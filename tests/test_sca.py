@@ -145,9 +145,33 @@ def test_calib_pi_is_one_when_local_is_exact():
 def test_chunking_identical():
     m = model()
     x = inputs(8, 8)
-    outs = [run(m, x, SCAContext(mode="sca", n0=4, tile=2, window=4, chunk=c, pi=PiTable("const", value=0.6)))
-            for c in (1, 3, None)]
+    outs = [run(m, x, SCAContext(mode="sca", n0=4, tile=2, window=4, chunk=c, local_impl="gather",
+                                 pi=PiTable("const", value=0.6))) for c in (1, 3, None)]
     assert torch.allclose(outs[0], outs[2], atol=1e-6) and torch.allclose(outs[1], outs[2], atol=1e-6)
+    for fused in (False, True):
+        flex = run(m, x, SCAContext(mode="sca", n0=4, tile=2, window=4, local_impl="flex", fused=fused,
+                                    pi=PiTable("const", value=0.6)))
+        assert torch.allclose(flex, outs[2], atol=1e-6), (fused, (flex - outs[2]).abs().max())
+
+
+@pytest.mark.parametrize("H,W,L,tile,win,q_tile,k_tile", [
+    (16, 24, 5, (8, 8), (8, 8), None, None),        # default 8x8 blocks, text length not a block multiple
+    (16, 16, 7, (4, 4), (8, 8), None, None),        # several model tiles per query block
+    (12, 20, 3, (2, 4), (6, 8), (4, 4), (4, 4)),    # grid not divisible by blocks (padding), odd window
+    (24, 16, 0, (8, 8), (16, 16), (4, 8), (8, 4)),  # no text, non-square blocks
+    (32, 40, 16, (8, 8), (16, 16), (8, 16), (8, 8)),
+    (8, 12, 6, (8, 12), (8, 12), None, None),       # window covers the whole grid
+])
+def test_flex_local_matches_gather(H, W, L, tile, win, q_tile, k_tile):
+    from sca.attn import flex_layout, local_branch, local_branch_flex
+    g = torch.Generator().manual_seed(H * W + L)
+    q, k, v = (torch.randn(2, L + H * W, 2, 16, generator=g, dtype=torch.float64) for _ in range(3))
+    ref = local_branch(q, k, v, L, (H, W), tile, win)
+    lay = flex_layout(L, (H, W), tile, win, "cpu", q_tile, k_tile)
+    out = local_branch_flex(q[:, L:], k, v, L, lay)
+    assert (out - ref).abs().max() < 1e-12
+    o_perm = local_branch_flex(q[:, L:], k, v, L, lay, permuted=True)
+    assert torch.equal(o_perm.transpose(1, 2).index_select(1, lay.q_inv), out)
 
 
 def test_merge_and_report(tmp_path):

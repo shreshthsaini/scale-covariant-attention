@@ -83,16 +83,19 @@ def pool_tokens(x, grid, f, pool):
     return g.reshape(B, -1, h, D)
 
 
-def global_branch(q, k, v, L, grid, f, pool, rope_txt, rope_q, rope_k):
+def global_branch(q, k, v, L, grid, f, pool, rope_txt, rope_q, rope_k, q_txt=None, k_txt=None):
     """Pooled image K/V on the coarse grid plus all text K/V; all queries (text and image).
 
     q, k, v are pre-RoPE [B, S, h, D], text first. rope_q are image-query RoPE tables at
     coarse coordinates (floor(row / fh), floor(col / fw)); rope_k the pooled-key tables.
+    q_txt / k_txt optionally pass the RoPE'd text queries / keys when the caller has them.
     """
     kp = pool_tokens(k[:, L:], grid, f, pool)
     vp = pool_tokens(v[:, L:], grid, f, pool)
-    qr = torch.cat([rope(q[:, :L], rope_txt), rope(q[:, L:], rope_q)], 1)
-    kr = torch.cat([rope(k[:, :L], rope_txt), rope(kp, rope_k)], 1)
+    q_txt = rope(q[:, :L], rope_txt) if q_txt is None else q_txt
+    k_txt = rope(k[:, :L], rope_txt) if k_txt is None else k_txt
+    qr = torch.cat([q_txt, rope(q[:, L:], rope_q)], 1)
+    kr = torch.cat([k_txt, rope(kp, rope_k)], 1)
     return sdpa(qr, kr, torch.cat([v[:, :L], vp], 1))
 
 
@@ -115,17 +118,19 @@ def auto_chunk(n_keys, h, D, itemsize, budget=2 << 30):
 def local_branch(qr, kr, v, L, grid, tile, window, chunk=None):
     """Blocked neighborhood attention for image queries at full resolution.
 
-    qr, kr are RoPE-applied with original (full-resolution) coordinates, [B, S, h, D].
+    qr, kr are RoPE-applied with original (full-resolution) coordinates, [B, S, h, D]
+    (qr may also hold the image queries alone, [B, H*W, h, D]).
     Each th x tw query tile attends to all text keys plus a Wh x Ww key window centred on
     the tile and clamped inside the grid. Returns [B, H*W, h, D].
     """
-    B, S, h, D = qr.shape
     (H, W), (th, tw) = grid, tile
+    B, _, h, D = qr.shape
+    qr = qr if qr.shape[1] == H * W else qr[:, L:]
     Th, Tw = H // th, W // tw
     T, tq = Th * Tw, th * tw
     idx = window_index(L, grid, tile, window, qr.device)
     chunk = chunk or auto_chunk(idx.shape[1], h, D, kr.element_size())
-    qt = qr[:, L:].view(B, Th, th, Tw, tw, h, D).permute(0, 1, 3, 2, 4, 5, 6).reshape(B, T, tq, h, D)
+    qt = qr.view(B, Th, th, Tw, tw, h, D).permute(0, 1, 3, 2, 4, 5, 6).reshape(B, T, tq, h, D)
     out = qt.new_empty(B, T, tq, h, D)
     for c0 in range(0, T, chunk):
         ii = idx[c0:c0 + chunk]
@@ -133,6 +138,184 @@ def local_branch(qr, kr, v, L, grid, tile, window, chunk=None):
         kk, vv = kr[:, ii].flatten(0, 1), v[:, ii].flatten(0, 1)  # [B*c, M, h, D]
         out[:, c0:c0 + c] = sdpa(qt[:, c0:c0 + c].flatten(0, 1), kk, vv).view(B, c, tq, h, D)
     return out.view(B, Th, Tw, th, tw, h, D).permute(0, 1, 3, 2, 4, 5, 6).reshape(B, H * W, h, D)
+
+
+# ----------------------------------------------------------------------------- flex local branch
+#
+# Same keys as local_branch, computed with FlexAttention over a block-sparse mask. Image queries
+# and image keys are permuted into tile-major order so that a sparse block is a small spatial
+# tile; mask_mod states the gather-window membership per (query, key) pair, so the result does
+# not depend on the block layout (only the amount of skipped work does). Text keys come first.
+
+FLEX_Q_TILE = (8, 16)     # query permutation tile (rows, cols) = one sparse Q block (128 queries)
+FLEX_K_TILE = (8, 8)      # key permutation tile = one sparse KV block (64 keys)
+FLEX_KERNEL = None        # kernel_options for flex_attention (None = derived from the block sizes)
+# Layout choice (GH200, 24 heads, d 128, bf16, interleaved min timings, scripts/bench_attn.py):
+# 8x16 query blocks with 8x8 window-aligned key blocks and TMA beat 8x8/16x16 query blocks and
+# 8x16/16x16 key blocks at 2048^2, 4096^2 and 6144x2048 for both t = 8 and t = 16.
+_FLEX = {}
+
+
+def _envfix():
+    """torch.compile needs zero-byte modules a scratch purge removed from the env; see sca/envfix.py."""
+    from sca.envfix import install
+    install()
+
+
+def _raise_recompile_limit(n=64):
+    """Each BlockMask carries its own mask_mod closure, so every new (grid, tile, window) layout
+    recompiles flex_attention and create_block_mask. Past dynamo's default limit (8) it would
+    silently fall back to the eager path, which materializes the full score matrix."""
+    from torch._dynamo import config as cfg
+    for name in ("recompile_limit", "cache_size_limit"):
+        if hasattr(cfg, name):
+            setattr(cfg, name, max(getattr(cfg, name), n))
+    if hasattr(cfg, "accumulated_recompile_limit"):
+        cfg.accumulated_recompile_limit = max(cfg.accumulated_recompile_limit, 8 * n)
+
+
+def flex_fn(device):
+    """flex_attention compiled once for CUDA; the eager reference elsewhere (CPU tests)."""
+    from torch.nn.attention.flex_attention import flex_attention
+    _envfix()
+    if torch.device(device).type != "cuda":
+        return flex_attention
+    if "fn" not in _FLEX:
+        _raise_recompile_limit()
+        _FLEX["fn"] = torch.compile(flex_attention, dynamic=False)
+    return _FLEX["fn"]
+
+
+def tile_order(grid, tile, offset=(0, 0), device=None):
+    """Row-major image index of every slot of a tile-major ordering, -1 for padding slots.
+
+    The grid is shifted by `offset` (padding rows/cols before the image) and padded at the end
+    to whole tiles; tiles are visited row-major and tokens inside a tile row-major.
+    """
+    (H, W), (th, tw), (oh, ow) = grid, tile, offset
+    Hp, Wp = -(-(H + oh) // th) * th, -(-(W + ow) // tw) * tw
+    y = torch.arange(Hp, device=device)[:, None] - oh
+    x = torch.arange(Wp, device=device)[None, :] - ow
+    idx = (y * W + x).masked_fill((y < 0) | (y >= H) | (x < 0) | (x >= W), -1)
+    return idx.view(Hp // th, th, Wp // tw, tw).permute(0, 2, 1, 3).reshape(-1)
+
+
+@dataclass
+class FlexLayout:
+    q_gather: torch.Tensor      # [Nq] image index per query slot (padding -> 0)
+    q_inv: torch.Tensor         # [N] query slot per image token
+    k_gather: torch.Tensor      # [Nk] image index per key slot (padding -> 0)
+    block_mask: object
+    kernel_options: dict | None
+
+
+def flex_layout(L, grid, tile, window, device, q_tile=None, k_tile=None, kernel_options=None):
+    """Permutations and BlockMask reproducing window_index() membership exactly."""
+    from torch.nn.attention.flex_attention import create_block_mask
+    _envfix()
+    _raise_recompile_limit()
+    (H, W), (th, tw), (Wh, Ww) = grid, tile, window
+    q_tile, k_tile = q_tile or FLEX_Q_TILE, k_tile or FLEX_K_TILE
+    # window start per query tile, identical to window_index()
+    r_start = (torch.arange(H, device=device) // th * th + th // 2 - Wh // 2).clamp(0, H - Wh)
+    c_start = (torch.arange(W, device=device) // tw * tw + tw // 2 - Ww // 2).clamp(0, W - Ww)
+    # shift key tiles so that unclamped windows start on a key-tile boundary
+    k_off = ((Wh // 2 - th // 2) % k_tile[0], (Ww // 2 - tw // 2) % k_tile[1])
+    qo = tile_order(grid, q_tile, device=device)
+    ko = tile_order(grid, k_tile, k_off, device=device)
+    q_gather, k_gather = qo.clamp(min=0), ko.clamp(min=0)
+    q_inv = torch.empty(H * W, dtype=torch.long, device=device)
+    valid = qo >= 0
+    q_inv[qo[valid]] = torch.arange(qo.numel(), device=device)[valid]
+    i32 = torch.int32
+    qr0 = r_start[q_gather // W].to(i32)
+    qc0 = c_start[q_gather % W].to(i32)
+    far = -(1 << 30)
+    krow = torch.where(ko >= 0, k_gather // W, far).to(i32)
+    kcol = torch.where(ko >= 0, k_gather % W, far).to(i32)
+
+    def mask_mod(b, h, q, kv):
+        j = (kv - L).clamp(min=0)
+        r, c, r0, c0 = krow[j], kcol[j], qr0[q], qc0[q]
+        return (kv < L) | ((r >= r0) & (r < r0 + Wh) & (c >= c0) & (c < c0 + Ww))
+
+    nq, nk = qo.numel(), L + ko.numel()
+    bs = (q_tile[0] * q_tile[1], k_tile[0] * k_tile[1])
+    from torch._dynamo import config as dynamo_config
+    # static shapes: with automatic dynamic shapes the second layout traces the captured ints
+    # (L, Wh, Ww) as SymInts and the mask_mod fails to trace
+    with dynamo_config.patch(automatic_dynamic_shapes=False):
+        bm = create_block_mask(mask_mod, None, None, nq, nk, device=device, BLOCK_SIZE=bs,
+                               _compile=torch.device(device).type == "cuda")
+    ko = kernel_options if kernel_options is not None else FLEX_KERNEL
+    if ko is None and torch.device(device).type == "cuda":  # kernel tiles must divide the sparse blocks
+        ko = {"BLOCK_M": math.gcd(bs[0], 128), "BLOCK_N": math.gcd(bs[1], 64), "USE_TMA": True}
+    return FlexLayout(q_gather, q_inv, k_gather, bm, ko)
+
+
+def local_branch_flex(qi, kr, v, L, layout, permuted=False):
+    """Flex version of local_branch. qi: RoPE'd image queries [B, N, h, D]; kr, v: [B, L+N, h, D].
+
+    Returns [B, N, h, D], or with permuted=True the raw flex output [B, h, Nq, D] in query-slot
+    order (un-permute with .transpose(1, 2).index_select(1, layout.q_inv)).
+    """
+    qp = qi.index_select(1, layout.q_gather)
+    kp = torch.cat([kr[:, :L], kr[:, L:].index_select(1, layout.k_gather)], 1)
+    vp = torch.cat([v[:, :L], v[:, L:].index_select(1, layout.k_gather)], 1)
+    kw = {"kernel_options": layout.kernel_options} if layout.kernel_options else {}
+    o = flex_fn(qi.device)(qp.transpose(1, 2), kp.transpose(1, 2), vp.transpose(1, 2),
+                           block_mask=layout.block_mask, **kw)
+    return o if permuted else o.transpose(1, 2).index_select(1, layout.q_inv)
+
+
+def mix_branches(o_glob, o_loc, pi, L, inv=None):
+    """[text: O_glob | image: pi * O_loc + (1 - pi) * O_glob] in fp32, cast to O_glob's dtype.
+
+    o_loc is [B, N, h, D], or the permuted flex output [B, h, Nq, D] when inv is given.
+    """
+    if inv is not None:
+        o_loc = o_loc.transpose(1, 2).index_select(1, inv)
+    img = (pi * o_loc.float() + (1 - pi) * o_glob[:, L:].float()).to(o_glob.dtype)
+    return torch.cat([o_glob[:, :L], img], 1)
+
+
+def mix_fn(device):
+    """mix_branches fused into one kernel on CUDA (same arithmetic, fp32)."""
+    if torch.device(device).type != "cuda":
+        return mix_branches
+    if "mix" not in _FLEX:
+        _envfix()
+        _FLEX["mix"] = torch.compile(mix_branches, dynamic=False)
+    return _FLEX["mix"]
+
+
+def sca_flex_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout):
+    """Whole SCA attention (both branches and the pi mix) with the flex local branch.
+
+    Same arithmetic as SCAProcessor.branches + mix_branches with local_impl="flex"; written as
+    one function so that torch.compile fuses RoPE, pooling, the tile permutations and the mix
+    around the two attention calls. q, k, v pre-RoPE [B, S, h, D]; returns [B, S, h, D].
+    """
+    cos, sin = rot
+    kr = rope(k, rot)
+    qi = rope(q[:, L:], (cos[L:], sin[L:]))
+    q_txt = rope(q[:, :L], (cos[:L], sin[:L]))
+    o_glob = global_branch(q, k, v, L, grid, f, pool, (cos[:L], sin[:L]), rope_q, rope_k, q_txt, kr[:, :L])
+    o_loc = local_branch_flex(qi, kr, v, L, layout, permuted=True)
+    return mix_branches(o_glob, o_loc, pi, L, layout.q_inv)
+
+
+def sca_flex_fn(device):
+    """sca_flex_forward compiled once for CUDA (flex_attention lowers inside the graph)."""
+    if torch.device(device).type != "cuda":
+        return sca_flex_forward
+    if "sca" not in _FLEX:
+        _envfix()
+        _raise_recompile_limit()
+        flex_fn(device)  # create the standalone compiled flex here: a torch.compile call reached
+        # while dynamo traces sca_flex_forward would cache the eager flex_attention instead
+        _FLEX["sca"] = torch.compile(sca_flex_forward, dynamic=False)
+    return _FLEX["sca"]
 
 
 # ----------------------------------------------------------------------------- pi tables
@@ -187,6 +370,8 @@ class SCAContext:
     window: int | None = None           # local key window side Wn (default n0)
     pool: str = "center"                # center | mean
     chunk: int | None = None            # tiles per local-branch chunk (None = auto, 2 GiB budget)
+    local_impl: str = "flex"            # flex (FlexAttention block mask) | gather (K/V window copies)
+    fused: bool = True                  # flex only: compile RoPE, pooling, both branches and the mix together
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -205,6 +390,16 @@ class SCAContext:
 
     def __post_init__(self):
         self._rope_cache, self._pi_now, self._img_ids = {}, None, None
+        self._flex_cache = {}
+        if self.local_impl not in ("flex", "gather"):
+            raise ValueError(f"local_impl must be flex or gather, got {self.local_impl}")
+
+    def flex_layout(self, L, tile, win, device):
+        """BlockMask and permutations, cached per (text length, grid, tile, window, device)."""
+        key = (L, self.grid, tuple(tile), tuple(win), str(device))
+        if key not in self._flex_cache:
+            self._flex_cache[key] = flex_layout(L, self.grid, tile, win, device)
+        return self._flex_cache[key]
 
     # -- state
     def set_inputs(self, img_ids, txt_ids=None, sigma=None):
@@ -298,22 +493,38 @@ class SCAProcessor:
         cos, sin = image_rotary_emb
         return L, (cos[:L], sin[:L])
 
-    def branches(self, q, k, v, image_rotary_emb, f, tile, win, qr=None, kr=None):
+    def branches(self, q, k, v, image_rotary_emb, f, tile, win, qr=None, kr=None, permuted=False):
+        """(L, o_loc, o_glob, inv). Text q/k RoPE is shared by both branches. With permuted=True
+        and the flex path, o_loc is the raw flex output and inv the un-permutation (else None)."""
         ctx = self.ctx
         L, rope_txt = self._split(q, image_rotary_emb)
-        rq, rk = ctx.coarse_rope(f, q.device)
-        o_glob = global_branch(q, k, v, L, ctx.grid, f, ctx.pool, rope_txt, rq, rk)
+        cos, sin = image_rotary_emb
+        if kr is None:
+            kr = rope(k, image_rotary_emb)
         if qr is None:
-            qr, kr = rope(q, image_rotary_emb), rope(k, image_rotary_emb)
-        o_loc = local_branch(qr, kr, v, L, ctx.grid, tile, win, ctx.chunk)
-        return L, o_loc, o_glob
+            q_txt, qi = rope(q[:, :L], rope_txt), rope(q[:, L:], (cos[L:], sin[L:]))
+        else:
+            q_txt, qi = qr[:, :L], qr[:, L:]
+        rq, rk = ctx.coarse_rope(f, q.device)
+        o_glob = global_branch(q, k, v, L, ctx.grid, f, ctx.pool, rope_txt, rq, rk, q_txt, kr[:, :L])
+        if ctx.local_impl == "flex":
+            layout = ctx.flex_layout(L, tile, win, q.device)
+            o_loc = local_branch_flex(qi, kr, v, L, layout, permuted)
+            return L, o_loc, o_glob, (layout.q_inv if permuted else None)
+        return L, local_branch(qi, kr, v, L, ctx.grid, tile, win, ctx.chunk), o_glob, None
 
     def sca(self, q, k, v, image_rotary_emb):
-        f, tile, win = self.ctx.geometry()
-        L, o_loc, o_glob = self.branches(q, k, v, image_rotary_emb, f, tile, win)
-        pi = self.ctx.pi_now(self.layer, q.shape[2], q.device).view(1, 1, -1, 1)
-        img = (pi * o_loc.float() + (1 - pi) * o_glob[:, L:].float()).to(o_glob.dtype)
-        return torch.cat([o_glob[:, :L], img], 1)
+        ctx = self.ctx
+        f, tile, win = ctx.geometry()
+        pi = ctx.pi_now(self.layer, q.shape[2], q.device).view(1, 1, -1, 1)
+        if ctx.local_impl == "flex" and ctx.fused:
+            L, _ = self._split(q, image_rotary_emb)
+            rq, rk = ctx.coarse_rope(f, q.device)
+            layout = ctx.flex_layout(L, tile, win, q.device)
+            return sca_flex_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f,
+                                         ctx.pool, layout)
+        L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True)
+        return mix_fn(q.device)(o_glob, o_loc, pi, L, inv)
 
     def calibrate(self, q, k, v, image_rotary_emb):
         ctx = self.ctx
@@ -321,7 +532,7 @@ class SCAProcessor:
         full = sdpa(qr, kr, v)
         for i, s in enumerate(ctx.calib_scales):
             f, tile, win = ctx.geometry(s)
-            L, o_loc, o_glob = self.branches(q, k, v, image_rotary_emb, f, tile, win, qr, kr)
+            L, o_loc, o_glob, _ = self.branches(q, k, v, image_rotary_emb, f, tile, win, qr, kr)
             ctx.calib.add(self.layer, i, ctx.sigma, full[:, L:], o_loc, o_glob[:, L:])
         ctx.calib.add_mass(self.layer, ctx.sigma, ctx.step, qr, kr, L, ctx.grid)
         return full

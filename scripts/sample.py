@@ -39,7 +39,9 @@ def parser():
     p.add_argument("--tile", type=int, default=8)
     p.add_argument("--window", type=int)
     p.add_argument("--pool", choices=("center", "mean"), default="center")
-    p.add_argument("--chunk", type=int, help="Query tiles per local-branch chunk (default: 2 GiB budget)")
+    p.add_argument("--chunk", type=int, help="Query tiles per local-branch chunk, gather only (default: 2 GiB budget)")
+    p.add_argument("--local-impl", choices=("flex", "gather"), default="flex",
+                   help="Local branch implementation (same keys; flex uses a FlexAttention block mask)")
     p.add_argument("--device", default="cuda")
     return p
 
@@ -59,7 +61,7 @@ def build_context(args, grid):
     else:
         pi = PiTable.load(args.pi_table, variant, args.pi_scale, args.sigma_star, target)
     ctx = SCAContext(mode="sca", n0=args.n0, tile=args.tile, window=args.window, pool=args.pool,
-                     chunk=args.chunk, pi=pi)
+                     chunk=args.chunk, local_impl=args.local_impl, pi=pi)
     info = {"n0": args.n0, "tile": args.tile, "window": args.window or args.n0, "pool": args.pool,
             "chunk": args.chunk, "pool_factors": list(pool_factors(grid, args.n0)), "pi_variant": pi.variant,
             "pi_const": args.pi_const, "sigma_star": pi.sigma_star, "pi_scale": getattr(pi, "scale", None),
@@ -134,7 +136,8 @@ def main(argv=None):
                                "excludes model loading and PNG I/O",
                                "peak_memory_bytes": torch.cuda.max_memory_allocated() if cuda else None,
                                "sigmas": [float(s) for s in pipe.scheduler.sigmas[:-1]],
-                               "pi_trace": list(ctx.pi_trace), "sca_log": sorted(set(ctx.log))})
+                               "pi_trace": list(ctx.pi_trace), "sca_log": sorted(set(ctx.log)),
+                               "local_impl": args.local_impl})  # not fingerprinted: both give the same keys
             print(f"saved {row['id']} {label} {config['res']} seconds={seconds:.3f}", flush=True)
     finally:
         uninstall()

@@ -28,6 +28,8 @@ def parser():
     p.add_argument("--tile", type=int, default=8, help="Inference tile t; emulation uses t * Wc / Wn")
     p.add_argument("--window", type=int, help="Inference window Wn (default n0)")
     p.add_argument("--pool", choices=("center", "mean"), default="center")
+    p.add_argument("--local-impl", choices=("flex", "gather"), default="flex",
+                   help="Local branch implementation (same keys; flex uses a FlexAttention block mask)")
     p.add_argument("--mass-queries", type=int, default=256)
     p.add_argument("--out", type=Path, required=True, help="pi table .npz; parts go to <out stem>_parts/")
     p.add_argument("--report-only", action="store_true", help="Merge existing parts without running FLUX")
@@ -43,7 +45,7 @@ def run(args, rows, parts, settings):
     from sca.runtime import load_pipeline
     pipe = load_pipeline(args.device)
     ctx = SCAContext(mode="calib", n0=args.n0, tile=args.tile, window=args.window, pool=args.pool,
-                     calib_scales=tuple(settings["scales"]))
+                     local_impl=args.local_impl, calib_scales=tuple(settings["scales"]))
     uninstall = install(pipe.transformer, ctx)
     ctx.scheduler = pipe.scheduler
     h, w = args.res
