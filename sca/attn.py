@@ -382,7 +382,7 @@ class SCAContext:
     chunk: int | None = None            # tiles per local-branch chunk (None = auto, 2 GiB budget)
     local_impl: str = "flex"            # flex (FlexAttention block mask) | gather (K/V window copies)
     gate_sigma: float = 0.0             # sigma above which pi = 0 (global only, local branch skipped)
-    band: int = 0                       # >1: low band (avgpool band, bilinear up) of each image output from O_glob
+    band: int = 0                       # >1: low band (avgpool band, bilinear up) of each image output from O_glob; <0: adaptive, c=-band
     fused: bool = True                  # flex only: compile RoPE, pooling, both branches and the mix together
     pi: PiTable = field(default_factory=PiTable)
     # calibration
@@ -536,13 +536,18 @@ class SCAProcessor:
             return global_branch(q, k, v, L, ctx.grid, f, ctx.pool, rope_txt, rq, rk,
                                  rope(q[:, :L], rope_txt), kr_txt)
         pi = ctx.pi_now(self.layer, q.shape[2], q.device).view(1, 1, -1, 1)
-        if ctx.band > 1:
+        band = ctx.band
+        if band < 0:  # SNR-adaptive: p = c * sigma / (1 - sigma) tokens, off below 2
+            sg = float(ctx.sigma) if ctx.sigma is not None else 0.0
+            band = int(round(-band * sg / max(1e-3, 1 - sg)))
+            band = min(band, min(ctx.grid))
+        if band > 1:
             L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True)
             if inv is not None:
                 o_loc = o_loc.transpose(1, 2).index_select(1, inv)
             og = o_glob[:, L:].float()
             img = pi * o_loc.float() + (1 - pi) * og
-            img = img + band_low(og, ctx.grid, ctx.band) - band_low(img, ctx.grid, ctx.band)
+            img = img + band_low(og, ctx.grid, band) - band_low(img, ctx.grid, band)
             return torch.cat([o_glob[:, :L], img.to(o_glob.dtype)], 1)
         if ctx.local_impl == "flex" and ctx.fused:
             L, _ = self._split(q, image_rotary_emb)
