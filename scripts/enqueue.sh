@@ -3,7 +3,7 @@
 # METHOD: area | full | sca | sca_* (sample.py variants). RES: HxW. EXTRA is passed to the sampler.
 set -e
 M=$1; R=$2; C=${3:-5}; shift 3 || shift $#; EXTRA="$*"
-P=/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention; S=/scratch/09032/saini_2/sca
+S=/scratch/09032/saini_2/sca; P=$S/code/${CODE:-041bbf1}; PSRC=/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention
 PR=${PRF:-/scratch/09032/saini_2/constancy_rope/prompts/aesthetic4k_eval.jsonl}; N=$(wc -l < $PR)
 LBL=${LABEL:-$M}; OUT=${OUTROOT:-$S/out/main}/$LBL/$R
 if [ "$M" = area ]; then CMD="scripts/run_area.py"; else CMD="scripts/sample.py --method $M"; fi

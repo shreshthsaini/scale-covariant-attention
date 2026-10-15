@@ -268,6 +268,16 @@ def local_branch_flex(qi, kr, v, L, layout, permuted=False):
     return o if permuted else o.transpose(1, 2).index_select(1, layout.q_inv)
 
 
+def band_low(x, grid, p):
+    """Low band of image tokens [B, N, h, D] on the (gh, gw) grid: average-pool by p, bilinear upsample."""
+    B, N, H, D = x.shape
+    gh, gw = grid
+    y = x.reshape(B, gh, gw, H * D).permute(0, 3, 1, 2)
+    y = torch.nn.functional.avg_pool2d(y, p, stride=p, ceil_mode=True)
+    y = torch.nn.functional.interpolate(y, size=(gh, gw), mode="bilinear", align_corners=False)
+    return y.permute(0, 2, 3, 1).reshape(B, N, H, D)
+
+
 def mix_branches(o_glob, o_loc, pi, L, inv=None):
     """[text: O_glob | image: pi * O_loc + (1 - pi) * O_glob] in fp32, cast to O_glob's dtype.
 
@@ -371,6 +381,8 @@ class SCAContext:
     pool: str = "center"                # center | mean
     chunk: int | None = None            # tiles per local-branch chunk (None = auto, 2 GiB budget)
     local_impl: str = "flex"            # flex (FlexAttention block mask) | gather (K/V window copies)
+    gate_sigma: float = 0.0             # sigma above which pi = 0 (global only, local branch skipped)
+    band: int = 0                       # >1: low band (avgpool band, bilinear up) of each image output from O_glob
     fused: bool = True                  # flex only: compile RoPE, pooling, both branches and the mix together
     pi: PiTable = field(default_factory=PiTable)
     # calibration
@@ -516,7 +528,22 @@ class SCAProcessor:
     def sca(self, q, k, v, image_rotary_emb):
         ctx = self.ctx
         f, tile, win = ctx.geometry()
+        if ctx.gate_sigma > 0 and ctx.sigma is not None and float(ctx.sigma) > ctx.gate_sigma:
+            L, rope_txt = self._split(q, image_rotary_emb)
+            cos, sin = image_rotary_emb
+            rq, rk = ctx.coarse_rope(f, q.device)
+            kr_txt = rope(k[:, :L], rope_txt)
+            return global_branch(q, k, v, L, ctx.grid, f, ctx.pool, rope_txt, rq, rk,
+                                 rope(q[:, :L], rope_txt), kr_txt)
         pi = ctx.pi_now(self.layer, q.shape[2], q.device).view(1, 1, -1, 1)
+        if ctx.band > 1:
+            L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True)
+            if inv is not None:
+                o_loc = o_loc.transpose(1, 2).index_select(1, inv)
+            og = o_glob[:, L:].float()
+            img = pi * o_loc.float() + (1 - pi) * og
+            img = img + band_low(og, ctx.grid, ctx.band) - band_low(img, ctx.grid, ctx.band)
+            return torch.cat([o_glob[:, :L], img.to(o_glob.dtype)], 1)
         if ctx.local_impl == "flex" and ctx.fused:
             L, _ = self._split(q, image_rotary_emb)
             rq, rk = ctx.coarse_rope(f, q.device)

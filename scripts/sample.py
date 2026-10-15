@@ -39,6 +39,8 @@ def parser():
     p.add_argument("--tile", type=int, default=8)
     p.add_argument("--window", type=int)
     p.add_argument("--pool", choices=("center", "mean"), default="center")
+    p.add_argument("--gate-sigma", type=float, default=0.0, help="Global-only (pi=0) above this sigma")
+    p.add_argument("--band", type=int, default=0, help="Low band (pool size, tokens) taken from O_glob")
     p.add_argument("--chunk", type=int, help="Query tiles per local-branch chunk, gather only (default: 2 GiB budget)")
     p.add_argument("--local-impl", choices=("flex", "gather"), default="flex",
                    help="Local branch implementation (same keys; flex uses a FlexAttention block mask)")
@@ -61,9 +63,10 @@ def build_context(args, grid):
     else:
         pi = PiTable.load(args.pi_table, variant, args.pi_scale, args.sigma_star, target)
     ctx = SCAContext(mode="sca", n0=args.n0, tile=args.tile, window=args.window, pool=args.pool,
-                     chunk=args.chunk, local_impl=args.local_impl, pi=pi)
+                     chunk=args.chunk, local_impl=args.local_impl, pi=pi,
+                     gate_sigma=args.gate_sigma, band=args.band)
     info = {"n0": args.n0, "tile": args.tile, "window": args.window or args.n0, "pool": args.pool,
-            "chunk": args.chunk, "pool_factors": list(pool_factors(grid, args.n0)), "pi_variant": pi.variant,
+            "chunk": args.chunk, "gate_sigma": args.gate_sigma, "band": args.band, "pool_factors": list(pool_factors(grid, args.n0)), "pi_variant": pi.variant,
             "pi_const": args.pi_const, "sigma_star": pi.sigma_star, "pi_scale": getattr(pi, "scale", None),
             "pi_table_sha256": file_sha256(args.pi_table) if args.pi_const is None else None}
     return ctx, info

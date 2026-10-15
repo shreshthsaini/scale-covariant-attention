@@ -248,3 +248,18 @@ def test_branches_match_bruteforce():
     ctx.set_inputs(ids)
     out = global_branch(q, k, v, L, (H, W), f, "center", (txt[0], txt[1]), *ctx.coarse_rope(f, q.device))
     assert torch.allclose(out, ref, atol=1e-5)
+
+
+def test_gate_and_band():
+    m, H, W = model(), 8, 8
+    mk = lambda **kw: SCAContext(mode="sca", n0=4, tile=2, window=4, local_impl="gather", **kw)
+    ref = attn_outputs(m, mk(pi=PiTable("const", value=0.0)), H, W)
+    gated = attn_outputs(m, mk(pi=PiTable("const", value=0.7), gate_sigma=0.4), H, W)
+    band0 = attn_outputs(m, mk(pi=PiTable("const", value=0.0), band=2), H, W)
+    open_gate = attn_outputs(m, mk(pi=PiTable("const", value=0.7), gate_sigma=0.6), H, W)
+    plain = attn_outputs(m, mk(pi=PiTable("const", value=0.7)), H, W)
+    band = attn_outputs(m, mk(pi=PiTable("const", value=0.7), band=2), H, W)
+    flat = lambda o: torch.cat([t.flatten() for t in (o[0] if isinstance(o[0], tuple) else (o[0],))] + [o[1].flatten()])
+    for a, b in ((ref, gated), (ref, band0), (plain, open_gate)):
+        assert torch.allclose(flat(a), flat(b), atol=1e-5)
+    assert not torch.allclose(flat(plain), flat(band), atol=1e-4)
