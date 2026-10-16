@@ -26,3 +26,13 @@ hazy. Released all hold_flux2 tasks (calib f010-f013, merge f200, full f100-f145
 ## 13:00 E6 calibration budget done (46 prompts; results/e6_*): tables from 4/8/16 prompts vs 32-prompt table:
 all metrics n.s. (|dIR| <= 0.012), except cal16 MUSIQ +0.13*. => 4 calibration prompts suffice (~10 GPU-min).
 Running: E5 seeds, FLUX.2 calibration (f010-f013). Fleets SCA6/SCA7 still pending; 6 MF9 guests active.
+## 15:35 UltraImage bug: wrapper did not pass height/width -> 1024 output (g000,g005 failed). Fixed
+(scripts/run_ultraimage.py: call height/width; block-avg cache dir *_v2 since v1 caches were built at
+1024; not deleted per scratch rule). Frozen code/PHASE2U. Tasks parked in taskq/hold_ultra (38, now
+pointing to PHASE2U); smoke = pending/a000_ultraimage_smoke_4096x4096.sh. If its PNGs are 4096x4096,
+move hold_ultra/* to pending.
+## 16:05 UltraImage smoke OK (4096x4096, ~303 s/img, coherent). Released hold_ultra -> pending.
+## 16:15 E5 seeds (46 prompts, results/e5_*): SCA-AReA seed1 IR +0.31*, HPS2.1 +0.022*, Pick +0.71*, CLIP +1.51*,
+MUSIQ-crop +11.6*; seed2 IR +0.36*, HPS2.1 +0.028*, Pick +0.86*, CLIP +1.69*, crop +11.0* (consistent with seed 0).
+E8 FLUX.2-dev 4096^2 (50 prompts, results/e8_flux2_sca_vs_full.csv): SCA-full IR +0.46*, aes +0.31*, HPS2.1
++0.018*, Pick +0.56*, CLIP-IQA +0.066*, ARNIQA +0.071*, MUSIQ +16.0*, crop +21.4*, CLIP n.s., -224 s/img (~2x).
