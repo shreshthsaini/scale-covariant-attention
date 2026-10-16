@@ -263,3 +263,17 @@ def test_gate_and_band():
     for a, b in ((ref, gated), (ref, band0), (plain, open_gate)):
         assert torch.allclose(flat(a), flat(b), atol=1e-5)
     assert not torch.allclose(flat(plain), flat(band), atol=1e-4)
+
+
+def test_band_mix_matches_two_pass():
+    from sca.attn import band_mix, band_low
+    g = torch.Generator().manual_seed(0)
+    L, grid, heads, D = 3, (8, 12), 2, 4
+    og_all = torch.randn(1, L + 96, heads, D, generator=g, dtype=torch.float64)
+    ol = torch.randn(1, 96, heads, D, generator=g, dtype=torch.float64)
+    pi = torch.rand(1, 1, heads, 1, generator=g, dtype=torch.float64)
+    og = og_all[:, L:]
+    img = pi * ol + (1 - pi) * og
+    ref = img + band_low(og, grid, 4) - band_low(img, grid, 4)
+    out = band_mix(og_all, ol, pi, L, grid, 4)
+    assert torch.allclose(out[:, L:], ref, atol=1e-12) and torch.equal(out[:, :L], og_all[:, :L])

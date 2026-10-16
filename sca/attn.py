@@ -278,6 +278,25 @@ def band_low(x, grid, p):
     return y.permute(0, 2, 3, 1).reshape(B, N, H, D)
 
 
+def band_mix(o_glob, o_loc, pi, L, grid, p):
+    """Image output og + pi * (d - LP_p(d)), d = O_loc - O_glob: the pi mix with its low band
+    replaced by O_glob's (LP is linear and pi is constant over space, so one LP call suffices)."""
+    og = o_glob[:, L:].float()
+    d = o_loc.float() - og
+    img = og + pi * (d - band_low(d, grid, p))
+    return torch.cat([o_glob[:, :L], img.to(o_glob.dtype)], 1)
+
+
+def band_mix_fn(device):
+    """band_mix compiled once for CUDA (static grid and band per process)."""
+    if torch.device(device).type != "cuda":
+        return band_mix
+    if "band" not in _FLEX:
+        _envfix()
+        _FLEX["band"] = torch.compile(band_mix, dynamic=False)
+    return _FLEX["band"]
+
+
 def mix_branches(o_glob, o_loc, pi, L, inv=None):
     """[text: O_glob | image: pi * O_loc + (1 - pi) * O_glob] in fp32, cast to O_glob's dtype.
 
@@ -545,10 +564,7 @@ class SCAProcessor:
             L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True)
             if inv is not None:
                 o_loc = o_loc.transpose(1, 2).index_select(1, inv)
-            og = o_glob[:, L:].float()
-            img = pi * o_loc.float() + (1 - pi) * og
-            img = img + band_low(og, ctx.grid, band) - band_low(img, ctx.grid, band)
-            return torch.cat([o_glob[:, :L], img.to(o_glob.dtype)], 1)
+            return band_mix_fn(q.device)(o_glob, o_loc, pi, L, ctx.grid, band)
         if ctx.local_impl == "flex" and ctx.fused:
             L, _ = self._split(q, image_rotary_emb)
             rq, rk = ctx.coarse_rope(f, q.device)
