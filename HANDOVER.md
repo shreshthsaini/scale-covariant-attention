@@ -289,3 +289,26 @@ per-head routing (`--route`) is no better than the soft mix. The scale-2 pi tabl
    pi near 0.
 5. Reinstall torch and triton in the `sca` env instead of relying on envfix.
 6. The paper's no-ai-slop pass and a final read; the figure scale and crops can be polished.
+
+## 12. PHASE 2 (started 2026-10-16 11:30): bulletproof experiments + presentation upgrade
+
+User request: complete the paper with many visual examples, a hero figure, polished diagrams, clear
+contributions and method (with math), comparison tables, qualitative results, a much larger appendix
+with proofs and extra evidence, more experiments. Keep this file current; it is the crash-recovery doc.
+
+Experiments (all at seed 0, Aesthetic-4K ids excl dev4 unless noted; spool prefixes in parentheses):
+- E1 baselines at 4096^2, 191 prompts: DyPE, SEGA (official), UltraImage (crope harness / third_party).
+- E2 higher resolution: 6144^2 metrics (SCA, AReA; 100 prompts) and 8192^2 qualitative + latency.
+- E3 latency curve: 2048^2, 3072^2, 4096^2, 6144^2, 8192^2 x {full, AReA, SCA}, batch 1, idle node.
+- E4 HRGen-1K (AReA's second prompt set, no references): SCA vs AReA at 4096^2, 200 prompts.
+- E5 seeds 1 and 2 on 50 prompts at 4096^2 (SCA, AReA) for variance.
+- E6 calibration budget: pi tables from 4 / 8 / 16 prompts (merge subsets of calib/k1_1024_parts with
+  --report-only), generate 46 prompts at 4K each.
+- E7 gate sensitivity: sigma* in {0.85, 0.93} at 4K, 46 prompts.
+- E8 second model FLUX.2-dev (cached): port SCA, calibrate, SCA vs full attention at 4K (50 prompts).
+- E9 checkpoint generality FLUX.1-Krea-dev (AReA's code default): recalibrate, SCA vs AReA, 100 prompts.
+Presentation: hero figure (page 1), TikZ method diagram, calibration figures, many qualitative grids
+(main + appendix galleries per resolution and per baseline), math (formal method, closed-form
+calibration, propositions on relative-position range and cost, proofs in appendix).
+Owners: experiments-engineer agent (E1-E7, E9 task scripts), FLUX.2 port agent (E8), figures agent
+(paper/figures only, no main.tex edits; writes paper/figures/snippets.tex), writing agent (owns main.tex).

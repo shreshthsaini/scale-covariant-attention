@@ -242,8 +242,9 @@ def ultra_settings(res):
     method["hyper_parameters_width"]["linear_factor"] = w / 2048
     method["hyper_parameters_height"]["train_length"] = (th // 16) * (tw // 16) + 512
     method["hyper_parameters_width"]["train_length"] = (th // 16) * (tw // 16) + 512
-    method["save_dir"] = str(BLOCKAVG_ROOT / f"{h}x{w}")
-    call = {"num_inference_steps1": 30, "num_inference_steps2": 30,
+    method["save_dir"] = str(BLOCKAVG_ROOT / f"{h}x{w}_v2")  # v1 caches were built at the 1024 default
+    call = {"height": h, "width": w,
+            "num_inference_steps1": 30, "num_inference_steps2": 30,
             "guidance_scale1": 3.5, "guidance_scale2": 7,
             "ntk_factor": method.get("ntk_factor", 10),
             "time_shift_1": 3, "time_shift_2": method.get("time_shift_2", 6),
