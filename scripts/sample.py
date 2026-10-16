@@ -62,7 +62,7 @@ def build_context(args, grid):
         raise SystemExit("--pi-table is required for this method")
     else:
         pi = PiTable.load(args.pi_table, variant, args.pi_scale, args.sigma_star, target)
-    ctx = SCAContext(mode="sca", n0=args.n0, tile=args.tile, window=args.window, pool=args.pool,
+    ctx = SCAContext(mode="sca", known_grid=grid, n0=args.n0, tile=args.tile, window=args.window, pool=args.pool,
                      chunk=args.chunk, local_impl=args.local_impl, pi=pi,
                      gate_sigma=args.gate_sigma, band=args.band)
     info = {"n0": args.n0, "tile": args.tile, "window": args.window or args.n0, "pool": args.pool,

@@ -411,6 +411,7 @@ class SCAContext:
     calib_tile: int | None = None       # override emulated tile side (default t * Wc / Wn)
     # runtime state (set by the transformer pre-hook)
     grid: tuple | None = None
+    known_grid: tuple | None = None     # exact (H, W) token grid from the sampler; FLUX builds img_ids in bf16, which rounds positions above 256
     sigma: float = 1.0
     step: int = 0
     scheduler: object | None = None
@@ -437,8 +438,11 @@ class SCAContext:
         img_ids = img_ids[0] if img_ids.ndim == 3 else img_ids
         if self._img_ids is None or self._img_ids.shape != img_ids.shape or not torch.equal(self._img_ids, img_ids):
             self._img_ids, self._rope_cache = img_ids.detach().clone(), {}
-            r, c = img_ids[:, 1], img_ids[:, 2]
-            self.grid = (int(r.max() - r.min()) + 1, int(c.max() - c.min()) + 1)
+            if self.known_grid is not None:
+                self.grid = tuple(self.known_grid)
+            else:
+                r, c = img_ids[:, 1], img_ids[:, 2]
+                self.grid = (int(r.max() - r.min()) + 1, int(c.max() - c.min()) + 1)
             assert self.grid[0] * self.grid[1] == img_ids.shape[0], "image ids must form a full grid"
         if sigma is not None:
             self.sigma = float(sigma)
