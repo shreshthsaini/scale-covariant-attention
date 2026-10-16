@@ -27,6 +27,7 @@ CROPE = Path("/work/09032/saini_2/vista/Projects/Exploration/constancy_rope")
 AREA_DIR = Path(os.environ.get("AREA_DIR", "/scratch/09032/saini_2/sca/third_party/AReA"))
 HF_HOME = "/scratch/09032/saini_2/tmp/hf"
 MODEL_ID = "black-forest-labs/FLUX.1-dev"
+KREA_ID = "black-forest-labs/FLUX.1-Krea-dev"   # AReA's own default; local snapshot holds only its transformer
 TXT_LEN = 512                     # FLUX T5 max_sequence_length, the text token count AReA prices
 OFFLOAD_BELOW_GB = 60             # AReA generate.py offloads below this much GPU memory
 
@@ -62,6 +63,8 @@ def parser():
     p.add_argument("--bridge-ratio", type=float, default=0.5, help="rho")
     p.add_argument("--area-seed", type=int, default=None,
                    help="AReA jitter/Halo seed; default --seed, as in AReA generate.py")
+    p.add_argument("--model", choices=("dev", "krea"), default="dev",
+                   help="dev = FLUX.1-dev; krea = FLUX.1-Krea-dev transformer with FLUX.1-dev encoders and VAE")
     p.add_argument("--device", default="cuda")
     p.add_argument("--cpu-offload", action="store_true",
                    help=f"Model CPU offload; also enabled automatically below {OFFLOAD_BELOW_GB} GB like AReA")
@@ -70,8 +73,8 @@ def parser():
     return p
 
 
-def snapshot_dir():
-    hub = Path(os.environ.get("HF_HOME", HF_HOME)) / "hub/models--black-forest-labs--FLUX.1-dev"
+def snapshot_dir(repo_id=MODEL_ID):
+    hub = Path(os.environ.get("HF_HOME", HF_HOME)) / ("hub/models--" + repo_id.replace("/", "--"))
     revision = (hub / "refs/main").read_text().strip()
     return hub / "snapshots" / revision, revision
 
@@ -142,6 +145,11 @@ class AReARunner:
         self.versions = {"diffusers": diffusers.__version__, "torch": torch.__version__}
         self.base = {"code_revision": git_revision(ROOT), "area_revision": git_revision(AREA_DIR),
                      "implementation_sha256": implementation_hash()}
+        self.model_id = MODEL_ID
+        if args.model == "krea":    # keys added only for Krea so FLUX.1-dev fingerprints are unchanged
+            self.model_id = KREA_ID
+            self.krea_source, krea_revision = snapshot_dir(KREA_ID)
+            self.base["transformer_revision"] = krea_revision
         if dry_run:
             self.scheduler_config = None
             return
@@ -161,8 +169,13 @@ class AReARunner:
         torch.set_num_threads(min(8, int(os.environ.get("OMP_NUM_THREADS", "8"))))
         if args.allow_download:
             source = MODEL_ID
+        kwargs = {}
+        if args.model == "krea":
+            from diffusers import FluxTransformer2DModel
+            kwargs["transformer"] = FluxTransformer2DModel.from_pretrained(
+                str(self.krea_source), subfolder="transformer", torch_dtype=torch.bfloat16, local_files_only=True)
         pipe = FluxPipeline.from_pretrained(str(source), torch_dtype=torch.bfloat16,
-                                            local_files_only=not args.allow_download)
+                                            local_files_only=not args.allow_download, **kwargs)
         pipe.vae.enable_tiling()                        # AReA generate.py: always tiled VAE decode
         device = torch.device(args.device)
         small = device.type == "cuda" and \
@@ -179,7 +192,7 @@ class AReARunner:
         return {"schema_version": 1, "method": "area", "res": f"{self.res[0]}x{self.res[1]}",
                 "prompt_id": str(row["id"]), "prompt": row["prompt"], "seed": int(seed),
                 "derived_seed": image_seed(row["id"], seed), "steps": a.steps, "guidance": a.guidance,
-                "model": MODEL_ID, "model_revision": self.model_revision, "dtype": "bfloat16", "batch_size": 1,
+                "model": self.model_id, "model_revision": self.model_revision, "dtype": "bfloat16", "batch_size": 1,
                 "attention": "area_official (diffusers dispatch_attention_fn, default backend)",
                 **self.versions, **self.base, "grid": [n // 16 for n in self.res],
                 "area": {"pooling": self.cfg.pooling, "phase1_steps": self.schedule.get("phase1_steps"),

@@ -34,6 +34,8 @@ def parser():
     p.add_argument("--out", type=Path, required=True, help="pi table .npz; parts go to <out stem>_parts/")
     p.add_argument("--report-only", action="store_true", help="Merge existing parts without running FLUX")
     p.add_argument("--transfer-with", type=Path, nargs="*", default=[], help="Other calibration npz files")
+    p.add_argument("--model", choices=("dev", "krea"), default="dev",
+                   help="dev = FLUX.1-dev; krea = FLUX.1-Krea-dev transformer with FLUX.1-dev encoders and VAE")
     p.add_argument("--device", default="cuda")
     return p
 
@@ -43,7 +45,7 @@ def run(args, rows, parts, settings):
     from sca.attn import SCAContext, install
     from sca.calib import CalibStats
     from sca.runtime import load_pipeline
-    pipe = load_pipeline(args.device)
+    pipe = load_pipeline(args.device, args.model)
     ctx = SCAContext(mode="calib", n0=args.n0, tile=args.tile, window=args.window, pool=args.pool,
                      local_impl=args.local_impl, calib_scales=tuple(settings["scales"]))
     uninstall = install(pipe.transformer, ctx)
@@ -83,6 +85,8 @@ def main(argv=None):
                 "steps": args.steps, "guidance": args.guidance, "seed": args.seed, "sigma_bins": args.sigma_bins,
                 "mu_mode": args.mu_mode, "n0": args.n0, "tile": args.tile, "window": args.window,
                 "pool": args.pool, "mass_queries": args.mass_queries, "prompts": str(args.prompts.resolve())}
+    if args.model != "dev":  # keyed only when non-default so existing calib_config.json files still match
+        settings["model"] = args.model
     cfg = parts / "calib_config.json"
     if cfg.exists() and json.loads(cfg.read_text()) != settings:
         raise SystemExit(f"{cfg} has different settings; choose a new --out")

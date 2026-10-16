@@ -45,6 +45,8 @@ def parser():
     p.add_argument("--chunk", type=int, help="Query tiles per local-branch chunk, gather only (default: 2 GiB budget)")
     p.add_argument("--local-impl", choices=("flex", "gather"), default="flex",
                    help="Local branch implementation (same keys; flex uses a FlexAttention block mask)")
+    p.add_argument("--model", choices=("dev", "krea"), default="dev",
+                   help="dev = FLUX.1-dev; krea = FLUX.1-Krea-dev transformer with FLUX.1-dev encoders and VAE")
     p.add_argument("--device", default="cuda")
     return p
 
@@ -84,11 +86,11 @@ def main(argv=None):
     import torch
     from PIL import Image
     from sca.attn import install
-    from sca.runtime import load_pipeline
+    from sca.runtime import MODELS, load_pipeline
     h, w = args.res
     grid = (h // 16, w // 16)
     ctx, info = build_context(args, grid)
-    pipe = load_pipeline(args.device)
+    pipe = load_pipeline(args.device, args.model)
     uninstall = install(pipe.transformer, ctx)
     ctx.scheduler = pipe.scheduler
     if h * w >= 2048 * 4096:
@@ -102,7 +104,7 @@ def main(argv=None):
             png, meta = args.out / f"{stem}.png", args.out / f"{stem}.json"
             config = {"schema_version": 1, "method": label, "res": f"{h}x{w}", "prompt_id": str(row["id"]),
                       "prompt": row["prompt"], "seed": int(args.seed), "derived_seed": image_seed(row["id"], args.seed),
-                      "steps": args.steps, "guidance": args.guidance, "model": "black-forest-labs/FLUX.1-dev",
+                      "steps": args.steps, "guidance": args.guidance, "model": MODELS[args.model],
                       "dtype": "bfloat16", "batch_size": 1, "attention": f"sca:{args.method}",
                       "diffusers": diffusers.__version__, "torch": torch.__version__,
                       "implementation_sha256": impl, "grid": list(grid), "mu_mode": args.mu_mode,

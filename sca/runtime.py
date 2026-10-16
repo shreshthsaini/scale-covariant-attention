@@ -107,13 +107,27 @@ def implementation_hash():
     return digest.hexdigest()
 
 
-def load_pipeline(device="cuda"):
+# --model choices. The Krea snapshot ships only the transformer (and the same scheduler config), so
+# Krea runs load the FLUX.1-dev pipeline (text encoders, VAE, scheduler) with Krea's transformer.
+MODELS = {"dev": "black-forest-labs/FLUX.1-dev", "krea": "black-forest-labs/FLUX.1-Krea-dev"}
+
+
+def snapshot(repo_id):
+    hub = Path(os.environ.get("HF_HOME", HF_HOME)) / ("hub/models--" + repo_id.replace("/", "--"))
+    return hub / "snapshots" / (hub / "refs/main").read_text().strip()
+
+
+def load_pipeline(device="cuda", model="dev"):
     from diffusers import FluxPipeline
     if device.startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError("CUDA is required for FLUX inference; use pytest for CPU checks")
-    hub = Path(os.environ.get("HF_HOME", HF_HOME)) / "hub/models--black-forest-labs--FLUX.1-dev"
-    source = str(hub / "snapshots" / (hub / "refs/main").read_text().strip())
-    pipe = FluxPipeline.from_pretrained(source, torch_dtype=torch.bfloat16, local_files_only=True)
+    kwargs = {}
+    if model != "dev":
+        from diffusers import FluxTransformer2DModel
+        kwargs["transformer"] = FluxTransformer2DModel.from_pretrained(
+            str(snapshot(MODELS[model])), subfolder="transformer", torch_dtype=torch.bfloat16, local_files_only=True)
+    pipe = FluxPipeline.from_pretrained(str(snapshot(MODELS["dev"])), torch_dtype=torch.bfloat16,
+                                        local_files_only=True, **kwargs)
     return pipe.to(device)
 
 
