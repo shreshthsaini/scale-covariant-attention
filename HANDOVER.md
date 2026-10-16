@@ -4,16 +4,14 @@ Goal: strong training-free method paper beating AReA (arXiv 2610.17227) on FLUX.
 high-resolution generation (4096^2, 2048x4096, 6144x2048), faster than full attention.
 Spec: PROPOSAL.md (approved 2026-10-15) plus the calibration refinement below.
 
-## Method (as built)
-Per head h, per sigma: image queries get o = pi_h(sigma) * O_loc + (1 - pi_h(sigma)) * O_glob.
-- O_loc: blocked neighborhood attention at full resolution, native-size window
-  (n0 x n0 tokens = 64x64 for FLUX), text keys included, original RoPE.
-- O_glob: K/V pooled by s onto the native grid (block center), query and key RoPE
-  coordinates on that grid (AReA Phase-I geometry with f = s fixed), text keys included.
-- Text queries: global branch only.
-Calibration (output matching): run FLUX at in-distribution resolution n_T (1024, 1280)
-with full attention; emulate scale s (window n_T/s, pooling s); least-squares
-pi = argmin ||O_full - (pi O_loc + (1-pi) O_glob)||^2 per (layer, head, sigma bin).
+## Status (2026-10-16 09:40): campaign complete, paper drafted
+Final method (SCA, code 2d11740): sigma > 0.89 global-only (K/V pooled onto native grid, rescaled RoPE);
+afterwards per head pi_h(sigma) * O_loc + (1 - pi_h(sigma)) * O_glob, O_loc = exact 64x64 FlexAttention
+sliding window, pi table calib/k1_1024.npz (output-matching calibration at 1024^2). Band guard optional.
+Results (191 Aesthetic-4K prompts, FLUX.1-dev, guidance 4.5, vs AReA released code): results/final4k_nb_*,
+final_2048x4096_*, final_2048x6144_*, final4k_full_*; ablations results/ablnb_*, localnb_*; latency
+results/latency_4096_batch1.csv. Paper: paper/main.pdf, paper/sca_overleaf.zip.
+Open: no git remote yet; a second model (Qwen-Image/FLUX.2) and DyPE/SEGA/HRDiT baselines not run.
 
 ## Layout
 code: this dir (sca/, scripts/, slurm/, tests/). Scratch: /scratch/09032/saini_2/sca

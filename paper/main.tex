@@ -32,6 +32,8 @@
 \newcommand{\dn}[1]{\textcolor{sigdn}{\textit{#1}}}
 % Main table: significantly better than AReA (95% paired bootstrap CI of the difference excludes zero).
 \newcommand{\sg}{$^{\ast}$}
+% Main table: significantly worse than AReA.
+\newcommand{\sw}{$^{\dagger}$}
 
 \title{Scale-Covariant Attention for Training-Free\\High-Resolution Diffusion Transformers}
 
@@ -44,7 +46,7 @@
 \maketitle
 
 \begin{abstract}
-Diffusion transformers sampled far beyond their training resolution need attention that is cheap and stays inside the training distribution. Recent training-free methods give every head the same hand-scheduled receptive field. We ask FLUX.1-dev, at its training resolution, how much of each head's output a native-size window explains and how much a downsampled view of the whole image explains. A per-head, per-noise-level convex mix of these two in-distribution branches fits full attention closely. Its weight is stable across prompts (split-half correlation 0.99) and transfers across emulated scales and calibration resolutions at almost no cost. Scale-Covariant Attention (\sca{}) reuses this table at the target resolution. For the first 8 of 28 steps, while only layout-scale structure carries signal, every head uses the global branch alone, whose keys are pooled onto the native grid with rescaled coordinates. Afterwards each head mixes the global branch with an exact native-extent sliding-window attention by its calibrated weight. \sca{} needs one calibration pass and no training, and its attention cost is linear in the token count. On 191 Aesthetic-4K prompts at $4096^2$, under one protocol shared with AReA's released code, \sca{} raises ImageReward from 0.92 to 1.23 and HPSv2.1 from 0.272 to 0.297, lowers FID from 146.0 to 138.4, and is significantly better on every preference, alignment, and no-reference quality metric we report. At 71\,s per image on one GH200 it is 2.6 times faster than full attention and 3.0 times faster than AReA. Both parts of the method are needed: without the opening phase subjects duplicate, and replacing the per-head mix with local-only attention after it lowers ImageReward by 0.36, because the mix is what carries global context through the remaining steps.
+Diffusion transformers sampled far beyond their training resolution need attention that is cheap and stays inside the training distribution. Recent training-free methods give every head the same hand-scheduled receptive field. We ask FLUX.1-dev, at its training resolution, how much of each head's output a native-size window explains and how much a downsampled view of the whole image explains. A per-head, per-noise-level convex mix of these two in-distribution branches fits full attention closely. Its weight is stable across prompts (split-half correlation 0.99) and transfers across emulated scales and calibration resolutions at almost no cost. Scale-Covariant Attention (\sca{}) reuses this table at the target resolution. For the first 8 of 28 steps, while only layout-scale structure carries signal, every head uses the global branch alone, whose keys are pooled onto the native grid with rescaled coordinates. Afterwards each head mixes the global branch with an exact native-extent sliding-window attention by its calibrated weight. \sca{} needs one calibration pass and no training, and its attention cost is linear in the token count. On 191 Aesthetic-4K prompts at $4096^2$, under one protocol shared with AReA's released code, \sca{} raises ImageReward from 0.92 to 1.23 and HPSv2.1 from 0.272 to 0.297, lowers FID from 146.0 to 138.4, and is significantly better on every preference, alignment, and no-reference quality metric we report. At 71\,s per image on one GH200 it is 2.6 times faster than full attention and 3.0 times faster than AReA. The advantage grows with the scale factor: \sca{} ties AReA at $2048\times4096$ and raises ImageReward from 0.39 to 0.66 at $2048\times6144$. Both parts of the method are needed: without the opening phase subjects duplicate, and replacing the per-head mix with local-only attention after it lowers ImageReward by 0.36, because the mix is what carries global context through the remaining steps.
 \end{abstract}
 
 % =====================================================================================
@@ -57,7 +59,7 @@ Most training-free fixes edit either the positional encoding~\citep{zhuo2024lumi
 
 We question the shared receptive field. AReA's evidence for it, the narrowing of attention during denoising, is an average over heads and layers. We ask the pretrained model instead: at its training resolution, where full attention is trustworthy, how much of each head's output does a native-size neighborhood explain, and how much does a downsampled view of the whole image explain? A convex mix of the two explains each head well (Section~\ref{sec:analysis}). The weight differs strongly between heads, barely changes across prompts, and changes little with the emulated scale or the calibration resolution. We fit it once per model in closed form against the model's own full attention.
 
-Output matching cannot set everything. Applied from the first step at $4096^2$, the calibrated mix duplicates subjects: one prompt for a Moai statue gives five statues. At high noise only the lowest spatial frequencies carry signal, and these set layout and object count. A native window covers a quarter of the image width at $4096^2$, cannot resolve those frequencies, and invents a layout per window. Squared output error does not register this, because texture dominates it. \sca{} therefore runs the global branch alone while $\sigma>0.89$ (the first 8 of 28 steps) and the calibrated mix afterwards (Figure~\ref{fig:method}). The opening phase coincides with AReA's; the two methods differ in the remaining 20 steps.
+Output matching cannot set everything. Applied from the first step at $4096^2$, the calibrated mix duplicates subjects: one prompt for a Moai statue gives five statues (Figure~\ref{fig:failure}). At high noise only the lowest spatial frequencies carry signal, and these set layout and object count. A native window covers a quarter of the image width at $4096^2$, cannot resolve those frequencies, and invents a layout per window. Squared output error does not register this, because texture dominates it. \sca{} therefore runs the global branch alone while $\sigma>0.89$ (the first 8 of 28 steps) and the calibrated mix afterwards (Figure~\ref{fig:method}). The opening phase coincides with AReA's; the two methods differ in the remaining 20 steps.
 
 The ablations separate the two parts. The opening phase is essential: without it, subjects repeat. After it, the calibration says that most heads lean local (mean weight 0.64 to 0.74), yet forcing every head to local-only attention lowers ImageReward by 0.36 and HPSv2.1 by 2.9 points. The minority weight each head puts on the global branch is what keeps global context in the last 20 steps. An earlier configuration with a low-band guard hid this, because the guard injects the global branch's low band into every head whatever its weight.
 
@@ -66,7 +68,7 @@ Our contributions are:
   \item A protocol that emulates resolution extrapolation inside the training distribution and scores any receptive-field rule by its output error against full attention, from statistics collected in one pass.
   \item Evidence on FLUX.1-dev that receptive-field needs are head-specific, prompt-stable, and close to invariant under changes of scale and of calibration resolution.
   \item \sca{}, a training-free attention processor: a global-only opening phase, then a calibrated per-head mix of a native-grid global branch and an exact FlexAttention sliding window. One attention layer at $4096^2$ takes 18.7\,ms against 87.3\,ms for full attention.
-  \item A 4K evaluation on Aesthetic-4K under one protocol shared with AReA's released code. On 191 prompts at $4096^2$, \sca{} reaches ImageReward 1.23 against 0.92, FID 138.4 against 146.0, and HPSv2.1 0.297 against 0.272, and runs 2.6 times faster than full attention and 3.0 times faster than AReA on a GH200. AReA's paper reports ImageReward 1.32 under its own settings, so numbers across papers are not comparable. Ablations cover every component and the local-only and hard-routing special cases.
+  \item An evaluation on Aesthetic-4K at $4096^2$, $2048\times4096$, and $2048\times6144$ under one protocol shared with AReA's released code, with ablations of every component. \sca{} beats AReA at $4096^2$ and $2048\times6144$, matches it at $2048\times4096$, and is 2.7 to 3.0 times faster than AReA. AReA's paper reports ImageReward 1.32 at 4K under its own settings, so numbers across papers are not comparable.
 \end{itemize}
 
 \begin{figure}[t]
@@ -84,7 +86,7 @@ Our contributions are:
 For U-Nets, ScaleCrafter dilates convolutions~\citep{he2023scalecrafter}, HiDiffusion restructures the network and uses shifted windows~\citep{zhang2023hidiffusion}, FouriScale constrains the spectrum~\citep{huang2024fouriscale}, and \citet{jin2023training} rescale the attention temperature. DemoFusion~\citep{du2023demofusion}, FAM~\citep{yang2024fam}, and FreeScale~\citep{qiu2024freescale} fuse a global path with local patches; I-Max~\citep{du2024imax}, HiFlow~\citep{bu2025hiflow}, and ScaleDiff~\citep{koh2025scalediff} guide sampling with a native-resolution pass. Another line edits rotary embeddings~\citep{su2021roformer}: Lumina-Next~\citep{zhuo2024lumina}, DyPE~\citep{issachar2025dype}, UltraImage~\citep{zhao2025ultraimage}, SigMa~\citep{zhao2026sigma}, SEGA~\citep{rajabi2026sega}, and TIDE~\citep{liu2026tide}. The closest relatives of \sca{} change which keys a query sees. ResDiT fuses a global branch with scaled positions and patch-wise attention by Gaussian and Fourier weights~\citep{ma2025resdit}. HRDiT gives each head a static local scope chosen by an integer program under a cost budget~\citep{xue2026hrdit}. AReA schedules a shared receptive field from pooled-global to shrinking-local~\citep{rajabi2026area}. \sca{} differs from all three at once: its weights are per head and per noise level, its global branch is a zoom (pooling plus coordinate rescaling), and its weights are read off the model's own full attention instead of being set by hand or searched against a cost proxy.
 
 \paragraph{Efficient and head-specific attention.}
-ToDo attends from full-resolution queries to downsampled keys~\citep{smith2024todo}, the topology of our image-anchored branch without coordinate rescaling. DiTFastAttn selects window attention per layer and step~\citep{yuan2024ditfastattn}; for video, Sparse VideoGen classifies heads online~\citep{xi2025svg}, Sliding Tile Attention computes tiled windows efficiently~\citep{zhang2025sta}, and Sparse-vDiT searches per-head sparsity offline~\citep{chen2025sparsevdit}. These target speed at trained resolutions. Our local branch is blocked neighborhood attention~\citep{hassani2022nat} written in FlexAttention~\citep{dong2024flex}. In language models, Self-Extend gives far tokens grouped positions~\citep{jin2024selfextend}, Ms-PoE rescales positions per head~\citep{zhang2024mspoe}, MoA profiles a span per head~\citep{fu2024moa}, DuoAttention splits heads into retrieval and streaming heads~\citep{xiao2024duoattention,xiao2023streamingllm}, and YaRN interpolates RoPE frequencies~\citep{peng2023yarn}. Trained vision transformers learn head-level scale splits: Focal attention~\citep{yang2021focal}, PVT~\citep{wang2021pvt}, HiLo~\citep{pan2022hilo}, Shunted attention~\citep{ren2021shunted}, and Swin~\citep{liu2021swin}. Our measurements suggest that a full-attention diffusion transformer learns a comparable split implicitly, and \sca{} reads it out without training.
+ToDo attends from full-resolution queries to downsampled keys~\citep{smith2024todo}, the topology of our image-anchored branch without coordinate rescaling. DiTFastAttn selects window attention per layer and step~\citep{yuan2024ditfastattn}; for video, Sparse VideoGen classifies heads online~\citep{xi2025svg}, Sliding Tile Attention computes tiled windows efficiently~\citep{zhang2025sta}, and Sparse-vDiT searches per-head sparsity offline~\citep{chen2025sparsevdit}. These target speed at trained resolutions. Our local branch is blocked neighborhood attention~\citep{hassani2022nat} written in FlexAttention~\citep{dong2024flex}. Language models assign positions or spans per head~\citep{jin2024selfextend,zhang2024mspoe,fu2024moa,xiao2024duoattention,xiao2023streamingllm,peng2023yarn}, and trained vision transformers learn head-level scale splits~\citep{yang2021focal,wang2021pvt,pan2022hilo,ren2021shunted,liu2021swin}. Our measurements suggest that a full-attention diffusion transformer learns a comparable split implicitly, and \sca{} reads it out without training.
 
 % =====================================================================================
 \section{Scale-Covariant Attention}
@@ -117,7 +119,7 @@ where $O^{A}_i$, $O^{B}_i$ are the outputs restricted to $A$ and $B$ and $m_i$ i
 \end{equation}
 Text queries use the image-anchored branch alone. Relative to Equation~\ref{eq:split}, $\pih$ stands in for the near-field mass; it is constant across queries, which makes it cheap and lets a few prompts determine it.
 
-\paragraph{Why the gate.} At noise level $\sigma$, the signal-to-noise ratio of a spatial frequency band is $((1-\sigma)/\sigma)^2 S(f)$ for image spectrum $S$. Natural spectra fall with frequency, so in the first steps only the lowest band carries signal, and that band fixes layout and object count. A window of $w$ tokens completes less than one period of any frequency below $1/w$ cycles per token, so it cannot tell one large object from a repeating pattern, and neighboring windows settle the question independently. Running the mix from the first step therefore duplicates subjects at the window's scale: with a 16-token window the duplicates shrink and multiply (Figure~\ref{fig:failure}). The image-anchored branch sees the whole image on the native grid and resolves this band. \sca{} sets $\pih=0$ and skips the pixel-anchored branch while $\sigma>\sigma_g=0.89$, which covers the first 8 of 28 steps at the maximum shift. This equals AReA's switch point $\sigma^\star$. Gating 13 steps ($\sigma_g=0.80$) produces a $4\times4$ block mosaic, because all queries in an $s\times s$ block share one coarse position in the image-anchored branch and receive nearly the same output at high noise. We did not measure the per-band SNR crossing on FLUX latents \todo{measure per-band SNR of FLUX.1-dev latents against $\sigma$ and mark where the band above $1/w$ crosses 1}.
+\paragraph{Why the gate.} At noise level $\sigma$, the signal-to-noise ratio of a spatial frequency band is $((1-\sigma)/\sigma)^2 S(f)$ for image spectrum $S$. Natural spectra fall with frequency, so in the first steps only the lowest band carries signal, and that band fixes layout and object count. A window of $w$ tokens completes less than one period of any frequency below $1/w$ cycles per token, so it cannot tell one large object from a repeating pattern, and neighboring windows settle the question independently. Running the mix from the first step therefore duplicates subjects at the window's scale: with a 16-token window the duplicates shrink and multiply (Figure~\ref{fig:failure}). The image-anchored branch sees the whole image on the native grid and resolves this band. \sca{} sets $\pih=0$ and skips the pixel-anchored branch while $\sigma>\sigma_g=0.89$, which covers the first 8 of 28 steps at the maximum shift. This equals AReA's switch point $\sigma^\star$. Gating 13 steps ($\sigma_g=0.80$) produces a $4\times4$ block mosaic, because all queries in an $s\times s$ block share one coarse position in the image-anchored branch and receive nearly the same output at high noise. We have not measured the per-band signal-to-noise ratio of FLUX.1 latents; this argument is qualitative, and the gate value comes from generations, not from a spectral calculation.
 
 \subsection{Calibration by output matching}
 \label{sec:calib}
@@ -127,26 +129,32 @@ The weights must come from where the model is trustworthy, which the target reso
   B=\textstyle\sum \langle \Ofull-\Oglob,\, \Oloc-\Oglob\rangle,\quad
   E=\textstyle\sum \|\Ofull-\Oglob\|^2 .
 \end{equation}
-The squared error of the mix is $E-2\pi B+\pi^2 A$, so the optimal weight is $\pih=\operatorname{clip}(B/A,0,1)$. The same statistics score any other rule (per-layer weights, one shared weight per noise level, a hard switch at any threshold, local only, global only) without another forward pass. We use 14 uniform bins in $\sigma$ and interpolate linearly between bin centers; the table has $57\times24\times14$ entries. Calibration runs the unmodified model at $1024^2$, collects emulated scales 2 and 4 in one pass, and took \todo{GPU hours} on one GH200 for 32 prompts (Appendix~\ref{app:calib}).
+The squared error of the mix is $E-2\pi B+\pi^2 A$, so the optimal weight is $\pih=\operatorname{clip}(B/A,0,1)$. The same statistics score any other rule (per-layer weights, one shared weight per noise level, a hard switch at any threshold, local only, global only) without another forward pass. We use 14 uniform bins in $\sigma$ and interpolate linearly between bin centers; the table has $57\times24\times14$ entries. Calibration runs the unmodified model at $1024^2$, collects emulated scales 2 and 4 in one pass, and took about 1.5 GPU-hours on one GH200 in total for 32 prompts at $1024^2$ and 16 at $1280^2$ (Appendix~\ref{app:calib}).
 
 \subsection{Inference and cost}
 \label{sec:inference}
-At a target with factors $(s_H,s_W)$, \sca{} uses the table of the emulated scale closest in log space to $\max(s_H,s_W)$; all our targets use the scale-4 table. Algorithm~\ref{alg:sca} gives one layer. Weights, scheduler, VAE, and text encoders are untouched; the method is an attention-processor swap. Per head and block, full attention costs $(N+T)^2$ query-key pairs; \sca{} costs $N(n_0^2+T)$ for the pixel-anchored branch, skipped in 8 of 28 steps, and $(N+T)(n_0^2+T)$ for the image-anchored branch, both linear in $N$. At $4096^2$ this is 8.4 times fewer attention FLOPs than full attention (Appendix~\ref{app:impl}). The pixel-anchored branch is one FlexAttention call~\citep{dong2024flex} whose block mask is the window membership itself, so it is an exact sliding window rather than an approximation.
+At a target with factors $(s_H,s_W)$, \sca{} uses the table of the emulated scale closest in log space to $\max(s_H,s_W)$; all our targets use the scale-4 table. Algorithm~\ref{alg:sca} in Appendix~\ref{app:impl} gives one layer. Weights, scheduler, VAE, and text encoders are untouched; the method is an attention-processor swap. Per head and block, full attention costs $(N+T)^2$ query-key pairs; \sca{} costs $N(n_0^2+T)$ for the pixel-anchored branch, skipped in 8 of 28 steps, and $(N+T)(n_0^2+T)$ for the image-anchored branch, both linear in $N$. At $4096^2$ this is 8.4 times fewer attention FLOPs than full attention (Appendix~\ref{app:impl}). The pixel-anchored branch is one FlexAttention call~\citep{dong2024flex} whose block mask is the window membership itself, so it is an exact sliding window rather than an approximation.
 
-\begin{algorithm}[t]
-  \caption{One \sca{} attention layer at noise level $\sigma$ (per head $h$).}
-  \label{alg:sca}
-  \small
-  \begin{algorithmic}[1]
-    \Require pre-RoPE $Q,K,V$ for $T$ text and $N=H\times W$ image tokens; factors $(s_H,s_W)$; table $\pi_h(\sigma)$; gate $\sigma_g=0.89$
-    \State $\tilde K,\tilde V \gets$ image keys and values at the center of every $s_H\times s_W$ block, plus all text keys
-    \State $\Oglob \gets \mathrm{Attn}\big(Q\text{ at }\lfloor p/s\rfloor,\;\tilde K\text{ at block index},\;\tilde V\big)$ \Comment{all queries, text included}
-    \If{$\sigma>\sigma_g$} \Return $\Oglob$ \Comment{opening phase: pixel-anchored branch skipped}
-    \EndIf
-    \State $\Oloc \gets$ FlexAttention of each $t\times t$ image-query tile over text keys and its $n_0\times n_0$ window, original RoPE
-    \State \Return $[\,\Oglob_{\text{text}},\;\pih\,\Oloc + (1-\pih)\,\Oglob_{\text{img}}\,]$ \Comment{mix in fp32}
-  \end{algorithmic}
-\end{algorithm}
+\begin{figure}[t]
+  \centering
+  % Tiles: figures/src/fig_qualitative.py (sources: out/abl/abl_v0, out/dev/sca_w16, out/abl/abl_localonly_nb, out/main/sca_nb).
+  \begin{minipage}[c]{0.625\linewidth}
+    \centering\sffamily\scriptsize
+    \setlength{\tabcolsep}{0.5pt}
+    \renewcommand{\arraystretch}{0.4}
+    \newcommand{\fimg}[1]{\includegraphics[width=0.246\linewidth]{figures/failure/#1.jpg}}
+    \begin{tabular}{cccc}
+      (a) v0, $w{=}64$ & (b) v0, $w{=}16$ & (c) local only & (d) \sca{} \\[2pt]
+      \fimg{moai_v0w64} & \fimg{moai_v0w16} & \fimg{moai_local} & \fimg{moai_sca} \\
+      \fimg{boats_v0w64} & \fimg{boats_v0w16} & \fimg{boats_local} & \fimg{boats_sca} \\
+      \fimg{bear_v0w64} & \fimg{bear_v0w16} & \fimg{bear_local} & \fimg{bear_sca} \\
+    \end{tabular}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.355\linewidth}
+    \caption{\textbf{Local windows at high noise duplicate subjects.} $4096^2$, three development prompts, one seed per row. (a)~v0, the calibrated mix from the first step with no gate: each 64-token window settles the layout on its own. (b)~A 16-token window gives smaller, more numerous copies. (c)~The gate (image-anchored branch alone for 8 of 28 steps) restores one main subject, but local-only attention afterwards ($\pi=1$) leaves ghost copies and grid speckle. (d)~\sca{}: the gate, then the per-head mix, whose global share keeps context. Small extra figures can remain (Section~\ref{sec:limits}).}
+    \label{fig:failure}
+  \end{minipage}
+\end{figure}
 
 % =====================================================================================
 \section{What the heads want}
@@ -161,20 +169,13 @@ We run the calibration on FLUX.1-dev with 32 prompts at $1024^2$, guidance 4.5, 
   \label{fig:heatmap}
 \end{figure}
 
-\paragraph{Heads differ.} At emulated scale 2 the standard deviation of $\pih$ over the 1368 heads is 0.24 to 0.26 at every noise level (Figure~\ref{fig:heatmap}). Half of all (head, noise level) cells (50.4\%; 49.7\% at scale 4) lie in $[0.2,0.8]$, 11.7\% are above 0.95, and 2.9\% below 0.05. The mean weight is 0.64 to 0.74 depending on the noise level, so the typical head leans local but still draws on the global branch. The spread is mostly within blocks: a per-layer table recovers only part of the gain of the per-head table (Figure~\ref{fig:relerr}). The median head changes its weight by 0.18 across noise levels, and a quarter of heads by more than 0.3.
+\paragraph{Heads differ.} At emulated scale 2 the standard deviation of $\pih$ over the 1368 heads is 0.24 to 0.26 at every noise level (Figure~\ref{fig:heatmap}). Half of all (head, noise level) cells (50.4\%; 49.7\% at scale 4) lie in $[0.2,0.8]$, 11.7\% are above 0.95, and 2.9\% below 0.05. The mean weight is 0.64 to 0.74 depending on the noise level, so the typical head leans local but still draws on the global branch. The spread is mostly within blocks: a per-layer table recovers only part of the gain of the per-head table (Figure~\ref{fig:relerr} in Appendix~\ref{app:calib}). The median head changes its weight by 0.18 across noise levels, and a quarter of heads by more than 0.3.
 
 \paragraph{The table is a property of the model, not of the prompts.} Tables fitted on two disjoint halves of the prompts correlate at 0.989 over all cells (0.986 at scale 4). Each half's table scored on the other half gives a relative error of 0.0576, against 0.0574 in sample. At $1280^2$, 16 prompts give a split-half correlation of 0.974.
 
 \paragraph{The weights barely depend on scale or calibration resolution.} The table fitted at emulated scale 2 and applied at scale 4 gives a relative error of 0.205 against 0.200 for the scale-4 table: 2.4\% higher, and still below every shared rule fitted at scale 4 (Figure~\ref{fig:relerr}). The scale-4 table at scale 2 gives 0.0599 against 0.0574. Across calibration resolutions, the $1024^2$ table scored at $1280^2$ gives 0.0589 against 0.0585, and the reverse gives 0.0578 against 0.0574. The two resolutions emulate scale 2 with windows of 32 and 40 tokens, so the weights depend on the ratio of image to window rather than on the window's absolute size. This is what we mean by scale covariance: as the image grows, each branch follows its own law and the weight between them stays put.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.9\linewidth]{figures/rel_err.pdf}
-  \caption{\textbf{Per-head weights explain full attention best, and transfer across scales.} Relative output error against full attention for each mixing rule at emulated scales 2 (a) and 4 (b), 32 prompts. ``Fitted at the other scale'' applies the scale-4 table at scale 2 and vice versa. The best hard switch puts its threshold at $\sigma^\star=1$ and so equals local only. In-sample and held-out errors agree within 0.0003.}
-  \label{fig:relerr}
-\end{figure}
-
-\paragraph{Output error and what it misses.} Per-head mixing lowers the relative error from 0.092 to 0.057 at scale 2 and from 0.261 to 0.200 at scale 4, relative to the best shared hard switch; a per-layer table reaches 0.071 and 0.223, one shared weight per noise level 0.077 and 0.230. In output energy there is no global phase: even in the noisiest bin the global branch alone has error 0.27 at scale 2, against 0.14 for the local branch alone, and the best hard switch never switches (Appendix~\ref{app:calib}, Figure~\ref{fig:pisigma}). The gate of Section~\ref{sec:method} contradicts this on purpose. Output error is dominated by texture and does not weigh the low band that sets layout at high noise; Section~\ref{sec:ablations} shows that generation needs both: without the gate subjects repeat, and without the calibrated mix after it preference and alignment scores drop.
+\paragraph{Output error and what it misses.} Per-head mixing lowers the relative error from 0.092 to 0.057 at scale 2 and from 0.261 to 0.200 at scale 4, relative to the best shared hard switch; a per-layer table reaches 0.071 and 0.223, one shared weight per noise level 0.077 and 0.230. In output energy there is no global phase: the best hard switch never switches (Appendix~\ref{app:calib}). The gate of Section~\ref{sec:method} contradicts this on purpose, because output error is dominated by texture and does not weigh the low band that sets layout at high noise.
 
 % =====================================================================================
 \section{Experiments}
@@ -183,19 +184,34 @@ We run the calibration on FLUX.1-dev with 32 prompts at $1024^2$, guidance 4.5, 
 \subsection{Protocol}
 \label{sec:protocol}
 
-\paragraph{Model, sampler, baselines.} FLUX.1-dev~\citep{flux2024} in bf16, 28 flow-matching Euler steps, guidance 4.5, and the timestep shift $\mu$ at its maximum (1.15) at every resolution, with one fixed seed per prompt shared across methods and tiled VAE decoding for all. These are AReA's FLUX.1 defaults, applied to every method so that only attention differs. Baselines are full attention at the target resolution (Base) and AReA~\citep{rajabi2026area} from its released code under this protocol, with the FLUX.1-dev checkpoint in place of the FLUX.1-Krea-dev default of the release. AReA's paper reports ImageReward 1.32 at 4K under its own settings; our protocol gives 0.92, so numbers across papers are not comparable (Appendix~\ref{app:area}). \todo{decide whether DyPE, SEGA, UltraImage, and HRDiT are run.}
+\paragraph{Model, sampler, baselines.} FLUX.1-dev~\citep{flux2024} in bf16, 28 flow-matching Euler steps, guidance 4.5, and the timestep shift $\mu$ at its maximum (1.15) at every resolution, with one fixed seed per prompt shared across methods and tiled VAE decoding for all. These are AReA's FLUX.1 defaults, applied to every method so that only attention differs. Baselines are full attention at the target resolution (Base) and AReA~\citep{rajabi2026area} from its released code under this protocol, with the FLUX.1-dev checkpoint in place of the FLUX.1-Krea-dev default of the release. Appendix~\ref{app:area} gives AReA's settings and why its paper's numbers are not comparable with ours. We did not run DyPE, SEGA, UltraImage, or HRDiT under this protocol, and we ran full attention only at $4096^2$.
 
-\paragraph{Benchmark.} The 195 evaluation prompts of Aesthetic-4K with their 4K reference images~\citep{zhang2025diffusion4k}, at $4096\times4096$, $2048\times4096$, and $2048\times6144$ (height $\times$ width)\footnote{\todo{confirm AReA's orientation convention and match it.}}. Four of the 195 prompts (boats, Moai, woman and bear, underwater surfer) were used to choose the gate and window, so the main table reports the other 191. Ablations use a fixed subset of 46 of these.
+\paragraph{Benchmark.} The 195 evaluation prompts of Aesthetic-4K with their 4K reference images~\citep{zhang2025diffusion4k}, at $4096\times4096$, $2048\times4096$, and $2048\times6144$ (height $\times$ width)\footnote{AReA's paper writes its sizes without stating the order (for example $6144\times2048$). Its released schedules are identical under transposition, so the orientation does not change AReA's computation; our wide sizes are landscape.}. Four of the 195 prompts (boats, Moai, woman and bear, underwater surfer) were used to choose the gate and window, so the main table reports the other 191. Ablations use a fixed subset of 46 of these.
 
-\paragraph{\sca{} settings.} $n_0=64$, tile $t=8$, local window $64\times64$, block-center pooling, gate $\sigma_g=0.89$, and the scale-4 table from the 32-prompt calibration at $1024^2$. The calibration prompts are written for this purpose \todo{verify that they are disjoint from Aesthetic-4K}. ``\sca{} + band guard'' additionally replaces the low band of each head's output by that of the image-anchored branch (Appendix~\ref{app:band}); it is the configuration of our first full run and not part of the final method.
+\paragraph{\sca{} settings.} $n_0=64$, tile $t=8$, local window $64\times64$, block-center pooling, gate $\sigma_g=0.89$, and the scale-4 table from the 32-prompt calibration at $1024^2$. The calibration prompts are written for this purpose and share no prompt with Aesthetic-4K (the largest word-set Jaccard overlap with any evaluation prompt is 0.26). ``\sca{} + band guard'' additionally replaces the low band of each head's output by that of the image-anchored branch (Appendix~\ref{app:band}); it is the configuration of our first full run and not part of the final method.
 
 \paragraph{Metrics.} ImageReward (IR)~\citep{xu2023imagereward}, LAION aesthetic score~\citep{schuhmann2022aesthetic}, CLIP score (ViT-L/14)~\citep{radford2021clip}, PickScore~\citep{kirstain2023pickapic}, HPSv2 and HPSv2.1~\citep{wu2023hpsv2}; FID~\citep{heusel2017fid} against the 4K references at $299^2$ and patch FID (FID$_\text{p}$) on four fixed $1024^2$ crops per image; MUSIQ~\citep{ke2021musiq} on the resized image and on a $1024^2$ crop (MUSIQ$_\text{c}$), CLIP-IQA~\citep{wang2022clipiqa}, and ARNIQA~\citep{agnolucci2024arniqa}. Intervals are 95\% percentile paired bootstraps over prompts with 1000 draws. Latency is wall-clock per image on one idle GH200 (96\,GB), batch 1, including text encoding and VAE decoding, after a warm-up generation.
 
 \subsection{Main results}
 \label{sec:main}
 
+\begin{figure}[t]
+  \centering
+  % Tiles: figures/src/fig_qualitative.py (sources: out/main/{full,area,sca_nb}/4096x4096); none of these prompts is a development prompt.
+  \begingroup\sffamily\scriptsize
+  \newcommand{\qimg}[1]{\includegraphics[width=0.152\linewidth]{figures/qual/#1.jpg}}
+  \newcommand{\qrow}[1]{\qimg{#1_full_full}\hspace{0.5pt}\qimg{#1_full_crop}\hspace{3pt}\qimg{#1_area_full}\hspace{0.5pt}\qimg{#1_area_crop}\hspace{3pt}\qimg{#1_sca_full}\hspace{0.5pt}\qimg{#1_sca_crop}}
+  \makebox[0.3055\linewidth]{Full attention}\hspace{3pt}\makebox[0.3055\linewidth]{AReA (released code)}\hspace{3pt}\makebox[0.3055\linewidth]{\sca{} (final)}\\[1pt]
+  \qrow{man}\\[0.5pt]
+  \qrow{bear}\\[0.5pt]
+  \qrow{lake}\\[0.5pt]
+  \qrow{sign}\par\endgroup
+  \caption{\textbf{At $4096^2$ full attention collapses, and \sca{} renders finer detail than AReA.} Four Aesthetic-4K prompts outside the development set (a portrait of a gray-haired man, a standing brown bear in a forest, a mountain lake, a man holding a ``Fantasyland'' sign before a castle), one seed per prompt shared across methods. Each pair shows the image downscaled and the outlined $512\times512$ region at native resolution (1:1 pixels). Full attention gives stripes on every prompt we inspected; AReA's skin and fur are smoother, and its lake carries bright speckles.}
+  \label{fig:qual}
+\end{figure}
+
 \begin{table}[t]
-  \caption{\textbf{Aesthetic-4K with FLUX.1-dev}, 191 prompts (development prompts excluded), guidance 4.5, 28 steps, one seed per prompt shared across methods. HPS, CLIP-IQA, and ARNIQA are $\times100$. Higher is better except latency and FID. Bold: best per column. \sg: significantly better than AReA (95\% paired bootstrap interval of the difference excludes zero). Latency is a clean measurement on a single GH200: seconds per image at batch 1, median of three images, not campaign wall-clock (Appendix~\ref{app:impl}). \sca{} + band guard is the configuration of our first full run (Appendix~\ref{app:band}).}
+  \caption{\textbf{Aesthetic-4K with FLUX.1-dev}, 191 prompts (development prompts excluded), guidance 4.5, 28 steps, one seed per prompt shared across methods. HPS, CLIP-IQA, and ARNIQA are $\times100$. Higher is better except latency and FID. Bold: best per column within each resolution. \sg{} / \sw{}: significantly better / worse than AReA (95\% paired bootstrap interval of the difference excludes zero). At $4096^2$, latency is a clean measurement on a single GH200: seconds per image at batch 1, median of three images (Appendix~\ref{app:impl}). $^\ddagger$Mean campaign wall-clock per image on shared nodes, not a clean measurement. Full attention was run at $4096^2$ only. \sca{} + band guard is the configuration of our first full run (Appendix~\ref{app:band}).}
   \label{tab:main}
   \centering
   \footnotesize
@@ -205,25 +221,32 @@ We run the calibration on FLUX.1-dev with 32 prompts at $1024^2$, guidance 4.5, 
     \toprule
     Method & Lat.\,(s)$\downarrow$ & IR & Aesth. & CLIP & PickS. & HPSv2 & HPSv2.1 & FID$\downarrow$ & FID$_\text{p}\downarrow$ & MUSIQ & MUSIQ$_\text{c}$ & CLIP-IQA & ARNIQA \\
     \midrule
-    \multicolumn{14}{l}{\emph{$4096\times4096$}} \\
-    Full attention & 184.6 & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
+    \multicolumn{14}{l}{\emph{$4096\times4096$}, scale factors (4, 4)} \\
+    Full attention & 184.6 & $-2.18$\sw & 4.51\sw & 15.38\sw & 17.94\sw & 20.75\sw & 7.61\sw & 312.7\sw & 257.9\sw & 22.9\sw & 33.2\sw & 49.0\sw & 54.5\sw \\
     AReA (released code) & 212.6 & 0.92 & 6.28 & 27.67 & 22.35 & 28.64 & 27.20 & 146.0 & 110.2 & 39.4 & 50.4 & 67.5 & 67.3 \\
     \sca{} + band guard & 88.1 & 1.20\sg & \textbf{6.46}\sg & 28.87\sg & 22.90\sg & 29.40\sg & 28.95\sg & 142.3 & \textbf{104.8}\sg & 41.4\sg & 61.0\sg & 70.9\sg & 70.8\sg \\
     \sca{} (final) & \textbf{71.0} & \textbf{1.23}\sg & 6.45\sg & \textbf{29.11}\sg & \textbf{23.09}\sg & \textbf{29.77}\sg & \textbf{29.71}\sg & \textbf{138.4}\sg & 106.5 & \textbf{45.3}\sg & \textbf{61.2}\sg & \textbf{72.9}\sg & \textbf{71.2}\sg \\
     \midrule
-    \emph{$2048\times4096$}: full, AReA, \sca{} & \multicolumn{13}{c}{\todo{runs in progress}} \\
-    \emph{$2048\times6144$}: full, AReA, \sca{} & \multicolumn{13}{c}{\todo{runs in progress}} \\
+    \multicolumn{14}{l}{\emph{$2048\times4096$}, scale factors (2, 4)} \\
+    AReA (released code) & 112.4$^\ddagger$ & \textbf{1.13} & \textbf{6.41} & \textbf{28.51} & \textbf{22.67} & 28.38 & \textbf{27.66} & 144.8 & \textbf{119.0} & 51.8 & 61.6 & \textbf{74.8} & \textbf{73.0} \\
+    \sca{} (final) & \textbf{38.1}$^\ddagger$ & \textbf{1.13} & 6.21\sw & 28.21 & 22.64 & \textbf{28.55}\sg & 27.46 & \textbf{143.8} & 124.1\sw & \textbf{55.9}\sg & \textbf{65.9}\sg & 73.5\sw & 72.8 \\
+    \midrule
+    \multicolumn{14}{l}{\emph{$2048\times6144$}, scale factors (2, 6)} \\
+    AReA (released code) & 150.5$^\ddagger$ & 0.39 & \textbf{6.15} & 26.49 & 21.51 & 26.41 & 23.35 & 163.6 & \textbf{112.8} & 42.9 & 53.1 & 67.3 & 69.3 \\
+    \sca{} (final) & \textbf{55.8}$^\ddagger$ & \textbf{0.66}\sg & 6.00\sw & \textbf{27.01} & \textbf{21.74}\sg & \textbf{26.54}\sg & \textbf{23.48} & \textbf{143.8}\sg & 116.5 & \textbf{48.4}\sg & \textbf{60.6}\sg & \textbf{69.0}\sg & \textbf{70.2}\sg \\
     \bottomrule
   \end{tabular}}
 \end{table}
 
-On 191 prompts at $4096^2$, \sca{} beats AReA on every preference, alignment, and no-reference quality metric (Table~\ref{tab:main}). The paired differences are ImageReward $+0.31$ $[0.24,0.38]$, aesthetic score $+0.17$ $[0.12,0.22]$, HPSv2 $+1.12$ $[0.95,1.31]$, HPSv2.1 $+2.50$ $[2.17,2.88]$, PickScore $+0.73$ $[0.62,0.86]$, CLIP score $+1.45$ $[1.06,1.82]$, MUSIQ $+5.8$ $[4.1,7.5]$, MUSIQ$_\text{c}$ $+10.9$ $[9.5,12.4]$, CLIP-IQA $+5.4$ $[4.0,6.8]$, and ARNIQA $+3.9$ $[3.0,4.9]$. FID falls by 7.6 $[3.5,12.5]$ and patch KID falls significantly; patch FID falls by 3.7 $[-1.1,7.2]$, within noise, as do KID and Inception score ($6.52$ vs.\ $6.42$). At 71.0\,s per image on a single GH200 (median of three images), \sca{} is 2.6 times faster than full attention (184.6\,s) and 3.0 times faster than AReA's released code (212.6\,s). The band-guard configuration also beats AReA significantly on every metric in the table except FID, but scores below final \sca{} on ImageReward, CLIP score, PickScore, both HPS versions, and all four no-reference metrics, and takes 17\,s longer per image; its patch FID is slightly lower. Per-layer, one attention layer at $4096^2$ takes 18.7\,ms against 87.3\,ms for full attention (Appendix~\ref{app:impl}). \todo{qualitative figure: one prompt per resolution, all methods, zoomed crops.}
+On 191 prompts at $4096^2$, \sca{} beats AReA on every preference, alignment, and no-reference quality metric (Table~\ref{tab:main}). The paired differences include ImageReward $+0.31$ $[0.24,0.38]$, HPSv2.1 $+2.50$ $[2.17,2.88]$, PickScore $+0.73$ $[0.62,0.86]$, CLIP score $+1.45$ $[1.06,1.82]$, and MUSIQ$_\text{c}$ $+10.9$ $[9.5,12.4]$. FID falls by 7.6 $[3.5,12.5]$ and patch KID falls significantly; patch FID falls by 3.7 $[-1.1,7.2]$, within noise, as do KID and Inception score ($6.52$ vs.\ $6.42$). At 71.0\,s per image on a single GH200 (median of three images), \sca{} is 2.6 times faster than full attention (184.6\,s) and 3.0 times faster than AReA's released code (212.6\,s). The band-guard configuration also beats AReA on every metric except FID, but stays below final \sca{} on all but aesthetic score and patch FID and takes 17\,s longer per image. Full attention collapses under this protocol: its images are fields of horizontal and vertical stripes with at most a faint trace of the subject (Figure~\ref{fig:qual}), and it scores ImageReward $-2.18$ $[-2.22,-2.12]$ and FID 312.7, significantly worse than AReA on every metric. Figure~\ref{fig:qual} also shows the difference in detail between \sca{} and AReA: at 1:1 scale AReA's skin and fur are smoother, and its lake surface carries bright speckles.
+
+\paragraph{Non-square sizes.} The advantage of \sca{} over AReA grows with the scale factor. It is smallest at $2048\times4096$, the smallest factors (2 and 4 per axis), where \sca{} matches AReA: ImageReward ($-0.00$ $[-0.08,0.07]$), HPSv2.1, PickScore, CLIP score, ARNIQA, and FID are within noise, HPSv2 ($+0.17$), MUSIQ ($+4.1$ $[2.7,5.7]$), and MUSIQ$_\text{c}$ ($+4.3$) are significantly better, and aesthetic score ($-0.21$ $[-0.26,-0.15]$), CLIP-IQA ($-1.3$), and patch FID ($+5.1$ $[1.2,9.1]$) are significantly worse. It does so at 2.9 times lower campaign time per image (38.1\,s against 112.4\,s). At $2048\times6144$, factors 2 and 6, \sca{} wins clearly: ImageReward $+0.27$ $[0.15,0.40]$, FID $-19.8$ $[-24.5,-11.9]$, KID $-0.0096$, Inception score $+0.99$, PickScore $+0.23$, MUSIQ $+5.5$, MUSIQ$_\text{c}$ $+7.5$, CLIP-IQA $+1.6$, ARNIQA $+0.9$, and HPSv2 $+0.13$ are all significant; HPSv2.1, CLIP score, and patch FID are within noise; aesthetic score is significantly worse ($-0.15$ $[-0.25,-0.04]$). Campaign time is 2.7 times lower (55.8\,s against 150.5\,s). From $2048\times4096$ to $4096^2$ to $2048\times6144$, the FID difference goes from $-1.1$ (within noise) to $-7.6$ to $-19.8$, and AReA's own ImageReward falls to 0.39 at the largest factor while \sca{} keeps 0.66. Both non-square sizes use the scale-4 table; the scale-2 table changes the $2048\times4096$ results negligibly (Appendix~\ref{app:ps2}).
 
 \subsection{Ablations}
 \label{sec:ablations}
 
 \begin{table}[t]
-  \caption{\textbf{Ablations at $4096^2$}, 46 Aesthetic-4K prompts. Each panel starts with a reference row of absolute values; every other row changes one thing and reports its paired difference to that panel's reference. (a)~Final setting: reference \sca{} final (gate 0.89, per-head $\pih$, no band guard). (b)~Earlier setting: reference \sca{} + band guard (band 16). \up{Bold blue}: significantly better; \dn{orange italic}: significantly worse (95\% paired bootstrap CI excludes zero). Global only and v0 run without the guard or leave it inactive, so they appear in (a). Patch FID differences in (a) have no interval and are unmarked. HPS, CLIP-IQA, and ARNIQA are $\times100$. ``Mix err.'' is the relative output error of the weight rule at emulated scale 4 (Section~\ref{sec:analysis}).}
+  \caption{\textbf{Ablations of the final method at $4096^2$}, 46 Aesthetic-4K prompts. The first row gives absolute values for \sca{} final (gate 0.89, per-head $\pih$, no band guard); other rows change one thing and report the paired difference. \up{Bold blue} / \dn{orange italic}: significantly better / worse (95\% paired bootstrap CI excludes zero); patch FID has no interval. HPS, CLIP-IQA, and ARNIQA are $\times100$. ``Mix err.'' is the relative output error of the weight rule at emulated scale 4 (Section~\ref{sec:analysis}). Table~\ref{tab:ablation_band} gives the earlier ablations around the band guard.}
   \label{tab:ablation}
   \centering
   \footnotesize
@@ -233,7 +256,6 @@ On 191 prompts at $4096^2$, \sca{} beats AReA on every preference, alignment, an
     \toprule
     Variant & Mix err. & IR & Aesth. & HPSv2 & HPSv2.1 & PickS. & CLIP & CLIP-IQA & ARNIQA & MUSIQ & MUSIQ$_\text{c}$ & FID$_\text{p}\downarrow$ \\
     \midrule
-    \multicolumn{13}{l}{\emph{(a) Final setting, no band guard}} \\
     \sca{} final (reference) & 0.200 & 1.12 & 6.45 & 29.71 & 29.98 & 22.96 & 29.41 & 71.3 & 70.5 & 46.1 & 62.5 & 170.2 \\
     \midrule
     w/o per-head mixing ($\pi=1$) & 0.261 & \dn{$-0.36$} & \dn{$-0.21$} & \dn{$-1.78$} & \dn{$-2.86$} & \dn{$-1.20$} & \dn{$-1.93$} & \dn{$-4.6$} & $-1.0$ & \dn{$-3.5$} & $-0.3$ & $+24.1$ \\
@@ -243,54 +265,32 @@ On 191 prompts at $4096^2$, \sca{} beats AReA on every preference, alignment, an
     global only ($\pi=0$) & 0.627 & \dn{$-0.40$} & \dn{$-0.76$} & \dn{$-3.32$} & \dn{$-5.66$} & \dn{$-1.44$} & \dn{$-3.48$} & \dn{$-27.0$} & \dn{$-45.1$} & \dn{$-3.5$} & \dn{$-11.7$} & $+68.7$ \\
     mean pooling & n/a & \dn{$-1.52$} & \dn{$-0.61$} & \dn{$-4.04$} & \dn{$-9.75$} & \dn{$-2.60$} & \dn{$-3.59$} & \dn{$-10.1$} & \dn{$-4.8$} & $-1.8$ & \dn{$-4.2$} & $+17.3$ \\
     v0: no gate & 0.200 & \dn{$-1.33$} & $-0.08$ & \dn{$-1.89$} & \dn{$-4.07$} & \dn{$-2.18$} & \dn{$-1.65$} & \up{$+2.9$} & \up{$+4.3$} & \dn{$-5.6$} & $+2.5$ & $+34.7$ \\
-    \midrule
-    \multicolumn{13}{l}{\emph{(b) Earlier setting, with band guard}} \\
-    \sca{} + band guard (reference) & 0.200 & 1.17 & 6.43 & 29.18 & 28.81 & 22.71 & 29.01 & 69.6 & 69.6 & 43.1 & 62.1 & 169.3 \\
-    \midrule
-    no band (\textbf{= \sca{} final}) & 0.200 & $-0.04$ & $+0.01$ & \up{$+0.54$} & \up{$+1.17$} & \up{$+0.25$} & $+0.40$ & \up{$+1.7$} & $+0.9$ & \up{$+2.9$} & $+0.4$ & $+0.8$ \\
-    no gate & 0.200 & \dn{$-0.36$} & \dn{$-0.23$} & \dn{$-0.49$} & \dn{$-1.39$} & \dn{$-0.86$} & \dn{$-1.15$} & $-0.6$ & $+1.6$ & $-0.7$ & $-1.0$ & \dn{$+9.0$} \\
-    \midrule
-    one shared $\pi(\sigma)$ & 0.230 & $-0.03$ & $-0.06$ & $-0.20$ & $-0.33$ & $+0.02$ & $-0.09$ & \dn{$-6.5$} & \dn{$-4.6$} & $+0.5$ & \dn{$-5.7$} & \up{$-4.8$} \\
-    per-layer $\pi_\ell(\sigma)$ & 0.223 & $-0.02$ & $+0.03$ & $-0.08$ & $-0.01$ & $+0.01$ & $-0.03$ & \dn{$-1.2$} & \dn{$-1.2$} & $-0.3$ & \dn{$-1.5$} & $-1.4$ \\
-    local only ($\pi=1$) & 0.261 & $-0.01$ & $+0.03$ & \up{$+0.16$} & \up{$+0.55$} & \up{$+0.12$} & $+0.16$ & $+0.5$ & $+0.6$ & $+1.0$ & \up{$+0.9$} & $+1.3$ \\
-    hard routing, threshold 0.5 & n/a & \dn{$-0.05$} & $-0.02$ & $+0.02$ & $+0.18$ & $+0.04$ & $0.00$ & $+0.3$ & $+0.1$ & $+1.2$ & $+0.5$ & $+1.5$ \\
-    hard routing, threshold 0.3 & n/a & $-0.03$ & $+0.02$ & $+0.11$ & \up{$+0.34$} & \up{$+0.09$} & $+0.13$ & $+0.6$ & $+0.6$ & $+0.8$ & \up{$+0.8$} & $+1.1$ \\
-    \midrule
-    mean pooling & n/a & \dn{$-0.85$} & \dn{$-0.39$} & \dn{$-2.35$} & \dn{$-5.81$} & \dn{$-1.80$} & \dn{$-2.96$} & \dn{$-5.4$} & $-1.1$ & $-1.8$ & $-0.8$ & \dn{$+18.8$} \\
     \bottomrule
   \end{tabular}}
 \end{table}
 
-Table~\ref{tab:ablation} changes one component at a time. Panel (a) ablates the final method; panel (b) holds the full set of ablations we ran earlier around the band-guard configuration, in which every row except ``no band'' keeps the guard. Global only and v0 sit in panel (a): at $\pi=0$ the guard has no effect, and v0 never had it. All rows except v0 and ``no gate'' keep the gate.
+Table~\ref{tab:ablation} changes one component of the final method at a time; all rows except v0 keep the gate. Table~\ref{tab:ablation_band} in Appendix~\ref{app:band} holds the ablations we ran earlier around the band-guard configuration.
 
-\paragraph{The per-head mix supplies global context after the gate.} Setting $\pi=1$ after the gate, so that every head attends only inside its native window for the last 20 steps, lowers ImageReward by 0.36 $[0.21,0.52]$, HPSv2.1 by 2.86 $[2.36,3.35]$, PickScore by 1.20 $[0.99,1.44]$, CLIP score by 1.93 $[1.20,2.68]$, aesthetic score by 0.21, CLIP-IQA by 4.6, and MUSIQ by 3.5, all significant, and raises patch FID from 170.2 to 194.3; only ARNIQA and MUSIQ$_\text{c}$ stay within noise (Appendix~\ref{app:impl} gives the source of these intervals). Most heads lean local (mean weight 0.64 to 0.74), but the calibrated share each head gives the image-anchored branch is what keeps the image coherent once the opening phase ends. In panel (b), local only matched the per-head mix within 2\% on preference metrics and was even slightly higher on HPSv2.1 ($+0.55$). That came from the guard: it replaces the low band of every head's output with that of the image-anchored branch whatever the head's weight, so it injects global low frequencies even at $\pi=1$. Without the guard the mix is the only route for global information after the gate.
+\paragraph{The per-head mix supplies global context after the gate.} Setting $\pi=1$ after the gate, so that every head attends only inside its native window for the last 20 steps, lowers ImageReward by 0.36 $[0.21,0.52]$, HPSv2.1 by 2.86 $[2.36,3.35]$, PickScore by 1.20 $[0.99,1.44]$, CLIP score by 1.93 $[1.20,2.68]$, aesthetic score by 0.21, CLIP-IQA by 4.6, and MUSIQ by 3.5, all significant, and raises patch FID from 170.2 to 194.3; only ARNIQA and MUSIQ$_\text{c}$ stay within noise. Most heads lean local (mean weight 0.64 to 0.74), but their calibrated share of the image-anchored branch keeps the image coherent after the opening phase. With the band guard, local only matched the mix, because the guard injects the image-anchored branch's low band into every head whatever its weight (Appendix~\ref{app:band}); without it the mix is the only route for global information after the gate.
 
-\paragraph{The opening phase is essential.} Removing the gate lowers ImageReward by 0.36 and every preference and alignment score significantly, and raises patch FID by 9.0. Without gate and band (v0, the calibrated mix from the first step), ImageReward falls by 1.33 $[1.06,1.60]$ against final \sca{} and patch FID rises by 34.7: subjects repeat across the image (Figure~\ref{fig:failure}). Yet v0 scores higher on CLIP-IQA ($+2.9$) and ARNIQA ($+4.3$), both significant, because each repeated subject is sharp; no-reference quality metrics do not see layout.
+\paragraph{The opening phase is essential.} Without the gate (v0, the calibrated mix from the first step), ImageReward falls by 1.33 $[1.06,1.60]$ against final \sca{} and patch FID rises by 34.7: subjects repeat across the image (Figure~\ref{fig:failure}). Yet v0 scores higher on CLIP-IQA ($+2.9$) and ARNIQA ($+4.3$), both significant, because each repeated subject is sharp; no-reference quality metrics do not see layout.
 
-\paragraph{The global branch cannot work alone.} Global only loses on every metric, significantly wherever an interval exists (patch FID $+68.7$, ARNIQA $-45$): with keys $s$ tokens apart it cannot render detail. Mean pooling in place of block-center subsampling blurs the image-anchored keys and loses on every metric except MUSIQ, with ImageReward $-1.52$ and HPSv2.1 $-9.8$, confirming AReA's finding.
+\paragraph{The global branch cannot work alone.} Global only loses on every metric (patch FID $+68.7$, ARNIQA $-45$): with keys $s$ tokens apart it cannot render detail. Mean pooling blurs the image-anchored keys (ImageReward $-1.52$), confirming AReA's choice of block-center subsampling.
 
-\paragraph{Per-head weights beat shared and per-layer weights.} Without the guard, replacing the per-head table with one shared weight per noise level lowers ImageReward by 0.09 $[0.01,0.17]$, HPSv2.1 by 1.83, PickScore by 0.38, CLIP-IQA by 7.7, ARNIQA by 6.5, and MUSIQ$_\text{c}$ by 10.4, all significant. Per-layer weights recover part of this gap, as the output error predicts (0.223 against 0.230 and 0.200), but still lose significantly on HPSv2.1 ($-0.70$), PickScore ($-0.16$), ARNIQA ($-1.5$), and MUSIQ$_\text{c}$ ($-2.4$); their ImageReward drop ($-0.05$) is within noise. Patch FID is within 1.1 of the reference for both. With the guard (panel b), the same two rules matched the per-head table on preference metrics and lost only on no-reference quality, because the guard supplies global low frequencies by itself. Hard per-head routing (10 to 17\% of heads global at threshold 0.5, about 6\% at 0.3) also stays within 2\% of the mix on preference metrics there. Removing the guard improves the per-head mix on five metrics and is our final method (Appendix~\ref{app:band}).
+\paragraph{Per-head weights beat shared and per-layer weights.} Without the guard, replacing the per-head table with one shared weight per noise level lowers ImageReward by 0.09 $[0.01,0.17]$, HPSv2.1 by 1.83, PickScore by 0.38, CLIP-IQA by 7.7, ARNIQA by 6.5, and MUSIQ$_\text{c}$ by 10.4, all significant. Per-layer weights recover part of this gap, as the output error predicts (0.223 against 0.230 and 0.200), but still lose significantly on HPSv2.1 ($-0.70$), PickScore ($-0.16$), ARNIQA ($-1.5$), and MUSIQ$_\text{c}$ ($-2.4$); their ImageReward drop ($-0.05$) is within noise.
 
-\begin{figure}[t]
-  \centering
-  % Image sources (scratch): out/abl/abl_w64_nogate_noband (v0), out/dev/sca_w16, out/dev/sca_g89 (gate only = final), plus AReA from out/main/area.
-  \fbox{\parbox[c][3.2cm][c]{0.95\linewidth}{\centering
-    \todo{image grid, rows Moai, boats, woman and bear, surfer; columns (a) v0: mix from the first step, $64\times64$ window; (b) v0 with a $16\times16$ window; (c) \sca{} final; (d) AReA; one zoomed crop per row.}}}
-  \caption{\textbf{Without the opening phase, the calibrated mix duplicates subjects at the window's scale.} $4096^2$, same seed per row. (a)~Five Moai statues; a sea of small boats. (b)~A 16-token window gives smaller, more numerous copies. (c)~\sca{}: one main subject. (d)~AReA.}
-  \label{fig:failure}
-\end{figure}
 
 % =====================================================================================
 \section{Limitations}
 \label{sec:limits}
 
-\textbf{What the per-head weights add.} Without the band guard, the per-head mix beats local-only attention, one shared weight, and per-layer weights, but its margin over per-layer weights is small on preference metrics (HPSv2.1 $-0.70$, ImageReward within noise) on 46 prompts. \textbf{Residual duplication.} With the gate alone, small extra figures can appear late in sampling on some prompts, and the underwater surfer prompt keeps doubled limbs in every variant we tried; AReA's image for that prompt shows a large translucent ghost. The band guard of Appendix~\ref{app:band} removes some of these cases at a cost in metrics and time. \textbf{The gate threshold} equals AReA's $\sigma^\star$, was compared only with 0.80 on four prompts, and its dependence on the shift and step count is untested. \textbf{Calibration objective.} Squared output error does not see low-band errors, which is why the gate is set by hand; a frequency-weighted calibration could fit it. \textbf{Emulation.} Emulated scale 4 at $1024^2$ uses a 16-token window, the real $4096^2$ target a 64-token window. Transfer across emulated scales and calibration resolutions supports the assumption that the weights depend on the ratio, but cannot prove it at the target. \textbf{Query-independent weights.} Equation~\ref{eq:split} has a query-dependent weight; merging the branches through their log-sum-exp normalizers with a calibrated per-head bias would keep it at no extra attention cost; we have not tested this. \textbf{Scope.} FLUX.1-dev only \todo{add a second MM-DiT or state the restriction in the claims}.
+\textbf{Small scale factors.} At $2048\times4096$ \sca{} only matches AReA and is worse on aesthetic score, CLIP-IQA, and patch FID; the speed gain remains. \textbf{Residual duplication.} With the gate alone, small extra figures can appear late in sampling on some prompts, and the underwater surfer prompt keeps doubled limbs in every variant we tried; AReA's image for that prompt shows a large translucent ghost. The band guard (Appendix~\ref{app:band}) removes some of these at a cost. \textbf{The gate threshold} equals AReA's $\sigma^\star$, was compared only with 0.80 on four prompts, and its dependence on the shift and step count is untested. \textbf{Calibration objective.} Squared output error misses low-band errors, so the gate is set by hand. \textbf{Emulation.} Emulated scale 4 at $1024^2$ uses a 16-token window, the real $4096^2$ target a 64-token window. Transfer across emulated scales supports, but cannot prove, that the weights depend only on the ratio. \textbf{Scope.} All results are for FLUX.1-dev. We have not calibrated or evaluated a second multimodal diffusion transformer, so the claim that receptive-field needs are head-specific and scale-stable is shown for one model.
 
 % =====================================================================================
 \section{Conclusion}
 \label{sec:conclusion}
 
-At its training resolution, FLUX.1-dev shows how each attention head splits between a neighborhood fixed in tokens and a view of the whole image. The split differs between heads, holds across prompts, and changes little with scale, so it can be measured once and reused at 4K. Output matching sets the weights but not the opening phase: while only layout carries signal, every head must see the whole image. With that phase, \sca{} reaches ImageReward 1.23 against 0.92 for AReA's released code at $4096^2$ under a shared protocol, FID 138.4 against 146.0, and HPSv2.1 0.297 against 0.272, while running 2.6 times faster than full attention and 3.0 times faster than AReA. Most heads lean local after layout forms, but the small calibrated share of the global branch still matters: local-only attention loses on nearly every metric.
+At its training resolution, FLUX.1-dev shows how each attention head splits between a neighborhood fixed in tokens and a view of the whole image; the split differs between heads, holds across prompts, and changes little with scale, so it can be measured once and reused at 4K. Output matching sets the weights but not the opening phase, in which every head must see the whole image. With both, \sca{} beats AReA's released code at $4096^2$ (ImageReward 1.23 against 0.92, FID 138.4 against 146.0) while running 3.0 times faster, ties it at $2048\times4096$, and beats it at $2048\times6144$ with the largest FID gain ($-19.8$).
 
 \bibliography{references}
 \bibliographystyle{iclr2026_conference}
@@ -314,6 +314,13 @@ At its training resolution, FLUX.1-dev shows how each attention head splits betw
   \label{fig:pisigma}
 \end{figure}
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.9\linewidth]{figures/rel_err.pdf}
+  \caption{\textbf{Per-head weights explain full attention best, and transfer across scales.} Relative output error against full attention for each mixing rule at emulated scales 2 (a) and 4 (b), 32 prompts. ``Fitted at the other scale'' applies the scale-4 table at scale 2 and vice versa. The best hard switch puts its threshold at $\sigma^\star=1$ and so equals local only. In-sample and held-out errors agree within 0.0003.}
+  \label{fig:relerr}
+\end{figure}
+
 \paragraph{No global phase in output energy.} The best single shared weight falls from 0.88 at $\sigma=0.10$ to 0.72 at $\sigma=0.97$, and the mean per-head weight from 0.74 to 0.64 (Figure~\ref{fig:pisigma}). The global share rises with noise, but at no noise level does the average head prefer the global branch. Among hard switches from global to local, the best threshold is $\sigma^\star=1$, which equals local only. A switch at $\sigma^\star=0.89$ between our two branches raises the error from 0.092 to 0.152 at scale 2 and from 0.261 to 0.376 at scale 4. In the noisiest bin, the global branch alone has relative error 0.27 at scale 2, the local branch alone 0.14, and the per-head mix 0.09. The generation results of Section~\ref{sec:ablations} show the opposite preference for the opening steps, which is the gap between squared output error and layout.
 
 \paragraph{Attention mass.} For 256 random image queries per block and step, the pass also records the softmax mass on text keys and on image keys within Chebyshev distance 2, 4, 8, and 16. At $1024^2$, averaged over heads and queries, text receives 15 to 19\% of the mass; image keys within distance 16 receive 52\% at $\sigma=0.10$ and 40\% at $\sigma=0.97$, and keys outside that $33\times33$ neighborhood still receive 29\% and 41\%. A purely local receptive field cannot account for any step even at native resolution.
@@ -321,9 +328,24 @@ At its training resolution, FLUX.1-dev shows how each attention head splits betw
 \section{Implementation details and cost}
 \label{app:impl}
 
+\begin{algorithm}[t]
+  \caption{One \sca{} attention layer at noise level $\sigma$ (per head $h$).}
+  \label{alg:sca}
+  \small
+  \begin{algorithmic}[1]
+    \Require pre-RoPE $Q,K,V$ for $T$ text and $N=H\times W$ image tokens; factors $(s_H,s_W)$; table $\pi_h(\sigma)$; gate $\sigma_g=0.89$
+    \State $\tilde K,\tilde V \gets$ image keys and values at the center of every $s_H\times s_W$ block, plus all text keys
+    \State $\Oglob \gets \mathrm{Attn}\big(Q\text{ at }\lfloor p/s\rfloor,\;\tilde K\text{ at block index},\;\tilde V\big)$ \Comment{all queries, text included}
+    \If{$\sigma>\sigma_g$} \Return $\Oglob$ \Comment{opening phase: pixel-anchored branch skipped}
+    \EndIf
+    \State $\Oloc \gets$ FlexAttention of each $t\times t$ image-query tile over text keys and its $n_0\times n_0$ window, original RoPE
+    \State \Return $[\,\Oglob_{\text{text}},\;\pih\,\Oloc + (1-\pih)\,\Oglob_{\text{img}}\,]$ \Comment{mix in fp32}
+  \end{algorithmic}
+\end{algorithm}
+
 \paragraph{FlexAttention window.} Image tokens are reordered tile-major; query blocks cover $8\times16$ tokens and key blocks $8\times8$, shifted so that unclamped windows start on a block edge, and the mask function is the window membership itself. The kernel matches a reference that gathers each tile's key window explicitly to within one bf16 unit in the last place, and both are equally far from an fp32 reference. RoPE, pooling, both branches, and the mix compile into one graph per layer.
 
-\paragraph{Paired intervals for panel (a).} The intervals of every row in Table~\ref{tab:ablation}(a) are paired bootstraps over the 46 prompts with 2000 draws and seed 0, computed by \texttt{scripts/paired\_bootstrap.py} from the per-image scores against final \sca{}; the outputs are \texttt{results/ablnb\_<method>\_deltas.csv}. Patch FID is a set-level metric (\texttt{results/ablnb\_base\_summary.csv}) and has no paired interval.
+\paragraph{Paired intervals for Table~\ref{tab:ablation}.} The intervals of every row in Table~\ref{tab:ablation} are paired bootstraps over the 46 prompts with 2000 draws and seed 0, computed by \texttt{scripts/paired\_bootstrap.py} from the per-image scores against final \sca{}; the outputs are \texttt{results/ablnb\_<method>\_deltas.csv}. Patch FID is a set-level metric (\texttt{results/ablnb\_base\_summary.csv}) and has no paired interval.
 
 \paragraph{Position ids in bf16.} The FLUX.1 pipeline builds image position ids in bf16, which cannot represent every integer above 256, so positions beyond 256 tokens per axis are rounded. This affects every method, including full attention and AReA, at the $2048\times6144$ setting (384 tokens per row). \sca{} takes the grid size from the sampler instead of inferring it from the rounded ids, so that its window and pooling geometry match the true grid.
 
@@ -350,7 +372,12 @@ At its training resolution, FLUX.1-dev shows how each attention head splits betw
   \end{tabular}
 \end{table}
 
-\paragraph{End-to-end latency.} On a single GH200, batch 1, $4096^2$, 28 steps, after a warm-up generation, we report the median over three images (all timings in \texttt{results/latency\_4096\_batch1.csv}): full attention 184.6\,s (184.1, 184.7, 184.6), AReA (released code) 212.6\,s (207.3, 225.8, 212.6), \sca{} + band guard 88.1\,s (88.1, 98.7, 88.1; single-pass compiled band, outputs equal to the campaign code up to floating-point rounding), and \sca{} final 71.0\,s (71.0, 83.1, 70.9). On the shared campaign nodes, per-image times were 71\,s for \sca{} final, 120\,s for \sca{} + band guard, and 262\,s for AReA; the campaign code used an unfused band, so dropping it saved more there (48\,s) than in the clean measurement (17\,s). Non-square resolutions: \todo{}.
+\paragraph{End-to-end latency.} On a single GH200, batch 1, $4096^2$, 28 steps, after a warm-up generation, we report the median over three images (all timings in \texttt{results/latency\_4096\_batch1.csv}): full attention 184.6\,s (184.1, 184.7, 184.6), AReA (released code) 212.6\,s (207.3, 225.8, 212.6), \sca{} + band guard 88.1\,s (88.1, 98.7, 88.1; single-pass compiled band, outputs equal to the campaign code up to floating-point rounding), and \sca{} final 71.0\,s (71.0, 83.1, 70.9). On the shared campaign nodes, per-image times were 71\,s for \sca{} final, 120\,s for \sca{} + band guard, and 262\,s for AReA; the campaign code used an unfused band, so dropping it saved more there (48\,s) than in the clean measurement (17\,s). At the non-square sizes we have only campaign timings on shared nodes (mean per image over 191 prompts): $2048\times4096$, \sca{} 38.1\,s and AReA 112.4\,s; $2048\times6144$, \sca{} 55.8\,s and AReA 150.5\,s. These are not clean measurements, but the two methods ran on the same pool of nodes.
+
+\section{Calibration table at non-square sizes}
+\label{app:ps2}
+
+At $(s_H,s_W)=(2,4)$ the two axes have different factors, and \sca{} uses the table of the emulated scale nearest the larger factor, here scale 4 (Section~\ref{sec:inference}). On the 46 ablation prompts at $2048\times4096$, replacing it with the scale-2 table changes the paired metrics negligibly: HPSv2 $+0.09$ $[0.04,0.13]$, HPSv2.1 $+0.17$ $[0.08,0.26]$ (both $\times100$), and PickScore $+0.05$ $[0.00,0.09]$ are significant but small, and ImageReward ($+0.01$ $[-0.03,0.05]$), aesthetic score, CLIP score, MUSIQ, MUSIQ$_\text{c}$, CLIP-IQA, and ARNIQA are within noise (\texttt{results/ps2\_abl\_ps2\_vs\_scanb.csv}). The choice of table therefore does not explain why \sca{} only matches AReA at this size, and we keep the default rule.
 
 \section{The low-band duplication guard}
 \label{app:band}
@@ -359,13 +386,39 @@ At its training resolution, FLUX.1-dev shows how each attention head splits betw
 \begin{equation}
   O \;=\; \LP\big(\Oglob\big) + \HP\big(M\big) \;=\; \Oglob + \pih\,\HP\big(\Oloc-\Oglob\big).
 \end{equation}
-The pixel-anchored branch then contributes only its difference from the image-anchored branch above the cutoff. The cutoff should lie below $1/(2s)$, where the image-anchored branch aliases, and above $1/w$, below which the window cannot resolve; with $w=64$ and $s=4$ this leaves periods of 8 to 64 tokens. We used $p=16$; $p=8$ and $p=32$ were worse on four development prompts, and a noise-dependent cutoff behaved like $p=16$. The construction resembles FreeScale's fusion of a global low band with a local high band~\citep{qiu2024freescale} \todo{check FreeScale's exact fusion rule and state the difference}, applied here to per-head attention outputs in every layer.
+The pixel-anchored branch then contributes only its difference from the image-anchored branch above the cutoff. The cutoff should lie below $1/(2s)$, where the image-anchored branch aliases, and above $1/w$, below which the window cannot resolve; with $w=64$ and $s=4$ this leaves periods of 8 to 64 tokens. We used $p=16$; $p=8$ and $p=32$ were worse on four development prompts, and a noise-dependent cutoff behaved like $p=16$. FreeScale~\citep{qiu2024freescale} also fuses two self-attention outputs by frequency band, in the opposite direction: it keeps the Gaussian-blurred low band of attention over overlapping crops and takes the high band from full self-attention at the target size, to suppress small repeated objects. The guard instead takes the low band from the image-anchored branch, which stays at native token count and offsets, and keeps the per-head weight on the high band.
 
-\paragraph{What it fixes and what it costs.} On the development prompts, the band alone (no gate) fixes the boats but leaves extra statues and faces on the Moai and woman-and-bear prompts; the gate alone gets the main subject right but small extra figures appear late on some prompts; gate and band together give one subject on the boats, Moai, and woman-and-bear prompts. On 46 prompts, however, removing the guard improves HPSv2 ($+0.54$), HPSv2.1 ($+1.17$), PickScore ($+0.25$), CLIP-IQA ($+1.7$), and MUSIQ ($+2.9$), all significant, leaves ImageReward, aesthetic score, ARNIQA, MUSIQ$_\text{c}$, and patch FID within noise, and saves 17\,s per image on an idle GPU. The guard also hides what the per-head mix contributes: with it, local-only attention matches the mix, and without it local only loses on nearly every metric (Section~\ref{sec:ablations}). The guard is therefore an option for prompts where late duplication is visible, not part of the default method.
+\begin{table}[t]
+  \caption{\textbf{Ablations around the band-guard configuration at $4096^2$}, 46 Aesthetic-4K prompts. The reference row gives absolute values for \sca{} + band guard (band 16); every other row changes one thing, keeps the guard unless stated, and reports its paired difference to the reference. Marks and units as in Table~\ref{tab:ablation}; here patch FID also has paired intervals.}
+  \label{tab:ablation_band}
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{2.5pt}
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{lcccccccccccc}
+    \toprule
+    Variant & Mix err. & IR & Aesth. & HPSv2 & HPSv2.1 & PickS. & CLIP & CLIP-IQA & ARNIQA & MUSIQ & MUSIQ$_\text{c}$ & FID$_\text{p}\downarrow$ \\    \midrule
+    \sca{} + band guard (reference) & 0.200 & 1.17 & 6.43 & 29.18 & 28.81 & 22.71 & 29.01 & 69.6 & 69.6 & 43.1 & 62.1 & 169.3 \\
+    \midrule
+    no band (\textbf{= \sca{} final}) & 0.200 & $-0.04$ & $+0.01$ & \up{$+0.54$} & \up{$+1.17$} & \up{$+0.25$} & $+0.40$ & \up{$+1.7$} & $+0.9$ & \up{$+2.9$} & $+0.4$ & $+0.8$ \\
+    no gate & 0.200 & \dn{$-0.36$} & \dn{$-0.23$} & \dn{$-0.49$} & \dn{$-1.39$} & \dn{$-0.86$} & \dn{$-1.15$} & $-0.6$ & $+1.6$ & $-0.7$ & $-1.0$ & \dn{$+9.0$} \\
+    \midrule
+    one shared $\pi(\sigma)$ & 0.230 & $-0.03$ & $-0.06$ & $-0.20$ & $-0.33$ & $+0.02$ & $-0.09$ & \dn{$-6.5$} & \dn{$-4.6$} & $+0.5$ & \dn{$-5.7$} & \up{$-4.8$} \\
+    per-layer $\pi_\ell(\sigma)$ & 0.223 & $-0.02$ & $+0.03$ & $-0.08$ & $-0.01$ & $+0.01$ & $-0.03$ & \dn{$-1.2$} & \dn{$-1.2$} & $-0.3$ & \dn{$-1.5$} & $-1.4$ \\
+    local only ($\pi=1$) & 0.261 & $-0.01$ & $+0.03$ & \up{$+0.16$} & \up{$+0.55$} & \up{$+0.12$} & $+0.16$ & $+0.5$ & $+0.6$ & $+1.0$ & \up{$+0.9$} & $+1.3$ \\
+    hard routing, threshold 0.5 & n/a & \dn{$-0.05$} & $-0.02$ & $+0.02$ & $+0.18$ & $+0.04$ & $0.00$ & $+0.3$ & $+0.1$ & $+1.2$ & $+0.5$ & $+1.5$ \\
+    hard routing, threshold 0.3 & n/a & $-0.03$ & $+0.02$ & $+0.11$ & \up{$+0.34$} & \up{$+0.09$} & $+0.13$ & $+0.6$ & $+0.6$ & $+0.8$ & \up{$+0.8$} & $+1.1$ \\
+    \midrule
+    mean pooling & n/a & \dn{$-0.85$} & \dn{$-0.39$} & \dn{$-2.35$} & \dn{$-5.81$} & \dn{$-1.80$} & \dn{$-2.96$} & \dn{$-5.4$} & $-1.1$ & $-1.8$ & $-0.8$ & \dn{$+18.8$} \\
+    \bottomrule
+  \end{tabular}}
+\end{table}
+
+\paragraph{What it fixes and what it costs.} On the development prompts, the band alone (no gate) fixes the boats but leaves extra statues and faces on the Moai and woman-and-bear prompts; the gate alone gets the main subject right but small extra figures appear late on some prompts; gate and band together give one subject on the boats, Moai, and woman-and-bear prompts. On 46 prompts, however, removing the guard improves HPSv2 ($+0.54$), HPSv2.1 ($+1.17$), PickScore ($+0.25$), CLIP-IQA ($+1.7$), and MUSIQ ($+2.9$), all significant, leaves ImageReward, aesthetic score, ARNIQA, MUSIQ$_\text{c}$, and patch FID within noise, and saves 17\,s per image on an idle GPU. The guard also hides what the per-head mix contributes. With it (Table~\ref{tab:ablation_band}), local only matched the per-head mix within 2\% on preference metrics and was slightly higher on HPSv2.1 ($+0.55$), because the guard replaces the low band of every head's output with that of the image-anchored branch whatever the head's weight, so it injects global low frequencies even at $\pi=1$; without the guard local only loses on nearly every metric (Section~\ref{sec:ablations}). Likewise, with the guard one shared weight and per-layer weights matched the per-head table on preference metrics and lost only on no-reference quality, and hard per-head routing (10 to 17\% of heads global at threshold 0.5, about 6\% at 0.3) stayed within 2\% of the mix on preference metrics. The guard is therefore an option for prompts where late duplication is visible, not part of the default method.
 
 \section{Reproducing AReA}
 \label{app:area}
 
-We run AReA's released code with its FLUX.1 defaults (block-center pooling, first phase for 8 of 28 steps, halo width 8, bridge ratio 0.5), the FLUX.1-dev checkpoint, guidance 4.5, 28 steps, $\mu$ at its maximum, and the seeds shared with the other methods. AReA's paper reports ImageReward 1.32 at 4K under its own settings; our shared protocol gives 0.92, so cross-paper numbers are not comparable, while all numbers in this paper come from one protocol. AReA's paper reports 151\,s for AReA and 314\,s for full attention at $4096^2$ on an H100; we measure 212.6\,s and 184.6\,s on a single GH200 (medians of three images). \todo{list the AReA commit, its schedules at the three resolutions, and any deviation from the paper, such as the cost cap on halo and bridge tokens.}
+We run AReA's released code with its FLUX.1 defaults (block-center pooling, first phase for 8 of 28 steps, halo width 8, bridge ratio 0.5), the FLUX.1-dev checkpoint, guidance 4.5, 28 steps, $\mu$ at its maximum, and the seeds shared with the other methods. AReA's paper reports ImageReward 1.32 at 4K under its own settings; our shared protocol gives 0.92, so cross-paper numbers are not comparable, while all numbers in this paper come from one protocol. AReA's paper reports 151\,s for AReA and 314\,s for full attention at $4096^2$ on an H100; we measure 212.6\,s and 184.6\,s on a single GH200 (medians of three images). We use commit \texttt{9e38ec2} of the released repository (github.com/KooroshRH/AReA), which includes the cost cap on halo and bridge tokens and the jagged halo edge; neither appears in the paper text, and the paper does not say whether its Table~1 used them. Recomputed from the code with 512 text tokens, the schedules are as follows. At $4096\times4096$ and $2048\times4096$, the first-phase pooling factors are 4, 4, 4, 4, 2, 2, 2, 2; at $2048\times6144$ they are 8, 8, 8, 4, 4, 4, 2, 2. The second-phase windows shrink over 20 steps from 180, 151, and 192 tokens respectively to 64. At $2048\times6144$ no window is cheaper than full attention once the text tokens are counted, so the first window falls back to 192 tokens and the cap drops the bridge and halo on the first three second-phase steps. Other differences from the release defaults: the FLUX.1-dev checkpoint instead of FLUX.1-Krea-dev, and one seed per prompt shared across methods instead of one seed for all prompts.
 
 \end{document}
