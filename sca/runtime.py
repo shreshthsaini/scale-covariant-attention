@@ -79,8 +79,15 @@ def file_sha256(path):
     return digest.hexdigest()
 
 
+def _stable(x):
+    """Sort set-derived lists (diffusers' _use_default_values) so the digest is process independent."""
+    if isinstance(x, dict):
+        return {k: (sorted(v) if k == "_use_default_values" and isinstance(v, list) else _stable(v)) for k, v in x.items()}
+    return [_stable(v) for v in x] if isinstance(x, list) else x
+
+
 def fingerprint(config):
-    return hashlib.sha256(json.dumps(config, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    return hashlib.sha256(json.dumps(_stable(config), sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
 def code_revision():

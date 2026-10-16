@@ -96,9 +96,16 @@ def implementation_hash():
     return digest.hexdigest()
 
 
+def _stable(x):
+    """Sort set-derived lists (diffusers' _use_default_values) so the digest is process independent."""
+    if isinstance(x, dict):
+        return {k: (sorted(v) if k == "_use_default_values" and isinstance(v, list) else _stable(v)) for k, v in x.items()}
+    return [_stable(v) for v in x] if isinstance(x, list) else x
+
+
 def fingerprint(config):
     # The SCA repo revision changes with unrelated commits; resume keys on everything else.
-    stable = {k: v for k, v in config.items() if k != "code_revision"}
+    stable = _stable({k: v for k, v in config.items() if k != "code_revision"})
     return hashlib.sha256(json.dumps(stable, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
