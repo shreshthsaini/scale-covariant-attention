@@ -21,3 +21,8 @@ Phase 2: bulletproof experiments + presentation upgrade of the SCA paper (HANDOV
 ## 12:35 E7 gate sensitivity done (46 prompts; results/e7_*): sigma*=0.85 worse on aes -0.19*, HPS2.1 -0.009*,
 CLIP-IQA -0.032*, ARNIQA -0.040*, MUSIQ -1.9* (IR n.s.); sigma*=0.93 ~ same (IR n.s., CLIP -0.64*, Pick -0.22*,
 ARNIQA +0.018*). => 0.89 near-optimal, robust. E6 eval running; E5 started; FLUX.2 smoke running.
+## 12:45 FLUX.2 smoke OK: 4096^2 SCA 226 s vs full 433 s, peak 82 GB; SCA visibly sharper/coherent, full
+hazy. Released all hold_flux2 tasks (calib f010-f013, merge f200, full f100-f145, SCA f300-f345, eval f900).
+## 13:00 E6 calibration budget done (46 prompts; results/e6_*): tables from 4/8/16 prompts vs 32-prompt table:
+all metrics n.s. (|dIR| <= 0.012), except cal16 MUSIQ +0.13*. => 4 calibration prompts suffice (~10 GPU-min).
+Running: E5 seeds, FLUX.2 calibration (f010-f013). Fleets SCA6/SCA7 still pending; 6 MF9 guests active.
