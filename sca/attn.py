@@ -411,6 +411,7 @@ class SCAContext:
     calib_tile: int | None = None       # override emulated tile side (default t * Wc / Wn)
     # runtime state (set by the transformer pre-hook)
     grid: tuple | None = None
+    route: float = 0.0                  # >0: hard per-head routing, pi -> 1[pi >= route] (local or global, no blend)
     known_grid: tuple | None = None     # exact (H, W) token grid from the sampler; FLUX builds img_ids in bf16, which rounds positions above 256
     sigma: float = 1.0
     step: int = 0
@@ -559,6 +560,8 @@ class SCAProcessor:
             return global_branch(q, k, v, L, ctx.grid, f, ctx.pool, rope_txt, rq, rk,
                                  rope(q[:, :L], rope_txt), kr_txt)
         pi = ctx.pi_now(self.layer, q.shape[2], q.device).view(1, 1, -1, 1)
+        if ctx.route > 0:
+            pi = (pi >= ctx.route).to(pi.dtype)
         band = ctx.band
         if band < 0:  # SNR-adaptive: p = c * sigma / (1 - sigma) tokens, off below 2
             sg = float(ctx.sigma) if ctx.sigma is not None else 0.0
