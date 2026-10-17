@@ -1,4 +1,4 @@
-# SCA live state, 2026-10-17 06:30 CDT
+# SCA live state, 2026-10-17 06:37 CDT
 
 ## Goal
 Finish experiments, verified evaluation, paper and reproducibility package.
@@ -15,7 +15,8 @@ The user transferred full project ownership to Codex. Continue without another a
   Proof: metric_environment/validation_summary_1076947.json;42 focused tests pass.
   Paper audit verified762 means,195 hashes,13 fits,82 appendix rows,593 other table values.
   Unsupported energy claim and overly broad frozen-baseline provenance sentence corrected.
-  New37-page delivery built twice independently; raster review and final audit active.
+  New37-page delivery and456sources verified independently; page27 reviewed at144dpi.
+  Delivery proof: results/evidence/delivery_validation_1076947.json.
   Isolated cache copied39 verified assets,12.08GB,0 downloads. Five restore tests pass.
   Cache proof: results/evidence/metric_environment/cache_copy_receipt.json.
 - Complete: E1/E4/E5/E6/E7/E8, budget controls, and E2 8K metrics and full gallery.
@@ -30,13 +31,13 @@ The user transferred full project ownership to Codex. Continue without another a
   Native MUSIQ uses query chunks256 with all keys/patches retained. All24scores archived.
   Original GPU OOM task is preserved in taskq/recovered with a separate recovery receipt.
 - SCA6 job1075813 timed out03:07:36; its workers are gone and interrupted tasks requeued.
-- SCA7 job1075814: PENDING, four nodes, four hours, minimum two hours.
-  Scheduler estimate16:02CDT is uncertain. Root activated the frozen v2 compatibility
+- SCA7 job1075814: RUNNING, four nodes, granted two hours06:29-08:29CDT.
+  All four GPUs99-100% utilized. Root activated the frozen v2 compatibility
   bridge while pending at03:35:54CDT. Only this JobID uses the bridge; priority/topology retained.
   Bridge: dispatch/20261017_sca7_1075814_bridge. Four nodes, one task/node are required.
   Actual deadline comes from Slurm env or one rank-zero query; telemetry is reaped.
 - SCA9 job1076923: PENDING, two to eight nodes, four hours, minimum one hour.
-  Frozen dispatcher: dispatch/20261017_v2. No SCA GPU is currently allocated.
+  Frozen dispatcher: dispatch/20261017_v2. Four SCA7 GPUs are allocated.
   SCA8 job1076908 was cancelled while pending. MF9 guests yielded; do not restart them.
 - Last budget check before submission: 8212.919/40000 SUs available,79.47% used.
 - Generation: 6K AReA26/100, SCA24/100; Krea SCA5/100, AReA0/100.
@@ -65,7 +66,7 @@ The user transferred full project ownership to Codex. Continue without another a
   Strict split-report merger passes18 tests and an end-to-end synthetic CLI fixture.
 - Complete-gallery readiness tests and SCA7 bridge tests:22 passed. No incomplete new
   gallery was rendered. Historical14-prompt6K and partial8K artifacts stay preserved.
-- At06:22CDT both SCA7/SCA9 pending;82 tasks pending,0 running,0 failed.
+- SCA7 started. Smoke compiler and full6K grid-inference failures are under repair.
   Three bounded subagents run within this CPU allocation. All must finish and reap their
   subprocesses before the unit ends. No local watcher was launched.
 - NEXT: controller finishes metric environment CPU validation while awaiting GPUs; then generation,

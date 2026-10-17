@@ -19,7 +19,8 @@ all requested metrics are available, and every expected method has the exact exp
 prompt IDs: 100 at 6K, 12 at 8K, and 100 on Krea. Partial results are skipped. It creates
 flat summaries and paired-delta CSVs with the same experiment prefixes in `results/`.
 
-The October 17 audit rederived all 740 scalar means exactly, found equal prompt sets
+The October 17 audit rederived all 762 scalar means exactly, including the completed
+12-prompt 8K evaluation, verified 195 archive hashes, found equal prompt sets
 between methods within every evaluation, and reproduced all 13 per-head calibration
 fits and relative squared errors from seven archived tables. The original 32-prompt
 calibration split-half correlations were also rederived: 0.9885567 at scale 2 and

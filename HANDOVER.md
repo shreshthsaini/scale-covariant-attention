@@ -1,6 +1,6 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-17 06:30 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
+Last updated 2026-10-17 06:37 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
 its short live index. Historical sections below are superseded by the correction notice here.
 
 ## 1. Current status and corrections
@@ -9,8 +9,10 @@ Codex is the main operator, authorized to finish experiments, evaluation, paper 
 CPU controller job1076947 is RUNNING on i615-074, ending2026-10-17 10:19:14CDT.
 Its recorded successor1077042 is PENDING on its dependency. Do not alter the frozen
 controller, launch another watcher, cancel the successor or change its dependency.
-The first continuation unit verified live ownership and scheduler state at06:22CDT.
-SCA7/SCA9 are pending; the spool has82 pending tasks,0 running and0 failed.
+Startup ownership was verified at06:22CDT. SCA7 started at06:29CDT on4nodes
+for2hours; SCA9 remains pending. Four GPU workers are99-100% utilized.
+Fresh GPU smoke failed on inherited nvc compiler flags; full6K latency failed
+on bf16-derived grid inference. Both repairs are being tested before new retries.
 Both final CPU bootstraps remain unready. Evidence: results/evidence/continuation/.
 The controller uses frozen dispatch/20261017_continuation and checkpoints between units.
 See slurm/CONTINUATION.md and scratch sca/continuation/status.json for live ownership.
@@ -25,13 +27,14 @@ Isolated asset restoration
 copied and verified39 assets (12.08GB), with0 network requests; seven restore/cache-isolation tests pass.
 Evidence: results/evidence/metric_environment/cache_copy_receipt.json.
 E1, E4, E5, E6, E7, E8, budget controls and the exploratory E2 8K comparison are complete.
-The37-page paper and extracted Overleaf ZIP build independently. The final source refresh
-passed; all37 pages render identically to the reviewed version at72dpi. E2 6K, three E3 latency groups,
+The37-page paper and extracted Overleaf ZIP were rebuilt and456source hashes checked.
+All37 independent pages render identically; page27 prose fixes were inspected at144dpi.
+Proof: results/evidence/delivery_validation_1076947.json and paper_numeric_audit_20261017.json. E2 6K, three E3 latency groups,
 and E9 Krea remain unfinished. There is no git remote; keep local commits.
 
 SCA6 job1075813 ended at03:07:36CDT with TIMEOUT. Interrupted 6K tasks were requeued;
 its three held long-latency tasks were released only after all old steps disappeared.
-SCA7 job1075814 is pending: four nodes, four hours, minimum two hours.
+SCA7 job1075814 is running: four nodes, granted two hours,06:29-08:29CDT.
 Its mutable launcher now routes only this job to the frozen v2 compatibility bridge,
 activated while pending at03:35:54CDT. Job priority and four-node topology were retained.
 The bridge passed14 tests; only rank zero can query the actual allocation deadline.
@@ -40,7 +43,7 @@ using the reviewed deadline-aware dispatcher frozen in dispatch/20261017_v2.
 SCA8 job1076908 was cancelled while pending after SCA9 was accepted.
 MF9 guests yielded to their host project's resumed work. Do not restart them.
 SU balance at submission:40000 awarded,31787.081 used,8212.919 available (79.47% burned).
-Latest scheduler estimate for SCA7 moved to16:02CDT; estimates are not commitments.
+SCA7 received its minimum walltime. More fleet time may be needed after drain.
 
 All12 paired8K images and all10 per-image metrics are complete and archived.
 SCA improves ImageReward, CLIP, PickScore, both HPS variants and ARNIQA; aesthetic,
