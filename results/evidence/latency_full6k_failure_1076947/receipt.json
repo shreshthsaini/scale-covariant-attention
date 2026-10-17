@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-17T11:37:56.571780+00:00",
+  "status": "CPU fix verified; GPU retry unrun and held for owner-step termination",
+  "allocation": 1076947,
+  "owning_job": 1075814,
+  "owning_step": "1075814.0",
+  "failure": {
+    "kind": "assertion",
+    "exit_code": 1,
+    "start": "2026-10-17T06:29:59-05:00",
+    "end": "2026-10-17T06:31:42-05:00",
+    "old_grid": [
+      385,
+      385
+    ],
+    "actual_grid": [
+      384,
+      384
+    ],
+    "token_count": 147456,
+    "timed_images_completed": 0,
+    "timeout": false,
+    "output_directory_exists_at_review": false
+  },
+  "source": {
+    "original_freeze": "/scratch/09032/saini_2/sca/code/2d11740",
+    "original_sample_sha256": "8446dd11f9b574b8f601eec5820780711eae20e6a43264a6f581011187b40578",
+    "patched_historical_sample_sha256": "75e0769b1dad082a0c5e937d837e83cdc9cc0b0c4058fc11c6098f1e615c59f1",
+    "mutable_sample_sha256": "6130822eba3255e4a82f0cb847d5b588ece3abd8e76f4e6f18387a693a2d2042",
+    "attn_identical_historical_and_mutable": true,
+    "attn_sha256": "09c201611917c5ad0d3dd10037d70ed69a8462191d972376c10a4beae7fa855f",
+    "patch": "return SCAContext(mode=\"full\", known_grid=grid), {}",
+    "freeze_prepared_by": "root; not created or modified by this subagent",
+    "expected_new_freeze": "/scratch/09032/saini_2/sca/code/2d11740_full_gridfix_1076947"
+  },
+  "tests": [
+    {
+      "source": "mutable",
+      "command": "OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 uv run --no-project --python /work/09032/saini_2/vista/library/uv-envs/sca/bin/python python -m pytest -q tests/test_sample_grid.py tests/test_sca.py",
+      "passed": 22,
+      "seconds": 21.89,
+      "exit_code": 0,
+      "warnings": 1,
+      "warning": "Existing CPU unfused FlexAttention warning; no torch.compile requested"
+    },
+    {
+      "source": "one-line patched historical sample",
+      "command": "OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 SCA_SAMPLE_SOURCE=/scratch/09032/saini_2/sca/full6k_grid_fix_validation_1076947/scripts/sample.py uv run --no-project --python /work/09032/saini_2/vista/library/uv-envs/sca/bin/python python -m pytest -q tests/test_sample_grid.py --junitxml=/scratch/09032/saini_2/sca/full6k_grid_fix_validation_1076947/historical_sample_grid.junit.xml",
+      "passed": 4,
+      "seconds": 7.37,
+      "exit_code": 0,
+      "warnings": 0
+    }
+  ],
+  "recovery": {
+    "candidate_task": "results/evidence/latency_full6k_failure_1076947/a_y003_latency_6144x6144_full_gridfix_1076947.sh",
+    "minimum_seconds": 4800,
+    "prerequisite": "root verifies 1075814.0/job is gone, no running owner and no duplicate pending/done retry, then releases held task",
+    "preserve": "original failed task plus immutable attempt log/metadata retained; any prior output moved into unique mktemp history directory before four-image restart",
+    "scientific_protocol": "same historical source plus grid metadata fix, same bf16 coordinates, one excluded warmup followed by three timed images in a fresh process",
+    "taskq_mutated": false,
+    "old_frozen_sources_modified": false
+  },
+  "files": {
+    "results/evidence/latency_full6k_failure_1076947/a_y003_latency_6144x6144_full_gridfix_1076947.sh": {
+      "sha256": "65c27ee22b038f7c4c6f9aa942f42c939028c9866275e55916e4eda06484c04d",
+      "bytes": 1298
+    },
+    "results/evidence/latency_full6k_failure_1076947/failed_attempt.json": {
+      "sha256": "cd08a7139f378ab7311d4f95d180149464052b34450964f243ff1feebacf30a3",
+      "bytes": 542
+    },
+    "results/evidence/latency_full6k_failure_1076947/failed_attempt.log": {
+      "sha256": "c1878740e3407ef8fd19638df20f4baf76dd2029b8d2b97ff29fb4385d09d18d",
+      "bytes": 3756
+    },
+    "results/evidence/latency_full6k_failure_1076947/failed_task.sh": {
+      "sha256": "992f5cead748b94f6c6ab53afd228ed979e79cf2b5a4dd832f0fa3d80fcc4dff",
+      "bytes": 1257
+    },
+    "results/evidence/latency_full6k_failure_1076947/historical_sample_grid.junit.xml": {
+      "sha256": "ecdd53a45816426117933d74b7be03aa5a777bd10b8ee8569be9bf725169f1e5",
+      "bytes": 778
+    },
+    "results/evidence/latency_full6k_failure_1076947/historical_sample_grid.log": {
+      "sha256": "4dd7e07c222dccd7271c1463ffad30cf7f65908e90a247d49257776cee09c8cb",
+      "bytes": 98
+    },
+    "results/evidence/latency_full6k_failure_1076947/patched_historical_sample.py": {
+      "sha256": "75e0769b1dad082a0c5e937d837e83cdc9cc0b0c4058fc11c6098f1e615c59f1",
+      "bytes": 8607
+    },
+    "results/evidence/latency_full6k_failure_1076947/worker_events_snapshot.log": {
+      "sha256": "de094e62f67b4b420e7e0416d338b94a13914b4eddff4e289d93497dd3e489a0",
+      "bytes": 287
+    }
+  }
+}

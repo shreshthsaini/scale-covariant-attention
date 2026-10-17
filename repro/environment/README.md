@@ -5,8 +5,8 @@ This recipe was installed into a new, isolated uv environment on October 17,
 the FLUX.1 and FLUX.2 pipelines. Six command-line help checks and the AReA and
 UltraImage dry runs passed. No model weights were loaded, no GPU was used, and
 the campaign environments and frozen jobs were not changed. This is a tested
-generation dependency recipe; the separate learned-metric environment has not
-been rebuilt from scratch.
+generation dependency recipe. Learned-metric restoration uses the separate
+recipes and evidence under `../metrics_environment`.
 
 `generation.in` preserves the inherited Torch 2.11.0+cu128, torchvision
 0.26.0+cu128, Triton 3.6.0, Diffusers 0.39.0, Transformers 5.19.0 and other explicit
@@ -85,10 +85,17 @@ environment was repaired or overwritten. `inherited_audit.json` and
 learned-image rescoring, full-model generation, or other operating-system or
 Python-version compatibility claim follows from these CPU checks.
 
-## Prepared GPU smoke check
+## Bounded GPU smoke check
 
-`gpu_smoke.py` is prepared for a slot inside an existing GPU allocation. It was
-not executed on GPU while preparing this recipe. It uses no model weights and
+`gpu_smoke.py` runs inside an existing GPU allocation. The first GPU attempt
+passed matrix multiplication, SDPA and stock/full FLUX checks, then failed at
+native-window FlexAttention compilation because the inherited `CC` selected
+NVIDIA `nvc`, which rejects Triton's `-Wno-psabi` argument. The failed JSON and
+log are preserved in `results/evidence/environment/fresh_gpu_smoke.*` and scratch.
+This compiler failure does not establish a scientific failure or a successful
+compiled SCA smoke. The repaired launcher requires a fresh GPU retry.
+
+The smoke uses no model weights and
 sets a 280-second worker deadline, followed by bounded process cleanup. It checks
 bf16 CUDA matrix multiplication and SDPA against float32 references, then a tiny
 random FLUX transformer: stock versus full attention, stock versus SCA with a
@@ -98,16 +105,35 @@ relative 0.02 using `torch.allclose`; each comparison records its actual error.
 The SCA checks execute compiled FlexAttention kernels, using one compiler worker.
 They do not directly exercise cuSPARSELt sparse kernels or reproduce a paper result.
 
+Before importing Torch, the worker selects explicit GNU C and C++ compilers,
+replacing inherited `CC` and `CXX`. Defaults are `gcc` and `g++`; `--cc` and
+`--cxx` accept explicit paths. It compiles and loads a tiny C shared library
+with Python headers and Triton's host flags, including `-Wno-psabi`, plus a
+C++17 shared library. Both must return the expected value. These bounded probes
+record compiler paths, versions, binary hashes, commands and diagnostics, and
+fail before CUDA work if either compiler is unsuitable. They do not replace
+the compiled FlexAttention checks or change their numerical tolerances.
+
+The host compiler probes can be checked on a CPU compute node:
+
+```bash
+"$SCA_FRESH_PY" repro/environment/gpu_smoke.py --compiler-preflight-only \
+  --cc /usr/bin/gcc --cxx /usr/bin/g++ \
+  --out /scratch/09032/saini_2/sca/repro_env_gpu_NEW/compiler_preflight.json
+```
+
 Root may run this command within an existing scheduled GPU worker:
 
 ```bash
 "$SCA_FRESH_PY" repro/environment/gpu_smoke.py \
-  --out /scratch/09032/saini_2/sca/repro_env_gpu_20261017/smoke.json \
-  --archive results/evidence/environment/fresh_gpu_smoke.json
+  --cc /usr/bin/gcc --cxx /usr/bin/g++ \
+  --out /scratch/09032/saini_2/sca/repro_env_gpu_NEW/smoke.json \
+  --archive results/evidence/environment/fresh_gpu_smoke_NEW.json
 ```
 
 The script refuses an existing output/archive path. Partial progress is written
 atomically after each stage, so a timeout or failure remains inspectable. The final
-JSON and log are copied to work only when `--archive` is supplied. The two tests in
-`repro/tests/test_gpu_smoke.py` check failure preservation and timeout cleanup on
-CPU; they establish no CUDA result.
+JSON and log are copied to work only when `--archive` is supplied. The seven tests
+in `repro/tests/test_gpu_smoke.py` check failure preservation, timeout cleanup,
+explicit compiler selection, real C/C++ compile/load probes, rejected flags and
+CPU-only CLI behavior. They establish no CUDA result.

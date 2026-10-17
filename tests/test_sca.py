@@ -68,8 +68,9 @@ def test_full_matches_stock():
     for H, W in ((8, 8), (6, 10)):
         x = inputs(H, W)
         ref = run(m, x)
-        out = run(m, x, SCAContext(mode="full"))
-        assert torch.allclose(out, ref, atol=1e-5, rtol=0), (out - ref).abs().max()
+        for known_grid in (None, (H, W)):
+            out = run(m, x, SCAContext(mode="full", known_grid=known_grid))
+            assert torch.allclose(out, ref, atol=1e-5, rtol=0), (out - ref).abs().max()
 
 
 def test_local_full_window_equals_full_attention():

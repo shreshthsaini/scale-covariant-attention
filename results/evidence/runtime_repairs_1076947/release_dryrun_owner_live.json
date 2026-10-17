@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-10-17T11:43:19.819348+00:00",
+  "helper_sha256": "fb9b9fdc073e0fcdfd64f2888f8e35e91366fa770c571423521ad345143c2bd5",
+  "manifest": "repro/runtime_repairs_20261017/manifest.json",
+  "status": "refused",
+  "manifest_sha256": "ca2d9211d9795e5f6f1131980084bb3603451322bf3a6b73c667add88e22d784",
+  "taskq": "/scratch/09032/saini_2/sca/taskq",
+  "owning_job": "1075814",
+  "apply_requested": false,
+  "scheduler": [
+    {
+      "command": [
+        "squeue",
+        "--noheader",
+        "--user",
+        "saini_2",
+        "--format",
+        "%i|%T"
+      ],
+      "checked_utc": "2026-10-17T11:43:19.829055+00:00",
+      "returncode": 0,
+      "stdout": "1076903|PENDING\n1077042|PENDING\n1076960|PENDING\n1073260|RUNNING\n1076947|RUNNING\n1075816|PENDING\n1075862|PENDING\n1075863|PENDING\n1076855|PENDING\n1076857|PENDING\n1076856|PENDING\n1076866|PENDING\n1076871|PENDING\n1076888|PENDING\n1076918|PENDING\n1076923|PENDING\n1076893|PENDING\n1074769|RUNNING\n1075814|RUNNING\n1072639|RUNNING\n1075888|PENDING\n1076920|RUNNING\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sacct",
+        "--noheader",
+        "--parsable2",
+        "--jobs",
+        "1075814",
+        "--format",
+        "JobIDRaw,State%40,ExitCode"
+      ],
+      "checked_utc": "2026-10-17T11:43:19.834526+00:00",
+      "returncode": 0,
+      "stdout": "1075814|RUNNING|0:0\n1075814.batch|RUNNING|0:0\n1075814.0|RUNNING|0:0\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "squeue",
+        "--steps",
+        "--noheader",
+        "--user",
+        "saini_2",
+        "--format",
+        "%i"
+      ],
+      "checked_utc": "2026-10-17T11:43:19.940018+00:00",
+      "returncode": 0,
+      "stdout": "1073260.batch\n1076947.batch\n1072639.1\n1072639.batch\n1074769.batch\n1075814.0\n1075814.batch\n1076920.0\n1076920.batch\n",
+      "stderr": ""
+    }
+  ],
+  "error": "Refusal: State is active or unclear: 'RUNNING'",
+  "finished_utc": "2026-10-17T11:43:19.950100+00:00"
+}

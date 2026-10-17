@@ -13,10 +13,15 @@ references/citations. Retained warnings concern caption anchors and float placem
 
 This is the current verified draft, not project completion. E2 6K, three E3 timing
 groups, E9 Krea repair/generation, final GPU evaluation/bootstrap, complete galleries
-and fresh-generation GPU smoke still await the existing fleets. Final scientific
+and a repaired fresh-generation GPU smoke remain unfinished. SCA7 is now running;
+the smoke and full6K latency repairs are held until its owning step exits. Final scientific
 integration and delivery must be rebuilt when those results arrive.
 
 CPU job1076947 on i615-074 ends2026-10-17 10:19:14CDT. Its recorded successor1077042
 is managed by the frozen controller. Do not start another watcher or alter that job.
 Render/build history stays at `/scratch/09032/saini_2/sca/paper_review_1076947`;
 critical hashes and reports are archived on work at the links above.
+
+Bounded CPU restoration of all three metric environments passed exactly. Receipts
+and limitations: `results/evidence/metric_environment/validation_summary_1076947.json`.
+Repair release command and prerequisites: `repro/runtime_repairs_20261017/README.md`.

@@ -55,7 +55,7 @@ def build_context(args, grid):
     from sca.attn import PiTable, SCAContext, pool_factors
     variant = VARIANT[args.method]
     if variant is None:
-        return SCAContext(mode="full"), {}
+        return SCAContext(mode="full", known_grid=grid), {}
     target = max(pool_factors(grid, args.n0))
     if args.pi_const is not None:
         pi = PiTable("const", value=args.pi_const)

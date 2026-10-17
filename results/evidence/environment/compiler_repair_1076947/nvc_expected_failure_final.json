@@ -1,0 +1,58 @@
+{
+  "started_utc": "2026-10-17T11:35:45.712764+00:00",
+  "status": "failed",
+  "stage": "host_compiler_preflight",
+  "checks": [],
+  "scope": "Tiny random bf16 CUDA operations and model only; no learned weights, no benchmark reproduction, no cuSPARSELt-specific sparse kernel test.",
+  "python": "/work/09032/saini_2/vista/library/uv-envs/sca-repro-20261017/bin/python",
+  "source_sha256": "e02a2a7ba97b2571f43344518e2366ab84109acf9fc7eca4568953a7ede0e14d",
+  "lock_sha256": "29238d938c36c1ef6bc6c50f7676bafe6ce6b322c707bae0e078c8a8c5e8d4fa",
+  "tolerance": {
+    "atol": 0.02,
+    "rtol": 0.02,
+    "policy": "torch.allclose on finite float32-converted outputs; fixed before GPU execution"
+  },
+  "compiler_preflight": {
+    "requested": {
+      "CC": "/home1/apps/nvidia/Linux_aarch64/24.7/compilers/bin/nvc",
+      "CXX": "/home1/apps/nvidia/Linux_aarch64/24.7/compilers/bin/nvc++"
+    },
+    "inherited": {
+      "CC": "/home1/apps/nvidia/Linux_aarch64/24.7/compilers/bin/nvc",
+      "CXX": "/home1/apps/nvidia/Linux_aarch64/24.7/compilers/bin/nvc++"
+    },
+    "probes": [
+      {
+        "variable": "CC",
+        "executable": "/home1/apps/nvidia/Linux_aarch64/24.7/compilers/bin/nvc",
+        "executable_sha256": "8b0ab7dc196a099a8ef2b01ecc561ff0048e2aeac07a1d37e82e955f3e749c21",
+        "version": "nvc 24.7-0 linuxarm64 target on aarch64 Linux -tp neoverse-v2 \nNVIDIA Compilers and Tools\nCopyright (c) 2024, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.",
+        "command": [
+          "/home1/apps/nvidia/Linux_aarch64/24.7/compilers/bin/nvc",
+          "/scratch/09032/saini_2/sca/repro_env_gpu_compiler_repair_1076947/nvc_expected_failure_final_cache/compiler/host_probe.c",
+          "-O3",
+          "-shared",
+          "-fPIC",
+          "-Wno-psabi",
+          "-o",
+          "/scratch/09032/saini_2/sca/repro_env_gpu_compiler_repair_1076947/nvc_expected_failure_final_cache/compiler/host_probe_c.so",
+          "-I/home1/09032/saini_2/.local/share/uv/python/cpython-3.11.13-linux-aarch64-gnu/include/python3.11"
+        ],
+        "source_sha256": "84ac19784b5bfdda07a1f9f828f0f9fc195225130e07e10781a8b2aa65c74a31",
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "nvc-Error-Unknown switch: -Wno-psabi\n"
+      }
+    ],
+    "selected": {
+      "CC": "/home1/apps/nvidia/Linux_aarch64/24.7/compilers/bin/nvc",
+      "CXX": "/home1/apps/nvidia/Linux_aarch64/24.7/compilers/bin/nvc++"
+    }
+  },
+  "elapsed_seconds": 0.07925014500506222,
+  "error": "RuntimeError: CC compiler preflight failed: nvc-Error-Unknown switch: -Wno-psabi",
+  "traceback": "Traceback (most recent call last):\n  File \"/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/repro/environment/gpu_smoke.py\", line 118, in worker\n    compiler_preflight(cc, cxx, Path(out).parent / (Path(out).stem + \"_cache\") / \"compiler\",\n  File \"/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/repro/environment/gpu_smoke.py\", line 69, in compiler_preflight\n    raise RuntimeError(f\"{variable} compiler preflight failed: {result.stderr.strip()}\")\nRuntimeError: CC compiler preflight failed: nvc-Error-Unknown switch: -Wno-psabi\n",
+  "worker_exit_code": 1,
+  "timed_out": false,
+  "timeout_seconds": 280
+}

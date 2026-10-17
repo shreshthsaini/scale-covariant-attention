@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -11,6 +12,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import sysconfig
 import time
 import traceback
 
@@ -23,6 +25,55 @@ def write_json(path, data):
     temp = path.with_name(path.name + ".tmp")
     temp.write_text(json.dumps(data, indent=2) + "\n")
     temp.replace(path)
+
+
+def compiler_preflight(cc, cxx, directory, receipt):
+    """Select explicit GNU host compilers and exercise Triton's C flags on CPU."""
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    receipt.update(requested={"CC": cc, "CXX": cxx},
+                   inherited={name: os.environ.get(name) for name in ("CC", "CXX")}, probes=[])
+    selected = {}
+    for variable, command in (("CC", cc), ("CXX", cxx)):
+        executable = shutil.which(command)
+        if executable is None:
+            raise RuntimeError(f"{variable} compiler is unavailable: {command}")
+        selected[variable] = str(Path(executable).resolve())
+    receipt["selected"] = selected
+    # Set both before importing Torch: Triton reads CC and Inductor captures CXX.
+    os.environ.update(selected)
+    for variable, language in (("CC", "c"), ("CXX", "cpp")):
+        executable = selected[variable]
+        version = subprocess.run([executable, "--version"], capture_output=True, text=True,
+                                 timeout=10, check=True)
+        source = directory / f"host_probe.{language}"
+        library = directory / f"host_probe_{language}.so"
+        prefix = "#include <Python.h>\n" if language == "c" else "#include <vector>\n"
+        prefix += "#if !defined(__GNUC__) || defined(__NVCOMPILER) || defined(__clang__)\n#error GNU compiler required\n#endif\n"
+        body = "int sca_host_probe(void) { return PY_MAJOR_VERSION + 39; }\n"
+        if language == "cpp":
+            body = 'static_assert(__cplusplus >= 201703L);\nextern "C" int sca_host_probe(void) { return std::vector<int>{42}[0]; }\n'
+        source.write_text(prefix + body)
+        command = [executable, str(source), "-O3", "-shared", "-fPIC", "-Wno-psabi",
+                   "-o", str(library)]
+        command += ["-I" + sysconfig.get_paths()["include"]] if language == "c" else ["-std=c++17"]
+        probe = {"variable": variable, "executable": executable,
+                 "executable_sha256": hashlib.sha256(Path(executable).read_bytes()).hexdigest(),
+                 "version": version.stdout.strip(), "command": command,
+                 "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest()}
+        receipt["probes"].append(probe)
+        print("Compiler preflight: " + json.dumps(command), flush=True)
+        result = subprocess.run(command, capture_output=True, text=True, timeout=20)
+        probe.update(exit_code=result.returncode, stdout=result.stdout, stderr=result.stderr)
+        if result.returncode:
+            raise RuntimeError(f"{variable} compiler preflight failed: {result.stderr.strip()}")
+        loaded = ctypes.CDLL(str(library.resolve()))
+        loaded.sca_host_probe.restype = ctypes.c_int
+        value = loaded.sca_host_probe()
+        probe.update(load_result=value, library_sha256=hashlib.sha256(library.read_bytes()).hexdigest())
+        if value != 42:
+            raise RuntimeError(f"{variable} compiler probe returned {value}, expected 42")
+    receipt["passed"] = True
 
 
 def supervise(command, timeout, log):
@@ -49,7 +100,7 @@ def supervise(command, timeout, log):
             return child.returncode, True
 
 
-def worker(out):
+def worker(out, cc="gcc", cxx="g++", compiler_only=False):
     start = time.monotonic()
     record = {
         "started_utc": datetime.now(timezone.utc).isoformat(),
@@ -61,6 +112,18 @@ def worker(out):
     }
     write_json(out, record)
     try:
+        record["stage"] = "host_compiler_preflight"
+        record["compiler_preflight"] = {}
+        write_json(out, record)
+        compiler_preflight(cc, cxx, Path(out).parent / (Path(out).stem + "_cache") / "compiler",
+                           record["compiler_preflight"])
+        write_json(out, record)
+        if compiler_only:
+            record.update(status="passed", stage="compiler_preflight_complete",
+                          scope="CPU host compiler compile/load preflight only; no CUDA checks executed.",
+                          elapsed_seconds=time.monotonic() - start)
+            write_json(out, record)
+            return 0
         import torch
         import torch.nn.functional as F
         import diffusers
@@ -158,11 +221,14 @@ def main():
     parser.add_argument("--archive", type=Path, help="Optional WORK copy of final JSON and log")
     parser.add_argument("--timeout", type=int, default=280, help="Worker timeout, 1 to 280 seconds; cleanup allows 10 seconds")
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--cc", default="gcc", help="GNU C compiler for Triton host shims; inherited CC is replaced")
+    parser.add_argument("--cxx", default="g++", help="GNU C++ compiler for Inductor; inherited CXX is replaced")
+    parser.add_argument("--compiler-preflight-only", action="store_true", help="Compile/load C and C++ host probes on CPU, then stop before importing Torch")
     args = parser.parse_args()
     if not 1 <= args.timeout <= 280:
         parser.error("timeout must be between 1 and 280 seconds")
     if args.worker:
-        return worker(args.out)
+        return worker(args.out, args.cc, args.cxx, args.compiler_preflight_only)
     if args.out.exists():
         parser.error("use a new output path to preserve previous evidence")
     if args.archive and (args.archive.exists() or args.archive.with_suffix(".log").exists()):
@@ -175,7 +241,11 @@ def main():
     for key, name in (("TORCHINDUCTOR_CACHE_DIR", "inductor"), ("TRITON_CACHE_DIR", "triton")):
         os.environ[key] = str(args.out.parent / (args.out.stem + "_cache") / name)
     log = args.out.with_suffix(".log")
-    rc, timed_out = supervise([sys.executable, str(Path(__file__).resolve()), "--worker", "--out", str(args.out)], args.timeout, log)
+    command = [sys.executable, str(Path(__file__).resolve()), "--worker", "--out", str(args.out),
+               "--cc", args.cc, "--cxx", args.cxx]
+    if args.compiler_preflight_only:
+        command.append("--compiler-preflight-only")
+    rc, timed_out = supervise(command, args.timeout, log)
     result = json.loads(args.out.read_text()) if args.out.exists() else {"status": "failed", "error": "worker produced no JSON"}
     result.update(worker_exit_code=rc, timed_out=timed_out, timeout_seconds=args.timeout)
     if timed_out:

@@ -1,0 +1,51 @@
+{
+  "observed_utc": "2026-10-17T11:38:48.667589+00:00",
+  "owning_job": "1075814",
+  "owning_step": "1075814.0",
+  "state": "running_shared_step; replacements held, release forbidden until owner gone",
+  "failures": [
+    {
+      "task": "a_000_repro_gpu_smoke.sh",
+      "exit_code": 1,
+      "timed_out": false,
+      "terminal_end_local": "2026-10-17T06:30:50-05:00",
+      "cause": "Inherited nvc rejects Triton host flag -Wno-psabi",
+      "repair": "Explicit verified GNU C/C++ compilers, no numerical or compiled-path relaxation"
+    },
+    {
+      "task": "a_y003_latency_6144x6144_full.sh",
+      "exit_code": 1,
+      "timed_out": false,
+      "terminal_end_local": "2026-10-17T06:31:42-05:00",
+      "cause": "bf16 grid inference385x385 conflicts with384x384 tokens",
+      "repair": "Pass known_grid metadata only; historicalfreeze gets one-linepatch"
+    }
+  ],
+  "latency_receipt": "results/evidence/latency_full6k_failure_1076947/receipt.json",
+  "artifacts": [
+    {
+      "path": "results/evidence/runtime_repairs_1076947/original_fresh_gpu_smoke.json",
+      "sha256": "d7fd4b231526025c145fc89e02c2d33ba56f1aac76cd195cbd036b71fd8df49c"
+    },
+    {
+      "path": "results/evidence/runtime_repairs_1076947/original_fresh_gpu_smoke.log",
+      "sha256": "93baa93fa4b3049ef4daf3da035eec1230c9c53017abc0cf7fb5e24bfa7bc029"
+    },
+    {
+      "path": "results/evidence/runtime_repairs_1076947/smoke_attempt.json",
+      "sha256": "1a41e8b24e462d51a25177c4bd8ed440d378f77390266c5c60b2af876cae1b96"
+    },
+    {
+      "path": "results/evidence/runtime_repairs_1076947/smoke_attempt.log",
+      "sha256": "9543bda5739bccb264ea3652624e6bffb3b001fb67da0230b698caa0bb919e96"
+    },
+    {
+      "path": "results/evidence/runtime_repairs_1076947/smoke_failed_task.sh",
+      "sha256": "54599f9fc445b4f97788fcafb6f6cf43f7e9c16875204ec50efc43707af1527d"
+    },
+    {
+      "path": "results/evidence/runtime_repairs_1076947/smoke_worker_events_snapshot.log",
+      "sha256": "f6ebd5c1b8c9bf00c40c27b261fa7b882d61752ea6cb39a6d3597f3763148335"
+    }
+  ]
+}

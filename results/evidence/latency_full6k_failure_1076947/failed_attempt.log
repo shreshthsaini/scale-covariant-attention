@@ -1,0 +1,45 @@
+name, utilization.gpu [%], memory.used [MiB]
+NVIDIA GH200 120GB, 0 %, 5 MiB
+pid, used_gpu_memory [MiB]
+Loading pipeline components...:   0%|          | 0/7 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][A
+Loading weights:  29%|██▉       | 57/196 [00:00<00:00, 563.20it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 1029.89it/s]
+Loading pipeline components...:  14%|█▍        | 1/7 [00:00<00:02,  2.68it/s]
+Loading weights:   0%|          | 0/219 [00:00<?, ?it/s][A
+Loading weights:  24%|██▍       | 53/219 [00:00<00:00, 518.64it/s][A
+Loading weights:  48%|████▊     | 105/219 [00:00<00:00, 442.10it/s][A
+Loading weights:  68%|██████▊   | 150/219 [00:00<00:00, 368.00it/s][ALoading weights: 100%|██████████| 219/219 [00:00<00:00, 561.04it/s]
+Loading pipeline components...:  29%|██▊       | 2/7 [00:00<00:02,  2.01it/s]Loading pipeline components...:  43%|████▎     | 3/7 [00:01<00:01,  2.57it/s]Loading pipeline components...:  57%|█████▋    | 4/7 [00:01<00:00,  3.52it/s]
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s][A
+Loading checkpoint shards:  33%|███▎      | 1/3 [00:00<00:00,  2.11it/s][A
+Loading checkpoint shards:  67%|██████▋   | 2/3 [00:01<00:00,  1.96it/s][A
+Loading checkpoint shards: 100%|██████████| 3/3 [00:01<00:00,  2.70it/s][ALoading checkpoint shards: 100%|██████████| 3/3 [00:01<00:00,  2.47it/s]
+Loading pipeline components...:  86%|████████▌ | 6/7 [00:02<00:00,  2.06it/s]Loading pipeline components...: 100%|██████████| 7/7 [00:02<00:00,  2.60it/s]
+  0%|          | 0/28 [00:00<?, ?it/s]  0%|          | 0/28 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/scratch/09032/saini_2/sca/code/2d11740/scripts/sample.py", line 151, in <module>
+    main()
+  File "/scratch/09032/saini_2/sca/code/2d11740/scripts/sample.py", line 128, in main
+    image = pipe(prompt=row["prompt"], height=h, width=w, num_inference_steps=args.steps,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/09032/saini_2/vista/library/uv-envs/sca/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/work/09032/saini_2/vista/library/uv-envs/sca/lib/python3.11/site-packages/diffusers/pipelines/flux/pipeline_flux.py", line 953, in __call__
+    noise_pred = self.transformer(
+                 ^^^^^^^^^^^^^^^^^
+  File "/work/09032/saini_2/vista/library/uv-envs/sca/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/09032/saini_2/vista/library/uv-envs/sca/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1885, in _call_impl
+    return inner()
+           ^^^^^^^
+  File "/work/09032/saini_2/vista/library/uv-envs/sca/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1812, in inner
+    args_kwargs_result = hook(self, args, kwargs)  # type: ignore[misc]
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/09032/saini_2/sca/code/2d11740/sca/attn.py", line 616, in pre_hook
+    ctx.set_inputs(img_ids, txt_ids, sigma)
+  File "/scratch/09032/saini_2/sca/code/2d11740/sca/attn.py", line 447, in set_inputs
+    assert self.grid[0] * self.grid[1] == img_ids.shape[0], "image ids must form a full grid"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: image ids must form a full grid
