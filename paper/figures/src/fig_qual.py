@@ -235,7 +235,7 @@ def fig_hero(a):
                  (1, t["cmp_area"]["crop"], "AReA"), (1, t["cmp_sca"]["crop"], r"\textbf{SCA}"),
                  (1, t["still"]["full"], wxh(HERO["still"][1]))])
     cap = (r"\textbf{SCA generates coherent, detailed images up to 6144$\times$2048 from FLUX.1-dev without "
-           r"training.} All images are SCA outputs at seed 0 (labels give width$\times$height); framed tiles are "
+           r"training.} Unless labeled otherwise, images are SCA outputs at seed 0 (labels give width$\times$height); framed tiles are "
            r"1:1 crops at native resolution from the outlined windows. Bottom row: the same prompt and seed at "
            r"4096$\times$4096 with full attention, which collapses into a blurred field, with AReA, whose sky breaks "
            r"into tiled facets, and with SCA.")

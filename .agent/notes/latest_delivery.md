@@ -1,27 +1,35 @@
-# Latest verified paper delivery, 2026-10-17 06:31 CDT
+# Latest verified paper delivery, 2026-10-17 10:19 PDT
 
-- [PDF](../../paper/main.pdf),37 pages.
-- [Overleaf source ZIP](../../paper/sca_overleaf.zip),456 source files; extracted source builds independently.
-- [Delivery hashes](../../paper/delivery_receipt.json).
-- [Build and appearance validation](../../results/evidence/delivery_validation_1076947.json).
-- [Numerical audit](../../results/evidence/paper_numeric_audit_20261017.json).
+- [Paper PDF](../../paper/main.pdf), 38 pages.
+- [Overleaf source ZIP](../../paper/sca_overleaf.zip), 473 source files.
+- [Build receipt](../../paper/delivery_receipt.json).
+- [Independent appearance checks](../../results/evidence/presentation_review_20261017.json).
+- [Revamp and numeric evidence](../../results/evidence/paper_revamp_20261017.json).
 
-All37 primary and independent PDFs render identically at72dpi. Page27 contains the
-corrected energy and source-provenance statements and was inspected at144dpi;
-all36 other pages match the prior reviewed version. No overfull boxes or unresolved
-references/citations. Retained warnings concern caption anchors and float placement.
+The source ZIP builds independently. All 38 pages render identically at 72 dpi.
+Changed pages were inspected at 144 dpi. No overfull boxes or undefined references.
+The revised method diagram has PDF, editable SVG, source and data provenance.
+The main paper now shows six methods, paired quality intervals, a six-method
+portrait with identical crop coordinates, and the full verified latency curve.
+Main results and ablations use readable compact tables; full metrics remain in
+the appendix. The ablation data font increased from 6.96 pt to 8.97 pt.
 
-This is the current verified draft, not project completion. E2 6K, three E3 timing
-groups, E9 Krea repair/generation, final GPU evaluation/bootstrap, complete galleries
-and a repaired fresh-generation GPU smoke remain unfinished. SCA7 is now running;
-the smoke and full6K latency repairs are held until its owning step exits. Final scientific
-integration and delivery must be rebuilt when those results arrive.
+Verified AReA/SCA medians are 482.3/161.6 seconds at 6K and 952.0/287.6 seconds
+at 8K: speedups 2.99x and 3.31x. Timing logs identify NVIDIA GH200 120GB.
+All 30 compact main-table values and headline deltas passed independent audit.
+All 42 retained ablation values exactly match the previously audited table.
+The figures retain UltraImage's preference-score advantages and unresolved
+comparisons. The portrait is explicitly curated, not a random sample.
 
-CPU job1076947 on i615-074 ends2026-10-17 10:19:14CDT. Its recorded successor1077042
-is managed by the frozen controller. Do not start another watcher or alter that job.
-Render/build history stays at `/scratch/09032/saini_2/sca/paper_review_1076947`;
-critical hashes and reports are archived on work at the links above.
+PDF SHA256: `13832c6ee2774271999010e6ad063177f6fd9908f6f91c225baf63d34a36fb82`.
+ZIP SHA256: `cdb8c611a44864f3ba5dcba4f4cbc38498f5e2452856e0b618f87bb53847dccd`.
 
-Bounded CPU restoration of all three metric environments passed exactly. Receipts
-and limitations: `results/evidence/metric_environment/validation_summary_1076947.json`.
-Repair release command and prerequisites: `repro/runtime_repairs_20261017/README.md`.
+This is a verified revised draft, not project completion. E2 6K, E9 Krea,
+full-attention 6K timing, repaired GPU smoke, final evaluation and complete
+galleries remain pending. HRDiT and SigMa are being added as validated baseline
+experiments; CPU preflight does not count as a GPU result.
+
+SCA10 1077447 and SCA11 1077473 are queued. Durable continuation 1077042 is
+queued with its dependency satisfied. Read HANDOVER.md for current ownership.
+Do not duplicate the watcher. Render history is under
+`/scratch/09032/saini_2/sca/paper_review_20261017/redesign_final`.
