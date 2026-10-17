@@ -104,6 +104,30 @@ offline `main` references in the isolated cache. Torch URLs are recorded in
 hash. A mismatch stops restoration and preserves the file for inspection.
 No restoration downloads were executed during this audit.
 
+## Reusing verified local assets
+
+On a compute node with the archived source paths still present, restore isolated
+caches without downloading weights:
+
+```bash
+"$SCA_FRESH_PY" repro/metrics_environment/restore_assets.py \
+  --hf-home /scratch/09032/saini_2/sca/metric_restore_NEW/hf \
+  --torch-home /scratch/09032/saini_2/sca/metric_restore_NEW/torch \
+  --from-cache --receipt /scratch/09032/saini_2/sca/metric_restore_NEW/cache_copy_receipt.json
+```
+
+This verifies each source and destination SHA256, preserves the original caches,
+and refuses conflicting destination bytes or revisions. Three tokenizer files
+have archived Git blob SHA1 identities rather than SHA256 values; the helper
+checks those identities and recorded sizes before computing their SHA256.
+Partial copies stay available for diagnosis. The receipt records every copied
+file, its size and SHA256. This checks asset restoration only; numerical parity
+requires actual scoring in each restored environment.
+
+The continuation CPU unit copied and verified all selected assets without network
+requests. Its receipt is archived at
+`results/evidence/metric_environment/cache_copy_receipt.json`.
+
 ## Scoring after restoration
 
 Use the same images, prompt rows, methods and preprocessing settings as the parent

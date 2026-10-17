@@ -53,4 +53,6 @@ Initial deployment: CPU job1076947 is queued without dependencies. A bounded
 headless authentication test and16 offline controller tests passed. Reusing the
 current CPU host through srun was rejected by TACC before any worker started;
 that failed attempt is archived. The original v1 frozen batch job remains the
-authoritative continuation. Live batch startup and rearming still await allocation.
+authoritative continuation. Live startup was verified on2026-10-17 at06:22CDT: job1076947 is running on
+i615-074 until10:19:14CDT, and recorded successor1077042 is pending on its
+dependency. See results/evidence/continuation/runtime_1076947_start.json.

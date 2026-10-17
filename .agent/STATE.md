@@ -1,16 +1,18 @@
-# SCA live state, 2026-10-17 03:57 CDT
+# SCA live state, 2026-10-17 06:23 CDT
 
 ## Goal
 Finish experiments, verified evaluation, paper and reproducibility package.
 The user transferred full project ownership to Codex. Continue without another approval.
 
 ## Status and next action
-- User requested unattended continuation. CPU controller1076947 submitted; frozen
-  dispatch/20261017_continuation. It queues its successor before starting agent work.
-  Job1076947 is PENDING without dependency. Auth smoke and16 offline tests passed.
-  TACC rejected a current-node srun attempt before worker startup; no owned process remains.
-  Live controller execution/successor verification awaits its CPU allocation.
-  Read slurm/CONTINUATION.md and scratch sca/continuation/status.json for current ownership.
+- CPU controller1076947 RUNNING on i615-074; ends2026-10-17 10:19:14CDT.
+  Recorded successor1077042 PENDING on dependency. Frozen controller is unchanged.
+  Do not start a watcher, modify the controller or change/cancel its successor.
+  Read results/evidence/continuation/runtime_1076947_start.json for live startup proof.
+- Current CPU unit: base and extra/ImageReward environments installing separately;
+  bounded real learned-score parity and an independent paper-number audit underway.
+  Isolated cache copied39 verified assets,12.08GB,0 downloads. Five restore tests pass.
+  Cache proof: results/evidence/metric_environment/cache_copy_receipt.json.
 - Complete: E1/E4/E5/E6/E7/E8, budget controls, and E2 8K metrics and full gallery.
 - Latest verified paper: 37 pages. PDF and extracted Overleaf ZIP build independently;
   no overfull warnings. Final source ZIP rebuild passed; all37 pages render identically
@@ -58,8 +60,9 @@ The user transferred full project ownership to Codex. Continue without another a
   Strict split-report merger passes18 tests and an end-to-end synthetic CLI fixture.
 - Complete-gallery readiness tests and SCA7 bridge tests:22 passed. No incomplete new
   gallery was rendered. Historical14-prompt6K and partial8K artifacts stay preserved.
-- All three agents and root finished and reaped their subprocesses. No owned poller remains.
-  Latest live scheduler check: both SCA7/SCA9 pending;82 tasks pending,0 running.
+- At06:22CDT both SCA7/SCA9 pending;82 tasks pending,0 running,0 failed.
+  Three bounded subagents run within this CPU allocation. All must finish and reap their
+  subprocesses before the unit ends. No local watcher was launched.
 - NEXT: controller finishes metric environment CPU validation while awaiting GPUs; then generation,
   GPU evaluation, CPU bootstraps, latency audit, complete galleries and manuscript.
   Run archive_evidence.py and gen_final_tables.py only after full validated coverage.
@@ -82,8 +85,9 @@ The user transferred full project ownership to Codex. Continue without another a
   Exact-coordinate theorem does not remove bf16 drift above4K. Full calibration cost unknown;
   unsupported1.5GPUh claim removed. Distinct2101 main image hashes verified.
 - GPU feature extraction, then CPU bootstrap; GPU workers do not wait for dependencies.
-- CPU hosti618-051 control job1073260 ends12:45CDT; queued GPU jobs may outlive this session.
-  Two unrelated SSH sessions exist. Ours are reaped; at most3 account-wide. login2 works.
+- This CPU hosti615-074 job1076947 ends10:19CDT. Successor1077042 preserves continuation.
+  One short login2 SSH verified guard GO,12 login processes,7947SUs available; it exited.
+  At most3 account-wide SSHs; preserve unrelated sessions. No new Slurm submissions.
 - No git remote. Commit locally with explicit paths; publication is not authorized here.
 
 ## Open questions

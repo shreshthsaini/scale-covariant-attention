@@ -1,20 +1,23 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-17 03:57 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
+Last updated 2026-10-17 06:23 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
 its short live index. Historical sections below are superseded by the correction notice here.
 
 ## 1. Current status and corrections
 
 Codex is the main operator, authorized to finish experiments, evaluation, paper and delivery.
-The user explicitly requested unattended continuation while away. CPU controller job1076947
-is submitted, using frozen dispatch/20261017_continuation. It performs remaining CPU work,
-then wakes on GPU scheduler events; each worker arms its successor before agent work.
+CPU controller job1076947 is RUNNING on i615-074, ending2026-10-17 10:19:14CDT.
+Its recorded successor1077042 is PENDING on its dependency. Do not alter the frozen
+controller, launch another watcher, cancel the successor or change its dependency.
+The first continuation unit verified live ownership and scheduler state at06:22CDT.
+SCA7/SCA9 are pending; the spool has82 pending tasks,0 running and0 failed.
+Both final CPU bootstraps remain unready. Evidence: results/evidence/continuation/.
+The controller uses frozen dispatch/20261017_continuation and checkpoints between units.
 See slurm/CONTINUATION.md and scratch sca/continuation/status.json for live ownership.
-GPT-6.1 Sol headless authentication passed;16 controller tests passed. Job1076947 is
-PENDING without dependency; live startup and successor submission await allocation.
-An attempted srun on the current host was rejected by TACC before any worker started.
-That attempt exited; no local watcher or login-node daemon remains. The queued batch
-job is the durable continuation, independent of this chat and current CPU allocation.
+Three separate metric environment installs and bounded learned-score parity are active
+on this CPU allocation. No campaign environment is changed. Isolated asset restoration
+copied and verified39 assets (12.08GB), with0 network requests; five focused tests pass.
+Evidence: results/evidence/metric_environment/cache_copy_receipt.json.
 E1, E4, E5, E6, E7, E8, budget controls and the exploratory E2 8K comparison are complete.
 The37-page paper and extracted Overleaf ZIP build independently. The final source refresh
 passed; all37 pages render identically to the reviewed version at72dpi. E2 6K, three E3 latency groups,
