@@ -1,6 +1,6 @@
 # Cached-feature distribution audit
 
-All 152 historical FID, KID, patch-FID, and patch-KID point estimates in 17 archived
+All 160 historical FID, KID, patch-FID, and patch-KID point estimates in 18 archived
 evaluation groups were reproduced exactly from their cached Inception features.
 This checks feature assembly and numerical statistics. Image generation and Inception
 encoder inference were not rerun. HRGen has no reference-image distribution evaluation.
@@ -8,7 +8,7 @@ encoder inference were not rerun. HRGen has no reference-image distribution eval
 The joined float32 banks preserve prompt IDs, seeds, and crop grouping. Each experiment's
 `*_banks.json` records the source cache paths and hashes, input image signatures, scorer
 provenance, and hashes of the joined banks. Identical banks are stored once. The full
-archive is about 136 MB, without generated images or model weights.
+archive is about 144 MB, without generated images or model weights.
 
 ## Reference crop assembly
 
@@ -28,6 +28,13 @@ Whole-image FID and KID are unchanged. Corrected main-comparison patch-FID value
 | AReA | 110.184895 | 103.411062 |
 | SCA | 106.472475 | 99.815615 |
 | UltraImage | 117.527434 | 110.563269 |
+
+Corrected main SCA-minus-AReA patch-KID is -0.002270261. Its 1,000-draw interval
+crosses zero with either row clusters [-0.004404523, 0.000046140] or distinct-image
+clusters [-0.004727081, 0.000121068]. The historical significant patch-KID claim
+therefore does not survive the crop correction. Corrected patch-FID also remains
+unresolved: its image-cluster interval is [-7.388678, 1.152473]. Whole-image FID
+still favors SCA, with image-cluster interval [-12.793463, -2.944971].
 
 The historical artifacts remain unchanged. Corrected values and sensitivity results
 live under `checks/`; they are not automatic replacements for manuscript numbers.

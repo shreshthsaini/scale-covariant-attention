@@ -51,6 +51,7 @@ def main():
     parser.add_argument('--metrics', nargs='+', default=['fid', 'kid', 'patch_fid', 'patch_kid'])
     parser.add_argument('--draws', type=int, default=0)
     parser.add_argument('--reference-method')
+    parser.add_argument('--methods', nargs='+', help='Only compute these method comparisons; baseline remains loaded.')
     args = parser.parse_args()
     out = args.root / 'checks'
     out.mkdir(exist_ok=True)
@@ -60,6 +61,8 @@ def main():
         report = json.loads((REPO / 'results/evidence/eval' / experiment / 'metrics.json').read_text())
         available = {row['metric'] for row in report['summary']}
         methods = sorted({r['method'] for r in report['per_image']})
+        selected_methods = args.methods or methods
+        assert set(selected_methods) <= set(methods), (experiment, selected_methods, methods)
         reference = args.reference_method or report['config']['reference_method']
         for metric in [m for m in args.metrics if m in available]:
             start = time.monotonic()
@@ -74,7 +77,7 @@ def main():
                 raise ValueError(f'{experiment}: historical reference {reference} missing; supply --reference-method')
             baseline_value = statistic(combine(banks[reference]), y) if reference in banks else None
             rows = []
-            for method in methods:
+            for method in selected_methods:
                 value = statistic(combine(banks[method]), y)
                 saved = next(r for r in report['summary'] if r['method'] == method and r['metric'] == metric)
                 row = dict(experiment=experiment, policy=args.policy, reference_clusters=args.reference_clusters,
@@ -94,7 +97,8 @@ def main():
                     if args.policy == 'legacy' and args.reference_clusters == 'rows' and args.draws == report['config']['bootstrap']:
                         assert max(errors) < 1e-7, (experiment, metric, errors)
                 rows.append(row)
-            file = out / f'{experiment}_{args.policy}_{args.reference_clusters}_{metric}_{args.draws}.csv'
+            suffix = '_methods-' + '-'.join(selected_methods) if args.methods else ''
+            file = out / f'{experiment}_{args.policy}_{args.reference_clusters}_{metric}_{args.draws}{suffix}.csv'
             with file.open('w') as fh:
                 writer = csv.DictWriter(fh, fieldnames=list(rows[0]))
                 writer.writeheader()

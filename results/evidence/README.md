@@ -62,8 +62,8 @@ campaign workers and should be distinguished from isolated latency measurements.
 ## Reproduction limits
 
 The scalar and calibration audit uses saved sufficient statistics. The subsequent
-cached-feature audit in `distributions/` rederived all 152 FID/KID and patch-FID/KID
-point estimates across 17 groups and preserved joined feature banks for offline checks.
+cached-feature audit in `distributions/` rederived all 160 FID/KID and patch-FID/KID
+point estimates across 18 groups and preserved joined feature banks for offline checks.
 It also identified and isolated a reference crop lookup issue for repeated image paths;
 historical and corrected row-weighted results remain separate. Inception Score was
 not recomputed. Absolute FID percentile bootstrap intervals may exclude

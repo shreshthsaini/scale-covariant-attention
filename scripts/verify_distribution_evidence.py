@@ -19,7 +19,7 @@ sys.path.insert(0, str(REPO / 'repro/evaluator_snapshot'))
 from crope.metrics.io import digest, file_signature, load_references
 from crope.metrics.statistics import distribution_bootstrap, fid, kid
 
-DEFAULT = ['final4k_nb_base', 'e1_baselines_base', 'e1_ultraimage_base', 'flux2_4k_base',
+DEFAULT = ['final4k_nb_base', 'final4k_base', 'e1_baselines_base', 'e1_ultraimage_base', 'flux2_4k_base',
            'final4k_full_base', 'final_2048x4096_base', 'final_2048x6144_base', 'budget_base',
            'ablnb_base', 'localnb_base', 'ps2_base', 'route_base', 'ablfinal_base',
            'e6_calib_base', 'e7_gate_base', 'e5_seed1_base', 'e5_seed2_base']
@@ -169,8 +169,11 @@ def main():
                     ci_rows.append(row)
                     print(json.dumps(row), flush=True)
                     write_csv(args.out / f'{experiment}_paired_ci.csv', ci_rows)
+    all_points = [r for file in args.out.glob('*_points.csv') for r in csv.DictReader(file.open())]
     (args.out / 'verification.json').write_text(json.dumps({
         'point_estimates_checked_this_run': len(point_rows),
+        'point_estimates_archived': len(all_points),
+        'max_absolute_archived_error': max(float(r['absolute_error']) for r in all_points),
         'max_absolute_point_error': max(r['absolute_error'] for r in point_rows),
         'scope': 'Cached Inception numerical statistics only; image generation and encoder inference were not rerun.',
         'evaluator_snapshot': str(REPO / 'repro/evaluator_snapshot'),
