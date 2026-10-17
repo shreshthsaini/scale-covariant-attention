@@ -1,10 +1,14 @@
-# SCA live state, 2026-10-17 03:39 CDT
+# SCA live state, 2026-10-17 03:50 CDT
 
 ## Goal
 Finish experiments, verified evaluation, paper and reproducibility package.
 The user transferred full project ownership to Codex. Continue without another approval.
 
 ## Status and next action
+- User requested unattended continuation. CPU controller1076947 submitted; frozen
+  dispatch/20261017_continuation. It queues its successor before starting agent work.
+  Live startup/successor verification is pending. Auth smoke and16 offline tests passed.
+  Read slurm/CONTINUATION.md and scratch sca/continuation/status.json for current ownership.
 - Complete: E1/E4/E5/E6/E7/E8, budget controls, and E2 8K metrics and full gallery.
 - Latest verified paper: 37 pages. PDF and extracted Overleaf ZIP build independently;
   no overfull warnings. Final source ZIP rebuild passed; all37 pages render identically
@@ -54,12 +58,13 @@ The user transferred full project ownership to Codex. Continue without another a
   gallery was rendered. Historical14-prompt6K and partial8K artifacts stay preserved.
 - All three agents and root finished and reaped their subprocesses. No owned poller remains.
   Latest live scheduler check: both SCA7/SCA9 pending;82 tasks pending,0 running.
-- NEXT: await GPU allocations, inspect utilization and exact task logs, finish generation,
+- NEXT: controller finishes metric environment CPU validation while awaiting GPUs; then generation,
   GPU evaluation, CPU bootstraps, latency audit, complete galleries and manuscript.
   Run archive_evidence.py and gen_final_tables.py only after full validated coverage.
 
 ## Map
 - HANDOVER.md: current corrections override the historical claims below them.
+- slurm/CONTINUATION.md: unattended worker, successor, stop file and runtime evidence.
 - repro/README.md, repro/environment/, repro/metrics_environment/: restoration and validation.
 - results/evidence/krea_baseline_provenance/: launch receipts, source audit, seven repair prompts.
 - results/evidence/dispatch/: task definitions, deployment receipts and current snapshot hashes.

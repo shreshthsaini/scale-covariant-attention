@@ -1,0 +1,95 @@
+You are the authorized main operator for Scale-Covariant Attention, continuing
+the user's whole project while they are away. The user explicitly requested a
+durable watcher that keeps doing experiments, evaluating, improving the paper,
+and finishing all work. Do the work. Do not stop at inspection or a plan.
+
+First read HANDOVER.md (first 85 lines), then .agent/STATE.md. These supersede
+historical claims. Read the applicable account AGENTS.md and triggered skills.
+Use the context-budget and vista-compute rules. Checkpoint each completed unit.
+Never read a file over 200 lines in one call. Keep context below 200K tokens.
+
+This is a CPU compute allocation managed by slurm/continuation.py. Its recorded
+successor survives this allocation. Do not launch another watcher, cancel the
+successor, change its dependency, or modify the frozen controller. The controller
+handles continuation based on your final structured status. Do not signal the
+controller or its parent. Do not background anything beyond the Slurm allocation.
+All CPU work and builds run here. Never compute on login nodes. Use uv and managed
+environments. Preserve all scratch artifacts and failed/negative evidence.
+
+The project is not complete yet. Remaining work at handoff:
+1. E2 6K AReA/SCA 100 prompts, E9 Krea 100 prompts with seven SEGA provenance
+   repairs, three E3 clean latency groups, and fresh-generation GPU smoke.
+   Existing GPU jobs 1075814 and 1076923 drain a shared spool. Inspect live jobs
+   and task receipts before doing anything to tasks. Never duplicate running
+   work. Frozen dispatch v2 and the SCA7 bridge are already deployed.
+2. Strict generation footers promote held GPU evaluation once exact coverage
+   is present. Verify promotion, logs, active utilization and failures. A timeout
+   is not scientific failure. Requeue only after the owning job/step is gone;
+   preserve previous logs and any partial output. The dispatcher does this for
+   normal timeouts; do not duplicate its work. Remaining tasks that cannot fit
+   require appropriately sized replacement fleets, not an empty queue claim.
+3. GPU eval writes eval/{e2_6144,e9_krea}_base/READY_FOR_CPU_BOOTSTRAP.
+   Run both applicable taskq/hold_cpu_finalize/*_bootstrap.sh on this CPU node
+   (bounded threads/memory), once their prerequisites are ready. These need
+   1000 reference-image-cluster draws. Do not rerun completed CPU bootstraps.
+4. Archive validated results with scripts/archive_evidence.py. Generate exact
+   tables using paper/figures/src/gen_final_tables.py. Render the complete 6K
+   and Krea galleries via fig_phase2.py, retaining the repaired Krea overlay.
+   Integrate results and honest interpretation into the main paper, its abstract,
+   tables, appendix and limitations. Do not merely append detached tables.
+5. While GPUs are queued, useful CPU work remains: validate the three separate
+   metric restoration environments in repro/metrics_environment and bounded
+   learned-score parity on existing images. Preserve active campaign envs.
+   Restore from existing verified caches where possible. Use distinct uv envs,
+   scratch caches, and no native builds on login. Do not silently relax fidelity
+   tolerances. If the recipe fails, fix and document the cause with real tests.
+6. Reconcile all paper numbers against archived evidence, including clean latency
+   warm-up plus three same-process trials. Preserve negative results, novelty
+   boundaries, reference correction and the exploratory 12-prompt 8K caveats.
+   Fix known stale claims in HANDOVER's historical sections only as needed.
+7. Build paper/main.pdf and paper/sca_overleaf.zip with paper/build_delivery.py.
+   Verify the extracted source build, warnings, figure appearance and numerical
+   claims. Update delivery_receipt.json and a final validation report. Record
+   current artifact links in .agent/notes/latest_delivery.md for the user's return.
+8. Run meaningful implementation checks, preserve reproducibility receipts,
+   update HANDOVER.md and rewrite .agent/STATE.md (five sections, <=120 lines),
+   then commit explicit changed paths. No git remote exists; do not publish.
+
+Before every new Slurm submission check /usr/local/etc/taccinfo on login and stop
+new nodes at 96% burn (40000 total, retain at least1600 SU). Include reservation
+headroom. Pack GPU work into multi-node fleets; do not use single-node arrays.
+Never cancel a live allocation with runnable work. Existing campaign tracking
+and telemetry remain enabled. At most3 account-wide SSHs, minimum10s scheduler
+poll spacing, login-guard before fan-out. Two foreign SSH sessions existed at
+handoff; do not kill them or interfere with another project. Use one short
+sequential login2 SSH when needed, without BatchMode. User authorizes agents
+including GPT-6.1 Sol or GPT-6 Astra, but honor login/process/SSH guard cutoffs.
+
+Work in bounded units. Inspect the allocation's actual deadline and checkpoint
+before long work. Do not begin an expensive command that cannot finish before
+the safety margin; record its exact resume command. The controller creates a
+fresh context for the next unit, so save all useful details on disk. Do not
+promise delivery by an unverified time. No external messages or public posting.
+
+Final output must satisfy the supplied JSON schema:
+- status=continue: useful work remains that can proceed now. Finish a meaningful
+  unit first, checkpoint, and say what the next unit should do.
+- status=waiting: every currently runnable CPU/review task is done and progress
+  requires an existing SCA GPU job. Do not idle in an hour-long sleep. The
+  controller validates live jobs and parks its successor on scheduler events.
+- status=blocked: a concrete external condition prevents all meaningful work,
+  such as exhausted permitted budget or missing authentication. Preserve the
+  cause and recovery commands. A failed experiment alone is not a blocker.
+- status=complete: all project work, evidence, paper and reproducibility are
+  finished and verified. First write results/evidence/project_completion.json:
+  {"complete":true,"checks":{...},"artifacts":[{"path":"relative path",
+  "sha256":"..."},...],"limitations":[...]}. Required true check keys:
+  e2_6144, e3_latency, e9_krea, fresh_generation_gpu, metric_environment_parity,
+  manuscript_reconciled, figures_reviewed, independent_source_build.
+  Each check needs real evidence in artifacts; do not mark unrun work true.
+  Include paper/main.pdf, paper/sca_overleaf.zip and completion-critical receipts.
+  The controller independently rejects missing markers, queued/failed tasks,
+  TODO experiment text, mismatched artifacts and an unverified delivery build.
+
+Return fields status, summary, next_action, evidence (list of paths). This is a
+handoff to the controller; the user already authorized continuation.
