@@ -1,0 +1,53 @@
+usage: sample.py [-h] --method {full,sca,sca_uniform,sca_layer,sca_switch}
+                 [--label LABEL] [--pi-table PI_TABLE] [--pi-scale PI_SCALE]
+                 [--pi-const PI_CONST] [--sigma-star SIGMA_STAR] --res HxW
+                 --prompts PROMPTS [--start START] [--end END] [--seed SEED]
+                 [--steps STEPS] [--guidance GUIDANCE] --out OUT
+                 [--mu-mode {max_shift,default}] [--n0 N0] [--tile TILE]
+                 [--window WINDOW] [--pool {center,mean}]
+                 [--gate-sigma GATE_SIGMA] [--band BAND] [--route ROUTE]
+                 [--chunk CHUNK] [--local-impl {flex,gather}]
+                 [--model {dev,krea}] [--device DEVICE]
+
+Generate one resumable FLUX chunk with full attention or SCA. Output (PNG +
+JSON sidecar per prompt, deterministic per-prompt seeds) matches
+constancy_rope/scripts/sample.py, so its eval.py runs unchanged on --out.
+
+options:
+  -h, --help            show this help message and exit
+  --method {full,sca,sca_uniform,sca_layer,sca_switch}
+  --label LABEL         Method name written to the sidecar (default --method);
+                        use for ablations
+  --pi-table PI_TABLE   npz from scripts/calibrate.py (required for sca
+                        variants except sca_switch with --sigma-star and
+                        sca_uniform with --pi-const)
+  --pi-scale PI_SCALE   Calibrated scale to use (default: nearest to target
+                        scale)
+  --pi-const PI_CONST   Constant pi for every head and sigma (ablation)
+  --sigma-star SIGMA_STAR
+                        Switch point for sca_switch (default: fitted value)
+  --res HxW
+  --prompts PROMPTS
+  --start START
+  --end END
+  --seed SEED
+  --steps STEPS
+  --guidance GUIDANCE
+  --out OUT
+  --mu-mode {max_shift,default}
+  --n0 N0
+  --tile TILE
+  --window WINDOW
+  --pool {center,mean}
+  --gate-sigma GATE_SIGMA
+                        Global-only (pi=0) above this sigma
+  --band BAND           Low band (pool size, tokens) taken from O_glob
+  --route ROUTE         Hard per-head routing threshold on pi (0 = soft mix)
+  --chunk CHUNK         Query tiles per local-branch chunk, gather only
+                        (default: 2 GiB budget)
+  --local-impl {flex,gather}
+                        Local branch implementation (same keys; flex uses a
+                        FlexAttention block mask)
+  --model {dev,krea}    dev = FLUX.1-dev; krea = FLUX.1-Krea-dev transformer
+                        with FLUX.1-dev encoders and VAE
+  --device DEVICE

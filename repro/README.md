@@ -161,10 +161,13 @@ model identities/revisions and scorer settings are recorded in the archived
 `results/evidence/eval/*/metrics.json` reports. The aesthetic scorer additionally
 uses the fixed checkpoint path and SHA256 in `scripts/eval_extra.py`.
 
-`generation-freeze.txt` and `metrics-freeze.txt` describe installed environments,
-not a verified fresh installation recipe. The uv environments themselves resolve
-to scratch. Restore them and metric caches separately after a purge. No environment
-was installed or modified for these checks.
+`generation-freeze.txt` and `metrics-freeze.txt` describe the inherited environments.
+The separate [fresh generation recipe](environment/README.md) was installed and
+checked on Linux aarch64 using an isolated uv environment. It preserves the main
+framework versions and resolves the inherited Hub version conflict; CPU tests and
+baseline dry runs pass, with an explicit NVIDIA wheel-tag warning. It does not
+claim GPU equivalence or a fresh learned-metric installation. The uv environments
+resolve to scratch. Restore them and metric caches separately after a purge.
 
 ## Baseline sources and remaining dependencies
 
@@ -304,6 +307,7 @@ the expected per-file LFS identities. Generate image outputs again or restore th
 from a separate artifact store for fresh learned-metric scoring. The archived
 numeric/feature banks remain sufficient for the offline checks described above.
 
-The remaining installation limitation is unchanged: package freezes describe the
-tested inherited environments, including their recorded incompatibilities. A fresh
-portable dependency resolution has not been validated.
+The [fresh generation recipe](environment/README.md) supplies a hash-pinned
+dependency resolution and bounded CPU validation for Linux aarch64. The separate
+metric environment remains an inherited package freeze; fresh GPU generation and
+full learned-metric scoring are not reproduced by the environment checks.

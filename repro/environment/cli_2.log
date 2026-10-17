@@ -1,0 +1,41 @@
+usage: calibrate.py [-h] [--prompts PROMPTS] [--count COUNT] [--res HxW]
+                    [--scales SCALES] [--steps STEPS] [--guidance GUIDANCE]
+                    [--seed SEED] [--sigma-bins SIGMA_BINS]
+                    [--mu-mode {max_shift,default}] [--n0 N0] [--tile TILE]
+                    [--window WINDOW] [--pool {center,mean}]
+                    [--local-impl {flex,gather}] [--mass-queries MASS_QUERIES]
+                    --out OUT [--report-only]
+                    [--transfer-with [TRANSFER_WITH ...]] [--model {dev,krea}]
+                    [--device DEVICE]
+
+SCA calibration: run FLUX with exact attention at an in-distribution
+resolution, emulate scales s_c (window n/s_c, pooling s_c), accumulate output-
+matching statistics per prompt (resumable), then merge into a pi table npz and
+a JSON report (same path, .json).
+
+options:
+  -h, --help            show this help message and exit
+  --prompts PROMPTS
+  --count COUNT
+  --res HxW
+  --scales SCALES
+  --steps STEPS
+  --guidance GUIDANCE
+  --seed SEED
+  --sigma-bins SIGMA_BINS
+  --mu-mode {max_shift,default}
+  --n0 N0
+  --tile TILE           Inference tile t; emulation uses t * Wc / Wn
+  --window WINDOW       Inference window Wn (default n0)
+  --pool {center,mean}
+  --local-impl {flex,gather}
+                        Local branch implementation (same keys; flex uses a
+                        FlexAttention block mask)
+  --mass-queries MASS_QUERIES
+  --out OUT             pi table .npz; parts go to <out stem>_parts/
+  --report-only         Merge existing parts without running FLUX
+  --transfer-with [TRANSFER_WITH ...]
+                        Other calibration npz files
+  --model {dev,krea}    dev = FLUX.1-dev; krea = FLUX.1-Krea-dev transformer
+                        with FLUX.1-dev encoders and VAE
+  --device DEVICE

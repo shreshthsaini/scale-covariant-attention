@@ -1,0 +1,55 @@
+usage: run_ultraimage.py [-h] --res HxW --prompts PROMPTS [--start START]
+                         [--end END] [--seed SEED] --out OUT [--label LABEL]
+                         [--model-path MODEL_PATH] [--device DEVICE]
+                         [--allow-download] [--dry-run]
+
+Generate one resumable UltraImage (official code, FLUX branch) campaign chunk with FLUX.1-dev.
+
+Thin wrapper around the official UltraImage checkout (thu-ml/DiT-Extrapolation, directory flux/)
+that keeps the CLI, seeding, file naming and PNG + JSON sidecar format of
+constancy_rope/scripts/sample.py and scripts/run_area.py, so constancy_rope/scripts/eval.py reads
+the outputs as method "ultraimage". Settings follow flux/infer_unified.py with flux/base.yaml:
+stage 1 at the 1024 training resolution (30 steps, guidance 3.5, time_shift_1 3), stage 2 at the
+target resolution (30 steps, guidance 7, time_shift_2 from the yaml), guidance_schedule super_imax,
+swin patchify, proportional attention, RIFLEx RoPE on both spatial axes with linear_factor = res/2048
+and train_length = (1024/16)^2 + 512, and the attention_decay operator. Before each prompt a
+2 + 2 step "get_block_avg" pass writes 57 block-average files (one per FLUX block) that
+attention_decay then reads; they live under ULTRA_BLOCKAVG_ROOT/<HxW>/<stem>/ on scratch.
+
+Deviations from infer_unified.py, all recorded in the sidecar under "ultraimage":
+  * seeding: infer_unified seeds torch once with 42 and passes torch.Generator("cuda").manual_seed(0)
+    to every call. Here every call gets torch.Generator("cpu").manual_seed(derived_seed) and the
+    global torch RNG (used by the VAE latent_dist.sample() of super_imax) is reseeded with
+    derived_seed before each call, so each prompt is reproducible independent of chunking.
+  * block averages are keyed by the image stem (prompt id + seed), not by the first 20 prompt
+    characters, and a "_blockavg.json" marker must exist before the cache is reused.
+  * only images[0] (the final image) is saved; the low-resolution guidance image is discarded.
+Compatibility shim: the pipeline imports PyWavelets (pywt) for its level-1 Haar low-pass in
+super_imax. If pywt is not installed, an exact numpy Haar level-1 replacement for pywt.wavedec2 /
+pywt.waverec2 is registered in sys.modules; it matches PyWavelets 1.8.0 bitwise on this path. The
+backend goes into the sidecar record (outside the resume fingerprint) as compat.dwt_backend. No
+UltraImage file is edited.
+
+Known upstream behaviour kept as is: infer_unified assigns scheduler.config.shift = time_shift_*,
+which with diffusers >= 0.3x does not reach FlowMatchEulerDiscreteScheduler._shift, so both stages
+run with the FLUX scheduler config shift (3.0); the emulated sigma schedules are recorded.
+
+--dry-run parses arguments, loads prompts, imports the UltraImage modules on CPU, builds the full
+settings and both sigma schedules and prints one sidecar config and the todo list without loading
+model weights.
+
+options:
+  -h, --help            show this help message and exit
+  --res HxW
+  --prompts PROMPTS
+  --start START
+  --end END
+  --seed SEED
+  --out OUT
+  --label LABEL         method name written to the sidecar
+  --model-path MODEL_PATH
+                        FLUX.1-dev diffusers directory; default the local HF
+                        snapshot
+  --device DEVICE
+  --allow-download      Allow missing FLUX cache files to download
+  --dry-run             No model: print config and todo list, then exit

@@ -1,0 +1,49 @@
+usage: run_area.py [-h] --res HxW --prompts PROMPTS [--start START]
+                   [--end END] [--seed SEED] [--steps STEPS]
+                   [--guidance GUIDANCE] --out OUT
+                   [--pooling {subsample,mean,medoid,random}]
+                   [--phase1-steps PHASE1_STEPS] [--halo HALO]
+                   [--bridge-ratio BRIDGE_RATIO] [--area-seed AREA_SEED]
+                   [--model {dev,krea}] [--device DEVICE] [--cpu-offload]
+                   [--allow-download] [--dry-run]
+
+Generate one resumable AReA (official code) campaign chunk with FLUX.1-dev.
+
+Thin wrapper around the official AReA checkout (github.com/KooroshRH/AReA) that keeps the
+CLI, seeding, file naming and PNG + JSON sidecar format of
+constancy_rope/scripts/sample.py, so constancy_rope/scripts/eval.py reads the outputs as
+method "area". AReA defaults follow its generate.py for model family flux1: 28 steps,
+guidance 4.5, Phase I 8 steps, subsample pooling, Halo 8, bridge ratio 0.5, AReA seed
+equal to the run seed, VAE tiling always on, scheduler base_shift = max_shift (mu = 1.15).
+The checkpoint is the local FLUX.1-dev snapshot instead of AReA's FLUX.1-Krea-dev default.
+
+--dry-run parses arguments, loads prompts, builds the AReA config and the per-step
+schedule and prints one sidecar config without importing a model; it runs on CPU.
+
+options:
+  -h, --help            show this help message and exit
+  --res HxW
+  --prompts PROMPTS
+  --start START
+  --end END
+  --seed SEED
+  --steps STEPS         AReA flux1 default 28
+  --guidance GUIDANCE   AReA flux1 default 4.5 (constancy_rope sample.py uses
+                        3.5)
+  --out OUT
+  --pooling {subsample,mean,medoid,random}
+  --phase1-steps PHASE1_STEPS
+                        Phase I steps; default AReA flux1 value 8
+  --halo HALO           delta_max in patches
+  --bridge-ratio BRIDGE_RATIO
+                        rho
+  --area-seed AREA_SEED
+                        AReA jitter/Halo seed; default --seed, as in AReA
+                        generate.py
+  --model {dev,krea}    dev = FLUX.1-dev; krea = FLUX.1-Krea-dev transformer
+                        with FLUX.1-dev encoders and VAE
+  --device DEVICE
+  --cpu-offload         Model CPU offload; also enabled automatically below 60
+                        GB like AReA
+  --allow-download      Allow missing FLUX cache files to download
+  --dry-run             No model: print config and schedule, then exit
