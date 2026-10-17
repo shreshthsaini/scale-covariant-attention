@@ -15,6 +15,8 @@ Regenerate: <sca env python> paper/figures/src/fig_latency.py [--csv PATH] [--ou
 
 import argparse
 import csv
+import hashlib
+import json
 import os
 
 os.environ.setdefault("SOURCE_DATE_EPOCH", "0")  # byte-identical PDF/SVG on rerun
@@ -30,7 +32,7 @@ from k1data import FIGDIR  # noqa: E402
 from orx_figstyle import BASELINE, COLUMN, PALETTE, figure, label_ends, save, use_style  # noqa: E402
 
 REPO = os.path.normpath(os.path.join(FIGDIR, "..", ".."))
-CURVE_CSV = "/scratch/09032/saini_2/sca/results_latency_curve.csv"
+CURVE_CSV = os.path.join(REPO, "results", "latency_curve.csv")
 CSV_4096 = os.path.join(REPO, "results", "latency_4096_batch1.csv")
 
 METHODS = {  # canonical key -> (label, color, marker)
@@ -46,6 +48,8 @@ def read_curve(path):
     rows = []
     with open(path) as fh:
         for r in csv.DictReader(fh):
+            if r.get("warmup_verified", "True").lower() != "true":
+                raise ValueError("Latency figure requires verified warm-up ordering")
             m = ALIASES.get(r["method"].strip().lower())
             if m is None:
                 print(f"skipping unknown method {r['method']!r}")
@@ -70,6 +74,8 @@ def medians(rows):
     acc = defaultdict(list)
     for res, m, s in rows:
         acc[res, m].append(s)
+    if any(len(v) != 3 for v in acc.values()):
+        raise ValueError("Each reported latency group must contain three timed images")
     return {k: (float(np.median(v)), len(v)) for k, v in acc.items()}
 
 
@@ -96,6 +102,9 @@ def main():
         src, rows = args.csv, read_curve(args.csv)
     print(f"latency source: {src}")
     med = medians(rows)
+    ranges = {}
+    for res, method, seconds in rows:
+        ranges.setdefault((res, method), []).append(seconds)
     resolutions = sorted({r for r, _ in med}, key=lambda r: np.prod(parse_res(r)))
     for (res, m), (s, n) in sorted(med.items()):
         print(f"  {res} {m}: median {s:.2f} s over {n} images")
@@ -135,6 +144,11 @@ def main():
                 continue
             (ln,) = ax.plot([mp[r] for r in rs], [med[r, m][0] for r in rs], color=col, marker=mk,
                             ms=3.2, lw=1.3)
+            # These are observed ranges over three timed prompts, not confidence intervals.
+            lower = [med[r, m][0] - min(ranges[r, m]) for r in rs]
+            upper = [max(ranges[r, m]) - med[r, m][0] for r in rs]
+            ax.errorbar([mp[r] for r in rs], [med[r, m][0] for r in rs],
+                        yerr=[lower, upper], fmt="none", ecolor=col, capsize=2, elinewidth=0.7)
             lines.append(ln)
             labels.append(lbl)
         ax.set_xscale("log")
@@ -164,6 +178,14 @@ def main():
             ax.annotate(txt, (x0, y0), xytext=(5, -7), textcoords="offset points", ha="left", va="top",
                         fontsize=6, color=METHODS["sca"][1])
     save(fig, args.out)
+    with open(src, "rb") as handle:
+        source_hash = hashlib.sha256(handle.read()).hexdigest()
+    with open(args.out + "_provenance.json", "w") as handle:
+        json.dump({"source": src, "sha256": source_hash, "statistic": "median of three timed prompts",
+                   "whiskers": "observed minimum and maximum, not a confidence interval",
+                   "groups": [{"res": r, "method": m, "median_seconds": value, "n": n}
+                              for (r, m), (value, n) in sorted(med.items())]}, handle, indent=2)
+        handle.write("\n")
 
 
 if __name__ == "__main__":
