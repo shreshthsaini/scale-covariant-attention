@@ -1,88 +1,90 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-17 11:51 CDT. Read the first85 lines, then `.agent/STATE.md`.
+Last updated 2026-10-17 10:26 PDT. Read the first 85 lines, then `.agent/STATE.md`.
 This current section supersedes historical claims below it.
 
 ## 1. Current status and corrections
 
-Codex is the authorized main operator for experiments, evaluation, paper and delivery.
-CPU controller1076947 completed its first work unit at06:44CDT. Successor1077042
-is PENDING for a CPU node, with its GPU dependency already satisfied. Do not start
-another watcher or alter its ownership. Root checked live status at11:49-11:51CDT.
-SCA7 and SCA9 completed, adding24 successful tasks. Both GPU allocations are gone.
-Root released both tested repair tasks through the owner-gated helper after checking
-that the owning job and all its steps were terminal; original failures are archived.
-SCA10 job1077447 is now PENDING:2-8nodes,4hours,minimum2hours so full6K can fit.
-Live submission balance7908/40000SUs available. Frozen dispatcher v2 is unchanged.
-Queue58pending,0running,0failed,894done; no active SCA GPU allocation at this check.
-Evidence: results/evidence/continuation/root_status_20261017_1151.json and adjacent
-repair release/submission receipts. MF9 guests remain yielded; do not restart them.
+Codex owns completion of experiments, evaluation, paper, figures and reproducibility.
+The user explicitly expanded the task: finish the entire paper, redesign diagrams,
+make measured multi-baseline gains clear, and add recent relevant baselines.
+Do not manufacture wins or discard unfavorable results. GPU queuing alone is not
+completion. Read `.agent/notes/active_team_20261017.md` before overlapping writes.
 
-Two actual software failures were diagnosed and CPU-tested, without changing tolerances:
-- Fresh GPU smoke passed matmul,SDPA and stock/full FLUX, then nvc rejected Triton's
-  -Wno-psabi. The new launcher selects and probes GNU C/C++ before importing Torch.
-- Full6K latency failed before warm-up because bf16 coordinates inferred385x385,
-  rather than384x384 tokens. Pass known_grid metadata; keep coordinates unchanged.
-Original failures, logs and tasks remain preserved. New freezes do not alter old sources.
-Both replacement scripts were released to pending by root at11:49CDT after the
-owner job/steps ended. The helper verified exact hashes and archived both originals.
-Do not duplicate these pending retries. Release receipt is in continuation evidence.
-18 release tests passed; earlier dry run refused RUNNING and live application now passed.
-Full6K retry needs4800s admission plus dispatcher cleanup; a1hour fleet cannot fit it.
-After successful smoke, review then promote its distinct GCC receipt to canonical
-results/evidence/environment/fresh_gpu_smoke.json, preserving the original failure.
-
-All three fresh metric envs now pass bounded CPU parity exactly. Base125,extra123,
-ImageReward80 packages; assets39files/12.08GB restored and hashed with0downloads.
-Four base images cover CLIP/PickScore, bounded1024 MUSIQ crops and40960 features.
-Two extra/IR images cover12 scalar scores and2016 Inception logits. Real split
-scoring CLIs and strict merge pass. Four restoration defects and failed runs retained.
-Proof: results/evidence/metric_environment/validation_summary_1076947.json.
-42 focused tests pass; combined runtime/metric suite71 passes. GPU metric parity,
-native4K MUSIQ and full benchmark reruns are outside these bounded checks.
-NVIDIA cuSPARSELt wheel-tag warning remains visible;0 dependency-version conflicts.
-Campaign environments are unchanged. Keep managed uv envs and isolated scratch caches.
-
-Paper numeric audit verifies195 archive hashes,762 means,13 calibration fits,
-82 generated appendix rows,593 other numeric table values and11 clean latency groups.
-Unsupported energy claim and overly broad frozen-baseline provenance sentence fixed.
-Current37-page PDF and456-file Overleaf ZIP build independently; all37 rendered
-pages agree. Changed page27 inspected at144dpi; other36 pages match prior review.
-Proof: results/evidence/{paper_numeric_audit_20261017,delivery_validation_1076947}.json.
-Current artifact links/hashes: .agent/notes/latest_delivery.md and paper/delivery_receipt.json.
+The major paper revamp is committed as 4011238. Current draft: 38 pages, 473-file
+Overleaf ZIP; independent build passes, all 38 page renders identical at 72 dpi,
+changed pages inspected at 144 dpi, no overfull boxes or undefined references.
+New main diagram: native calibration, actual coefficient inset, attention tensors,
+head/noise mixing and global opening; PDF/SVG/source/provenance preserved.
+New six-method portrait uses authentic outputs and identical crop coordinates.
+New paired quality figure exposes all five existing baselines, uncertainty and losses.
+Compact main and ablation tables keep full metrics in the appendix. Ablation data
+font increased from 6.96 to 8.97 pt. All 30 main cells independently verified;
+42 retained ablation values match the earlier audited table exactly.
+Receipts: results/evidence/{paper_revamp,presentation_review}_20261017.json.
+Current links/hashes: .agent/notes/latest_delivery.md and paper/delivery_receipt.json.
 This is a verified draft, not project completion. No git remote; commit locally.
 
-E1/E4/E5/E6/E7/E8 and budget controls complete. Latest exact generation coverage:
-6K AReA56/100,SCA64/100; Krea AReA0/100,SCA20/100. All7 SEGA repairs now have
-complete sidecars and PNGs; overlay coverage100/100. Full final hash audit still applies.
-Krea overlay out/krea_baseline_overlay_20261017 preserves193 originals plus7repairs.
-Keep the overlay in readiness, evaluation and the final complete Krea gallery.
-SCA clean medians:2K18.20s,3K40.16s,4K71.06s,6K161.56s,8K287.64s.
-Matched4K AReA202.44s/full186.54s. New6K/8K AReA timing tasks completed; harvest
-and audit their logs before paper insertion. Only repaired full6K timing remains queued.
-Each new group requires fresh excluded warm-up plus3 timed images in one process.
+New latency audit verified warm-up plus three same-process trials: AReA 6K482.2844s,
+8K951.9874s; SCA 6K161.5585s,8K287.6398s. Speedups 2.9852x and 3.3097x,
+time reductions 66.5% and 69.8%. All seven timing logs identify GH200 120GB.
+Thirteen clean groups now audited; only full-attention 6K remains pending.
+CSV summaries, raw logs, figure and manuscript now contain the verified values.
 
-Strict generation footers promote held GPU evaluation only at exact100-prompt coverage.
-Neither eval/{e2_6144,e9_krea}_base/READY_FOR_CPU_BOOTSTRAP exists at06:41CDT.
-Once ready, run taskq/hold_cpu_finalize/{e2_6144,e9_krea}_bootstrap.sh on CPU with
-bounded threads/memory; require1000 reference-image-cluster draws, no completed reruns.
+Baseline expansion is required next work, not an optional future suggestion:
+repro/baseline_expansion_20261017/ and .agent/notes/baseline_audit_20261017.md.
+HRDiT/SigMa official source pins, isolated dependency overlay, paired46 prompt list,
+strict resume provenance and18CPUchecks pass. CPU tests are not GPU results.
+Both one-image smoke tasks are frozen and enqueued; do not duplicate them.
+After finite/fidelity/runtime checks, prepare pilot12, then46; consider full191 within
+verified SU headroom. Promotion must not depend on SCA winning. Preserve failures.
+HRDiT has a separate57-step progressive budget. SigMa paper dev/guidance3.5 differs
+from released Krea/guidance4.5; released mu already equals max_shift. Do not count
+identical schedule aliases as separate controls. No official ResDiT code verified.
+New baselines must be evaluated/integrated or their concrete unresolved limitations
+recorded before claiming whole-project completion. Read the audit and README.
+
+Durable CPU controller1076947 finished its first unit. Successor1077042 is PENDING,
+dependency satisfied, scheduler estimate10:42PDT at the latest check, not a guarantee.
+Do not start another watcher, change its dependency, or edit the frozen controller.
+Root CPU allocation1073260 ends10:45PDT. Follow ownership note for handoff.
+SCA7/SCA9 completed, adding24 tasks. No SCA GPU allocation currently running.
+SCA10 job1077447 PENDING:2-8nodes,4hours,min2hours. SCA11 job1077473 PENDING:
+2-4nodes,2hours on gh-dev. Last SCA11 estimate11:44PDT, not guaranteed.
+Both use unchanged frozen dispatch v2. Queue60pending,0running,0failed,894done.
+Receipt: continuation/baseline_smoke_deployment_20261017.json (under evidence).
+Latest submission balance7908/40000SUs. Before every new submission check login2
+balance and reservations, retaining1600SUs minimum. At most3 SSHs; guard first.
+MF9 guests remain yielded. Preserve foreign work, original logs and all scratch.
+
+Root released the two owner-gated software repairs after owning job/steps ended:
+a_000_repro_gpu_smoke_gcc_1076947.sh selects/probes GNU compiler before Torch;
+a_y003_latency_6144x6144_full_gridfix_1076947.sh supplies true384x384 grid metadata.
+Original failures retained; bf16 coordinates unchanged.18 release tests passed.
+Do not duplicate retries. Full6K requires4800s admission plus dispatcher cleanup.
+After successful GCC smoke, review/promote its distinct receipt to canonical
+results/evidence/environment/fresh_gpu_smoke.json, preserving original failure.
+
+Generation coverage:6K AReA56/100,SCA64/100;Krea AReA0/100,SCA20/100.
+All7SEGA repairs finished; Krea overlay100/100 includes193originals+7replacements.
+Overlay: /scratch/09032/saini_2/sca/out/krea_baseline_overlay_20261017.
+Strict generation footers promote held GPU eval only at exact100 coverage/hash audit.
+Neither final CPU bootstrap READY marker exists at this handoff. When GPU eval
+writes eval/{e2_6144,e9_krea}_base/READY_FOR_CPU_BOOTSTRAP, run the corresponding
+hold_cpu_finalize script on CPU,1000reference-image-cluster draws, no completed reruns.
 Then archive_evidence.py,gen_final_tables.py,complete6K/Krea fig_phase2.py galleries,
-and integrate abstract/main tables/interpretation/appendix/limitations before delivery.
-Paper insertion map: .agent/notes/paper_numeric_audit_20261017.md. Rebuild and inspect
-with paper/build_delivery.py, then independently verify source and numerical claims.
+and reconcile abstract/main tables/interpretation/appendix/limitations. Rebuild delivery.
 
-Preserve science boundaries: corrected195 reference rows/168 image identities;
-main patchFID99.8156 SCA vs103.4111 AReA has unresolved paired difference, as does KID.
-Whole-image FID gain remains resolved. Exact-coordinate theorem does not remove bf16
-RoPE drift; observed GPU max0.015625 is not a proven ULP bound. Calibration cost unknown.
-Novelty is native emulation plus fitted/transferred per-head/noise output mixing.
-Exploratory12-prompt8K has all10 metrics and full gallery: six resolved SCA gains,
-four unresolved metrics; MUSIQ/cropMUSIQ/CLIP-IQA means favor AReA; stripe/grid failures.
-8K scores use CPUfloat32 HPS, unlike main GPU precision; native MUSIQ retains all keys.
-
-Before any new submission check login2 taccinfo, reservation headroom and96% burn cap.
-Latest root check:7908SUs available of40000 before submitting SCA10 job1077447.
-Preserve foreign SSHs; at most3 total, login guard before fan-out. Never delete scratch.
+All three restored metric envs pass bounded CPU parity exactly;39assets12.08GB,
+0downloads,42focused/71combined checks. Proof: metric_environment/validation_summary_1076947.json.
+GPU metric parity/native4K MUSIQ/full benchmark reruns are not established by CPU checks.
+E1/E4/E5/E6/E7/E8,budgetcontrols and exploratory12paired8K metrics/gallery are complete.
+Preserve corrected195reference rows/168identities; patchFID/KID gain unresolved.
+8K has six resolved SCA gains/four unresolved; MUSIQ means favor AReA; grid failures.
+8K CPUfloat32 HPS differs from main GPU precision. Calibration runtime remains unknown.
+Novelty is native emulation plus fitted/transferred per-head/noise mixing; ingredients
+are established. Exact-coordinate theorem does not remove bf16 drift;0.015625 is
+an observed GPU absolute difference, not a proven ULP bound.
 
 ## 2. Goal and user requirements
 
