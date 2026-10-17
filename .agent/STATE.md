@@ -1,4 +1,4 @@
-# SCA live state, 2026-10-17 02:35 CDT
+# SCA live state, 2026-10-17 02:46 CDT
 
 
 ## Goal
@@ -7,7 +7,7 @@ User explicitly transferred full project ownership to Codex; continue autonomous
 
 ## Status and next action
 - Root owns campaign, delivery and documentation. Paper agent implements isolated dispatcher v2;
-  evidence and figures agents have completed their audits and are idle.
+  evidence agent repairs reproducibility packaging; figures agent owns the CPU shard tool sessions.
 - Complete: Phase1, E1/E4/E5/E6/E7/E8 and budget controls. PDF36pages and extracted ZIP verified,
   corrected patch metrics, full8K gallery, readable generality table and2K/3K timings integrated.
 - Audit:740 scalar means,13 calibration fits exact;152 legacy distribution points reproduced exactly.
@@ -16,14 +16,16 @@ User explicitly transferred full project ownership to Codex; continue autonomous
   Native8K MUSIQ fixed with opt-in --musiq-query-chunk256; bounded pretrained scores matchexactly.
   Actual8K benchmark succeeded702sCPU/21.76GiBpeak. Snapshot evaluator unchanged.
 - SCA6 1075813 RUNNING2nodes c638-152,c640-021, ends03:07CDT. E3 4K and6KSCA active.
-- E3 8KSCA released02:34; shouldstartafter6KSCA~02:39 andfinish~03:03. Ifstillpending02:41,
-  parkagain because measurementmustfinishwithoutcoldresume. Other3longtasks remainhold_long.
-- SCA7 1075814 PENDING4nodes/4h min2h; newSCA8 1076908 PENDING8nodes/4h min2h.
-  SCA8 dispatcher frozen under /scratch/.../sca/dispatch/20261017_completion.
-  Flexible replacement is being reviewed; no v2 submission yet. Budget79.47%burned,
-  8212.919/40000SUsavailable, verifiedloginusage.map beforeSCA8 submission.
+- E3 8KSCA started02:38;expectedfinish~03:03. Other3longtasks remainhold_long.
+  6KSCAfinished161.56smedian;4KSCA71.06s,AReA202.44s;fullstillrunning.
+- SCA7 1075814 PENDING4nodes/4h min2h; SCA9 1076923 PENDING2-8nodes/4h min1h.
+  V2 dispatcher frozen under /scratch/.../sca/dispatch/20261017_v2;23 focusedtests pass.
+  SCA8 1076908 cancelledwhilePENDING afterreplacementaccepted. Budget79.47%burned,
+  8212.919/40000SUsavailable, verifiedlogin2usage.map beforeSCA9submission.
+  V2latestlogs use task_NAME.latest.log; latency auditor nowprefers them.
+  Release3hold_longtasks onlyafteroldSCA6workersstop;v2honors runtimeheaders.
 - MF9 guests fullyyielded. All12paired8K generated;6K24/100each;Krea0/100each.
-- FourCPU8KMUSIQ shards nowROOT-owned: sessions45166,91706,77575,42657;
+- FourCPU8KMUSIQ shards FIGURES-agent-owned (root toolregistry cannotpoll): sessions45166,91706,77575,42657;
   PIDs973089,949776,949774,949775 respectively. Firstbenchmarkdone/reaped.
   Outputs/logs: /scratch/.../sca/eval/e2_8192_musiq_shards_20261017/.
   Reapall, use repro/merge_evaluation_caches.py (rejectsconflictingkeys), expect72basecacheentries,
@@ -35,7 +37,7 @@ User explicitly transferred full project ownership to Codex; continue autonomous
   SCA sidecarslackfirst_callflag; don'trequireit, verifyuninterruptedlogsequenceinstead.
 - OnlineWandB snapshotrun sca-phase2-20261017; refresh scripts/track_campaign.py atmilestones.
 - NEXT: finishCPU8Kscoring/report/paper; validatev2dispatcher, keepGPUsbusy; finishE2/E3/E9.
-- No gitremote. CPUcomputei618-051. TwootherprojectSSHsessionsheld; oursallreaped.
+- No gitremote. CPUcomputei618-051. TwootherprojectSSHsessionsheld; oursallreaped. Login1SSHstalledandwasreaped;login2works11processes.
   Atmost3SSHaccount-wide, guardbeforeSSH. RA6c620-061 reserved; do notborrow.
 
 ## Map

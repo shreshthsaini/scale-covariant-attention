@@ -1,6 +1,6 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-17 02:35 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
+Last updated 2026-10-17 02:46 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
 its short live index. Historical sections below are superseded by the correction notice here.
 
 ## 1. Current status and corrections
@@ -8,8 +8,9 @@ its short live index. Historical sections below are superseded by the correction
 Codex is the main operator, authorized to finish experiments, evaluation, paper and delivery.
 Phase 2 E1, E4, E5, E6, E7, E8 and budget controls are complete and integrated in a 36-page
 paper. The PDF and Overleaf ZIP both build independently. E2 6K/8K, E3 latency and E9 Krea
-remain active. New SCA8 job1076908 requests eight nodes for four hours (minimum two),
-with a frozen dispatcher. SCA6 job1075813 has two GH200 nodes until03:07CDT; SCA7 job1075814 is pending
+remain active. SCA9 job1076923 requests 2 to 8 nodes for four hours (minimum one),
+using the reviewed deadline-aware v2 dispatcher frozen in `dispatch/20261017_v2`.
+It replaces SCA8 job1076908, which was cancelled while still pending. SCA6 job1075813 has two GH200 nodes until03:07CDT; SCA7 job1075814 is pending
 with four nodes, four hours requested and two-hour minimum. Existing MF9 guest workers
 are yielding to their host project's resumed work. Do not restart those guests.
 
@@ -32,10 +33,14 @@ local/global branches, head-specific roles and a global opening have close prior
 All12 paired8K images are generated. CPU preference/alignment scores completed. Query-chunked native8K MUSIQ passes equivalence
 checks and the actual8K benchmark (702sCPU,21.76GiBpeak); four CPU shards are now scoring all24images.
 Long6K/8K latency bundles were split by method, retaining one warm-up plus three timed images.
-Three long AReA/full tasks remain held; SCA6K is running and SCA8K is queued for the currentallocation.
+Three long AReA/full tasks remain held until the old SCA6 workers finish. SCA6K latency is complete
+(161.56 s median); SCA8K latency is running. New 4K timings are71.06 s SCA and202.44 s AReA; full attention is still running.
 Evaluation dependency-wait tasks are in hold_cpu to avoid occupying GPUs while waiting.
 SU balance verified from login usage.map:40000 awarded,31787.081 used,8212.919 available
-(79.47% burned), safely below96%. SCA8 was submitted after checking this balance; existing SCA7 was reshaped.
+(79.47% burned), safely below96%. SCA9 was submitted after checking this balance on login2; existing SCA7 remains pending.
+V2 passed23 focused tests, preserves unique attempt logs and stops/reaps its own process groups
+before requeueing. It reads conservative task runtime metadata and uses the actual allocation deadline.
+Full calibration cost is unverified; `results/compute/claims_audit/` verifies2101 distinct main PNG hashes.
 **There is no git remote.** Keep local commits; publication is not part of this handoff.
 
 ## 2. Goal and user requirements

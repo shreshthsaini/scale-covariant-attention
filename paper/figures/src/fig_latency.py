@@ -3,7 +3,7 @@
 Input, one of:
   --csv PATH   columns res,method,seconds; res like 4096x4096, one row per image (the median
                over rows of a (res, method) pair is plotted). Default:
-               /scratch/09032/saini_2/sca/results_latency_curve.csv
+               results/latency_curve.csv (verified archived measurements)
   results/latency_4096_batch1.csv (repo), used when the curve CSV does not exist or with
                --source 4096. Adapter: full and AReA from run "latency", SCA final (no band
                guard, code 2d11740) from run "latency3"; the band-guard SCA runs are dropped.
