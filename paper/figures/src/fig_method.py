@@ -160,7 +160,7 @@ def main():
     text(59,218,r"RoPE coordinates $\lfloor p/4\rfloor$",7.7,GRAY,"center")
     arrow([(115,175),(126,175)],GLOBAL)
     text(134,175,r"all $Q$",7.2,GLOBAL,"center",rotation=90)
-    attention(142,158,GLOBAL,PALE_GLOBAL,r"$(N+L)\times(64^2+L)$")
+    attention(142,158,GLOBAL,PALE_GLOBAL,r"$(N+T)\times(64^2+T)$")
     arrow([(207,175),(222,175)],GLOBAL)
     tensor(228,161,GLOBAL,r"$O_h^{\rm glob}$")
 
@@ -182,7 +182,7 @@ def main():
     text(59,299,r"RoPE $p$; border-clamped windows",7.4,GRAY,"center")
     arrow([(115,256),(126,256)],LOCAL)
     text(134,256,r"tile $Q$",7.2,LOCAL,"center",rotation=90)
-    attention(142,239,LOCAL,PALE_LOCAL,r"$8^2\times(64^2+L)$ per tile")
+    attention(142,239,LOCAL,PALE_LOCAL,r"$8^2\times(64^2+T)$ per tile")
     arrow([(207,256),(222,256)],LOCAL)
     tensor(228,242,LOCAL,r"$O_h^{\rm loc}$")
 
@@ -197,7 +197,7 @@ def main():
     arrow([(384,103),(391,103),(391,182),(331,182),(331,192)],BLUE,dashed=True)
     text(329,169,r"Transfer $\pi_h(\sigma)$",8,BLUE,"center")
     text(330,265,r"Text queries: $O^{\rm glob}$",8.3,INK,"center")
-    text(330,280,r"Both branches include all $L$ text keys",7.4,GRAY,"center")
+    text(330,280,r"Both branches include all $T$ text keys",7.4,GRAY,"center")
     rect(272,291,3,3,INK,INK,.4)
     text(280,293,"query tile; grids are schematic",7.2,GRAY)
 

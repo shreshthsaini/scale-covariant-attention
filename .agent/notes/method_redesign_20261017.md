@@ -39,8 +39,8 @@ shares their training regimes. The four reference images were inspected directly
 - Deployment shows the 4096-square example, 256x256 image tokens, 64x64 global keys,
   and 64x64 local windows around 8x8 query tiles. Relative window/query extents are
   exact; the drawn grid cells aggregate tokens and are explicitly schematic.
-- Global attention has (N+L) queries and 64^2+L keys; each local query tile has 8^2
-  queries and 64^2+L keys. The matrices show support/shapes, not observed attention
+- Global attention has (N+T) queries and 64^2+T keys; each local query tile has 8^2
+  queries and 64^2+T keys. The matrices show support/shapes, not observed attention
   weights or a claim that the implementation materializes those matrices.
 - Text keys occur in both branches. The output mixture applies to image queries;
   text queries use the global branch. At sigma>0.89 the local branch is skipped.
@@ -75,3 +75,20 @@ PDF text bounds are checked for clipping; a first-render clipped local caption
 was shortened before delivery. Printed-width previews at 72dpi and 144dpi are in
 `/scratch/09032/saini_2/sca/method_redesign_20261017/`; they are QA intermediates,
 not paper assets. The source/data/output hashes are in `method_provenance.json`.
+
+## Assembled draft review
+
+The first 12 pages of the rebuilt 38-page draft were rendered and visually
+inspected at 108dpi. The new six-method teaser, method figure, compact main table
+and paired-difference figure have no clipping, overlapping captions or missing
+labels. The method occupies page 4 and retains its intended print width. Caption
+and panels agree. A notation follow-up changes the diagram's text-token count
+from L to T to match the manuscript, followed by regenerated PDF/SVG/provenance.
+
+Two concrete findings were sent to the main operator: Figure 2's older caption
+said all images were SCA despite its labeled Full/AReA comparison tiles; and the
+older main ablation table retains 13 columns at 6.96pt, noticeably denser than the
+new compact main comparison. Root owns the hero-caption correction and any table
+revision. Pending experiment markers are still visible and must not be mistaken
+for completed evidence. Review previews are under
+`/scratch/09032/saini_2/sca/paper_review_20261017/redesign_assembled/`.
