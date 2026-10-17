@@ -10,7 +10,7 @@ cd /scratch/09032/saini_2/sca/code/PHASE2
 # Promote evaluation only after exact complete paired coverage.
 sca_generation_rc=$?
 if [ "$sca_generation_rc" -eq 0 ]; then
-  if ! /work/09032/saini_2/vista/library/uv-envs/sca/bin/python /scratch/09032/saini_2/sca/dispatch/20261017_eval_promotion/promote_ready_eval.py e9_krea --scratch /scratch/09032/saini_2/sca --baselines /scratch/09032/saini_2/constancy_rope/out_krea/main --apply; then
+  if ! /work/09032/saini_2/vista/library/uv-envs/sca/bin/python /scratch/09032/saini_2/sca/dispatch/20261017_eval_promotion/promote_ready_eval.py e9_krea --scratch /scratch/09032/saini_2/sca --baselines /scratch/09032/saini_2/sca/out/krea_baseline_overlay_20261017 --apply; then
     printf '%s\n' 'WARNING: evaluation promotion failed; generation status preserved' >&2
   fi
 fi
