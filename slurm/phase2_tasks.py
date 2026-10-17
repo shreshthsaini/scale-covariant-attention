@@ -70,7 +70,7 @@ def wait_regex(names):
     """Regex over task names (pending/ and running/<name>.<host>) of the generation tasks."""
     groups = sorted({n.split("_", 1)[1][:-3] for n in names})
     prefixes = sorted({n[0] for n in names})
-    return f"^[{''.join(prefixes)}][0-9]{{3}}_({'|'.join(g.replace('.', '[.]') for g in groups)})[.]sh"
+    return f"^(a_)?[{''.join(prefixes)}][0-9]{{3}}_({'|'.join(g.replace('.', '[.]') for g in groups)})[.]sh"
 
 
 def evaluation(name, gens, root, res, seed, prompts, methods, ref, extra, base, refs=True, hold=False,
