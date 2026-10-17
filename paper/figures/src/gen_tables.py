@@ -1,4 +1,9 @@
-"""Generate appendix LaTeX tables (values and paired 95% CIs) from results/*.csv. Read-only on results."""
+"""Generate appendix tables from archived CSVs and corrected distribution checks.
+
+Read-only on results. Corrected patch points never inherit historical intervals.
+Image-identity cluster intervals supersede row intervals where archived; missing
+corrected patch intervals are omitted, and missing corrected points appear as n/a.
+"""
 import csv
 import sys
 from pathlib import Path
@@ -51,6 +56,40 @@ def deltas(files):
     return d
 
 
+def corrected_distributions(sd, dd, groups, reference):
+    """Overlay corrected points and available image-cluster CIs for one comparison."""
+    distribution_metrics = ("fid", "kid", "patch_fid", "patch_kid")
+    # Never silently reuse the historical patch bank or its confidence intervals.
+    for d in (sd, dd):
+        for key in list(d):
+            if key[1] in ("patch_fid", "patch_kid"):
+                del d[key]
+    corrected = {}
+    clustered = []
+    for group in groups:
+        for metric in distribution_metrics:
+            stem = "evidence/distributions/checks/" + group
+            for row in rows(stem + "_rows_rows_" + metric + "_0.csv"):
+                corrected[(row["method"], metric)] = float(row["value"])
+            for path in sorted(R.glob(stem + "_rows_images_" + metric + "_1000*.csv")):
+                clustered.extend(rows(str(path.relative_to(R))))
+    sd.update(corrected)
+    for (method, metric), value in corrected.items():
+        if method == reference or (reference, metric) not in sd:
+            continue
+        delta = value - sd[(reference, metric)]
+        if metric.startswith("patch_"):
+            dd[(method, metric)] = (delta, None, None)
+        elif (method, metric) in dd:
+            _, low, high = dd[(method, metric)]
+            dd[(method, metric)] = (delta, low, high)
+    for row in clustered:
+        if row["reference_method"] != reference or not row["ci_low"]:
+            continue
+        dd[(row["method"], row["metric"])] = tuple(
+            float(row[key]) for key in ("paired_delta", "ci_low", "ci_high"))
+
+
 def f(x, m, signed=False):
     _, _, sc, dec, _ = METD[m]
     s = f"{x * sc:+.{dec}f}" if signed else f"{x * sc:.{dec}f}"
@@ -61,6 +100,8 @@ def dcell(t, m):
     if t is None:
         return "n/a"
     v, lo, hi = t
+    if lo is None or hi is None:
+        return f(v, m, True)
     sig = lo > 0 or hi < 0
     lib = METD[m][4]
     better = (v < 0) if lib else (v > 0)
@@ -113,9 +154,12 @@ s_nb, s_b, s_f = summary("final4k_nb"), summary("final4k"), summary("final4k_ful
 d_nb = deltas(["final4k_nb_base_paired_deltas.csv", "final4k_nb_extra_paired_deltas.csv"])
 d_b = deltas(["final4k_base_paired_deltas.csv", "final4k_extra_paired_deltas.csv"])
 d_f = deltas(["final4k_full_base_paired_deltas.csv", "final4k_full_extra_paired_deltas.csv"])
+corrected_distributions(s_nb, d_nb, ["final4k_nb_base"], "area")
+corrected_distributions(s_b, d_b, ["final4k_base"], "area")
+corrected_distributions(s_f, d_f, ["final4k_full_base"], "area")
 area4 = {("area", m): v for (meth, m), v in s_nb.items() if meth == "area"}
 W("\\begin{table}[h]")
-W("  \\caption{\\textbf{All metrics at $4096^2$}, 191 prompts, paired against AReA (released code). $\\Delta$ is method minus AReA with its 95\\% paired bootstrap interval (1000 draws); \\up{blue} / \\dn{orange}: significantly better / worse than AReA. Set-level metrics (FID, KID and their patch versions, Inception score) are computed on the whole set; their paired intervals resample prompts in both sets jointly. $^\\ddagger$Mean campaign wall-clock on shared nodes, not a clean latency measurement (Table~\\ref{tab:main} gives clean latency). Sources: \\texttt{results/final4k\\_nb\\_*}, \\texttt{final4k\\_*}, \\texttt{final4k\\_full\\_*}.}")
+W("  \\caption{\\textbf{All metrics at $4096^2$}, 191 prompts, paired against AReA (released code). $\\Delta$ is method minus AReA with its 95\\% paired bootstrap interval (1000 draws); \\up{blue} / \\dn{orange}: significantly better / worse than AReA. Set-level metrics (FID, KID and their patch versions, Inception score) are computed on the whole set; the final SCA FID/KID and patch-FID/KID intervals use reference-image clusters; other FID/KID intervals retain the historical reference-row bootstrap unless a corrected image-cluster interval is available. Inception-score intervals resample only generated images. Corrected patch values without recomputed intervals have no significance marks. $^\\ddagger$Mean campaign wall-clock on shared nodes, not a clean latency measurement (Table~\\ref{tab:main} gives clean latency). Sources: \\texttt{results/final4k\\_nb\\_*}, \\texttt{final4k\\_*}, \\texttt{final4k\\_full\\_*}.}")
 W("  \\label{tab:app_4k}")
 W("  \\centering\\scriptsize\\setlength{\\tabcolsep}{3pt}")
 W("  \\resizebox{\\linewidth}{!}{%")
@@ -136,7 +180,7 @@ W("")
 
 # ---- non-square
 W("\\begin{table}[h]")
-W("  \\caption{\\textbf{All metrics at the non-square sizes}, 191 prompts each, \\sca{} final paired against AReA (released code). Conventions as in Table~\\ref{tab:app_4k}. Sources: \\texttt{results/final\\_2048x4096\\_*}, \\texttt{final\\_2048x6144\\_*}.}")
+W("  \\caption{\\textbf{All metrics at the non-square sizes}, 191 prompts each, \\sca{} final paired against AReA (released code). Conventions as in Table~\\ref{tab:app_4k}. Corrected patch intervals use reference-image clusters where available; absent intervals are omitted. Sources: \\texttt{results/final\\_2048x4096\\_*}, \\texttt{final\\_2048x6144\\_*}.}")
 W("  \\label{tab:app_wide}")
 W("  \\centering\\scriptsize\\setlength{\\tabcolsep}{3pt}")
 W("  \\resizebox{\\linewidth}{!}{%")
@@ -148,6 +192,8 @@ W("    Metric & AReA & \\sca{} & $\\Delta$ [95\\% CI] & AReA & \\sca{} & $\\Delt
 W("    \\midrule")
 sw = {r: summary(f"final_{r}") for r in ("2048x4096", "2048x6144")}
 dw = {r: deltas([f"final_{r}_base_paired_deltas.csv", f"final_{r}_extra_paired_deltas.csv"]) for r in sw}
+for res in sw:
+    corrected_distributions(sw[res], dw[res], [f"final_{res}_base"], "area")
 for m in ALL:
     c = [METD[m][1]]
     for r in ("2048x4096", "2048x6144"):
@@ -162,6 +208,7 @@ W("")
 PM = ["ir", "aesthetic", "clip", "pickscore", "hpsv2", "hpsv21", "musiq", "musiq_crop1024", "clipiqa", "arniqa"]
 snb = summary("ablnb")
 dnb = deltas([f"ablnb_{x}_deltas.csv" for x in ("abl_localonly_nb", "abl_uniform_nb", "abl_layer_nb", "abl_globalonly", "abl_mean_nb", "abl_v0")])
+corrected_distributions(snb, dnb, ["ablnb_base", "localnb_base"], "sca_nb")
 var = [("abl_localonly_nb", "$\\pi=1$"), ("abl_uniform_nb", "shared $\\pi(\\sigma)$"), ("abl_layer_nb", "per-layer"),
        ("abl_globalonly", "$\\pi=0$"), ("abl_mean_nb", "mean pool"), ("abl_v0", "v0, no gate")]
 W("\\begin{table}[h]")
@@ -186,6 +233,7 @@ W("")
 # ---- ablations around the band guard (reference: SCA + band)
 sab = summary("abl")
 dab = deltas(["abl_base_paired_deltas.csv", "abl_extra_paired_deltas.csv", "route_base_paired_deltas.csv", "route_extra_paired_deltas.csv"])
+corrected_distributions(sab, dab, ["ablfinal_base", "route_base"], "sca")
 varb = [("abl_noband", "no band"), ("abl_nogate", "no gate"), ("abl_uniform", "shared $\\pi(\\sigma)$"), ("abl_layer", "per-layer"),
         ("abl_localonly", "$\\pi=1$"), ("abl_route50", "route 0.5"), ("abl_route30", "route 0.3"), ("abl_mean", "mean pool"),
         ("abl_globalonly", "$\\pi=0$"), ("abl_v0", "v0")]
@@ -194,7 +242,7 @@ for part, chunk in enumerate((varb[:5], varb[5:])):
     if not chunk:
         continue
     W("\\begin{table}[h]")
-    cap = ("\\textbf{Intervals for the band-guard ablations} (Table~\\ref{tab:ablation_band} and further variants), 46 prompts at $4096^2$, paired against \\sca{} + band guard, whose absolute values form the first column. Here patch FID has paired intervals. Sources: \\texttt{results/abl\\_*}, \\texttt{route\\_*}."
+    cap = ("\\textbf{Intervals for the band-guard ablations} (Table~\\ref{tab:ablation_band} and further variants), 46 prompts at $4096^2$, paired against \\sca{} + band guard, whose absolute values form the first column. Corrected patch FID is shown without intervals. Sources: \\texttt{results/abl\\_*}, \\texttt{route\\_*}."
            if part == 0 else "\\textbf{Band-guard ablations, continued.} Conventions as in Table~\\ref{tab:app_abl_band}.")
     W("  \\caption{" + cap + "}")
     W("  \\label{tab:app_abl_band" + ("" if part == 0 else "2") + "}")

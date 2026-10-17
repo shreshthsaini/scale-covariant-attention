@@ -65,6 +65,15 @@ other. Original per-row bootstrap results and image-cluster sensitivities must r
 their labels. `historical_ci_max_abs_error` compares a new interval against the original;
 nonzero differences are expected for corrected crops or a changed cluster policy.
 
+Targeted comparisons add a `_methods-...` filename suffix. For example, the budget
+comparison can be reproduced with `--experiments budget_base --methods sca_s56
+--metrics patch_fid --policy rows --reference-clusters images --draws 1000`.
+The reference method is recorded in every CSV row; E1 and budget comparisons use
+`sca_nb`, while the main and wide comparisons use `area`. Differences are always
+the named method minus that reference, with lower FID and KID preferred. These
+intervals resample generated prompt IDs and reference image identities independently,
+using the same sampled generated IDs for the two paired methods.
+
 To rebuild the joined archive while the scratch caches still exist, run
 `scripts/verify_distribution_evidence.py` with the same four-thread environment. Its
 default `auto` mode recognizes the corrected evaluator's assembly-policy metadata,
