@@ -38,11 +38,12 @@ def main():
                     raise ValueError(f'Duplicate latency prompt: {folder}/{pid}')
                 sidecars[pid] = (path, data)
             task = f'a_y00{index}_latency_{res}' + (f'_{method}' if index >= 3 else '')
-            # V2 keeps immutable attempt logs; its alias must take precedence
-            # over a preserved historical attempt using the legacy filename.
-            log = args.scratch / 'logs' / f'task_{task}.latest.log'
-            if not log.exists():
-                log = args.scratch / 'logs' / f'task_{task}.log'
+            # Either worker version can retry a task. Select the newest actual
+            # log bytes, not an older V2 alias left behind by a legacy retry.
+            candidates = [args.scratch / 'logs' / f'task_{task}{suffix}.log'
+                          for suffix in ('', '.latest')]
+            existing = [path for path in candidates if path.exists()]
+            log = max(existing, key=lambda path: path.stat().st_mtime_ns) if existing else candidates[0]
             if set(sidecars) != set(expected) or not log.exists():
                 missing.append(f'{res}/{method}')
                 continue
