@@ -87,6 +87,12 @@ Attention regression tests cover unmasked, partially masked and fully masked
 queries, unequal chunk boundaries, and inference-only enforcement. These checks
 support numerical equivalence, not a claim of bitwise identity at every size.
 The full suite, including the cache-merge regression, passes 28 tests.
+`musiq_chunked_8k_benchmark.json` records successful full native 8192x8192 scoring
+plus four original 1024x1024 crops: 702 seconds at four CPU threads, with a process
+peak of 21.76 GiB. Its image hash identifies the exact benchmark input. The original
+8K implementation was not rerun for this check; numerical agreement was established
+on the bounded inputs above. The first three eight-thread shard scores took
+447 to 452 seconds each under concurrent CPU load.
 
 ```bash
 HF_HOME=/scratch/09032/saini_2/tmp/hf TORCH_HOME=/scratch/09032/saini_2/tmp/torch \
