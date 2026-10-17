@@ -4,12 +4,18 @@
 The historical evaluator_snapshot is unchanged. This subclass changes only
 distribution feature assembly and records reference_prompt_row_v2 in reports.
 Feature cache keys remain compatible: they already include prompt identity.
+With --reference-clusters images, bootstrap draws group references by declared
+content SHA256, Hugging Face SHA256 blob identity, or resolved path, in that order.
+All manifest rows and crop weights remain in the point estimate. The default rows
+policy preserves the earlier bootstrap behavior. No image bytes are rehashed here.
 """
 
 import importlib.util
 import json
 import os
+from collections import defaultdict
 from pathlib import Path
+import re
 import sys
 import time
 
@@ -24,6 +30,8 @@ def configure_cli():
     parser = cli.parser()
     parser.add_argument("--musiq-query-chunk", type=int, default=0,
                         help="Opt-in inference attention query chunking; preserves native MUSIQ patches (0 disables)")
+    parser.add_argument("--reference-clusters", choices=("rows", "images"), default="rows",
+                        help="Bootstrap reference rows or shared image identities, retaining every row's point-estimate weight")
     args = parser.parse_args()
     if args.musiq_query_chunk < 0:
         parser.error("--musiq-query-chunk must be nonnegative")
@@ -48,12 +56,47 @@ from crope.metrics.evaluate import (
     release_model, synchronize,
 )
 from crope.metrics.models import InceptionFeatures
+from crope.metrics.io import read_jsonl
 from crope.metrics.statistics import distribution_bootstrap, fid, kid
 
 ASSEMBLY_POLICY = "reference_prompt_row_v2"
 
 
+def reference_identity(record):
+    """Prefer a supplied content digest or an HF SHA256 blob identity, else resolved path."""
+    for name in ("content_sha256", "sha256"):
+        value = str(record.get(name, "")).lower()
+        if re.fullmatch(r"[0-9a-f]{64}", value):
+            return "sha256:" + value, "content_sha256"
+    path = Path(record["path"]).resolve()
+    if path.parent.name == "blobs" and re.fullmatch(r"[0-9a-f]{64}", path.name):
+        return "sha256:" + path.name, "huggingface_sha256_blob"
+    return str(path), "resolved_path"
+
+
+def reference_clusters(references, bank, policy):
+    """Concatenate each identity's rows; do not deduplicate their feature weights."""
+    if policy == "rows":
+        return bank
+    if policy != "images":
+        raise ValueError(f"Unknown reference cluster policy: {policy}")
+    grouped = defaultdict(list)
+    for record in references:
+        grouped[reference_identity(record)[0]].append(bank[record["prompt_id"]])
+    return {identity: np.concatenate(rows) for identity, rows in grouped.items()}
+
+
 class Evaluation(HistoricalEvaluation):
+    def __init__(self, args):
+        super().__init__(args)
+        if args.references:
+            source_rows = {str(row["id"]): row for row in read_jsonl(args.references)}
+            for record in self.references:
+                source = source_rows[record["prompt_id"]]
+                for field in ("content_sha256", "sha256"):
+                    if field in source:
+                        record[field] = source[field]
+
     def key(self, record, metric, extra=None):
         chunk = getattr(self.args, "musiq_query_chunk", 0)
         if metric == "musiq" and chunk:
@@ -146,17 +189,22 @@ class Evaluation(HistoricalEvaluation):
             del extractor
             release_model()
         groups = sorted({(r["method"], r["res"]) for r in self.records})
+        cluster_policy = getattr(self.args, "reference_clusters", "rows")
         for metric in selected:
+            bank, reference_rows = banks[metric.startswith("patch_")]
+            real = reference_clusters(self.references, reference_rows, cluster_policy)
             self.status[metric] = {
                 "status": "complete", "provenance": provenance,
                 "estimator": "unbiased all-pairs polynomial degree 3" if metric.endswith("kid") else "empirical Gaussian FID",
-                "bootstrap": "generated and real prompt clusters independently; shared real draw for paired deltas",
+                "bootstrap": f"generated prompt clusters and reference {cluster_policy} independently; shared real draw for paired deltas",
                 "feature_assembly": ASSEMBLY_POLICY,
+                "reference_clusters": cluster_policy,
+                "reference_cluster_count": len(real),
+                "reference_identity_sources": sorted({reference_identity(r)[1] for r in self.references}),
                 "reference_rows": len(self.references),
                 "reference_distinct_paths": len({r["path"] for r in self.references}),
-                "reference_weighting": "one prompt cluster per manifest row; repeated image content retained",
+                "reference_weighting": "all manifest rows retained with their original feature weights",
             }
-            bank, real = banks[metric.startswith("patch_")]
             statistic = kid if metric.endswith("kid") else fid
             for method, res in groups:
                 try:

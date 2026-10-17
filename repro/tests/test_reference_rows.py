@@ -1,6 +1,7 @@
 """Regression: distinct prompt crops must survive shared reference image paths."""
 
 import argparse
+import hashlib
 import json
 
 import numpy as np
@@ -123,3 +124,75 @@ def test_duplicate_reference_ids_are_reported_not_silently_collapsed(tmp_path):
     evaluation.distributions()
     assert len(evaluation.errors) == 4
     assert all("Reference prompt IDs must be unique" in row["error"] for row in evaluation.errors)
+
+
+def test_image_clusters_match_archived_checker_and_preserve_point_weights(tmp_path, monkeypatch):
+    from scripts.check_archived_distributions import load_bank
+
+    args = fixture_args(tmp_path)
+    other = tmp_path / "other_reference.png"
+    with Image.open(tmp_path / "shared_reference.png") as opened:
+        opened.transpose(Image.Transpose.FLIP_LEFT_RIGHT).save(other)
+    with open(args.references, "a") as handle:
+        handle.write("\n" + json.dumps({"id": "reference_2", "path": str(other)}))
+    monkeypatch.setattr(corrected, "InceptionFeatures", TinyFeatures)
+    rows = corrected.Evaluation(args)
+    rows.distributions()
+    args.reference_clusters = "images"
+    images = corrected.Evaluation(args)
+    images.distributions()
+    assert not rows.errors and not images.errors
+    for old, new in zip(rows.summaries, images.summaries):
+        assert old["value"] == pytest.approx(new["value"], abs=1e-12)
+        assert old["n_reference_prompts"] == 3
+        assert new["n_reference_prompts"] == 2
+        assert old["n_reference_feature_rows"] == new["n_reference_feature_rows"]
+
+    extractor = TinyFeatures("cpu")
+    arrays = np.stack([extractor.extract(r, patch=True, crop_seed=0, crops=4) for r in images.references])
+    path = tmp_path / "row_bank.npz"
+    np.savez_compressed(path, features=arrays,
+                        prompt_ids=[r["prompt_id"] for r in images.references], seeds=["0"] * len(images.references))
+    entry = {"row_bank": path.name, "row_bank_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+             "records": [{"prompt_id": r["prompt_id"], "seed": "0", "manifest_order": i,
+                          "image_signature": {"path": r["path"]}} for i, r in enumerate(images.references)]}
+    archived_real = load_bank(tmp_path, entry, policy="rows", clusters="images")
+    generated = {method: {r["prompt_id"]: extractor.extract(r, patch=True, crop_seed=0, crops=4)
+                         for r in images.records if r["method"] == method}
+                 for method in ("baseline", "candidate")}
+    for metric, statistic in (("patch_fid", fid), ("patch_kid", kid)):
+        expected = distribution_bootstrap(generated["candidate"], archived_real, statistic,
+                                         baseline=generated["baseline"], draws=20, seed=7)
+        actual = next(r for r in images.paired if r["metric"] == metric)
+        for field, value in expected.items():
+            assert actual[field] == pytest.approx(value)
+        status = images.status[metric]
+        assert status["reference_clusters"] == "images"
+        assert status["reference_cluster_count"] == 2
+        assert status["reference_rows"] == 3
+        assert status["reference_identity_sources"] == ["resolved_path"]
+
+
+def test_reference_identity_prefers_content_digest_and_keeps_repeated_rows():
+    digest = "a" * 64
+    refs = [{"prompt_id": "a", "path": "/first.png", "sha256": digest},
+            {"prompt_id": "b", "path": "/second.png", "content_sha256": digest}]
+    bank = {"a": np.array([[1., 2.]]), "b": np.array([[3., 4.]])}
+    grouped = corrected.reference_clusters(refs, bank, "images")
+    assert list(grouped) == ["sha256:" + digest]
+    np.testing.assert_array_equal(grouped["sha256:" + digest], [[1., 2.], [3., 4.]])
+    assert corrected.reference_identity({"path": "/cache/blobs/" + digest}) == (
+        "sha256:" + digest, "huggingface_sha256_blob")
+
+
+def test_declared_reference_hash_survives_manifest_loading(tmp_path):
+    args = fixture_args(tmp_path)
+    with open(args.references) as handle:
+        rows = [json.loads(line) for line in handle]
+    for row in rows:
+        row["content_sha256"] = "b" * 64
+    with open(args.references, "w") as handle:
+        handle.write("\n".join(json.dumps(row) for row in rows))
+    evaluation = corrected.Evaluation(args)
+    assert {corrected.reference_identity(row) for row in evaluation.references} == {
+        ("sha256:" + "b" * 64, "content_sha256")}
