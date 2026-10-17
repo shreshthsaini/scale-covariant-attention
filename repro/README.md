@@ -6,6 +6,13 @@ copies, including the existing numerical tests. Every file also matches the
 `c05ebdc` generation freeze. `SOURCE.json` records source commits and SHA256 hashes.
 No other project checkout or live experiment code was changed.
 
+Use `evaluate_corrected.py` for new distribution evaluations. The original snapshot
+has a reference crop-feature assembly bug: references with different prompt IDs can
+resolve to the same image path, and the last reference's crops overwrite earlier
+ones. The corrected entrypoint keeps a separate feature bank per reference prompt
+ID, records policy `reference_prompt_row_v2`, and retains the original reference
+row weights. The historical snapshot remains unchanged for reproducing old reports.
+
 The snapshot provides CLIP, PickScore, MUSIQ, FID/KID, crop metrics, sample discovery
 and prompt bootstrap. `scripts/eval_extra.py --crope-root repro/evaluator_snapshot`
 uses the same archived helpers for ImageReward, HPS, aesthetic, CLIP-IQA and ARNIQA.
@@ -35,6 +42,28 @@ resume and missing-metric failures. Imports were verified to resolve inside this
 snapshot. These checks load no learned metric models and do not reproduce GPU
 generation or the full benchmark. `validation.json` records their scope.
 
+Two additional regression tests in `tests/test_reference_rows.py` exercise the
+corrected evaluator. Different prompt IDs share one reference PNG, produce distinct
+crop features, and reuse historical per-record caches. Corrected point estimates
+and paired intervals match direct per-row calculations, whole-image FID/KID stay
+unchanged, and all reference rows remain present. The combined suite passes 16 tests:
+
+```bash
+PYTHONPATH="$PWD/repro/evaluator_snapshot:$PWD" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
+  uv run --no-project --python "$SCA_PY" python -m pytest -q \
+  repro/tests/test_reference_rows.py repro/evaluator_snapshot/tests/test_metrics.py
+uv run --no-project --python "$SCA_PY" python repro/evaluate_corrected.py --help
+```
+
+The pinned Aesthetic-4K source has 195 filenames and prompt IDs but 168 distinct
+image-content hashes. This was verified against the upstream Hugging Face tree at
+revision `8c5d5cb8b94230ff897d87bf060451257d1c7bf8`, then against the local cache.
+All exported filenames/prompts match the upstream metadata. The repeated content
+comes from the source dataset, rather than a local export mistake.
+`reference_dataset_audit.json` records the comparison and the 15 repeated-content
+groups. The corrected main evaluation preserves all 195 rows; any deduplicated
+168-image evaluation is a separate sensitivity analysis.
+
 ## Scoring existing campaign images
 
 The commands below preserve the campaign metric choices and use a new output
@@ -51,7 +80,7 @@ export WANDB_PROJECT=scale-covariant-attention
 export WANDB_DIR=/scratch/09032/saini_2/sca/wandb
 export WANDB_MODE=offline
 SCA_EVAL_ROOT=/scratch/09032/saini_2/sca/out/evalroot/e1_baselines
-uv run --no-project --python "$SCA_PY" python repro/evaluator_snapshot/scripts/eval.py \
+uv run --no-project --python "$SCA_PY" python repro/evaluate_corrected.py \
   --root "$SCA_EVAL_ROOT" --prompts results/evidence/prompts/aesthetic4k_eval.jsonl \
   --references results/evidence/prompts/aesthetic4k_refs.jsonl \
   --reference-method sca_nb --res 4096x4096 \
