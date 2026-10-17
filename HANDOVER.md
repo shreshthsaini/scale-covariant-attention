@@ -1,6 +1,6 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-17 10:26 PDT. Read the first 85 lines, then `.agent/STATE.md`.
+Last updated 2026-10-17 10:39 PDT. Read the first 85 lines, then `.agent/STATE.md`.
 This current section supersedes historical claims below it.
 
 ## 1. Current status and corrections
@@ -9,7 +9,7 @@ Codex owns completion of experiments, evaluation, paper, figures and reproducibi
 The user explicitly expanded the task: finish the entire paper, redesign diagrams,
 make measured multi-baseline gains clear, and add recent relevant baselines.
 Do not manufacture wins or discard unfavorable results. GPU queuing alone is not
-completion. Read `.agent/notes/active_team_20261017.md` before overlapping writes.
+completion. All root/subagent ownership is released to continuation1077042.
 
 The major paper revamp is committed as 4011238. Current draft: 38 pages, 473-file
 Overleaf ZIP; independent build passes, all 38 page renders identical at 72 dpi,
@@ -43,14 +43,17 @@ from released Krea/guidance4.5; released mu already equals max_shift. Do not cou
 identical schedule aliases as separate controls. No official ResDiT code verified.
 New baselines must be evaluated/integrated or their concrete unresolved limitations
 recorded before claiming whole-project completion. Read the audit and README.
+Validated scoring handoff:repro/baseline_evaluation_20261017/README.md,9tests.
+Exact12/46 eight-method pairing, GPU score stage, cache-only CPU bootstrap;
+missing outputs close the barrier. No fresh baseline generation/scoring has run.
 
 Durable CPU controller1076947 finished its first unit. Successor1077042 is PENDING,
-dependency satisfied, scheduler estimate10:42PDT at the latest check, not a guarantee.
+dependency satisfied; start estimates can move. No new CPU watcher is needed.
 Do not start another watcher, change its dependency, or edit the frozen controller.
 Root CPU allocation1073260 ends10:45PDT. Follow ownership note for handoff.
 SCA7/SCA9 completed, adding24 tasks. No SCA GPU allocation currently running.
 SCA10 job1077447 PENDING:2-8nodes,4hours,min2hours. SCA11 job1077473 PENDING:
-2-4nodes,2hours on gh-dev. Last SCA11 estimate11:44PDT, not guaranteed.
+2-4nodes,2hours on gh-dev. Both await scheduler priority.
 Both use unchanged frozen dispatch v2. Queue60pending,0running,0failed,894done.
 Receipt: continuation/baseline_smoke_deployment_20261017.json (under evidence).
 Latest submission balance7908/40000SUs. Before every new submission check login2
@@ -66,9 +69,11 @@ After successful GCC smoke, review/promote its distinct receipt to canonical
 results/evidence/environment/fresh_gpu_smoke.json, preserving original failure.
 
 Generation coverage:6K AReA56/100,SCA64/100;Krea AReA0/100,SCA20/100.
-All7SEGA repairs finished; Krea overlay100/100 includes193originals+7replacements.
+Krea overlay hash audit passed:100DyPE+100SEGA,193originals+7replacements.
+All7regenerated PNGs are byte-identical to originals;200original sidecars preserved.
+Receipt:results/evidence/krea_overlay_complete/receipt.json;207PNGs hashed/CRC checked.
 Overlay: /scratch/09032/saini_2/sca/out/krea_baseline_overlay_20261017.
-Strict generation footers promote held GPU eval only at exact100 coverage/hash audit.
+Strict footers still require all4E9methods at exact100 coverage before GPU eval.
 Neither final CPU bootstrap READY marker exists at this handoff. When GPU eval
 writes eval/{e2_6144,e9_krea}_base/READY_FOR_CPU_BOOTSTRAP, run the corresponding
 hold_cpu_finalize script on CPU,1000reference-image-cluster draws, no completed reruns.

@@ -1,4 +1,4 @@
-# SCA live state, 2026-10-17 10:26 PDT
+# SCA live state, 2026-10-17 10:39 PDT
 
 ## Goal
 Finish experiments, verified evaluation, full paper revamp and reproducibility delivery.
@@ -20,18 +20,22 @@ professional diagrams, readable tables/plots and continued unattended execution.
   HRDiT blur global RNG reset per prompt; environment versions in resume identity.
   Follow finite/fidelity/runtime checks, then12/46, then affordable191 comparison.
   Do not promote based on SCA winning. HRDiT progressive57steps is separate budget.
+- New scoring handoff:repro/baseline_evaluation_20261017/,9tests+independentreview.
+  Exact8-method12/46 pairing and cache-onlyCPU guard; actualGPUevaluation unrun.
 - Durable controller1076947 completed first work unit. Successor1077042 PENDING,
-  dependency satisfied, estimated10:42PDT; do not duplicate or alter frozen controller.
-  Root allocation1073260 ends10:45PDT; read active-team note for ownership transfer.
+  dependency satisfied; do not duplicate or alter frozen controller.
+  Root allocation1073260 ends10:45PDT; all root/child ownership released to continuation.
 - GPU fleets SCA10/1077447 (2-8nodes,4h,min2h) and SCA11/1077473
   (2-4nodes,2h,gh-dev) PENDING. No SCA GPU allocation active. Queue60pending,
-  0running,0failed,894done after baseline smoke addition. Last SCA11 estimate11:44PDT.
+  0running,0failed,894done after baseline smoke addition. Both await priority.
 - Owner-gated repair release completed after SCA7/steps ended; original failures kept.
   GCC freshGPU smoke and full6K gridfix pending.18release tests passed.
   Full6K needs4800s pluscleanup. Promote only successful reviewed GCC smoke receipt.
 - Generation6K AReA56/100,SCA64/100;Krea AReA0/100,SCA20/100.
-  SEGA7repairs complete, overlay100/100; final strict hash audit still required.
-  Overlay preserves193originals+7repairs. Generation footers gate exact100coverage.
+  Overlay audit PASSED:100DyPE+100SEGA,207PNG hashes/CRC/dimensions verified.
+  All7repair PNGs byte-identical tooriginals;200originalsidecars unchanged.
+  Receipt:results/evidence/krea_overlay_complete/receipt.json.
+  Generation footers still gate all4methods at exact100coverage.
 - Neither E2/E9 CPU bootstrap READY marker exists. After GPU features ready,
   run corresponding hold_cpu_finalize script onCPU,1000reference-image-cluster draws.
   Archive, regenerate exacttables/completegalleries, reconcile wholemanuscript,
@@ -42,6 +46,7 @@ professional diagrams, readable tables/plots and continued unattended execution.
 
 ## Map
 - HANDOVER.md first85lines: authoritative current status; historical claims below.
+- results/evidence/continuation/root_handoff_20261017_1039pdt.json: final live checks.
 - .agent/notes/latest_delivery.md: current PDF/ZIP hashes and validation links.
 - results/evidence/paper_revamp_20261017.json: delivery and numerical evidence.
 - results/evidence/presentation_review_20261017.json:38-page render/layout audit.
