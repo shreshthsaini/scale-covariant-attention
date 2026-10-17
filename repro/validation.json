@@ -1,0 +1,34 @@
+{
+  "validated_utc": "2026-10-17T07:00:43.815907+00:00",
+  "snapshot_manifest_sha256": "6fbf3074769b882a72043611c9097b7276694dd377eae8d0f178d7914d51a12a",
+  "source_files_verified": 10,
+  "numerical_tests": {
+    "path": "repro/evaluator_snapshot/tests/test_metrics.py",
+    "passed": 14,
+    "reported_seconds": 1.19,
+    "command": "PYTHONPATH=\"$PWD/repro/evaluator_snapshot\" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-project --python /work/09032/saini_2/vista/library/uv-envs/sca/bin/python python -m pytest -q repro/evaluator_snapshot/tests/test_metrics.py"
+  },
+  "cli_checks": [
+    {
+      "entrypoint": "repro/evaluator_snapshot/scripts/eval.py --help",
+      "environment": "sca",
+      "exit_code": 0
+    },
+    {
+      "entrypoint": "scripts/eval_extra.py --crope-root \"$PWD/repro/evaluator_snapshot\" --help",
+      "environment": "sca-metrics",
+      "exit_code": 0
+    }
+  ],
+  "import_paths_verified": [
+    "repro/evaluator_snapshot/crope/metrics/evaluate.py",
+    "repro/evaluator_snapshot/crope/utils.py"
+  ],
+  "scope_limits": [
+    "No model weights loaded",
+    "No full learned-metric rescoring",
+    "No fresh environment installation",
+    "No GPU generation",
+    "No live or frozen experiment code changed"
+  ]
+}
