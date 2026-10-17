@@ -1,82 +1,88 @@
-# SCA live state, 2026-10-17 10:39 PDT
+# SCA live state, 2026-10-17 17:48 UTC
 
 ## Goal
-Finish experiments, verified evaluation, full paper revamp and reproducibility delivery.
-User transferred full ownership to Codex and explicitly requested broader baselines,
-professional diagrams, readable tables/plots and continued unattended execution.
+Finish experiments, verified evaluation, the paper and reproducibility delivery.
+Codex owns the whole project. Preserve unfavorable results and novelty boundaries.
 
 ## Status and next action
-- Paper revamp committed4011238:38pages,473source files, independent ZIP build,
-  all38pixel-identical72dpi renders, changed pages144dpi inspected, no overfull boxes.
-  Method PDF/SVG/source/provenance; six-method authentic portrait/common crops;
-  five-baseline paired intervals; compact main/ablation tables; main latency plot.
-  Main30cells and headline numbers independently audited;42ablation cells preserved.
-- New clean AReA medians6K482.2844s/8K951.9874s, SCA161.5585s/287.6398s.
-  Speedups2.9852x/3.3097x,66.5%/69.8%time reduction.13clean timinggroups verified.
-  All7timinglogs identifyGH200120GB. Only full6K clean timing remains pending.
-- Baseline audit/source-pinned HRDiT+SigMa package prepared and CPU checked.
-  Both one-image smoke tasks frozen/enqueued, GPU generation unrun.18tests passed;
-  receipt:evidence/continuation/baseline_smoke_deployment_20261017.json. No duplicates.
-  HRDiT blur global RNG reset per prompt; environment versions in resume identity.
-  Follow finite/fidelity/runtime checks, then12/46, then affordable191 comparison.
-  Do not promote based on SCA winning. HRDiT progressive57steps is separate budget.
-- New scoring handoff:repro/baseline_evaluation_20261017/,9tests+independentreview.
-  Exact8-method12/46 pairing and cache-onlyCPU guard; actualGPUevaluation unrun.
-- Durable controller1076947 completed first work unit. Successor1077042 PENDING,
-  dependency satisfied; do not duplicate or alter frozen controller.
-  Root allocation1073260 ends10:45PDT; all root/child ownership released to continuation.
-- GPU fleets SCA10/1077447 (2-8nodes,4h,min2h) and SCA11/1077473
-  (2-4nodes,2h,gh-dev) PENDING. No SCA GPU allocation active. Queue60pending,
-  0running,0failed,894done after baseline smoke addition. Both await priority.
-- Owner-gated repair release completed after SCA7/steps ended; original failures kept.
-  GCC freshGPU smoke and full6K gridfix pending.18release tests passed.
-  Full6K needs4800s pluscleanup. Promote only successful reviewed GCC smoke receipt.
-- Generation6K AReA56/100,SCA64/100;Krea AReA0/100,SCA20/100.
-  Overlay audit PASSED:100DyPE+100SEGA,207PNG hashes/CRC/dimensions verified.
-  All7repair PNGs byte-identical tooriginals;200originalsidecars unchanged.
-  Receipt:results/evidence/krea_overlay_complete/receipt.json.
-  Generation footers still gate all4methods at exact100coverage.
-- Neither E2/E9 CPU bootstrap READY marker exists. After GPU features ready,
-  run corresponding hold_cpu_finalize script onCPU,1000reference-image-cluster draws.
-  Archive, regenerate exacttables/completegalleries, reconcile wholemanuscript,
-  and rebuild/inspect standalone delivery. New baselines must also be integrated.
-- Complete:E1/E4/E5/E6/E7/E8,budget controls,12paired8K metrics/gallery.
-  Fresh3metricenvs pass boundedCPUparity exactly,39assets12.08GB,0downloads;
-  42focused/71combined tests. Does not establish GPU/native4KMUSIQ/fullrerun parity.
+- Unit1077042 completed baseline promotion/evaluation hardening. All28 combined CPU
+  tests passed:15 promotion and13 evaluation. The separate helper prepares reviewed
+  12/46 candidates, sizing missing prompts from twice the maximum observed time
+  plus explicit startup headroom. It never enqueues or submits jobs; it retains the
+  frozen runner, manifest, output root and WandB. Partial/corrupt outputs refuse.
+- Evaluator now preserves all4 GPU reports, including paired deltas; binds reference
+  image bytes across195 rows/168 images; checks PNG CRC; explicitly uses4 CLI threads.
+  Verified39 frozen files,46 identities for each historical control,6 sampled PNGs.
+  New baseline GPU generation/scoring and CPU intervals remain unrun. Smokes absent.
+- NEXT: existing GPU event. At17:47:50 UTC, SCA10/1077447 and SCA11/1077473 remain
+  PENDING. No SCA GPU allocation active;60 pending,0 running,0 failed,894 done.
+  All60 admission headers fit fresh2h windows with120s cleanup. This is not runtime
+  proof. No submission, task mutation or controller change. Do not duplicate retries.
+- CPU1077042 runs on i618-043; deadline16:41:12 America/Chicago(21:41:12 UTC).
+  Successor1077572 is PENDING on dependency. Frozen controller hashes unchanged.
+  Currently actionable CPU work is done; return waiting so the controller parks on
+  existing GPU events. Do not change successor/dependency or launch another watcher.
+- Generation:6K AReA56/100,SCA64/100; Krea AReA0/100,SCA20/100. Strict readiness
+  remains closed. Neither E2/E9 CPU READY nor CPU COMPLETE marker exists. When READY
+  appears, run its hold_cpu_finalize script once on CPU,1000 reference-image-cluster
+  draws with bounded threads. Do not rerun a completed bootstrap.
+- After the GCC fresh GPU smoke, review its distinct receipt and promote to canonical
+  environment/fresh_gpu_smoke.json, preserving the original failure. Full6K gridfix
+  timing remains pending,4800s+cleanup.13 clean groups audited; only full6K pending.
+  AReA6K482.2844s/8K951.9874s; SCA161.5585s/287.6398s;2.9852x/3.3097x.
+  All7 timing logs identify GH200120GB.
+- Baseline next: inspect smoke images/profile fidelity, write a hash-bound review
+  with the new helper, prepare12 candidates sized to the fleet, inspect live task
+  ownership, then publish. After12 review, prepare46 and evaluate exact8-method
+  pairs. Consider affordable191 only after measured cost/protocol review and a
+  separate frozen manifest. Promotion must never depend on SCA winning.
+- Krea overlay:100DyPE+100SEGA,193 originals+7 replacements. All7 repaired PNGs
+  are byte-identical to originals;200 original sidecars unchanged;207 PNGs audited.
+- Paper revamp4011238:38 pages,473 source files, independent ZIP build,38 identical
+  72dpi renders, changed pages inspected at144dpi, no overfull boxes. Method diagram
+  PDF/SVG/source; authentic6-method portrait; paired intervals; readable tables.
+  Main30 cells independently verified;42 ablation cells preserved. Paper unchanged
+  by this CPU unit. PDF/ZIP hashes remain those in latest_delivery.md.
+- After GPU evidence: archive validated E2/E9 results; exact tables; complete6K/Krea
+  galleries; reconcile abstract/main interpretation/appendix/limitations. Rebuild
+  PDF+ZIP; independently build extracted sources; review appearance and numbers.
+- Complete:E1/E4/E5/E6/E7/E8,budget controls, exploratory12-prompt8K metrics/gallery.
+  Three fresh metric envs pass bounded CPU parity exactly:39 assets,12.08GB,
+  0 downloads,42 focused/71 combined tests. GPU/native4K MUSIQ/full reruns untested.
 
 ## Map
-- HANDOVER.md first85lines: authoritative current status; historical claims below.
-- results/evidence/continuation/root_handoff_20261017_1039pdt.json: final live checks.
-- .agent/notes/latest_delivery.md: current PDF/ZIP hashes and validation links.
-- results/evidence/paper_revamp_20261017.json: delivery and numerical evidence.
-- results/evidence/presentation_review_20261017.json:38-page render/layout audit.
-- .agent/notes/baseline_audit_20261017.md: primary-paper coverage/protocol/source audit.
-- repro/baseline_expansion_20261017/README.md: immutable smoke/pilot procedure.
-- .agent/notes/active_team_20261017.md: live ownership; avoid overlapping writes.
-- repro/runtime_repairs_20261017/README.md: repairs already released, do not duplicate.
-- results/evidence/metric_environment/validation_summary_1076947.json: CPUparity scope.
-- .agent/notes/paper_numeric_audit_20261017.md: final result insertion map.
-- slurm/CONTINUATION.md: frozen durable controller. /scratch/09032/saini_2/sca/taskq/:spool.
+- HANDOVER.md first85 lines: current authoritative summary before historical material.
+- results/evidence/continuation/unit_validation_1077042.json: latest live checks,
+  pending task hashes, frozen hashes and28 tests; read before task actions.
+- .agent/notes/unit_1077042.md: completed unit and exact next commands.
+- repro/baseline_promotion_1077042/README.md: after smokes, exact12/46 commands.
+- .agent/notes/baseline_eval_audit_1077042.md: evaluator fixes and planner review.
+- repro/baseline_evaluation_20261017/audit_validation_1077042.json: control audit.
+- repro/baseline_evaluation_20261017/README.md: exact8-method GPU/CPU handoff.
+- .agent/notes/baseline_audit_20261017.md: primary sources/protocol/novelty review.
+- repro/baseline_expansion_20261017/README.md: original frozen generation profiles.
+- repro/runtime_repairs_20261017/README.md: repairs already released; no duplicates.
+- results/evidence/metric_environment/validation_summary_1076947.json: CPU parity.
+- .agent/notes/latest_delivery.md: current PDF/ZIP hashes and appearance proof.
+- .agent/notes/paper_numeric_audit_20261017.md: result insertion map; old line counts.
+- slurm/CONTINUATION.md: frozen controller; scratch continuation/status.json is live.
 
 ## Decisions
-- Preserve original/negative outputs and old freezes. No scratch deletion.
-- No remote; commit explicit paths locally, no publication or external messages.
-- Last submission balance7908/40000SUs; before ANY new nodes checklogin2,
-  reservation headroom and96%burn cap, retain1600SU. Pack tasks into existingfleets.
-- Preserve MF9 hostwork/foreignSSH; no guests restarted. At most3SSH, login guardfirst.
-- Reference correction195rows/168identities; mainpatchFID/KIDgain unresolved.
-- 8K sixresolvedgains/fourunresolved, MUSIQ meansfavorAReA;stripe/gridfailures retained.
-  8K CPUfloat32 HPS differs from mainGPUprecision. Fullcalibrationruntime unknown.
-- Native emulation and fitted/transferred per-head/noise mixture is boundednovelty.
-  Two branches, headroles and globalopening are established. Exact-coordinate
-  theorem does not repair bf16drift;0.015625 is observedabsoluteerror,notULPbound.
-- SigMa paperdev/g3.5 vs releasedKrea/g4.5 are separateprotocols; releasedmu=max_shift.
-  Optional native/matchedKrea aliases are identicalschedules, not independentcontrols.
-- Baseline scale-up depends on fidelity/validity/cost, never favorablemetrics.
+- Keep originals, negative evidence, frozen packages and all scratch artifacts.
+- No remote; commit explicit paths locally. No posting or external messages.
+- Before any submission use one sequential login2 SSH; check balance+reservations,
+  retain1600SU and respect96% burn cap. Historical balance7908/40000SU is stale.
+- No submissions in this unit. Preserve foreign SSH/jobs; guard before fan-out.
+- Promotion uses fidelity, finite valid output and measured cost, never quality wins.
+- HRDiT57 progressive steps are a separate budget. SigMa paper dev/g3.5 differs from
+  released Krea/g4.5; released mu=max_shift. Identical aliases are not extra controls.
+- Reference195 rows/168 images: main patchFID/KID gain unresolved.8K has6 resolved
+  gains/4 unresolved; MUSIQ means favor AReA; stripe/grid failures retained.
+  8K CPU float32 HPS differs from main GPU precision. Calibration runtime unknown.
+- Native emulation+fitted/transferred head/noise mixing is bounded novelty; ingredients
+  established. Exact coordinates do not repair bf16 drift;0.015625 is observed error.
 
 ## Open questions
-- Wholeproject remains incomplete:6K/Krea,full6Ktiming,freshGPU smoke,finaleval,
-  broaderbaselineexperiments,completegalleries/manuscriptintegration anddelivery.
-- NewHRDiT/SigMaGPUcompatibility and measuredcost unknown untilsmokes finish.
-- No official ResDiT implementation verified; no invented officialbaseline claim.
-- GPU/CPU queue starts remain estimates. Successor is durable but currentlypending.
+- Waiting for existing SCA fleets; new baseline GPU fidelity/cost unknown until smokes.
+- E2/E9,full6K timing,fresh GPU,final evaluation,broader baselines,paper remain unfinished.
+- No official ResDiT code verified. Do not claim an invented reproduction.

@@ -25,6 +25,7 @@ def check_csv(path,expected,metrics,paths=None):
 
 
 METHODS={'sigma_dev_matched','hrdit_dev_author','full','area','dype','sega_official','ultraimage','sca_nb'}
+BASE_REPORTS=('metrics.json','per_image.csv','summary.csv','paired_deltas.csv')
 
 
 def validate_view(receipt,records,prompts):
@@ -56,7 +57,7 @@ def scoring_paths(workspace):
 
 def preserve_scores(workspace):
     completed=(workspace/'GPU_SCORES_COMPLETE.json').exists()
-    for name in ['metrics.json','per_image.csv','summary.csv']:
+    for name in BASE_REPORTS:
         source=workspace/'base'/name;target=source.with_name('scored_'+name)
         if target.exists():
             if not completed and sha(target)!=sha(source):
@@ -72,6 +73,10 @@ def main(workspace,inputs_only=False):
         if sha(code/name)!=value:raise ValueError(f'Evaluator source changed: {name}')
     for name in ['prompts','references']:
         if sha(workspace/(name+'.jsonl'))!=receipt[name+'_sha256']:raise ValueError(f'{name} changed')
+    sys.path.insert(0,str(Path(__file__).resolve().parent))
+    from prepare import reference_inputs
+    if reference_inputs(workspace/'references.jsonl')!=receipt.get('reference_inputs'):
+        raise ValueError('Reference image bytes or identities changed')
     for row in receipt['inputs']:
         for kind in ['image','sidecar']:
             if sha(row[kind])!=row[kind+'_sha256']:raise ValueError(f'Input changed: {row[kind]}')
@@ -121,8 +126,9 @@ def main(workspace,inputs_only=False):
             files[str(path)]=sha(path)
     preserve_scores(workspace)
     marker=dict(inputs_sha256=sha(workspace/'inputs.json'),features=files,
-        reports={name:sha(workspace/name) for name in ['base/scored_metrics.json','base/scored_per_image.csv',
-        'base/scored_summary.csv','extra/extra_metrics.json','extra/extra_per_image.csv','extra/extra_input_identities.json']})
+        reports={name:sha(workspace/name) for name in [
+        *('base/scored_'+name for name in BASE_REPORTS),
+        'extra/extra_metrics.json','extra/extra_per_image.csv','extra/extra_input_identities.json']})
     path=workspace/'GPU_SCORES_COMPLETE.json'
     if path.exists() and json.loads(path.read_text())!=marker:
         raise ValueError('Previously completed score/cache hashes changed')

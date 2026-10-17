@@ -1,6 +1,6 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-17 10:39 PDT. Read the first 85 lines, then `.agent/STATE.md`.
+Last updated 2026-10-17 17:48 UTC. Read the first 85 lines, then `.agent/STATE.md`.
 This current section supersedes historical claims below it.
 
 ## 1. Current status and corrections
@@ -43,19 +43,25 @@ from released Krea/guidance4.5; released mu already equals max_shift. Do not cou
 identical schedule aliases as separate controls. No official ResDiT code verified.
 New baselines must be evaluated/integrated or their concrete unresolved limitations
 recorded before claiming whole-project completion. Read the audit and README.
-Validated scoring handoff:repro/baseline_evaluation_20261017/README.md,9tests.
-Exact12/46 eight-method pairing, GPU score stage, cache-only CPU bootstrap;
-missing outputs close the barrier. No fresh baseline generation/scoring has run.
+Baseline hardening unit1077042:28combined tests passed. Separate duration-aware
+12/46candidate helper:repro/baseline_promotion_1077042/README.md,15tests.
+It preserves frozenrunner/outputroot, requires hash-bound fidelity review and never
+enqueues. Scoring helper now preserves all4GPUreports, hashes195reference rows/
+168images, checksPNGCRC and explicitly bounds CLIthreads4;13tests passed.
+Audit:repro/baseline_evaluation_20261017/audit_validation_1077042.json.
+No fresh baseline generation/scoring has run; missing outputs close both barriers.
 
-Durable CPU controller1076947 finished its first unit. Successor1077042 is PENDING,
-dependency satisfied; start estimates can move. No new CPU watcher is needed.
+CPU continuation1077042 is RUNNING on i618-043, ends16:41:12America/Chicago.
+Recorded successor1077572 is PENDING on dependency; controller owns continuation.
 Do not start another watcher, change its dependency, or edit the frozen controller.
-Root CPU allocation1073260 ends10:45PDT. Follow ownership note for handoff.
+Root1073260 ended; all root/child ownership is released to1077042.
 SCA7/SCA9 completed, adding24 tasks. No SCA GPU allocation currently running.
 SCA10 job1077447 PENDING:2-8nodes,4hours,min2hours. SCA11 job1077473 PENDING:
 2-4nodes,2hours on gh-dev. Both await scheduler priority.
 Both use unchanged frozen dispatch v2. Queue60pending,0running,0failed,894done.
-Receipt: continuation/baseline_smoke_deployment_20261017.json (under evidence).
+Unit receipt:results/evidence/continuation/unit_validation_1077042.json.
+All60pending admission headers fit fresh2h windows including120s cleanup;
+this is not an observed-runtime guarantee. No task mutations or submissions made.
 Latest submission balance7908/40000SUs. Before every new submission check login2
 balance and reservations, retaining1600SUs minimum. At most3 SSHs; guard first.
 MF9 guests remain yielded. Preserve foreign work, original logs and all scratch.

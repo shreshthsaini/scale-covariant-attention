@@ -21,6 +21,23 @@ EXTRA_PY='/work/09032/saini_2/vista/library/uv-envs/sca-metrics/bin/python'
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def reference_inputs(manifest):
+    """Bind every reference row to bytes while retaining repeated-image weights."""
+    result=[];seen=set();hashes={}
+    for line in Path(manifest).read_text().splitlines():
+        if not line.strip():continue
+        row=json.loads(line);identity=str(row['id'])
+        if identity in seen:raise ValueError('Duplicate reference prompt ID')
+        seen.add(identity)
+        image=Path(row['path']).expanduser()
+        if not image.is_absolute():image=Path(manifest).parent/image
+        image=image.resolve()
+        if image not in hashes:hashes[image]=sha(image)
+        result.append(dict(prompt_id=identity,image=str(image),image_sha256=hashes[image]))
+    if not result:raise ValueError('Empty reference manifest')
+    return result
+
+
 def load_adapter():
     receipt=json.loads(DEPLOY.read_text());root=Path(receipt['frozen_root'])
     for name,digest in receipt['files'].items():
@@ -42,6 +59,7 @@ def check_sample(image,method,row):
     from PIL import Image
     with Image.open(image) as opened:
         if opened.size!=(4096,4096):raise ValueError(f'Wrong pixel dimensions: {image}')
+        opened.verify()
     return dict(method=method,prompt_id=str(row['id']),image=str(image.resolve()),
         image_sha256=digest,sidecar=str(sidecar.resolve()),sidecar_sha256=sha(sidecar),config_hash=hashlib.sha256(json.dumps(cfg,sort_keys=True).encode()).hexdigest())
 
@@ -92,6 +110,7 @@ def gather(size,receipt,adapter):
 def freeze_evaluators(destination):
     files=[REPO/x for x in ['repro/evaluate_corrected.py','repro/eval_extra_portable.py',
         'repro/extra_report_identity.py','scripts/eval_extra.py','scripts/paired_bootstrap.py',
+        'repro/baseline_evaluation_20261017/prepare.py',
         'repro/baseline_evaluation_20261017/check_scores.py','repro/baseline_evaluation_20261017/cpu_cache_only.py']]
     files+=list((REPO/'repro/evaluator_snapshot').rglob('*.py'))
     manifest={}
@@ -116,12 +135,13 @@ def prepare(workspace,rows,selected):
     prompts=workspace/'prompts.jsonl';prompts.write_text(''.join(json.dumps(x)+'\n' for x in rows))
     references=workspace/'references.jsonl';shutil.copyfile(REPO/'results/evidence/prompts/aesthetic4k_refs.jsonl',references)
     receipt=dict(size=len(rows),methods=list(NEW+CONTROLS),inputs=selected,sources=manifest,
-        prompts_sha256=sha(prompts),references_sha256=sha(references),status='inputs_complete_scoring_not_run')
+        prompts_sha256=sha(prompts),references_sha256=sha(references),reference_inputs=reference_inputs(references),
+        status='inputs_complete_scoring_not_run')
     (workspace/'inputs.json').write_text(json.dumps(receipt,indent=2)+'\n')
-    common=['--root',view,'--prompts',prompts,'--reference-method','sca_nb','--res','4096x4096']
+    common=['--root',view,'--prompts',prompts,'--reference-method','sca_nb','--res','4096x4096','--threads','4']
     base=common+['--references',references,'--reference-clusters','images','--out',workspace/'base']
     extra=common+['--crope-root',code/'repro/evaluator_snapshot','--out',workspace/'extra']
-    header='#!/bin/bash\nset -euo pipefail\nexport HF_HOME=/scratch/09032/saini_2/tmp/hf TORCH_HOME=/scratch/09032/saini_2/tmp/torch HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1\nexport OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4\n'
+    header='#!/bin/bash\nset -euo pipefail\nexport HF_HOME=/scratch/09032/saini_2/tmp/hf TORCH_HOME=/scratch/09032/saini_2/tmp/torch HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1\nexport OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4 NUMEXPR_NUM_THREADS=4\n'
     check=command(PY,code/'repro/baseline_evaluation_20261017/check_scores.py',[workspace])
     gpu=[check+' --inputs-only',command(PY,code/'repro/evaluate_corrected.py',base+['--metrics','clip,pickscore,musiq,fid,kid,patch_fid,patch_kid','--device','cuda','--bootstrap','0']),
         command(EXTRA_PY,code/'repro/eval_extra_portable.py',extra+['--metrics','ir,aesthetic,hpsv2,hpsv21,clipiqa,arniqa','--device','cuda','--bootstrap','0']),check]

@@ -30,7 +30,10 @@ galleries remain pending. HRDiT and SigMa are being added as validated baseline
 experiments; two frozen smoke tasks are queued after18CPU checks. CPU preflight
 does not count as a GPU result.
 
-SCA10 1077447 and SCA11 1077473 are queued. Durable continuation 1077042 is
-queued with its dependency satisfied. Read HANDOVER.md for current ownership.
+At 17:47:50 UTC, SCA10 1077447 and SCA11 1077473 remain queued. CPU continuation
+1077042 completed baseline promotion/evaluation hardening with 28 combined tests.
+Its recorded successor 1077572 is pending on dependency; the controller owns it.
+Evidence: `results/evidence/continuation/unit_validation_1077042.json`.
+The PDF and source ZIP above remain unchanged. Read HANDOVER.md for ownership.
 Do not duplicate the watcher. Render history is under
 `/scratch/09032/saini_2/sca/paper_review_20261017/redesign_final_bibliography`.

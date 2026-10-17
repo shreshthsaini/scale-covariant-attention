@@ -34,7 +34,10 @@ No missing methods or prompts are silently dropped.
 After passing, the helper creates a new scratch workspace with a symlink-only
 sample view, exact prompt manifest, full195-row reference manifest, hashed input
 receipt, and a separate copy of the unchanged evaluator sources with SHA256 manifest.
-The original168 reference image identities retain195 row weights. It prepares:
+The original168 reference image identities retain195 row weights. Reference bytes
+are hashed once per distinct resolved image and checked again at every input/score
+barrier, including CPU reruns. All evaluator commands explicitly use four threads.
+It prepares:
 
 - `score_gpu.sh`: corrected base metrics/features and portable extra metrics with
   bootstrap0. Both retain the existing GPU metric precision and preprocessing.
@@ -42,7 +45,8 @@ The original168 reference image identities retain195 row weights. It prepares:
 - `intervals_cpu.sh`: rechecks the score barrier, uses cached Inception features
   for1000 reference-image-cluster distribution draws, and uses the existing paired
   bootstrap script for2000 scalar draws, seed0, comparing each new method to SCA.
-  It preserves the scored scalar CSV before the distribution-only report is written.
+  It preserves all four GPU reports, including paired deltas and the scalar CSV,
+  before the distribution-only reports are written.
 
 The main operator may run these scripts through existing allocations/spools after
 review; neither script requests GPUs or polls Slurm. GPU scoring must finish before

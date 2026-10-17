@@ -45,6 +45,11 @@ def test_generated_scripts_use_split_compute_and_preserved_scalars(tmp_path):
     assert '--bootstrap 0' in gpu and '--device cuda' in gpu
     assert '--bootstrap 1000' in cpu and '--reference-clusters images' in cpu
     assert '--draws 2000' in cpu and 'scored_per_image.csv' in cpu
+    assert gpu.count('--threads 4')==2 and cpu.count('--threads 4')==1
+    assert 'MKL_NUM_THREADS=4' in cpu
+    receipt=json.loads((out/'inputs.json').read_text())
+    assert len(receipt['reference_inputs'])==195
+    assert len({r['image'] for r in receipt['reference_inputs']})==168
     with pytest.raises(ValueError,match='new evaluation workspace'):p.prepare(out,[],[])
 
 
@@ -56,17 +61,18 @@ def test_missing_smoke_produces_no_cost_number(tmp_path):
     assert all(r['estimate'] is None and r['status']=='smoke_not_complete' for r in result.values())
 
 
-def fixture_view():
-    p=load('check_scores');prompts=[{'id':str(i),'prompt':'p'} for i in range(12)]
+def fixture_view(size=12):
+    p=load('check_scores');prompts=[{'id':str(i),'prompt':'p'} for i in range(size)]
     records=[dict(method=m,prompt_id=str(i),path=f'/image/{m}/{i}.png',sidecar=f'/image/{m}/{i}.json',
-                  config_hash='hash',res='4096x4096',seed=0) for m in p.METHODS for i in range(12)]
-    receipt=dict(size=12,methods=sorted(p.METHODS),inputs=[dict(method=r['method'],prompt_id=r['prompt_id'],
+                  config_hash='hash',res='4096x4096',seed=0) for m in p.METHODS for i in range(size)]
+    receipt=dict(size=size,methods=sorted(p.METHODS),inputs=[dict(method=r['method'],prompt_id=r['prompt_id'],
         image=r['path'],sidecar=r['sidecar'],config_hash='hash') for r in records])
     return p,receipt,records,prompts
 
 
-def test_current_view_rejects_changed_extra_or_subset():
-    p,receipt,records,prompts=fixture_view();p.validate_view(receipt,records,prompts)
+@pytest.mark.parametrize('size',[12,46])
+def test_current_view_rejects_changed_extra_or_subset(size):
+    p,receipt,records,prompts=fixture_view(size);p.validate_view(receipt,records,prompts)
     changed=[dict(r) for r in records];changed[0]['path']='/other/image.png'
     with pytest.raises(ValueError,match='path/config'):p.validate_view(receipt,changed,prompts)
     changed[0]=dict(records[0],config_hash='different')
@@ -106,8 +112,45 @@ def test_csv_rejects_changed_image_path(tmp_path):
 
 def test_stale_partial_snapshot_refused(tmp_path):
     p=load('check_scores');base=tmp_path/'base';base.mkdir()
-    for name in ['metrics.json','per_image.csv','summary.csv']:(base/name).write_text('current')
+    for name in p.BASE_REPORTS:(base/name).write_text('current')
     (base/'scored_metrics.json').write_text('old')
     with pytest.raises(ValueError,match='Partial immutable'):p.preserve_scores(tmp_path)
     (base/'scored_metrics.json').write_text('current');p.preserve_scores(tmp_path)
     assert (base/'scored_per_image.csv').read_text()=='current'
+
+
+def test_gpu_paired_deltas_survive_live_cpu_report_replacement(tmp_path):
+    p=load('check_scores');base=tmp_path/'base';base.mkdir()
+    for name in p.BASE_REPORTS:(base/name).write_text('gpu-'+name)
+    p.preserve_scores(tmp_path)
+    (tmp_path/'GPU_SCORES_COMPLETE.json').write_text('{}')
+    for name in p.BASE_REPORTS:(base/name).write_text('cpu-'+name)
+    p.preserve_scores(tmp_path)
+    for name in p.BASE_REPORTS:
+        assert (base/('scored_'+name)).read_text()=='gpu-'+name
+
+
+def test_reference_bytes_are_bound_even_with_same_size_and_timestamp(tmp_path):
+    import os
+    p=load('prepare');image=tmp_path/'reference.jpg';image.write_bytes(b'original')
+    manifest=tmp_path/'references.jsonl'
+    manifest.write_text(''.join(json.dumps(dict(id=i,path=image.name))+'\n' for i in ['a','b']))
+    original=p.reference_inputs(manifest);stat=image.stat()
+    assert len(original)==2 and original[0]['image_sha256']==original[1]['image_sha256']
+    image.write_bytes(b'changed!');os.utime(image,ns=(stat.st_atime_ns,stat.st_mtime_ns))
+    assert p.reference_inputs(manifest)!=original
+    manifest.write_text(json.dumps(dict(id='a',path=image.name))+'\n'+json.dumps(dict(id='a',path=image.name))+'\n')
+    with pytest.raises(ValueError,match='Duplicate reference'):p.reference_inputs(manifest)
+
+
+def test_input_barrier_rejects_changed_reference_before_scoring(tmp_path):
+    p=load('prepare');checks=load('check_scores')
+    image=tmp_path/'reference.jpg';image.write_bytes(b'original')
+    references=tmp_path/'references.jsonl';references.write_text(json.dumps(dict(id='a',path=str(image)))+'\n')
+    prompts=tmp_path/'prompts.jsonl';prompts.write_text('{}\n')
+    receipt=dict(sources={},inputs=[],prompts_sha256=p.sha(prompts),references_sha256=p.sha(references),
+        reference_inputs=p.reference_inputs(references))
+    (tmp_path/'inputs.json').write_text(json.dumps(receipt))
+    image.write_bytes(b'changed!')
+    with pytest.raises(ValueError,match='Reference image bytes'):
+        checks.main(tmp_path,inputs_only=True)
