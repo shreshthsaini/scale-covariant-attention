@@ -122,12 +122,48 @@ For extras, `repro/eval_extra_portable.py` uses archived helpers by default and
 locates the aesthetic checkpoint under `--torch-home`. It changes only those
 paths; the existing scorer implementation and checkpoint hash check remain intact.
 
-Use the extra environment for `--metrics aesthetic,hpsv2,hpsv21,clipiqa,arniqa,is`
-and the ImageReward environment for `--metrics ir`, each in a separate output
-directory. Pass `--hf-home "$HF_HOME" --torch-home "$TORCH_HOME"` to both commands.
-Do not concatenate per-image rows and rerun scorers under a mismatched environment.
-The separate reports provide the respective table columns; combining them into
-one campaign-format report remains a reporting step, not another model run.
+Use the extra and ImageReward environments in separate output directories, then
+merge their completed reports. For example, after restoring the images:
+
+```bash
+EXTRA_PY=/work/09032/saini_2/vista/library/uv-envs/sca-metric-extra-NEW/bin/python
+IR_PY=/work/09032/saini_2/vista/library/uv-envs/sca-metric-imagereward-NEW/bin/python
+IMAGE_ROOT=/scratch/09032/saini_2/sca/metric_restore_NEW/images
+RESULT_ROOT=/scratch/09032/saini_2/sca/metric_restore_NEW/evaluation
+COMMON=(--root "$IMAGE_ROOT" --prompts results/evidence/prompts/aesthetic4k_eval.jsonl
+  --reference-method area --res 4096x4096 --bootstrap 1000 --bootstrap-seed 0
+  --iqa-long-side 1024 --is-splits 10 --hf-home "$HF_HOME" --torch-home "$TORCH_HOME")
+"$EXTRA_PY" repro/eval_extra_portable.py "${COMMON[@]}" \
+  --metrics aesthetic,hpsv2,hpsv21,clipiqa,arniqa,is --out "$RESULT_ROOT/extra_split"
+"$IR_PY" repro/eval_extra_portable.py "${COMMON[@]}" \
+  --metrics ir --out "$RESULT_ROOT/ir_split"
+"$SCA_FRESH_PY" repro/merge_extra_reports.py --out "$RESULT_ROOT/extra_merged" \
+  "$RESULT_ROOT/ir_split" "$RESULT_ROOT/extra_split"
+```
+
+Each portable scorer hashes image bytes, prompt text and sidecars before and after
+scoring. `extra_input_identities.json` records those identities, the source
+environment/code hashes and hashes of all four report files. Resume is allowed
+only when these inputs, code and environment remain unchanged. Existing caches
+without this proof require a new output directory. Hashing reads the image files
+twice but performs no additional model inference.
+
+The merger requires identical prompt/method/resolution/seed/path/image identities,
+complete metric coverage, matching reference/bootstrap/preprocessing settings,
+and consistent JSON/CSV reports. It checks scalar point means and paired counts.
+It rejects overlapping metrics with conflicting values, intervals or model
+provenance. Identical duplicate metrics are retained once, with both sources
+recorded. Historical reports without scoring-time identity proof are rejected;
+the merger does not retrospectively infer image identity from a path.
+
+The output contains standard `extra_per_image.csv`, `extra_summary.csv`,
+`extra_paired_deltas.csv` and `extra_metrics.json`, plus its identity manifest.
+The paper's table reader accepts this format. Each source environment, full
+configuration, metric provenance and file hashes remain in the merged JSON;
+top-level versions contain only values shared by all sources. Source confidence
+intervals and IS statistics are preserved. IS is not recomputed without logits.
+No extra scorer run or invented score is used to combine the reports. Preserve
+the identity manifest when archiving the merged and source reports.
 
 The remaining verification is concrete: install each complete lock, run its CLI
 and numerical tests, then score the same small, hash-identified image/prompt set
@@ -136,3 +172,9 @@ full rescoring. In particular, the coherent ImageReward timm pin differs from th
 historical environment. Fresh locks, import checks and matching checkpoints alone
 do not establish equal scores. The supplied restore-plan/checksum tests cover
 default no-download behavior and rejection of changed assets.
+
+`repro/tests/test_extra_report_merge.py` uses explicitly synthetic report fixtures
+to cover identity/seed mismatches, partial results, duplicate/conflicting metrics,
+stale files, invalid statistics and compatibility with the actual paper table
+reader. `merge_validation.json` also records a tiny end-to-end synthetic PNG test
+using sidecar latency only, including refusal to resume after an image changes.
