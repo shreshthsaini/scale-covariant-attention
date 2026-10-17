@@ -46,7 +46,9 @@ Two additional regression tests in `tests/test_reference_rows.py` exercise the
 corrected evaluator. Different prompt IDs share one reference PNG, produce distinct
 crop features, and reuse historical per-record caches. Corrected point estimates
 and paired intervals match direct per-row calculations, whole-image FID/KID stay
-unchanged, and all reference rows remain present. The combined suite passes 16 tests:
+unchanged, and all reference rows remain present. A third test checks that optional
+MUSIQ execution changes use a separate cache while other metric caches remain
+compatible. The combined suite below passes 17 tests:
 
 ```bash
 PYTHONPATH="$PWD/repro/evaluator_snapshot:$PWD" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
@@ -84,6 +86,7 @@ precision for deterministic 512x512, 768x1024 and 1024x1024 random inputs.
 Attention regression tests cover unmasked, partially masked and fully masked
 queries, unequal chunk boundaries, and inference-only enforcement. These checks
 support numerical equivalence, not a claim of bitwise identity at every size.
+The full suite, including the cache-merge regression, passes 28 tests.
 
 ```bash
 HF_HOME=/scratch/09032/saini_2/tmp/hf TORCH_HOME=/scratch/09032/saini_2/tmp/torch \
@@ -92,7 +95,7 @@ HF_HOME=/scratch/09032/saini_2/tmp/hf TORCH_HOME=/scratch/09032/saini_2/tmp/torc
   --out /scratch/09032/saini_2/sca/eval/musiq_chunked_validation.json
 OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 \
   uv run --no-project --python "$SCA_PY" python -m pytest -q \
-  repro/tests/test_musiq_chunked.py repro/tests/test_reference_rows.py \
+  repro/tests/test_cache_merge.py repro/tests/test_musiq_chunked.py repro/tests/test_reference_rows.py \
   repro/evaluator_snapshot/tests/test_metrics.py
 ```
 
