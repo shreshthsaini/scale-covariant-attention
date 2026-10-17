@@ -1,4 +1,4 @@
-# SCA live state, 2026-10-17 03:50 CDT
+# SCA live state, 2026-10-17 03:57 CDT
 
 ## Goal
 Finish experiments, verified evaluation, paper and reproducibility package.
@@ -7,7 +7,9 @@ The user transferred full project ownership to Codex. Continue without another a
 ## Status and next action
 - User requested unattended continuation. CPU controller1076947 submitted; frozen
   dispatch/20261017_continuation. It queues its successor before starting agent work.
-  Live startup/successor verification is pending. Auth smoke and16 offline tests passed.
+  Job1076947 is PENDING without dependency. Auth smoke and16 offline tests passed.
+  TACC rejected a current-node srun attempt before worker startup; no owned process remains.
+  Live controller execution/successor verification awaits its CPU allocation.
   Read slurm/CONTINUATION.md and scratch sca/continuation/status.json for current ownership.
 - Complete: E1/E4/E5/E6/E7/E8, budget controls, and E2 8K metrics and full gallery.
 - Latest verified paper: 37 pages. PDF and extracted Overleaf ZIP build independently;

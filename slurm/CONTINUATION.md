@@ -35,8 +35,8 @@ Runtime state lives at `/scratch/09032/saini_2/sca/continuation/`:
 - `job_<job>/turn_*.events.jsonl`: full agent events and adjacent final outputs.
 - `slurm_<job>.log`: scheduler output; `failure_<job>.json` records controller errors.
 - `STOP`: an optional operator-created file that stops new work at the next unit
-  boundary. It does not interrupt an active experiment. Remove it only to resume
-  explicitly requested continuation; never delete unrelated scratch artifacts.
+  boundary. It does not interrupt an active experiment. To resume on explicit
+  instruction, archive this marker under a dated name; do not delete scratch files.
 
 The frozen deployment is
 `/scratch/09032/saini_2/sca/dispatch/20261017_continuation/`, with SHA256 checks.
@@ -48,3 +48,9 @@ The worker maintains `HANDOVER.md`, `.agent/STATE.md`, and
 `.agent/notes/latest_delivery.md`. Latest user artifacts remain `paper/main.pdf`
 and `paper/sca_overleaf.zip`. No public repository or external messaging is
 authorized by this continuation request.
+
+Initial deployment: CPU job1076947 is queued without dependencies. A bounded
+headless authentication test and16 offline controller tests passed. Reusing the
+current CPU host through srun was rejected by TACC before any worker started;
+that failed attempt is archived. The original v1 frozen batch job remains the
+authoritative continuation. Live batch startup and rearming still await allocation.

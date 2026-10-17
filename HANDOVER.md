@@ -1,6 +1,6 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-17 03:50 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
+Last updated 2026-10-17 03:57 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
 its short live index. Historical sections below are superseded by the correction notice here.
 
 ## 1. Current status and corrections
@@ -10,8 +10,11 @@ The user explicitly requested unattended continuation while away. CPU controller
 is submitted, using frozen dispatch/20261017_continuation. It performs remaining CPU work,
 then wakes on GPU scheduler events; each worker arms its successor before agent work.
 See slurm/CONTINUATION.md and scratch sca/continuation/status.json for live ownership.
-GPT-6.1 Sol headless authentication passed;16 controller tests passed. Live worker startup
-and successor submission are being verified. No login-node daemon is used.
+GPT-6.1 Sol headless authentication passed;16 controller tests passed. Job1076947 is
+PENDING without dependency; live startup and successor submission await allocation.
+An attempted srun on the current host was rejected by TACC before any worker started.
+That attempt exited; no local watcher or login-node daemon remains. The queued batch
+job is the durable continuation, independent of this chat and current CPU allocation.
 E1, E4, E5, E6, E7, E8, budget controls and the exploratory E2 8K comparison are complete.
 The37-page paper and extracted Overleaf ZIP build independently. The final source refresh
 passed; all37 pages render identically to the reviewed version at72dpi. E2 6K, three E3 latency groups,
