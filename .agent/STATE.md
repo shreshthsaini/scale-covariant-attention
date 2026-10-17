@@ -1,4 +1,4 @@
-# SCA live state, 2026-10-17 02:14 CDT
+# SCA live state, 2026-10-17 02:35 CDT
 
 
 ## Goal
@@ -6,30 +6,37 @@ Finish Phase 2 experiments, verified evaluation, figures, paper and reproducibil
 User explicitly transferred full project ownership to Codex; continue autonomously.
 
 ## Status and next action
-- Root owns campaign, delivery and documentation. Paper agent reconciles corrected metric tables;
-  evidence agent checks distribution CIs; figures agent tests memory-safe native8K MUSIQ.
-- Complete: Phase1, E1/E4/E5/E6/E7/E8 and budget controls. PDF35pages and standalone ZIP verified.
+- Root owns campaign, delivery and documentation. Paper agent implements isolated dispatcher v2;
+  evidence and figures agents have completed their audits and are idle.
+- Complete: Phase1, E1/E4/E5/E6/E7/E8 and budget controls. PDF36pages and extracted ZIP verified,
+  corrected patch metrics, full8K gallery, readable generality table and2K/3K timings integrated.
 - Audit:740 scalar means,13 calibration fits exact;152 legacy distribution points reproduced exactly.
-- Confirmed official reference195rows/168images. Historical patch-feature assembly aliased rows.
-  Corrected pointvalues archived; repro/evaluate_corrected.py fixes assembly,16tests pass.
-- Main corrected patchFID99.8156 vs103.4111, patchKID.00916929 vs.01143955. Both imagecluster
-  paired95%CIs crosszero. WholeFID benefit remains significant; KID remains nonsignificant.
-- SCA6 1075813 RUNNING2nodes c638-152,c640-021, ends03:07CDT. E3 2K/3K latency active.
-- SCA7 1075814 PENDING4nodes/4h with2hminimum. No new job submitted. Budget79.47%burned,
-  8212.919/40000SUsavailable, verified login usage.map02:13CDT.
-- MF9 guests yielding to host workload. Do not restart them; last2SCA tasks finishing on c638-141/142.
-- E2 8K12pairs complete. CPU extra+CLIP/PickScore complete; fullMUSIQ killed137 at8K.
-  Process88759 reaped. Failed task i999_eval_e2_8192.sh retained; don't blindly relaunch.
-- Pending E2 6K and E9 Krea generation remains. Evaluation scripts i998/j999 in hold_cpu;
-  root must dispatch once generation completes, with corrected evaluator and strict100coverage.
-- E3 long6K/8K bundles in taskq/hold_long, need2hfit. Other3tasks active/pending.
-  Summary in hold_cpu/y999_summary_latency.sh. First sca_latency_warmup excluded; validate
-  first_call_in_process=false for all timed images and n=3 before reporting.
-- NEXT: finish metric corrections and memory-safe8K scoring; publish corrected PDF/ZIP;
-  keep GPUs busy and finish E2/E3/E9. Do not claim project complete while these remain.
-- No git remote. Current session on CPUcompute i618-051. Two account SSH sessions already held;
-  guard before SSH, at most3account-wide. No login compute or poller.
-- RA6 c620-061 is reserved by a live dependency-waiting host worker; do not borrow it.
+  All targeted corrected distribution CIs complete. Main patchFID/KID unresolved; wholeFID significant.
+- Corrected evaluator: --reference-clusters images retains195rowweights/168imageidentityclusters.
+  Native8K MUSIQ fixed with opt-in --musiq-query-chunk256; bounded pretrained scores matchexactly.
+  Actual8K benchmark succeeded702sCPU/21.76GiBpeak. Snapshot evaluator unchanged.
+- SCA6 1075813 RUNNING2nodes c638-152,c640-021, ends03:07CDT. E3 4K and6KSCA active.
+- E3 8KSCA released02:34; shouldstartafter6KSCA~02:39 andfinish~03:03. Ifstillpending02:41,
+  parkagain because measurementmustfinishwithoutcoldresume. Other3longtasks remainhold_long.
+- SCA7 1075814 PENDING4nodes/4h min2h; newSCA8 1076908 PENDING8nodes/4h min2h.
+  SCA8 dispatcher frozen under /scratch/.../sca/dispatch/20261017_completion.
+  Flexible replacement is being reviewed; no v2 submission yet. Budget79.47%burned,
+  8212.919/40000SUsavailable, verifiedloginusage.map beforeSCA8 submission.
+- MF9 guests fullyyielded. All12paired8K generated;6K24/100each;Krea0/100each.
+- FourCPU8KMUSIQ shards nowROOT-owned: sessions45166,91706,77575,42657;
+  PIDs973089,949776,949774,949775 respectively. Firstbenchmarkdone/reaped.
+  Outputs/logs: /scratch/.../sca/eval/e2_8192_musiq_shards_20261017/.
+  Reapall, use repro/merge_evaluation_caches.py (rejectsconflictingkeys), expect72basecacheentries,
+  then finalcorrected evaluator --metrics clip,pickscore,musiq --device cpu --musiq-query-chunk256.
+- Failed i999_eval_e2_8192.sh is originalnativeMUSIQOOM; preservehistory, don'tblindlyrelaunch.
+- E2/E9 eval scripts i998/j999 inhold_cpu, strict100coverage, correctedimageclusterbootstrap,
+  onlineWandB;6Kalsoquerychunk256. Dispatchonlyaftergenerationcomplete.
+- E3 scripts/audit_latency.py verifieslogwarmupthen3timedimages, archiveslogs/sidecars andCSVs.
+  SCA sidecarslackfirst_callflag; don'trequireit, verifyuninterruptedlogsequenceinstead.
+- OnlineWandB snapshotrun sca-phase2-20261017; refresh scripts/track_campaign.py atmilestones.
+- NEXT: finishCPU8Kscoring/report/paper; validatev2dispatcher, keepGPUsbusy; finishE2/E3/E9.
+- No gitremote. CPUcomputei618-051. TwootherprojectSSHsessionsheld; oursallreaped.
+  Atmost3SSHaccount-wide, guardbeforeSSH. RA6c620-061 reserved; do notborrow.
 
 ## Map
 | Note | Read it when |

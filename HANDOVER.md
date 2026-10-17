@@ -1,14 +1,15 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-17 02:14 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
+Last updated 2026-10-17 02:35 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
 its short live index. Historical sections below are superseded by the correction notice here.
 
 ## 1. Current status and corrections
 
 Codex is the main operator, authorized to finish experiments, evaluation, paper and delivery.
-Phase 2 E1, E4, E5, E6, E7, E8 and budget controls are complete and integrated in a 35-page
+Phase 2 E1, E4, E5, E6, E7, E8 and budget controls are complete and integrated in a 36-page
 paper. The PDF and Overleaf ZIP both build independently. E2 6K/8K, E3 latency and E9 Krea
-remain active. SCA6 job1075813 has two GH200 nodes until03:07CDT; SCA7 job1075814 is pending
+remain active. New SCA8 job1076908 requests eight nodes for four hours (minimum two),
+with a frozen dispatcher. SCA6 job1075813 has two GH200 nodes until03:07CDT; SCA7 job1075814 is pending
 with four nodes, four hours requested and two-hour minimum. Existing MF9 guest workers
 are yielding to their host project's resumed work. Do not restart those guests.
 
@@ -28,12 +29,13 @@ The recorded GPU max-absolute difference0.015625 is not a proven one-ULP bound.
 Novelty is native emulated-scale output calibration and transferred per-head/noise mixing;
 local/global branches, head-specific roles and a global opening have close prior art.
 
-All12 paired8K images are generated. CPU preference/alignment scores completed; native8K
-MUSIQ exceeded memory, and an equivalent query-chunked implementation is being tested.
-Two long6K/8K latency bundles are in taskq/hold_long until an allocation can fit them.
+All12 paired8K images are generated. CPU preference/alignment scores completed. Query-chunked native8K MUSIQ passes equivalence
+checks and the actual8K benchmark (702sCPU,21.76GiBpeak); four CPU shards are now scoring all24images.
+Long6K/8K latency bundles were split by method, retaining one warm-up plus three timed images.
+Three long AReA/full tasks remain held; SCA6K is running and SCA8K is queued for the currentallocation.
 Evaluation dependency-wait tasks are in hold_cpu to avoid occupying GPUs while waiting.
 SU balance verified from login usage.map:40000 awarded,31787.081 used,8212.919 available
-(79.47% burned), safely below96%. No new job was submitted; existing SCA7 was reshaped.
+(79.47% burned), safely below96%. SCA8 was submitted after checking this balance; existing SCA7 was reshaped.
 **There is no git remote.** Keep local commits; publication is not part of this handoff.
 
 ## 2. Goal and user requirements
