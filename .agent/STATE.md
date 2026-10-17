@@ -36,3 +36,9 @@ move hold_ultra/* to pending.
 MUSIQ-crop +11.6*; seed2 IR +0.36*, HPS2.1 +0.028*, Pick +0.86*, CLIP +1.69*, crop +11.0* (consistent with seed 0).
 E8 FLUX.2-dev 4096^2 (50 prompts, results/e8_flux2_sca_vs_full.csv): SCA-full IR +0.46*, aes +0.31*, HPS2.1
 +0.018*, Pick +0.56*, CLIP-IQA +0.066*, ARNIQA +0.071*, MUSIQ +16.0*, crop +21.4*, CLIP n.s., -224 s/img (~2x).
+## 22:00 E1 BASELINES (191 prompts, 4096^2; results/e1_*): IR/HPS2.1/Pick/CLIP/MUSIQc/FID/s:
+SCA 1.229/.297/23.09/29.11/61.2/138.4/71; UltraImage 1.276/.308/23.32/28.80/41.8/142.7/309; AReA .917/.272/
+22.35/27.67/50.4/146.0/262; SEGA .552/.244/21.64/26.93/50.4/165.4/190; DyPE -.105/.205/20.49/24.84/50.4/206.2/196.
+UltraImage-SCA: HPS2.1 +.011*, Pick +.24*, aes +.055*, ARNIQA +.011*, IR +.047 n.s.; SCA better CLIP .31*,
+MUSIQ 11.7*, crop 19.4*, FID, patch FID; 4.3x faster. UltraImage = 2-stage, 2x30 steps, guidance 3.5->7.
+Budget checks queued (b*_sca_s56 = 56 steps, b*_sca_g7 = guidance 7; abl50; eval b999_eval_budget.sh -> eval/budget_*).
