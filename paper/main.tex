@@ -282,7 +282,7 @@ We calibrate FLUX.1-dev on 32 prompts at $1024^2$ and 16 at $1280^2$, written fo
 \label{sec:main}
 At $4096^2$, \sca{} beats AReA on every preference, alignment, and no-reference quality metric (Table~\ref{tab:main}): ImageReward $+0.31$ $[0.24,0.38]$, HPSv2.1 $+2.50$ $[2.17,2.88]$, PickScore $+0.73$ $[0.62,0.86]$, CLIP score $+1.45$ $[1.06,1.82]$, MUSIQ$_\text{c}$ $+10.9$ $[9.5,12.4]$. FID falls by 7.6 $[2.9,12.8]$. Corrected patch FID, patch KID, whole-image KID, and Inception score have intervals spanning zero; in particular, patch KID is not significant after correcting reference crops and grouping repeated image identities (Appendix~\ref{app:metrics}). \sca{} takes 71.0\,s per image, 2.6 times less than full attention and 3.0 times less than AReA. Full attention collapses into stripes and is significantly worse than AReA on every reported per-image preference, alignment, and quality metric. At 1:1 scale, AReA's skin and fur are smoother than \sca{}'s and its surfaces carry speckle and tiling artifacts (Figure~\ref{fig:qual_main}). \sca{} also improves every reported per-image preference, alignment, and quality metric over DyPE and SEGA under the shared protocol (Appendix~\ref{app:phase2}). UltraImage presents a tradeoff: its HPSv2.1 is higher by 1.10 $[0.80,1.40]$ and PickScore by 0.24 $[0.14,0.33]$, while its ImageReward advantage of 0.047 $[-0.016,0.111]$ is not resolved by the interval. \sca{} has higher CLIP score by 0.31 $[0.01,0.63]$ and crop MUSIQ by 19.4 $[18.2,20.7]$, and lower FID and patch FID. Campaign means are 71.5\,s for \sca{} and 308.5\,s for UltraImage, including its per-prompt preparation; these are not isolated-node benchmarks. Additional sampling-budget checks are in Appendix~\ref{app:budget}.
 
-\paragraph{Other aspect ratios.} The two non-square settings differ in which metrics favor \sca{}.  At $2048\times4096$ (factors 2 and 4) \sca{} has mixed results: ImageReward ($-0.00$ $[-0.08,0.07]$) and FID have intervals spanning zero, while the two MUSIQ scores and HPSv2 favor \sca{} and aesthetic score and CLIP-IQA favor AReA. Corrected patch FID and KID also favor AReA: patch FID is worse by 5.5 $[1.9,9.5]$ and patch KID ($\times10^3$) by 1.95 $[0.39,3.70]$. At $2048\times6144$ (factors 2 and 6) \sca{} is significantly better on ImageReward ($+0.27$ $[0.15,0.40]$), FID ($-19.8$ $[-24.4,-11.8]$), KID, Inception score, PickScore, HPSv2, both MUSIQ variants, CLIP-IQA, and ARNIQA, and significantly worse on aesthetic score ($-0.15$). Corrected patch FID and KID point estimates also favor AReA at this size; their updated intervals are pending. The scale-2 table changes the $2048\times4096$ results negligibly (Appendix~\ref{app:ps2}). Figure~\ref{fig:gallery_8192_complete} shows four examples sampled from the completed 12-prompt exploratory $8192^2$ run; grid and stripe artifacts remain. \todo{E2: $6144^2$ metrics.}
+\paragraph{Other aspect ratios.} The two non-square settings differ in which metrics favor \sca{}.  At $2048\times4096$ (factors 2 and 4) \sca{} has mixed results: ImageReward ($-0.00$ $[-0.08,0.07]$) and FID have intervals spanning zero, while the two MUSIQ scores and HPSv2 favor \sca{} and aesthetic score and CLIP-IQA favor AReA. Corrected patch FID and KID also favor AReA: patch FID is worse by 5.5 $[1.9,9.5]$ and patch KID ($\times10^3$) by 1.95 $[0.39,3.70]$. At $2048\times6144$ (factors 2 and 6) \sca{} is significantly better on ImageReward ($+0.27$ $[0.15,0.40]$), FID ($-19.8$ $[-24.4,-11.8]$), KID, Inception score, PickScore, HPSv2, both MUSIQ variants, CLIP-IQA, and ARNIQA, and significantly worse on aesthetic score ($-0.15$). Corrected patch FID and KID point estimates favor AReA at this size, but neither difference is resolved: patch FID $+3.6$ $[-0.2,11.3]$ and patch KID ($\times10^3$) $+1.70$ $[-2.22,6.07]$. The scale-2 table changes the $2048\times4096$ results negligibly (Appendix~\ref{app:ps2}). Figure~\ref{fig:gallery_8192_complete} shows four examples sampled from the completed 12-prompt exploratory $8192^2$ run; grid and stripe artifacts remain. \todo{E2: $6144^2$ metrics.}
 
 \snippet{qual_main}{%
 \begin{figure}[t]
@@ -300,46 +300,50 @@ At $4096^2$, \sca{} beats AReA on every preference, alignment, and no-reference 
 \end{figure}}
 
 \begin{table}[t]
+  \caption{\textbf{Seconds per image}, batch 1, idle GH200, 28 steps with text encoding and VAE decoding, median of three after warm-up. The $2048^2$ and $3072^2$ rows are completed portions of the continuing E3 sweep; $4096^2$ uses the earlier benchmark. \tbd: pending.}
+  \label{tab:latency}
   \centering\footnotesize
-  \begin{minipage}[t]{0.47\linewidth}
-    \centering
-    \captionof{table}{\textbf{Seconds per image}, batch 1, idle GH200, 28 steps with text encoding and VAE decoding, median of three. \todo{E3}}
-    \label{tab:latency}
-    \setlength{\tabcolsep}{3pt}
-    \begin{tabular}{lccc}
-      \toprule
-      Size ($N$ tokens) & Full & AReA & \sca{} \\
-      \midrule
-      $2048^2$ (16{,}384) & \tbd & \tbd & \tbd \\
-      $3072^2$ (36{,}864) & \tbd & \tbd & \tbd \\
-      $4096^2$ (65{,}536) & 184.6 & 212.6 & \textbf{71.0} \\
-      $6144^2$ (147{,}456) & \tbd & \tbd & \tbd \\
-      $8192^2$ (262{,}144) & \tbd & \tbd & \tbd \\
-      \bottomrule
-    \end{tabular}
-  \end{minipage}\hfill
-  \begin{minipage}[t]{0.5\linewidth}
-    \centering
-    \captionof{table}{\textbf{Generality and sensitivity} at $4096^2$: paired difference, method minus reference; HPSv2.1 $\times100$. E6 and E7 use default \sca{} as reference. Intervals in Appendix~\ref{app:phase2}. \tbd: pending.}
-    \label{tab:generality}
-    \setlength{\tabcolsep}{2.5pt}
-    \resizebox{\linewidth}{!}{%
-    \begin{tabular}{llccc}
-      \toprule
-      & Setting (vs.\ reference) & $\Delta$IR & $\Delta$HPSv2.1 & $\Delta$MUSIQ$_\text{c}$ \\
-      \midrule
-      E4 & HRGen-1K, vs.\ AReA & $+0.642$ & $+4.48$ & $+12.7$ \\
-      E5 & seed 1 / 2, vs.\ AReA & $+0.305/0.355$ & $+2.19/2.80$ & $+11.6/11.0$ \\
-      E6 & 4 / 8 / 16 calib.\ prompts & $+0.012/+0.010/-0.007$ & $-0.02/+0.01/-0.01$ & $+0.09/-0.03/-0.11$ \\
-      E7 & $\sigma_g=0.85$ / $0.93$ & $-0.015/-0.004$ & $-0.85/-0.15$ & $-2.04/+0.65$ \\
-      E8 & FLUX.2-dev, vs.\ full attention & $+0.456$ & $+1.84$ & $+21.4$ \\
-      E9 & FLUX.1-Krea-dev, vs.\ AReA & \tbd & \tbd & \tbd \\
-      \bottomrule
-    \end{tabular}}
-  \end{minipage}
+  \setlength{\tabcolsep}{8pt}
+  \begin{tabular}{lrrr}
+    \toprule
+    Size ($N$ tokens) & Full attention & AReA & \sca{} \\
+    \midrule
+    $2048^2$ (16{,}384) & 22.9 & 41.0 & \textbf{18.2} \\
+    $3072^2$ (36{,}864) & 73.9 & 114.3 & \textbf{40.2} \\
+    $4096^2$ (65{,}536) & 184.6 & 212.6 & \textbf{71.0} \\
+    $6144^2$ (147{,}456) & \tbd & \tbd & \tbd \\
+    $8192^2$ (262{,}144) & \tbd & \tbd & \tbd \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
-\paragraph{Latency.} \sca{}'s attention is linear in $N$ (Proposition~\ref{prop:cost}). At $4096^2$ one attention layer takes 18.7\,ms against 87.3\,ms for full attention, and a whole image 71.0\,s against 184.6\,s (Table~\ref{tab:latency}). \todo{E3: the curve from $2048^2$ to $8192^2$.}
+\begin{table}[t]
+  \caption{\textbf{Generality and sensitivity} at $4096^2$: paired differences from the stated reference; HPSv2.1 is $\times100$. Calibration and gate variants use default \sca{} (32 calibration prompts, $\sigma_g=0.89$) as reference. $n$ counts evaluation prompts. Intervals are in Appendix~\ref{app:phase2}. \tbd: pending.}
+  \label{tab:generality}
+  \centering\footnotesize
+  \setlength{\tabcolsep}{6pt}
+  \begin{tabular}{lrlrrr}
+    \toprule
+    Setting & $n$ & Reference & $\Delta$IR & $\Delta$HPSv2.1 & $\Delta$MUSIQ$_\text{c}$ \\
+    \midrule
+    HRGen-1K & 200 & AReA & $+0.642$ & $+4.48$ & $+12.71$ \\
+    Seed 1 & 46 & AReA & $+0.305$ & $+2.19$ & $+11.58$ \\
+    Seed 2 & 46 & AReA & $+0.355$ & $+2.80$ & $+11.04$ \\
+    \midrule
+    4 calibration prompts & 46 & \sca{} & $+0.012$ & $-0.02$ & $+0.09$ \\
+    8 calibration prompts & 46 & \sca{} & $+0.010$ & $+0.01$ & $-0.03$ \\
+    16 calibration prompts & 46 & \sca{} & $-0.007$ & $-0.01$ & $-0.11$ \\
+    \midrule
+    Gate $\sigma_g=0.85$ & 46 & \sca{} & $-0.015$ & $-0.85$ & $-2.04$ \\
+    Gate $\sigma_g=0.93$ & 46 & \sca{} & $-0.004$ & $-0.15$ & $+0.65$ \\
+    \midrule
+    FLUX.2-dev & 50 & Full attention & $+0.456$ & $+1.84$ & $+21.44$ \\
+    FLUX.1-Krea-dev & \tbd & AReA & \tbd & \tbd & \tbd \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Latency.} \sca{}'s attention is linear in $N$ (Proposition~\ref{prop:cost}). At $4096^2$ one attention layer takes 18.7\,ms against 87.3\,ms for full attention, and a whole image 71.0\,s against 184.6\,s (Table~\ref{tab:latency}). The continuing sweep gives 18.2\,s at $2048^2$ and 40.2\,s at $3072^2$ for \sca{}, compared with 41.0 and 114.3\,s for AReA. \todo{E3: finish the larger-resolution latency sweep.}
 
 \subsection{Ablations}
 \label{sec:ablations}
@@ -546,7 +550,7 @@ Any rule that assigns one weight per cell, such as a per-layer table, a weight s
   \end{tabular}
 \end{table}
 
-\paragraph{End-to-end latency.} On one GH200, batch 1, $4096^2$, 28 steps, after a warm-up generation, the medians over three images are (\texttt{results/latency\_4096\_batch1.csv}): full attention 184.6\,s (184.1, 184.7, 184.6), AReA 212.6\,s (207.3, 225.8, 212.6), \sca{} + band guard 88.1\,s (88.1, 98.7, 88.1; single-pass compiled band), and \sca{} final 71.0\,s (71.0, 83.1, 70.9). On the shared campaign nodes, per-image times were 71\,s for \sca{} final, 120\,s for \sca{} + band guard, and 262\,s for AReA; the campaign code used an unfused band, so dropping it saved more there (48\,s) than in the clean measurement (17\,s). At the non-square sizes we have only campaign timings on shared nodes (mean over 191 prompts): $2048\times4096$, \sca{} 38.1\,s and AReA 112.4\,s; $2048\times6144$, \sca{} 55.8\,s and AReA 150.5\,s. The two methods ran on the same pool of nodes. \todo{E3: clean latency at the other sizes, Table~\ref{tab:latency}.}
+\paragraph{End-to-end latency.} On one GH200, batch 1, $4096^2$, 28 steps, after a warm-up generation, the medians over three images are (\texttt{results/latency\_4096\_batch1.csv}): full attention 184.6\,s (184.1, 184.7, 184.6), AReA 212.6\,s (207.3, 225.8, 212.6), \sca{} + band guard 88.1\,s (88.1, 98.7, 88.1; single-pass compiled band), and \sca{} final 71.0\,s (71.0, 83.1, 70.9). On the shared campaign nodes, per-image times were 71\,s for \sca{} final, 120\,s for \sca{} + band guard, and 262\,s for AReA; the campaign code used an unfused band, so dropping it saved more there (48\,s) than in the clean measurement (17\,s). At the non-square sizes we have only campaign timings on shared nodes (mean over 191 prompts): $2048\times4096$, \sca{} 38.1\,s and AReA 112.4\,s; $2048\times6144$, \sca{} 55.8\,s and AReA 150.5\,s. The two methods ran on the same pool of nodes. The continuing sweep adds clean $2048^2$ medians of 22.9\,s for full attention, 41.0\,s for AReA, and 18.2\,s for \sca{}, and $3072^2$ medians of 73.9, 114.3, and 40.2\,s, respectively. Each is the median of three images after a generated warm-up in the same process (\texttt{results/latency\_curve\_summary.csv}). \todo{E3: finish the larger-resolution latency sweep, Table~\ref{tab:latency}.}
 
 \snippet{latency}{}
 
@@ -594,7 +598,7 @@ Any rule that assigns one weight per cell, such as a per-layer table, a weight s
 
 \paragraph{Distribution metrics and reference correction.} FID~\citep{heusel2017fid} and KID compare 191 generated images with all 195 official reference rows, using Inception-v3 features (torch-fidelity) after bilinear resizing to $299^2$. The reference rows contain 168 distinct image contents; repeated rows retain their official weights. Patch metrics use four $1024^2$ crops per row (764 generated and 780 reference crops). An audit found that the original feature-bank assembly keyed reference crops by resolved image path, so repeated images reused the last row's crop features. We corrected the lookup to retain each row's intended cached crops. Whole-image FID/KID are unchanged; all patch point estimates reported here use the corrected assembly. Original CSVs remain archived for provenance. Inception score uses full images at $299^2$, with 10 splits.
 
-\paragraph{Intervals.} Per-image intervals are 95\% paired percentile bootstraps over prompt ids: original summaries use 1000 draws; separately recomputed comparisons use 2000 draws with seed 0. For the main \sca{}--AReA FID/KID and patch-FID/KID comparison, 1000 draws resample generated prompt ids jointly across methods and resample the 168 distinct reference-image identities, keeping all rows and crops from each sampled identity together. This retains the 195-row weighted point estimate while accounting for repeated reference images. The resulting FID difference is $-7.63$ $[-12.79,-2.94]$; patch FID is $-3.60$ $[-7.39,1.15]$ and patch KID ($\times10^3$) is $-2.27$ $[-4.73,0.12]$. The earlier claim of a significant patch-KID improvement does not survive this corrected evaluation. The two non-square FID/KID comparisons, the added baselines' patch comparisons, and the 56-step patch-FID comparison also use reference-image clusters. Other whole-image FID/KID intervals are labeled historical reference-row bootstraps; they have not been recomputed with image-identity clusters. Historical patch intervals are not attached to corrected estimates and are omitted where recomputation is incomplete. FID's finite-sample bias can place point estimates outside percentile intervals. Intervals are unadjusted for multiple comparisons and measure prompt/reference sampling uncertainty, not variability over independent model training runs.
+\paragraph{Intervals.} Per-image intervals are 95\% paired percentile bootstraps over prompt ids: original summaries use 1000 draws; separately recomputed comparisons use 2000 draws with seed 0. For the main \sca{}--AReA FID/KID and patch-FID/KID comparison, 1000 draws resample generated prompt ids jointly across methods and resample the 168 distinct reference-image identities, keeping all rows and crops from each sampled identity together. This retains the 195-row weighted point estimate while accounting for repeated reference images. The resulting FID difference is $-7.63$ $[-12.79,-2.94]$; patch FID is $-3.60$ $[-7.39,1.15]$ and patch KID ($\times10^3$) is $-2.27$ $[-4.73,0.12]$. The earlier claim of a significant patch-KID improvement does not survive this corrected evaluation. The whole-image and patch FID/KID comparisons at both non-square sizes, the added baselines' patch comparisons, and the 56-step patch-FID comparison also use reference-image clusters. Other whole-image FID/KID intervals are labeled historical reference-row bootstraps; they have not been recomputed with image-identity clusters. Historical patch intervals are not attached to corrected estimates and are omitted where recomputation is incomplete. FID's finite-sample bias can place point estimates outside percentile intervals. Intervals are unadjusted for multiple comparisons and measure prompt/reference sampling uncertainty, not variability over independent model training runs.
 
 \section{Extended results with intervals}
 \label{app:tables}
@@ -656,8 +660,8 @@ The following tables are populated from archived evaluation CSV files. Per-image
     Inception score & 6.21 & 6.65 & $+0.44$ {\tiny[${-}0.16$, $+0.95$]} & 5.36 & 6.35 & \up{$+0.99$} {\tiny[$+0.13$, $+1.22$]} \\
     FID$\downarrow$ & 144.8 & 143.8 & ${-}1.1$ {\tiny[${-}6.4$, $+4.3$]} & 163.6 & 143.8 & \up{${-}19.8$} {\tiny[${-}24.4$, ${-}11.8$]} \\
     KID$\downarrow$ ($\times10^3$) & 7.95 & 7.87 & ${-}0.09$ {\tiny[${-}2.90$, $+2.97$]} & 18.08 & 8.46 & \up{${-}9.62$} {\tiny[${-}13.94$, ${-}5.60$]} \\
-    FID$_\text{p}\downarrow$ & 112.8 & 118.3 & \dn{$+5.5$} {\tiny[$+1.9$, $+9.5$]} & 106.5 & 110.1 & $+3.6$ \\
-    KID$_\text{p}\downarrow$ ($\times10^3$) & 14.53 & 16.48 & \dn{$+1.95$} {\tiny[$+0.39$, $+3.70$]} & 13.66 & 15.36 & $+1.70$ \\
+    FID$_\text{p}\downarrow$ & 112.8 & 118.3 & \dn{$+5.5$} {\tiny[$+1.9$, $+9.5$]} & 106.5 & 110.1 & $+3.6$ {\tiny[${-}0.2$, $+11.3$]} \\
+    KID$_\text{p}\downarrow$ ($\times10^3$) & 14.53 & 16.48 & \dn{$+1.95$} {\tiny[$+0.39$, $+3.70$]} & 13.66 & 15.36 & $+1.70$ {\tiny[${-}2.22$, $+6.07$]} \\
     Seconds per image$^\ddagger\downarrow$ & 112.4 & 38.1 & \up{${-}74.3$} {\tiny[${-}76.6$, ${-}72.0$]} & 150.5 & 55.8 & \up{${-}94.7$} {\tiny[${-}96.9$, ${-}92.4$]} \\
     \bottomrule
   \end{tabular}}
