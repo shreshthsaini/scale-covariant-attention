@@ -6,6 +6,9 @@ frozen code). Each evaluation task waits until its generation tasks have left pe
 running/, links the common prompt ids (scripts/link_common.py, dev4 excluded) and runs
 eval_extra.py (sca-metrics env) and constancy_rope eval.py (sca env).
 Existing task files are never overwritten; rerun with --dry-run to list what would be written.
+Historical builder: the corrected final evaluations and deadline-aware dispatch
+are preserved in results/evidence/dispatch/task_scripts and HANDOVER.md. Existing
+tasks are intentionally not rewritten by this generator.
 Notes: .agent/notes/phase2_experiments.md.
 """
 
@@ -153,7 +156,7 @@ def build():
         names += gen("i", "area", res, prompts, chunk, area_cmd(MAIN / f"area/{res}"), comment=f"E2: AReA {res}")
         evaluation(f"i99{8 if res.startswith('6') else 9}_eval_e2_{res.split('x')[0]}.sh", names,
                    f"e2_{res.split('x')[0]}", res, 0, prompts,
-                   [("sca", MAIN / f"sca_nb/{res}"), ("area", MAIN / f"area/{res}")], "area", extra, base,
+                   [("sca_nb", MAIN / f"sca_nb/{res}"), ("area", MAIN / f"area/{res}")], "area", extra, base,
                    refs=res.startswith("6"), allow_missing=allow,
                    comment=f"E2 eval {res}, reference area (Aesthetic-4K references are 4096 px)")
 
