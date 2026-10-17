@@ -60,5 +60,7 @@ nonzero differences are expected for corrected crops or a changed cluster policy
 
 To rebuild the joined archive while the scratch caches still exist, run
 `scripts/verify_distribution_evidence.py` with the same four-thread environment. Its
-default `legacy` mode verifies the historical numbers and preserves both the historical
-assembled banks and the raw per-reference-row banks needed by the offline checker.
+default `auto` mode recognizes the corrected evaluator's assembly-policy metadata,
+otherwise reproduces historical path assembly. It verifies the saved numbers and
+preserves both the assembled banks and the raw per-reference-row banks needed by the
+offline checker. Explicit `rows` or `unique` modes are labeled sensitivities.

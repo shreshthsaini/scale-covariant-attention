@@ -96,20 +96,24 @@ def main():
     parser.add_argument('--bootstrap-experiment')
     parser.add_argument('--bootstrap-metrics', nargs='+', default=['fid', 'kid', 'patch_fid', 'patch_kid'])
     parser.add_argument('--draws', type=int, default=1000)
-    parser.add_argument('--reference-policy', choices=['legacy', 'rows', 'unique'], default='legacy')
+    parser.add_argument('--reference-policy', choices=['auto', 'legacy', 'rows', 'unique'], default='auto')
     args = parser.parse_args()
     (args.out / 'banks').mkdir(parents=True, exist_ok=True)
     point_rows, indices, ci_rows = [], {}, []
     for experiment in args.experiments:
         source = args.scratch / 'eval' / experiment
         report = json.loads((source / 'metrics.json').read_text())
+        policy = args.reference_policy
+        if policy == 'auto':
+            fixed = any(s.get('feature_assembly') == 'reference_prompt_row_v2' for s in report['status'].values())
+            policy = 'rows' if fixed else 'legacy'
         metrics = [m for m in report['config']['metrics'].split(',') if m in ('fid', 'kid', 'patch_fid', 'patch_kid')]
         if not metrics:
             continue
         assert report['complete'] and report['all_metrics_available'], experiment
         records = report['per_image']
         references = load_references(report['config']['references'])
-        if args.reference_policy == 'unique':
+        if policy == 'unique':
             references = list({r['path']: r for r in reversed(references)}.values())
         methods = sorted({r['method'] for r in records})
         banks, entries = {}, {}
@@ -117,13 +121,13 @@ def main():
             for method in [*methods, 'reference_images']:
                 selected = references if method == 'reference_images' else [r for r in records if r['method'] == method]
                 bank, entry = make_bank(selected, patch, report, source, args.out,
-                                       alias_by_path=args.reference_policy == 'legacy')
+                                       alias_by_path=policy == 'legacy')
                 banks[method, patch] = bank
                 entries[f'{method}:patch={patch}'] = entry
         indices[experiment] = {'source_metrics': str(source / 'metrics.json'),
                                'source_metrics_sha256': hashlib.sha256((source / 'metrics.json').read_bytes()).hexdigest(),
                                'config': report['config'], 'banks': entries}
-        indices[experiment]['reference_policy'] = args.reference_policy
+        indices[experiment]['reference_policy'] = policy
         for metric in metrics:
             patch = metric.startswith('patch_')
             statistic = kid if metric.endswith('kid') else fid
@@ -135,7 +139,7 @@ def main():
                 value = statistic(x, y)
                 saved = next(r for r in report['summary'] if r['method'] == method and r['metric'] == metric)
                 delta = abs(value - saved['value'])
-                if delta > 1e-7 and args.reference_policy == 'legacy':
+                if delta > 1e-7 and args.reference_policy in ('auto', 'legacy'):
                     raise ValueError(f'{experiment}/{method}/{metric} differs by {delta}')
                 point_rows.append({'experiment': experiment, 'method': method, 'metric': metric,
                                    'recomputed': value, 'reported': saved['value'], 'absolute_error': delta,
@@ -157,7 +161,7 @@ def main():
                         seed=report['config']['bootstrap_seed'], baseline=banks[reference, patch])
                     saved = next(r for r in report['paired_deltas'] if r['method'] == method and r['metric'] == metric)
                     errors = {k: abs(result[k] - saved[k]) for k in ('value', 'ci_low', 'ci_high')}
-                    if args.reference_policy == 'legacy' and args.draws == report['config']['bootstrap'] and max(errors.values()) > 1e-7:
+                    if args.reference_policy in ('auto', 'legacy') and args.draws == report['config']['bootstrap'] and max(errors.values()) > 1e-7:
                         raise ValueError(f'Bootstrap mismatch: {experiment}/{method}/{metric}: {errors}')
                     row = dict(experiment=experiment, method=method, reference=reference, metric=metric,
                                **result, max_original_difference=max(errors.values()),
