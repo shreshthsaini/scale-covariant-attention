@@ -77,6 +77,22 @@
 Diffusion transformers sampled above their training resolution encounter longer position ranges and more attention keys, often producing repeated subjects or incoherent layouts. Scale-Covariant Attention (\sca{}) combines a subsampled global branch with an exact native-extent sliding window, using a weight fitted separately for each head and noise level. Calibration emulates larger images at native resolution and matches the model's full-attention outputs in closed form. The resulting weights vary across heads, agree across disjoint prompt sets (correlation 0.99 in FLUX.1-dev), and transfer across emulated scales and calibration resolutions with at most 5.4\% extra output error in our tests. An opening global-only phase handles layout before local detail. Attention cost is linear in the target token count, with no weight training. On 191 Aesthetic-4K prompts at $4096^2$, \sca{} improves ImageReward from 0.92 to 1.23 and HPSv2.1 from 27.2 to 29.7 over AReA's released code under a shared FLUX.1-dev protocol, while taking 71 rather than 213 seconds per image on a GH200. It also improves over DyPE and SEGA under that protocol. UltraImage, evaluated with its two-stage defaults, scores higher on several preference metrics, while \sca{} scores higher on crop quality and runs faster in campaign measurements. Gains over AReA persist on 200 HRGen-1K prompts and two additional seeds; a separately calibrated FLUX.2-dev experiment improves ImageReward over full attention by 0.46 on 50 prompts.
 \end{abstract}
 
+\begin{center}
+\begin{minipage}{\linewidth}
+\centering\sffamily\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{cccc}
+SCA full image & Full attention crop & AReA crop & SCA crop \\
+\includegraphics[width=0.235\linewidth]{figures/hero/cmp_sca.jpg} &
+\includegraphics[width=0.235\linewidth]{figures/hero/cmp_full_crop.jpg} &
+\includegraphics[width=0.235\linewidth]{figures/hero/cmp_area_crop.jpg} &
+\includegraphics[width=0.235\linewidth]{figures/hero/cmp_sca_crop.jpg}
+\end{tabular}
+\captionof{figure}{\textbf{A shared crop exposes high-resolution artifacts.} One curated $4096^2$ prompt, shared seed and FLUX.1-dev protocol. The outlined region in the SCA image is shown at the same coordinates for all three methods. Uncurated galleries and failures appear in the appendix.}
+\label{fig:teaser}
+\end{minipage}
+\end{center}
+
 \snippet{hero}{}
 
 % =====================================================================================
