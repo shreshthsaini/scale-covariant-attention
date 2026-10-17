@@ -44,7 +44,6 @@ def main():
     paper = Path(__file__).resolve().parent
     args.scratch.mkdir(parents=True, exist_ok=True)
     build = Path(tempfile.mkdtemp(prefix="delivery_", dir=args.scratch))
-    warnings = compile_paper(paper, build / "primary")
     # Ship rendered figures and the sources needed by LaTeX. Figure-generation scripts
     # and provenance remain in the repository; the ZIP is a portable LaTeX build.
     allowed = {".tex", ".bib", ".bst", ".sty", ".pdf", ".png", ".jpg", ".jpeg", ".svg"}
@@ -59,6 +58,9 @@ def main():
             continue
         inputs.append(path)
     manifest = {str(p.relative_to(paper)): sha256(p) for p in inputs}
+    warnings = compile_paper(paper, build / "primary")
+    if any(sha256(p) != manifest[str(p.relative_to(paper))] for p in inputs):
+        raise RuntimeError("Paper sources changed during the primary build; rerun after edits finish")
     archive = build / "sca_overleaf.zip"
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
         for path in inputs:

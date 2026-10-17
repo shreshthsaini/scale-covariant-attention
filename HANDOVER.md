@@ -1,21 +1,40 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-17 01:50 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
-the short live state; `PROPOSAL.md` is the original idea and literature map.
+Last updated 2026-10-17 02:14 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
+its short live index. Historical sections below are superseded by the correction notice here.
 
-## 1. Status in one paragraph
+## 1. Current status and corrections
 
-Phase 2 is active. Codex took over as main operator on October 17 with explicit authorization
-to finish experiments, evaluation, figures, manuscript and final checks. The October 16
-21:59 checkpoint (cda71e3) archived E1; E4 HRGen and the UltraImage budget controls finished
-afterwards. Six guest workers on MF9 are generating 6K/8K images; SCA6 (1075813, 4 nodes)
-and SCA7 (1075814, 4 nodes) remain pending. At 01:44 CDT the spool had 90 pending, 6 running,
-855 done and 0 failed tasks; STOP is absent. These are snapshots, not live counts.
-The current PDF is 27 pages and still contains completed-experiment placeholders. Its
-Overleaf ZIP predates the PDF and must be rebuilt. Manuscript, evidence archive and figures
-are being updated in parallel. See `.agent/STATE.md` for current ownership and next actions.
-**There is no git remote yet.** Sections 3 to 11 describe the completed Phase 1 campaign;
-Section 12 and the Phase 2 notes supersede their old next-step and completion statements.
+Codex is the main operator, authorized to finish experiments, evaluation, paper and delivery.
+Phase 2 E1, E4, E5, E6, E7, E8 and budget controls are complete and integrated in a 35-page
+paper. The PDF and Overleaf ZIP both build independently. E2 6K/8K, E3 latency and E9 Krea
+remain active. SCA6 job1075813 has two GH200 nodes until03:07CDT; SCA7 job1075814 is pending
+with four nodes, four hours requested and two-hour minimum. Existing MF9 guest workers
+are yielding to their host project's resumed work. Do not restart those guests.
+
+A reference-feature bug was found and corrected without altering historical reports.
+The official Aesthetic-4K dataset has195 rows but168 distinct image contents. Historical
+patch feature assembly overwrote crops for rows sharing the same file. New evaluator
+`repro/evaluate_corrected.py` retains all195 row weights and their intended crops.
+Main4K corrected patchFID is99.8156 SCA versus103.4111 AReA. With reference-image-cluster
+bootstrap, neither patchFID nor patchKID is significant; the old patchKID claim below is
+withdrawn. Whole-image FID/KID point estimates are unchanged; FID remains significant.
+Other patch numbers and historical significance statements below require the corrected
+archive in `results/evidence/distributions/`. The manuscript is being reconciled now.
+
+The native-range theorem assumes exact integer coordinates. FLUX.1 bf16 coordinates can
+round above4K; the known-grid fix restores grid membership, not exact RoPE coordinates.
+The recorded GPU max-absolute difference0.015625 is not a proven one-ULP bound.
+Novelty is native emulated-scale output calibration and transferred per-head/noise mixing;
+local/global branches, head-specific roles and a global opening have close prior art.
+
+All12 paired8K images are generated. CPU preference/alignment scores completed; native8K
+MUSIQ exceeded memory, and an equivalent query-chunked implementation is being tested.
+Two long6K/8K latency bundles are in taskq/hold_long until an allocation can fit them.
+Evaluation dependency-wait tasks are in hold_cpu to avoid occupying GPUs while waiting.
+SU balance verified from login usage.map:40000 awarded,31787.081 used,8212.919 available
+(79.47% burned), safely below96%. No new job was submitted; existing SCA7 was reshaped.
+**There is no git remote.** Keep local commits; publication is not part of this handoff.
 
 ## 2. Goal and user requirements
 

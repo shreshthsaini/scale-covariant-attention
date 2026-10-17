@@ -83,11 +83,15 @@ uv run --no-project --python "$SCA_PY" python -m pytest -q tests
 ```
 
 `scripts/eval_extra.py` computes preference and no-reference quality metrics.
-The campaign's CLIP/PickScore/MUSIQ/FID evaluation currently depends on the adjacent
-`constancy_rope/scripts/eval.py` project. The AReA and UltraImage wrappers likewise use
-external upstream checkouts documented in `HANDOVER.md`. Full benchmark reproduction
-therefore needs those dependencies as well as this repository. Archived paired per-image
-metrics can be checked independently without loading any model.
+Use `repro/evaluate_corrected.py` for CLIP/PickScore/MUSIQ/FID evaluation. It preserves
+reference crop features for every prompt row, including rows sharing an image file.
+The historical evaluator remains unchanged in `repro/evaluator_snapshot/` for reproducing
+the original reports; its patch FID/KID reference assembly contains the documented bug.
+Pass `--crope-root "$PWD/repro/evaluator_snapshot"` to `scripts/eval_extra.py` to use
+the same archived helpers. [Evaluation reproduction instructions](repro/README.md)
+include tested imports, numerical checks, upstream commits and remaining dependencies.
+The generation wrappers still use external upstream checkouts documented there.
+Archived paired per-image metrics can be checked without loading any model.
 
 ## Build the paper
 
