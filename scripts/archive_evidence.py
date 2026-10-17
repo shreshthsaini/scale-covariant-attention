@@ -39,7 +39,8 @@ def main():
         return dst
 
     names = ('per_image.csv', 'summary.csv', 'paired_deltas.csv', 'metrics.json', 'metrics_gpu_features.json',
-             'extra_per_image.csv', 'extra_summary.csv', 'extra_paired_deltas.csv', 'extra_metrics.json')
+             'extra_per_image.csv', 'extra_summary.csv', 'extra_paired_deltas.csv', 'extra_metrics.json',
+             'extra_input_identities.json')
     upcoming = {'e2_6144': (100, {'area', 'sca_nb'}),
                 'e2_8192': (12, {'area', 'sca_nb'}),
                 'e9_krea': (100, {'area', 'sca_krea', 'dype', 'sega_official'})}

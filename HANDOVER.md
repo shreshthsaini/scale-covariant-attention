@@ -1,18 +1,22 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-17 03:18 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
+Last updated 2026-10-17 03:39 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
 its short live index. Historical sections below are superseded by the correction notice here.
 
 ## 1. Current status and corrections
 
 Codex is the main operator, authorized to finish experiments, evaluation, paper and delivery.
 E1, E4, E5, E6, E7, E8, budget controls and the exploratory E2 8K comparison are complete.
-The paper and extracted Overleaf ZIP build independently. E2 6K, three E3 latency groups,
+The37-page paper and extracted Overleaf ZIP build independently. The final source refresh
+passed; all37 pages render identically to the reviewed version at72dpi. E2 6K, three E3 latency groups,
 and E9 Krea remain unfinished. There is no git remote; keep local commits.
 
 SCA6 job1075813 ended at03:07:36CDT with TIMEOUT. Interrupted 6K tasks were requeued;
 its three held long-latency tasks were released only after all old steps disappeared.
 SCA7 job1075814 is pending: four nodes, four hours, minimum two hours.
+Its mutable launcher now routes only this job to the frozen v2 compatibility bridge,
+activated while pending at03:35:54CDT. Job priority and four-node topology were retained.
+The bridge passed14 tests; only rank zero can query the actual allocation deadline.
 SCA9 job1076923 is pending: two to eight nodes, four hours, minimum one hour,
 using the reviewed deadline-aware dispatcher frozen in dispatch/20261017_v2.
 SCA8 job1076908 was cancelled while pending after SCA9 was accepted.
@@ -36,7 +40,7 @@ Latest generation coverage:6K AReA26/100,SCA24/100;Krea SCA5/100,AReA0/100.
 GPU evaluation tasks remain held until exact100-prompt readiness. They extract all
 scores/features with bootstrap0, then CPU finalizers run1000 reference-image-cluster
 draws. The archive refuses incomplete bootstrap output. Strict promotion automation
-is being prepared. A bounded fresh-environment GPU smoke is queued on this same fleet.
+is deployed to all77 remaining generation tasks and passed30 isolated tests. A bounded fresh-environment GPU smoke is queued on this same fleet.
 
 Corrected reference assembly retains195 Aesthetic-4K row weights and168 distinct image
 identity clusters. Historical patch features overwrote repeated rows. Main4K corrected
@@ -53,11 +57,18 @@ the old1.5GPUh claim was removed. Distinct main images2101 are hash-verified.
 
 Fresh generation environment recipe is under repro/environment, with71 locked packages,
 67 CPU tests,8 CLI/dry-run checks and2 supervisor tests passed. GPU smoke is queued,
-not yet validated. Inherited environment94-test combined CPU suite and frozen baseline
+not yet validated. Three separate metric environment locks resolve, with restoration
+recipes and verified asset hashes. Full installations and learned-score parity remain unrun.
+The strict split-report merger passed18 tests and a synthetic CLI fixture.
+Inherited environment94-test combined CPU suite and frozen baseline
 33-test suite also passed. The NVIDIA wheel-tag warning is documented, not suppressed.
 Krea reused baseline transformer provenance is supported by launch scripts, successful
 fleet events and the historical runtime override; original sidecars mislabeled the base
-pipeline. A compact provenance receipt is being archived.
+pipeline. The receipt and algorithm audit are archived in results/evidence/krea_baseline_provenance.
+Seven SEGA source hashes could not be recovered; a bounded seven-image repair is queued
+on the existing fleet, preserving all originals. Krea evaluation now requires the overlay
+at out/krea_baseline_overlay_20261017, which keeps193 original pairs plus seven replacements.
+All recoverable revisions have identical relevant baseline attention and sampling functions.
 
 ## 2. Goal and user requirements
 
