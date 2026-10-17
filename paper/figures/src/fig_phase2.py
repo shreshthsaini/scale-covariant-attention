@@ -46,6 +46,16 @@ SPECS = {
     },
     "6144": {"res": "6144x6144", "n": 4, "methods": ["area", "sca"]},
     "8192": {"res": "8192x8192", "n": 4, "methods": ["area", "sca"]},
+    "8192_complete": {
+        "res": "8192x8192", "n": 4, "methods": ["area", "sca"], "expected": 12,
+        "caption": (
+            r"\textbf{Exploratory $8192^2$ generation.} Four prompts sampled uniformly "
+            r"from all 12 paired evaluation prompts, without selection by visual quality "
+            r"or metric score. Each full image is followed by its native-pixel crop. "
+            r"FLUX.1-dev, seed 0, 28 steps, guidance 4.5. Grid and stripe artifacts "
+            r"remain at this scale; this small evaluation does not establish general 8K quality."
+        ),
+    },
 }
 
 NAMES = {"area": "AReA", "dype": "DyPE", "sega_official": "SEGA",
@@ -101,6 +111,8 @@ def build(tag):
         common = set.intersection(*(set(v) for v in indexes.values()))
         dev = imgsel.dev4_ids()
         eligible = sorted(pid for pid in common if imgsel.short_id(pid) not in dev)
+        if "expected" in spec and len(eligible) != spec["expected"]:
+            raise ValueError(f"{tag}: expected {spec['expected']} complete pairs, found {len(eligible)}")
         selected = sorted(random.Random(17).sample(eligible, min(spec["n"], len(eligible))))
         if not selected:
             raise ValueError(f"No completed pairs for {tag}")
