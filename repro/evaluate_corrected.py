@@ -21,7 +21,12 @@ def configure_cli():
     spec = importlib.util.spec_from_file_location("sca_historical_eval_cli", SNAPSHOT / "scripts/eval.py")
     cli = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(cli)
-    args = cli.parser().parse_args()
+    parser = cli.parser()
+    parser.add_argument("--musiq-query-chunk", type=int, default=0,
+                        help="Opt-in inference attention query chunking; preserves native MUSIQ patches (0 disables)")
+    args = parser.parse_args()
+    if args.musiq_query_chunk < 0:
+        parser.error("--musiq-query-chunk must be nonnegative")
     if args.bootstrap < 0 or args.crops < 1 or not 1 <= args.threads <= 8:
         raise SystemExit("--bootstrap must be nonnegative, --crops positive, and --threads between 1 and 8")
     for key in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
@@ -49,6 +54,35 @@ ASSEMBLY_POLICY = "reference_prompt_row_v2"
 
 
 class Evaluation(HistoricalEvaluation):
+    def key(self, record, metric, extra=None):
+        chunk = getattr(self.args, "musiq_query_chunk", 0)
+        if metric == "musiq" and chunk:
+            extra = {"original_extra": extra, "execution_adapter": "musiq_all_keys_query_chunks_v1",
+                     "query_chunk": chunk}
+        return super().key(record, metric, extra)
+
+    def learned(self, metric):
+        chunk = getattr(self.args, "musiq_query_chunk", 0)
+        if metric != "musiq" or not chunk:
+            return super().learned(metric)
+        from crope.metrics import models
+        from unittest.mock import patch
+        # This evaluator is sequential. Temporarily replace its scorer factory,
+        # preserving the historical learned-score loop and restoring on exit.
+        try:
+            from repro.musiq_chunked import install
+        except ModuleNotFoundError:
+            from musiq_chunked import install
+        original = models.load_scorer
+
+        def adapted_scorer(name, device):
+            scorer = original(name, device)
+            scorer.provenance.update(install(scorer.model, chunk))
+            return scorer
+
+        with patch.object(models, "load_scorer", adapted_scorer):
+            return super().learned(metric)
+
     def distributions(self):
         selected = [metric for metric in DISTRIBUTIONS if metric in self.metrics]
         if not selected:

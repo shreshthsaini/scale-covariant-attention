@@ -66,6 +66,48 @@ groups. The corrected main evaluation preserves all 195 rows; any deduplicated
 
 ## Scoring existing campaign images
 
+Native 8K MUSIQ has 65,730 attention tokens including its two resized scales and
+class token. Its original six-head float32 attention matrix alone occupies about
+104 GB, before masking and softmax temporaries. `--musiq-query-chunk 256` opts into
+`musiq_chunked.py`, which computes independent query rows in chunks against all
+keys. It retains every original-resolution patch, the original resized scales,
+the finite -1000 mask, and the original softmax. It requires inference mode.
+This reduces intermediate memory but keeps quadratic attention computation.
+Other metrics reuse their original caches; adapted MUSIQ uses a separate cache
+namespace and records adapter/source hashes in its provenance.
+PyIQA attribution and the installed package's license files are preserved in
+`baseline_metadata/PyIQA/`; its principal license is PolyForm Noncommercial 1.0.0.
+
+`musiq_chunked_validation.json` records a bounded CPU check using the cached
+KONIQ checkpoint. Original and adapted scores were identical at float32 output
+precision for deterministic 512x512, 768x1024 and 1024x1024 random inputs.
+Attention regression tests cover unmasked, partially masked and fully masked
+queries, unequal chunk boundaries, and inference-only enforcement. These checks
+support numerical equivalence, not a claim of bitwise identity at every size.
+
+```bash
+HF_HOME=/scratch/09032/saini_2/tmp/hf TORCH_HOME=/scratch/09032/saini_2/tmp/torch \
+  HF_HUB_OFFLINE=1 OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 \
+  uv run --no-project --python "$SCA_PY" python repro/check_musiq_chunked.py \
+  --out /scratch/09032/saini_2/sca/eval/musiq_chunked_validation.json
+OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 \
+  uv run --no-project --python "$SCA_PY" python -m pytest -q \
+  repro/tests/test_musiq_chunked.py repro/tests/test_reference_rows.py \
+  repro/evaluator_snapshot/tests/test_metrics.py
+```
+
+The 8K CPU rollout uses four disjoint prompt manifests, each with three prompts
+and both methods, in separate output directories. Prompt IDs are sorted and
+assigned by index modulo four. Workers use eight threads and chunk size 256;
+the first-image benchmark uses four threads. Do not merge while workers write.
+After every worker exits successfully, combine caches with
+`merge_evaluation_caches.py --destination <combined>/evaluation_cache.json
+<shard-0>/evaluation_cache.json ... <shard-3>/evaluation_cache.json` and rerun the
+corrected evaluator on the full prompt manifest with `--musiq-query-chunk 256`.
+The merge rejects any unequal entry sharing a key before changing the destination.
+It does not combine shard summary statistics; the final evaluator recomputes
+summaries and paired intervals from all cached per-image scores.
+
 The commands below preserve the campaign metric choices and use a new output
 directory. They were prepared from the campaign commands; full rescoring was not
 rerun for this archive. The existing `e1_baselines` image tree contains the paired

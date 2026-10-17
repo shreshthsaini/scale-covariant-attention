@@ -59,6 +59,18 @@ def fixture_args(tmp_path):
         crop_seed=0, crops=4, allow_missing=False, no_wandb=True, threads=1)
 
 
+def test_musiq_execution_cache_is_separate_other_metrics_reuse_cache(tmp_path):
+    args = fixture_args(tmp_path)
+    standard = corrected.Evaluation(args)
+    row = standard.rows[0]
+    original_keys = {metric: standard.key(row, metric) for metric in ("clip", "pickscore", "musiq")}
+    args.musiq_query_chunk = 256
+    adapted = corrected.Evaluation(args)
+    for metric in ("clip", "pickscore"):
+        assert adapted.key(row, metric) == original_keys[metric]
+    assert adapted.key(row, "musiq") != original_keys["musiq"]
+
+
 def test_reference_crop_rows_survive_aliases_and_cache_resume(tmp_path, monkeypatch):
     args = fixture_args(tmp_path)
     monkeypatch.setattr(models, "InceptionFeatures", TinyFeatures)
