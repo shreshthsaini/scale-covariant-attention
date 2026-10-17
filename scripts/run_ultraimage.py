@@ -49,7 +49,7 @@ import time
 import types
 
 ROOT = Path(__file__).resolve().parents[1]
-CROPE = Path("/work/09032/saini_2/vista/Projects/Exploration/constancy_rope")
+CROPE = ROOT / "repro/evaluator_snapshot"
 ULTRA_DIR = Path(os.environ.get("ULTRA_DIR", "/scratch/09032/saini_2/constancy_rope/third_party/UltraImage/flux"))
 BLOCKAVG_ROOT = Path(os.environ.get("ULTRA_BLOCKAVG_ROOT", "/scratch/09032/saini_2/sca/cache/ultraimage_blockavg"))
 HF_HOME = "/scratch/09032/saini_2/tmp/hf"
@@ -73,7 +73,7 @@ def environment(allow_download=False):
 
 
 # Path order: UltraImage first so its top-level modules (utils, rope, transformer_flux,
-# attention_processor, pipeline_flux_unified, jintao) win; constancy_rope is only reached through
+# attention_processor, pipeline_flux_unified, jintao) win; the vendored helpers are reached through
 # the package name crope, which UltraImage does not define. check_shadowing() verifies this.
 sys.path.insert(0, str(CROPE))
 sys.path.insert(0, str(ULTRA_DIR))

@@ -49,6 +49,7 @@ def parser():
     p.add_argument("--chunk", type=int, help="Query tiles per local-branch chunk, gather only")
     p.add_argument("--local-impl", choices=("flex", "gather"), default="flex")
     p.add_argument("--encode-only", action="store_true", help="Fill the prompt-embedding cache and exit")
+    p.add_argument("--embedding-cache", type=Path, help="Prompt-embedding cache directory; default preserves the campaign cache")
     p.add_argument("--device", default="cuda")
     return p
 
@@ -90,8 +91,9 @@ def main(argv=None):
     import diffusers
     import torch
     from sca.flux2 import REPO, empirical_mu, encode_prompts, free_cuda, install, load_pipeline, set_mu, snapshot
+    embedding_options = {"cache": args.embedding_cache} if args.embedding_cache is not None else {}
     if args.encode_only:
-        encode_prompts([r["prompt"] for r in rows], args.device)
+        encode_prompts([r["prompt"] for r in rows], args.device, **embedding_options)
         print(f"embeddings cached for {len(rows)} prompts", flush=True)
         return
     if args.out is None:
@@ -109,7 +111,7 @@ def main(argv=None):
         png, meta = paths(row)
         return png.exists() and meta.exists() and json.loads(meta.read_text()).get("complete")
     todo = [r for r in rows if not done(r)]
-    embeds = dict(zip([r["id"] for r in todo], encode_prompts([r["prompt"] for r in todo], args.device)))
+    embeds = dict(zip([r["id"] for r in todo], encode_prompts([r["prompt"] for r in todo], args.device, **embedding_options)))
     free_cuda()
     pipe = load_pipeline(args.device)
     uninstall = install(pipe.transformer, ctx)

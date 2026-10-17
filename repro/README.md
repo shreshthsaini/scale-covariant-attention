@@ -12,6 +12,13 @@ resolve to the same image path, and the last reference's crops overwrite earlier
 ones. The corrected entrypoint keeps a separate feature bank per reference prompt
 ID, records policy `reference_prompt_row_v2`, and retains the original reference
 row weights. The historical snapshot remains unchanged for reproducing old reports.
+Use `--reference-clusters images` for the final manuscript's corrected main and wide
+distribution intervals. This groups repeated references by content SHA256 when
+available, including SHA256-named Hugging Face blobs, and otherwise by resolved path.
+All 195 reference rows retain their point-estimate weights inside the 168 image
+clusters. The default `rows` retains the earlier reference-row bootstrap for
+compatibility. `reference_cluster_validation.json` records exact numerical agreement
+with the independent archived-feature checker for all four distribution metrics.
 
 The snapshot provides CLIP, PickScore, MUSIQ, FID/KID, crop metrics, sample discovery
 and prompt bootstrap. `scripts/eval_extra.py --crope-root repro/evaluator_snapshot`
@@ -42,13 +49,14 @@ resume and missing-metric failures. Imports were verified to resolve inside this
 snapshot. These checks load no learned metric models and do not reproduce GPU
 generation or the full benchmark. `validation.json` records their scope.
 
-Two additional regression tests in `tests/test_reference_rows.py` exercise the
+Additional regression tests in `tests/test_reference_rows.py` exercise the
 corrected evaluator. Different prompt IDs share one reference PNG, produce distinct
 crop features, and reuse historical per-record caches. Corrected point estimates
 and paired intervals match direct per-row calculations, whole-image FID/KID stay
-unchanged, and all reference rows remain present. A third test checks that optional
+unchanged, and all reference rows remain present. Image-cluster checks match the
+archived-feature checker while retaining every row's weight. Another test checks that optional
 MUSIQ execution changes use a separate cache while other metric caches remain
-compatible. The combined suite below passes 17 tests:
+compatible. Run these checks together with the historical numerical tests:
 
 ```bash
 PYTHONPATH="$PWD/repro/evaluator_snapshot:$PWD" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
@@ -86,7 +94,7 @@ precision for deterministic 512x512, 768x1024 and 1024x1024 random inputs.
 Attention regression tests cover unmasked, partially masked and fully masked
 queries, unequal chunk boundaries, and inference-only enforcement. These checks
 support numerical equivalence, not a claim of bitwise identity at every size.
-The full suite, including the cache-merge regression, passes 28 tests.
+The suite also includes the cache-merge regression.
 `musiq_chunked_8k_benchmark.json` records successful full native 8192x8192 scoring
 plus four original 1024x1024 crops: 702 seconds at four CPU threads, with a process
 peak of 21.76 GiB. Its image hash identifies the exact benchmark input. The original
@@ -134,7 +142,7 @@ SCA_EVAL_ROOT=/scratch/09032/saini_2/sca/out/evalroot/e1_baselines
 uv run --no-project --python "$SCA_PY" python repro/evaluate_corrected.py \
   --root "$SCA_EVAL_ROOT" --prompts results/evidence/prompts/aesthetic4k_eval.jsonl \
   --references results/evidence/prompts/aesthetic4k_refs.jsonl \
-  --reference-method sca_nb --res 4096x4096 \
+  --reference-method sca_nb --reference-clusters images --res 4096x4096 \
   --out /scratch/09032/saini_2/sca/eval/repro_e1_base \
   --metrics clip,pickscore,musiq,fid,kid,patch_fid,patch_kid --device cuda
 uv run --no-project --python "$METRICS_PY" python scripts/eval_extra.py \
@@ -188,17 +196,114 @@ The matching wrapper bytes are recoverable from SCA commits recorded in
 include absolute source paths, so relocating a restored wrapper can change its
 fingerprint even when the source bytes match; use a fresh output directory.
 
-AReA and UltraImage wrappers still contain an absolute `CROPE` helper path and use
-external source checkouts, configurable through `AREA_DIR` and `ULTRA_DIR`.
-Generation also embeds machine-specific cache/output locations. This archive makes
-evaluation independent of the sibling project, but leaves those generation paths
-unchanged to preserve the live protocol and resume fingerprints.
+AReA and UltraImage wrappers now import the byte-identical helper at
+`repro/evaluator_snapshot/crope/utils.py` relative to this repository. Their upstream
+checkouts remain external, configurable through `AREA_DIR` and `ULTRA_DIR`; set
+`ULTRA_DIR` to the checkout's `flux/` directory. Future code freezes must include
+the vendored helper directory. Existing campaign freezes are unchanged. The moved
+helper path and updated wrapper bytes change wrapper fingerprints, so use fresh
+output directories with the portable wrappers.
 
-DyPE and SEGA generation used the local account-authored `constancy_rope` commit
-`c05ebdcccddafd6b8fe4ec2e14247d72775df9a1`. It has no remote. Its Git history on work
-can restore the scratch freeze with `git archive` into a new directory; the selected
-runtime hashes in `sources.json` were checked against that commit. This archive
-does not contain that generation harness. A portable public reproduction still
-needs a separately prepared harness, dependency installation checks, and model/data
-retrieval instructions. Numerical port parity is not a reproduction of upstream
-papers under their original checkpoints or sampler settings.
+`generation_snapshot/` now contains the unchanged DyPE and SEGA generation code
+from account-authored commit `c05ebdcccddafd6b8fe4ec2e14247d72775df9a1`. Its 14 source
+and test files have Git-blob and SHA256 provenance. The composite implementation
+fingerprint matches every archived DyPE/SEGA sidecar exactly. It includes all local
+runtime dependencies and the two extra scripts included in the historical fingerprint.
+The selected CPU tests passed 33 cases, including direct upstream numerical parity,
+seed identity and resume integrity. This does not reproduce upstream papers under
+their preferred checkpoints or sampler settings, or regenerate the benchmark images.
+`generation_package_validation.json` records these checks, the 16 package/FLUX.2
+checks, wrapper source hashes, and the mocked embedding-cache argument check.
+
+Run the frozen generation tests in a separate process from evaluator tests because
+both preserved packages use the `crope` name:
+
+```bash
+PYTHONPATH="$PWD/repro/generation_snapshot" OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 \
+  uv run --no-project --python "$SCA_PY" python -m pytest -q \
+  repro/generation_snapshot/tests/test_rope.py repro/generation_snapshot/tests/test_runtime.py
+uv run --no-project --python "$SCA_PY" python repro/generation_snapshot/scripts/sample.py --help
+```
+
+Set `SCA_REPRO_OUTPUT` to a scratch directory. The manuscript's DyPE generation
+command is:
+
+```bash
+uv run --no-project --python "$SCA_PY" python repro/generation_snapshot/scripts/sample.py \
+  --method dype --res 4096x4096 --steps 28 --guidance 4.5 --seed 0 \
+  --prompts results/evidence/prompts/aesthetic4k_eval.jsonl --start 0 --end 195 \
+  --out "$SCA_REPRO_OUTPUT/dype"
+```
+
+Replace `dype` with `sega_official` for SEGA. The generation manifest includes all
+195 prompts; the paper excludes
+the four IDs in `results/evidence/prompts/dev4.jsonl` when constructing the common
+191-prompt evaluation root. Baseline inference uses maximum scheduler shift,
+prompt-derived seeds and tiled VAE decoding, as recorded in the original sidecars.
+
+## Pinned model and data restoration
+
+`model_snapshots.json` records the local cache observed on October 17, including
+file sizes, content-addressed blob names, and hashes of archived small JSON metadata
+under `model_metadata/`. The following revisions are the reproduction pins:
+
+| Repository | Observed cached revision |
+| --- | --- |
+| `black-forest-labs/FLUX.1-dev` | `3de623fc3c33e44ffbe2bad470d0f45bccf2eb21` |
+| `black-forest-labs/FLUX.1-Krea-dev` | `8162a9c7b05a641be098422bf2fcf335615c2f28` |
+| `black-forest-labs/FLUX.2-dev` | `26afe3a78bb242c0a8bb181dcc8937bb16e5c66c` |
+
+This inventory is retrospective. AReA, DyPE, SEGA and UltraImage sidecars directly
+record the listed FLUX.1-dev revision; historical SCA and FLUX.2 sidecars record the
+model identity but omit its snapshot revision. Observing the current cache does not
+retroactively prove those missing run-time fields. Large weight files were not
+rehashed or copied in this audit. Krea uses the FLUX.1-dev encoders and VAE together
+with the Krea transformer, so restore both repositories for that comparison.
+
+Restore into a dedicated reproduction cache, keeping live campaign caches separate.
+The code below downloads only the paths present in the audited snapshot and pins the
+local `refs/main` used by the preserved loaders. Model access must already be granted.
+Choose the repository needed for the run; repeat for other models as needed.
+
+```bash
+export HF_HOME="${SCA_REPRO_HF_HOME:?Set a dedicated scratch cache first}"
+export HF_HUB_OFFLINE=0
+uv run --no-project --python "$SCA_PY" python - <<'PY'
+import json, os
+from pathlib import Path
+from huggingface_hub import snapshot_download
+repo_id = "black-forest-labs/FLUX.1-dev"
+model = next(row for row in json.loads(Path("repro/model_snapshots.json").read_text())["models"]
+             if row["repo_id"] == repo_id)
+cache = Path(os.environ["HF_HOME"]) / "hub"
+revision = model["observed_cached_revision"]
+snapshot_download(repo_id, revision=revision, cache_dir=str(cache),
+                  allow_patterns=[row["path"] for row in model["files"]])
+ref = cache / ("models--" + repo_id.replace("/", "--")) / "refs/main"
+ref.parent.mkdir(parents=True, exist_ok=True)
+ref.write_text(revision + "\n")
+PY
+export HF_HUB_OFFLINE=1
+```
+
+Set `TORCH_HOME`, `XDG_CACHE_HOME`, `TRITON_CACHE_DIR`, `MPLCONFIGDIR` and
+`WANDB_DIR` to scratch locations on the reproduction machine; the historical files
+retain Vista defaults when these variables are absent. For FLUX.2 generation, pass
+`--embedding-cache "$SCA_REPRO_OUTPUT/flux2_embeddings"` to relocate its embedding
+cache; omitting the flag retains the original campaign default.
+For UltraImage, set `ULTRA_BLOCKAVG_ROOT` to a scratch directory for its per-prompt
+block-average cache.
+
+The Aesthetic-4K manifests pin dataset revision
+`8c5d5cb8b94230ff897d87bf060451257d1c7bf8` of `zhang0jhon/Aesthetic-4K`.
+Restore its `eval/size_4096/` files at that revision, then rebuild reference paths
+using each archived row's `source_file_name`. Update `path`, `image` and
+`reference_image` fields where present in copied manifests; preserve IDs, prompts,
+all 195 rows, and source revision metadata. `upstream_image_tree.json` preserves
+the expected per-file LFS identities. Generate image outputs again or restore them
+from a separate artifact store for fresh learned-metric scoring. The archived
+numeric/feature banks remain sufficient for the offline checks described above.
+
+The remaining installation limitation is unchanged: package freezes describe the
+tested inherited environments, including their recorded incompatibilities. A fresh
+portable dependency resolution has not been validated.

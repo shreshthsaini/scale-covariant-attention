@@ -23,7 +23,7 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-CROPE = Path("/work/09032/saini_2/vista/Projects/Exploration/constancy_rope")
+CROPE = ROOT / "repro/evaluator_snapshot"
 AREA_DIR = Path(os.environ.get("AREA_DIR", "/scratch/09032/saini_2/sca/third_party/AReA"))
 HF_HOME = "/scratch/09032/saini_2/tmp/hf"
 MODEL_ID = "black-forest-labs/FLUX.1-dev"

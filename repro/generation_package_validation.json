@@ -1,0 +1,40 @@
+{
+  "validated_utc": "2026-10-17T07:52:49.744481+00:00",
+  "device": "cpu",
+  "threads": 2,
+  "checks": [
+    {
+      "command": "PYTHONPATH=$PWD/repro/generation_snapshot python -m pytest -q repro/generation_snapshot/tests/test_rope.py repro/generation_snapshot/tests/test_runtime.py",
+      "passed": 33,
+      "skipped": 0,
+      "seconds": 10.76
+    },
+    {
+      "command": "python -m pytest -q repro/tests/test_generation_package.py tests/test_flux2.py",
+      "passed": 16,
+      "skipped": 0,
+      "seconds": 14.7
+    },
+    {
+      "command": "python repro/generation_snapshot/scripts/sample.py --help",
+      "exit_code": 0
+    },
+    {
+      "check": "FLUX2 --encode-only cache forwarding with mocked encoder",
+      "default_unchanged": true,
+      "explicit_embedding_cache_forwarded": true
+    }
+  ],
+  "generation_fingerprint": "fe1a23e318cf1e350d64a1236d2f7481cef5d87fd744e96b29b9be93a99a5392",
+  "fingerprint_scope": "Exact match to every archived DyPE and sega_official sidecar",
+  "scope": "Bounded source, metadata, CLI, numerical-port and mocked-cache checks. No model downloads, fresh environment installation or GPU image generation.",
+  "files": {
+    "scripts/run_area.py": "c74994c32410e6c573e319084c587c7415c8f1b42dc318b4518ea5838bcaf4fe",
+    "scripts/run_ultraimage.py": "4838f72c4cd627c2a000a3c2d32932862633dbbbd112078999d7fda77a2f8a3b",
+    "scripts/sample_flux2.py": "134639fae2189cf9619f7e216b014c6918d4820cd829afce2af7c1f3aa25be1b",
+    "repro/audit_model_snapshots.py": "a80b0bf3bd94612ff6d42a1e42fe397d73b245e57bf058465c413e9fdd8fd293",
+    "repro/tests/test_generation_package.py": "8ad13e25c7f9018da0c9c0e0782edf617daee68d1486043382f3afdb407676e3",
+    "repro/generation_snapshot/SOURCE.json": "c5d4f1c3c37ae7f09184b061c79e8582f383c0b2f40b250a8e13b04df9429516",
+    "repro/model_snapshots.json": "11d3d9ab66daabcd35d69e19148bdc37aa5e6e064edbc0834c2d3461b68ac6ea"
+  }
+}
