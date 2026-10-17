@@ -218,8 +218,11 @@ def main():
     written = skipped = 0
     for name, text in sorted(OUT.items()):
         dest = Q / ("hold_phase2" if name in HOLD else "pending") / name
-        exists = [d for d in ("pending", "running", "done", "failed", "hold_phase2")
-                  if list((Q / d).glob(name + "*"))]
+        # Operators may park dependency-bound or long tasks in additional hold folders,
+        # and latency tasks gain an a_ priority prefix. Never recreate those tasks.
+        variants = (name, "a_" + name)
+        exists = [d for d in Q.iterdir() if d.is_dir()
+                  and any(list(d.glob(candidate + "*")) for candidate in variants)]
         if exists:
             skipped += 1
             continue
