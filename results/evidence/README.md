@@ -61,10 +61,12 @@ campaign workers and should be distinguished from isolated latency measurements.
 
 ## Reproduction limits
 
-The scalar and calibration audit uses saved sufficient statistics. FID, KID, patch
-FID/KID, and Inception Score summaries and intervals are preserved but were not rerun
-in this audit. Recomputing these distribution metrics requires the scratch feature
-caches or regenerated images. Absolute FID percentile bootstrap intervals may exclude
+The scalar and calibration audit uses saved sufficient statistics. The subsequent
+cached-feature audit in `distributions/` rederived all 152 FID/KID and patch-FID/KID
+point estimates across 17 groups and preserved joined feature banks for offline checks.
+It also identified and isolated a reference crop lookup issue for repeated image paths;
+historical and corrected row-weighted results remain separate. Inception Score was
+not recomputed. Absolute FID percentile bootstrap intervals may exclude
 the original point estimate because empirical FID has finite-sample bias; use paired
 delta intervals for comparative claims.
 
