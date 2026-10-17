@@ -28,6 +28,7 @@ def main():
     values = {f'queue/{name}': len(names) for name, names in tasks.items()}
     current_hosts = {match[0] for name in tasks.get('running', [])
                      if (match := re.search(r'c\d+-\d+', name))}
+    values['campaign/active_workers'] = len(tasks.get('running', []))
     now = datetime.now(timezone.utc)
     for host in sorted(current_hosts):
         files = sorted((scratch / 'telemetry').glob(f'{host}_*.csv'), key=lambda p: p.stat().st_mtime)
@@ -55,6 +56,7 @@ def main():
         run.log(values)
         run.summary.update({'last_snapshot_utc': now.isoformat(), 'source_revision': revision,
                             'running_tasks': tasks.get('running', []),
+                            'active_gpu_hosts': sorted(current_hosts),
                             'held_long_tasks': tasks.get('hold_long', [])})
         receipt = {'timestamp_utc': now.isoformat(), 'mode': mode, 'run_id': run.id,
                    'url': run.url if mode == 'online' else None, 'source_revision': revision,

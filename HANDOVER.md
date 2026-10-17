@@ -1,47 +1,63 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-17 02:46 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
+Last updated 2026-10-17 03:18 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
 its short live index. Historical sections below are superseded by the correction notice here.
 
 ## 1. Current status and corrections
 
 Codex is the main operator, authorized to finish experiments, evaluation, paper and delivery.
-Phase 2 E1, E4, E5, E6, E7, E8 and budget controls are complete and integrated in a 36-page
-paper. The PDF and Overleaf ZIP both build independently. E2 6K/8K, E3 latency and E9 Krea
-remain active. SCA9 job1076923 requests 2 to 8 nodes for four hours (minimum one),
-using the reviewed deadline-aware v2 dispatcher frozen in `dispatch/20261017_v2`.
-It replaces SCA8 job1076908, which was cancelled while still pending. SCA6 job1075813 has two GH200 nodes until03:07CDT; SCA7 job1075814 is pending
-with four nodes, four hours requested and two-hour minimum. Existing MF9 guest workers
-are yielding to their host project's resumed work. Do not restart those guests.
+E1, E4, E5, E6, E7, E8, budget controls and the exploratory E2 8K comparison are complete.
+The paper and extracted Overleaf ZIP build independently. E2 6K, three E3 latency groups,
+and E9 Krea remain unfinished. There is no git remote; keep local commits.
 
-A reference-feature bug was found and corrected without altering historical reports.
-The official Aesthetic-4K dataset has195 rows but168 distinct image contents. Historical
-patch feature assembly overwrote crops for rows sharing the same file. New evaluator
-`repro/evaluate_corrected.py` retains all195 row weights and their intended crops.
-Main4K corrected patchFID is99.8156 SCA versus103.4111 AReA. With reference-image-cluster
-bootstrap, neither patchFID nor patchKID is significant; the old patchKID claim below is
-withdrawn. Whole-image FID/KID point estimates are unchanged; FID remains significant.
-Other patch numbers and historical significance statements below require the corrected
-archive in `results/evidence/distributions/`. The manuscript is being reconciled now.
+SCA6 job1075813 ended at03:07:36CDT with TIMEOUT. Interrupted 6K tasks were requeued;
+its three held long-latency tasks were released only after all old steps disappeared.
+SCA7 job1075814 is pending: four nodes, four hours, minimum two hours.
+SCA9 job1076923 is pending: two to eight nodes, four hours, minimum one hour,
+using the reviewed deadline-aware dispatcher frozen in dispatch/20261017_v2.
+SCA8 job1076908 was cancelled while pending after SCA9 was accepted.
+MF9 guests yielded to their host project's resumed work. Do not restart them.
+SU balance at submission:40000 awarded,31787.081 used,8212.919 available (79.47% burned).
+Latest scheduler estimate for SCA7 moved to16:02CDT; estimates are not commitments.
 
-The native-range theorem assumes exact integer coordinates. FLUX.1 bf16 coordinates can
-round above4K; the known-grid fix restores grid membership, not exact RoPE coordinates.
-The recorded GPU max-absolute difference0.015625 is not a proven one-ULP bound.
-Novelty is native emulated-scale output calibration and transferred per-head/noise mixing;
-local/global branches, head-specific roles and a global opening have close prior art.
+All12 paired8K images and all10 per-image metrics are complete and archived.
+SCA improves ImageReward, CLIP, PickScore, both HPS variants and ARNIQA; aesthetic,
+MUSIQ, crop MUSIQ and CLIP-IQA differences remain unresolved. The latter three means
+favor AReA. Full8K gallery retains grid/stripe failures. All8K scores use CPU; HPS uses
+float32 instead of the main GPU mixed precision. Native MUSIQ query chunks256 retain
+all keys/patches; bounded pretrained equivalence checks were exact. Original GPU OOM
+is preserved in taskq/recovered with a recovery receipt, not relabeled as a successful run.
 
-All12 paired8K images are generated. CPU preference/alignment scores completed. Query-chunked native8K MUSIQ passes equivalence
-checks and the actual8K benchmark (702sCPU,21.76GiBpeak); four CPU shards are now scoring all24images.
-Long6K/8K latency bundles were split by method, retaining one warm-up plus three timed images.
-Three long AReA/full tasks remain held until the old SCA6 workers finish. SCA6K latency is complete
-(161.56 s median); SCA8K latency is running. New 4K timings are71.06 s SCA and202.44 s AReA; full attention is still running.
-Evaluation dependency-wait tasks are in hold_cpu to avoid occupying GPUs while waiting.
-SU balance verified from login usage.map:40000 awarded,31787.081 used,8212.919 available
-(79.47% burned), safely below96%. SCA9 was submitted after checking this balance on login2; existing SCA7 remains pending.
-V2 passed23 focused tests, preserves unique attempt logs and stops/reaps its own process groups
-before requeueing. It reads conservative task runtime metadata and uses the actual allocation deadline.
-Full calibration cost is unverified; `results/compute/claims_audit/` verifies2101 distinct main PNG hashes.
-**There is no git remote.** Keep local commits; publication is not part of this handoff.
+SCA clean latency is complete:2K18.20s,3K40.16s,4K71.06s,6K161.56s,8K287.64s.
+Matched4K AReA202.44s and full186.54s. Missing:6K AReA/full and8K AReA.
+Every measurement requires fresh warm-up plus three timed images in one process.
+Retry preflights preserve interrupted output in latency_history before a fresh run.
+Latest generation coverage:6K AReA26/100,SCA24/100;Krea SCA5/100,AReA0/100.
+GPU evaluation tasks remain held until exact100-prompt readiness. They extract all
+scores/features with bootstrap0, then CPU finalizers run1000 reference-image-cluster
+draws. The archive refuses incomplete bootstrap output. Strict promotion automation
+is being prepared. A bounded fresh-environment GPU smoke is queued on this same fleet.
+
+Corrected reference assembly retains195 Aesthetic-4K row weights and168 distinct image
+identity clusters. Historical patch features overwrote repeated rows. Main4K corrected
+patchFID:99.8156 SCA versus103.4111 AReA; neither patchFID nor patchKID has a resolved
+paired difference. Whole-image FID remains significantly better. Historical significance
+claims below are superseded by results/evidence/distributions and the current manuscript.
+
+The native-range theorem assumes exact integer coordinates. FLUX.1 bf16 coordinates
+can round above4K; the grid fix restores membership, not exact RoPE coordinates.
+The recorded GPU max difference0.015625 is not a proven one-ULP bound. Novelty is native
+emulated-scale output calibration and transferred per-head/noise mixing; two branches,
+head roles and a global opening have close prior art. Full calibration runtime is unverified;
+the old1.5GPUh claim was removed. Distinct main images2101 are hash-verified.
+
+Fresh generation environment recipe is under repro/environment, with71 locked packages,
+67 CPU tests,8 CLI/dry-run checks and2 supervisor tests passed. GPU smoke is queued,
+not yet validated. Inherited environment94-test combined CPU suite and frozen baseline
+33-test suite also passed. The NVIDIA wheel-tag warning is documented, not suppressed.
+Krea reused baseline transformer provenance is supported by launch scripts, successful
+fleet events and the historical runtime override; original sidecars mislabeled the base
+pipeline. A compact provenance receipt is being archived.
 
 ## 2. Goal and user requirements
 

@@ -1,79 +1,61 @@
-# SCA live state, 2026-10-17 03:03 CDT
-
+# SCA live state, 2026-10-17 03:18 CDT
 
 ## Goal
-Finish Phase 2 experiments, verified evaluation, figures, paper and reproducibility package.
-User explicitly transferred full project ownership to Codex; continue autonomously.
+Finish experiments, verified evaluation, paper and reproducibility package.
+User transferred full project ownership to Codex; continue autonomously.
 
 ## Status and next action
-- Root owns campaign, delivery and documentation. Paper agent monitors SCA6 until03:10 and then
-  prepares strict evaluation-promotion automation. Evidence agent tests a fresh isolated uv env;
-  figures agent owns/reaps the CPU shard sessions.
-- Complete: Phase1, E1/E4/E5/E6/E7/E8 and budget controls. PDF36pages and extracted ZIP verified,
-  corrected patch metrics, full8K gallery, readable generality table and2K/3K timings integrated.
-- Audit:740 scalar means,13 calibration fits exact;152 legacy distribution points reproduced exactly.
-  All targeted corrected distribution CIs complete. Main patchFID/KID unresolved; wholeFID significant.
-- Corrected evaluator: --reference-clusters images retains195rowweights/168imageidentityclusters.
-  Native8K MUSIQ fixed with opt-in --musiq-query-chunk256; bounded pretrained scores matchexactly.
-  Actual8K benchmark succeeded702sCPU/21.76GiBpeak. Snapshot evaluator unchanged.
-- SCA6 1075813 RUNNING2nodes c638-152,c640-021, ends03:07CDT. 4K sweep andallSCA latency sizes complete.
-- E3 8KSCA completed02:58:46,median287.640s;6KSCA161.56s.
-  4Kmatched: SCA71.06s,AReA202.44s,full186.54s. Three longtasks remainheld.
-  c640-021 nowruns a_j000_sca_krea_4096x4096.sh,firstimage79.576s.
-  c638-152 runs i024_area_6144x6144.sh;generation mayresumeafterwalltime.
-- SCA7 1075814 PENDING4nodes/4h min2h; SCA9 1076923 PENDING2-8nodes/4h min1h.
-  V2 dispatcher frozen under /scratch/.../sca/dispatch/20261017_v2;23 focusedtests pass.
-  SCA8 1076908 cancelledwhilePENDING afterreplacementaccepted. Budget79.47%burned,
-  8212.919/40000SUsavailable, verifiedlogin2usage.map beforeSCA9submission.
-  V2latestlogs use task_NAME.latest.log; auditor selectsnewestactuallegacy/V2log.
-  Heldlongtasks preserveprioroutputinlatency_history andrerunwarmup+3freshonretry.
-  Release3hold_longtasks onlyafteroldSCA6workersstop;v2honors runtimeheaders.
-- MF9 guests fullyyielded. All12paired8K generated;6K24/100each;Krea0/100each.
-- FourCPU8KMUSIQ shards FIGURES-agent-owned (root toolregistry cannotpoll): sessions45166,91706,77575,42657;
-  Only45166/PID973089 stillactive5/6scores;others3sessions exited0andreaped.
-  Total23/24cached. Firstbenchmarkdone/reaped.
-  Outputs/logs: /scratch/.../sca/eval/e2_8192_musiq_shards_20261017/.
-  Reapall, use repro/merge_evaluation_caches.py (rejectsconflictingkeys), expect72basecacheentries,
-  then finalcorrected evaluator --metrics clip,pickscore,musiq --device cpu --musiq-query-chunk256.
-- Failed i999_eval_e2_8192.sh is originalnativeMUSIQOOM; preservehistory, don'tblindlyrelaunch.
-- E2/E9 eval scripts i998/j999 inhold_cpu, strict100coverage, correctedimageclusterbootstrap,
-  onlineWandB;6Kalsoquerychunk256. Dispatchonlyaftergenerationcomplete.
-- E3 scripts/audit_latency.py verifieslogwarmupthen3timedimages, archiveslogs/sidecars andCSVs.
-  SCA sidecarslackfirst_callflag; don'trequireit, verifyuninterruptedlogsequenceinstead.
-- OnlineWandB snapshotrun sca-phase2-20261017; refresh scripts/track_campaign.py atmilestones.
-- NEXT: finish8Kscoremerge/report/paper;releaseheldlongtasksafterSCA6terminal;
-  freezeandapplytestedstrictready-evalpromotion;finishE2/E3/E9whenfleetsstart.
-  Root94-testCPU suitepassed31.42s;frozenbaseline33-test suitealsopassed.
-  Reproductionpackageportablehelpers,baselinefreezeandretrospectivemodelpins committed3d7deb7.
-  LastdeliveredPDF36pagesbuilt02:49;sourceincludes8Klatencyand5.45%transferboundawaitingnextbuild.
-- No gitremote. CPUcomputei618-051. TwootherprojectSSHsessionsheld; oursallreaped. Login1SSHstalledandwasreaped;login2works11processes.
-  Atmost3SSHaccount-wide, guardbeforeSSH. RA6c620-061 reserved; do notborrow.
+- Complete: E1/E4/E5/E6/E7/E8, budget controls, E2 8K12paired metrics and gallery.
+- New paper+ZIP independently build; PDFshad980bda6ab17f51fca104fbc393b86cc0cda59dcbd5e86f399b69cc99a845949.
+  Figures agent verified37pages,all11latencygroupsandall50displayed8Kvalues.
+- 8K:6 resolved gains (IR/CLIP/Pick/HPSv2/HPSv21/ARNIQA),4 unresolved differences.
+  MUSIQ/cropMUSIQ/CLIPIQA means favorAReA; visible stripes remain. All8KmetricsCPU.
+  Querychunk256 preservesnativeMUSIQallkeys/patches. All24scorescomplete,72basecacheentries.
+  OriginalfailedGPUOOMtask movedto recovered withreceipt; originalfailurepreserved.
+- SCA6 1075813 TIMEOUT03:07:36,allstepsgone; threeheldlatencytasksreleased03:12:55.
+- SCA7 1075814 PENDING4nodes4h,min2h; latestestimate16:02CDT.
+- SCA9 1076923 PENDING2-8nodes4h,min1h,deadline-awarev2frozen dispatcher.
+  SCA8 1076908 cancelledwhilePENDING. Lastbudget8212.919/40000SUsavailable79.47%burned.
+  MF9guestsfullyyielded; noforeignworkinterference. NoSCAactiveGPUnow.
+- E3 SCA2K18.20/3K40.16/4K71.06/6K161.56/8K287.64scomplete.
+  Matched4KAReA202.44/full186.54s. Missing6KAReA/full,8KAReA.
+  Retrypreflightpreservesoldimagesandfreshwarmup+3. V2fitsruntimeheaders/deadlines.
+- 6KAReA26/100,SCA24/100;KreaSCA5/100,AReA0/100. Interrupted6Ktasksrequeued.
+- E2/E9GPUevaltasksheldinhold_cpu: strict100coverage,6Klabelsca_nbfixed.
+  GPUbasebootstrap0 plusREADY_FOR_CPU_BOOTSTRAP; CPUfinalizersinhold_cpu_finalize
+  perform1000drawsimageidentityclusterbootstrap. RootmustlaunchonCPUwhenready.
+  ArchiveguardrejectsGPU-onlybootstrap0stage. Paperagentpreparesstrictpromotionhelper.
+- KreaDyPE/SEGAtransformerprovenanceverifiedlaunchscripts/env+successfulfleetlogs;
+  originalsidecarsmislabelbasepipeline. Paperagentarchivesreceipt.
+- Freshgenerationenvsca-repro-20261017:67tests,8CLIchecks,2supervisortestspass.
+  Queuea_000_repro_gpu_smoke.sh testsCUDA/compiledSCAwith5minbound,no learnedweights.
+  Sourcehashesverifiedattaskstart. Evidenceagentpreparesmetricenvrestorationrecipe.
+- RootinheritedcombinedCPU94tests pass; frozenbaseline33tests pass.
+- Corrected195row/168imageidentityclusterreferencepolicy retained; mainpatchFID/KIDunresolved.
+  Noveltybounded; bf16coordinatecaveat; unsupported1.5GPUhclaimremoved.
+- Paperagent:promoter+Kreaprovenance. Figuresagent:printQA. Evidenceagent:metricenvrecipe.
+- CPUcomputei618-051. TwoforeignSSHsessionsheld;oursallreaped. login2works;login1stalled.
+  Atmost3SSHaccountwide,guardbeforeSSH. No gitremote. Localcommitsexplicitpaths.
+- NEXT: review/freezehelper,patchonlypendinggenerationfooters;deliver8KPDFZIP;
+  finishCPUrepro/validation,thenE2/E3/E9whenallocationsstart.
 
 ## Map
-| Note | Read it when |
-| --- | --- |
-| HANDOVER.md | Method, historical results, paths and Phase 2 plan |
-| .agent/notes/state_20261016_checkpoint.md | Exact inherited chronology and prior results |
-| .agent/notes/phase2_experiments.md | E1-E7/E9 task design and protocol |
-| .agent/notes/flux2_port.md | FLUX.2 implementation, scheduler and memory decisions |
-| .agent/notes/area_code.md | AReA release implementation details |
-| paper/figures/snippets/README.md | Figure generation and snippets |
-| .agent/notes/primary_source_audit.md | Verified UltraImage, ResDiT and HRDiT overlap |
-| results/evidence/README.md | Numeric archive and audit scope; refresh commands |
-| results/compute/ | Attributable GPU-hour lower bound and missing-log limitations |
+- HANDOVER.md: current corrections override historical claims below them.
+- .agent/notes/phase2_experiments.md: original E1-E9 design, some eval implementation superseded.
+- repro/README.md, repro/environment/: portable snapshots, data/model restoration, environments.
+- results/evidence/: immutable source evidence, corrected metrics, coverage, latency, tracking.
+- paper/delivery_receipt.json: PDF/ZIP hashes and standalone source build validation.
+- /scratch/09032/saini_2/sca/taskq/: pending/running/done/held tasks and receipts.
 
 ## Decisions
-- Preserve frozen campaign code and shared FLUX.1-dev protocol for comparability.
-- UltraImage own two-stage defaults and FLUX.2 own scheduler/guidance must be explicit.
-- UltraImage wins some preference metrics; SCA wins detail metrics and speed. No universal superiority claim.
-- Four-prompt calibration shows no detected loss on 46 prompts; absence of significance is not equivalence.
-- Novelty is fitted and transferred per-head/noise output mixing; head roles, two branches and a global
-  opening already have prior art. Exact-coordinate range theorem does not eliminate bf16 drift above4K.
-- Preserve negative results and protocol limitations; paired CIs do not establish novelty or universal efficacy.
-- No source checkout changes in another project. No scratch deletion. Archive compact paper crux on work.
-- Existing guest authorization applies; inspect resource ownership and foreign processes before adding workers.
+- Preserve frozen campaign protocol and outputs. Negative results stay in paper.
+- Reference-image-cluster bootstrap retains195rowweights/168identities.
+- GPUfeatures thenCPUbootstrap; no GPUworker dependency waits.
+- Native8Kmetrics exploratory; no12promptFID/KID or universalqualityclaim.
+- Cleanlatencyneedswarmup+3inoneprocess; restartedtasksstartfresh,preserveoldbytes.
+- No new repository publication authorized; no remote exists.
 
 ## Open questions
-- Need final E2/E3/E9 outputs, coverage checks and paper integration before claiming completion.
-- Need final clean build, print-size review, source ZIP rebuild and independent ZIP build.
-- No Git remote; keep local commits and defer repository creation/publication to user instruction.
+- E2 6K, E3 remaining3latencygroups and E9 stillneedGPUallocation/results.
+- FreshGPUenvvalidationqueued; metricenvrecipeunderconstruction.
+- Finalpaperdeliverymustfollowallresults,provenancechecks,printQAandindependentZIPbuild.

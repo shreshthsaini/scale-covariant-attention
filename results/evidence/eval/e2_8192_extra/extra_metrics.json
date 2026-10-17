@@ -1,0 +1,643 @@
+{
+  "config": {
+    "root": "/scratch/09032/saini_2/sca/out/evalroot/e2_8192",
+    "prompts": "/scratch/09032/saini_2/sca/hi12.jsonl",
+    "out": "/scratch/09032/saini_2/sca/eval/e2_8192_extra",
+    "metrics": "ir,aesthetic,hpsv2,hpsv21,clipiqa,arniqa",
+    "reference_method": "area",
+    "res": null,
+    "methods": null,
+    "device": "cpu",
+    "batch_size": 2,
+    "threads": 4,
+    "iqa_long_side": 1024,
+    "is_splits": 10,
+    "bootstrap": 1000,
+    "bootstrap_seed": 0,
+    "crope_root": "/work/09032/saini_2/vista/Projects/Exploration/constancy_rope",
+    "hf_home": "/scratch/09032/saini_2/tmp/hf",
+    "torch_home": "/scratch/09032/saini_2/tmp/torch",
+    "allow_download": false,
+    "allow_missing": false
+  },
+  "metrics": [
+    "ir",
+    "aesthetic",
+    "hpsv2",
+    "hpsv21",
+    "clipiqa",
+    "arniqa"
+  ],
+  "versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "4.45.2",
+    "image-reward": "1.5",
+    "hpsv2": "1.2.0",
+    "pyiqa": "0.1.15",
+    "torch-fidelity": "0.3.0",
+    "open-clip-torch": "3.3.0"
+  },
+  "provenance": {
+    "ir": {
+      "model": "THUDM/ImageReward v1.0",
+      "checkpoint_sha": "5736be03b2652728fb87788c9797b0570450ab72",
+      "definition": "official normalized reward, batched copy of ImageReward.score",
+      "load_seconds": 20.34412630740553
+    },
+    "aesthetic": {
+      "model": "LAION improved-aesthetic-predictor sac+logos+ava1-l14-linearMSE",
+      "backbone": "openai/clip-vit-large-patch14",
+      "sha256": "21dd590f3ccdc646f0d53120778b296013b096a035a2718c9cb0d511bff0f1e0",
+      "revision": null,
+      "load_seconds": 0.12180921249091625
+    },
+    "hpsv2": {
+      "model": "xswu/HPSv2 HPS_v2_compressed.pt",
+      "checkpoint_sha": "697403c78157020a1ae59d23f111aa58ced35b0a",
+      "definition": "diag(image_features @ text_features.T), official val transform",
+      "load_seconds": 7.30250677280128
+    },
+    "hpsv21": {
+      "model": "xswu/HPSv2 HPS_v2.1_compressed.pt",
+      "checkpoint_sha": "697403c78157020a1ae59d23f111aa58ced35b0a",
+      "definition": "diag(image_features @ text_features.T), official val transform",
+      "load_seconds": 6.87580229062587
+    },
+    "clipiqa": {
+      "model": "pyiqa 0.1.15 clipiqa",
+      "long_side": 1024,
+      "resize": "PIL bicubic antialiased, aspect kept",
+      "load_seconds": 2.3258598623797297
+    },
+    "arniqa": {
+      "model": "pyiqa 0.1.15 arniqa",
+      "long_side": 1024,
+      "resize": "PIL bicubic antialiased, aspect kept",
+      "load_seconds": 0.6875892169773579
+    }
+  },
+  "errors": [],
+  "summary": [
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "aesthetic",
+      "value": 5.644785126050313,
+      "ci_low": 5.343470220764478,
+      "ci_high": 5.9401289006074265,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "arniqa",
+      "value": 0.373085876305898,
+      "ci_low": 0.31350865767647823,
+      "ci_high": 0.42666578746090333,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "clipiqa",
+      "value": 0.571110837161541,
+      "ci_low": 0.5223938988521695,
+      "ci_high": 0.6171744337305427,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "hpsv2",
+      "value": 0.24598868936300278,
+      "ci_low": 0.2336732084242006,
+      "ci_high": 0.25781129232297345,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "hpsv21",
+      "value": 0.16590647213160992,
+      "ci_low": 0.13631604678618411,
+      "ci_high": 0.19293091096915305,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "ir",
+      "value": -0.37578460574150085,
+      "ci_low": -1.1259588482479255,
+      "ci_high": 0.3695574738085269,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "aesthetic",
+      "value": 5.72461982568105,
+      "ci_low": 5.369038920601209,
+      "ci_high": 6.072843266526858,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "arniqa",
+      "value": 0.545887957016627,
+      "ci_low": 0.49660397277524077,
+      "ci_high": 0.6001653404285511,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "clipiqa",
+      "value": 0.5204542924960455,
+      "ci_low": 0.46272981924315293,
+      "ci_high": 0.5776718569298585,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "hpsv2",
+      "value": 0.2612981212635835,
+      "ci_low": 0.2534062497317791,
+      "ci_high": 0.2702860744670033,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "hpsv21",
+      "value": 0.20507621640960375,
+      "ci_low": 0.1844297094270587,
+      "ci_high": 0.22946134135127066,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "ir",
+      "value": 0.6754901404492557,
+      "ci_low": 0.12437718594834829,
+      "ci_high": 1.1518363876268265,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    }
+  ],
+  "paired_deltas": [
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "aesthetic",
+      "delta_definition": "method_minus_reference",
+      "value": 0.0798346996307373,
+      "ci_low": -0.24815473159154255,
+      "ci_high": 0.457635141412417,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "arniqa",
+      "delta_definition": "method_minus_reference",
+      "value": 0.17280208071072897,
+      "ci_low": 0.12136372302969296,
+      "ci_high": 0.2254786760235826,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "clipiqa",
+      "delta_definition": "method_minus_reference",
+      "value": -0.05065654466549555,
+      "ci_low": -0.10072695128619671,
+      "ci_high": 0.0071300759911537,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "hpsv2",
+      "delta_definition": "method_minus_reference",
+      "value": 0.015309431900580725,
+      "ci_low": 0.005489768926054239,
+      "ci_high": 0.027651491947472094,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "hpsv21",
+      "delta_definition": "method_minus_reference",
+      "value": 0.039169744277993836,
+      "ci_low": 0.014249745740865669,
+      "ci_high": 0.06995209463251133,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "ir",
+      "delta_definition": "method_minus_reference",
+      "value": 1.0512747461907566,
+      "ci_low": 0.4147192141856067,
+      "ci_high": 1.761097864387557,
+      "n_prompts": 12,
+      "bootstrap_valid": 1000
+    }
+  ],
+  "per_image": [
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_305536346962135631",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_305536346962135631_c6f18cbbd1_seed0.png",
+      "metrics": {
+        "ir": -2.2815144062042236,
+        "aesthetic": 5.810460090637207,
+        "hpsv2": 0.20873010158538818,
+        "hpsv21": 0.06282863765954971,
+        "clipiqa": 0.576133131980896,
+        "arniqa": 0.38414761424064636
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_4673559490456019105",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_4673559490456019105_cc91d8ed8c_seed0.png",
+      "metrics": {
+        "ir": 1.8857672214508057,
+        "aesthetic": 5.514121055603027,
+        "hpsv2": 0.28943970799446106,
+        "hpsv21": 0.2654024362564087,
+        "clipiqa": 0.45495128631591797,
+        "arniqa": 0.1772243082523346
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_7265494513082458083",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_7265494513082458083_3ceeb2ed50_seed0.png",
+      "metrics": {
+        "ir": 1.3625351190567017,
+        "aesthetic": 6.382510662078857,
+        "hpsv2": 0.27713024616241455,
+        "hpsv21": 0.20950114727020264,
+        "clipiqa": 0.4580148160457611,
+        "arniqa": 0.48761627078056335
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus3413373481783671760",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus3413373481783671760_98fb94bf5e_seed0.png",
+      "metrics": {
+        "ir": -2.2495334148406982,
+        "aesthetic": 5.080342769622803,
+        "hpsv2": 0.22375161945819855,
+        "hpsv21": 0.129825621843338,
+        "clipiqa": 0.5787285566329956,
+        "arniqa": 0.28727975487709045
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus3645125026227080560",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus3645125026227080560_f28cca297c_seed0.png",
+      "metrics": {
+        "ir": 0.28917279839515686,
+        "aesthetic": 6.553128242492676,
+        "hpsv2": 0.2384215146303177,
+        "hpsv21": 0.14973363280296326,
+        "clipiqa": 0.7003351449966431,
+        "arniqa": 0.4436246454715729
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus4469448794852185540",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus4469448794852185540_faa7240901_seed0.png",
+      "metrics": {
+        "ir": -0.2074333131313324,
+        "aesthetic": 5.2649054527282715,
+        "hpsv2": 0.24484798312187195,
+        "hpsv21": 0.171505406498909,
+        "clipiqa": 0.618205189704895,
+        "arniqa": 0.24537095427513123
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus4850138611731379908",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus4850138611731379908_4970b08792_seed0.png",
+      "metrics": {
+        "ir": -0.8802943825721741,
+        "aesthetic": 5.457671165466309,
+        "hpsv2": 0.22559843957424164,
+        "hpsv21": 0.123581662774086,
+        "clipiqa": 0.622008204460144,
+        "arniqa": 0.42598167061805725
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus5023570400257826529",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
+      "metrics": {
+        "ir": -0.38016021251678467,
+        "aesthetic": 5.659192085266113,
+        "hpsv2": 0.2395770251750946,
+        "hpsv21": 0.1647660732269287,
+        "clipiqa": 0.5389417409896851,
+        "arniqa": 0.45623788237571716
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus5685677173773420545",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus5685677173773420545_b6a31bd1c6_seed0.png",
+      "metrics": {
+        "ir": -0.6518380045890808,
+        "aesthetic": 4.7535295486450195,
+        "hpsv2": 0.2536492943763733,
+        "hpsv21": 0.17461137473583221,
+        "clipiqa": 0.6395295262336731,
+        "arniqa": 0.2624804377555847
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus5691444384207183173",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus5691444384207183173_1debaf2765_seed0.png",
+      "metrics": {
+        "ir": -2.254291534423828,
+        "aesthetic": 5.0828447341918945,
+        "hpsv2": 0.23589809238910675,
+        "hpsv21": 0.13654901087284088,
+        "clipiqa": 0.6537229418754578,
+        "arniqa": 0.5136902928352356
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus7320315357894569493.Jpg",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus7320315357894569493.Jpg_65228aaf5e_seed0.png",
+      "metrics": {
+        "ir": -0.5363408923149109,
+        "aesthetic": 5.729584693908691,
+        "hpsv2": 0.26037564873695374,
+        "hpsv21": 0.18043382465839386,
+        "clipiqa": 0.4020455479621887,
+        "arniqa": 0.3948376178741455
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus7692529131595280570",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus7692529131595280570_2f6817a356_seed0.png",
+      "metrics": {
+        "ir": 1.3945157527923584,
+        "aesthetic": 6.449131011962891,
+        "hpsv2": 0.25444459915161133,
+        "hpsv21": 0.22213883697986603,
+        "clipiqa": 0.6107139587402344,
+        "arniqa": 0.39853906631469727
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_305536346962135631",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_305536346962135631_c6f18cbbd1_seed0.png",
+      "metrics": {
+        "ir": -1.3827859163284302,
+        "aesthetic": 6.571473121643066,
+        "hpsv2": 0.25112074613571167,
+        "hpsv21": 0.16335484385490417,
+        "clipiqa": 0.4678570330142975,
+        "arniqa": 0.657005250453949
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_4673559490456019105",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_4673559490456019105_cc91d8ed8c_seed0.png",
+      "metrics": {
+        "ir": 1.9100229740142822,
+        "aesthetic": 5.179811000823975,
+        "hpsv2": 0.2930848300457001,
+        "hpsv21": 0.28599998354911804,
+        "clipiqa": 0.5657202005386353,
+        "arniqa": 0.47671571373939514
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_7265494513082458083",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_7265494513082458083_3ceeb2ed50_seed0.png",
+      "metrics": {
+        "ir": 1.8143306970596313,
+        "aesthetic": 5.705951690673828,
+        "hpsv2": 0.2797902226448059,
+        "hpsv21": 0.22712776064872742,
+        "clipiqa": 0.4064869284629822,
+        "arniqa": 0.6416383981704712
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus3413373481783671760",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus3413373481783671760_98fb94bf5e_seed0.png",
+      "metrics": {
+        "ir": 0.9469515085220337,
+        "aesthetic": 6.285820007324219,
+        "hpsv2": 0.2761498689651489,
+        "hpsv21": 0.2481244057416916,
+        "clipiqa": 0.6032326817512512,
+        "arniqa": 0.645865797996521
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus3645125026227080560",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus3645125026227080560_f28cca297c_seed0.png",
+      "metrics": {
+        "ir": 0.8009787201881409,
+        "aesthetic": 6.083767414093018,
+        "hpsv2": 0.24686893820762634,
+        "hpsv21": 0.1623569130897522,
+        "clipiqa": 0.47351065278053284,
+        "arniqa": 0.6189894080162048
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus4469448794852185540",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus4469448794852185540_faa7240901_seed0.png",
+      "metrics": {
+        "ir": -0.518245279788971,
+        "aesthetic": 5.896830081939697,
+        "hpsv2": 0.2501830458641052,
+        "hpsv21": 0.17440567910671234,
+        "clipiqa": 0.5108038187026978,
+        "arniqa": 0.4439380466938019
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus4850138611731379908",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus4850138611731379908_4970b08792_seed0.png",
+      "metrics": {
+        "ir": 0.01493886299431324,
+        "aesthetic": 5.286816596984863,
+        "hpsv2": 0.2520800828933716,
+        "hpsv21": 0.17844490706920624,
+        "clipiqa": 0.6507025957107544,
+        "arniqa": 0.5474411249160767
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus5023570400257826529",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
+      "metrics": {
+        "ir": 0.6762409806251526,
+        "aesthetic": 5.650646686553955,
+        "hpsv2": 0.24201367795467377,
+        "hpsv21": 0.1872485727071762,
+        "clipiqa": 0.4162079393863678,
+        "arniqa": 0.4645252525806427
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus5685677173773420545",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus5685677173773420545_b6a31bd1c6_seed0.png",
+      "metrics": {
+        "ir": 1.6203539371490479,
+        "aesthetic": 4.837400913238525,
+        "hpsv2": 0.25578582286834717,
+        "hpsv21": 0.1844072937965393,
+        "clipiqa": 0.47070178389549255,
+        "arniqa": 0.41235193610191345
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus5691444384207183173",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus5691444384207183173_1debaf2765_seed0.png",
+      "metrics": {
+        "ir": 1.25642991065979,
+        "aesthetic": 5.747692108154297,
+        "hpsv2": 0.2777582108974457,
+        "hpsv21": 0.27468612790107727,
+        "clipiqa": 0.6313613653182983,
+        "arniqa": 0.6686819195747375
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus7320315357894569493.Jpg",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus7320315357894569493.Jpg_65228aaf5e_seed0.png",
+      "metrics": {
+        "ir": 0.061966560781002045,
+        "aesthetic": 4.670351505279541,
+        "hpsv2": 0.25394466519355774,
+        "hpsv21": 0.17183758318424225,
+        "clipiqa": 0.33478498458862305,
+        "arniqa": 0.5286652445793152
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus7692529131595280570",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus7692529131595280570_2f6817a356_seed0.png",
+      "metrics": {
+        "ir": 0.9046987295150757,
+        "aesthetic": 6.778876781463623,
+        "hpsv2": 0.25679734349250793,
+        "hpsv21": 0.20292052626609802,
+        "clipiqa": 0.7140815258026123,
+        "arniqa": 0.44483739137649536
+      }
+    }
+  ],
+  "uncertainty": "95% percentile bootstrap over prompt clusters; seeds stay inside prompts",
+  "paired_note": "Only matching resolution/prompt/seed pairs enter deltas",
+  "is_note": "IS per method/res from torch-fidelity isc_features_to_metric; CI resamples prompts",
+  "seconds": 188.5073258485645,
+  "complete": true
+}
