@@ -314,3 +314,14 @@ def test_batch_uses_actual_nodes_and_one_deadline_lookup(tmp_path, valid_env):
     assert text.splitlines()[0] == str(deadline)
     assert "--nodes=3 --ntasks=3 --ntasks-per-node=1" in text
     assert (not calls.exists()) if valid_env else calls.read_text().splitlines() == ["called"]
+
+
+@pytest.mark.parametrize("mask", ["0", "GPU-test-identifier"])
+def test_guardian_preserves_cuda_and_slurm_environment(tmp_path, mask):
+    queue, logs = setup_queue(tmp_path)
+    (queue / "pending" / "environment.sh").write_text(
+        'printf "%s:%s\\n" "$CUDA_VISIBLE_DEVICES" "$SLURM_STEP_NUM_NODES"\n')
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES=mask, SLURM_STEP_NUM_NODES="4")
+    run = subprocess.run(command(queue, logs), env=env, capture_output=True, text=True, timeout=8)
+    assert run.returncode == 0, run.stdout + run.stderr
+    assert (logs / "task_environment.latest.log").read_text() == mask + ":4\n"
