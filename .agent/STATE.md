@@ -1,4 +1,4 @@
-# SCA live state, 2026-10-17 06:23 CDT
+# SCA live state, 2026-10-17 06:30 CDT
 
 ## Goal
 Finish experiments, verified evaluation, paper and reproducibility package.
@@ -9,8 +9,12 @@ The user transferred full project ownership to Codex. Continue without another a
   Recorded successor1077042 PENDING on dependency. Frozen controller is unchanged.
   Do not start a watcher, modify the controller or change/cancel its successor.
   Read results/evidence/continuation/runtime_1076947_start.json for live startup proof.
-- Current CPU unit: base and extra/ImageReward environments installing separately;
-  bounded real learned-score parity and an independent paper-number audit underway.
+- Base metric restoration complete: bounded CPU CLIP/Pick/MUSIQ/features exactly equal.
+  Proof: results/evidence/metric_environment/base_validation.json;8 rejection tests pass.
+  Extra/ImageReward recipe repairs and end-to-end fresh scorer checks remain active.
+  Paper audit verified762 means,195 hashes,13 fits,82 appendix rows,593 other table values.
+  Unsupported energy claim and overly broad frozen-baseline provenance sentence corrected.
+  New37-page delivery built twice independently; raster review and final audit active.
   Isolated cache copied39 verified assets,12.08GB,0 downloads. Five restore tests pass.
   Cache proof: results/evidence/metric_environment/cache_copy_receipt.json.
 - Complete: E1/E4/E5/E6/E7/E8, budget controls, and E2 8K metrics and full gallery.

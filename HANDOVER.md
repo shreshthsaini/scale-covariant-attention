@@ -1,6 +1,6 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-17 06:23 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
+Last updated 2026-10-17 06:30 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
 its short live index. Historical sections below are superseded by the correction notice here.
 
 ## 1. Current status and corrections
@@ -14,8 +14,12 @@ SCA7/SCA9 are pending; the spool has82 pending tasks,0 running and0 failed.
 Both final CPU bootstraps remain unready. Evidence: results/evidence/continuation/.
 The controller uses frozen dispatch/20261017_continuation and checkpoints between units.
 See slurm/CONTINUATION.md and scratch sca/continuation/status.json for live ownership.
-Three separate metric environment installs and bounded learned-score parity are active
-on this CPU allocation. No campaign environment is changed. Isolated asset restoration
+Fresh base metric restoration is complete: four CLIP/PickScore inputs, bounded MUSIQ
+and40960 Inception feature values are exactly equal across restored/inherited CPU envs.
+Eight rejection tests and fresh CLI checks pass; native4K MUSIQ/CUDA parity remain untested.
+Base proof: results/evidence/metric_environment/base_validation.json. Extra/ImageReward
+restoration is active on this CPU allocation. No campaign environment is changed.
+Isolated asset restoration
 copied and verified39 assets (12.08GB), with0 network requests; five focused tests pass.
 Evidence: results/evidence/metric_environment/cache_copy_receipt.json.
 E1, E4, E5, E6, E7, E8, budget controls and the exploratory E2 8K comparison are complete.

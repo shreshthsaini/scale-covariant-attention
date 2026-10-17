@@ -1,0 +1,207 @@
+{
+  "checked_utc": "2026-10-17T11:27:35.419732+00:00",
+  "status": "passed_bounded_cpu_parity",
+  "restoration": {
+    "environment": "/work/09032/saini_2/vista/library/uv-envs/sca-metric-base-20261017",
+    "uv": "0.8.23",
+    "lock": "repro/metrics_environment/base.lock",
+    "lock_sha256": "23e6a46dc8831ba9efaa98e07f6fe5d79695be24e53db5506fc851c21ecfa466",
+    "packages_installed": 125,
+    "install_script_exit_code": 1,
+    "dependency_check_exit_code": 1,
+    "only_dependency_warning": "nvidia-cusparselt-cu12 platform tag; documented upstream wheel warning; no other incompatibility",
+    "native_source_builds": false,
+    "pure_python_source_wheels_built": [
+      "openai-clip==1.0.1",
+      "filterpy==1.4.5"
+    ]
+  },
+  "parity": {
+    "clip": {
+      "count": 4,
+      "inherited_sha256": "4e03e058667bb0edf0978ce2b2a3c2d7fd71d1b7a62ebaab0ab07ba53c8b81d4",
+      "max_absolute_error": 0.0,
+      "passed": true,
+      "restored_sha256": "4a4bdc8de6acabb4aa8d619c85f4a28659dbd3ef3e91896b71786a87f439286d"
+    },
+    "features": {
+      "count": 40960,
+      "inherited_sha256": "e016cd2db880a32cb143f934f68d68fa1ce4986b024fd0a9718c255edacb3ba2",
+      "max_absolute_error": 0.0,
+      "passed": true,
+      "restored_sha256": "ca7c224cc3428340c163c6548d5ef5bf10d0dd0b561c660224ef13fd1a549a7f"
+    },
+    "musiq": {
+      "count": 8,
+      "inherited_sha256": "81f54865b6fa69003a80854f5fafab2ee45fb212c4c1b35692582aadf097f1d4",
+      "max_absolute_error": 0.0,
+      "passed": true,
+      "restored_sha256": "00025bdc67556e15c117853963f55f802c2fe3a32babe46701c254dfe46bb974"
+    },
+    "pickscore": {
+      "count": 4,
+      "inherited_sha256": "9b106685b470cd4b56b37f1144f82dec202ebb031ebd58fbd85f5851b02113b6",
+      "max_absolute_error": 0.0,
+      "passed": true,
+      "restored_sha256": "ec62ef76940cd8cc00dfa266cfffd2f2a6a4c363ba94d111b9239afb6048ec4f"
+    }
+  },
+  "protocol": {
+    "atol": 1e-05,
+    "clip_pickscore": "original 4K image, frozen processor",
+    "crop_seed": 0,
+    "crops": 4,
+    "device": "cpu",
+    "features": "original 4K whole image plus four frozen 1024 crops",
+    "musiq": "first frozen deterministic 1024 crop, no resize",
+    "rtol": 1e-06,
+    "threads": 4,
+    "version": 1
+  },
+  "tests": {
+    "fresh_rejection_tests_passed": 8,
+    "inherited_rejection_tests_passed": 8,
+    "fresh_evaluator_help_exit_code": 0,
+    "fresh_parity_help_exit_code": 0,
+    "score_commands_exit_code": {
+      "inherited": 0,
+      "restored": 0
+    },
+    "comparison_exit_code": 0
+  },
+  "limits": [
+    "Four existing 4K images, first two prompt rows with paired images available in final4k shard; not campaign reproduction.",
+    "MUSIQ is tested on deterministic 1024 crops with the unchanged native scorer, not native-4K or native-6K MUSIQ.",
+    "FID/KID learned extraction paths tested with4 whole and16 patch2048-dimensional vectors; distribution estimates and bootstrap reruns are outside this bounded test.",
+    "CPU float32 only; GPU metric parity remains untested."
+  ],
+  "preserved_attempts": {
+    "legacy_cache": "/scratch/09032/saini_2/sca/metric_base_parity_20261017/inherited_legacy_cache_attempt",
+    "historical_work_checkpoint": "results/evidence/metric_environment/base_inherited_checkpoint.json",
+    "initial_fixture_failure": "results/evidence/metric_environment/base_isolated_parity_20261017/tests.log",
+    "cache_ref_note": "Hub2.2 base run loaded before shared refs newline repair; Hub0.36.2 failure belongs to extra restoration, fixed exact40-byte refs used for fresh base run."
+  },
+  "resume": {
+    "prepare": "/work/09032/saini_2/vista/library/uv-envs/sca/bin/python repro/check_metric_base_parity.py prepare --images /scratch/09032/saini_2/sca/out/final4k --prompts results/evidence/prompts/aesthetic4k_eval.jsonl --out /scratch/09032/saini_2/sca/metric_base_parity_NEW/inputs.json",
+    "score": "ENV/bin/python repro/check_metric_base_parity.py score --manifest /scratch/09032/saini_2/sca/metric_base_parity_NEW/inputs.json --hf-home /scratch/09032/saini_2/sca/metric_restore_20261017/hf --torch-home /scratch/09032/saini_2/sca/metric_restore_20261017/torch --out /scratch/09032/saini_2/sca/metric_base_parity_NEW/ENV_LABEL",
+    "compare": "ENV/bin/python repro/check_metric_base_parity.py compare --inherited /scratch/09032/saini_2/sca/metric_base_parity_NEW/inherited --restored /scratch/09032/saini_2/sca/metric_base_parity_NEW/restored --out /scratch/09032/saini_2/sca/metric_base_parity_NEW/comparison.json"
+  },
+  "artifacts": [
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/cache_copy_receipt.json",
+      "sha256": "f197887bf90fc6b8a4ddfa965988114dc8e8faedbcff24d32213c8c255a71b1c"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/compare.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/comparison.json",
+      "sha256": "8d9352c77a3fabae15154c6ea5e3913d6bf8e9bcd9e933dcd43bc53288a3f187"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/evaluate_cli.log",
+      "sha256": "c0fec3fcc22e3b697bf6c91b9188560abff9783caf3e1173660bdf6a0b1e4a24"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/fresh_tests.log",
+      "sha256": "78b2ab407e1f3e72bd45f428ea28c678fbef5365cd6881b5e7d20aa4bca8e886"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/inherited/clip.json",
+      "sha256": "4e03e058667bb0edf0978ce2b2a3c2d7fd71d1b7a62ebaab0ab07ba53c8b81d4"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/inherited/environment.json",
+      "sha256": "2a5d3d8f13ad1c8d8cd47e049e3dfbf62ce80cd87abb9a7eae5a387088593b09"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/inherited/features.json",
+      "sha256": "e016cd2db880a32cb143f934f68d68fa1ce4986b024fd0a9718c255edacb3ba2"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/inherited/features.npz",
+      "sha256": "3942aace13402e8f7a41316dbd7be843e66b46426fa898590856c8346a10023f"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/inherited/musiq.json",
+      "sha256": "81f54865b6fa69003a80854f5fafab2ee45fb212c4c1b35692582aadf097f1d4"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/inherited/pickscore.json",
+      "sha256": "9b106685b470cd4b56b37f1144f82dec202ebb031ebd58fbd85f5851b02113b6"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/inherited.log",
+      "sha256": "37a3b5128072207115dd9a56273f6b125cddd6d5a011d5cc4507a202bec9bbcb"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/inputs.json",
+      "sha256": "3479ad5125dde40b2d4b298128e9623199aa843394ab70b1822e84018cfc50d1"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/install.log",
+      "sha256": "1e3882cc69f8a71318e6dd5d43cba6ff9c41770005f26da6687e739407357a80"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/parity_cli.log",
+      "sha256": "61084f4fefdd63eec89b7388270f36dcf68ed10dae0b7957df6fc10277aac22e"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/pip_check.log",
+      "sha256": "c7c31a6110b6d6982ccaecec2b5ad064092084452e32e41f408fbd153e23713e"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/prepare_isolated.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/ref_repair_receipt.json",
+      "sha256": "778d9a6ba68ce6d89fa2eab8fb223bae56207df2d45562d2071d7a9667e1b2ea"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/restored/clip.json",
+      "sha256": "4a4bdc8de6acabb4aa8d619c85f4a28659dbd3ef3e91896b71786a87f439286d"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/restored/environment.json",
+      "sha256": "36a6844ed6f4d8ba6e5ae6e4b2d13988e5cfb8208158670644026bac9a2fd08f"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/restored/features.json",
+      "sha256": "ca7c224cc3428340c163c6548d5ef5bf10d0dd0b561c660224ef13fd1a549a7f"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/restored/features.npz",
+      "sha256": "3942aace13402e8f7a41316dbd7be843e66b46426fa898590856c8346a10023f"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/restored/musiq.json",
+      "sha256": "00025bdc67556e15c117853963f55f802c2fe3a32babe46701c254dfe46bb974"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/restored/pickscore.json",
+      "sha256": "ec62ef76940cd8cc00dfa266cfffd2f2a6a4c363ba94d111b9239afb6048ec4f"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/restored.log",
+      "sha256": "804a653548fbe77541b030d74d48a39cd73a86872e1279e56a77645fc84875fc"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/tests.log",
+      "sha256": "0e34049fcaf031c4ae517c5c7085f734e74d25d9c546b91c5e4856e3a8dd1a43"
+    },
+    {
+      "path": "results/evidence/metric_environment/base_isolated_parity_20261017/tests_corrected.log",
+      "sha256": "06d543d8ddccd8b0ac0fc5f796abeab24dd33da624f74167a18b238c37c22737"
+    },
+    {
+      "path": "repro/check_metric_base_parity.py",
+      "sha256": "ad085bf5428f1c3c5cbcbe43467424b4eac24a21f7b5909465c0372aa0612520"
+    },
+    {
+      "path": "repro/tests/test_metric_base_parity.py",
+      "sha256": "0a3b903535ec8969f46bdacc808712d631084ad30b2a977490b5e4af0c666432"
+    }
+  ]
+}

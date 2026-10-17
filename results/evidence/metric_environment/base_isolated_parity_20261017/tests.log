@@ -1,0 +1,35 @@
+......F.                                                                 [100%]
+=================================== FAILURES ===================================
+__________________________ test_changed_input_refused __________________________
+
+tmp_path = PosixPath('/scratch/09032/saini_2/tmp/tmp/pytest-of-saini_2/pytest-1643/test_changed_input_refused0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x4000190c0c90>
+
+    def test_changed_input_refused(tmp_path, monkeypatch):
+        source = tmp_path / "image.png"
+        source.write_bytes(b"original image")
+        monkeypatch.setattr(parity, "source_hashes", lambda: {"source": "fixed"})
+        document = {"protocol": parity.PROTOCOL, "sources": {"source": "fixed"},
+                    "records": [{"path": str(source), "image_sha256": "wrong"}]}
+        with pytest.raises(ValueError, match="Input changed"):
+>           parity.verify_inputs(document)
+
+repro/tests/test_metric_base_parity.py:84: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+manifest = {'protocol': {'version': 1, 'device': 'cpu', 'threads': 4, 'atol': 1e-05, ...}, 'sources': {'source': 'fixed'}, 'recor.../09032/saini_2/tmp/tmp/pytest-of-saini_2/pytest-1643/test_changed_input_refused0/image.png', 'image_sha256': 'wrong'}]}
+
+    def verify_inputs(manifest):
+        if manifest["protocol"] != PROTOCOL or manifest["sources"] != source_hashes():
+            raise ValueError("Protocol or code changed since manifest preparation")
+        for record in manifest["records"]:
+            for path, identity in ((record["path"], "image_sha256"),
+>                                  (record["musiq_path"], "musiq_sha256"),
+                                    ^^^^^^^^^^^^^^^^^^^^
+                                   (str(Path(record["path"]).with_suffix(".json")), "sidecar_sha256")):
+E                                  KeyError: 'musiq_path'
+
+repro/check_metric_base_parity.py:101: KeyError
+=========================== short test summary info ============================
+FAILED repro/tests/test_metric_base_parity.py::test_changed_input_refused - K...
+1 failed, 7 passed in 1.04s

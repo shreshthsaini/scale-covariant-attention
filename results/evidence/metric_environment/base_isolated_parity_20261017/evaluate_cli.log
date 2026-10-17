@@ -1,0 +1,44 @@
+usage: evaluate_corrected.py [-h] --root ROOT --prompts PROMPTS
+                             [--references REFERENCES]
+                             [--reference-method REFERENCE_METHOD] [--res RES]
+                             --out OUT [--metrics METRICS] [--device DEVICE]
+                             [--bootstrap BOOTSTRAP]
+                             [--bootstrap-seed BOOTSTRAP_SEED]
+                             [--crop-seed CROP_SEED] [--crops CROPS]
+                             [--threads THREADS] [--allow-missing]
+                             [--no-wandb]
+                             [--musiq-query-chunk MUSIQ_QUERY_CHUNK]
+                             [--reference-clusters {rows,images}]
+
+Evaluate completed sample PNG/JSON pairs and bootstrap by prompt.
+
+options:
+  -h, --help            show this help message and exit
+  --root ROOT           Root containing sample PNG files and JSON sidecars
+  --prompts PROMPTS     Prompt JSONL with id and prompt
+  --references REFERENCES
+                        Reference JSONL with id and path
+  --reference-method REFERENCE_METHOD
+  --res RES             Optional resolution filter, for example 4096x4096
+  --out OUT             Evaluation directory on scratch, also holds resumable
+                        caches
+  --metrics METRICS     all (HPSv3 optional) or comma list: clip,imagereward,p
+                        ickscore,hpsv3,musiq,clipiqa,fid,kid,patch_fid,patch_k
+                        id,spectrum,tiling
+  --device DEVICE
+  --bootstrap BOOTSTRAP
+  --bootstrap-seed BOOTSTRAP_SEED
+  --crop-seed CROP_SEED
+  --crops CROPS         Fixed random 1024 crops per image, shared across
+                        methods
+  --threads THREADS
+  --allow-missing       Exit successfully with explicitly reported unavailable
+                        metrics
+  --no-wandb            Disable W&B logging explicitly, useful for CPU
+                        numerical tests
+  --musiq-query-chunk MUSIQ_QUERY_CHUNK
+                        Opt-in inference attention query chunking; preserves
+                        native MUSIQ patches (0 disables)
+  --reference-clusters {rows,images}
+                        Bootstrap reference rows or shared image identities,
+                        retaining every row's point-estimate weight
