@@ -78,7 +78,7 @@ Applied to FLUX.1-dev joint attention (57 blocks, 24 heads, native grid n0 = 64x
   - Emulate scale s (window n/s, pooling s) and solve closed-form least squares per
     (layer, head, sigma bin) against the model's own full-attention output.
   - Table: `/scratch/09032/saini_2/sca/calib/k1_1024.npz`, using the scale-4 entry at inference.
-  - Cost: about 1.5 GPU-hours.
+  - Cost: the historical 1.5 GPU-hour estimate is unsupported. Surviving partial logs cannot establish total calibration runtime; see `results/compute/claims_audit/`.
 - **Band guard (optional, not in the final method).** It replaces the low band (avg-pool 16,
   bilinear up) of each head output with O_glob's. It fixed duplication on hand-picked prompts but
   lowered metrics and cost time. It is in the appendix.
