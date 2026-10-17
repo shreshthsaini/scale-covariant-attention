@@ -308,6 +308,9 @@ from a separate artifact store for fresh learned-metric scoring. The archived
 numeric/feature banks remain sufficient for the offline checks described above.
 
 The [fresh generation recipe](environment/README.md) supplies a hash-pinned
-dependency resolution and bounded CPU validation for Linux aarch64. The separate
-metric environment remains an inherited package freeze; fresh GPU generation and
-full learned-metric scoring are not reproduced by the environment checks.
+dependency resolution and bounded CPU validation for Linux aarch64. Separate
+[metric restoration recipes](metrics_environment/README.md) now provide three
+resolved hash-pinned dependency sets, checkpoint identities and a restoration
+helper. Their full installation and numerical rescoring remain unverified.
+Fresh GPU generation and full learned-metric scoring are not reproduced by these
+environment checks.
