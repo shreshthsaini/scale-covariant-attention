@@ -38,7 +38,7 @@ def main():
                       'sha256': sha(dst)})
         return dst
 
-    names = ('per_image.csv', 'summary.csv', 'paired_deltas.csv', 'metrics.json',
+    names = ('per_image.csv', 'summary.csv', 'paired_deltas.csv', 'metrics.json', 'metrics_gpu_features.json',
              'extra_per_image.csv', 'extra_summary.csv', 'extra_paired_deltas.csv', 'extra_metrics.json')
     upcoming = {'e2_6144': (100, {'area', 'sca_nb'}),
                 'e2_8192': (12, {'area', 'sca_nb'}),
@@ -60,6 +60,15 @@ def main():
             if not meta.get('complete') or meta.get('all_metrics_available') is False:
                 valid = False
                 break
+            if suffix == 'base' and experiment != 'e2_8192':
+                # GPU feature extraction deliberately uses zero draws. Archive
+                # only after the cached CPU bootstrap has produced final CIs.
+                status = meta.get('status', {})
+                if (meta.get('config', {}).get('bootstrap', 0) < 1000
+                        or any(status.get(metric, {}).get('reference_clusters') != 'images'
+                               for metric in ('fid', 'kid', 'patch_fid', 'patch_kid'))):
+                    valid = False
+                    break
             groups = defaultdict(set)
             for row in csv.DictReader(per_image.open()):
                 groups[row['method']].add((row['res'], row['seed'], row['prompt_id']))
