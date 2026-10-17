@@ -113,3 +113,14 @@ Bounded receipt: `results/evidence/presentation_review_20261017.json`.
 All primary/standalone page renders and changed-page high-resolution previews:
 `/scratch/09032/saini_2/sca/paper_review_20261017/redesign_final/`.
 No paper files were modified during this review.
+
+The final bibliography/navigation build supersedes that PDF with SHA256
+`abf64459d0aae84a207b592ab53f0be80cbd503c04f68a3f6d81fcf671b4ff3e`.
+It remains 38 pages. All 38 primary/standalone page renders match at 72dpi;
+33 pages also match the preceding build exactly. Changed pages 9, 10, 11, 12
+and 15 were inspected at 144dpi. The latency reference is now explicit; its
+paragraph reflows onto page 10. Figure and compact-table contents remain clear.
+The SigMa PMLR reference and expanded unrun-baselines limitation render without
+clipping. No new visual defect was found. The bounded presentation receipt now
+records current PDF/ZIP hashes and per-page hashes. Final previews are under
+`/scratch/09032/saini_2/sca/paper_review_20261017/redesign_final_bibliography/`.
