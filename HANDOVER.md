@@ -1,15 +1,21 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-16 11:05 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
+Last updated 2026-10-17 01:50 CDT. Read this file first; it is self-contained. `.agent/STATE.md` is
 the short live state; `PROPOSAL.md` is the original idea and literature map.
 
 ## 1. Status in one paragraph
 
-All experiments are finished and the paper is drafted. `paper/main.pdf` has a 9-page main text,
-16 pages in total, 0 `\todo`. `paper/sca_overleaf.zip` compiles on its own. No Slurm jobs are
-running, the task spool is empty (497 done, 0 failed), and `taskq/STOP` is set. Everything is
-committed locally; **there is no git remote yet** (ask the user before creating a GitHub repo).
-Open items are in Section 11.
+Phase 2 is active. Codex took over as main operator on October 17 with explicit authorization
+to finish experiments, evaluation, figures, manuscript and final checks. The October 16
+21:59 checkpoint (cda71e3) archived E1; E4 HRGen and the UltraImage budget controls finished
+afterwards. Six guest workers on MF9 are generating 6K/8K images; SCA6 (1075813, 4 nodes)
+and SCA7 (1075814, 4 nodes) remain pending. At 01:44 CDT the spool had 90 pending, 6 running,
+855 done and 0 failed tasks; STOP is absent. These are snapshots, not live counts.
+The current PDF is 27 pages and still contains completed-experiment placeholders. Its
+Overleaf ZIP predates the PDF and must be rebuilt. Manuscript, evidence archive and figures
+are being updated in parallel. See `.agent/STATE.md` for current ownership and next actions.
+**There is no git remote yet.** Sections 3 to 11 describe the completed Phase 1 campaign;
+Section 12 and the Phase 2 notes supersede their old next-step and completion statements.
 
 ## 2. Goal and user requirements
 
