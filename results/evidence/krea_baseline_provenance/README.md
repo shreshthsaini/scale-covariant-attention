@@ -4,6 +4,14 @@ This archive records the evidence connecting the inherited DyPE and SEGA outputs
 to the Krea transformer. It covers the 100 selected E9 prompts for each method.
 The original outputs and sidecars have not been changed.
 
+Completion follow-up, 17 October 2026: `../krea_overlay_complete/receipt.json`
+verifies the finished seven-image repair and all 200 selected overlay pairs.
+It hashes and checks all 207 PNG files, including the preserved originals.
+All seven regenerated PNGs are byte-identical to their originals. The selected
+overlay now uses recovered source fingerprints for every image; the historical
+193-image subset still spans multiple revisions. The original audit below and
+its preparation-only receipt remain unchanged as historical provenance.
+
 All 56 completed generation scripts export `CROPE_TRANSFORMER` to
 `black-forest-labs/FLUX.1-Krea-dev`, snapshot
 `8162a9c7b05a641be098422bf2fcf335615c2f28`. Their prompt ranges cover all 100
