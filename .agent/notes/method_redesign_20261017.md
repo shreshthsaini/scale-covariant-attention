@@ -92,3 +92,24 @@ new compact main comparison. Root owns the hero-caption correction and any table
 revision. Pending experiment markers are still visible and must not be mistaken
 for completed evidence. Review previews are under
 `/scratch/09032/saini_2/sca/paper_review_20261017/redesign_assembled/`.
+
+## Final delivery visual comparison
+
+Reviewed the next 38-page build, paper SHA256
+`13832c6ee2774271999010e6ad063177f6fd9908f6f91c225baf63d34a36fb82`.
+All 38 primary and independently rebuilt pages have identical pixel hashes at
+72dpi. Source ZIP has 473 files. Changed pages 1, 2, 4, 8, 9, 10, 11 and 12 were
+also inspected at 144dpi. The hero caption exception and method T notation are
+correct. Compact ablation data now print at 8.97pt, up from 6.96pt, with seven
+columns and an explicit pointer to the full appendix metrics and intervals.
+
+The main latency figure is legible on page 11. Its paragraph is on page 9,
+with the qualitative Figure 6 on page 10 between them. There is no blank page,
+overlap or clipping; this is an ordinary float delay. An explicit reference to
+the latency figure from that paragraph was suggested for navigation. No blocking
+visual defect remains. Pending experiments remain visibly marked.
+
+Bounded receipt: `results/evidence/presentation_review_20261017.json`.
+All primary/standalone page renders and changed-page high-resolution previews:
+`/scratch/09032/saini_2/sca/paper_review_20261017/redesign_final/`.
+No paper files were modified during this review.
