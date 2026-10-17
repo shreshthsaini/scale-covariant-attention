@@ -44,6 +44,29 @@ def pool(tmp_path, monkeypatch, tag="6144_complete"):
         monkeypatch.setitem(gallery.imgsel.ROOTS, method, str(roots[method]))
         for pid in ids:
             source(roots[method], pid)
+    if tag == "krea_complete":
+        overlay, replacement = tmp_path / "overlay", tmp_path / "replacement"
+        links = []
+        for method, label in (("krea_dype", "dype"), ("krea_sega", "sega_official")):
+            original_root = roots[method]
+            roots[method] = overlay / label
+            roots[method].mkdir(parents=True)
+            monkeypatch.setitem(gallery.imgsel.ROOTS, method, str(roots[method]))
+            for i, pid in enumerate(ids):
+                original = original_root / f"{pid}_0123456789_seed0.png"
+                replace = method == "krea_sega" and i < 7
+                target = source(replacement, pid) if replace else original
+                dest = roots[method] / original.name
+                dest.symlink_to(target)
+                dest.with_suffix(".json").symlink_to(target.with_suffix(".json"))
+                links.append(dict(method=label, prompt_id=pid, replacement=replace,
+                    overlay_json=str(dest.with_suffix(".json")), target_json=str(target.with_suffix(".json")),
+                    original_json=str(original.with_suffix(".json")),
+                    original_sidecar_sha256=gallery.sha256(original.with_suffix(".json"))))
+        repair = tmp_path / "repair.json"
+        repair.write_text(json.dumps(dict(overlay=str(overlay), output=str(replacement),
+            selected_pairs=200, replacement_pairs=7, links=links)))
+        spec["provenance_receipts"].append(repair)
     return ids, roots
 
 
@@ -93,4 +116,15 @@ def test_krea_requires_all_four_methods_and_checkpoint_receipt(tmp_path, monkeyp
     assert eligible == ids
     gallery.SPECS["krea_complete"]["provenance_receipts"] = [tmp_path / "not_archived.json"]
     with pytest.raises(ValueError, match="required provenance receipt"):
+        gallery.ready_pool("krea_complete")
+
+
+def test_krea_repaired_files_cannot_fall_back_to_originals(tmp_path, monkeypatch):
+    _, roots = pool(tmp_path, monkeypatch, "krea_complete")
+    repair = json.loads(gallery.SPECS["krea_complete"]["provenance_receipts"][1].read_text())
+    item = next(r for r in repair["links"] if r["replacement"])
+    sidecar = Path(item["overlay_json"])
+    sidecar.unlink()
+    sidecar.symlink_to(item["original_json"])
+    with pytest.raises(ValueError, match="differs from the prepared overlay"):
         gallery.ready_pool("krea_complete")

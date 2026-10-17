@@ -89,18 +89,25 @@ successful render samples the sorted complete pool with seed 17 and freezes its
 IDs, prompt-manifest hash, PNG and sidecar hashes, configurations and shared crop
 coordinates. Later renders reject changed sources or evaluation manifests.
 
-Krea uses AReA and recalibrated SCA from `sca/out/krea/`, plus the inherited DyPE
-and SEGA outputs from `constancy_rope/out_krea/main/`. It requires the archived
-`results/evidence/krea_baseline_provenance/receipt.json`, which connects the older
-baseline runs to the Krea transformer snapshot through launch scripts and loader
-code. Their sidecars label the FLUX.1-dev base pipeline and omit that override.
-The gallery records the receipt hash and this metadata limitation, retains each
-selected runtime configuration, and reports any unresolved historical source
-snapshots counted by the receipt. It does not present the varying historical
-runtime revisions as one frozen implementation. The caption also distinguishes
-the shared sampling protocol from separately tuned defaults and equal runtime.
+Krea uses AReA and recalibrated SCA from `sca/out/krea/`, plus DyPE and SEGA from
+`/scratch/09032/saini_2/sca/out/krea_baseline_overlay_20261017/`. This overlay
+selects193 inherited pairs and seven regenerated SEGA pairs. Until all seven
+replacement outputs exist, the final gallery remains blocked. There is no
+fallback to their historical originals.
+
+The gallery requires and hashes `receipt.json`, `repair_preparation.json` and
+`algorithm_review.json` in `results/evidence/krea_baseline_provenance/`. The first
+connects the older runs to the Krea transformer through launch scripts and loader
+code; inherited sidecars label the FLUX.1-dev base pipeline and omit that override.
+The repair receipt identifies every selected overlay target. Readiness validates
+the exact200 baseline identities, both image and sidecar targets, seven distinct
+replacement paths, and unchanged inherited sidecar hashes. The caption describes
+the seven replacements and the varying historical runtime revisions. The earlier
+source gaps remain archived but are not attributed to the regenerated outputs.
+The shared sampling protocol is distinct from tuned defaults and equal runtime.
 
 `tests/test_gallery_readiness.py` exercises missing-target substitution, protocol
 and metadata mismatches, duplicate outputs, deterministic selection, four-method
-coverage and the required checkpoint receipt. It uses tiny synthetic images and
+coverage, required checkpoint receipts and rejection of fallback to historical
+outputs at repaired overlay paths. It uses tiny synthetic images and
 does not render an incomplete campaign.

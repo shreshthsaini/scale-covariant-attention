@@ -21,6 +21,7 @@ from fig_qual import COLORS, auto_box, header, make_tiles, row, snippet
 
 REPO = Path(__file__).resolve().parents[3]
 EVAL100 = REPO / "results/evidence/prompts/eval100.jsonl"
+KREA_OVERLAY = Path("/scratch/09032/saini_2/sca/out/krea_baseline_overlay_20261017")
 
 SPECS = {
     "baselines": {
@@ -74,14 +75,15 @@ SPECS = {
         "res": "4096x4096", "n": 2,
         "methods": ["krea_area", "krea_dype", "krea_sega", "krea_sca"],
         "expected": 100, "prompt_manifest": EVAL100,
-        "provenance_receipts": [REPO / "results/evidence/krea_baseline_provenance/receipt.json"],
+        "provenance_receipts": [REPO / "results/evidence/krea_baseline_provenance" / name
+                                for name in ("receipt.json", "repair_preparation.json", "algorithm_review.json")],
         "caption": (
             r"\textbf{FLUX.1-Krea-dev transformer at $4096^2$.} Two prompts sampled "
             r"uniformly from all 100 four-method evaluation prompts, without selection "
             r"by visual quality or metric score. Each prompt occupies two rows: "
             r"full images, then matching native-pixel crops. Seed 0, 28 steps, "
             r"guidance 4.5, with FLUX.1-dev text encoders and VAE. SCA is recalibrated "
-            r"for Krea; DyPE and SEGA reuse the earlier Krea campaign. This compares "
+            r"for Krea; DyPE and SEGA use the earlier Krea campaign with the recorded source repairs. This compares "
             r"the recorded implementations under the shared sampling settings, "
             r"rather than each method's separately tuned defaults or equal runtime. "
             r"The inherited baselines span multiple recorded runtime revisions."
@@ -101,8 +103,8 @@ for method in ("flux2_full", "flux2_sca"):
 imgsel.ROOTS.update({
     "krea_area": imgsel.OUT + "/krea/area/{res}",
     "krea_sca": imgsel.OUT + "/krea/sca_krea/{res}",
-    "krea_dype": "/scratch/09032/saini_2/constancy_rope/out_krea/main/dype/{res}",
-    "krea_sega": "/scratch/09032/saini_2/constancy_rope/out_krea/main/sega_official/{res}",
+    "krea_dype": str(KREA_OVERLAY / "dype/{res}"),
+    "krea_sega": str(KREA_OVERLAY / "sega_official/{res}"),
 })
 
 
@@ -179,13 +181,40 @@ def ready_pool(tag):
     for receipt in spec.get("provenance_receipts", []):
         if not Path(receipt).is_file():
             raise ValueError(f"{tag}: required provenance receipt not yet archived: {receipt}")
-        if tag == "krea_complete":
-            evidence = json.loads(Path(receipt).read_text())
-            if (evidence.get("transformer_snapshot") != "8162a9c7b05a641be098422bf2fcf335615c2f28"
-                    or any(evidence.get("coverage", {}).get(m, {}).get("selected_prompts") != spec["expected"]
-                           for m in ("dype", "sega_official"))):
-                raise ValueError("Krea provenance receipt does not cover the expected checkpoint and prompt count")
+    if tag == "krea_complete":
+        evidence = json.loads(Path(spec["provenance_receipts"][0]).read_text())
+        if (evidence.get("transformer_snapshot") != "8162a9c7b05a641be098422bf2fcf335615c2f28"
+                or any(evidence.get("coverage", {}).get(m, {}).get("selected_prompts") != spec["expected"]
+                       for m in ("dype", "sega_official"))):
+            raise ValueError("Krea provenance receipt does not cover the expected checkpoint and prompt count")
+        validate_krea_overlay(json.loads(Path(spec["provenance_receipts"][1]).read_text()), indexes, targets)
     return indexes, eligible, prompt_source
+
+
+def validate_krea_overlay(repair, indexes, targets):
+    """Refuse fallback to the seven historical files with unresolved sources."""
+    links = repair["links"]
+    expected = {(m, pid) for m in ("dype", "sega_official") for pid in targets}
+    actual = {(r["method"], r["prompt_id"]) for r in links}
+    if (actual != expected or len(links) != len(expected)
+            or repair["selected_pairs"] != len(expected)
+            or repair["replacement_pairs"] != 7 or sum(r["replacement"] for r in links) != 7):
+        raise ValueError("Krea repair receipt does not cover the exact selected baseline pool")
+    for entry in links:
+        method = {"dype": "krea_dype", "sega_official": "krea_sega"}[entry["method"]]
+        sidecar = Path(indexes[method][entry["prompt_id"]]).with_suffix(".json")
+        target = Path(entry["target_json"])
+        if (sidecar != Path(entry["overlay_json"])
+                or not sidecar.is_relative_to(Path(repair["overlay"]))
+                or sidecar.resolve() != target.resolve()
+                or sidecar.with_suffix(".png").resolve() != target.with_suffix(".png").resolve()):
+            raise ValueError(f"Krea selected source differs from the prepared overlay: {sidecar}")
+        if entry["replacement"]:
+            if (entry["method"] != "sega_official" or not target.is_relative_to(Path(repair["output"]))
+                    or target.resolve() == Path(entry["original_json"]).resolve()):
+                raise ValueError(f"Krea repair still selects an original unresolved source: {sidecar}")
+        elif sha256(sidecar) != entry["original_sidecar_sha256"]:
+            raise ValueError(f"Krea inherited sidecar changed: {sidecar}")
 
 
 def select_prompts(eligible, count):
@@ -239,7 +268,8 @@ def build(tag):
             manifest["historical_baseline_metadata_note"] = (
                 "DyPE and SEGA sidecars identify the FLUX.1-dev base pipeline and omit the Krea "
                 "transformer override. The archived launch/runtime receipt establishes the override; "
-                "historical runtime revisions may differ and each selected sidecar is preserved.")
+                "historical runtime revisions may differ and each selected sidecar is preserved. "
+                "The repair receipt selects seven regenerated SEGA outputs instead of the unresolved originals.")
         for pid in selected:
             images = [imgsel.load(indexes[m][pid]) for m in methods]
             crop = auto_box(images, 512 * int(res.split("x")[0]) // 4096)
@@ -284,11 +314,9 @@ def build(tag):
             lines.append(line)
     caption = spec.get("caption")
     if tag == "krea_complete":
-        evidence = json.loads(Path(spec["provenance_receipts"][0]).read_text())
-        unmatched = evidence.get("unmatched_source_count", 0)
-        if unmatched:
-            caption += (rf" Exact historical source snapshots remain unresolved for {unmatched} "
-                        r"of the 200 inherited baseline outputs; the provenance receipt records this limitation.")
+        repair = json.loads(Path(spec["provenance_receipts"][1]).read_text())
+        caption += (rf" {repair['replacement_pairs']} SEGA outputs were regenerated from an archived runtime "
+                    r"to replace historical outputs whose exact source snapshots could not be recovered.")
     if caption is None:
         caption = (
             rf"\textbf{{Partial qualitative results at ${res.split('x')[0]}^2$.}} "
