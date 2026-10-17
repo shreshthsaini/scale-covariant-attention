@@ -2,7 +2,7 @@
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/method_sca.pdf}
-  \caption{\textbf{\sca{} keeps the global branch alone for the first 8 steps, then mixes two in-distribution branches per head with a calibrated weight.}
+  \caption{\textbf{\sca{} keeps the global branch alone for the first 8 steps, then mixes two branches with native-range image geometry per head.}
   (a)~One attention layer at $4096^2$ over 28 denoising steps. While $\sigma>\sigma_g=0.89$ (steps 1 to 8), every head uses only the image-anchored output $\Oglob$ and the pixel-anchored branch is skipped. Afterwards each head computes both branches; image queries receive $\pih\,\Oloc+(1-\pih)\,\Oglob$ and text queries receive $\Oglob$.
   (b)~The two coordinate systems at $s=4$, drawn schematically. Image-anchored: keys and values are subsampled at the centre of every $s\times s$ block, giving a $64\times64$ grid like the native $1024^2$ one, and RoPE uses block indices, so a query (black) takes the position of its block (shaded). Pixel-anchored: each $8\times8$ query tile attends to the $64\times64$ image keys around it, clamped at the border, with the original RoPE positions. Both branches always include all text keys.
   (c)~$\pih$ is fit once per model at $1024^2$: FLUX.1-dev runs with full attention on 32 prompts, scale $s$ is emulated with a window of $n_0/s$ and pooling by $s$, and closed-form least squares against the model's own $\Ofull$ gives one weight per layer, head, and $\sigma$ bin. Inference at $4096^2$ reads the scale-4 entry.}

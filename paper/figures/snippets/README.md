@@ -14,6 +14,9 @@ Each `.tex` file holds one complete `figure`/`figure*` environment. Use it with 
 | `gallery_4096.tex`, `gallery_4096_p2.tex` | `fig:gallery_4096`, `fig:gallery_4096_p2` | 32 randomly sampled, uncurated prompts, AReA vs SCA at 4096^2, with crops. | Appendix gallery |
 | `gallery_4096x2048.tex` | `fig:gallery_4096x2048` | 6 random prompts, AReA vs SCA at 4096x2048 (W x H). | Appendix gallery |
 | `gallery_6144x2048.tex` | `fig:gallery_6144x2048` | 6 random prompts, AReA vs SCA at 6144x2048 (W x H). | Appendix gallery |
+| `gallery_baselines.tex` | `fig:gallery_baselines` | 3 random prompts, AReA, DyPE, SEGA, UltraImage and SCA at 4096^2; full-image row followed by matching crops. UltraImage uses its own two-stage defaults. | Appendix gallery |
+| `gallery_flux2.tex` | `fig:gallery_flux2` | 4 random paired FLUX.2-dev prompts, full attention vs SCA at 4096^2. | Appendix gallery |
+| `gallery_6144.tex`, `gallery_8192.tex` | `fig:gallery_6144`, `fig:gallery_8192` | 4 prompts each from the completed AReA/SCA pairs at the frozen snapshot, explicitly labeled partial qualitative evidence. | Appendix gallery |
 
 `main.tex` already uses the label `fig:failure` for the body figure. `fig:failures` is a different figure.
 
@@ -23,6 +26,7 @@ Each `.tex` file holds one complete `figure`/`figure*` environment. Use it with 
 P=/work/09032/saini_2/vista/library/uv-envs/sca/bin/python
 cd paper/figures/src
 $P fig_qual.py all                      # hero, qual_main, gallery, gallery_wide, ablation, failures
+$P fig_phase2.py all                    # new baseline, FLUX.2, partial 6K and 8K galleries
 $P fig_calib.py; $P fig_latency.py      # latency: add --csv /scratch/09032/saini_2/sca/results_latency_curve.csv
 tectonic -o .. method_sca.tex           # method diagram
 $P make_test_doc.py && cd ../snippets && tectonic -Z search-path=../.. _test.tex   # layout check
@@ -34,3 +38,24 @@ $P make_test_doc.py && cd ../snippets && tectonic -Z search-path=../.. _test.tex
 - **Selection:** hero, main and failure prompts and their crop windows are hand-picked in the specs at the top of `fig_qual.py`. Gallery prompts are random and disjoint across galleries. Automatic crops take the window with the most edge energy, averaged over the methods shown.
 - `contact_sheet.py` builds thumbnail sheets for choosing prompts.
 - `_test.tex` and `_test.pdf` are scratch files. Do not commit `_test.pdf` (25 MB).
+
+## Phase-2 provenance
+
+`src/fig_phase2.py` builds the four new galleries without changing the existing
+selection. On its first run it samples sorted eligible prompt IDs using
+`random.Random(17)`, excluding the four development prompts. An image is eligible
+only when all compared methods have a complete seed-zero sidecar and a PNG with
+the expected dimensions. The high-resolution pool is incomplete and may reflect
+completion order; its captions explicitly limit the evidence to that pool.
+
+Each gallery directory contains `provenance.json` with the frozen eligible pool,
+selected prompts, source SHA256 hashes, full generation configurations, snapshot
+time, and shared crop coordinates. Later runs reuse the selection and check source
+hashes. Crops maximize edge energy averaged over all methods shown. No score or
+visual judgment enters prompt selection. JPEG paper assets are archived here;
+the source PNG paths point to scratch and remain purge-eligible.
+
+The first phase-2 render was checked as four separate pages with the paper's
+5.5-inch text width. The frozen 6K and 8K eligible pools contain 14 and 11 paired
+prompts respectively. The displayed FLUX.2 portrait distortion and residual 8K
+grid/stripe artifacts are retained and identified in their captions.
