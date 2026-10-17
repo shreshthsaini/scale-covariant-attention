@@ -5,7 +5,8 @@ Usage: link_common.py --root R --res HxW --seed S --prompts P.jsonl [--exclude d
 
 For each prompt id in --prompts (minus --exclude), the PNG and JSON sidecar named
 image_stem(id, seed) (constancy_rope / sca naming) must exist and be complete in every DIR;
-those ids are linked into R/NAME/<res>/. R is recreated from scratch. Stdlib only.
+those ids are linked into R/NAME/<res>/. An existing root is retained beside the
+replacement. Insufficient coverage leaves the existing root untouched. Stdlib only.
 """
 
 import argparse
@@ -14,7 +15,7 @@ import json
 import os
 from pathlib import Path
 import re
-import shutil
+import uuid
 
 
 def image_stem(prompt_id, seed):  # identical to sca/runtime.py and crope/utils.py
@@ -39,8 +40,6 @@ def main():
     a = p.parse_args()
     methods = [m.split("=", 1) for m in a.methods]
     skip = set(ids(a.exclude)) if a.exclude else set()
-    if a.root.exists():
-        shutil.rmtree(a.root)
     common, missing = [], {name: 0 for name, _ in methods}
     for pid in ids(a.prompts):
         if pid in skip:
@@ -53,15 +52,30 @@ def main():
                 ok = False
         if ok:
             common.append(stem)
-    for name, d in methods:
-        out = a.root / name / a.res
-        out.mkdir(parents=True, exist_ok=True)
-        for stem in common:
-            for ext in (".png", ".json"):
-                os.symlink(Path(d) / f"{stem}{ext}", out / f"{stem}{ext}")
     print(f"common ids: {len(common)}; missing per method: {missing}", flush=True)
     if len(common) < a.min_count:
         raise SystemExit(f"only {len(common)} common ids (< {a.min_count})")
+    if a.root.is_symlink():
+        raise ValueError("evaluation root must not itself be a symlink")
+    attempt = uuid.uuid4().hex
+    stage = a.root.with_name(a.root.name + '.building-' + attempt)
+    stage.mkdir(parents=True, exist_ok=False)
+    for name, d in methods:
+        out = stage / name / a.res
+        out.mkdir(parents=True, exist_ok=True)
+        for stem in common:
+            for ext in (".png", ".json"):
+                os.symlink(Path(d).resolve() / f"{stem}{ext}", out / f"{stem}{ext}")
+    previous = a.root.with_name(a.root.name + '.previous-' + attempt)
+    if a.root.exists():
+        a.root.rename(previous)
+        print(f"preserved previous evaluation root: {previous}", flush=True)
+    try:
+        stage.rename(a.root)
+    except OSError:
+        if previous.exists() and not a.root.exists():
+            previous.rename(a.root)
+        raise
 
 
 if __name__ == "__main__":
