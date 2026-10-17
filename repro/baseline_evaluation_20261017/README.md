@@ -49,21 +49,24 @@ review; neither script requests GPUs or polls Slurm. GPU scoring must finish bef
 CPU intervals. The CPU barrier requires exact eight-method coverage, finite scalar
 values, complete error-free reports, unchanged source/input bytes, matching metric
 package/model revisions, and every required finite2048-dimensional feature array.
-It rejects missing caches before CPU model extraction can occur. The current scripts
+It compares fresh sample discovery to the input receipt, verifies the extra-metric
+identity receipt, and rejects missing caches. A separate cache-only guard also
+refuses Inception construction if a cache disappears after validation. CPU reruns
+read immutable GPU score snapshots, whose hashes remain bound to the completion
+marker, while the live distribution report may be replaced. The current scripts
 do not automatically enqueue scoring or bootstrap tasks.
 
 Cache reuse is conditional, not promised:
 
 - Base cache keys include resolved PNG path, size/mtime, prompt text/ID, source
   config hash, metric schema, crop seed/count, package versions and model revisions.
-  Symlinks preserve original resolved paths. The corrected reference assembly
-  accepts existing per-row feature keys, so compatible original feature NPZ files
-  and scalar cache entries can be copied into the new base output. Use the existing
-  `repro/merge_evaluation_caches.py` to reject unequal JSON-key collisions; compare
-  SHA256 before copying an existing NPZ filename. Never modify source caches.
-- The evaluator itself decides key hits. Changed environments, weights, source
-  configs, crop settings or file signatures require new scoring. A matching metric
-  name or similar filename is insufficient. Keep `--crop-seed 0 --crops 4` defaults.
+  Symlinks preserve original resolved paths. Keys do not record extraction device,
+  so matching keys or package versions alone do not establish GPU precision parity.
+  This workflow starts with an empty output directory. Do not import base caches
+  until a separate audit verifies source-report device, extraction provenance,
+  exact input identities, settings and hashes. Never modify source caches.
+- Keep the existing crop defaults: `--crop-seed 0 --crops 4`. Changed environments,
+  weights, source configs, crop settings or file signatures require new scoring.
 - The portable extra evaluator binds its cache to the complete input-identity set.
   Do not transplant historical caches lacking this receipt, or reuse a12-image-set
   portable cache as a46-image-set cache. Use a new46 workspace and rescore extras.
@@ -71,8 +74,8 @@ Cache reuse is conditional, not promised:
   only when exact image/protocol/version/precision identity is established. The
   prepared workflow does not silently perform such a merge.
 
-For46, rerun preparation with `--size 46` and a new workspace. Compatible base caches
-from12 may be copied under the same key checks. Preserve12 reports before extending.
+For46, rerun preparation with `--size 46` and a new workspace. Any base cache transfer
+from12 requires the separate extraction-provenance audit above. Preserve12 reports before extending.
 For191, prepare an explicitly reviewed full manifest and retain valid earlier
 outputs through an audited combined view; do not change active frozen manifests.
 
@@ -80,6 +83,10 @@ Promotion depends on implementation fidelity, finite/non-corrupt outputs and
 affordable measured runtime, never whether results favor SCA. Retain every loss
 and failure.12/46 are bounded checks, not the final completion criterion. HRDiT's
 30+17+10 progressive steps remain a separate protocol from direct28-step methods
-and guided UltraImage's60 steps. Small-sample distribution estimates are exploratory.
+and guided UltraImage's60 steps. Existing SCA56-step and UltraImage budget controls
+should inform that separate-system comparison; similar total step counts across
+resolutions do not establish equal compute. The final191 campaign should reconcile
+the complete paper metric suite, including IS if retained in the final table.
+Small-sample distribution estimates are exploratory.
 After final checks, archive reports, scalar CSVs, source/input receipts and required
 feature banks on work, then update tables and paper claims from actual results.

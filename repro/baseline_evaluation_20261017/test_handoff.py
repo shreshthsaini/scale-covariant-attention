@@ -54,3 +54,60 @@ def test_missing_smoke_produces_no_cost_number(tmp_path):
         read_prompts=lambda *args:[{'id':'x','prompt':'p'}],stem_for=lambda *args:'x')
     result=p.costs({'output_root':str(tmp_path)},adapter)
     assert all(r['estimate'] is None and r['status']=='smoke_not_complete' for r in result.values())
+
+
+def fixture_view():
+    p=load('check_scores');prompts=[{'id':str(i),'prompt':'p'} for i in range(12)]
+    records=[dict(method=m,prompt_id=str(i),path=f'/image/{m}/{i}.png',sidecar=f'/image/{m}/{i}.json',
+                  config_hash='hash',res='4096x4096',seed=0) for m in p.METHODS for i in range(12)]
+    receipt=dict(size=12,methods=sorted(p.METHODS),inputs=[dict(method=r['method'],prompt_id=r['prompt_id'],
+        image=r['path'],sidecar=r['sidecar'],config_hash='hash') for r in records])
+    return p,receipt,records,prompts
+
+
+def test_current_view_rejects_changed_extra_or_subset():
+    p,receipt,records,prompts=fixture_view();p.validate_view(receipt,records,prompts)
+    changed=[dict(r) for r in records];changed[0]['path']='/other/image.png'
+    with pytest.raises(ValueError,match='path/config'):p.validate_view(receipt,changed,prompts)
+    changed[0]=dict(records[0],config_hash='different')
+    with pytest.raises(ValueError,match='path/config'):p.validate_view(receipt,changed,prompts)
+    with pytest.raises(ValueError,match='view'):p.validate_view(receipt,records+[records[0]],prompts)
+    receipt['inputs']=receipt['inputs'][:-1]
+    with pytest.raises(ValueError,match='coverage'):p.validate_view(receipt,records,prompts)
+
+
+def test_cpu_rerun_uses_immutable_scored_report(tmp_path):
+    p=load('check_scores');(tmp_path/'base').mkdir();(tmp_path/'inputs.json').write_text('{}')
+    scored=tmp_path/'base/scored_metrics.json';scored.write_text('{"device":"cuda"}')
+    live=tmp_path/'base/metrics.json';live.write_text('{"device":"cpu"}')
+    marker=dict(inputs_sha256=p.sha(tmp_path/'inputs.json'),reports={'base/scored_metrics.json':p.sha(scored)})
+    (tmp_path/'GPU_SCORES_COMPLETE.json').write_text(json.dumps(marker))
+    assert p.scoring_paths(tmp_path)[0]==scored
+    scored.write_text('changed')
+    with pytest.raises(ValueError,match='Immutable'):p.scoring_paths(tmp_path)
+
+
+def test_cache_only_constructor_and_metric_guards():
+    from types import SimpleNamespace
+    p=load('cpu_cache_only');args=SimpleNamespace(device='cpu',metrics='fid,kid,patch_fid,patch_kid',
+        bootstrap=1000,reference_clusters='images');p.validate_args(args)
+    with pytest.raises(RuntimeError,match='refuses Inception'):p.deny_encoder('cpu')
+    args.metrics='fid,musiq'
+    with pytest.raises(ValueError,match='distribution'):p.validate_args(args)
+    args.metrics='fid';args.device='cuda'
+    with pytest.raises(ValueError):p.validate_args(args)
+
+
+def test_csv_rejects_changed_image_path(tmp_path):
+    p=load('check_scores');path=tmp_path/'scores.csv'
+    path.write_text('method,prompt_id,res,seed,x,path\na,p,4096x4096,0,1.2,/wrong.png\n')
+    with pytest.raises(ValueError,match='image path'):p.check_csv(path,{('a','p')},['x'],{('a','p'):'/right.png'})
+
+
+def test_stale_partial_snapshot_refused(tmp_path):
+    p=load('check_scores');base=tmp_path/'base';base.mkdir()
+    for name in ['metrics.json','per_image.csv','summary.csv']:(base/name).write_text('current')
+    (base/'scored_metrics.json').write_text('old')
+    with pytest.raises(ValueError,match='Partial immutable'):p.preserve_scores(tmp_path)
+    (base/'scored_metrics.json').write_text('current');p.preserve_scores(tmp_path)
+    assert (base/'scored_per_image.csv').read_text()=='current'

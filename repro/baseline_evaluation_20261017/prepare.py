@@ -43,7 +43,7 @@ def check_sample(image,method,row):
     with Image.open(image) as opened:
         if opened.size!=(4096,4096):raise ValueError(f'Wrong pixel dimensions: {image}')
     return dict(method=method,prompt_id=str(row['id']),image=str(image.resolve()),
-        image_sha256=digest,sidecar=str(sidecar.resolve()),sidecar_sha256=sha(sidecar))
+        image_sha256=digest,sidecar=str(sidecar.resolve()),sidecar_sha256=sha(sidecar),config_hash=hashlib.sha256(json.dumps(cfg,sort_keys=True).encode()).hexdigest())
 
 
 def costs(receipt,adapter):
@@ -92,7 +92,7 @@ def gather(size,receipt,adapter):
 def freeze_evaluators(destination):
     files=[REPO/x for x in ['repro/evaluate_corrected.py','repro/eval_extra_portable.py',
         'repro/extra_report_identity.py','scripts/eval_extra.py','scripts/paired_bootstrap.py',
-        'repro/baseline_evaluation_20261017/check_scores.py']]
+        'repro/baseline_evaluation_20261017/check_scores.py','repro/baseline_evaluation_20261017/cpu_cache_only.py']]
     files+=list((REPO/'repro/evaluator_snapshot').rglob('*.py'))
     manifest={}
     for source in files:
@@ -125,7 +125,7 @@ def prepare(workspace,rows,selected):
     check=command(PY,code/'repro/baseline_evaluation_20261017/check_scores.py',[workspace])
     gpu=[check+' --inputs-only',command(PY,code/'repro/evaluate_corrected.py',base+['--metrics','clip,pickscore,musiq,fid,kid,patch_fid,patch_kid','--device','cuda','--bootstrap','0']),
         command(EXTRA_PY,code/'repro/eval_extra_portable.py',extra+['--metrics','ir,aesthetic,hpsv2,hpsv21,clipiqa,arniqa','--device','cuda','--bootstrap','0']),check]
-    cpu=[check,command(PY,code/'repro/evaluate_corrected.py',base+['--metrics','fid,kid,patch_fid,patch_kid','--device','cpu','--bootstrap','1000'])]
+    cpu=[check,command(PY,code/'repro/baseline_evaluation_20261017/cpu_cache_only.py',base+['--metrics','fid,kid,patch_fid,patch_kid','--device','cpu','--bootstrap','1000'])]
     for method in NEW:
         cpu.append(command(PY,code/'scripts/paired_bootstrap.py',['--method',method,'--reference','sca_nb','--draws','2000','--out',workspace/(method+'_paired.csv'),workspace/'base/scored_per_image.csv',workspace/'extra/extra_per_image.csv']))
     for name,lines in [('score_gpu.sh',gpu),('intervals_cpu.sh',cpu)]:
