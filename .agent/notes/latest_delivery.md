@@ -1,4 +1,4 @@
-# Latest verified paper delivery, 2026-10-17 10:19 PDT
+# Latest verified paper delivery, 2026-10-17 10:32 PDT
 
 - [Paper PDF](../../paper/main.pdf), 38 pages.
 - [Overleaf source ZIP](../../paper/sca_overleaf.zip), 473 source files.
@@ -21,15 +21,16 @@ All 42 retained ablation values exactly match the previously audited table.
 The figures retain UltraImage's preference-score advantages and unresolved
 comparisons. The portrait is explicitly curated, not a random sample.
 
-PDF SHA256: `13832c6ee2774271999010e6ad063177f6fd9908f6f91c225baf63d34a36fb82`.
-ZIP SHA256: `cdb8c611a44864f3ba5dcba4f4cbc38498f5e2452856e0b618f87bb53847dccd`.
+PDF SHA256: `abf64459d0aae84a207b592ab53f0be80cbd503c04f68a3f6d81fcf671b4ff3e`.
+ZIP SHA256: `a9d7fc5c03ca6552a3a46dd36a2d83c75ebe73362bc1c06dbf68668ae4c10588`.
 
 This is a verified revised draft, not project completion. E2 6K, E9 Krea,
 full-attention 6K timing, repaired GPU smoke, final evaluation and complete
 galleries remain pending. HRDiT and SigMa are being added as validated baseline
-experiments; CPU preflight does not count as a GPU result.
+experiments; two frozen smoke tasks are queued after18CPU checks. CPU preflight
+does not count as a GPU result.
 
 SCA10 1077447 and SCA11 1077473 are queued. Durable continuation 1077042 is
 queued with its dependency satisfied. Read HANDOVER.md for current ownership.
 Do not duplicate the watcher. Render history is under
-`/scratch/09032/saini_2/sca/paper_review_20261017/redesign_final`.
+`/scratch/09032/saini_2/sca/paper_review_20261017/redesign_final_bibliography`.
