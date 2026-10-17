@@ -85,12 +85,18 @@ uv run --no-project --python "$SCA_PY" python -m pytest -q tests
 `scripts/eval_extra.py` computes preference and no-reference quality metrics.
 Use `repro/evaluate_corrected.py` for CLIP/PickScore/MUSIQ/FID evaluation. It preserves
 reference crop features for every prompt row, including rows sharing an image file.
+Pass `--reference-clusters images` for the manuscript's reference-image-cluster
+bootstrap, which retains all reference rows in the point estimates. Native 6K/8K
+MUSIQ uses `--musiq-query-chunk 256` to retain all patches within available memory.
 The historical evaluator remains unchanged in `repro/evaluator_snapshot/` for reproducing
 the original reports; its patch FID/KID reference assembly contains the documented bug.
 Pass `--crope-root "$PWD/repro/evaluator_snapshot"` to `scripts/eval_extra.py` to use
 the same archived helpers. [Evaluation reproduction instructions](repro/README.md)
 include tested imports, numerical checks, upstream commits and remaining dependencies.
-The generation wrappers still use external upstream checkouts documented there.
+The frozen DyPE/SEGA generation harness is archived in `repro/generation_snapshot/`.
+AReA and UltraImage use external upstream implementations documented there, with
+portable archived helper imports. Model snapshot pins and their provenance limits
+are recorded in `repro/model_snapshots.json`.
 Archived paired per-image metrics can be checked without loading any model.
 
 ## Build the paper

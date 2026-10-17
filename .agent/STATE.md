@@ -1,4 +1,4 @@
-# SCA live state, 2026-10-17 02:46 CDT
+# SCA live state, 2026-10-17 03:03 CDT
 
 
 ## Goal
@@ -6,8 +6,9 @@ Finish Phase 2 experiments, verified evaluation, figures, paper and reproducibil
 User explicitly transferred full project ownership to Codex; continue autonomously.
 
 ## Status and next action
-- Root owns campaign, delivery and documentation. Paper agent implements isolated dispatcher v2;
-  evidence agent repairs reproducibility packaging; figures agent owns the CPU shard tool sessions.
+- Root owns campaign, delivery and documentation. Paper agent monitors SCA6 until03:10 and then
+  prepares strict evaluation-promotion automation. Evidence agent tests a fresh isolated uv env;
+  figures agent owns/reaps the CPU shard sessions.
 - Complete: Phase1, E1/E4/E5/E6/E7/E8 and budget controls. PDF36pages and extracted ZIP verified,
   corrected patch metrics, full8K gallery, readable generality table and2K/3K timings integrated.
 - Audit:740 scalar means,13 calibration fits exact;152 legacy distribution points reproduced exactly.
@@ -15,18 +16,22 @@ User explicitly transferred full project ownership to Codex; continue autonomous
 - Corrected evaluator: --reference-clusters images retains195rowweights/168imageidentityclusters.
   Native8K MUSIQ fixed with opt-in --musiq-query-chunk256; bounded pretrained scores matchexactly.
   Actual8K benchmark succeeded702sCPU/21.76GiBpeak. Snapshot evaluator unchanged.
-- SCA6 1075813 RUNNING2nodes c638-152,c640-021, ends03:07CDT. E3 4K and6KSCA active.
-- E3 8KSCA started02:38;expectedfinish~03:03. Other3longtasks remainhold_long.
-  6KSCAfinished161.56smedian;4KSCA71.06s,AReA202.44s;fullstillrunning.
+- SCA6 1075813 RUNNING2nodes c638-152,c640-021, ends03:07CDT. 4K sweep andallSCA latency sizes complete.
+- E3 8KSCA completed02:58:46,median287.640s;6KSCA161.56s.
+  4Kmatched: SCA71.06s,AReA202.44s,full186.54s. Three longtasks remainheld.
+  c640-021 nowruns a_j000_sca_krea_4096x4096.sh,firstimage79.576s.
+  c638-152 runs i024_area_6144x6144.sh;generation mayresumeafterwalltime.
 - SCA7 1075814 PENDING4nodes/4h min2h; SCA9 1076923 PENDING2-8nodes/4h min1h.
   V2 dispatcher frozen under /scratch/.../sca/dispatch/20261017_v2;23 focusedtests pass.
   SCA8 1076908 cancelledwhilePENDING afterreplacementaccepted. Budget79.47%burned,
   8212.919/40000SUsavailable, verifiedlogin2usage.map beforeSCA9submission.
-  V2latestlogs use task_NAME.latest.log; latency auditor nowprefers them.
+  V2latestlogs use task_NAME.latest.log; auditor selectsnewestactuallegacy/V2log.
+  Heldlongtasks preserveprioroutputinlatency_history andrerunwarmup+3freshonretry.
   Release3hold_longtasks onlyafteroldSCA6workersstop;v2honors runtimeheaders.
 - MF9 guests fullyyielded. All12paired8K generated;6K24/100each;Krea0/100each.
 - FourCPU8KMUSIQ shards FIGURES-agent-owned (root toolregistry cannotpoll): sessions45166,91706,77575,42657;
-  PIDs973089,949776,949774,949775 respectively. Firstbenchmarkdone/reaped.
+  Only45166/PID973089 stillactive5/6scores;others3sessions exited0andreaped.
+  Total23/24cached. Firstbenchmarkdone/reaped.
   Outputs/logs: /scratch/.../sca/eval/e2_8192_musiq_shards_20261017/.
   Reapall, use repro/merge_evaluation_caches.py (rejectsconflictingkeys), expect72basecacheentries,
   then finalcorrected evaluator --metrics clip,pickscore,musiq --device cpu --musiq-query-chunk256.
@@ -36,7 +41,11 @@ User explicitly transferred full project ownership to Codex; continue autonomous
 - E3 scripts/audit_latency.py verifieslogwarmupthen3timedimages, archiveslogs/sidecars andCSVs.
   SCA sidecarslackfirst_callflag; don'trequireit, verifyuninterruptedlogsequenceinstead.
 - OnlineWandB snapshotrun sca-phase2-20261017; refresh scripts/track_campaign.py atmilestones.
-- NEXT: finishCPU8Kscoring/report/paper; validatev2dispatcher, keepGPUsbusy; finishE2/E3/E9.
+- NEXT: finish8Kscoremerge/report/paper;releaseheldlongtasksafterSCA6terminal;
+  freezeandapplytestedstrictready-evalpromotion;finishE2/E3/E9whenfleetsstart.
+  Root94-testCPU suitepassed31.42s;frozenbaseline33-test suitealsopassed.
+  Reproductionpackageportablehelpers,baselinefreezeandretrospectivemodelpins committed3d7deb7.
+  LastdeliveredPDF36pagesbuilt02:49;sourceincludes8Klatencyand5.45%transferboundawaitingnextbuild.
 - No gitremote. CPUcomputei618-051. TwootherprojectSSHsessionsheld; oursallreaped. Login1SSHstalledandwasreaped;login2works11processes.
   Atmost3SSHaccount-wide, guardbeforeSSH. RA6c620-061 reserved; do notborrow.
 
