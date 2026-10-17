@@ -1,24 +1,20 @@
-# SCA live state, 2026-10-17 06:44 CDT
+# SCA live state, 2026-10-17 11:51 CDT
 
 ## Goal
 Finish experiments, verified evaluation, paper and reproducibility delivery.
 The user transferred full project ownership to Codex; continue without new approval.
 
 ## Status and next action
-- CPU controller1076947 on i615-074 ends2026-10-17 10:19:14CDT.
-  Successor1077042 is pending dependency. Frozen controller remains unchanged.
-  Never launch another watcher, signal its parent, or change/cancel its successor.
-- Live06:41CDT: SCA7=1075814 RUNNING4nodes until08:29:50CDT; SCA9=1076923 PENDING.
-  SCA7 frozen bridge and SCA9 frozen v2 dispatcher are unchanged.
-  Queue76pending,4running,2failed,2review-held repairs,870done,0quarantine.
-  Runtime snapshot: results/evidence/continuation/runtime_1076947_end.json.
-- Two terminalrc1 failures have tested replacements in taskq/hold_review:
-  a_000_repro_gpu_smoke_gcc_1076947.sh: explicit probed GNU compilers;420s minimum.
-  a_y003_latency_6144x6144_full_gridfix_1076947.sh: exact grid metadata;4800s minimum.
-  Keep held until owning job1075814 AND its steps are gone. Original failures stay.
-  Release with repro/runtime_repairs_20261017/release.py, manifest and README.
-  18 release tests pass; live dry run correctly refused RUNNING without queue changes.
-  A1hour SCA9 grant cannot fit full6K; inspect actual deadlines before replacement fleet.
+- Controller1076947 completed first unit. Successor1077042 PENDING for CPU; its
+  dependency is satisfied. Do not duplicate the watcher or alter its ownership.
+- Root live status11:49-11:51CDT: SCA7/SCA9 completed;24additional tasks done.
+  Queue58pending,0running,0failed,894done. No SCA GPU currently held.
+- Root released both tested repairs via owner-gated helper after all owner steps ended.
+  Originals archived; GCC smoke and full6K gridfix replacements are now PENDING.
+  No duplicate release needed.18 release tests and live application passed.
+- SCA10 job1077447 PENDING,2-8nodes,4hours,min2hours to fit4800s full6K retry.
+  Existing frozen v2 dispatcher unchanged. Submission balance7908/40000SUs available.
+  Root receipts: results/evidence/continuation/root_status_20261017_1151.json.
 - Fresh base/extra/ImageReward envs pass bounded CPU parity exactly.125/123/80packages;
  39 isolated assets12.08GB,0downloads. Real split scoring+merge pass;42 focused tests.
   Combined runtime/metric checks71pass. GPU retries remain unrun; no tolerance relaxed.
@@ -30,17 +26,19 @@ The user transferred full project ownership to Codex; continue without new appro
 - Complete: E1/E4/E5/E6/E7/E8,budget controls, exploratory12paired8K metrics/gallery.
   8K six resolved gains;4 unresolved. MUSIQ/cropMUSIQ/CLIP-IQA means favor AReA.
   Stripe/grid failures remain;8K CPUfloat32 HPS differs from main GPU precision.
-- Generation6K AReA26/100,SCA24/100;Krea AReA0/100,SCA5/100,SEGA5repairs missing.
+- Generation6K AReA56/100,SCA64/100;Krea AReA0/100,SCA20/100.
+  All7SEGA repairs now have complete sidecars/PNGs; overlay100/100. Final hash audit remains.
   Krea overlay: out/krea_baseline_overlay_20261017;193originals plus7replacements.
   Strict generation footers will promote heldGPUeval only at exact100prompt readiness.
 - Latency SCA2K18.20s,3K40.16s,4K71.06s,6K161.56s,8K287.64s.
-  AReA4K202.44s/full4K186.54s. Missing6K AReA/full and8K AReA.
+  AReA4K202.44s/full4K186.54s.6K/8K AReA timing tasks newly done; harvest/audit logs.
+  Repaired full6K timing is pending on SCA10.
   Warmup plus3 same-process timed images required; interrupted outputs preserved.
 - Neither final CPU bootstrap READY marker exists. After GPUeval writes READY, run
   taskq/hold_cpu_finalize/e2_6144_bootstrap.sh and e9_krea_bootstrap.sh onCPU.
   Require1000reference-image-cluster draws; never rerun completedCPUbootstraps.
-- NEXT: after SCA7 owner exits, apply gated repair release; inspect SCA9 deadline and
-  remaining task sizes. Review/promote successful GCC smoke receipt to canonical.
+- NEXT: harvest/audit new6K/8K AReA timing logs, monitor SCA10 when granted,
+  and review/promote its successful GCC smoke receipt to canonical.
   When GPUeval READY, finalizeCPU,archive,generate exact tables/complete galleries,
   integrate all paper sections, rebuild/review independent delivery. No final claim yet.
 
@@ -64,12 +62,12 @@ The user transferred full project ownership to Codex; continue without new appro
 - Exact-coordinate theorem does not repair bf16 drift.0.015625 is observed, not ULP bound.
 - Full calibration runtime is unknown. No unsupported1.5GPUh or energy-saving claim.
 - Preserve MF9 host work and foreign SSH sessions; no guests restarted/no new submissions.
-- Last live budget check7947/40000SUs available; check login2 before ANY new submission,
-  include reservations and retain1600SUs. Existing4GPUs productive; no live cancellation.
+- Last live budget check7908/40000SUs available; check login2 before ANY new submission,
+  include reservations and retain1600SUs. SCA10 queued; no live allocation cancelled.
 - No remote. Commit explicit changed paths locally; no publication/external messages.
 
 ## Open questions
 - Project incomplete until remaining6K/Krea,clean latency,freshGPU smoke,final eval,
   galleries/manuscript reconciliation and delivery are verified.
-- SCA9 grant/start unknown. Minimum1hour will not fit repaired full6K task4800s.
+- SCA10 start/node grant unknown; minimum2hours requested to fit full6K4800s.
 - GPU metric precision parity remains outside bounded CPU restoration tests.

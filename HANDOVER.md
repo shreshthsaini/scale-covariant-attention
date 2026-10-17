@@ -1,24 +1,22 @@
 # Scale-Covariant Attention (SCA): full handover
 
-Last updated 2026-10-17 06:44 CDT. Read the first85 lines, then `.agent/STATE.md`.
+Last updated 2026-10-17 11:51 CDT. Read the first85 lines, then `.agent/STATE.md`.
 This current section supersedes historical claims below it.
 
 ## 1. Current status and corrections
 
 Codex is the authorized main operator for experiments, evaluation, paper and delivery.
-CPU controller1076947 runs on i615-074 until2026-10-17 10:19:14CDT.
-Recorded successor1077042 is pending on dependency. Do not launch another watcher,
-change/cancel its dependency, signal its parent, or modify the frozen controller.
-Runtime: /scratch/09032/saini_2/sca/continuation/status.json and slurm/CONTINUATION.md.
-
-At06:41CDT SCA7 job1075814 was RUNNING on4nodes, granted06:29:50-08:29:50CDT.
-SCA9 job1076923 remained PENDING,2-8nodes,4hours with1hour minimum.
-Spool:76pending,4running,2failed,2review-held repairs;870done,0quarantined.
-Read-only proof: results/evidence/continuation/runtime_1076947_end.json.
-Four workers are productive. Recent GPU utilization varies during AReA execution;
-per-node telemetry and advancing logs are recorded. Do not co-locate timing work.
-SCA7 uses frozen v2 compatibility bridge; SCA9 uses dispatch/20261017_v2.
-MF9 guests yielded to their host project; do not restart them.
+CPU controller1076947 completed its first work unit at06:44CDT. Successor1077042
+is PENDING for a CPU node, with its GPU dependency already satisfied. Do not start
+another watcher or alter its ownership. Root checked live status at11:49-11:51CDT.
+SCA7 and SCA9 completed, adding24 successful tasks. Both GPU allocations are gone.
+Root released both tested repair tasks through the owner-gated helper after checking
+that the owning job and all its steps were terminal; original failures are archived.
+SCA10 job1077447 is now PENDING:2-8nodes,4hours,minimum2hours so full6K can fit.
+Live submission balance7908/40000SUs available. Frozen dispatcher v2 is unchanged.
+Queue58pending,0running,0failed,894done; no active SCA GPU allocation at this check.
+Evidence: results/evidence/continuation/root_status_20261017_1151.json and adjacent
+repair release/submission receipts. MF9 guests remain yielded; do not restart them.
 
 Two actual software failures were diagnosed and CPU-tested, without changing tolerances:
 - Fresh GPU smoke passed matmul,SDPA and stock/full FLUX, then nvc rejected Triton's
@@ -26,11 +24,10 @@ Two actual software failures were diagnosed and CPU-tested, without changing tol
 - Full6K latency failed before warm-up because bf16 coordinates inferred385x385,
   rather than384x384 tokens. Pass known_grid metadata; keep coordinates unchanged.
 Original failures, logs and tasks remain preserved. New freezes do not alter old sources.
-Both replacement scripts are in taskq/hold_review, NOT pending. The shared owning
-step1075814.0 is still live. Release only after owning job/steps are gone using
-repro/runtime_repairs_20261017/release.py and its manifest/README. This one-shot
-helper checks scheduler states, exact hashes, duplicates and preserved failures.
-18 release tests pass; live dry run correctly refused RUNNING with no queue changes.
+Both replacement scripts were released to pending by root at11:49CDT after the
+owner job/steps ended. The helper verified exact hashes and archived both originals.
+Do not duplicate these pending retries. Release receipt is in continuation evidence.
+18 release tests passed; earlier dry run refused RUNNING and live application now passed.
 Full6K retry needs4800s admission plus dispatcher cleanup; a1hour fleet cannot fit it.
 After successful smoke, review then promote its distinct GCC receipt to canonical
 results/evidence/environment/fresh_gpu_smoke.json, preserving the original failure.
@@ -56,11 +53,13 @@ Current artifact links/hashes: .agent/notes/latest_delivery.md and paper/deliver
 This is a verified draft, not project completion. No git remote; commit locally.
 
 E1/E4/E5/E6/E7/E8 and budget controls complete. Latest exact generation coverage:
-6K AReA26/100,SCA24/100; Krea AReA0/100,SCA5/100; five SEGA repairs still missing.
+6K AReA56/100,SCA64/100; Krea AReA0/100,SCA20/100. All7 SEGA repairs now have
+complete sidecars and PNGs; overlay coverage100/100. Full final hash audit still applies.
 Krea overlay out/krea_baseline_overlay_20261017 preserves193 originals plus7repairs.
 Keep the overlay in readiness, evaluation and the final complete Krea gallery.
 SCA clean medians:2K18.20s,3K40.16s,4K71.06s,6K161.56s,8K287.64s.
-Matched4K AReA202.44s/full186.54s. Missing6K AReA/full and8K AReA.
+Matched4K AReA202.44s/full186.54s. New6K/8K AReA timing tasks completed; harvest
+and audit their logs before paper insertion. Only repaired full6K timing remains queued.
 Each new group requires fresh excluded warm-up plus3 timed images in one process.
 
 Strict generation footers promote held GPU evaluation only at exact100-prompt coverage.
@@ -82,7 +81,7 @@ four unresolved metrics; MUSIQ/cropMUSIQ/CLIP-IQA means favor AReA; stripe/grid 
 8K scores use CPUfloat32 HPS, unlike main GPU precision; native MUSIQ retains all keys.
 
 Before any new submission check login2 taccinfo, reservation headroom and96% burn cap.
-Last live check this unit:7947SUs available of40000; no new submissions were made.
+Latest root check:7908SUs available of40000 before submitting SCA10 job1077447.
 Preserve foreign SSHs; at most3 total, login guard before fan-out. Never delete scratch.
 
 ## 2. Goal and user requirements
