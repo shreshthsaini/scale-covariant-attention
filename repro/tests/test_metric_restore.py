@@ -3,6 +3,9 @@ import hashlib
 import importlib.util
 from pathlib import Path
 import sys
+import json
+import os
+import subprocess
 
 import pytest
 
@@ -55,7 +58,11 @@ def test_cache_restore_authenticates_git_tokenizer_blob(tmp_path):
     hf, torch = tmp_path / "hf", tmp_path / "torch"
     receipt = RESTORE.restore_from_cache(record, hf, torch)
     assert len(receipt) == 1
-    assert (hf / "hub/models--org--model/refs/main").read_text().strip() == "fixed-revision"
+    assert (hf / "hub/models--org--model/refs/main").read_text() == "fixed-revision"
+    # Hub reads refs as raw revision strings. A trailing newline breaks lookup.
+    from huggingface_hub import try_to_load_from_cache
+    assert Path(try_to_load_from_cache("org/model", "tokenizer.json", cache_dir=hf / "hub")) == (
+        hf / "hub/models--org--model/snapshots/fixed-revision/tokenizer.json")
     source.write_bytes(b"corrupted")
     with pytest.raises(RuntimeError, match="Git blob identity mismatch"):
         RESTORE.restore_from_cache(record, hf, torch)
@@ -70,3 +77,36 @@ def test_cache_restore_refuses_existing_revision(tmp_path):
     with pytest.raises(RuntimeError, match="Refusing to change existing cache revision"):
         RESTORE.restore_from_cache(record, hf, tmp_path / "torch")
     assert ref.read_text() == "other-revision"
+
+
+def test_cache_restore_rejects_noncanonical_ref_without_overwriting(tmp_path):
+    hf = tmp_path / "hf"
+    ref = hf / "hub/models--org--model/refs/main"
+    ref.parent.mkdir(parents=True)
+    ref.write_text("fixed-revision\n")
+    record = {"hub": {"org/model": {"revision": "fixed-revision"}}, "torch_files": {}}
+    with pytest.raises(RuntimeError, match="Refusing to change existing cache revision"):
+        RESTORE.restore_from_cache(record, hf, tmp_path / "torch")
+    assert ref.read_text() == "fixed-revision\n"
+
+
+def test_portable_wrapper_overrides_legacy_cache_before_hub_import(tmp_path):
+    isolated = tmp_path / "hf"
+    env = dict(os.environ, PYTHONPATH=str(SOURCE.parents[1]),
+               HF_HOME="/old/home", HF_HUB_CACHE="/old/new_hub",
+               HUGGINGFACE_HUB_CACHE="/old/legacy_hub", TRANSFORMERS_CACHE="/old/transformers")
+    code = """import json,sys,os
+from eval_extra_portable import configure_caches
+caches=configure_caches(sys.argv[1],sys.argv[2])
+from huggingface_hub import constants
+assert constants.HF_HUB_CACHE == caches['HF_HUB_CACHE']
+assert constants.HUGGINGFACE_HUB_CACHE == caches['HUGGINGFACE_HUB_CACHE']
+assert 'TRANSFORMERS_CACHE' not in os.environ
+print(json.dumps(caches))
+"""
+    result = subprocess.run([sys.executable, "-c", code, str(isolated), str(tmp_path / "torch")],
+                            env=env, capture_output=True, text=True, check=True)
+    caches = json.loads(result.stdout)
+    assert caches["HF_HUB_CACHE"] == str(isolated / "hub")
+    assert caches["HF_HUB_CACHE"] == caches["HUGGINGFACE_HUB_CACHE"]
+    assert not isolated.exists()

@@ -11,7 +11,8 @@ The user transferred full project ownership to Codex. Continue without another a
   Read results/evidence/continuation/runtime_1076947_start.json for live startup proof.
 - Base metric restoration complete: bounded CPU CLIP/Pick/MUSIQ/features exactly equal.
   Proof: results/evidence/metric_environment/base_validation.json;8 rejection tests pass.
-  Extra/ImageReward recipe repairs and end-to-end fresh scorer checks remain active.
+  Extra/ImageReward fresh installs, bit-exact CPU scores and real split CLIs/merge pass.
+  Proof: metric_environment/validation_summary_1076947.json;42 focused tests pass.
   Paper audit verified762 means,195 hashes,13 fits,82 appendix rows,593 other table values.
   Unsupported energy claim and overly broad frozen-baseline provenance sentence corrected.
   New37-page delivery built twice independently; raster review and final audit active.
@@ -59,7 +60,7 @@ The user transferred full project ownership to Codex. Continue without another a
   Archive rejects the unfinished GPU-only stage. Reuse the unchanged managed sca env.
 - Fresh generation environment:67 CPU tests,8 CLI checks,2 supervisor tests passed.
   a_000_repro_gpu_smoke.sh is queued; no learned weights, <=5min, declared tolerances.
-  Full fresh metric environments and score-equivalence tests are NOT yet validated.
+  Fresh metric installs and bounded CPU score equivalence are validated.
   Three metric locks resolve; seven Torch asset hashes and historical HF revisions checked.
   Strict split-report merger passes18 tests and an end-to-end synthetic CLI fixture.
 - Complete-gallery readiness tests and SCA7 bridge tests:22 passed. No incomplete new
@@ -99,4 +100,4 @@ The user transferred full project ownership to Codex. Continue without another a
   evaluations, final paper reconciliation and independent source build finish.
 - GPU start times and granted walltimes remain scheduler-dependent; more fleet time may
   be needed if both pending jobs receive their minimum allocations.
-- Fresh GPU validation is queued. Metric recipe installs and learned-score parity remain unrun.
+- Fresh GPU validation is queued. Bounded CPU metric parity is complete; native4K MUSIQ/GPU metric parity untested.

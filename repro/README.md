@@ -270,6 +270,8 @@ Choose the repository needed for the run; repeat for other models as needed.
 
 ```bash
 export HF_HOME="${SCA_REPRO_HF_HOME:?Set a dedicated scratch cache first}"
+export HF_HUB_CACHE="$HF_HOME/hub" HUGGINGFACE_HUB_CACHE="$HF_HOME/hub"
+unset TRANSFORMERS_CACHE
 export HF_HUB_OFFLINE=0
 uv run --no-project --python "$SCA_PY" python - <<'PY'
 import json, os
@@ -284,7 +286,7 @@ snapshot_download(repo_id, revision=revision, cache_dir=str(cache),
                   allow_patterns=[row["path"] for row in model["files"]])
 ref = cache / ("models--" + repo_id.replace("/", "--")) / "refs/main"
 ref.parent.mkdir(parents=True, exist_ok=True)
-ref.write_text(revision + "\n")
+ref.write_text(revision)
 PY
 export HF_HUB_OFFLINE=1
 ```
@@ -310,7 +312,7 @@ numeric/feature banks remain sufficient for the offline checks described above.
 The [fresh generation recipe](environment/README.md) supplies a hash-pinned
 dependency resolution and bounded CPU validation for Linux aarch64. Separate
 [metric restoration recipes](metrics_environment/README.md) now provide three
-resolved hash-pinned dependency sets, checkpoint identities and a restoration
-helper. Their full installation and numerical rescoring remain unverified.
-Fresh GPU generation and full learned-metric scoring are not reproduced by these
-environment checks.
+installed hash-pinned dependency sets, checkpoint identities and isolated asset
+restoration. Bounded CPU learned-score and feature checks match inherited outputs
+exactly; the linked guide records inputs, repairs, receipts and limitations.
+These checks do not reproduce full benchmark scoring or GPU metric parity.

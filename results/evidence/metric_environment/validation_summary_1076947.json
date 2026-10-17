@@ -1,0 +1,62 @@
+{
+  "checked_utc": "2026-10-17T11:34:19.951997+00:00",
+  "passed": true,
+  "scope": "Bounded CPU learned-score restoration, not full benchmark or GPU metric parity",
+  "environments": {
+    "base": 125,
+    "extra": 123,
+    "imagereward": 80
+  },
+  "checks": {
+    "all_three_fresh_installations": true,
+    "all_tested_learned_outputs_bit_exact": true,
+    "isolated_hashed_assets": true,
+    "real_split_cli_and_merge": true,
+    "focused_tests_passed": 42,
+    "receipt_artifact_hashes_verified": 108
+  },
+  "repairs": [
+    "Explicit both Hub cache overrides",
+    "No newline in HF revision references",
+    "ImageReward undeclared openai-clip dependency",
+    "HPSv2 wheel missing pinned BPE data"
+  ],
+  "dependency_check": {
+    "version_conflicts": 0,
+    "exit_code_each": 1,
+    "retained_warning": "NVIDIA cuSPARSELt wheel platform tag"
+  },
+  "limitations": [
+    "Four base images and two extra/IR images only",
+    "MUSIQ bounded to deterministic1024 crops",
+    "CPU float32 only; GPU mixed-precision metric parity untested",
+    "Two-image one-split IS is a diagnostic, not benchmarkIS",
+    "Build-system dependencies not separately hash pinned"
+  ],
+  "artifacts": [
+    {
+      "path": "results/evidence/metric_environment/base_validation.json",
+      "sha256": "96aeaee2c5d75ca4955070c25b62edce1d71fc93255c8166778adace049e69d2"
+    },
+    {
+      "path": "results/evidence/metric_environment/extra_restore_validation.json",
+      "sha256": "c5a6548ad3412be7da622c3986d9b5c07d83318f9c3df18ce4f832e57210f0f7"
+    },
+    {
+      "path": "results/evidence/metric_environment/imagereward_restore_validation.json",
+      "sha256": "d8a99461aefa6b9ad736a90f411917879baf3add68a88b23e4c7660899a36d96"
+    },
+    {
+      "path": "results/evidence/metric_environment/cache_copy_receipt.json",
+      "sha256": "f197887bf90fc6b8a4ddfa965988114dc8e8faedbcff24d32213c8c255a71b1c"
+    },
+    {
+      "path": "results/evidence/metric_environment/ref_repair_receipt.json",
+      "sha256": "778d9a6ba68ce6d89fa2eab8fb223bae56207df2d45562d2071d7a9667e1b2ea"
+    },
+    {
+      "path": "results/evidence/metric_environment/root_repro_tests_1076947.log",
+      "sha256": "54232d83bfd361511a8d0b42fe1352ee0e221f2de92c1e47783e8fb166dad5d6"
+    }
+  ]
+}

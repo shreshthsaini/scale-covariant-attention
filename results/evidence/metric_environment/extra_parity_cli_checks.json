@@ -1,0 +1,101 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "command": [
+        "/work/09032/saini_2/vista/library/uv-envs/sca-metrics/bin/python",
+        "repro/check_metric_extra_parity.py",
+        "--help"
+      ],
+      "returncode": 0,
+      "expected": 0,
+      "pass": true,
+      "stdout": "usage: check_metric_extra_parity.py [-h] {manifest,score,compare} ...\n\nBounded CPU restoration parity using unchanged campaign scorer classes. The\nfixed tolerances are declared before scoring. This tests environment\nrestoration on selected existing images, not GPU parity or benchmark accuracy.\n\npositional arguments:\n  {manifest,score,compare}\n\noptions:\n  -h, --help            show this help message and exit\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/work/09032/saini_2/vista/library/uv-envs/sca-metrics/bin/python",
+        "repro/check_metric_extra_parity.py",
+        "manifest",
+        "--count",
+        "0",
+        "--out",
+        "/not-created"
+      ],
+      "returncode": 2,
+      "expected": 2,
+      "pass": true,
+      "stdout": "",
+      "stderr": "usage: check_metric_extra_parity.py [-h] {manifest,score,compare} ...\ncheck_metric_extra_parity.py: error: count must be between 1 and 8\n"
+    },
+    {
+      "command": [
+        "/work/09032/saini_2/vista/library/uv-envs/sca-metrics/bin/python",
+        "repro/check_metric_extra_parity.py",
+        "score",
+        "--manifest",
+        "/not-read",
+        "--metrics",
+        "wrong",
+        "--hf-home",
+        "/not-read",
+        "--torch-home",
+        "/not-read",
+        "--out",
+        "/not-created"
+      ],
+      "returncode": 2,
+      "expected": 2,
+      "pass": true,
+      "stdout": "",
+      "stderr": "usage: check_metric_extra_parity.py [-h] {manifest,score,compare} ...\ncheck_metric_extra_parity.py: error: metrics must be unique known metric names\n"
+    },
+    {
+      "command": [
+        "/work/09032/saini_2/vista/library/uv-envs/sca-metrics/bin/python",
+        "repro/check_metric_extra_parity.py",
+        "score",
+        "--manifest",
+        "/not-read",
+        "--metrics",
+        "ir,ir",
+        "--hf-home",
+        "/not-read",
+        "--torch-home",
+        "/not-read",
+        "--out",
+        "/not-created"
+      ],
+      "returncode": 2,
+      "expected": 2,
+      "pass": true,
+      "stdout": "",
+      "stderr": "usage: check_metric_extra_parity.py [-h] {manifest,score,compare} ...\ncheck_metric_extra_parity.py: error: metrics must be unique known metric names\n"
+    },
+    {
+      "command": [
+        "/work/09032/saini_2/vista/library/uv-envs/sca-metrics/bin/python",
+        "repro/check_metric_extra_parity.py",
+        "score",
+        "--manifest",
+        "/not-read",
+        "--metrics",
+        "ir",
+        "--threads",
+        "17",
+        "--hf-home",
+        "/not-read",
+        "--torch-home",
+        "/not-read",
+        "--out",
+        "/not-created"
+      ],
+      "returncode": 2,
+      "expected": 2,
+      "pass": true,
+      "stdout": "",
+      "stderr": "usage: check_metric_extra_parity.py [-h] {manifest,score,compare} ...\ncheck_metric_extra_parity.py: error: threads must be between 1 and 16\n"
+    }
+  ]
+}

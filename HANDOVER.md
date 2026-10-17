@@ -17,10 +17,12 @@ See slurm/CONTINUATION.md and scratch sca/continuation/status.json for live owne
 Fresh base metric restoration is complete: four CLIP/PickScore inputs, bounded MUSIQ
 and40960 Inception feature values are exactly equal across restored/inherited CPU envs.
 Eight rejection tests and fresh CLI checks pass; native4K MUSIQ/CUDA parity remain untested.
-Base proof: results/evidence/metric_environment/base_validation.json. Extra/ImageReward
-restoration is active on this CPU allocation. No campaign environment is changed.
+Base, extra and ImageReward fresh environments now pass bounded CPU parity exactly.
+Real split scoring CLIs and merger pass. Evidence: metric_environment/validation_summary_1076947.json.
+42 focused tests pass. Native4K MUSIQ/GPU metric parity remain outside this check.
+No campaign environment changed. Four actual restoration defects were fixed; failures remain.
 Isolated asset restoration
-copied and verified39 assets (12.08GB), with0 network requests; five focused tests pass.
+copied and verified39 assets (12.08GB), with0 network requests; seven restore/cache-isolation tests pass.
 Evidence: results/evidence/metric_environment/cache_copy_receipt.json.
 E1, E4, E5, E6, E7, E8, budget controls and the exploratory E2 8K comparison are complete.
 The37-page paper and extracted Overleaf ZIP build independently. The final source refresh
@@ -74,7 +76,7 @@ the old1.5GPUh claim was removed. Distinct main images2101 are hash-verified.
 Fresh generation environment recipe is under repro/environment, with71 locked packages,
 67 CPU tests,8 CLI/dry-run checks and2 supervisor tests passed. GPU smoke is queued,
 not yet validated. Three separate metric environment locks resolve, with restoration
-recipes and verified asset hashes. Full installations and learned-score parity remain unrun.
+recipes, verified asset hashes and completed bounded CPU learned-score parity.
 The strict split-report merger passed18 tests and a synthetic CLI fixture.
 Inherited environment94-test combined CPU suite and frozen baseline
 33-test suite also passed. The NVIDIA wheel-tag warning is documented, not suppressed.

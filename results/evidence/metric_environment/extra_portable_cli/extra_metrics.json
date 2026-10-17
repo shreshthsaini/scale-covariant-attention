@@ -1,0 +1,179 @@
+{
+  "config": {
+    "root": "/scratch/09032/saini_2/sca/metric_restore_20261017/extra_cli_inputs",
+    "prompts": "/scratch/09032/saini_2/sca/metric_restore_20261017/extra_cli_prompts.jsonl",
+    "out": "/scratch/09032/saini_2/sca/metric_restore_20261017/extra_cli_output",
+    "metrics": "aesthetic,hpsv2,hpsv21,clipiqa,arniqa,is",
+    "reference_method": "area",
+    "res": "4096x4096",
+    "methods": null,
+    "device": "cpu",
+    "batch_size": 1,
+    "threads": 4,
+    "iqa_long_side": 1024,
+    "is_splits": 1,
+    "bootstrap": 0,
+    "bootstrap_seed": 0,
+    "crope_root": "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/repro/evaluator_snapshot",
+    "hf_home": "/scratch/09032/saini_2/sca/metric_restore_20261017/hf",
+    "torch_home": "/scratch/09032/saini_2/sca/metric_restore_20261017/torch",
+    "allow_download": false,
+    "allow_missing": false
+  },
+  "metrics": [
+    "aesthetic",
+    "hpsv2",
+    "hpsv21",
+    "clipiqa",
+    "arniqa",
+    "is"
+  ],
+  "versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "4.45.2",
+    "image-reward": null,
+    "hpsv2": "1.2.0",
+    "pyiqa": "0.1.15",
+    "torch-fidelity": "0.3.0",
+    "open-clip-torch": null
+  },
+  "provenance": {
+    "aesthetic": {
+      "model": "LAION improved-aesthetic-predictor sac+logos+ava1-l14-linearMSE",
+      "backbone": "openai/clip-vit-large-patch14",
+      "sha256": "21dd590f3ccdc646f0d53120778b296013b096a035a2718c9cb0d511bff0f1e0",
+      "revision": null,
+      "load_seconds": 5.386684047058225
+    },
+    "hpsv2": {
+      "model": "xswu/HPSv2 HPS_v2_compressed.pt",
+      "checkpoint_sha": "697403c78157020a1ae59d23f111aa58ced35b0a",
+      "definition": "diag(image_features @ text_features.T), official val transform",
+      "load_seconds": 6.374518048018217
+    },
+    "hpsv21": {
+      "model": "xswu/HPSv2 HPS_v2.1_compressed.pt",
+      "checkpoint_sha": "697403c78157020a1ae59d23f111aa58ced35b0a",
+      "definition": "diag(image_features @ text_features.T), official val transform",
+      "load_seconds": 5.209450419060886
+    },
+    "clipiqa": {
+      "model": "pyiqa 0.1.15 clipiqa",
+      "long_side": 1024,
+      "resize": "PIL bicubic antialiased, aspect kept",
+      "load_seconds": 3.833609360968694
+    },
+    "arniqa": {
+      "model": "pyiqa 0.1.15 arniqa",
+      "long_side": 1024,
+      "resize": "PIL bicubic antialiased, aspect kept",
+      "load_seconds": 0.31207233807072043
+    },
+    "is": {
+      "model": "torch-fidelity inception-v3-compat logits_unbiased",
+      "resize": "PIL bicubic antialiased to 299x299",
+      "load_seconds": 0.13284045504406095
+    }
+  },
+  "errors": [],
+  "summary": [
+    {
+      "method": "area",
+      "res": "4096x4096",
+      "metric": "aesthetic",
+      "value": 6.585082530975342,
+      "ci_low": null,
+      "ci_high": null,
+      "n_prompts": 2,
+      "bootstrap_valid": 0
+    },
+    {
+      "method": "area",
+      "res": "4096x4096",
+      "metric": "arniqa",
+      "value": 0.5781662613153458,
+      "ci_low": null,
+      "ci_high": null,
+      "n_prompts": 2,
+      "bootstrap_valid": 0
+    },
+    {
+      "method": "area",
+      "res": "4096x4096",
+      "metric": "clipiqa",
+      "value": 0.7151944041252136,
+      "ci_low": null,
+      "ci_high": null,
+      "n_prompts": 2,
+      "bootstrap_valid": 0
+    },
+    {
+      "method": "area",
+      "res": "4096x4096",
+      "metric": "hpsv2",
+      "value": 0.2906322479248047,
+      "ci_low": null,
+      "ci_high": null,
+      "n_prompts": 2,
+      "bootstrap_valid": 0
+    },
+    {
+      "method": "area",
+      "res": "4096x4096",
+      "metric": "hpsv21",
+      "value": 0.27754858136177063,
+      "ci_low": null,
+      "ci_high": null,
+      "n_prompts": 2,
+      "bootstrap_valid": 0
+    },
+    {
+      "method": "area",
+      "res": "4096x4096",
+      "metric": "is",
+      "value": 1.6905184766188246,
+      "ci_low": null,
+      "ci_high": null,
+      "n_prompts": 2,
+      "bootstrap_valid": 0,
+      "n_images": 2,
+      "split_std": 0.0
+    }
+  ],
+  "paired_deltas": [],
+  "per_image": [
+    {
+      "method": "area",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1041106339713796826",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_1041106339713796826_4043a88752_seed0.png",
+      "metrics": {
+        "aesthetic": 6.538961410522461,
+        "hpsv2": 0.2914533019065857,
+        "hpsv21": 0.282308965921402,
+        "clipiqa": 0.748722493648529,
+        "arniqa": 0.49055102467536926
+      }
+    },
+    {
+      "method": "area",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1046736963520652161",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_1046736963520652161_826d2659e4_seed0.png",
+      "metrics": {
+        "aesthetic": 6.631203651428223,
+        "hpsv2": 0.2898111939430237,
+        "hpsv21": 0.2727881968021393,
+        "clipiqa": 0.6816663146018982,
+        "arniqa": 0.6657814979553223
+      }
+    }
+  ],
+  "uncertainty": "95% percentile bootstrap over prompt clusters; seeds stay inside prompts",
+  "paired_note": "Only matching resolution/prompt/seed pairs enter deltas",
+  "is_note": "IS per method/res from torch-fidelity isc_features_to_metric; CI resamples prompts",
+  "seconds": 33.90391923091374,
+  "complete": true
+}

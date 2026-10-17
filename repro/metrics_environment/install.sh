@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Resolution checked on Linux aarch64; fresh installation remains to be validated.
+# Linux aarch64 restoration checked by bounded CPU learned-score parity.
+# The preserved cuSPARSELt wheel-tag warning can make the final uv check exit 1.
 set -euo pipefail
 if [[ $# -ne 4 ]]; then
   echo "Usage: $0 {base|extra|imagereward} NEW_ENV_DIR SCRATCH_UV_CACHE PYTHON_INTERPRETER" >&2
@@ -21,4 +22,8 @@ export UV_LINK_MODE=copy
 uv venv --python "$sca_python_source" "$sca_env_target"
 uv pip sync --python "$sca_env_target/bin/python" --torch-backend cu128 \
   --require-hashes "$sca_recipe_dir/$sca_metric_kind.lock"
+if [[ "$sca_metric_kind" == extra ]]; then
+  "$sca_env_target/bin/python" "$sca_recipe_dir/restore_hps_tokenizer.py" \
+    --receipt "$sca_env_target/sca_hps_tokenizer_receipt.json"
+fi
 uv pip check --python "$sca_env_target/bin/python"

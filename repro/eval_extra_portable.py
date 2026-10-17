@@ -2,6 +2,7 @@
 """Use archived helpers and the supplied Torch cache for extra-metric reproduction."""
 import importlib.util
 import json
+import os
 from pathlib import Path
 
 from extra_report_identity import (IDENTITY_FILE, POLICY, REPORT_FILES, environment,
@@ -10,12 +11,24 @@ from extra_report_identity import (IDENTITY_FILE, POLICY, REPORT_FILES, environm
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def configure_caches(hf_home, torch_home):
+    """Override legacy account caches before any learned-model imports."""
+    hf_home, torch_home = Path(hf_home).resolve(), Path(torch_home).resolve()
+    os.environ.pop("TRANSFORMERS_CACHE", None)
+    cache = str(hf_home / "hub")
+    os.environ.update(HF_HOME=str(hf_home), HF_HUB_CACHE=cache,
+                      HUGGINGFACE_HUB_CACHE=cache, TORCH_HOME=str(torch_home))
+    return {key: os.environ[key] for key in
+            ("HF_HOME", "HF_HUB_CACHE", "HUGGINGFACE_HUB_CACHE", "TORCH_HOME")}
+
+
 def main():
     spec = importlib.util.spec_from_file_location("sca_eval_extra_portable", ROOT / "scripts/eval_extra.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     module.DEFAULT_CROPE = str(ROOT / "repro/evaluator_snapshot")
     args = module.parser().parse_args()
+    caches = configure_caches(args.hf_home, args.torch_home)
     module.AESTHETIC_WEIGHTS = str(Path(args.torch_home) / "hub/checkpoints/laion_aesthetic/sac+logos+ava1-l14-linearMSE.pth")
     module.setup_environment(args)
     from crope.metrics.io import discover_samples, read_jsonl
@@ -33,10 +46,11 @@ def main():
     identity_path = out / IDENTITY_FILE
     before = inputs()
     manifest = {"policy": POLICY, "phase": "running", "identities": before,
-                "environment": environment(), "source_hashes": source_hashes()}
+                "environment": environment(), "source_hashes": source_hashes(),
+                "execution_caches": caches}
     if identity_path.exists():
         old = json.loads(identity_path.read_text())
-        for field in ("policy", "identities", "environment", "source_hashes"):
+        for field in ("policy", "identities", "environment", "source_hashes", "execution_caches"):
             if old.get(field) != manifest[field]:
                 raise ValueError(f"Refusing cache reuse after {field} changed; use a new output directory")
     elif any((out / name).exists() for name in ("extra_cache.jsonl", *REPORT_FILES)):

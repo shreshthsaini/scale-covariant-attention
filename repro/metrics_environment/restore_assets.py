@@ -44,7 +44,7 @@ def restore_from_cache(record, hf_home, torch_home):
     for model, entry in record["hub"].items():
         base = hf_home / "hub" / ("models--" + model.replace("/", "--"))
         ref = base / "refs/main"
-        if ref.exists() and ref.read_text().strip() != entry["revision"]:
+        if ref.exists() and ref.read_text() != entry["revision"]:
             raise RuntimeError(f"Refusing to change existing cache revision: {ref}")
         snapshot = base / "snapshots" / entry["revision"]
         by_name = {row["name"]: row for row in entry["files"]}
@@ -64,7 +64,7 @@ def restore_from_cache(record, hf_home, torch_home):
         ref.parent.mkdir(parents=True, exist_ok=True)
         if not ref.exists():
             with ref.open("x") as f:
-                f.write(entry["revision"] + "\n")
+                f.write(entry["revision"])
     for relative, entry in record["torch_files"].items():
         copy_verified(entry["path"], torch_home / relative,
                       entry["verified_sha256"], receipt)
@@ -110,7 +110,7 @@ def main():
     for model, entry in record["hub"].items():
         base = cache / ("models--" + model.replace("/", "--"))
         ref = base / "refs/main"
-        if ref.exists() and ref.read_text().strip() != entry["revision"]:
+        if ref.exists() and ref.read_text() != entry["revision"]:
             raise RuntimeError(f"Refusing to change existing cache revision: {ref}")
         snapshot = Path(snapshot_download(model, revision=entry["revision"],
                         allow_patterns=entry["restore_files"], cache_dir=cache, max_workers=2))
@@ -124,7 +124,7 @@ def main():
         ref.parent.mkdir(parents=True, exist_ok=True)
         if not ref.exists():
             with ref.open("x") as f:
-                f.write(entry["revision"] + "\n")
+                f.write(entry["revision"])
     for relative, entry in record["torch_files"].items():
         target = args.torch_home / relative
         if not target.exists():
