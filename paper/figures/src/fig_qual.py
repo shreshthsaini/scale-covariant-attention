@@ -5,15 +5,22 @@ All figures:             <sca env python> paper/figures/src/fig_qual.py all
 Options: --methods area sca (gallery columns; any imgsel.ROOTS label, e.g. a new baseline once its
          ROOTS entry exists), --res 4096x4096, --n 32, --seed 0, --workers 16.
 
-Every tile is either a downscaled full image (Lanczos, longest side <= 1600 px) or a native 1:1
-crop (never resampled). Crop windows are given by hand in the specs below, or chosen
-automatically as the window with the highest mean absolute Laplacian, averaged over all methods
-shown in that row so no method is favoured. Output is deterministic: tiles go to
-paper/figures/<figure>/ and the snippet to paper/figures/snippets/<figure>.tex. Sources live on
-scratch (purge-eligible): /scratch/09032/saini_2/sca/out/...
+Every tile is either a downscaled full image (Lanczos) or a native 1:1 crop (never resampled).
+Crop windows are given by hand in the specs below, or chosen automatically as the window with the
+highest mean absolute Laplacian, averaged over all methods shown in that row so no method is
+favoured. Output is deterministic: tiles go to paper/figures/<figure>/ and the snippet to
+paper/figures/snippets/<figure>.tex. Sources live on scratch (purge-eligible):
+/scratch/09032/saini_2/sca/out/...
+
+The appendix grids (gallery, gallery_wide, ablation, failures) share snippets/_scagrid.tex: clean
+JPEG tiles, vector crop windows and frames drawn by TikZ, and one tile height per figure. Their
+prompts, crop windows and source hashes are frozen in paper/figures/<figure>/provenance.json on the
+first run; later runs reuse that record and refuse changed sources. hero and qual_main keep the
+older raster layout. failure_fallback re-encodes the tiles of the fallback fig:failure in main.tex.
 """
 
 import argparse
+import json
 import os
 import random
 from multiprocessing import Pool
@@ -28,8 +35,8 @@ COLORS = ["#E69F00", "#56B4E9", "#009E73", "#D55E00"]  # Okabe-Ito, matches orx_
 GAP = 0.004  # gap between tiles, fraction of \linewidth
 LABW = 0.022  # width reserved for a rotated row label
 NAMES = {"sca": r"\textbf{SCA (ours)}", "area": "AReA", "full": "Full attention",
-         "abl_v0": "No gate", "abl_local": r"$\pi=1$ (local only)", "abl_uniform": r"Uniform $\pi(\sigma)$",
-         "abl_global": r"$\pi=0$ (global only)", "abl_mean": "Mean pooling", "abl_layer": r"Per-layer $\pi$",
+         "abl_v0": "No gate", "abl_local": r"\scaTwo{$\pi{=}1$}{local only}", "abl_uniform": r"Uniform $\pi(\sigma)$",
+         "abl_global": r"\scaTwo{$\pi{=}0$}{global only}", "abl_mean": "Mean pooling", "abl_layer": r"Per-layer $\pi$",
          "dev_w16": "No gate, window 16", "dev_w32": "No gate, window 32",
          "dypes": "DyPE", "sega": "SEGA", "ultraimage": "UltraImage"}
 
@@ -176,6 +183,245 @@ def boxes_for(specs, workers):
         return dict(pool.map(find_boxes, specs, chunksize=1))
 
 
+# ---------------------------------------------------------------- appendix grids: one vector style
+# The appendix galleries, the ablation grid and the failure grid share the macros in
+# snippets/_scagrid.tex. Every tile of a figure has one height, \scaT, which TeX sets so that the
+# widest row fills \linewidth. A full image is followed 1 pt later by its native crop; method groups
+# are 4 pt apart, rows 2 pt, prompts set side by side 9 pt. The crop window is a vector rectangle in
+# scaZoom over a thin dark casing, so it reads on light and dark images, and its crop tile carries
+# the same frame. The JPEGs stay clean: full images at GRID_DPI of their printed size, crops native.
+JPEG_Q = 85  # quality of every grid tile; imgsel.save_jpeg uses 4:2:0 and optimize (deterministic)
+GRID_DPI = 500  # full-image previews, pixels per printed inch
+TEXT_PT = 397.48  # \linewidth of the 5.5 in text block; sizes the JPEGs only, TeX sizes the tiles
+G_PAIR, G_GROUP, G_ROW, G_BLOCK, G_SECTION = 1, 4, 2, 9, 5  # gutters in pt
+LAB_PT = 11  # \scaLW + \scaLG: the rotated row-label column and its gap
+ACCENT = {"sca", "flux2_sca", "krea_sca"}  # columns headed "SCA (ours)" in the accent colour
+
+GRID_MACROS = r"""% Shared macros for the SCA image grids. Written by paper/figures/src/fig_qual.py; do not edit by hand.
+% Each grid snippet inputs this file first. The guard makes repeated input harmless, and every
+% definition is global, so input inside a group is safe too. Needs graphicx, xcolor and tikz.
+\ifcsname scaGridLoaded\endcsname\else
+\expandafter\gdef\csname scaGridLoaded\endcsname{}%
+\xglobal\providecolor{scaInk}{HTML}{1F2328}%
+\xglobal\providecolor{scaMid}{HTML}{5B6570}%
+\xglobal\providecolor{scaAccent}{HTML}{13865F}%
+\xglobal\providecolor{scaZoom}{HTML}{FFC21A}%
+\newlength{\scaT}% tile height; each figure sets it so that its widest row fills \linewidth
+\newlength{\scaLW}\global\scaLW=9.5pt% rotated row-label column
+\newlength{\scaLG}\global\scaLG=1.5pt% gap between a row label and its tiles
+\newlength{\scaZW}\global\scaZW=0.8pt% crop window and crop frame, in scaZoom
+\newlength{\scaZC}\global\scaZC=1.4pt% dark casing under that line, 0.3 pt on each side
+\newlength{\scaZI}\global\scaZI=0.7pt% half the casing: frames and border windows stay inside the tile
+\newlength{\scaHT}\global\scaHT=1.5pt% trim at each end of a header rule
+\newlength{\scaTW}\newlength{\scaTH}%
+% \scaImg{width}{height}{file}: a plain tile.
+\gdef\scaImg#1#2#3{\includegraphics[width=#1,height=#2]{#3}}%
+% \scaImgTag{width}{height}{file}{tag}: a plain tile with a small label in its top left corner.
+\gdef\scaImgTag#1#2#3#4{\scaTW=#1\relax\scaTH=#2\relax%
+\begin{tikzpicture}[x=\scaTW,y=\scaTH]%
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (0,0) {\includegraphics[width=\scaTW,height=\scaTH]{#3}};%
+\useasboundingbox (0,0) rectangle (1,1);%
+\node[anchor=north west,inner sep=1.2pt,fill=black,fill opacity=.6,text opacity=1,text=white,font=\sffamily\scriptsize] at ([shift={(1.5pt,-1.5pt)}]0,1) {#4};%
+\end{tikzpicture}}%
+% \scaFull{width}{height}{file}{(x0,y0)}{(x1,y1)}: a full image with its crop window outlined.
+% Corners are fractions of the tile, origin at the bottom left.
+\gdef\scaFull#1#2#3#4#5{\scaTW=#1\relax\scaTH=#2\relax%
+\begin{tikzpicture}[x=\scaTW,y=\scaTH]%
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (0,0) {\includegraphics[width=\scaTW,height=\scaTH]{#3}};%
+\useasboundingbox (0,0) rectangle (1,1);%
+\draw[black,draw opacity=.55,line width=\scaZC] #4 rectangle #5;%
+\draw[scaZoom,line width=\scaZW] #4 rectangle #5;%
+\end{tikzpicture}}%
+% \scaCrop{width}{height}{file}: a native crop, framed like its window.
+\gdef\scaCrop#1#2#3{\scaTW=#1\relax\scaTH=#2\relax%
+\begin{tikzpicture}[x=\scaTW,y=\scaTH]%
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (0,0) {\includegraphics[width=\scaTW,height=\scaTH]{#3}};%
+\useasboundingbox (0,0) rectangle (1,1);%
+\draw[black,draw opacity=.55,line width=\scaZC] ([shift={(\scaZI,\scaZI)}]0,0) rectangle ([shift={(-\scaZI,-\scaZI)}]1,1);%
+\draw[scaZoom,line width=\scaZW] ([shift={(\scaZI,\scaZI)}]0,0) rectangle ([shift={(-\scaZI,-\scaZI)}]1,1);%
+\end{tikzpicture}}%
+% \scaHead{width}{rule colour}{text}: a one-line header centred over a group of tiles, ruled like
+% \cmidrule(lr); text a little wider than its group may overhang into the gutters.
+\gdef\scaHead#1#2#3{\parbox[b]{#1}{\centering\makebox[\linewidth][c]{\color{scaInk}\strut#3}\par\nointerlineskip
+\vskip1.2pt\hbox to\hsize{\hskip\scaHT{\color{#2}\leaders\hrule height .5pt\hfill}\hskip\scaHT}}}%
+% \scaTwo{line}{line}: two-line header text, bottom aligned with one-line headers.
+\gdef\scaTwo#1#2{\begin{tabular}[b]{@{}c@{}}#1\\#2\end{tabular}}%
+% \scaRowLabel{height}{text}: a row label rotated 90 degrees and centred on a row of that height.
+\gdef\scaRowLabel#1#2{\makebox[\scaLW][l]{\rotatebox{90}{\makebox[#1][c]{\color{scaInk}\strut#2}}}}%
+% \scaGridStyle: typography and exact spacing for a grid; use inside a group.
+\gdef\scaGridStyle{\centering\sffamily\footnotesize\offinterlineskip\parskip=0pt\relax}%
+\fi
+"""
+
+
+def write_grid_macros():
+    os.makedirs(SNIP, exist_ok=True)
+    p = os.path.join(SNIP, "_scagrid.tex")
+    with open(p, "w") as fh:
+        fh.write(GRID_MACROS)
+    return p
+
+
+def grid_tiles(job):
+    """Clean JPEG tiles for a grid; the TikZ overlay draws windows and frames.
+
+    job: dict(out, name, png or label/res/sid, px=None, crops=[(box, cname)]). The full image is
+    downscaled (Lanczos) to px on its long side; crops are native 1:1, never resampled.
+    """
+    img = imgsel.load(job.get("png") or imgsel.find(job["label"], job["res"], job["sid"]))
+    out = {}
+    if job.get("px"):
+        out["full"] = imgsel.save_jpeg(img, os.path.join(job["out"], f"{job['name']}.jpg"), JPEG_Q, job["px"])
+    for box, cname in job.get("crops", []):
+        out[cname] = imgsel.save_jpeg(imgsel.crop(img, box), os.path.join(job["out"], f"{job['name']}_{cname}.jpg"),
+                                      JPEG_Q, box[2])
+    return job["name"], out
+
+
+def run_grid(jobs, workers):
+    with Pool(max(1, min(workers, len(jobs)))) as pool:
+        return dict(pool.map(grid_tiles, jobs, chunksize=1))
+
+
+class Geo:
+    """Tile height of one grid: its widest row, `units` tile heights plus `gaps` pt, fills \\linewidth."""
+
+    def __init__(self, units, gaps, label=False):
+        self.units, self.gaps, self.label = units, gaps, label
+
+    def tile_in(self):
+        return (TEXT_PT - self.gaps - (LAB_PT if self.label else 0)) / self.units / 72.27
+
+    def px(self, aspect=1.0):
+        """Long side, in pixels, of a full image with this width/height at GRID_DPI of its print size."""
+        return round(max(aspect, 1.0) * self.tile_in() * GRID_DPI)
+
+    def tex(self):
+        lab = r"-\scaLW-\scaLG" if self.label else ""
+        return r"\setlength{\scaT}{\dimexpr(\linewidth-%gpt%s)*1000/%d\relax}%%" % (
+            self.gaps, lab, round(self.units * 1000))
+
+
+def tdim(units, gaps=0):
+    """TeX width of `units` tile heights plus `gaps` pt."""
+    u = r"\scaT" if units == 1 else r"%g\scaT" % units
+    return r"\dimexpr%s+%gpt\relax" % (u, gaps) if gaps else u
+
+
+def t_img(path, aspect=1):
+    return r"\scaImg{%s}{\scaT}{%s}" % (tdim(aspect), rel(path))
+
+
+def t_tag(path, tag, aspect=1):
+    return r"\scaImgTag{%s}{\scaT}{%s}{%s}" % (tdim(aspect), rel(path), tag)
+
+
+def t_crop(path):
+    return r"\scaCrop{\scaT}{\scaT}{%s}" % rel(path)
+
+
+def t_full(path, box, res):
+    """Full image at `res` (HxW) with its crop window box = (x, y, size), native pixels, outlined."""
+    w, h = imgsel.res_size(res)
+    x, y, s = box
+
+    def corner(fx, fy, sx, sy):  # a side on the image border moves inside by half the casing
+        shift = [f"{a}shift={'' if d > 0 else '-'}\\scaZI" for a, d in (("x", sx), ("y", sy)) if d]
+        return "(%s%.5f,%.5f)" % ("[%s]" % ",".join(shift) if shift else "", fx, fy)
+
+    lo = corner(x / w, 1 - (y + s) / h, x <= 0, y + s >= h)
+    hi = corner((x + s) / w, 1 - y / h, -(x + s >= w), -(y <= 0))
+    return r"\scaFull{%s}{\scaT}{%s}{%s}{%s}" % (tdim(w / h), rel(path), lo, hi)
+
+
+def g_row(cells, label=None, indent=False):
+    """One row of a grid, exactly \\linewidth wide: TeX cells interleaved with gutters in pt."""
+    body = "".join(r"\hspace{%gpt}" % c if isinstance(c, (int, float)) else c for c in cells)
+    if label is not None:
+        body = r"\scaRowLabel{\scaT}{%s}\hspace{\scaLG}" % label + body
+    elif indent:
+        body = r"\hspace*{\dimexpr\scaLW+\scaLG\relax}" + body
+    return r"\makebox[\linewidth][c]{%s}" % body
+
+
+def head_cell(text, units, gaps=0, accent=False):
+    if accent:
+        text = r"\textcolor{scaAccent}{\textbf{%s}}" % text
+    return r"\scaHead{%s}{%s}{%s}" % (tdim(units, gaps), "scaAccent" if accent else "scaMid", text)
+
+
+def method_head(m, units, gaps=0, names=None):
+    if m in ACCENT:
+        return head_cell("SCA (ours)", units, gaps, accent=True)
+    return head_cell((names or NAMES).get(m, m), units, gaps)
+
+
+def grid_snippet(name, geo, rows, caption, label, comments=(), source=None, env="figure*"):
+    """Write snippets/<name>.tex. rows: [(tex, gap after in pt)]; the last gap is unused."""
+    write_grid_macros()
+    lines = [f"% Generated by paper/figures/src/{source or 'fig_qual.py ' + name}; do not edit by hand."]
+    lines += [f"% {c}" for c in comments]
+    lines += [r"\input{figures/snippets/_scagrid}%", rf"\begin{{{env}}}[t]", r"\begingroup\scaGridStyle", geo.tex()]
+    lines += [tex + (r"\par\vskip%gpt" % gap if i < len(rows) - 1 else r"\par") for i, (tex, gap) in enumerate(rows)]
+    lines += [r"\endgroup", rf"\caption{{{caption}}}", rf"\label{{{label}}}", rf"\end{{{env}}}", ""]
+    p = os.path.join(SNIP, f"{name}.tex")
+    with open(p, "w") as fh:
+        fh.write("\n".join(lines))
+    print("wrote", p)
+    return p
+
+
+# ---------------------------------------------------------------- frozen selection (provenance.json)
+def _manifest_path(name):
+    return os.path.join(imgsel.FIGDIR, name, "provenance.json")
+
+
+def _write_manifest(name, man):
+    os.makedirs(os.path.dirname(_manifest_path(name)), exist_ok=True)
+    with open(_manifest_path(name), "w") as fh:
+        fh.write(json.dumps(man, indent=2) + "\n")
+
+
+def frozen(name, compute, workers):
+    """Prompts, crop windows and source hashes of one figure, frozen in <figure>/provenance.json.
+
+    The first run calls compute() -> dict(selection=..., prompts=[dict(short_id, res, crop_xy_size,
+    methods)], ...) and records every source PNG with its SHA256. Later runs reuse that record and
+    fail if any source changed, so a growing output pool cannot change a published figure.
+    """
+    path = _manifest_path(name)
+    if os.path.exists(path):
+        with open(path) as fh:
+            man = json.load(fh)
+        srcs = [s for e in man["prompts"] for s in e["sources"].values()]
+        with Pool(max(1, min(workers, len(srcs)))) as pool:
+            digests = pool.map(imgsel.sha256, [s["png"] for s in srcs])
+        for s, d in zip(srcs, digests):
+            if d != s["sha256"]:
+                raise ValueError(f"Changed source image: {s['png']}")
+        return man
+    man = dict(schema=1, figure=name, generation_seed=0, **compute())
+    pngs = {}
+    for e in man["prompts"]:
+        e["sources"] = {m: {"png": imgsel.find(m, e["res"], e["short_id"])} for m in e.pop("methods")}
+        pngs.update({s["png"]: None for s in e["sources"].values()})
+    with Pool(max(1, min(workers, len(pngs)))) as pool:
+        digests = dict(zip(pngs, pool.map(imgsel.sha256, list(pngs))))
+    for e in man["prompts"]:
+        e["prompt"] = imgsel.prompt(next(iter(e["sources"].values()))["png"])
+        for s in e["sources"].values():
+            s["sha256"] = digests[s["png"]]
+    _write_manifest(name, man)
+    return man
+
+
+def record_outputs(name, man, tiles):
+    """Store the SHA256 of every tile written for this figure (the only part that changes on a re-render)."""
+    paths = sorted(p for t in tiles.values() for p in t.values())
+    man["outputs"] = {rel(p): imgsel.sha256(p) for p in paths}
+    _write_manifest(name, man)
+
+
 # ---------------------------------------------------------------- figures
 HERO = dict(
     pano=("sca", "2048x6144", "m2742856837225126754", (3456, 128, 768)),
@@ -271,13 +517,60 @@ def fig_main(a):
     snippet("qual_main", lines, cap, "fig:qual_main", comments=prompt_comments([("sca", res, s) for s in MAIN]))
 
 
-def gallery_ids(res, n, seed, labels, exclude=()):
+def gallery_pool(res, labels, exclude=()):
     common = None
     for l in labels:
         ids = {imgsel.short_id(k) for k in imgsel.index(l, res)}
         common = ids if common is None else common & ids
-    pool = sorted(common - imgsel.dev4_ids() - used_ids() - set(exclude))
+    return sorted(common - imgsel.dev4_ids() - used_ids() - set(exclude))
+
+
+def gallery_ids(res, n, seed, labels, exclude=()):
+    pool = gallery_pool(res, labels, exclude)
     return sorted(random.Random(seed).sample(pool, min(n, len(pool))))
+
+
+def count_word(n):
+    return ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"][n] if n <= 10 else str(n)
+
+
+CROP_RULE = "Window of size crop_xy_size[2] with the highest mean edge energy, averaged over every method shown"
+FLUX1 = r"FLUX.1-dev, seed~0, 28 steps, guidance 4.5"
+
+
+def random_selection(name, res, n, seed, methods, size, workers, exclude=()):
+    """Frozen random gallery selection: seeded sample of the eligible pool, automatic crop windows."""
+    def compute():
+        pool = gallery_pool(res, methods, exclude)
+        ids = gallery_ids(res, n, seed, methods, exclude)
+        auto = boxes_for([dict(key=s, labels=methods, res=res, sid=s, size=size) for s in ids], workers)
+        return dict(
+            resolution=res, methods=methods,
+            selection=f"random.Random({seed}).sample(sorted(eligible_ids), {n}); eligible = prompts with "
+                      f"seed-0 outputs for every method, minus the development prompts, the prompts in the "
+                      f"main-text figures (fig_qual.used_ids) and {len(set(exclude))} prompts of earlier galleries",
+            crop_rule=CROP_RULE, eligible_count=len(pool), eligible_ids=pool,
+            prompts=[dict(short_id=s, res=res, crop_xy_size=list(auto[s]), methods=methods) for s in ids])
+    man = frozen(name, compute, workers)
+    if man["methods"] != methods:
+        raise ValueError(f"{name} is frozen for methods {man['methods']}; remove its provenance.json to reselect")
+    return man
+
+
+def pair_cells(t, s, methods, box, res):
+    """Full image then its crop, for each method, groups 4 pt apart."""
+    cells = []
+    for k, m in enumerate(methods):
+        cells += ([G_GROUP] if k else []) + [t_full(t[f"{s}_{m}"]["full"], box, res), G_PAIR,
+                                             t_crop(t[f"{s}_{m}"]["crop"])]
+    return cells
+
+
+def pair_heads(methods, aspect, names=None):
+    cells = []
+    for k, m in enumerate(methods):
+        cells += ([G_GROUP] if k else []) + [method_head(m, aspect + 1, G_PAIR, names)]
+    return cells
 
 
 def fig_gallery_square(a):
@@ -287,141 +580,180 @@ def fig_gallery_square(a):
     tag = res.split("x")[0] if len(set(res.split("x"))) == 1 else res
     name = f"gallery_{tag}"
     out = os.path.join(imgsel.FIGDIR, name)
-    ids = gallery_ids(res, a.n, a.seed, methods)
     size = 512 * int(res.split("x")[0]) // 4096 if int(res.split("x")[0]) > 4096 else 512
-    auto = boxes_for([dict(key=s, labels=methods, res=res, sid=s, size=size) for s in ids], a.workers)
-    jobs = [dict(out=out, name=f"{s}_{m}", label=m, res=res, sid=s, side=560, boxes=[(auto[s], COLORS[0])],
-                 crops=[(auto[s], COLORS[0], "crop")]) for s in ids for m in methods]
-    t = run(jobs, a.workers)
-    per_row = 2 if len(methods) <= 2 else 1
+    man = random_selection(name, res, a.n, a.seed, methods, size, a.workers)
+    ids = [e["short_id"] for e in man["prompts"]]
+    box = {e["short_id"]: tuple(e["crop_xy_size"]) for e in man["prompts"]}
+    nm = len(methods)
+    per_row = 2 if nm <= 2 else 1
     per_page = 16 if per_row == 2 else 6
+    geo = Geo(per_row * 2 * nm, per_row * (nm * G_PAIR + (nm - 1) * G_GROUP) + (per_row - 1) * G_BLOCK)
+    jobs = [dict(out=out, name=f"{s}_{m}", label=m, res=res, sid=s, px=geo.px(), crops=[(box[s], "crop")])
+            for s in ids for m in methods]
+    t = run_grid(jobs, a.workers)
+    head = []
+    for j in range(per_row):
+        head += ([G_BLOCK] if j else []) + pair_heads(methods, 1)
+    vs = " and ".join(r"\textbf{SCA (ours)}" if m in ACCENT else NAMES.get(m, m) for m in methods)
     pages = [ids[i:i + per_page] for i in range(0, len(ids), per_page)]
     for pi, page in enumerate(pages):
-        lines = []
+        rows = [(g_row(head), G_ROW)]
         for i in range(0, len(page), per_row):
-            items = []
-            for s in page[i:i + per_row]:
-                for m in methods:
-                    items += [(1, t[f"{s}_{m}"]["full"]), (1, t[f"{s}_{m}"]["crop"])]
-            line, h = row(items)
-            if i == 0:
-                lines.append(header([(2 + GAP / h, NAMES.get(m, m)) for m in methods] * per_row, h))
-            lines.append(line)
-        cap = (rf"\textbf{{Random prompts at {wxh(res)}, {' vs '.join(NAMES.get(m, m) for m in methods)}"
-               rf"{' (continued)' if pi else ''}.}} ")
+            cells = []
+            for j, s in enumerate(page[i:i + per_row]):
+                cells += ([G_BLOCK] if j else []) + pair_cells(t, s, methods, box[s], res)
+            rows.append((g_row(cells), G_ROW))
+        cap = rf"\textbf{{Uncurated samples at {wxh(res)}: {vs}{', continued' if pi else ''}.}} "
         if pi == 0:
-            cap += (rf"{len(ids)} prompts sampled uniformly at random (seed {a.seed}) from the evaluation prompts, "
-                    r"excluding the development prompts and those shown in the main text; not curated. "
-                    r"Each full image is followed by a 1:1 crop of its outlined window, chosen automatically "
-                    r"as the region with the most edge energy averaged over the methods. FLUX.1-dev, seed 0.")
+            cap += (rf"{count_word(len(ids))} evaluation prompts drawn at random (selection seed~{a.seed}), excluding "
+                    rf"development and main-text prompts. {FLUX1}. Each image is followed by a native-pixel crop of "
+                    rf"its outlined {size}$\times${size} window of highest edge energy averaged over the methods.")
         else:
             cap += r"Same protocol as Figure~\ref{fig:" + name + "}."
-        lab = f"fig:{name}" + ("" if pi == 0 else f"_p{pi + 1}")
-        snippet(name + ("" if pi == 0 else f"_p{pi + 1}"), lines, cap, lab,
-                comments=prompt_comments([("sca" if "sca" in methods else methods[0], res, s) for s in page]))
+        part = name + ("" if pi == 0 else f"_p{pi + 1}")
+        grid_snippet(part, geo, rows, cap, f"fig:{part}",
+                     comments=prompt_comments([("sca" if "sca" in methods else methods[0], res, s) for s in page]),
+                     source=f"fig_qual.py gallery_{tag}")
+    record_outputs(name, man, t)
 
 
 def fig_gallery_wide(a):
     methods = a.methods or ["area", "sca"]
-    taken = set(gallery_ids("4096x4096", a.n, a.seed, ["area", "sca"]))
+    sq = _manifest_path("gallery_4096")
+    if os.path.exists(sq):  # the square gallery's frozen prompts
+        with open(sq) as fh:
+            taken = {e["short_id"] for e in json.load(fh)["prompts"]}
+    else:
+        taken = set(gallery_ids("4096x4096", a.n, a.seed, ["area", "sca"]))
     for res in (a.wide or ["2048x4096", "2048x6144"]):
         h, w = (int(v) for v in res.split("x"))
         name = f"gallery_{w}x{h}"
         out = os.path.join(imgsel.FIGDIR, name)
         # disjoint from the square gallery and from earlier wide galleries, so every prompt appears once
-        ids = gallery_ids(res, a.n_wide, a.seed + 1 + len(taken), methods, exclude=taken)
+        man = random_selection(name, res, a.n_wide, a.seed + 1 + len(taken), methods, 512, a.workers,
+                               exclude=sorted(taken))
+        ids = [e["short_id"] for e in man["prompts"]]
+        box = {e["short_id"]: tuple(e["crop_xy_size"]) for e in man["prompts"]}
         taken |= set(ids)
-        size = 512
-        auto = boxes_for([dict(key=s, labels=methods, res=res, sid=s, size=size) for s in ids], a.workers)
-        jobs = [dict(out=out, name=f"{s}_{m}", label=m, res=res, sid=s, side=1200 if w / h > 2.5 else 1000,
-                     boxes=[(auto[s], COLORS[0])], crops=[(auto[s], COLORS[0], "crop")]) for s in ids for m in methods]
-        t = run(jobs, a.workers)
         asp = w / h
-        lines = []
-        for i, s in enumerate(ids):
-            items = []
-            for m in methods:
-                items += [(asp, t[f"{s}_{m}"]["full"]), (1, t[f"{s}_{m}"]["crop"])]
-            line, hh = row(items)
-            if i == 0:
-                lines.append(header([(asp + 1 + GAP / hh, NAMES.get(m, m)) for m in methods], hh))
-            lines.append(line)
-        cap = (rf"\textbf{{Random prompts at {w}$\times${h} (width$\times$height), "
-               rf"{' vs '.join(NAMES.get(m, m) for m in methods)}.}} "
-               rf"{len(ids)} prompts sampled at random from the evaluation prompts, disjoint from the other galleries and excluding the "
-               r"development prompts and those in the main text; not curated. Each image is followed by a 1:1 crop "
-               r"of its outlined 512$\times$512 window, chosen automatically as the region with the most edge energy "
-               r"averaged over the methods. FLUX.1-dev, seed 0.")
-        snippet(name, lines, cap, f"fig:{name}",
-                comments=prompt_comments([("sca", res, s) for s in ids]))
+        nm = len(methods)
+        geo = Geo(nm * (asp + 1), nm * G_PAIR + (nm - 1) * G_GROUP)
+        jobs = [dict(out=out, name=f"{s}_{m}", label=m, res=res, sid=s, px=geo.px(asp), crops=[(box[s], "crop")])
+                for s in ids for m in methods]
+        t = run_grid(jobs, a.workers)
+        rows = [(g_row(pair_heads(methods, asp)), G_ROW)]
+        rows += [(g_row(pair_cells(t, s, methods, box[s], res)), G_ROW) for s in ids]
+        vs = " and ".join(r"\textbf{SCA (ours)}" if m in ACCENT else NAMES.get(m, m) for m in methods)
+        cap = (rf"\textbf{{Uncurated samples at {w}$\times${h} (width$\times$height): {vs}.}} "
+               rf"{count_word(len(ids))} evaluation prompts drawn at random, disjoint from the other galleries, "
+               rf"excluding development and main-text prompts. {FLUX1}. Each image is followed by a native-pixel "
+               r"crop of its outlined 512$\times$512 window of highest edge energy averaged over the methods.")
+        grid_snippet(name, geo, rows, cap, f"fig:{name}", comments=prompt_comments([("sca", res, s) for s in ids]),
+                     source="fig_qual.py gallery_wide")
+        record_outputs(name, man, t)
 
 
 def fig_ablation(a):
     out = os.path.join(imgsel.FIGDIR, "ablation")
     res, size = "4096x4096", 512
     methods = a.methods or ABL_METHODS
-    auto = boxes_for([dict(key=s, labels=methods, res=res, sid=s, size=size) for s in ABL], a.workers)
-    jobs = [dict(out=out, name=f"{s}_{m}", label=m, res=res, sid=s, side=640, boxes=[(auto[s], COLORS[0])],
-                 crops=[(auto[s], COLORS[0], "crop")]) for s in ABL for m in methods]
-    t = run(jobs, a.workers)
-    lines = []
-    for i, s in enumerate(ABL):
-        rf_, h = row([(1, t[f"{s}_{m}"]["full"]) for m in methods])
-        rc, _ = row([(1, t[f"{s}_{m}"]["crop"]) for m in methods])
-        if i == 0:
-            lines.append(header([(1, NAMES.get(m, m)) for m in methods], h))
-        lines += [rf_, rc]
-    cap = (r"\textbf{Removing the gate duplicates subjects; dropping either branch or the per-head weights "
-           r"costs detail or coherence.} Four ablation prompts at 4096$\times$4096, seed 0; each prompt shows the "
-           r"full images and, below them, 1:1 crops of the outlined 512$\times$512 window (chosen automatically as "
-           r"the region with the most edge energy averaged over the six variants). No gate: the calibrated mix "
-           r"from the first step. $\pi=1$ and $\pi=0$: after the gate, the local or the global branch alone. "
-           r"Uniform $\pi(\sigma)$: one weight shared by all heads. Mean pooling: average-pooled instead of "
-           r"subsampled global keys. Without the gate the subject repeats across the canvas. $\pi=0$ crops show "
-           r"the coarse grid of the pooled branch, and mean pooling loses the layout. $\pi=1$ and uniform "
-           r"$\pi(\sigma)$ look close to SCA in these crops; their deficits show in the metrics.")
-    snippet("ablation", lines, cap, "fig:ablation_grid", comments=prompt_comments([("sca", res, s) for s in ABL]))
+
+    def compute():
+        auto = boxes_for([dict(key=s, labels=methods, res=res, sid=s, size=size) for s in ABL], a.workers)
+        return dict(resolution=res, methods=methods, selection="Hand-picked ablation prompts (fig_qual.ABL)",
+                    crop_rule=CROP_RULE,
+                    prompts=[dict(short_id=s, res=res, crop_xy_size=list(auto[s]), methods=methods) for s in ABL])
+
+    man = frozen("ablation", compute, a.workers)
+    if man["methods"] != methods:
+        raise ValueError(f"ablation is frozen for methods {man['methods']}")
+    nm = len(methods)
+    geo = Geo(nm, (nm - 1) * G_GROUP, label=True)
+    jobs = [dict(out=out, name=f"{e['short_id']}_{m}", label=m, res=res, sid=e["short_id"], px=geo.px(),
+                 crops=[(tuple(e["crop_xy_size"]), "crop")]) for e in man["prompts"] for m in methods]
+    t = run_grid(jobs, a.workers)
+    head = []
+    for k, m in enumerate(methods):
+        head += ([G_GROUP] if k else []) + [method_head(m, 1)]
+    rows = [(g_row(head, indent=True), G_ROW)]
+    for e in man["prompts"]:
+        s, b = e["short_id"], tuple(e["crop_xy_size"])
+        full, crop = [], []
+        for k, m in enumerate(methods):
+            full += ([G_GROUP] if k else []) + [t_full(t[f"{s}_{m}"]["full"], b, res)]
+            crop += ([G_GROUP] if k else []) + [t_crop(t[f"{s}_{m}"]["crop"])]
+        rows += [(g_row(full, label="Full image"), G_PAIR), (g_row(crop, label="1:1 crop"), G_SECTION)]
+    cap = (r"\textbf{Without the gate the subject repeats; $\pi=0$ leaves the pooled branch's coarse grid, and "
+           r"mean pooling loses the layout.} Four ablation prompts at 4096$\times$4096, seed~0, 28 steps, guidance "
+           r"4.5; variants as in Table~\ref{tab:ablation}; crops show native pixels of the outlined 512$\times$512 "
+           r"windows. $\pi=1$ and uniform $\pi(\sigma)$ look close to SCA here; their deficits show in the metrics.")
+    grid_snippet("ablation", geo, rows, cap, "fig:ablation_grid",
+                 comments=prompt_comments([("sca", res, s) for s in ABL]))
+    record_outputs("ablation", man, t)
 
 
 def fig_failures(a):
     out = os.path.join(imgsel.FIGDIR, "failures")
     res = "4096x4096"
     dup_methods = ["abl_v0", "dev_w16", "sca"]
-    jobs = [dict(out=out, name=f"dup_{s}_{m}", label=m, res=res, sid=s, side=640) for s in FAIL_DUP for m in dup_methods]
-    for s, b in FAIL_SCA:
-        jobs.append(dict(out=out, name=f"err_{s}_sca", label="sca", res=res, sid=s, side=640,
-                         boxes=[(b, COLORS[0])], crops=[(b, COLORS[0], "crop")]))
-        jobs.append(dict(out=out, name=f"err_{s}_area", label="area", res=res, sid=s, crops=[(b, COLORS[0], "crop")]))
-    t = run(jobs, a.workers)
-    lines = []
-    r1, h = row([(1, t[f"dup_{s}_{m}"]["full"]) for s in FAIL_DUP for m in dup_methods])
-    dup_names = ["No gate, window 64", "No gate, window 16", NAMES["sca"]]
-    lines.append(header([(1, t_) for t_ in dup_names] * 2, h))
-    lines.append(r1)
-    hdr_done = False
-    for pair in (FAIL_SCA[:2], FAIL_SCA[2:]):
-        items = []
-        for s, _ in pair:
-            items += [(1, t[f"err_{s}_sca"]["full"]), (1, t[f"err_{s}_sca"]["crop"]), (1, t[f"err_{s}_area"]["crop"])]
-        rr, h = row(items)
-        if not hdr_done:
-            lines.append(header([(1, "SCA"), (1, "SCA crop"), (1, "AReA crop")] * 2, h))
-            hdr_done = True
-        lines.append(rr)
-    cap = (r"\textbf{Failure modes.} Top: without the gate, local windows decide the layout at high noise and "
-           r"duplicate the subject (no gate, 64-token window; no gate, 16-token window, which gives smaller and more "
-           r"numerous copies); SCA keeps one subject. Two development prompts, 4096$\times$4096. Middle and bottom: "
-           r"errors SCA still makes on evaluation prompts, with 1:1 crops of the outlined window and the same "
-           r"window from AReA. A thin diagonal sword is drawn as a staircase of short blocks; a patch beside the "
-           r"coat turns into a coarse grid; a dancer's rear arm ends in a foot; and the border of a dense "
-           r"illustration dissolves into speckle. AReA's images show none of these four errors, though its "
-           r"compositions differ, so its crops are not of the same objects. All seed 0.")
-    snippet("failures", lines, cap, "fig:failures",
-            comments=prompt_comments([("sca", res, s) for s in FAIL_DUP] + [("sca", res, s) for s, _ in FAIL_SCA]))
+
+    def compute():
+        return dict(resolution=res, methods=dup_methods + ["area"],
+                    selection="Hand-picked: two development prompts (FAIL_DUP) and four SCA errors with "
+                              "hand-placed windows (FAIL_SCA) in fig_qual.py",
+                    crop_rule="Hand-placed windows; the AReA crop uses the same window",
+                    prompts=[dict(short_id=s, res=res, crop_xy_size=None, methods=dup_methods) for s in FAIL_DUP]
+                    + [dict(short_id=s, res=res, crop_xy_size=list(b), methods=["sca", "area"]) for s, b in FAIL_SCA])
+
+    man = frozen("failures", compute, a.workers)
+    box = {e["short_id"]: tuple(e["crop_xy_size"]) for e in man["prompts"] if e["crop_xy_size"]}
+    geo = Geo(6, 2 * (G_PAIR + G_GROUP) + G_BLOCK)
+    jobs = [dict(out=out, name=f"dup_{s}_{m}", label=m, res=res, sid=s, px=geo.px())
+            for s in FAIL_DUP for m in dup_methods]
+    for s, _ in FAIL_SCA:
+        jobs.append(dict(out=out, name=f"err_{s}_sca", label="sca", res=res, sid=s, px=geo.px(),
+                         crops=[(box[s], "crop")]))
+        jobs.append(dict(out=out, name=f"err_{s}_area", label="area", res=res, sid=s, crops=[(box[s], "crop")]))
+    t = run_grid(jobs, a.workers)
+    head1, row1, head2 = [], [], []
+    for j, s in enumerate(FAIL_DUP):  # duplication without the gate, two development prompts
+        head1 += ([G_BLOCK] if j else []) + [head_cell("No gate", 2, 2), 3, method_head("sca", 1)]
+        row1 += ([G_BLOCK] if j else []) + [t_tag(t[f"dup_{s}_abl_v0"]["full"], r"$w{=}64$"), 2,
+                                            t_tag(t[f"dup_{s}_dev_w16"]["full"], r"$w{=}16$"), 3,
+                                            t_img(t[f"dup_{s}_sca"]["full"])]
+        head2 += ([G_BLOCK] if j else []) + [method_head("sca", 2, G_PAIR), G_GROUP, method_head("area", 1)]
+    rows = [(g_row(head1), G_ROW), (g_row(row1), G_SECTION), (g_row(head2), G_ROW)]
+    for pair in (FAIL_SCA[:2], FAIL_SCA[2:]):  # errors SCA still makes, each beside AReA's same window
+        cells = []
+        for j, (s, _) in enumerate(pair):
+            cells += ([G_BLOCK] if j else []) + [t_full(t[f"err_{s}_sca"]["full"], box[s], res), G_PAIR,
+                                                 t_crop(t[f"err_{s}_sca"]["crop"]), G_GROUP,
+                                                 t_crop(t[f"err_{s}_area"]["crop"])]
+        rows.append((g_row(cells), G_ROW))
+    cap = (r"\textbf{Without the gate, windows duplicate the subject; SCA still makes local errors.} "
+           r"Top (development prompts): no gate with 64- and 16-token windows ($w$), then SCA. Below: a staircase "
+           r"sword, a grid beside a coat, a foot for an arm, border speckle, each next to AReA's same window; AReA "
+           r"composes differently and avoids them. 4096$\times$4096, seed~0, 28 steps, guidance 4.5.")
+    grid_snippet("failures", geo, rows, cap, "fig:failures",
+                 comments=prompt_comments([("sca", res, s) for s in FAIL_DUP] + [("sca", res, s) for s, _ in FAIL_SCA]))
+    record_outputs("failures", man, t)
+
+
+# The fallback fig:failure in main.tex reads figures/failure/<prompt>_<variant>.jpg, written first by
+# fig_qualitative.py at 600 px. Same sources and names here, sized to GRID_DPI of the printed tile.
+FALLBACK = [("3614061571823823193", "moai"), ("m6873203881450547484", "boats"), ("7354534197758042049", "bear")]
+FALLBACK_VARIANTS = [("v0w64", "abl_v0"), ("v0w16", "dev_w16"), ("local", "abl_local"), ("sca", "sca")]
+
+
+def fig_failure_fallback(a):
+    out = os.path.join(imgsel.FIGDIR, "failure")
+    px = round(0.246 * 0.6 * TEXT_PT / 72.27 * GRID_DPI)  # width=0.246\linewidth of a 0.6\linewidth minipage
+    run_grid([dict(out=out, name=f"{n}_{v}", label=lab, res="4096x4096", sid=s, px=px)
+              for s, n in FALLBACK for v, lab in FALLBACK_VARIANTS], a.workers)
 
 
 FIGS = {"hero": fig_hero, "qual_main": fig_main, "gallery": fig_gallery_square, "gallery_wide": fig_gallery_wide,
-        "ablation": fig_ablation, "failures": fig_failures}
+        "ablation": fig_ablation, "failures": fig_failures, "failure_fallback": fig_failure_fallback}
 
 
 def main():

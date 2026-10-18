@@ -1,10 +1,9 @@
-% Method figure. Source: figures/src/fig_method.py; exact data/source hashes in method_provenance.json.
+% Method figure. Source: figures/src/fig_method.py (TikZ: src/method_diagram.tex); data hashes in method_provenance.json.
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/method.pdf}
-  \caption{\textbf{Calibrate the mixture at native resolution, then transfer it to a larger attention geometry.}
-  (a)~On 32 native $1024^2$ prompts, \sca{} emulates scale 4 using $16^2$ sampled global keys and a $16\times16$ local window. Matching the model's full-attention outputs gives one clipped least-squares coefficient per layer, head and noise bin. Sums run over calibration image queries; the model weights remain fixed. The inset shows the archived layer-29 slice in its original head/bin order, not illustrative values.
-  (b)~At $4096^2$, global attention retains $64^2$ block-centre image keys with block-index RoPE. Local attention retains a $64\times64$ window around each $8\times8$ query tile with original RoPE. The rectangles show attention support, not measured attention weights; $N$ and $T$ count image and text tokens. Both branches include all text keys. Image queries receive the fitted mixture; text queries use the global output.
-  (c)~For the 28-step protocol, the first eight steps use only global attention. The local branch is skipped while $\sigma>0.89$. Grid drawings are schematic; the coordinate definitions do not assert exact bf16 RoPE equivalence.}
+  \caption{\textbf{\sca{} fits one local/global weight per head and noise level at native resolution, then reuses the table at the target size.}
+  (a)~At $1024^2$, sums against the frozen model's own full attention give $\pih$ in closed form; the inset shows real fitted values for block 29.
+  (b)~At the target, block-centre global and native-window local attention are mixed per head, and the first 8 of 28 steps use the global branch only. Grids are schematic.}
   \label{fig:method}
 \end{figure*}

@@ -17,7 +17,8 @@ from pathlib import Path
 from PIL import Image
 
 import imgsel
-from fig_qual import COLORS, auto_box, header, make_tiles, row, snippet
+from fig_qual import (G_GROUP, G_PAIR, G_ROW, G_SECTION, Geo, auto_box, count_word, g_row, grid_snippet,
+                      grid_tiles, method_head, rel, t_crop, t_full)
 
 REPO = Path(__file__).resolve().parents[3]
 EVAL100 = REPO / "results/evidence/prompts/eval100.jsonl"
@@ -29,23 +30,20 @@ SPECS = {
         "methods": ["area", "dype", "sega_official", "ultraimage", "sca"],
         "caption": (
             r"\textbf{Additional baselines at $4096^2$.} "
-            r"Three randomly sampled paired prompts from the completed evaluation set, "
-            r"with no selection by visual quality or metric score. Each prompt occupies "
-            r"two rows: full images, then native-pixel crops of the outlined windows. "
-            r"FLUX.1-dev, seed 0. AReA, DyPE, SEGA and SCA use 28 steps and guidance 4.5; "
-            r"UltraImage uses its two-stage defaults (30+30 steps, guidance 3.5 then 7). "
-            r"The gallery illustrates outputs under these protocols, not equal-cost comparisons."
+            r"Three of the 191 paired evaluation prompts, sampled at random (selection seed~17); "
+            r"each image sits above a native-pixel crop of its outlined window. FLUX.1-dev, seed~0. "
+            r"AReA, DyPE, SEGA and SCA use 28 steps and guidance 4.5; UltraImage uses its two-stage "
+            r"defaults (30+30 steps, guidance 3.5 then 7), so this is not an equal-cost comparison."
         ),
     },
     "flux2": {
         "res": "4096x4096", "n": 4,
         "methods": ["flux2_full", "flux2_sca"],
         "caption": (
-            r"\textbf{FLUX.2-dev at $4096^2$.} Four randomly sampled paired prompts "
-            r"from the completed 50-prompt evaluation, without quality-based selection. "
-            r"For each method, a full image is followed by its native-pixel crop. "
-            r"Seed 0, 28 steps, guidance 4.0, with the FLUX.2 calibration table for SCA. "
-            r"SCA can still distort face geometry and fine texture, as the last row shows."
+            r"\textbf{FLUX.2-dev at $4096^2$: SCA can still distort face geometry and fine texture "
+            r"(last row).} Four of the 50 paired evaluation prompts, sampled at random (selection seed~17). "
+            r"Seed~0, 28 steps, guidance 4.0, FLUX.2 calibration table for SCA; each image is followed "
+            r"by a native-pixel crop of its outlined window."
         ),
     },
     "6144": {"res": "6144x6144", "n": 4, "methods": ["area", "sca"]},
@@ -53,11 +51,10 @@ SPECS = {
     "8192_complete": {
         "res": "8192x8192", "n": 4, "methods": ["area", "sca"], "expected": 12,
         "caption": (
-            r"\textbf{Exploratory $8192^2$ generation.} Four prompts sampled uniformly "
-            r"from all 12 paired evaluation prompts, without selection by visual quality "
-            r"or metric score. Each full image is followed by its native-pixel crop. "
-            r"FLUX.1-dev, seed 0, 28 steps, guidance 4.5. Grid and stripe artifacts "
-            r"remain at this scale; this small evaluation does not establish general 8K quality."
+            r"\textbf{Exploratory $8192^2$ generation: grid and stripe artifacts remain at this scale.} "
+            r"Four of the 12 paired evaluation prompts, sampled at random (selection seed~17). FLUX.1-dev, "
+            r"seed~0, 28 steps, guidance 4.5; each image is followed by a native-pixel crop of its outlined "
+            r"window. This small evaluation does not establish general 8K quality."
         ),
     },
     "6144_complete": {
@@ -292,26 +289,39 @@ def build(tag):
         out.mkdir(exist_ok=True)
         manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
 
-    lines = []
-    for i, entry in enumerate(manifest["prompts"]):
+    # Layout: the shared vector grid of fig_qual (snippets/_scagrid.tex). Two methods: one prompt per
+    # row, each full image followed by its crop. More methods: one column per method, each prompt a
+    # block of two labelled rows, full images above their crops.
+    vertical = len(methods) > 2
+    if vertical:
+        geo = Geo(len(methods), (len(methods) - 1) * G_GROUP, label=True)
+    else:
+        geo = Geo(2 * len(methods), len(methods) * G_PAIR + (len(methods) - 1) * G_GROUP)
+    head = []
+    for k, method in enumerate(methods):
+        head += ([G_GROUP] if k else []) + [method_head(method, 1, 0, NAMES) if vertical
+                                            else method_head(method, 2, G_PAIR, NAMES)]
+    rows = [(g_row(head, indent=vertical), G_ROW)]
+    written = {}
+    for entry in manifest["prompts"]:
         sid, box = entry["short_id"], tuple(entry["crop_xy_size"])
         tiles = {}
         for method in methods:
-            _, tiles[method] = make_tiles(dict(out=str(out), name=f"{sid}_{method}",
-                label=method, res=res, sid=sid, side=800, boxes=[(box, COLORS[0])],
-                crops=[(box, COLORS[0], "crop")]))
-        if len(methods) > 2:
-            full, height = row([(1, tiles[m]["full"]) for m in methods])
-            crops, _ = row([(1, tiles[m]["crop"]) for m in methods])
-            if i == 0:
-                lines.append(header([(1, NAMES[m]) for m in methods], height))
-            lines.extend([full, crops])
+            _, tiles[method] = grid_tiles(dict(out=str(out), name=f"{sid}_{method}",
+                png=entry["sources"][method]["png"], px=geo.px(), crops=[(box, "crop")]))
+            written[method, sid] = tiles[method]
+        if vertical:
+            full, crops = [], []
+            for k, method in enumerate(methods):
+                full += ([G_GROUP] if k else []) + [t_full(tiles[method]["full"], box, res)]
+                crops += ([G_GROUP] if k else []) + [t_crop(tiles[method]["crop"])]
+            rows += [(g_row(full, label="Full image"), G_PAIR), (g_row(crops, label="1:1 crop"), G_SECTION)]
         else:
-            items = [(1, tiles[m][kind]) for m in methods for kind in ("full", "crop")]
-            line, height = row(items)
-            if i == 0:
-                lines.append(header([(2 + 0.004 / height, NAMES[m]) for m in methods], height))
-            lines.append(line)
+            cells = []
+            for k, method in enumerate(methods):
+                cells += ([G_GROUP] if k else []) + [t_full(tiles[method]["full"], box, res), G_PAIR,
+                                                     t_crop(tiles[method]["crop"])]
+            rows.append((g_row(cells), G_ROW))
     caption = spec.get("caption")
     if tag == "krea_complete":
         repair = json.loads(Path(spec["provenance_receipts"][1]).read_text())
@@ -320,24 +330,23 @@ def build(tag):
     if caption is None:
         caption = (
             rf"\textbf{{Partial qualitative results at ${res.split('x')[0]}^2$.}} "
-            rf"{len(manifest['prompts'])} prompts sampled uniformly from the "
-            rf"{manifest['eligible_count']} non-development prompts with completed AReA and SCA outputs "
-            r"at the figure snapshot; this is not the final evaluation set. "
-            r"Each full image is followed by its native-pixel crop. FLUX.1-dev, "
-            r"seed 0, 28 steps, guidance 4.5. The subset was not selected by image quality; "
-            r"completion order may differ from the full benchmark."
+            rf"{count_word(len(manifest['prompts']))} prompts sampled at random (selection seed~17) from the "
+            rf"{manifest['eligible_count']} non-development prompts with completed AReA and SCA outputs at the figure "
+            r"snapshot, a pool that may reflect completion order; this is not the final evaluation set. "
+            r"FLUX.1-dev, seed~0, 28 steps, guidance 4.5; each image is followed by a native-pixel crop."
         )
         if tag == "8192":
             caption += r" Visible grid and stripe artifacts remain in both methods at this scale."
-    caption += (r" Crop locations maximize edge energy averaged across the methods shown. "
-                r"Prompt selection uses seed 17; source hashes and crop coordinates are archived with the figure.")
+    if "prompt_manifest" in spec:  # prepared complete-campaign galleries keep their full protocol note
+        caption += (r" Crop locations maximize edge energy averaged across the methods shown. "
+                    r"Prompt selection uses seed 17; source hashes and crop coordinates are archived with the figure.")
     comments = [f"Generated by fig_phase2.py {tag}; frozen selection in {name}/provenance.json."]
     comments += [f"{e['short_id']}: {e['prompt'].replace(chr(0x2014), ' - ')}" for e in manifest["prompts"]]
-    snippet(name, lines, caption, "fig:" + name, comments=comments)
-    snippet_path = Path(imgsel.FIGDIR) / "snippets" / f"{name}.tex"
-    generated = snippet_path.read_text().splitlines()
-    generated[0] = f"% Generated by paper/figures/src/fig_phase2.py {tag}; do not edit by hand."
-    snippet_path.write_text("\n".join(generated) + "\n")
+    grid_snippet(name, geo, rows, caption, "fig:" + name, comments=comments, source=f"fig_phase2.py {tag}")
+    # Output hashes are the only part of the frozen manifest a re-render may change.
+    paths = sorted(p for t in written.values() for p in t.values())
+    manifest["outputs"] = {rel(p): sha256(p) for p in paths}
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
     print(name, manifest["eligible_count"], "eligible; selected", len(manifest["prompts"]))
 
 

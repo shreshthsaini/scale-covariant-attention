@@ -15,9 +15,10 @@ from pathlib import Path
 os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import MultipleLocator
 
-from orx_figstyle import PALETTE, TEXT, save, use_style
+
+import scafig as sf
 
 ROOT = Path(__file__).resolve().parents[3]
 EVAL = ROOT / "results/evidence/eval"
@@ -129,6 +130,79 @@ def paired_statistics():
     return records, provenance
 
 
+# Display names and label precision for the plot only (the CSV keeps METHODS/METRICS labels).
+SHOW = {"ir": ("ImageReward", 2, 2), "pickscore": ("PickScore", 2, 4),  # name, label digits, tick step
+        "hpsv21": (r"HPSv2.1 $(\times 100)$", 2, 20), "musiq_crop1024": ("crop MUSIQ", 1, 20)}
+ROW = {"full": 4.4, "area": 3.4, "dype": 2.4, "sega_official": 1.4, "ultraimage": 0.0}
+NAME = {"full": "Full attention", "area": "AReA", "dype": "DyPE", "sega_official": "SEGA",
+        "ultraimage": "UltraImage\u2020"}
+UNRESOLVED = "#8A939C"
+
+
+def plot_deltas(records):
+    """One row of four panels sharing the baseline axis; dot = mean paired difference, whisker = 95%."""
+    W, H = sf.TEXT, 1.88
+    left, gap, right, bottom, top = 0.72, 0.15, 0.03, 0.53, 0.20
+    pw = (W - left - right - 3 * gap) / 4
+    fig = plt.figure(figsize=(W, H))
+    axes = []
+    for i in range(4):
+        rect = [(left + i * (pw + gap)) / W, bottom / H, pw / W, (H - bottom - top) / H]
+        axes.append(fig.add_axes(rect, sharey=axes[0] if axes else None))
+    for i, (ax, (metric, _, _)) in enumerate(zip(axes, METRICS)):
+        name, digits, step = SHOW[metric]
+        rows = [r for r in records if r["metric"] == metric]
+        ax.axvline(0, color=sf.INK, lw=0.6, zorder=1)
+        ax.axhline(0.7, color=sf.RULE, lw=0.5, zorder=1)
+        labels = []
+        for r in rows:
+            yy, d, lo, hi = ROW[r["baseline"]], r["delta"], r["ci_low"], r["ci_high"]
+            col = sf.SCA if lo > 0 else sf.LOSS if hi < 0 else UNRESOLVED
+            ax.errorbar(d, yy, xerr=[[d - lo], [hi - d]], fmt="o", ms=4.2, mew=0.9, mec=col,
+                        mfc="white" if lo <= 0 <= hi else col, ecolor=col, elinewidth=1.0,
+                        capsize=1.8, capthick=0.8, zorder=3)
+            text = f"{d:+.{digits}f}".replace("-", "\u2212")
+            ink = sf.MID if col == UNRESOLVED else col  # grey text needs more contrast than the marker
+            # Labels sit outside the whisker and never cross the zero line.
+            if hi < 0:
+                labels.append(ax.annotate(text, (lo, yy), xytext=(-3, 0), textcoords="offset points",
+                                          ha="right", va="center", fontsize=sf.FS_SMALL, color=ink))
+            else:
+                labels.append(ax.annotate(text, (hi, yy), xytext=(3, 0), textcoords="offset points",
+                                          ha="left", va="center", fontsize=sf.FS_SMALL, color=ink))
+        lo_x = min(0.0, min(r["ci_low"] for r in rows))
+        hi_x = max(r["ci_high"] for r in rows)
+        pad = 0.04 * (hi_x - lo_x)
+        ax.set_xlim(lo_x - pad, hi_x + pad)
+        for _ in range(4):  # widen the limits until every value label sits inside the panel
+            fig.canvas.draw()
+            inv = ax.transData.inverted()
+            x0 = min(inv.transform(t.get_window_extent())[0, 0] for t in labels)
+            x1 = max(inv.transform(t.get_window_extent())[1, 0] for t in labels)
+            cur = ax.get_xlim()
+            ax.set_xlim(min(cur[0], x0 - pad), max(cur[1], x1 + pad))
+        ax.xaxis.set_major_locator(MultipleLocator(step))
+        ax.grid(axis="x", visible=True)
+        ax.grid(axis="y", visible=False)
+        ax.spines["left"].set_visible(False)
+        ax.set_xlabel(rf"$\Delta$ {name}")
+        if i == 0:
+            ax.set_yticks(list(ROW.values()), [NAME[k] for k in ROW])
+            ax.tick_params(axis="y", length=0, pad=3)
+            # The method column gets a header in the panel-letter row instead of a rotated label.
+            ax.set_ylabel("baseline", rotation=0, ha="left", va="baseline", color=sf.MID,
+                          fontsize=sf.FS_TICK)
+            ax.yaxis.set_label_coords(-(left - 0.03) / pw, 1 + 0.035 / (H - bottom - top))
+        else:
+            ax.tick_params(axis="y", length=0, labelleft=False)
+        ax.set_ylim(-0.6, 5.0)
+        sf.panel_label(fig, ax, "abcd"[i], dy=0.035 / H)
+    x_mid = (left + (W - right)) / 2 / W
+    fig.text(x_mid, 0.03 / H, "SCA minus baseline; positive values favor SCA", ha="center",
+             va="bottom", fontsize=sf.FS_TICK, color=sf.MID)
+    return fig
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", type=Path, default=ROOT / "paper/figures/baseline_deltas")
@@ -140,40 +214,10 @@ def main():
         writer = csv.DictWriter(handle, fieldnames=list(records[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(records)
-    use_style()
+    sf.use_style()
     plt.rcParams["svg.hashsalt"] = "sca-baseline-deltas"
-    fig, axes = plt.subplots(2, 2, figsize=(TEXT, 4.15))
-    fig.subplots_adjust(left=.15, right=.98, bottom=.12, top=.95, wspace=.48, hspace=.53)
-    y = np.array([4.3, 3.3, 2.3, 1.3, 0.0])
-    for index, (ax, (metric, label, _)) in enumerate(zip(axes.flat, METRICS)):
-        rows = [r for r in records if r["metric"] == metric]
-        lower = min(0, min(r["ci_low"] for r in rows))
-        upper = max(r["ci_high"] for r in rows)
-        span = upper - lower
-        ax.set_xlim(lower - .14 * span, upper + .15 * span)
-        ax.axvline(0, color="#555555", linewidth=.8, zorder=1)
-        ax.axhline(.65, color="#aaaaaa", linewidth=.5, linestyle=(0, (3, 3)))
-        for position, row in zip(y, rows):
-            resolved = row["ci_low"] > 0 or row["ci_high"] < 0
-            color = PALETTE["blue"]
-            ax.errorbar(row["delta"], position,
-                        xerr=[[row["delta"] - row["ci_low"]], [row["ci_high"] - row["delta"]]],
-                        fmt="D" if row["baseline"] == "ultraimage" else "o", ms=3.8,
-                        mfc=color if resolved else "white", mec=color, color=color,
-                        elinewidth=1.0, capsize=2, zorder=3)
-            ax.annotate(f'{row["delta"]:+.2f}', (row["delta"], position), xytext=(0, 6),
-                        textcoords="offset points", ha="center", va="bottom", fontsize=6.5)
-        ax.set_yticks(y, [label for _, label, _ in METHODS])
-        ax.set_ylim(-.55, 5.0)
-        ax.set_xlabel(f"Δ {label}")
-        ax.xaxis.set_major_locator(MaxNLocator(5))
-        ax.grid(axis="x", visible=True)
-        ax.grid(axis="y", visible=False)
-        ax.tick_params(axis="y", length=0, pad=4)
-        ax.spines["left"].set_visible(False)
-        ax.text(-.22, 1.03, chr(97 + index), transform=ax.transAxes, weight="bold", fontsize=9)
-    fig.text(.5, .015, "SCA minus baseline  ·  right of zero favors SCA", ha="center", fontsize=7)
-    save(fig, str(args.out))
+    fig = plot_deltas(records)
+    sf.save(fig, str(args.out))
     if args.preview:
         fig.savefig(args.preview, dpi=150, facecolor="white")
     provenance["statistics_csv"] = str(result.relative_to(ROOT))

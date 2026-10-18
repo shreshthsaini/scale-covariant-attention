@@ -8,6 +8,7 @@ label that maps to a directory pattern with a {res} slot (see ROOTS); new method
 """
 
 import glob
+import hashlib
 import json
 import os
 import re
@@ -104,3 +105,18 @@ def save_jpeg(img, path, quality=88, max_side=1600):
     # optimize + fixed subsampling keeps the bytes deterministic for identical input
     img.save(path, "JPEG", quality=quality, optimize=True, subsampling=0 if quality >= 90 else 2)
     return path
+
+
+def sha256(path):
+    """Hex SHA256 of a file, for provenance records."""
+    digest = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for block in iter(lambda: fh.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def res_size(res):
+    """'HxW' -> (W, H) in pixels, the PIL size of an image at that resolution."""
+    h, w = (int(v) for v in res.split("x"))
+    return w, h

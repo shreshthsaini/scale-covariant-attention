@@ -2,13 +2,9 @@
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/calib.pdf}
-  \caption{\textbf{Mixing weights vary strongly across heads, yet a calibrated table transfers across scale and resolution at little cost.}
-  (a to c) Local weight $\pi_h(\sigma)$ of the scale-4 table used at inference, for all 57 blocks and 24 heads at three noise levels below the gate ($\sigma=0.89$).
-  Heads are sorted within each block by their mean weight, in the same order in every panel; the white line separates the 19 double-stream blocks from the 38 single-stream blocks.
-  Below the gate, 48.7\% of the cells lie in $[0.2, 0.8]$ and the standard deviation over heads is 0.22.
-  (d) Mean of $\pi$ over all heads, with thin lines and light fill marking the interquartile range, for three calibrations: $1024^2$ with 32 prompts at emulated scales 2 and 4, and $1280^2$ with 16 prompts at scale 2.
-  In the shaded region the gate replaces the table with the global branch.
-  (e) Relative output error of each per-head table on each calibration target, as excess over the target's own table (hollow dot; its absolute error is printed below).
-  A transferred table adds at most 5.45\% error, while the target's own per-layer fit (grey bar) adds 12\% to 24\%.}
+  \caption{\textbf{Heads differ widely, yet a calibrated table transfers across scale and resolution.}
+  (a to c) $\pih$ of the scale-4 table used at inference, heads sorted within each block.
+  (d) Mean and interquartile range over all 1368 heads for three calibrations (32 prompts at $1024^2$, 16 at $1280^2$).
+  (e) Error added over the target's own per-head table: at most 5.45\% for a transferred table, 12 to 24\% for the target's own per-layer fit.}
   \label{fig:calib}
 \end{figure*}
