@@ -12,11 +12,11 @@ Each `.tex` file holds one complete `figure`/`figure*` environment. Use it with 
 | `latency.tex` | `fig:latency` | Log-log resolution curve: SCA from 2048^2 through 8192^2, AReA and full attention through 4096^2. Median of three timed prompts; whiskers are observed ranges. | Cost appendix |
 | `ablation.tex` | `fig:ablation_grid` | 4 prompts x {no gate, pi=1, uniform pi, pi=0, mean pooling, SCA}, full images plus crops. | Appendix, next to the ablation table |
 | `failures.tex` | `fig:failures` | Top row: duplication without the gate (window 64 and window 16, dev prompts). Then four errors SCA still makes: a staircase sword, a blocky patch, a foot in place of an arm, speckle at a border. | Appendix, limitations |
-| `gallery_4096.tex`, `gallery_4096_p2.tex` | `fig:gallery_4096`, `fig:gallery_4096_p2` | 32 randomly sampled, uncurated prompts, AReA vs SCA at 4096^2, with crops. | Appendix gallery |
+| `gallery_4096.tex`, `gallery_4096_p2.tex`, `gallery_4096_p3.tex` | `fig:gallery_4096`, `fig:gallery_4096_p2`, `fig:gallery_4096_p3` | 32 randomly sampled, uncurated prompts, AReA vs SCA at 4096^2, with crops; rows split 2/12/2 by hand for page layout (fig_qual.py writes an 8/8 split into the first two files). | Appendix gallery |
 | `gallery_4096x2048.tex` | `fig:gallery_4096x2048` | 6 random prompts, AReA vs SCA at 4096x2048 (W x H). | Appendix gallery |
 | `gallery_6144x2048.tex` | `fig:gallery_6144x2048` | 6 random prompts, AReA vs SCA at 6144x2048 (W x H). | Appendix gallery |
 | `gallery_baselines.tex` | `fig:gallery_baselines` | 3 random prompts, AReA, DyPE, SEGA, UltraImage and SCA at 4096^2; full-image row followed by matching crops. UltraImage uses its own two-stage defaults. | Appendix gallery |
-| `gallery_flux2.tex` | `fig:gallery_flux2` | 4 random paired FLUX.2-dev prompts, full attention vs SCA at 4096^2. | Appendix gallery |
+| `gallery_flux2.tex` | `fig:gallery_flux2` | 4 random paired FLUX.2-dev prompts, full attention vs SCA at 4096^2; two prompts per row, edited by hand for page layout (fig_phase2.py flux2 writes one per row). | Appendix gallery |
 | `gallery_6144.tex`, `gallery_8192.tex` | `fig:gallery_6144`, `fig:gallery_8192` | 4 prompts each from the completed AReA/SCA pairs at the frozen snapshot, explicitly labeled partial qualitative evidence. | Appendix gallery |
 | `gallery_8192_complete.tex` | `fig:gallery_8192_complete` | 4 random prompts from all 12 completed 8K pairs, preserving visible grid/stripe failures. | Appendix gallery |
 | `gallery_6144_complete.tex` (prepared mode; not rendered) | `fig:gallery_6144_complete` | 4 random prompts, only after all 100 archived E2 IDs have complete AReA/SCA pairs. Preserves the older 14-prompt pool separately. | Future appendix gallery |

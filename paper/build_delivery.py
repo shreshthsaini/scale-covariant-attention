@@ -8,6 +8,7 @@ Requires tectonic on PATH. Build logs and extracted verification files stay on s
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -22,7 +23,8 @@ def sha256(path):
 def compile_paper(source, output):
     output.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(
-        ["tectonic", "--keep-logs", "--outdir", str(output), "main.tex"],
+        ["tectonic", "--keep-logs", "--outdir", str(output), "--makefile-rules",
+         str(output / "deps.mk"), "main.tex"],
         cwd=source, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
     )
     (output / "build_stdout.txt").write_text(result.stdout)
@@ -35,6 +37,21 @@ def compile_paper(source, output):
     if problems:
         raise RuntimeError("Unresolved paper references: " + "\n".join(problems))
     return [line for line in log.splitlines() if "Overfull" in line]
+
+
+def used_files(output):
+    """Source paths (relative to the paper) that a tectonic run read, from --makefile-rules.
+    Tectonic prefixes each relative input name with the output directory, so strip it."""
+    text = (output / "deps.mk").read_text().replace("\\\n", " ")
+    names = text.split(" : ", 1)[1].split() if " : " in text else []
+    prefix = str(output) + "/"
+    return {n[len(prefix):] if n.startswith(prefix) else n for n in names}
+
+
+def page_count(output):
+    """Pages reported by the engine in the build log."""
+    match = re.search(r"Output written on \S+ \((\d+) pages?", (output / "main.log").read_text(errors="replace"))
+    return int(match.group(1)) if match else None
 
 
 def main():
@@ -59,6 +76,12 @@ def main():
         inputs.append(path)
     manifest = {str(p.relative_to(paper)): sha256(p) for p in inputs}
     warnings = compile_paper(paper, build / "primary")
+    # Ship only the figure assets the build actually read: unused renders, previews (.svg) and
+    # superseded image sets stay in the repository but not in the portable ZIP.
+    used = used_files(build / "primary")
+    asset = {".pdf", ".png", ".jpg", ".jpeg", ".svg"}
+    inputs = [p for p in inputs if p.suffix.lower() not in asset or str(p.relative_to(paper)) in used]
+    manifest = {str(p.relative_to(paper)): sha256(p) for p in inputs}
     if any(sha256(p) != manifest[str(p.relative_to(paper))] for p in inputs):
         raise RuntimeError("Paper sources changed during the primary build; rerun after edits finish")
     archive = build / "sca_overleaf.zip"
@@ -73,12 +96,16 @@ def main():
     # Publish only after both builds succeed, and reject concurrent source edits.
     if any(sha256(p) != manifest[str(p.relative_to(paper))] for p in inputs):
         raise RuntimeError("Paper sources changed during build; rerun after edits finish")
+    if page_count(build / "primary") != page_count(build / "standalone"):
+        raise RuntimeError("Standalone build page count differs from the primary build")
     shutil.copy2(build / "primary/main.pdf", paper / "main.pdf")
     shutil.copy2(archive, paper / "sca_overleaf.zip")
     receipt = {
         "paper_sha256": sha256(paper / "main.pdf"),
         "source_zip_sha256": sha256(paper / "sca_overleaf.zip"),
         "source_files": len(inputs), "standalone_build_passed": True,
+        "primary_pages": page_count(build / "primary"),
+        "standalone_pages": page_count(build / "standalone"),
         "primary_overfull_warnings": warnings,
         "standalone_overfull_warnings": standalone_warnings,
         "build_directory": str(build),

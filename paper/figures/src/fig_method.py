@@ -119,14 +119,14 @@ def main() -> None:
     t.rect(0, 0, W, Ha, "panel")
     t.text(0.09, 0.14, r"\textbf{a}\hspace{6pt}\textbf{Calibrate once at native resolution}", "ttl")
     t.text(2.62, 0.145, r"frozen model; full attention drives the sampler", "note")
-    gx, gy, gs = 0.16, 0.40, 0.56
+    gx, gy, gs = 0.15, 0.40, 0.46
     t.text(gx + gs / 2, gy - 0.075, r"$1024^2$ image", "small", "center")
     t.grid(gx, gy, gs, 8)
     t.text(gx + gs / 2, gy + gs + 0.09, r"$64\times64$ tokens", "tiny", "center")
-    rows = [(0.42, "full", r"$\Ofull$\;\,full attention", "lbl"),
-            (0.68, "glob", r"$\Oglob$\;\,$16^2$ centre keys", "lblg"),
-            (0.94, "loc", r"$\Oloc$\;\,$16\times16$ window", "lbll")]
-    ix, isz = 0.98, 0.19
+    rows = [(0.42, "full", r"$\Ofull$\;\,{\scriptsize full attention}", "lbl"),
+            (0.68, "glob", r"$\Oglob$\;\,{\scriptsize $16^2$ centre keys}", "lblg"),
+            (0.94, "loc", r"$\Oloc$\;\,{\scriptsize $16\times16$ window}", "lbll")]
+    ix, isz = 0.80, 0.19
     for yc, kind, label, style in rows:
         t.arrow([(gx + gs + 0.04, gy + gs / 2), (ix - 0.05, yc)])
         if kind == "full":
@@ -144,17 +144,18 @@ def main() -> None:
         t.text(ix + isz + 0.07, yc, label, style)
     t.text(ix, 1.12, r"emulated target scale $s_c=4$", "tiny", "west")
     # statistics and closed-form fit
-    sx0, sx1, sy0, sy1 = 2.40, 4.24, 0.33, 1.03
+    ARX = 2.13                       # row arrows start right of the longest label
+    sx0, sx1, sy0, sy1 = 2.30, 4.30, 0.35, 1.05
     for yc, _, _, _ in rows:
-        t.arrow([(2.21, yc), (sx0 - 0.04, yc)])
+        t.arrow([(ARX, yc), (sx0 - 0.04, yc)])
     t.rect(sx0, sy0, sx1, sy1, "box")
     cx = (sx0 + sx1) / 2
     t.text(cx, sy0 + 0.11, r"sums per block $l$, head $h$, noise bin $\beta$", "tiny", "center")
-    t.text(cx, sy0 + 0.27, r"$A=\sum\|\Oloc-\Oglob\|^2$", "maths", "center")
-    t.text(cx, sy0 + 0.43, r"$B=\sum\langle\Ofull-\Oglob,\,\Oloc-\Oglob\rangle$", "maths", "center")
+    t.text(cx, sy0 + 0.27, r"$A=\sum\|\Oloc{-}\Oglob\|^2$", "maths", "center")
+    t.text(cx, sy0 + 0.43, r"$B=\sum\langle\Ofull{-}\Oglob,\,\Oloc{-}\Oglob\rangle$", "maths", "center")
     t.text(cx, sy0 + 0.60, r"$\pi^{\star}_{lh\beta}=\operatorname{clip}(B/A,\,0,\,1)$", "mathb", "center")
     # coefficient inset: real data
-    hx0, hy0, hw, hh = 4.45, 0.39, 0.90, 0.46
+    hx0, hy0, hw, hh = 4.51, 0.39, 0.86, 0.46
     t.arrow([(sx1 + 0.04, 0.62), (hx0 - 0.05, 0.62)])
     cw, ch = hw / 14, hh / 24
     for h in range(24):

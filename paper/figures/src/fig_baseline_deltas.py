@@ -198,7 +198,7 @@ def plot_deltas(records):
         ax.set_ylim(-0.6, 5.0)
         sf.panel_label(fig, ax, "abcd"[i], dy=0.035 / H)
     x_mid = (left + (W - right)) / 2 / W
-    fig.text(x_mid, 0.03 / H, "SCA minus baseline; positive values favor SCA", ha="center",
+    fig.text(x_mid, 0.03 / H, "SCA minus baseline; positive values favour SCA", ha="center",
              va="bottom", fontsize=sf.FS_TICK, color=sf.MID)
     return fig
 

@@ -1,7 +1,7 @@
 """Page-1 hero (fig:teaser): curated SCA outputs plus a six-method strip.
 
 Top row: two curated SCA outputs from the 191 evaluation prompts (seed 0,
-28 steps, guidance 4.5), a 6144x2048 panorama and a 4096^2 interior, with
+28 steps, guidance 4.5), a 2048x6144 panorama and a 4096^2 interior, with
 native-pixel zoom tiles. Bottom: one curated evaluation prompt at 4096^2 for
 six methods, full image above the same 768x768 window. Seconds per image are
 the clean batch-1 medians of results/latency_curve_summary.csv (one GH200,
@@ -40,10 +40,20 @@ TECTONIC = os.path.expanduser("~/.local/bin/tectonic")
 
 W = 5.5          # text width, inches
 G = 0.05         # gutter
+M = 0.02         # margin of insets and badges from image edges (0.035 let the AReA and SCA
+                 # strip badges overlap the head covering and the pipe on it)
 DPI = 600        # pixel budget for downsampled full images
 
+# One leader per zoom tile, along the outer edge of the pair: the houses window joins
+# its tile at the top (the line runs over the hillside) and the rowboat window at the
+# bottom (over the lake), so no leader crosses the village or the crowded shore.
 PANO = dict(method="sca_nb", res="2048x6144", pid="minus2742856837225126754",
-            zooms=[(4064, 832, 384), (3488, 1536, 320)])   # houses, rowboat
+            zooms=[(4064, 832, 384), (3488, 1536, 320)],   # houses, rowboat
+            leaders=("top", "bottom"))
+# The square's inset sits in its top-right corner, on the dark vault: chosen by eye as
+# the least informative corner (the lower corners hold the pews and the receding
+# chandeliers, the top-left holds the badge). Leaders join the window's right corners
+# to the inset's left corners and stay on the dark stonework.
 SQUARE = dict(method="sca_nb", res="4096x4096", pid="minus8737279395568207187",
               zooms=[(1792, 1536, 448)])                      # rose window
 STRIP_PID = "3657338173664010496"
@@ -135,14 +145,17 @@ def main() -> None:
         bx0, by0, bx1, by1 = x * sx, y * sx, (x + s) * sx, (y + s) * sx
         ty = 0 if k == 0 else zt + G
         node(zx, ty, zt, zt, p.name)
-        leader((bx1, by0), (zx, ty))
-        leader((bx1, by1), (zx, ty + zt))
+        if PANO["leaders"][k] == "top":
+            leader((bx1, by0), (zx, ty))
+        else:
+            leader((bx1, by1), (zx, ty + zt))
         box(bx0, by0, bx1, by1)
         frame(zx, ty, zx + zt, ty + zt, "zoomframe")
-    badge(0.035, 0.035, r"6144\,$\times$\,2048")
+    badge(M, M, r"2048\,$\times$\,6144")       # height x width, as in the text
     records.append(dict(role="mosaic panorama", source=str(png), png_sha256=sha(png),
                         prompt=meta["config"]["prompt"], config=meta["config"],
-                        zoom_boxes_xys=PANO["zooms"], preview=full.name, zooms=zooms))
+                        zoom_boxes_xys=PANO["zooms"], leaders=list(PANO["leaders"]),
+                        preview=full.name, zooms=zooms))
 
     # --- top row: square with one inset ---------------------------------------------------
     png, meta = source(SQUARE["method"], SQUARE["res"], SQUARE["pid"])
@@ -155,16 +168,19 @@ def main() -> None:
     sx = h / img.width
     bx0, by0, bx1, by1 = sq_x + x * sx, y * sx, sq_x + (x + s) * sx, (y + s) * sx
     inset = 0.47
-    ix, iy = sq_x + 0.035, h - 0.035 - inset
+    ix, iy = sq_x + h - M - inset, M
+    assert ix > bx1 and iy + inset < h, "inset must clear the window and stay inside the image"
     node(ix, iy, inset, inset, p.name)
-    leader((bx0, by1), (ix, iy))
-    leader((bx1, by1), (ix + inset, iy))
+    leader((bx1, by0), (ix, iy))
+    leader((bx1, by1), (ix, iy + inset))
     box(bx0, by0, bx1, by1)
     frame(ix, iy, ix + inset, iy + inset, "zoomframe")
-    badge(sq_x + 0.035, 0.035, r"4096\,$\times$\,4096")
+    badge(sq_x + M, M, r"4096\,$\times$\,4096")
     records.append(dict(role="mosaic square", source=str(png), png_sha256=sha(png),
                         prompt=meta["config"]["prompt"], config=meta["config"],
-                        zoom_boxes_xys=SQUARE["zooms"], preview=full.name, zooms=[p.name]))
+                        zoom_boxes_xys=SQUARE["zooms"], inset_at="top-right", inset_in=inset,
+                        inset_xy_in=[round(ix - sq_x, 4), round(iy, 4)], preview=full.name,
+                        zooms=[p.name]))
 
     # --- bottom: six-method strip ---------------------------------------------------------
     secs = timings()
@@ -189,7 +205,7 @@ def main() -> None:
         t = secs.get(key) if key else None
         if t is not None:
             tex.append(r"\node[%s,anchor=north west] at (%.4f,%.4f) {%.1f\,s};"
-                       % ("badgeours" if ours else "badge", x0 + 0.03, -(y_strip + 0.03), t))
+                       % ("badgeours" if ours else "badge", x0 + M, -(y_strip + M), t))
         records.append(dict(role="strip " + method, source=str(png), png_sha256=sha(png),
                             prompt=meta["config"]["prompt"], config=meta["config"],
                             crop_xys=STRIP_BOX, seconds_batch1_median=t,
@@ -214,11 +230,11 @@ def main() -> None:
   cropframe/.style={draw=scaZoom,line width=0.5pt},
   leader/.style={draw=scaZoom,line width=0.4pt},
   badge/.style={fill=black,fill opacity=0.58,text opacity=1,text=white,rounded corners=1.2pt,
-                inner xsep=2.2pt,inner ysep=1.3pt,font=\sffamily\fontsize{6.8}{7}\selectfont},
+                inner xsep=1.8pt,inner ysep=1.15pt,font=\sffamily\fontsize{6.5}{7}\selectfont},
   badgeours/.style={fill=scaAccent,fill opacity=0.92,text opacity=1,text=white,rounded corners=1.2pt,
-                inner xsep=2.2pt,inner ysep=1.3pt,font=\sffamily\bfseries\fontsize{6.8}{7}\selectfont},
-  head/.style={font=\sffamily\fontsize{7.8}{9}\selectfont,text=scaInk},
-  headours/.style={font=\sffamily\fontsize{7.8}{9}\selectfont,text=scaAccent},
+                inner xsep=1.8pt,inner ysep=1.15pt,font=\sffamily\bfseries\fontsize{6.5}{7}\selectfont},
+  head/.style={font=\sffamily\fontsize{8.5}{10}\selectfont,text=scaInk},
+  headours/.style={font=\sffamily\fontsize{8.5}{10}\selectfont,text=scaAccent},
   ]
 \useasboundingbox (0,0) rectangle (%.4f,%.4f);
 %s
@@ -232,8 +248,8 @@ def main() -> None:
     assert produced == OUT_PDF and produced.exists()
 
     caption = (
-        r"\textbf{\sca{} keeps layout and fine detail up to $6144\times2048$ without training and "
-        r"runs $%.2f\times$ faster than AReA at $4096^2$.} "
+        r"\textbf{\sca{} keeps layout and fine detail at $4096^2$ and $2048\times6144$ without "
+        r"training, and at $4096^2$ runs $%.2f\times$ faster than AReA.} "
         r"Top: curated \sca{} outputs with native-pixel zooms. Bottom: one curated prompt and the "
         r"same $768\times768$ window for six methods, seed 0 ($^{*}$UltraImage uses its two-stage "
         r"defaults). Badges: batch-1 seconds per image on one GH200, where measured."

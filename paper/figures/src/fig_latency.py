@@ -42,7 +42,7 @@ CURVE_CSV = os.path.join(REPO, "results", "latency_curve.csv")
 CSV_4096 = os.path.join(REPO, "results", "latency_4096_batch1.csv")
 
 METHODS = {  # canonical key -> (label, color, marker); drawn in this order (SCA on top)
-    "full": ("full attention", sf.METHOD_COLOR["full"], "^"),
+    "full": ("Full attention", sf.METHOD_COLOR["full"], "^"),
     "area": ("AReA", sf.METHOD_COLOR["area"], "s"),
     "sca": ("SCA (ours)", sf.SCA, "o"),
 }
@@ -172,9 +172,17 @@ def curve_figure(med, ranges, resolutions, speed, expo):
     # direct labels: name and fitted exponent at each line's end
     for m, (x, y) in ends.items():
         lbl, col, _ = METHODS[m]
-        if m == "full":  # ends inside the AReA-SCA gap, just under AReA; its exponent is in the caption
-            ax.annotate(lbl, (x, y), xytext=(6, -2), textcoords="offset points", ha="left",
-                        va="top", fontsize=sf.FS_TICK, color=sf.MID)
+        if m == "full":
+            # The line ends inside the shaded AReA-SCA gap, so it gets a key in the empty lower
+            # right instead of a direct label; its exponent is in the caption.
+            _, _, mk = METHODS[m]
+            kx, ky, kw = 0.70, 0.11, 0.045
+            ax.plot([kx, kx + kw], [ky, ky], transform=ax.transAxes, color=col, lw=1.1,
+                    solid_capstyle="round", clip_on=False, zorder=4)
+            ax.plot([kx + kw / 2], [ky], transform=ax.transAxes, color=col, marker=mk, ms=3.3,
+                    mec="white", mew=0.4, clip_on=False, zorder=4)
+            ax.text(kx + kw + 0.012, ky, lbl, transform=ax.transAxes, ha="left", va="center",
+                    fontsize=sf.FS, color=sf.MID)
             continue
         ax.annotate(lbl, (x, y), xytext=(7, 2.5), textcoords="offset points", ha="left", va="center",
                     fontsize=sf.FS, color=col, fontweight="bold" if m == "sca" else "normal")

@@ -1,13 +1,13 @@
 """Appendix showcase (fig:hero): curated SCA outputs at three aspect ratios.
 
-Layout at the 5.5 in text width: a full-width 6144x2048 panorama with two
+Layout at the 5.5 in text width: a full-width 2048x6144 panorama with two
 native-pixel insets, a row of four 4096^2 images with one inset each, and a row
-of two 4096x2048 images. Every image is an SCA (sca_nb) output for an
-evaluation prompt at seed 0 (FLUX.1-dev, 28 steps, guidance 4.5; asserted from
-the sidecars). Images were chosen by visual inspection for variety and clean
-results; no metric ranked them. Prompts shown elsewhere in the paper (page-1
-hero, main qualitative figure, ablation and failure figures) and the
-development prompts are excluded.
+of two 2048x4096 images (sizes are height x width, as in the paper). Every image
+is an SCA (sca_nb) output for an evaluation prompt at seed 0 (FLUX.1-dev, 28
+steps, guidance 4.5; asserted from the sidecars). Images were chosen by visual
+inspection for variety and clean results; no metric ranked them. Prompts shown
+elsewhere in the paper (page-1 hero, main qualitative figure, ablation and
+failure figures) and the development prompts are excluded.
 
 Everything is generated: JPEG assets (deterministic PIL encoding), a TikZ
 source with vector boxes, leader lines and badges, its PDF (tectonic), the
@@ -43,25 +43,37 @@ W = 5.5           # text width, inches
 G = 0.05          # gutter
 DPI = 600         # pixel budget for downsampled full images
 M = 0.035         # margin of insets and badges from image edges
+HALO = 1.15 / 72  # width of the dark halo under boxes and frames, inches
 PANO_INSET = 0.80
 SQ_INSET = 0.44
 METHOD = "sca_nb"
 
-# Zoom windows are (x, y, size) in source pixels. `at` places the inset inside
-# its image; `side` says where the inset lies relative to the window, which
-# picks the corner pairs joined by leader lines.
+# Zoom windows are (x, y, size) in source pixels. `at` places the inset inside its
+# image: a corner, or "top" (centred above the window). `margin` is the (horizontal,
+# vertical) gap to the image edges, M by default; 0 docks that side against the edge.
+# `side` says where the inset lies relative to the window and picks the corner pairs
+# joined by leader lines; None draws none. Positions were chosen by eye: each inset
+# covers the least informative region of its image that is large enough, and leader
+# lines and badges stay off the main subject.
 PANO = dict(res="2048x6144", pid="7543519915112968451", what="village street",
-            zooms=[dict(box=(3040, 1170, 320), at="top", side="above"),          # couple
-                   dict(box=(5400, 190, 384), at="bottom-right", side="below")])  # shutter, flowers
+            zooms=[dict(box=(3040, 1170, 320), at="top", side="above"),           # couple: on the sky
+                   dict(box=(5400, 190, 384), at="bottom-right", side="below")])  # shutter: on the ground floor
 SQUARES = [
+    # Earring: inset on the sweater and the wall. A leader from the ear to that corner
+    # would cross the face and the necklace, so this inset has none; the shared yellow
+    # pairs it with its window.
     dict(pid="minus1066207185399086750", what="portrait",
-         zoom=dict(box=(1160, 2080, 384), at="bottom-left", side="below")),      # earring
-    dict(pid="minus6845347395255545991", what="illustration",
-         zoom=dict(box=(1850, 420, 384), at="top-right", side="right")),         # lit spire
+         zoom=dict(box=(1160, 2080, 384), at="bottom-right", side=None)),
+    # Lit spire: inset on the empty sky. The badge sits on the dark rocks because the
+    # top-left corner holds the second peak and its lit tower.
+    dict(pid="minus6845347395255545991", what="illustration", badge="bottom-right",
+         zoom=dict(box=(1850, 420, 384), at="top-right", side="right")),
+    # Pear skin: inset on the plain wall, docked in the corner so it clears the rear bowl.
     dict(pid="minus947425340308551929", what="still life",
-         zoom=dict(box=(2960, 1990, 384), at="top-right", side="above")),        # pear skin
+         zoom=dict(box=(2960, 1990, 384), at="top-right", side="above", margin=(0.0, 0.0))),
+    # Face: inset on the flat ice wall right of the crevice.
     dict(pid="997293625843621481", what="ice climber",
-         zoom=dict(box=(1900, 1250, 384), at="top-right", side="right")),        # face
+         zoom=dict(box=(1900, 1250, 384), at="top-right", side="right")),
 ]
 WIDES = [dict(res="2048x4096", pid="7414267858891695058", what="interior"),
          dict(res="2048x4096", pid="minus5370774387421928008", what="river town")]
@@ -147,9 +159,15 @@ def main() -> None:
         tex.append(r"\draw[leaderhalo] (%.4f,%.4f) -- (%.4f,%.4f);" % (a[0], -a[1], b[0], -b[1]))
         tex.append(r"\draw[leader] (%.4f,%.4f) -- (%.4f,%.4f);" % (a[0], -a[1], b[0], -b[1]))
 
-    def badge(x, y, img):
-        tex.append(r"\node[badge,anchor=north west] at (%.4f,%.4f) {%d\,$\times$\,%d};"
-                   % (x + M, -(y + M), img.width, img.height))
+    def badge(x, y, w, h, img, at="top-left"):
+        """Size badge, height x width, top left; bottom right where the top left holds content."""
+        if at == "top-left":
+            anchor, bx, by = "north west", x + M, y + M
+        else:
+            assert at == "bottom-right", at
+            anchor, bx, by = "south east", x + w - M, y + h - M
+        tex.append(r"\node[badge,anchor=%s] at (%.4f,%.4f) {%d\,$\times$\,%d};"   # height x width
+                   % (anchor, bx, -by, img.height, img.width))
 
     def save_full(img, width_in, name):
         p = save_jpeg(preview(img, width_in), ASSETS / name, 90, 2)
@@ -163,26 +181,31 @@ def main() -> None:
         written.append(crop)
         s = w / img.width
         b0, b1 = (x0 + bx * s, y0 + by * s), (x0 + (bx + bs) * s, y0 + (by + bs) * s)
-        at = z["at"]
+        at, (mx, my) = z["at"], z.get("margin", (M, M))
         if at == "top":
-            ix = min(max((b0[0] + b1[0]) / 2 - q / 2, x0 + M), x0 + w - M - q)
-            iy = y0 + M
+            ix = min(max((b0[0] + b1[0]) / 2 - q / 2, x0 + mx), x0 + w - mx - q)
+            iy = y0 + my
         else:
-            ix = x0 + M if at.endswith("left") else x0 + w - M - q
-            iy = y0 + M if at.startswith("top") else y0 + h - M - q
+            ix = x0 + mx if at.endswith("left") else x0 + w - mx - q
+            iy = y0 + my if at.startswith("top") else y0 + h - my - q
         i0, i1 = (ix, iy), (ix + q, iy + q)
         assert not (i0[0] < b1[0] and b0[0] < i1[0] and i0[1] < b1[1] and b0[1] < i1[1]), name
         node(ix, iy, q, q, crop.name)
-        pairs = {"below": [((b0[0], b1[1]), i0), (b1, (i1[0], i0[1]))],
-                 "above": [(b0, (i0[0], i1[1])), ((b1[0], b0[1]), i1)],
-                 "right": [((b1[0], b0[1]), i0), (b1, (i0[0], i1[1]))],
-                 "left": [(b0, (i1[0], i0[1])), ((b0[0], b1[1]), i1)]}[z["side"]]
-        for a, b in pairs:
-            leader(a, b)
+        if z["side"]:
+            pairs = {"below": [((b0[0], b1[1]), i0), (b1, (i1[0], i0[1]))],
+                     "above": [(b0, (i0[0], i1[1])), ((b1[0], b0[1]), i1)],
+                     "right": [((b1[0], b0[1]), i0), (b1, (i0[0], i1[1]))],
+                     "left": [(b0, (i1[0], i0[1])), ((b0[0], b1[1]), i1)]}[z["side"]]
+            for a, b in pairs:
+                leader(a, b)
         rect(*b0, *b1, "zoombox")
-        rect(*i0, *i1, "zoomframe")
+        # On a docked side the frame moves in by half its halo, so it stays inside the image.
+        dx, dy = (HALO / 2 if mx == 0 else 0.0), (HALO / 2 if my == 0 else 0.0)
+        rect(i0[0] + dx, i0[1] + dy, i1[0] - dx, i1[1] - dy, "zoomframe")
         return dict(box_xys=list(z["box"]), crop=crop.name, crop_px=bs,
-                    inset_in=q, magnification=round((q / bs) / (w / img.width), 2))
+                    inset_in=q, magnification=round((q / bs) / (w / img.width), 2),
+                    inset_at=at, inset_margin_in=[mx, my],
+                    inset_xy_in=[round(ix - x0, 4), round(iy - y0, 4)], leaders=z["side"] is not None)
 
     def record(role, png, meta, full, zooms):
         records.append(dict(role=role, source=str(png), png_sha256=sha(png),
@@ -197,7 +220,7 @@ def main() -> None:
     node(0, 0, W, pano_h, full.name)
     zooms = [inset(img, 0, 0, W, pano_h, z, PANO_INSET, f"pano_zoom{k + 1}.jpg")
              for k, z in enumerate(PANO["zooms"])]
-    badge(0, 0, img)
+    badge(0, 0, W, pano_h, img)
     record("panorama: " + PANO["what"], png, meta, full, zooms)
 
     # --- four squares -----------------------------------------------------------------------
@@ -209,10 +232,10 @@ def main() -> None:
         full = save_full(img, sq, f"square{k + 1}.jpg")
         node(x0, y_sq, sq, sq, full.name)
         z = inset(img, x0, y_sq, sq, sq, spec["zoom"], SQ_INSET, f"square{k + 1}_zoom.jpg")
-        badge(x0, y_sq, img)
+        badge(x0, y_sq, sq, sq, img, spec.get("badge", "top-left"))
         record("square: " + spec["what"], png, meta, full, [z])
 
-    # --- two 4096x2048 ----------------------------------------------------------------------
+    # --- two 2048x4096 ----------------------------------------------------------------------
     for k, spec in enumerate(WIDES):
         png, meta = source(spec["res"], spec["pid"])
         img = Image.open(png).convert("RGB")
@@ -220,7 +243,7 @@ def main() -> None:
         x0 = k * (wide_w + G)
         full = save_full(img, wide_w, f"wide{k + 1}.jpg")
         node(x0, y_wide, wide_w, wide_w / 2, full.name)
-        badge(x0, y_wide, img)
+        badge(x0, y_wide, wide_w, wide_w / 2, img)
         record("wide: " + spec["what"], png, meta, full, [])
 
     for stale in sorted(set(ASSETS.glob("*.jpg")) - set(written)):
@@ -257,7 +280,7 @@ def main() -> None:
 
     caption = (
         r"\textbf{\sca{} keeps layout and fine detail across three aspect ratios without training.} "
-        r"Curated \sca{} outputs at $4096^2$, $4096\times2048$ and $6144\times2048$ on evaluation prompts, "
+        r"Curated \sca{} outputs at $4096^2$, $2048\times4096$ and $2048\times6144$ on evaluation prompts, "
         r"picked by eye for variety (FLUX.1-dev, seed 0, 28 steps, guidance 4.5). Insets are native-pixel "
         r"crops of the outlined windows.")
     comments = ["%% %s %s (%s): %s" % (r["role"], r["config"]["prompt_id"].split("_")[-1],
