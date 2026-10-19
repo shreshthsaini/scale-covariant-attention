@@ -382,6 +382,22 @@ def _write_manifest(name, man):
         fh.write(json.dumps(man, indent=2) + "\n")
 
 
+def superseded(name):
+    """True if fig_gallery_large.py lays out this gallery (a "display" record in its provenance.json).
+
+    The gallery modes then skip it, so a rerun cannot restore the superseded small-tile layout or
+    overwrite its larger full-image tiles. Delete the display record to rebuild the old layout.
+    """
+    path = _manifest_path(name)
+    if not os.path.exists(path):
+        return False
+    with open(path) as fh:
+        shown = "display" in json.load(fh)
+    if shown:
+        print(f"{name}: skipped; fig_gallery_large.py lays out this gallery (display record in provenance.json)")
+    return shown
+
+
 def frozen(name, compute, workers):
     """Prompts, crop windows and source hashes of one figure, frozen in <figure>/provenance.json.
 
@@ -579,6 +595,8 @@ def fig_gallery_square(a):
     res = a.res
     tag = res.split("x")[0] if len(set(res.split("x"))) == 1 else res
     name = f"gallery_{tag}"
+    if superseded(name):
+        return
     out = os.path.join(imgsel.FIGDIR, name)
     size = 512 * int(res.split("x")[0]) // 4096 if int(res.split("x")[0]) > 4096 else 512
     man = random_selection(name, res, a.n, a.seed, methods, size, a.workers)
@@ -628,6 +646,10 @@ def fig_gallery_wide(a):
     for res in (a.wide or ["2048x4096", "2048x6144"]):
         h, w = (int(v) for v in res.split("x"))
         name = f"gallery_{w}x{h}"
+        if superseded(name):  # its frozen prompts still count as taken for later wide galleries
+            with open(_manifest_path(name)) as fh:
+                taken |= {e["short_id"] for e in json.load(fh)["prompts"]}
+            continue
         out = os.path.join(imgsel.FIGDIR, name)
         # disjoint from the square gallery and from earlier wide galleries, so every prompt appears once
         man = random_selection(name, res, a.n_wide, a.seed + 1 + len(taken), methods, 512, a.workers,

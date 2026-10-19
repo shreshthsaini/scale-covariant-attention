@@ -1,8 +1,129 @@
 {
-  "selection": "Curated for the hero by visual inspection of SCA outputs; no metric ranking. The six-method prompt and window are those of the earlier hero and teaser.",
-  "timings_source": "results/latency_curve_summary.csv (4096x4096 medians, batch 1, one GH200)",
+  "selection": "Curated by visual inspection; no metric ranking. Mosaic: SCA outputs. Strip: chosen from the 191 evaluation prompts at 4096x4096 where all six methods have a complete seed-0 output, for a visible layout difference.",
+  "strip_selection": {
+    "procedure": "Six-method contact sheets of all 191 prompts (256 px thumbnails) were screened for layout failures (duplication, stripes, broken structure) in the baselines with a coherent SCA output; shortlisted prompts were then viewed at 512 px per method and SCA at full size. Prompts where SCA itself duplicated subjects or broke structure were rejected.",
+    "shortlist": [
+      "1269964769307095670",
+      "6978695891801939003",
+      "minus3112502764021036396",
+      "5467301199144503406",
+      "minus836402013429605880"
+    ],
+    "chosen": "1269964769307095670",
+    "reason": "Full attention is a flat band; DyPE and SEGA lose the peaks and the hills under speckle; AReA keeps the peaks but its lower half dissolves into a streaked haze; UltraImage and SCA keep peaks above rolling hills. The alternatives either showed small repeated structures in SCA (waterfall bridge) or weaker AReA failures.",
+    "crop": "Shared native window on the main peak, where snow and rock detail differ most between methods (x, y, side in pixels)."
+  },
+  "strip_prompt_id": "a4k_eval_4096_1269964769307095670",
+  "strip_crop_xys": [
+    1664,
+    1408,
+    768
+  ],
+  "timing_definitions": {
+    "clean": "batch-1 median of three prompts after warm-up on an idle GPU (results/latency_curve_summary.csv, 4096x4096)",
+    "campaign": "mean over the 191-prompt evaluation campaign on shared nodes (results/e1_*_base_summary.csv, metric seconds)"
+  },
+  "metrics_definition": "ImageReward and HPSv2.1 (x100), means over the 191 evaluation prompts at 4096x4096",
+  "numbers": {
+    "full": {
+      "seconds": {
+        "shown": 186.5,
+        "kind": "clean",
+        "raw": 186.5384593643248,
+        "n": 3,
+        "source": "results/latency_curve_summary.csv (median_seconds)"
+      },
+      "metrics": {
+        "imagereward": -2.178216232055145,
+        "hpsv21": 0.07612556431939854,
+        "n_prompts": 191,
+        "source": "results/final4k_full_extra_summary.csv"
+      },
+      "steps": "28"
+    },
+    "dype": {
+      "seconds": {
+        "shown": 196.1,
+        "kind": "campaign",
+        "raw": 196.1282665367983,
+        "n": 191,
+        "source": "results/e1_baselines_base_summary.csv (metric seconds, value)"
+      },
+      "metrics": {
+        "imagereward": -0.10500391990590002,
+        "hpsv21": 0.20523672111098368,
+        "n_prompts": 191,
+        "source": "results/e1_baselines_extra_summary.csv"
+      },
+      "steps": "28"
+    },
+    "sega_official": {
+      "seconds": {
+        "shown": 190.5,
+        "kind": "campaign",
+        "raw": 190.47559306261323,
+        "n": 191,
+        "source": "results/e1_baselines_base_summary.csv (metric seconds, value)"
+      },
+      "metrics": {
+        "imagereward": 0.5515305485152177,
+        "hpsv21": 0.2436605254627023,
+        "n_prompts": 191,
+        "source": "results/e1_baselines_extra_summary.csv"
+      },
+      "steps": "28"
+    },
+    "area": {
+      "seconds": {
+        "shown": 202.4,
+        "kind": "clean",
+        "raw": 202.43776634894311,
+        "n": 3,
+        "source": "results/latency_curve_summary.csv (median_seconds)"
+      },
+      "metrics": {
+        "imagereward": 0.9168018175353643,
+        "hpsv21": 0.2720463681595488,
+        "n_prompts": 191,
+        "source": "results/e1_baselines_extra_summary.csv"
+      },
+      "steps": "28"
+    },
+    "ultraimage": {
+      "seconds": {
+        "shown": 308.5,
+        "kind": "campaign",
+        "raw": 308.5062876789976,
+        "n": 191,
+        "source": "results/e1_ultraimage_base_summary.csv (metric seconds, value)"
+      },
+      "metrics": {
+        "imagereward": 1.275675597761548,
+        "hpsv21": 0.3080199420140052,
+        "n_prompts": 191,
+        "source": "results/e1_ultraimage_extra_summary.csv"
+      },
+      "steps": "30+30"
+    },
+    "sca_nb": {
+      "seconds": {
+        "shown": 71.1,
+        "kind": "clean",
+        "raw": 71.06495948787779,
+        "n": 3,
+        "source": "results/latency_curve_summary.csv (median_seconds)"
+      },
+      "metrics": {
+        "imagereward": 1.2288348134216993,
+        "hpsv21": 0.29705545438833886,
+        "n_prompts": 191,
+        "source": "results/e1_baselines_extra_summary.csv"
+      },
+      "steps": "28"
+    }
+  },
   "width_in": 5.5,
-  "height_in": 3.1856,
+  "height_in": 3.148,
   "pdf": "paper/figures/teaser.pdf",
   "records": [
     {
@@ -79,26 +200,40 @@
           "_diffusers_version": "0.30.0.dev0"
         }
       },
-      "zoom_boxes_xys": [
-        [
-          4064,
-          832,
-          384
-        ],
-        [
-          3488,
-          1536,
-          320
-        ]
-      ],
-      "leaders": [
-        "top",
-        "bottom"
-      ],
       "preview": "pano.jpg",
+      "preview_px": [
+        1928,
+        643
+      ],
       "zooms": [
-        "pano_zoom1.jpg",
-        "pano_zoom2.jpg"
+        {
+          "file": "pano_zoom1.jpg",
+          "box_xys": [
+            4064,
+            832,
+            384
+          ],
+          "color": "scaZoomB",
+          "tile_xy_in": [
+            3.258,
+            0.0
+          ],
+          "tile_in": 0.513
+        },
+        {
+          "file": "pano_zoom2.jpg",
+          "box_xys": [
+            2304,
+            1088,
+            384
+          ],
+          "color": "scaZoom",
+          "tile_xy_in": [
+            3.258,
+            0.558
+          ],
+          "tile_in": 0.513
+        }
       ]
     },
     {
@@ -175,37 +310,55 @@
           "_diffusers_version": "0.30.0.dev0"
         }
       },
-      "zoom_boxes_xys": [
-        [
-          1792,
-          1536,
-          448
-        ]
-      ],
-      "inset_at": "top-right",
-      "inset_in": 0.47,
-      "inset_xy_in": [
-        0.7156,
-        0.02
-      ],
       "preview": "square.jpg",
+      "preview_px": [
+        643,
+        643
+      ],
       "zooms": [
-        "square_zoom1.jpg"
+        {
+          "file": "square_zoom1.jpg",
+          "box_xys": [
+            3420,
+            1520,
+            448
+          ],
+          "color": "scaZoomB",
+          "tile_xy_in": [
+            4.987,
+            0.0
+          ],
+          "tile_in": 0.513
+        },
+        {
+          "file": "square_zoom2.jpg",
+          "box_xys": [
+            1792,
+            1536,
+            448
+          ],
+          "color": "scaZoom",
+          "tile_xy_in": [
+            4.987,
+            0.558
+          ],
+          "tile_in": 0.513
+        }
       ]
     },
     {
       "role": "strip full",
-      "source": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_3657338173664010496_d4df7d19bb_seed0.png",
-      "png_sha256": "6f8f2423d34d2760d38da7a29178ebf9ff4dfe52708c97f9b68507c1a71f4105",
-      "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+      "source": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_1269964769307095670_0ff6dedbe4_seed0.png",
+      "png_sha256": "3201224e2a42f6d5b4679862cbd47f16aa33ea01ba8d620fa1059e5423d33f73",
+      "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
       "config": {
         "schema_version": 1,
         "method": "full",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_3657338173664010496",
-        "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+        "prompt_id": "a4k_eval_4096_1269964769307095670",
+        "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
         "seed": 0,
-        "derived_seed": 2256563941301075758,
+        "derived_seed": 8130889848028690000,
         "steps": 28,
         "guidance": 4.5,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -237,40 +390,44 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "invert_sigmas",
-            "use_exponential_sigmas",
-            "time_shift_type",
             "use_beta_sigmas",
-            "shift_terminal",
             "use_karras_sigmas",
-            "stochastic_sampling"
+            "invert_sigmas",
+            "shift_terminal",
+            "stochastic_sampling",
+            "time_shift_type",
+            "use_exponential_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
         }
       },
       "crop_xys": [
-        1600,
-        1280,
+        1664,
+        1408,
         768
       ],
-      "seconds_batch1_median": 186.5384593643248,
+      "steps": "28",
+      "seconds": 186.5,
+      "seconds_kind": "clean",
+      "imagereward": -2.18,
+      "hpsv21_x100": 7.61,
       "full": "strip_full_full.jpg",
       "crop": "strip_full_crop.jpg"
     },
     {
       "role": "strip dype",
-      "source": "/scratch/09032/saini_2/sca/out/main/dype/4096x4096/a4k_eval_4096_3657338173664010496_d4df7d19bb_seed0.png",
-      "png_sha256": "1637ccf5ac86728561025cf5849aa0c1f9e1376126daacc9b6daf24c12d0da5d",
-      "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+      "source": "/scratch/09032/saini_2/sca/out/main/dype/4096x4096/a4k_eval_4096_1269964769307095670_0ff6dedbe4_seed0.png",
+      "png_sha256": "2e71d18d99c9ca52923fd0e2bb43c2d6e4a4e2e7b3917ce591d502c51149f3f6",
+      "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
       "config": {
         "schema_version": 1,
         "method": "dype",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_3657338173664010496",
-        "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+        "prompt_id": "a4k_eval_4096_1269964769307095670",
+        "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
         "seed": 0,
-        "derived_seed": 2256563941301075758,
+        "derived_seed": 8130889848028690000,
         "steps": 28,
         "guidance": 4.5,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -471,40 +628,44 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "invert_sigmas",
-            "use_exponential_sigmas",
-            "use_karras_sigmas",
             "stochastic_sampling",
             "time_shift_type",
+            "use_karras_sigmas",
             "use_beta_sigmas",
-            "shift_terminal"
+            "invert_sigmas",
+            "shift_terminal",
+            "use_exponential_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
         }
       },
       "crop_xys": [
-        1600,
-        1280,
+        1664,
+        1408,
         768
       ],
-      "seconds_batch1_median": null,
+      "steps": "28",
+      "seconds": 196.1,
+      "seconds_kind": "campaign",
+      "imagereward": -0.11,
+      "hpsv21_x100": 20.52,
       "full": "strip_dype_full.jpg",
       "crop": "strip_dype_crop.jpg"
     },
     {
       "role": "strip sega_official",
-      "source": "/scratch/09032/saini_2/sca/out/main/sega_official/4096x4096/a4k_eval_4096_3657338173664010496_d4df7d19bb_seed0.png",
-      "png_sha256": "a398dc9460907e660da52193e8e2f5eeee68d47814e2774a2584afeff691833b",
-      "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+      "source": "/scratch/09032/saini_2/sca/out/main/sega_official/4096x4096/a4k_eval_4096_1269964769307095670_0ff6dedbe4_seed0.png",
+      "png_sha256": "654581c7268015a82d4a87da7c9748775910e0352bb07148f63b3d05d3e72721",
+      "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
       "config": {
         "schema_version": 1,
         "method": "sega_official",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_3657338173664010496",
-        "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+        "prompt_id": "a4k_eval_4096_1269964769307095670",
+        "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
         "seed": 0,
-        "derived_seed": 2256563941301075758,
+        "derived_seed": 8130889848028690000,
         "steps": 28,
         "guidance": 4.5,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -705,40 +866,44 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "time_shift_type",
-            "stochastic_sampling",
             "shift_terminal",
-            "invert_sigmas",
+            "stochastic_sampling",
+            "time_shift_type",
             "use_exponential_sigmas",
-            "use_beta_sigmas",
-            "use_karras_sigmas"
+            "use_karras_sigmas",
+            "invert_sigmas",
+            "use_beta_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
         }
       },
       "crop_xys": [
-        1600,
-        1280,
+        1664,
+        1408,
         768
       ],
-      "seconds_batch1_median": null,
+      "steps": "28",
+      "seconds": 190.5,
+      "seconds_kind": "campaign",
+      "imagereward": 0.55,
+      "hpsv21_x100": 24.37,
       "full": "strip_sega_official_full.jpg",
       "crop": "strip_sega_official_crop.jpg"
     },
     {
       "role": "strip area",
-      "source": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_3657338173664010496_d4df7d19bb_seed0.png",
-      "png_sha256": "915cc80d10d85ae9a525ef41d53e6bf8271884c35fed12311dec1b131e5ac31e",
-      "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+      "source": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_1269964769307095670_0ff6dedbe4_seed0.png",
+      "png_sha256": "5ca6350bacec7cfbf4e2a5d9c6be329838f3dda24e0703866e147fcd18ec4613",
+      "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
       "config": {
         "schema_version": 1,
         "method": "area",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_3657338173664010496",
-        "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+        "prompt_id": "a4k_eval_4096_1269964769307095670",
+        "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
         "seed": 0,
-        "derived_seed": 2256563941301075758,
+        "derived_seed": 8130889848028690000,
         "steps": 28,
         "guidance": 4.5,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -821,39 +986,43 @@
           "stochastic_sampling": false,
           "_use_default_values": [
             "use_karras_sigmas",
-            "use_beta_sigmas",
-            "shift_terminal",
-            "time_shift_type",
-            "use_exponential_sigmas",
             "invert_sigmas",
-            "stochastic_sampling"
+            "time_shift_type",
+            "shift_terminal",
+            "stochastic_sampling",
+            "use_beta_sigmas",
+            "use_exponential_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
         }
       },
       "crop_xys": [
-        1600,
-        1280,
+        1664,
+        1408,
         768
       ],
-      "seconds_batch1_median": 202.43776634894311,
+      "steps": "28",
+      "seconds": 202.4,
+      "seconds_kind": "clean",
+      "imagereward": 0.92,
+      "hpsv21_x100": 27.2,
       "full": "strip_area_full.jpg",
       "crop": "strip_area_crop.jpg"
     },
     {
       "role": "strip ultraimage",
-      "source": "/scratch/09032/saini_2/sca/out/main/ultraimage/4096x4096/a4k_eval_4096_3657338173664010496_d4df7d19bb_seed0.png",
-      "png_sha256": "c31cda7d3c865b7d1c5c087389dbd7dbef2665d60739f9a7d1c63b5eef621e14",
-      "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+      "source": "/scratch/09032/saini_2/sca/out/main/ultraimage/4096x4096/a4k_eval_4096_1269964769307095670_0ff6dedbe4_seed0.png",
+      "png_sha256": "10d8a0ed3c4edd7d199dc9029767997366ca0433e52165fcb669ade1c241178c",
+      "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
       "config": {
         "schema_version": 1,
         "method": "ultraimage",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_3657338173664010496",
-        "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+        "prompt_id": "a4k_eval_4096_1269964769307095670",
+        "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
         "seed": 0,
-        "derived_seed": 2256563941301075758,
+        "derived_seed": 8130889848028690000,
         "steps": 60,
         "guidance": 7,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -1064,27 +1233,31 @@
         "cpu_offload": false
       },
       "crop_xys": [
-        1600,
-        1280,
+        1664,
+        1408,
         768
       ],
-      "seconds_batch1_median": null,
+      "steps": "30+30",
+      "seconds": 308.5,
+      "seconds_kind": "campaign",
+      "imagereward": 1.28,
+      "hpsv21_x100": 30.8,
       "full": "strip_ultraimage_full.jpg",
       "crop": "strip_ultraimage_crop.jpg"
     },
     {
       "role": "strip sca_nb",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_3657338173664010496_d4df7d19bb_seed0.png",
-      "png_sha256": "d880432271388f828b958fbe302937411baec2afb0848948ac3a908e8004120c",
-      "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1269964769307095670_0ff6dedbe4_seed0.png",
+      "png_sha256": "ed64324c5ba452b5b3e915971335274fdc6aa55dc6fcd5ee0344bf2db36802c0",
+      "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
       "config": {
         "schema_version": 1,
         "method": "sca_nb",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_3657338173664010496",
-        "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+        "prompt_id": "a4k_eval_4096_1269964769307095670",
+        "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
         "seed": 0,
-        "derived_seed": 2256563941301075758,
+        "derived_seed": 8130889848028690000,
         "steps": 28,
         "guidance": 4.5,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -1134,12 +1307,12 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "use_beta_sigmas",
             "use_exponential_sigmas",
-            "invert_sigmas",
+            "use_beta_sigmas",
+            "use_karras_sigmas",
             "shift_terminal",
             "time_shift_type",
-            "use_karras_sigmas",
+            "invert_sigmas",
             "stochastic_sampling"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
@@ -1147,32 +1320,37 @@
         }
       },
       "crop_xys": [
-        1600,
-        1280,
+        1664,
+        1408,
         768
       ],
-      "seconds_batch1_median": 71.06495948787779,
+      "steps": "28",
+      "seconds": 71.1,
+      "seconds_kind": "clean",
+      "imagereward": 1.23,
+      "hpsv21_x100": 29.71,
       "full": "strip_sca_nb_full.jpg",
       "crop": "strip_sca_nb_crop.jpg"
     }
   ],
   "asset_sha256": {
-    "pano.jpg": "7de9cf548733103d0ae8466758a542833978aa875bbd8f2d7f579861e706148e",
+    "pano.jpg": "cfaaeec18605139b906b45589f60139b52145ca41349bee183228519891ea973",
     "pano_zoom1.jpg": "108703f5618367b03495cdbba9d8d91ca0f6199041f282d6c9ab962670737917",
-    "pano_zoom2.jpg": "d4209c84fe1328ca7730c3bc5e3cf13f207ab9c160ad35760fd4bfd51cc4796a",
-    "square.jpg": "12164b60081f3f772f8e37e7aa60c023ab4e254e825522355f05924d64ad356c",
-    "square_zoom1.jpg": "376a882c275e612586c306d89bd946ca5008c2b75d232a753afc059d8e6e5f09",
-    "strip_area_crop.jpg": "be22b45c7560c01bafa90f3ea224c20443a2db6ba415f03a172c653aac876ea0",
-    "strip_area_full.jpg": "497b765b756f782dbdde73b336088f7b559b9c43435966efd0268bea3d93baef",
-    "strip_dype_crop.jpg": "ee2a036717b5b3cf7f6b6537583dcec1a76c0110c7111a04cf24e17aa461e853",
-    "strip_dype_full.jpg": "819cbc2fb2a0252ac0939206703e3e2ecdf9e9f960464cf7a49eb8ce5ec509a8",
-    "strip_full_crop.jpg": "f4b45fcf64bc1c83cf5b24d4e2f6c5b2f12adec00ce6be3bfe7c2e201ca0b8db",
-    "strip_full_full.jpg": "ea6fc0abd14b105ba7a55235de24529b0327817b5a4b43916d85b693aa2e6ab4",
-    "strip_sca_nb_crop.jpg": "9184190838ca472cb075bb1db5ea9df3d41e02a458c45d3f0834e8afee67b408",
-    "strip_sca_nb_full.jpg": "0ba89a05a9c0b9f76811bb29127b05250b5c2b3ea668615ffbee4f90817d0f00",
-    "strip_sega_official_crop.jpg": "a10f8941bd9b460f1ad1c87a1dcfaf4f610b795e6fe7e35589652b4bf7046ef6",
-    "strip_sega_official_full.jpg": "eccd5a63e36d536d12459d1b03e5cc831ef951cc7a1348033397e3db97dcf0d1",
-    "strip_ultraimage_crop.jpg": "8e97274d6a4b12a464589940f7f4be154615a3f5cd00820c87844fbb605b2414",
-    "strip_ultraimage_full.jpg": "bc066fa325ac93e6cc3c4ed580d04adb6d6d5b0942dc020b611d54a0a5d6d57c"
+    "pano_zoom2.jpg": "eaec1a82510438eb57280d5cb023e38032575ae778223b39627e2ce3f5eb0f74",
+    "square.jpg": "c93e63d20f11797bf73b1b6e0046b731f70a5b21b0f2d79eda7d4dc7ad607479",
+    "square_zoom1.jpg": "c23faa7be00a612db1731b5c7085c30e2c2630993fa4f323935ee05de4903a3a",
+    "square_zoom2.jpg": "376a882c275e612586c306d89bd946ca5008c2b75d232a753afc059d8e6e5f09",
+    "strip_area_crop.jpg": "dd0908b6d2e9b173bd62250fc82163e6120d52c6f2020ca30e456bd200840f94",
+    "strip_area_full.jpg": "9d1d354e0636789943350c0dd30deb835e5b58d8feb90d7deecb7538bd34b368",
+    "strip_dype_crop.jpg": "d4c766937013b8f6a13e0f736832097f9317ea83d7e9f718d8fc7ae58f253405",
+    "strip_dype_full.jpg": "ee0ebc015767fd1c712a220e6a4131577a810f6142f2d2f323e1d0f2032d169d",
+    "strip_full_crop.jpg": "08ee6be2ff00411b085c1daa382c6cb5845f9ec6e50f43b9ad8daf867498b351",
+    "strip_full_full.jpg": "44b0bf3156e39b215aa6d1b2238ce5d0ecb94d124090994aff7b5f169a29180c",
+    "strip_sca_nb_crop.jpg": "f882aeed0d84b0351aae2a2181ed903a2bf65a82b1789b11e12b249a6686e8a1",
+    "strip_sca_nb_full.jpg": "bb140b3acfc8e15d0d693f65b48d67e80cea8709c5e2c748e5887961d50729b4",
+    "strip_sega_official_crop.jpg": "75c0712d469937928614964bd137f482424e88d0fc7d8f8aaf69520fffea4336",
+    "strip_sega_official_full.jpg": "736c2f938b8451a9f7f8f25ddc261f09b59b65cb57c8f8b560756494fa4246f6",
+    "strip_ultraimage_crop.jpg": "3156d1e9ff814e2809464bb25d0a0d1b853fa375b2d70b78090d112ccc9aabd8",
+    "strip_ultraimage_full.jpg": "24f85b555efae76fb98e2b6ed39bda58f4ba9c524a990730e63561c77f762e14"
   }
 }

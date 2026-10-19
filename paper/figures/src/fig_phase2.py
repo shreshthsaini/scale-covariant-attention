@@ -224,6 +224,9 @@ def build(tag):
     name = "gallery_" + tag
     out = Path(imgsel.FIGDIR) / name
     manifest_path = out / "provenance.json"
+    if manifest_path.exists() and "display" in json.loads(manifest_path.read_text()):
+        print(f"{name}: skipped; fig_gallery_large.py lays out this gallery (display record in provenance.json)")
+        return
     methods, res = spec["methods"], spec["res"]
     pool = ready_pool(tag) if "prompt_manifest" in spec or not manifest_path.exists() else None
     if manifest_path.exists():

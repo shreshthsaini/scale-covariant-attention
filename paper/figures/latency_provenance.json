@@ -88,5 +88,65 @@
       "median_seconds": 287.63978986348957,
       "n": 3
     }
-  ]
+  ],
+  "speedup_sca_over_area": {
+    "2048x2048": 2.2522,
+    "3072x3072": 2.846,
+    "4096x4096": 2.8486,
+    "6144x6144": 2.9852,
+    "8192x8192": 3.3097
+  },
+  "full_attention": {
+    "measured": [
+      "2048x2048",
+      "3072x3072",
+      "4096x4096"
+    ],
+    "not_plotted": "6144x6144 clean timing run pending; 8192x8192 not run by design (quadratic attention cost)"
+  },
+  "campaign_means": {
+    "source": "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/baseline46/base_summary.csv",
+    "sha256": "9ea776c42d014f700281ced302053af554003bfe295f6ca8b0700e7c29df0a57",
+    "res": "4096x4096",
+    "statistic": "mean seconds per image over the campaign's prompts on shared nodes, bootstrap 95% interval; not clean batch-1 latency",
+    "drawn_as": "hollow markers at 4096^2, not joined to the clean curves",
+    "methods": {
+      "hrdit_dev_author": {
+        "mean": 106.47250291580333,
+        "ci_low": 103.22711793740525,
+        "ci_high": 110.99532135302444,
+        "n_prompts": 46,
+        "label": "HRDiT"
+      },
+      "sca_nb": {
+        "mean": 71.58125754941821,
+        "ci_low": 71.1199233535409,
+        "ci_high": 72.17114405500166,
+        "n_prompts": 46,
+        "label": "SCA (ours)"
+      },
+      "ultraimage": {
+        "mean": 321.9900417861164,
+        "ci_low": 307.1076020867283,
+        "ci_high": 340.6256865907763,
+        "n_prompts": 46,
+        "label": "UltraImage"
+      }
+    },
+    "protocols": {
+      "hrdit_dev_author": "progressive 30 + 17 + 10 steps at 1024^2, 2048^2, 4096^2 (scripts/sample_progressive.py HRDIT)",
+      "ultraimage": "released two-stage recipe, 30 steps per stage",
+      "sca_nb": "28 steps at the target size"
+    },
+    "ultraimage_191_prompts": {
+      "source": "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/e1_ultraimage_base_summary.csv",
+      "sha256": "c283fd06eea8a2b0ac2a73f74530d3015f378b35b7928ad33ddb78fb0847548c",
+      "mean": 308.5062876789976,
+      "ci_low": 304.79148676954566,
+      "ci_high": 313.2781598283114,
+      "n_prompts": 191,
+      "use": "not plotted; recorded to reconcile with the 191-prompt tables"
+    },
+    "pending": "clean batch-1 HRDiT timing queued, not measured; not plotted"
+  }
 }

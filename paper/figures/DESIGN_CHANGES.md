@@ -14,18 +14,18 @@ Nothing in `main.tex` was edited.
 |---|---|---|---|---|
 | `fig:teaser` | `figures/snippets/teaser_six.tex` (unchanged path and label) | in-flow `center`/`minipage` with 12 JPEGs, images 5.5 x 2.35 in, 5-line caption | `figure*[t]` including `figures/teaser.pdf` (5.5 x 3.19 in, about 3.75 in with its 4-line caption, about 34% of a page) | Intended placement: keep `\input` right after the abstract; as a top float it lands at the top of page 2. Nothing to change unless you want it elsewhere. |
 | `fig:method` | `figures/method.pdf` (unchanged path and label) | 5.5 x 5.0 in matplotlib drawing, panels a to c, 12-line caption | 5.5 x 2.84 in TikZ (paper fonts), panels a and b; the old panel c schedule is now a strip inside b | Saves about 2.2 in of main text. Caption already rewritten in `snippets/method.tex`. Line 192's "Figure~\ref{fig:method}a" still points at the real fitted-weight inset. |
-| `fig:qual_main` | `figures/snippets/qual_main.tex` (unchanged path and label) | `figure*` with 6 prompts, about 5.4 in tall | `figure[t]` including `figures/qual_main.pdf`, 5.5 x 4.5 in, 4 of the same 6 prompts (dropped 8142852677968042257 sunset lake and 1052899493017962912 roast chickens), same automatic crop rule | Saves about 0.9 in. New caption in the snippet. |
+| `fig:qual_main` | `figures/snippets/qual_main.tex` (unchanged path and label) | `figure*` with 6 prompts, about 5.4 in tall | `figure[t]` including `figures/qual_main.pdf`, 5.5 x 4.24 in, 4 of the same 6 prompts (dropped 8142852677968042257 sunset lake and 1052899493017962912 roast chickens); full attention as a thumbnail strip; AReA and SCA crops widened to 736x512 by the same edge-energy rule, at least 256 px from every border | Saves about 1.2 in. `src/fig_qual_main.py` writes the caption. |
 
 Proposed captions (already in the snippets):
 
 - `fig:teaser`: "SCA keeps layout and fine detail up to 6144x2048 without training and runs 2.85x faster than AReA at 4096^2. Top: curated SCA outputs with native-pixel zooms. Bottom: one curated prompt and the same 768x768 window for six methods, seed 0 (*UltraImage uses its two-stage defaults). Badges: batch-1 seconds per image on one GH200, where measured." The sentence about the earlier hero selection is gone.
 - `fig:method`: "SCA fits one local/global weight per head and noise level at native resolution, then reuses the table at the target size. (a) At 1024^2, sums against the frozen model's own full attention give pi_h(sigma) in closed form; the inset shows real fitted values for block 29. (b) At the target, block-centre global and native-window local attention are mixed per head, and the first 8 of 28 steps use the global branch only. Grids are schematic."
-- `fig:qual_main`: "At 4096^2 full attention collapses, AReA blurs or tiles fine structure, and SCA keeps both layout and detail. Four evaluation prompts, seed 0; next to each image is the same native 512x512 window, placed automatically where the three methods have the most edge energy. Random uncurated samples are in Figure~\ref{fig:gallery_4096}."
+- `fig:qual_main`: "At 4096^2 full attention collapses, AReA blurs or tiles fine structure, and SCA keeps both layout and detail. Seed 0; four curated prompts, hand-picked for variety from 191 evaluation prompts. Beside each AReA and SCA image is the same native 736x512 crop, auto-placed at maximal edge energy averaged over the three methods. Uncurated samples: Figure~\ref{fig:gallery_4096}." (written by `src/fig_qual_main.py`)
 
-Timing rule: the teaser shows seconds only for full attention (186.5 s), AReA (202.4 s) and
-SCA (71.1 s), the clean batch-1 medians in `results/latency_curve_summary.csv`. The campaign
-means for DyPE, SEGA and UltraImage proposed in `EDITOR_SUGGESTIONS.patch` are deliberately
-not shown.
+Timing rule: the teaser shows both kinds of seconds per image and labels every value. Clean
+batch-1 medians after warm-up (`results/latency_curve_summary.csv`) cover full attention
+(186.5 s), AReA (202.4 s) and SCA (71.1 s); DyPE (196.1 s), SEGA (190.5 s) and UltraImage
+(308.5 s) show their 191-prompt campaign means on shared nodes. An unlabelled time is never shown.
 
 ## New and superseded scripts
 
@@ -46,7 +46,7 @@ not shown.
 |---|---|---|---|
 | `fig:calib` (`calib.pdf`) | 5.5 x 3.55 in | 5.5 x 3.30 in | pi map, one colourbar (global 0, local 1); panel e is now grouped bars of extra error with the per-layer fit as a grey reference. |
 | `fig:baseline_quality` (`baseline_deltas.pdf`) | 5.5 x 4.15 in | 5.5 x 1.88 in | One row of four panels, baselines named once; filled marker when the 95% interval excludes zero; statistics CSV byte-identical. |
-| `fig:latency` (`latency.pdf`) | 5.5 x 2.34 in | 5.5 x 2.05 in | Clean batch-1 data only; fill between AReA and SCA, fitted exponents (SCA N^1.00, AReA N^1.12; full attention N^1.51 in the caption), top row of speedups over AReA. |
+| `fig:latency` (`latency.pdf`) | 5.5 x 2.34 in | 5.5 x 2.05 in | Clean batch-1 curves, plus hollow 46-prompt campaign-mean markers at 4096^2 (HRDiT 106.5 s, UltraImage 322.0 s, SCA 71.6 s) and an in-plot note (full attention: 6144^2 pending, 8192^2 not run by design); caption written by `src/fig_latency.py`; fill between AReA and SCA, fitted exponents (SCA N^1.00, AReA N^1.12; full attention N^1.51 in the caption), top row of speedups over AReA. |
 | `fig:pisigma`, `fig:relerr`, `fig:heatmap` | | rel_err now built at 5.5 in | Same visual language; rule colours keep their meaning. |
 
 Edits needed in `main.tex` (appendix figures whose captions live there):

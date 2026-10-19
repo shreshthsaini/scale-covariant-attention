@@ -2,89 +2,114 @@
 \documentclass[border=0pt]{standalone}
 \usepackage[T1]{fontenc}
 \usepackage{times}
+\usepackage{textcomp}
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{tikz}
 \graphicspath{{../teaser/}}
 \input{sca_colors.tex}
+\definecolor{scaZoomB}{HTML}{38C6F4}
+\newcommand{\tagfont}{\fontsize{6.5}{7.8}\selectfont\color{scaMid}}
 \begin{document}
 \begin{tikzpicture}[x=1in,y=1in,
   halo/.style={draw=black,draw opacity=0.35,line width=1.15pt},
-  leaderhalo/.style={draw=black,draw opacity=0.22,line width=0.85pt},
-  zoombox/.style={draw=scaZoom,line width=0.55pt},
-  zoomframe/.style={draw=scaZoom,line width=0.7pt},
-  cropframe/.style={draw=scaZoom,line width=0.5pt},
-  leader/.style={draw=scaZoom,line width=0.4pt},
+  zoombox/.style={line width=0.55pt},
+  zoomframe/.style={line width=0.8pt},
+  cropframe/.style={line width=0.5pt},
+  tabrule/.style={draw=scaRule,line width=0.4pt},
   badge/.style={fill=black,fill opacity=0.58,text opacity=1,text=white,rounded corners=1.2pt,
                 inner xsep=1.8pt,inner ysep=1.15pt,font=\sffamily\fontsize{6.5}{7}\selectfont},
-  badgeours/.style={fill=scaAccent,fill opacity=0.92,text opacity=1,text=white,rounded corners=1.2pt,
-                inner xsep=1.8pt,inner ysep=1.15pt,font=\sffamily\bfseries\fontsize{6.5}{7}\selectfont},
-  head/.style={font=\sffamily\fontsize{8.5}{10}\selectfont,text=scaInk},
-  headours/.style={font=\sffamily\fontsize{8.5}{10}\selectfont,text=scaAccent},
+  head/.style={inner sep=0pt,font=\sffamily\fontsize{8}{9.6}\selectfont,text=scaInk},
+  headours/.style={inner sep=0pt,font=\sffamily\bfseries\fontsize{8}{9.6}\selectfont,text=scaAccent},
+  lab/.style={inner sep=0pt,font=\sffamily\fontsize{6.5}{7.8}\selectfont,text=scaMid},
+  labhead/.style={inner sep=0pt,font=\sffamily\fontsize{8}{9.6}\selectfont,text=scaInk},
+  prompt/.style={inner sep=0pt,align=left,font=\sffamily\itshape\fontsize{6.5}{7.7}\selectfont,text=scaMid},
+  val/.style={inner sep=0pt,font=\sffamily\fontsize{7}{8.4}\selectfont,text=scaInk},
+  legend/.style={inner sep=0pt,font=\sffamily\fontsize{6.5}{7.8}\selectfont,text=scaMid},
   ]
-\useasboundingbox (0,0) rectangle (5.5000,-3.1856);
-\node[anchor=north west,inner sep=0pt] at (0.0000,0.0000) {\includegraphics[width=3.6167in,height=1.2056in]{pano.jpg}};
-\node[anchor=north west,inner sep=0pt] at (3.6667,0.0000) {\includegraphics[width=0.5778in,height=0.5778in]{pano_zoom1.jpg}};
-\draw[leaderhalo] (2.6183,-0.4898) -- (3.6667,0.0000);
-\draw[leader] (2.6183,-0.4898) -- (3.6667,0.0000);
-\draw[halo] (2.3923,-0.4898) rectangle (2.6183,-0.7158);
-\draw[zoombox] (2.3923,-0.4898) rectangle (2.6183,-0.7158);
-\draw[zoomframe] (3.6667,0.0000) rectangle (4.2444,-0.5778);
-\node[anchor=north west,inner sep=0pt] at (3.6667,-0.6278) {\includegraphics[width=0.5778in,height=0.5778in]{pano_zoom2.jpg}};
-\draw[leaderhalo] (2.2416,-1.0925) -- (3.6667,-1.2056);
-\draw[leader] (2.2416,-1.0925) -- (3.6667,-1.2056);
-\draw[halo] (2.0532,-0.9042) rectangle (2.2416,-1.0925);
-\draw[zoombox] (2.0532,-0.9042) rectangle (2.2416,-1.0925);
-\draw[zoomframe] (3.6667,-0.6278) rectangle (4.2444,-1.2056);
+\useasboundingbox (0,0) rectangle (5.5000,-3.1480);
+\node[anchor=north west,inner sep=0pt] at (0.0000,0.0000) {\includegraphics[width=3.2130in,height=1.0710in]{pano.jpg}};
+\node[anchor=north west,inner sep=0pt] at (3.2580,-0.0000) {\includegraphics[width=0.5130in,height=0.5130in]{pano_zoom1.jpg}};
+\draw[halo] (2.1253,-0.4351) rectangle (2.3261,-0.6359);
+\draw[zoombox,draw=scaZoomB] (2.1253,-0.4351) rectangle (2.3261,-0.6359);
+\draw[zoomframe,draw=scaZoomB] (3.2580,-0.0000) rectangle (3.7710,-0.5130);
+\node[anchor=north west,inner sep=0pt] at (3.2580,-0.5580) {\includegraphics[width=0.5130in,height=0.5130in]{pano_zoom2.jpg}};
+\draw[halo] (1.2049,-0.5690) rectangle (1.4057,-0.7698);
+\draw[zoombox,draw=scaZoom] (1.2049,-0.5690) rectangle (1.4057,-0.7698);
+\draw[zoomframe,draw=scaZoom] (3.2580,-0.5580) rectangle (3.7710,-1.0710);
 \node[badge,anchor=north west] at (0.0200,-0.0200) {2048\,$\times$\,6144};
-\node[anchor=north west,inner sep=0pt] at (4.2944,0.0000) {\includegraphics[width=1.2056in,height=1.2056in]{square.jpg}};
-\node[anchor=north west,inner sep=0pt] at (5.0100,-0.0200) {\includegraphics[width=0.4700in,height=0.4700in]{square_zoom1.jpg}};
-\draw[leaderhalo] (4.9537,-0.4521) -- (5.0100,-0.0200);
-\draw[leader] (4.9537,-0.4521) -- (5.0100,-0.0200);
-\draw[leaderhalo] (4.9537,-0.5839) -- (5.0100,-0.4900);
-\draw[leader] (4.9537,-0.5839) -- (5.0100,-0.4900);
-\draw[halo] (4.8219,-0.4521) rectangle (4.9537,-0.5839);
-\draw[zoombox] (4.8219,-0.4521) rectangle (4.9537,-0.5839);
-\draw[zoomframe] (5.0100,-0.0200) rectangle (5.4800,-0.4900);
-\node[badge,anchor=north west] at (4.3144,-0.0200) {4096\,$\times$\,4096};
-\node[anchor=north west,inner sep=0pt] at (0.0000,-1.4106) {\includegraphics[width=0.8750in,height=0.8750in]{strip_full_full.jpg}};
-\node[anchor=north west,inner sep=0pt] at (0.0000,-2.3106) {\includegraphics[width=0.8750in,height=0.8750in]{strip_full_crop.jpg}};
-\draw[halo] (0.3418,-1.6840) rectangle (0.5059,-1.8481);
-\draw[zoombox] (0.3418,-1.6840) rectangle (0.5059,-1.8481);
-\draw[cropframe] (0.0000,-2.3106) rectangle (0.8750,-3.1856);
-\node[head,anchor=base] at (0.4375,-1.3686) {Full attention};
-\node[badge,anchor=north west] at (0.0200,-1.4306) {186.5\,s};
-\node[anchor=north west,inner sep=0pt] at (0.9250,-1.4106) {\includegraphics[width=0.8750in,height=0.8750in]{strip_dype_full.jpg}};
-\node[anchor=north west,inner sep=0pt] at (0.9250,-2.3106) {\includegraphics[width=0.8750in,height=0.8750in]{strip_dype_crop.jpg}};
-\draw[halo] (1.2668,-1.6840) rectangle (1.4309,-1.8481);
-\draw[zoombox] (1.2668,-1.6840) rectangle (1.4309,-1.8481);
-\draw[cropframe] (0.9250,-2.3106) rectangle (1.8000,-3.1856);
-\node[head,anchor=base] at (1.3625,-1.3686) {DyPE};
-\node[anchor=north west,inner sep=0pt] at (1.8500,-1.4106) {\includegraphics[width=0.8750in,height=0.8750in]{strip_sega_official_full.jpg}};
-\node[anchor=north west,inner sep=0pt] at (1.8500,-2.3106) {\includegraphics[width=0.8750in,height=0.8750in]{strip_sega_official_crop.jpg}};
-\draw[halo] (2.1918,-1.6840) rectangle (2.3559,-1.8481);
-\draw[zoombox] (2.1918,-1.6840) rectangle (2.3559,-1.8481);
-\draw[cropframe] (1.8500,-2.3106) rectangle (2.7250,-3.1856);
-\node[head,anchor=base] at (2.2875,-1.3686) {SEGA};
-\node[anchor=north west,inner sep=0pt] at (2.7750,-1.4106) {\includegraphics[width=0.8750in,height=0.8750in]{strip_area_full.jpg}};
-\node[anchor=north west,inner sep=0pt] at (2.7750,-2.3106) {\includegraphics[width=0.8750in,height=0.8750in]{strip_area_crop.jpg}};
-\draw[halo] (3.1168,-1.6840) rectangle (3.2809,-1.8481);
-\draw[zoombox] (3.1168,-1.6840) rectangle (3.2809,-1.8481);
-\draw[cropframe] (2.7750,-2.3106) rectangle (3.6500,-3.1856);
-\node[head,anchor=base] at (3.2125,-1.3686) {AReA};
-\node[badge,anchor=north west] at (2.7950,-1.4306) {202.4\,s};
-\node[anchor=north west,inner sep=0pt] at (3.7000,-1.4106) {\includegraphics[width=0.8750in,height=0.8750in]{strip_ultraimage_full.jpg}};
-\node[anchor=north west,inner sep=0pt] at (3.7000,-2.3106) {\includegraphics[width=0.8750in,height=0.8750in]{strip_ultraimage_crop.jpg}};
-\draw[halo] (4.0418,-1.6840) rectangle (4.2059,-1.8481);
-\draw[zoombox] (4.0418,-1.6840) rectangle (4.2059,-1.8481);
-\draw[cropframe] (3.7000,-2.3106) rectangle (4.5750,-3.1856);
-\node[head,anchor=base] at (4.1375,-1.3686) {UltraImage$^{*}$};
-\node[anchor=north west,inner sep=0pt] at (4.6250,-1.4106) {\includegraphics[width=0.8750in,height=0.8750in]{strip_sca_nb_full.jpg}};
-\node[anchor=north west,inner sep=0pt] at (4.6250,-2.3106) {\includegraphics[width=0.8750in,height=0.8750in]{strip_sca_nb_crop.jpg}};
-\draw[halo] (4.9668,-1.6840) rectangle (5.1309,-1.8481);
-\draw[zoombox] (4.9668,-1.6840) rectangle (5.1309,-1.8481);
-\draw[cropframe] (4.6250,-2.3106) rectangle (5.5000,-3.1856);
-\node[headours,anchor=base] at (5.0625,-1.3686) {\textbf{SCA (ours)}};
-\node[badgeours,anchor=north west] at (4.6450,-1.4306) {71.1\,s};
+\node[anchor=north west,inner sep=0pt] at (3.8710,0.0000) {\includegraphics[width=1.0710in,height=1.0710in]{square.jpg}};
+\node[anchor=north west,inner sep=0pt] at (4.9870,-0.0000) {\includegraphics[width=0.5130in,height=0.5130in]{square_zoom1.jpg}};
+\draw[halo] (4.7652,-0.3974) rectangle (4.8824,-0.5146);
+\draw[zoombox,draw=scaZoomB] (4.7652,-0.3974) rectangle (4.8824,-0.5146);
+\draw[zoomframe,draw=scaZoomB] (4.9870,-0.0000) rectangle (5.5000,-0.5130);
+\node[anchor=north west,inner sep=0pt] at (4.9870,-0.5580) {\includegraphics[width=0.5130in,height=0.5130in]{square_zoom2.jpg}};
+\draw[halo] (4.3396,-0.4016) rectangle (4.4567,-0.5188);
+\draw[zoombox,draw=scaZoom] (4.3396,-0.4016) rectangle (4.4567,-0.5188);
+\draw[zoomframe,draw=scaZoom] (4.9870,-0.5580) rectangle (5.5000,-1.0710);
+\node[badge,anchor=north west] at (3.8910,-0.0200) {4096\,$\times$\,4096};
+\node[anchor=north west,inner sep=0pt] at (1.0800,-1.2360) {\includegraphics[width=0.6950in,height=0.6950in]{strip_full_full.jpg}};
+\node[anchor=north west,inner sep=0pt] at (1.0800,-1.9610) {\includegraphics[width=0.6950in,height=0.6950in]{strip_full_crop.jpg}};
+\draw[halo] (1.3623,-1.4749) rectangle (1.4927,-1.6052);
+\draw[zoombox,draw=scaZoom] (1.3623,-1.4749) rectangle (1.4927,-1.6052);
+\draw[cropframe,draw=scaZoom] (1.0800,-1.9610) rectangle (1.7750,-2.6560);
+\node[head,anchor=base] at (1.4275,-1.1860) {Full attention};
+\node[val,anchor=base] at (1.4275,-2.7740) {28};
+\node[val,anchor=base] at (1.4275,-2.8820) {186.5\,\,{\tagfont clean}};
+\node[val,anchor=base] at (1.4275,-2.9900) {\textminus 2.18\,/\,7.61};
+\node[anchor=north west,inner sep=0pt] at (1.8250,-1.2360) {\includegraphics[width=0.6950in,height=0.6950in]{strip_dype_full.jpg}};
+\node[anchor=north west,inner sep=0pt] at (1.8250,-1.9610) {\includegraphics[width=0.6950in,height=0.6950in]{strip_dype_crop.jpg}};
+\draw[halo] (2.1073,-1.4749) rectangle (2.2377,-1.6052);
+\draw[zoombox,draw=scaZoom] (2.1073,-1.4749) rectangle (2.2377,-1.6052);
+\draw[cropframe,draw=scaZoom] (1.8250,-1.9610) rectangle (2.5200,-2.6560);
+\node[head,anchor=base] at (2.1725,-1.1860) {DyPE};
+\node[val,anchor=base] at (2.1725,-2.7740) {28};
+\node[val,anchor=base] at (2.1725,-2.8820) {196.1\,\,{\tagfont campaign}};
+\node[val,anchor=base] at (2.1725,-2.9900) {\textminus 0.11\,/\,20.52};
+\node[anchor=north west,inner sep=0pt] at (2.5700,-1.2360) {\includegraphics[width=0.6950in,height=0.6950in]{strip_sega_official_full.jpg}};
+\node[anchor=north west,inner sep=0pt] at (2.5700,-1.9610) {\includegraphics[width=0.6950in,height=0.6950in]{strip_sega_official_crop.jpg}};
+\draw[halo] (2.8523,-1.4749) rectangle (2.9827,-1.6052);
+\draw[zoombox,draw=scaZoom] (2.8523,-1.4749) rectangle (2.9827,-1.6052);
+\draw[cropframe,draw=scaZoom] (2.5700,-1.9610) rectangle (3.2650,-2.6560);
+\node[head,anchor=base] at (2.9175,-1.1860) {SEGA};
+\node[val,anchor=base] at (2.9175,-2.7740) {28};
+\node[val,anchor=base] at (2.9175,-2.8820) {190.5\,\,{\tagfont campaign}};
+\node[val,anchor=base] at (2.9175,-2.9900) {0.55\,/\,24.37};
+\node[anchor=north west,inner sep=0pt] at (3.3150,-1.2360) {\includegraphics[width=0.6950in,height=0.6950in]{strip_area_full.jpg}};
+\node[anchor=north west,inner sep=0pt] at (3.3150,-1.9610) {\includegraphics[width=0.6950in,height=0.6950in]{strip_area_crop.jpg}};
+\draw[halo] (3.5973,-1.4749) rectangle (3.7277,-1.6052);
+\draw[zoombox,draw=scaZoom] (3.5973,-1.4749) rectangle (3.7277,-1.6052);
+\draw[cropframe,draw=scaZoom] (3.3150,-1.9610) rectangle (4.0100,-2.6560);
+\node[head,anchor=base] at (3.6625,-1.1860) {AReA};
+\node[val,anchor=base] at (3.6625,-2.7740) {28};
+\node[val,anchor=base] at (3.6625,-2.8820) {202.4\,\,{\tagfont clean}};
+\node[val,anchor=base] at (3.6625,-2.9900) {0.92\,/\,27.20};
+\node[anchor=north west,inner sep=0pt] at (4.0600,-1.2360) {\includegraphics[width=0.6950in,height=0.6950in]{strip_ultraimage_full.jpg}};
+\node[anchor=north west,inner sep=0pt] at (4.0600,-1.9610) {\includegraphics[width=0.6950in,height=0.6950in]{strip_ultraimage_crop.jpg}};
+\draw[halo] (4.3423,-1.4749) rectangle (4.4727,-1.6052);
+\draw[zoombox,draw=scaZoom] (4.3423,-1.4749) rectangle (4.4727,-1.6052);
+\draw[cropframe,draw=scaZoom] (4.0600,-1.9610) rectangle (4.7550,-2.6560);
+\node[head,anchor=base] at (4.4075,-1.1860) {UltraImage};
+\node[val,anchor=base] at (4.4075,-2.7740) {30+30};
+\node[val,anchor=base] at (4.4075,-2.8820) {308.5\,\,{\tagfont campaign}};
+\node[val,anchor=base] at (4.4075,-2.9900) {\textbf{1.28}\,/\,\textbf{30.80}};
+\node[anchor=north west,inner sep=0pt] at (4.8050,-1.2360) {\includegraphics[width=0.6950in,height=0.6950in]{strip_sca_nb_full.jpg}};
+\node[anchor=north west,inner sep=0pt] at (4.8050,-1.9610) {\includegraphics[width=0.6950in,height=0.6950in]{strip_sca_nb_crop.jpg}};
+\draw[halo] (5.0873,-1.4749) rectangle (5.2177,-1.6052);
+\draw[zoombox,draw=scaZoom] (5.0873,-1.4749) rectangle (5.2177,-1.6052);
+\draw[cropframe,draw=scaZoom] (4.8050,-1.9610) rectangle (5.5000,-2.6560);
+\node[headours,anchor=base] at (5.1525,-1.1860) {SCA (ours)};
+\node[val,anchor=base] at (5.1525,-2.7740) {28};
+\node[val,anchor=base] at (5.1525,-2.8820) {\textbf{\color{scaAccent}71.1}\,\,{\tagfont clean}};
+\node[val,anchor=base] at (5.1525,-2.9900) {1.23\,/\,29.71};
+\node[labhead,anchor=base west] at (0.0000,-1.1860) {Prompt};
+\node[prompt,text width=0.9800in,anchor=north west] at (0,-1.2310) {\hyphenpenalty=10000 ``Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.''};
+\node[lab,anchor=east] at (1.0200,-2.3085) {768$^2$ crop, 1:1};
+\node[lab,anchor=base east] at (1.0200,-2.7740) {Steps};
+\node[lab,anchor=base east] at (1.0200,-2.8820) {Time (s)};
+\node[lab,anchor=base east] at (1.0200,-2.9900) {ImageReward / HPSv2.1};
+\draw[tabrule] (0,-2.6840) -- (5.5000,-2.6840);
+\draw[tabrule] (0,-3.0300) -- (5.5000,-3.0300);
+\node[legend,anchor=base west] at (0.0000,-3.1230) {\textbf{clean}: batch-1 median of three after warm-up, idle GPU;\enspace \textbf{campaign}: mean over the 191-prompt run, shared nodes.\enspace HPSv2.1 is $\times$100.};
 \end{tikzpicture}
 \end{document}
