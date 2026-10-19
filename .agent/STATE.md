@@ -119,3 +119,25 @@ SCA 1.124/.300/22.96/29.41/62.5/206.4; AReA .833/.278/22.31/27.85/52.0/212.7; SE
 Budget (results via eval/budget_*): SCA 56 steps (140 s) IR 1.221, HPS2.1 .310, Pick 23.13, CLIP-IQA .727, MUSIQc 64.7.
 => SCA is best single-pass, best FID/patch FID/detail, fastest; HRDiT (progressive multi-stage, ~180 s) leads preference metrics.
 Asked user: (1) frame honestly now, or (2) implement SCA inside a progressive (HRDiT-like) pipeline to beat HRDiT.
+## 22:30 User: use ANY idle node/GPU to finish; keep checking. Added slurm/guest_worker_shared.sh (claims tasks when
+GPU util <= 10% and >= 56 GB free; for reserved-idle nodes). Submitted SCAdev 1080047 (gh-dev, 2 nodes, 2 h).
+Started progressive-SCA implementation agent (tasks into taskq/hold_prog; freeze code to code/PROG before release).
+User: use Fable as a background supervisor/reviewer; Fable review of paper + framing + progressive plan running.
+## 23:00 FABLE REVIEW (5/10 now; 6.5-7 after fixes). CORRECTION: HRDiT campaign mean 106.5 s (CI 103-111), SCA 71.5 s
+-> SCA 1.5x faster than HRDiT (NOT 180 s / 2.5x; 180 s was one smoke image). Framing: "strongest single-pass
+training-free operator at 4K; best FID/patch FID/detail of 8 methods; fastest; multi-stage recipes lead preference
+metrics; 56-step SCA closes most of the gap". Queued: c_hrdit191_* (HRDiT on 145 remaining eval prompts ->
+out/baseline_expansion_20261017_rest145), a_latency_hrdit_batch1.sh (clean timing, lat3 -> out/latency_hrdit),
+b*_sca_s42 (42-step matched wall clock, abl50 -> out/budget/sca_s42). Progressive SCA = operator swap in HRDiT
+schedule (agent told). Paper-fix agent (max effort) implementing Fable items A-E. Human 2AFC study not feasible.
+## 23:20 Progressive SCA committed 57feaef, frozen code/PROG. Smoke released (pending/a_p_prog_a_smoke_000_002.sh). After it passes (4096x4096, timing): mv taskq/hold_prog/* to pending (10 gen chunks + gated eval vs hrdit, sca_s42, sca_nb, ultraimage).
+## 23:41 SCA12 RUNNING on 8 nodes (c610-[001-002],c636-[042,051-052],c637-[081-082,091]); SCAdev cancelled (not needed).
+## 23:45 prog smoke OK (4096^2; steady 56 s/img: stages 5.5/13.8/31.5 s; clean layout, slightly softer texture with faint sharpening halo). Released hold_prog (gen chunks + gated eval).
+## 23:58 Paper fixes committed (Table 2 = 8-method panel; 11 of 15 vs AReA after corrected patch KID CI; 56-step 'narrows' gap). Editor asked to restore a compact calibration panel in Fig 2. TODO lead: update .agent/notes/latest_delivery.md after final build; rerun Fable review after progressive results.
+## 01:17 c_hrdit191 done (145+46 HRDiT). Queued q_eval_hrdit191.sh -> eval/hrdit191_{extra,base} (HRDiT vs sca_nb/area/ultraimage, 191 prompts). E2 6144 eval running; Krea last chunks; progressive p_* next.
+## 02:40 PROGRESSIVE SCA RESULT (46 prompts, 4096^2; results/progressive46/): HRDiT schedule with SCA attention (sca_prog)
+vs HRDiT: IR 1.296 vs 1.373 (-0.077 n.s.), HPS2.1 .319 vs .316 (n.s.), Pick 23.41 vs 23.43 (n.s.), CLIP-IQA, aes, CLIP n.s.;
+HPSv2 +0.005*, ARNIQA +0.030*; 49.0 s vs 106.5 s (2.2x faster; fastest of all methods). => ties HRDiT on preference at
+less than half the time; HRDiT's lead is a schedule effect, not its attention. Single-pass SCA keeps best FID/detail.
+sca_s42 (110 s): IR 1.185. Claim (Fable rule "tie"): SCA as drop-in operator matches the best multi-stage method at 2.2x speed
+and leads single-pass. CPU bootstraps for E2 6144 / E9 Krea queued as a_cpu_* on SCA12 (local 1-core run stopped).
