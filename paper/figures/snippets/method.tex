@@ -1,8 +1,7 @@
-% Method figure. Source: figures/src/fig_method.py (TikZ: src/method_diagram.tex); data hashes in method_provenance.json.
+% Method figure. Source: figures/src/method.tex (self-contained TikZ; build with `tectonic --outdir .. method.tex` in figures/src).
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/method.pdf}
-  \caption{\textbf{\sca{} mixes two native-size branches with per-head weights calibrated once at $1024^2$.}
-  (a)~$\pi^\star$ minimizes the mix's squared error to full attention. (b)~FLUX.1 uses $n_0=64$, $t=8$; steps 1 to 8 form the opening phase.}
+  \caption{\textbf{\sca{} mixes a native-size local window with block-centre global keys.} The opening steps, $\sigma>\sigma_g$, use the global operator alone, since high-noise windows repeat structure. Afterwards each head weights the local output by $\pi$, fitted once at $1024^2$ by matching full attention (right: one block's 24 heads by 14 noise bins).}
   \label{fig:method}
 \end{figure*}

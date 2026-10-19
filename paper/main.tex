@@ -109,7 +109,7 @@ Scale-Covariant Attention (\sca{}) turns this measurement into an attention oper
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/method.pdf}
-  \caption{\textbf{\sca{} mixes two receptive fields with native-range image geometry.} For a target grid of $sn_0\times sn_0$ tokens, the local (pixel-anchored) branch lets each query tile attend to a native $n_0\times n_0$ key window with the original RoPE coordinates. The global (image-anchored) branch subsamples keys and values at the centre of every $s\times s$ block onto an $n_0\times n_0$ grid and divides query coordinates by $s$. Both see the native key count and range of image offsets. Head $h$ mixes them with weight $\pih$ from a table calibrated once per model at native resolution. While $\sigma>\sigma_g$, $\pih=0$ and the local branch is skipped.}
+  \caption{\textbf{\sca{} mixes a native-size local window with block-centre global keys.} The opening steps, $\sigma>\sigma_g$, use the global operator alone, since high-noise windows repeat structure. Afterwards each head weights the local output by $\pi$, fitted once at $1024^2$ by matching full attention (right: one block's 24 heads by 14 noise bins).}
   \label{fig:method}
 \end{figure}}
 

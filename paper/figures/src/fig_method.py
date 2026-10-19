@@ -1,3 +1,4 @@
+raise SystemExit("Retired: figures/method.pdf is now built from figures/src/method.tex (TikZ). Do not run.")
 """SCA method diagram (fig:method) as TikZ, compiled to figures/method.pdf.
 
 The figure is generated as figures/src/method_diagram.tex (paper fonts:
