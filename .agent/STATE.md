@@ -141,3 +141,10 @@ HPSv2 +0.005*, ARNIQA +0.030*; 49.0 s vs 106.5 s (2.2x faster; fastest of all me
 less than half the time; HRDiT's lead is a schedule effect, not its attention. Single-pass SCA keeps best FID/detail.
 sca_s42 (110 s): IR 1.185. Claim (Fable rule "tie"): SCA as drop-in operator matches the best multi-stage method at 2.2x speed
 and leads single-pass. CPU bootstraps for E2 6144 / E9 Krea queued as a_cpu_* on SCA12 (local 1-core run stopped).
+## 02:45 ALL GPU WORK DONE; SCA12 released (scancel 1078982), taskq/STOP set. Archived:
+- results/hrdit191: HRDiT vs SCA single pass, 191 prompts: IR +0.109*, HPS2.1 +0.013*, Pick +0.36*, CLIP-IQA +0.028*,
+  aes +0.091*; SCA better MUSIQ -5.0*, crop -7.7*; FID 138.4 (SCA) vs 139.1, patch FID 106.5 vs 110.7; CLIP tie.
+- results/e2_6144 (100 prompts): SCA IR 0.841 vs AReA -0.421; FID 169.9 vs 216.7; patch FID 122.4 vs 188.6; 165 vs 508 s.
+- results/e9_krea (100 prompts, Krea checkpoint): SCA ~ AReA (IR 1.198 vs 1.240; HPS2.1 .297 vs .290; FID 165.8 vs 166.6;
+  patch FID 123.9 vs 115.5); 73 vs 217 s. SEGA strong on Krea (FID 164.2).
+Next: paper editor (running) integrates these; then Fable final review; rebuild; send PDF+zip.
