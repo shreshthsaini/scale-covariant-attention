@@ -1,4 +1,16 @@
-# SCA live state, 2026-10-17 17:48 UTC
+# SCA live state, 2026-10-18 11:40 CDT (operator: Claude session, resumed)
+
+## Operator change (read first)
+- The Codex continuation chain ended: SCA10/SCA11 were cancelled 2026-10-17 13:27, successor 1077572 never
+  ran, no SCAC job exists. Do NOT restart the controller unless the user asks; Claude orchestrates now.
+- User 2026-10-18: request many GPUs in ONE job and hold them until all work is done; finish experiments
+  and polish the paper to the level of top industry papers (NVIDIA SOL / Nemotron style).
+- Submitted SCA12 = job 1078982 (gh, 8 nodes, 16 h, IDLE_MAX=14400) via login2 after balance check
+  (7679 SU available; keep >= 1600). Guest worker on c608-101 (gpu_workspace) runs a_000 repro smoke.
+- Codex probe failed (treat unavailable); use Claude subagents (opus).
+- Remaining GPU work in taskq/pending: 4 a_ (repro smoke, HRDiT/SigMa smokes, full 6144 timing),
+  20 i (6144/8192), 36 j (Krea). Then baseline promotion per repro/baseline_promotion_1077042/README.md.
+
 
 ## Goal
 Finish experiments, verified evaluation, the paper and reproducibility delivery.
@@ -86,3 +98,24 @@ Codex owns the whole project. Preserve unfavorable results and novelty boundarie
 - Waiting for existing SCA fleets; new baseline GPU fidelity/cost unknown until smokes.
 - E2/E9,full6K timing,fresh GPU,final evaluation,broader baselines,paper remain unfinished.
 - No official ResDiT code verified. Do not claim an invented reproduction.
+## 2026-10-18 12:00 env repair: HRDiT smoke failed (torch._thread_safe_fork missing; scratch purge deleted
+zero-byte files). Restored 329 empty files from package RECORDs in uv-envs/sca (scripts/restore_empty_files.py;
+rerun after purges). HRDiT smoke requeued. User asked for separate max-effort Opus design agent(s) for all
+figures/plots/hero/diagrams and a final max-effort polish of the whole paper; paper editor told to leave figures.
+## 12:20 smokes done: HRDiT valid coherent; SigMa valid but lattice-degraded (kept). Review /scratch/09032/saini_2/sca/baseline_review12_1077042.json; published pilot12 tasks (a_b_pilot12_*). After both complete: repeat prepare.py --stage pilot46 with a new review (see repro/baseline_promotion_1077042/README.md).
+## 12:35 Figure redesign committed 9ee46b6 (house style src/scafig.py + sca_colors.tex; hero on p2; TikZ method; PDF ~29.6 MB). Final max-effort editor-in-chief agent running (owns paper/; applies DESIGN_CHANGES.md, fixes method-diagram overlaps, latency label, gallery floats, header; 2 render cycles; builds PDF+zip). SCA12 still pending.
+## 18:05 pilot12 done (HRDiT coherent and strong; SigMa consistently degraded); review46 filled; published
+pilot46 tasks (a_b_pilot46_*: HRDiT 012-046, SigMa 012-045 + 045-046). Next: when done, run the exact 8-method
+46-prompt eval per repro/baseline_evaluation_20261017/README.md. Final editor agent resumed after rate limit.
+## 19:25 Paper polish complete (commit above): 38 pp, main text 9 pp, teaser p2, PDF 29.6 MB, ZIP verified at
+/scratch/09032/saini_2/sca/zipcheck/final_20261018_191838. Header = anonymous ICLR 2026 submission (\iclrfinalcopy
+restores draft header). WARNING: some table blocks and gallery snippets are hand-edited; rerunning gen_tables.py,
+gen_final_tables.py, fig_qual.py gallery_4096 or fig_phase2.py flux2 undoes them (see figures/snippets/README.md).
+Remaining: E2 (6144/8192) and E9 (Krea) placeholders (13 \todo, 8 \tbd), HRDiT/SigMa 46-prompt 8-method table.
+## 21:10 pilot46 done (HRDiT, SigMa). Eval workspace /scratch/09032/saini_2/sca/eval/baseline_expansion46_v1 (368 samples, 8 methods x 46). Queued a_eval_baseline46_gpu.sh; after it: run intervals_cpu.sh on a CPU node, archive to results/, fill paper baseline table. SCA12 start estimate 2026-10-19 11:39.
+## 22:10 8-METHOD BASELINE EVAL (46 prompts, 4096^2; results/baseline46/; eval /scratch/09032/saini_2/sca/eval/baseline_expansion46_v1):
+IR/HPS2.1/Pick/CLIP/MUSIQc/FID: HRDiT 1.373/.316/23.43/29.38/54.1/216.9; UltraImage 1.260/.315/23.31/28.77/42.9/213.8;
+SCA 1.124/.300/22.96/29.41/62.5/206.4; AReA .833/.278/22.31/27.85/52.0/212.7; SEGA .469; DyPE -.234; SigMa -.771; full -2.214.
+Budget (results via eval/budget_*): SCA 56 steps (140 s) IR 1.221, HPS2.1 .310, Pick 23.13, CLIP-IQA .727, MUSIQc 64.7.
+=> SCA is best single-pass, best FID/patch FID/detail, fastest; HRDiT (progressive multi-stage, ~180 s) leads preference metrics.
+Asked user: (1) frame honestly now, or (2) implement SCA inside a progressive (HRDiT-like) pipeline to beat HRDiT.
