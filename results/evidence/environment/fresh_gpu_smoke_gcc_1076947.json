@@ -1,0 +1,158 @@
+{
+  "started_utc": "2026-10-18T16:22:04.252845+00:00",
+  "status": "passed",
+  "stage": "complete",
+  "checks": [
+    {
+      "name": "bf16_matmul_vs_cpu_float32",
+      "shape": [
+        32,
+        32
+      ],
+      "finite": true,
+      "max_abs_diff": 0.0018639564514160156,
+      "relative_l2": 0.0017265233909711242,
+      "passed": true
+    },
+    {
+      "name": "bf16_sdpa_vs_explicit_float32",
+      "shape": [
+        1,
+        2,
+        64,
+        16
+      ],
+      "finite": true,
+      "max_abs_diff": 0.0022311806678771973,
+      "relative_l2": 0.002187982201576233,
+      "passed": true
+    },
+    {
+      "name": "tiny_flux_stock_vs_full",
+      "shape": [
+        1,
+        64,
+        4
+      ],
+      "finite": true,
+      "max_abs_diff": 0.0,
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "name": "tiny_flux_native_full_window_vs_stock",
+      "shape": [
+        1,
+        64,
+        4
+      ],
+      "finite": true,
+      "max_abs_diff": 0.0,
+      "relative_l2": 0.0,
+      "passed": true
+    },
+    {
+      "name": "tiny_flux_sparse_fused_flex_vs_gather",
+      "shape": [
+        1,
+        64,
+        4
+      ],
+      "finite": true,
+      "max_abs_diff": 0.0,
+      "relative_l2": 0.0,
+      "passed": true
+    }
+  ],
+  "scope": "Tiny random bf16 CUDA operations and model only; no learned weights, no benchmark reproduction, no cuSPARSELt-specific sparse kernel test.",
+  "python": "/work/09032/saini_2/vista/library/uv-envs/sca-repro-20261017/bin/python",
+  "source_sha256": "e02a2a7ba97b2571f43344518e2366ab84109acf9fc7eca4568953a7ede0e14d",
+  "lock_sha256": "29238d938c36c1ef6bc6c50f7676bafe6ce6b322c707bae0e078c8a8c5e8d4fa",
+  "tolerance": {
+    "atol": 0.02,
+    "rtol": 0.02,
+    "policy": "torch.allclose on finite float32-converted outputs; fixed before GPU execution"
+  },
+  "compiler_preflight": {
+    "requested": {
+      "CC": "/usr/bin/gcc",
+      "CXX": "/usr/bin/g++"
+    },
+    "inherited": {
+      "CC": null,
+      "CXX": null
+    },
+    "probes": [
+      {
+        "variable": "CC",
+        "executable": "/usr/bin/gcc",
+        "executable_sha256": "7c49076b1a26aa2371e6d38372ff160b991bfc193c6d7c708a65c05ecefff88e",
+        "version": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-11)\nCopyright (C) 2021 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "command": [
+          "/usr/bin/gcc",
+          "/scratch/09032/saini_2/sca/repro_env_gpu_compiler_repair_1076947/gpu_retry_cache/compiler/host_probe.c",
+          "-O3",
+          "-shared",
+          "-fPIC",
+          "-Wno-psabi",
+          "-o",
+          "/scratch/09032/saini_2/sca/repro_env_gpu_compiler_repair_1076947/gpu_retry_cache/compiler/host_probe_c.so",
+          "-I/home1/09032/saini_2/.local/share/uv/python/cpython-3.11.13-linux-aarch64-gnu/include/python3.11"
+        ],
+        "source_sha256": "84ac19784b5bfdda07a1f9f828f0f9fc195225130e07e10781a8b2aa65c74a31",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "load_result": 42,
+        "library_sha256": "0343cbbc8073df3266830382cef9641f7f3c12758e074f24a77fdf86002438f5"
+      },
+      {
+        "variable": "CXX",
+        "executable": "/usr/bin/g++",
+        "executable_sha256": "80d6eb7f8886966af7f10d50a1caeb8af110840548699bc547f3d0c7b8602929",
+        "version": "g++ (GCC) 11.5.0 20240719 (Red Hat 11.5.0-11)\nCopyright (C) 2021 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "command": [
+          "/usr/bin/g++",
+          "/scratch/09032/saini_2/sca/repro_env_gpu_compiler_repair_1076947/gpu_retry_cache/compiler/host_probe.cpp",
+          "-O3",
+          "-shared",
+          "-fPIC",
+          "-Wno-psabi",
+          "-o",
+          "/scratch/09032/saini_2/sca/repro_env_gpu_compiler_repair_1076947/gpu_retry_cache/compiler/host_probe_cpp.so",
+          "-std=c++17"
+        ],
+        "source_sha256": "7fe436eda8563deb18c51e14f78be6bd4715534051e315786c07c2112269c0ca",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "load_result": 42,
+        "library_sha256": "ea414c68ed7543820a0dc66041cd17f61112aa24a80ba2d948927fc517aec663"
+      }
+    ],
+    "selected": {
+      "CC": "/usr/bin/gcc",
+      "CXX": "/usr/bin/g++"
+    },
+    "passed": true
+  },
+  "torch": "2.11.0+cu128",
+  "diffusers": "0.39.0",
+  "cuda_runtime": "12.8",
+  "gpu": "NVIDIA GH200 120GB",
+  "capability": [
+    9,
+    0
+  ],
+  "gpu_memory_bytes": 102005473280,
+  "elapsed_seconds": 61.90615754699684,
+  "compiled_function_cache_keys": [
+    "fn",
+    "mix",
+    "sca"
+  ],
+  "peak_cuda_memory_bytes": 97801728,
+  "worker_exit_code": 0,
+  "timed_out": false,
+  "timeout_seconds": 280
+}

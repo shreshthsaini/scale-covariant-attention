@@ -1,0 +1,14 @@
+{
+  "file": "sca_s42_vs_sca_nb_paired.csv",
+  "what": "Paired bootstrap of per-prompt differences, 42-step single-pass SCA (sca_s42) minus 28-step SCA (sca_nb), 46 prompts, 4096x4096, seed label 0. Used for the significance marks of the 42-step row of Table 2 and the '42 steps - SCA' column of Table tab:prog_deltas.",
+  "command": "python -I code/scripts/paired_bootstrap.py --method sca_s42 --reference sca_nb --draws 2000 --out <out> base/scored_per_image.csv extra/extra_per_image.csv (cwd /scratch/09032/saini_2/sca/eval/prog46_v1, sca uv env)",
+  "estimator": "2000 prompt draws with replacement, numpy default_rng(0), 95% percentile interval (the script's documented defaults, identical to the GPU stage of p_prog_z_eval46.sh)",
+  "inputs_sha256": {
+    "base/scored_per_image.csv": "14ce8b24897592a8e43730ad4b4616fef0fea1316ee093e2c854cda5a24a0d7d",
+    "extra/extra_per_image.csv": "9ff3487abf71ebf49b1b81b2a5c1880601b1867d16089131fe834d2e131987da",
+    "code/scripts/paired_bootstrap.py": "f2653d08e641de53784168023c5fd5ee6ddb78092af03e72084e611419f62629"
+  },
+  "reproduction_check": "The same command for sca_prog vs sca_nb reproduces results/progressive46/sca_prog_vs_sca_nb_paired.csv byte for byte after sorting rows (diff empty, 2026-10-19).",
+  "output_sha256": "5573ee4b768da3ac182084085031778202b66135f357b57b9225bb8d7e8c8bd0",
+  "note": "Not yet archived under results/progressive46; the lead may copy it there."
+}
