@@ -27,7 +27,7 @@ ROWS = [  # (key, label, color)
     ("loc", "local only", sf.LOCAL),
     ("glob", "global only", sf.GLOBAL),
 ]
-W, H = sf.TEXT, 1.72
+W, H = sf.TEXT, 1.62  # no bar values (house rule 9): the text and tables hold the numbers
 
 
 def main():
@@ -47,21 +47,13 @@ def main():
         e = errors(z, s)
         vals = [e[k] for k, _, _ in ROWS]
         ax.barh(y, vals, color=[c for _, _, c in ROWS], height=0.68, lw=0, zorder=2)
-        for yi, v in zip(y, vals):
-            ax.annotate(f"{v:.3f}", (v, yi), xytext=(2.5, 0), textcoords="offset points", va="center",
-                        ha="left", fontsize=sf.FS_SMALL)
-        ax.set_xlim(0, max(vals) * 1.17)
+        ax.set_xlim(0, max(vals) * 1.06)
         ax.set_xlabel("relative output error")
-        ax.grid(axis="y", visible=False)
-        ax.grid(axis="x", visible=True)
+        ax.grid(visible=False)
         ax.spines["left"].set_visible(False)
         if i == 0:
             ax.set_yticks(y, [lbl for _, lbl, _ in ROWS])
             ax.tick_params(axis="y", length=0, pad=3)
-            # The rule column gets a header in the panel-letter row instead of a rotated label.
-            ax.set_ylabel("mixing rule", rotation=0, ha="left", va="baseline", color=sf.MID,
-                          fontsize=sf.FS_TICK)
-            ax.yaxis.set_label_coords(-(left - 0.04) / pw, 1 + 0.05 / (H - bottom - top))
         else:
             ax.tick_params(axis="y", length=0, labelleft=False)
         ax.set_ylim(-0.6, len(ROWS) - 0.4)

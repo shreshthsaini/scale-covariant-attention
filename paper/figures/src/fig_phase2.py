@@ -24,16 +24,17 @@ REPO = Path(__file__).resolve().parents[3]
 EVAL100 = REPO / "results/evidence/prompts/eval100.jsonl"
 KREA_OVERLAY = Path("/scratch/09032/saini_2/sca/out/krea_baseline_overlay_20261017")
 
+# Captions: a bold claim, then at most 35 words in all. The shared protocol (FLUX.1-dev, seed 0, 28 steps,
+# guidance 4.5, automatic crop placement, archived selection seeds and hashes, the Krea and FLUX.2 settings
+# and the SEGA regeneration) is stated once in the appendix text (main.tex, app:galleries).
 SPECS = {
     "baselines": {
         "res": "4096x4096", "n": 3,
         "methods": ["area", "dype", "sega_official", "ultraimage", "sca"],
         "caption": (
-            r"\textbf{Additional baselines at $4096^2$.} "
-            r"Three of the 191 paired evaluation prompts, sampled at random (selection seed~17); "
-            r"each image sits above a native-pixel crop of its outlined window. FLUX.1-dev, seed~0. "
-            r"AReA, DyPE, SEGA and SCA use 28 steps and guidance 4.5; UltraImage uses its two-stage "
-            r"defaults (30+30 steps, guidance 3.5 then 7), so this is not an equal-cost comparison."
+            r"\textbf{DyPE and SEGA leave speckle at $4096^2$; UltraImage and SCA keep clean detail.} "
+            r"Three of 191 prompts drawn at random (seed~17); full images above 1:1 crops of one window. "
+            r"UltraImage runs its two-stage defaults."
         ),
     },
     "flux2": {
@@ -41,9 +42,8 @@ SPECS = {
         "methods": ["flux2_full", "flux2_sca"],
         "caption": (
             r"\textbf{FLUX.2-dev at $4096^2$: SCA can still distort face geometry and fine texture "
-            r"(last row).} Four of the 50 paired evaluation prompts, sampled at random (selection seed~17). "
-            r"Seed~0, 28 steps, guidance 4.0, FLUX.2 calibration table for SCA; each image is followed "
-            r"by a native-pixel crop of its outlined window."
+            r"(last row).} Four of 50 paired prompts drawn at random (seed~17); after each image, "
+            r"a 1:1 crop of its outlined window."
         ),
     },
     "6144": {"res": "6144x6144", "n": 4, "methods": ["area", "sca"]},
@@ -51,21 +51,18 @@ SPECS = {
     "8192_complete": {
         "res": "8192x8192", "n": 4, "methods": ["area", "sca"], "expected": 12,
         "caption": (
-            r"\textbf{Exploratory $8192^2$ generation: grid and stripe artifacts remain at this scale.} "
-            r"Four of the 12 paired evaluation prompts, sampled at random (selection seed~17). FLUX.1-dev, "
-            r"seed~0, 28 steps, guidance 4.5; each image is followed by a native-pixel crop of its outlined "
-            r"window. This small evaluation does not establish general 8K quality."
+            r"\textbf{At $8192^2$ grid and stripe artifacts remain in both methods.} "
+            r"Four of 12 paired prompts drawn at random; after each image, a 1:1 crop of its outlined "
+            r"window. Exploratory; not evidence of general 8K quality."
         ),
     },
     "6144_complete": {
         "res": "6144x6144", "n": 4, "methods": ["area", "sca"],
         "expected": 100, "prompt_manifest": EVAL100,
         "caption": (
-            r"\textbf{Paired $6144^2$ generation.} Four prompts sampled uniformly "
-            r"from all 100 paired evaluation prompts, without selection by visual quality "
-            r"or metric score. Each full image is followed by its native-pixel crop. "
-            r"FLUX.1-dev, seed 0, 28 steps, guidance 4.5. This gallery illustrates "
-            r"the shared protocol; four examples do not establish general generation quality."
+            r"\textbf{At $6144^2$ AReA's crops dissolve into speckle or streaks; SCA keeps recognisable "
+            r"detail.} Four of 100 paired prompts, drawn at random; after each image, a 1:1 crop of its "
+            r"window. Four examples do not establish general quality."
         ),
     },
     "krea_complete": {
@@ -75,15 +72,9 @@ SPECS = {
         "provenance_receipts": [REPO / "results/evidence/krea_baseline_provenance" / name
                                 for name in ("receipt.json", "repair_preparation.json", "algorithm_review.json")],
         "caption": (
-            r"\textbf{FLUX.1-Krea-dev transformer at $4096^2$.} Two prompts sampled "
-            r"uniformly from all 100 four-method evaluation prompts, without selection "
-            r"by visual quality or metric score. Each prompt occupies two rows: "
-            r"full images, then matching native-pixel crops. Seed 0, 28 steps, "
-            r"guidance 4.5, with FLUX.1-dev text encoders and VAE. SCA is recalibrated "
-            r"for Krea; DyPE and SEGA use the earlier Krea campaign with the recorded source repairs. This compares "
-            r"the recorded implementations under the shared sampling settings, "
-            r"rather than each method's separately tuned defaults or equal runtime. "
-            r"The inherited baselines span multiple recorded runtime revisions."
+            r"\textbf{On FLUX.1-Krea-dev at $4096^2$ the four methods are visually close.} "
+            r"Two of 100 four-method prompts drawn at random; full images above 1:1 crops of one window. "
+            r"SCA uses a Krea-calibrated table."
         ),
     },
 }
@@ -294,17 +285,17 @@ def build(tag):
 
     # Layout: the shared vector grid of fig_qual (snippets/_scagrid.tex). Two methods: one prompt per
     # row, each full image followed by its crop. More methods: one column per method, each prompt a
-    # block of two labelled rows, full images above their crops.
+    # block of two rows, full images above their crops (no row labels; the caption says so).
     vertical = len(methods) > 2
     if vertical:
-        geo = Geo(len(methods), (len(methods) - 1) * G_GROUP, label=True)
+        geo = Geo(len(methods), (len(methods) - 1) * G_GROUP)
     else:
         geo = Geo(2 * len(methods), len(methods) * G_PAIR + (len(methods) - 1) * G_GROUP)
     head = []
     for k, method in enumerate(methods):
         head += ([G_GROUP] if k else []) + [method_head(method, 1, 0, NAMES) if vertical
                                             else method_head(method, 2, G_PAIR, NAMES)]
-    rows = [(g_row(head, indent=vertical), G_ROW)]
+    rows = [(g_row(head), G_ROW)]
     written = {}
     for entry in manifest["prompts"]:
         sid, box = entry["short_id"], tuple(entry["crop_xy_size"])
@@ -318,7 +309,7 @@ def build(tag):
             for k, method in enumerate(methods):
                 full += ([G_GROUP] if k else []) + [t_full(tiles[method]["full"], box, res)]
                 crops += ([G_GROUP] if k else []) + [t_crop(tiles[method]["crop"])]
-            rows += [(g_row(full, label="Full image"), G_PAIR), (g_row(crops, label="1:1 crop"), G_SECTION)]
+            rows += [(g_row(full), G_PAIR), (g_row(crops), G_SECTION)]
         else:
             cells = []
             for k, method in enumerate(methods):
@@ -326,23 +317,18 @@ def build(tag):
                                                      t_crop(tiles[method]["crop"])]
             rows.append((g_row(cells), G_ROW))
     caption = spec.get("caption")
-    if tag == "krea_complete":
+    if tag == "krea_complete":  # the appendix text states the regeneration; the count must still match
         repair = json.loads(Path(spec["provenance_receipts"][1]).read_text())
-        caption += (rf" {repair['replacement_pairs']} SEGA outputs were regenerated from an archived runtime "
-                    r"to replace historical outputs whose exact source snapshots could not be recovered.")
+        if repair["replacement_pairs"] != 7:
+            raise ValueError("app:galleries in main.tex states seven regenerated SEGA outputs; update it")
     if caption is None:
+        side = res.split("x")[0]
+        claim = (rf"\textbf{{Partial results at ${side}^2$: grid and stripe artifacts remain.}}" if tag == "8192"
+                 else rf"\textbf{{Partial results at ${side}^2$ from an incomplete pool.}}")
         caption = (
-            rf"\textbf{{Partial qualitative results at ${res.split('x')[0]}^2$.}} "
-            rf"{count_word(len(manifest['prompts']))} prompts sampled at random (selection seed~17) from the "
-            rf"{manifest['eligible_count']} non-development prompts with completed AReA and SCA outputs at the figure "
-            r"snapshot, a pool that may reflect completion order; this is not the final evaluation set. "
-            r"FLUX.1-dev, seed~0, 28 steps, guidance 4.5; each image is followed by a native-pixel crop."
+            rf"{claim} {count_word(len(manifest['prompts']))} of the {manifest['eligible_count']} prompts paired "
+            r"at the snapshot, drawn at random; the pool may reflect completion order. After each image, a 1:1 crop."
         )
-        if tag == "8192":
-            caption += r" Visible grid and stripe artifacts remain in both methods at this scale."
-    if "prompt_manifest" in spec:  # prepared complete-campaign galleries keep their full protocol note
-        caption += (r" Crop locations maximize edge energy averaged across the methods shown. "
-                    r"Prompt selection uses seed 17; source hashes and crop coordinates are archived with the figure.")
     comments = [f"Generated by fig_phase2.py {tag}; frozen selection in {name}/provenance.json."]
     comments += [f"{e['short_id']}: {e['prompt'].replace(chr(0x2014), ' - ')}" for e in manifest["prompts"]]
     grid_snippet(name, geo, rows, caption, "fig:" + name, comments=comments, source=f"fig_phase2.py {tag}")

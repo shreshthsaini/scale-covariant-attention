@@ -1,8 +1,10 @@
 """Main qualitative comparison (fig:qual_main) as a TikZ-composed PDF.
 
-Four prompts at 4096^2, seed 0. Full attention collapses, so it is a narrow strip of small
-full-image thumbnails on the left; AReA and SCA each get a full image plus the same native-pixel
-crop, which is wider than tall (CROP_W x CROP_H) so the crops use the width the strip frees.
+Four prompts at 4096^2, seed 0, five tiles of one height per row: the full-attention image (it
+collapses, so it needs no crop), then AReA and SCA, each a full image plus the same native-pixel
+crop, which is wider than tall (CROP_W x CROP_H). House style: method names once, SCA (ours) last
+in the accent colour, 1 to 2 pt white gutters, no borders, one neutral 0.6 pt frame colour for the
+crop windows and crop tiles, no text inside the images, 8 pt headers.
 
 Selection (recorded in figures/qual_main/cmp_provenance.json):
 * Prompts are curated. The six prompts of fig_qual.py MAIN were picked by hand for variety from
@@ -47,10 +49,10 @@ W = 5.5
 PROMPTS = ["2100482621711410240", "m6394968997939197542", "m2729538226706404616", "m1057810871814672649"]
 METHODS = [("full", "Full attention"), ("area", "AReA"), ("sca_nb", "SCA (ours)")]
 CROP_W, CROP_H = 736, 512   # native crop window, width x height
-THUMB = 0.40                # full-attention thumbnail side (in)
-G_THUMB, G_IN, G_OUT = 0.07, 0.025, 0.085  # gutters: after the strip, inside a group, between groups
-HEAD, GV = 0.15, 0.025      # header band and row gap (in)
+G_IN, G_OUT = 1 / 72, 2 / 72  # white gutters (in): 1 pt inside a group, 2 pt between groups
+HEAD, GV = 0.14, 2 / 72     # header band and row gap (in)
 DPI = 600                   # downscaled full images: at most 600 dpi of printed width
+FRAME = "BFC5CB"            # the one neutral frame colour (crop windows and crop tiles)
 OLD_BOXES = {"2100482621711410240": (928, 3288), "m6394968997939197542": (1408, 1880),
              "m2729538226706404616": (1520, 256), "m1057810871814672649": (1896, 3328)}  # 512^2, v1
 
@@ -94,9 +96,9 @@ def auto_box(imgs, w, h, f=8):
 def layout():
     """Column x positions and the tile height; every tile in a row shares the height."""
     aspect = CROP_W / CROP_H
-    tile = (W - THUMB - G_THUMB - 2 * G_IN - G_OUT) / (2 + 2 * aspect)
+    tile = (W - 2 * G_IN - 2 * G_OUT) / (3 + 2 * aspect)
     crop_w = aspect * tile
-    x_area = THUMB + G_THUMB
+    x_area = tile + G_OUT
     xs = dict(full=0.0, area=x_area, area_crop=x_area + tile + G_IN)
     xs["sca_nb"] = xs["area_crop"] + crop_w + G_OUT
     xs["sca_nb_crop"] = xs["sca_nb"] + tile + G_IN
@@ -145,32 +147,30 @@ def main() -> None:
         bx, by, bw, bh = auto_box(trio, CROP_W, CROP_H)
         boxes[pid] = [bx, by, bw, bh]
         for m, _ in METHODS:
-            side = THUMB if m == "full" else tile
-            small = imgs[m].resize((round(DPI * side),) * 2, Image.Resampling.LANCZOS)
+            small = imgs[m].resize((round(DPI * tile),) * 2, Image.Resampling.LANCZOS)
             fp = assets / f"cmp_{pid}_{m}.jpg"
             small.save(fp, "JPEG", quality=88, optimize=True, subsampling=2)
-            node(xs[m], y, side, side, fp.name)
+            node(xs[m], y, tile, tile, fp.name)
             rec = dict(method=m, source=str(pngs[m]), png_sha256=sha(pngs[m]), config=metas[m]["config"],
                        full=fp.name, full_px=small.width)
             if m != "full":  # full attention has no crop tile, so no window either
-                for style in ("halo", "zoombox"):
-                    rect(xs[m] + bx * sx, y + by * sx, xs[m] + (bx + bw) * sx, y + (by + bh) * sx, style)
+                rect(xs[m] + bx * sx, y + by * sx, xs[m] + (bx + bw) * sx, y + (by + bh) * sx, "zoombox")
                 cp = assets / f"cmp_{pid}_{m}_crop.jpg"
                 imgs[m].crop((bx, by, bx + bw, by + bh)).save(cp, "JPEG", quality=90, optimize=True,
                                                               subsampling=0)
                 node(xs[m + "_crop"], y, crop_w, tile, cp.name)
-                rect(xs[m + "_crop"], y, xs[m + "_crop"] + crop_w, y + tile, "cropframe")
+                i = 0.3 / 72  # half the line width: the frame stays inside the tile
+                rect(xs[m + "_crop"] + i, y + i, xs[m + "_crop"] + crop_w - i, y + tile - i, "cropframe")
                 rec["crop"] = cp.name
             records.append(dict(prompt_id=pid, crop_xywh=[bx, by, bw, bh], **rec))
-    # headers: the strip gets a short label in the same band
-    centers = {"full": THUMB / 2, "area": (xs["area"] + xs["area_crop"] + crop_w) / 2,
+    # headers: each method named once, centred over its group; SCA (ours) last, bold, in the accent colour
+    centers = {"full": tile / 2, "area": (xs["area"] + xs["area_crop"] + crop_w) / 2,
                "sca_nb": (xs["sca_nb"] + xs["sca_nb_crop"] + crop_w) / 2}
-    labels = {"full": "Full attn.", "area": "AReA", "sca_nb": r"\textbf{SCA (ours)}"}
+    labels = {"full": "Full attention", "area": "AReA", "sca_nb": r"\textbf{SCA (ours)}"}
     for m, _ in METHODS:
         style = "headours" if m == "sca_nb" else "head"
-        anchor, x = ("base west", 0.0) if m == "full" else ("base", centers[m])
-        tex_lines.append(r"\node[%s,anchor=%s] at (%.4f,%.4f) {%s};" % (style, anchor, x, -(HEAD - 0.045),
-                                                                        labels[m]))
+        tex_lines.append(r"\node[%s,anchor=base] at (%.4f,%.4f) {%s};" % (style, centers[m], -(HEAD - 0.04),
+                                                                          labels[m]))
     total = HEAD + 4 * tile + 3 * GV
     doc = r"""%% Generated by fig_qual_main.py; edit the script, not this file.
 \documentclass[border=0pt]{standalone}
@@ -180,28 +180,28 @@ def main() -> None:
 \usepackage{tikz}
 \graphicspath{{%s/}}
 \input{sca_colors.tex}
+\definecolor{scaFrame}{HTML}{%s}
 \begin{document}
 \begin{tikzpicture}[x=1in,y=1in,
-  halo/.style={draw=black,draw opacity=0.35,line width=1.1pt},
-  zoombox/.style={draw=scaZoom,line width=0.55pt},
-  cropframe/.style={draw=scaZoom,line width=0.5pt},
-  head/.style={font=\sffamily\fontsize{8.5}{10}\selectfont,text=scaInk},
-  headours/.style={font=\sffamily\fontsize{8.5}{10}\selectfont,text=scaAccent}]
+  zoombox/.style={draw=scaFrame,line width=0.6pt},
+  cropframe/.style={draw=scaFrame,line width=0.6pt},
+  head/.style={font=\sffamily\fontsize{8}{9}\selectfont,text=scaInk},
+  headours/.style={font=\sffamily\fontsize{8}{9}\selectfont,text=scaAccent}]
 \useasboundingbox (0,0) rectangle (%.4f,%.4f);
 %s
 \end{tikzpicture}
 \end{document}
-""" % (os.path.relpath(assets, HERE) if not a.out_dir else str(assets), W, -total, "\n".join(tex_lines))
+""" % (os.path.relpath(assets, HERE) if not a.out_dir else str(assets), FRAME, W, -total, "\n".join(tex_lines))
     tex.write_text(doc)
     if a.out_dir:
         shutil.copy(HERE / "sca_colors.tex", a.out_dir / "sca_colors.tex")
     subprocess.run([TECTONIC, "-X", "compile", tex.name, "--outdir", str(out_pdf.parent)], cwd=tex.parent,
                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     caption = (r"\textbf{At $4096^2$ full attention collapses, AReA blurs or tiles fine structure, and "
-               r"\sca{} keeps both layout and detail.} Seed~0; four curated prompts, hand-picked for variety "
-               r"from 191 evaluation prompts. Beside each AReA and \sca{} image is the same native "
-               r"${%d\times%d}$ crop, auto-placed at maximal edge energy averaged over the three methods. "
-               r"Uncurated samples: Figure~\ref{fig:gallery_4096}." % (CROP_W, CROP_H))
+               r"\sca{} keeps both layout and detail.} Four curated prompts, seed~0, picked for variety from "
+               r"the 191 evaluation prompts. Beside each AReA and \sca{} image is a 1:1 crop of the same "
+               r"${%d\times%d}$ window (placement: Appendix~\ref{app:galleries}). Uncurated samples: "
+               r"Figure~\ref{fig:gallery_4096}." % (CROP_W, CROP_H))
     snippet.write_text("\n".join([
         "% Generated by src/fig_qual_main.py (TikZ source src/qual_main.tex, assets figures/qual_main/cmp_*).",
         r"\begin{figure}[tp]", r"  \centering",
@@ -217,8 +217,8 @@ def main() -> None:
                    f"With a 512x512 window this is exactly fig_qual.auto_box (checked by --check-square)."),
         crop_windows_xywh=boxes, previous_square_windows_xy_512=OLD_BOXES,
         layout_in=dict(width=W, height=round(total, 4), tile=round(tile, 4), crop_width=round(crop_w, 4),
-                       thumb=THUMB, gutters=dict(after_strip=G_THUMB, inside_group=G_IN, between_groups=G_OUT,
-                                                 rows=GV), header=HEAD),
+                       gutters=dict(inside_group=round(G_IN, 4), between_groups=round(G_OUT, 4),
+                                    rows=round(GV, 4)), header=HEAD, frame_hex=FRAME, frame_pt=0.6),
         jpeg=dict(full="Lanczos to 600 dpi of printed width, quality 88, 4:2:0",
                   crop="native pixels, quality 90, 4:4:4"),
         records=records, height_in=round(total, 4),

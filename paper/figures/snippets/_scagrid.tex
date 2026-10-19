@@ -1,54 +1,47 @@
 % Shared macros for the SCA image grids. Written by paper/figures/src/fig_qual.py; do not edit by hand.
 % Each grid snippet inputs this file first. The guard makes repeated input harmless, and every
 % definition is global, so input inside a group is safe too. Needs graphicx, xcolor and tikz.
+% House style: no image borders, 1 to 2 pt white gutters, one neutral frame colour about 0.6 pt wide
+% for crop windows and crop tiles, no text inside images, SCA green only for the "SCA (ours)" label.
 \ifcsname scaGridLoaded\endcsname\else
 \expandafter\gdef\csname scaGridLoaded\endcsname{}%
 \xglobal\providecolor{scaInk}{HTML}{1F2328}%
 \xglobal\providecolor{scaMid}{HTML}{5B6570}%
 \xglobal\providecolor{scaAccent}{HTML}{13865F}%
-\xglobal\providecolor{scaZoom}{HTML}{FFC21A}%
+\xglobal\providecolor{scaFrame}{HTML}{BFC5CB}%
 \newlength{\scaT}% tile height; each figure sets it so that its widest row fills \linewidth
+\newlength{\scaU}% second tile height for a figure whose rows differ in tile count
 \newlength{\scaLW}\global\scaLW=9.5pt% rotated row-label column
 \newlength{\scaLG}\global\scaLG=1.5pt% gap between a row label and its tiles
-\newlength{\scaZW}\global\scaZW=0.8pt% crop window and crop frame, in scaZoom
-\newlength{\scaZC}\global\scaZC=1.4pt% dark casing under that line, 0.3 pt on each side
-\newlength{\scaZI}\global\scaZI=0.7pt% half the casing: frames and border windows stay inside the tile
+\newlength{\scaZW}\global\scaZW=0.6pt% crop window and crop frame, in scaFrame
+\newlength{\scaZI}\global\scaZI=0.3pt% half the line: frames and border windows stay inside the tile
 \newlength{\scaHT}\global\scaHT=1.5pt% trim at each end of a header rule
 \newlength{\scaTW}\newlength{\scaTH}%
 % \scaImg{width}{height}{file}: a plain tile.
 \gdef\scaImg#1#2#3{\includegraphics[width=#1,height=#2]{#3}}%
-% \scaImgTag{width}{height}{file}{tag}: a plain tile with a small label in its top left corner.
-\gdef\scaImgTag#1#2#3#4{\scaTW=#1\relax\scaTH=#2\relax%
-\begin{tikzpicture}[x=\scaTW,y=\scaTH]%
-\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (0,0) {\includegraphics[width=\scaTW,height=\scaTH]{#3}};%
-\useasboundingbox (0,0) rectangle (1,1);%
-\node[anchor=north west,inner sep=1.2pt,fill=black,fill opacity=.6,text opacity=1,text=white,font=\sffamily\scriptsize] at ([shift={(1.5pt,-1.5pt)}]0,1) {#4};%
-\end{tikzpicture}}%
 % \scaFull{width}{height}{file}{(x0,y0)}{(x1,y1)}: a full image with its crop window outlined.
 % Corners are fractions of the tile, origin at the bottom left.
 \gdef\scaFull#1#2#3#4#5{\scaTW=#1\relax\scaTH=#2\relax%
 \begin{tikzpicture}[x=\scaTW,y=\scaTH]%
 \node[anchor=south west,inner sep=0pt,outer sep=0pt] at (0,0) {\includegraphics[width=\scaTW,height=\scaTH]{#3}};%
 \useasboundingbox (0,0) rectangle (1,1);%
-\draw[black,draw opacity=.55,line width=\scaZC] #4 rectangle #5;%
-\draw[scaZoom,line width=\scaZW] #4 rectangle #5;%
+\draw[scaFrame,line width=\scaZW] #4 rectangle #5;%
 \end{tikzpicture}}%
 % \scaCrop{width}{height}{file}: a native crop, framed like its window.
 \gdef\scaCrop#1#2#3{\scaTW=#1\relax\scaTH=#2\relax%
 \begin{tikzpicture}[x=\scaTW,y=\scaTH]%
 \node[anchor=south west,inner sep=0pt,outer sep=0pt] at (0,0) {\includegraphics[width=\scaTW,height=\scaTH]{#3}};%
 \useasboundingbox (0,0) rectangle (1,1);%
-\draw[black,draw opacity=.55,line width=\scaZC] ([shift={(\scaZI,\scaZI)}]0,0) rectangle ([shift={(-\scaZI,-\scaZI)}]1,1);%
-\draw[scaZoom,line width=\scaZW] ([shift={(\scaZI,\scaZI)}]0,0) rectangle ([shift={(-\scaZI,-\scaZI)}]1,1);%
+\draw[scaFrame,line width=\scaZW] ([shift={(\scaZI,\scaZI)}]0,0) rectangle ([shift={(-\scaZI,-\scaZI)}]1,1);%
 \end{tikzpicture}}%
-% \scaHead{width}{rule colour}{text}: a one-line header centred over a group of tiles, ruled like
-% \cmidrule(lr); text a little wider than its group may overhang into the gutters.
-\gdef\scaHead#1#2#3{\parbox[b]{#1}{\centering\makebox[\linewidth][c]{\color{scaInk}\strut#3}\par\nointerlineskip
-\vskip1.2pt\hbox to\hsize{\hskip\scaHT{\color{#2}\leaders\hrule height .5pt\hfill}\hskip\scaHT}}}%
-% \scaTwo{line}{line}: two-line header text, bottom aligned with one-line headers.
-\gdef\scaTwo#1#2{\begin{tabular}[b]{@{}c@{}}#1\\#2\end{tabular}}%
+% \scaHead{width}{text}: a one-line header centred over a group of tiles, with a thin neutral rule
+% like \cmidrule(lr); text a little wider than its group may overhang into the gutters.
+\gdef\scaHead#1#2{\parbox[b]{#1}{\centering\makebox[\linewidth][c]{\color{scaInk}\strut#2}\par\nointerlineskip
+\vskip1.2pt\hbox to\hsize{\hskip\scaHT{\color{scaMid}\leaders\hrule height .4pt\hfill}\hskip\scaHT}}}%
+% \scaOurs{text}: the one accent-coloured, bold label of a figure.
+\gdef\scaOurs#1{\textcolor{scaAccent}{\textbf{#1}}}%
 % \scaRowLabel{height}{text}: a row label rotated 90 degrees and centred on a row of that height.
 \gdef\scaRowLabel#1#2{\makebox[\scaLW][l]{\rotatebox{90}{\makebox[#1][c]{\color{scaInk}\strut#2}}}}%
-% \scaGridStyle: typography and exact spacing for a grid; use inside a group.
+% \scaGridStyle: typography (8 pt sans) and exact spacing for a grid; use inside a group.
 \gdef\scaGridStyle{\centering\sffamily\footnotesize\offinterlineskip\parskip=0pt\relax}%
 \fi

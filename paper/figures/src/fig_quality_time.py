@@ -13,12 +13,13 @@ results/progressive46/sca_prog_vs_hrdit_dev_author_paired.csv. The script stops 
 unless every value rounds to the number printed in the paper (PRINTED: seconds to 0.1, ImageReward
 to 0.01), every row covers the same 46 prompts at 4096^2, and the caption's claims still hold.
 
-Encoding: grey circles, single-pass baselines on the shared sampler (SEGA, AReA); darker grey
+Encoding (house style, figures/REFERENCE_STYLE.md): AReA purple circle, SEGA grey circle; dark grey
 diamonds, multi-stage baselines with their own recipes (UltraImage, HRDiT); filled green circle,
-single-pass SCA at 28 steps; hollow green circles, its budget variants (42 and 56 steps, guidance 7);
-filled green star, progressive SCA. Methods whose ImageReward falls below the plotted range (full
-attention, SigMa, DyPE) are listed in an in-plot note, not plotted. A dashed grey guide joins HRDiT to
-progressive SCA and carries the ratio of their campaign times.
+single-pass SCA at 28 steps; hollow green circles, its budget variants (42 and 56 steps, guidance 7),
+named only in the caption; filled green star, progressive SCA. Methods whose ImageReward falls below
+the plotted range (full attention, SigMa, DyPE) are named in the caption, not plotted. A dashed grey
+guide joins HRDiT to progressive SCA and carries the one bold ratio of their campaign times. The
+figure is 3.6 x 1.8 in (2:1) and is included at natural size.
 
 Regenerate on a compute node: <sca env python> paper/figures/src/fig_quality_time.py [--out STEM]
 (a trial --out writes the snippet and provenance beside STEM instead of into the paper tree).
@@ -64,17 +65,18 @@ NAME = {"full": "full attention", "dype": "DyPE", "sigma_dev_matched": "SigMa", 
         "sca_s56": "56 steps", "sca_g7": "guidance 7", "sca_s42": "42 steps", "sca_prog": "Progressive SCA"}
 OFF_AXIS = {"full", "dype", "sigma_dev_matched"}  # below YLIM; the caption names them
 
-W, H = sf.TEXT, 1.8
-LEFT, RIGHT, BOTTOM, TOP = 0.40, 0.06, 0.36, 0.05  # axes margins (in)
+W, H = 3.6, 1.8  # 2:1, included at natural size; the height must not grow
+LEFT, RIGHT, BOTTOM, TOP = 0.40, 0.05, 0.36, 0.05  # axes margins (in)
 XLIM, YLIM = (40.0, 380.0), (0.35, 1.45)
 XTICKS, YTICKS = [50, 70, 100, 150, 200, 300], [0.4, 0.6, 0.8, 1.0, 1.2, 1.4]
-GREY, DARK = sf.METHOD_COLOR["sega"], sf.METHOD_COLOR["area"]  # circles, darker diamonds
-FS_LABEL = sf.FS_TICK  # direct labels (7.5 pt); the note and the guide label use FS_SMALL (7 pt)
+GREY, DARK = sf.METHOD_COLOR["sega"], sf.METHOD_COLOR["ultraimage"]  # circles, darker diamonds
+FS_LABEL = sf.FS_TICK  # direct labels (7 pt)
 
 # marker style per class, and for each method its class and label placement:
 # (dx, dy) offset in points from the marker, horizontal and vertical alignment
 KIND = {
     "single": dict(marker="o", ms=4.6, mfc=GREY, mec="white", mew=0.5, zorder=3),
+    "area": dict(marker="o", ms=4.6, mfc=sf.METHOD_COLOR["area"], mec="white", mew=0.5, zorder=3),
     "multi": dict(marker="D", ms=4.2, mfc=DARK, mec="white", mew=0.5, zorder=3),
     "sca": dict(marker="o", ms=5.0, mfc=sf.SCA, mec="white", mew=0.5, zorder=4),
     "budget": dict(marker="o", ms=4.6, mfc="none", mec=sf.SCA, mew=0.9, zorder=5),
@@ -82,14 +84,14 @@ KIND = {
 }
 PLOT = {
     "sega_official": ("single", (5, 0), "left", "center"),
-    "area": ("single", (5, 0), "left", "center"),
+    "area": ("area", (5, 0), "left", "center"),
     "ultraimage": ("multi", (-5.5, 0), "right", "center"),
     "hrdit_dev_author": ("multi", (5, 0), "left", "center"),
     "sca_nb": ("sca", (4.5, -3.5), "left", "top"),
-    "sca_g7": ("budget", (4.5, 2.5), "left", "bottom"),
-    "sca_s42": ("budget", (0, -5), "center", "top"),
-    "sca_s56": ("budget", (5, 0), "left", "center"),
-    "sca_prog": ("prog", (0, -6.5), "center", "top"),
+    "sca_g7": ("budget", None, "left", "bottom"),     # budget variants: markers only, the
+    "sca_s42": ("budget", None, "center", "top"),     # caption names them (house rule 9)
+    "sca_s56": ("budget", None, "left", "center"),
+    "sca_prog": ("prog", (-9, 6.5), "left", "bottom"),
 }
 
 
@@ -156,46 +158,47 @@ def figure(values, speedup):
     ax.set_xticklabels([f"{t:g}" for t in XTICKS])
     ax.yaxis.set_major_locator(FixedLocator(YTICKS))
     ax.set_yticklabels([f"{t:.1f}" for t in YTICKS])
-    ax.set_xlabel("seconds per image (campaign mean, log scale)")
+    ax.set_xlabel("seconds per image (campaign mean)")
     ax.set_ylabel("ImageReward")
 
     # guide: HRDiT to progressive SCA, labelled with the ratio of campaign times
     h, p = values["hrdit_dev_author"], values["sca_prog"]
     ax.plot([h["seconds"], p["seconds"]], [h["ir"], p["ir"]], ls=(0, (2.5, 2)), lw=0.7, color=sf.MID, zorder=1)
-    xm, ym = np.sqrt(h["seconds"] * p["seconds"]), (h["ir"] + p["ir"]) / 2
-    ax.annotate(f"{speedup:.1f}\u00d7 faster", (xm, ym), xytext=(0, 3.5), textcoords="offset points",
-                ha="center", va="bottom", fontsize=sf.FS_SMALL, color=sf.MID)
+    t = 0.68  # the ratio sits on the HRDiT side of the guide, clear of the progressive label
+    xm = h["seconds"] ** t * p["seconds"] ** (1 - t)
+    ym = t * h["ir"] + (1 - t) * p["ir"]
+    # the panel's one bold speed ratio (house rule 8)
+    ax.annotate(f"{speedup:.1f}\u00d7 faster", (xm, ym), xytext=(0, -3.5), textcoords="offset points",
+                ha="center", va="top", fontsize=sf.FS, fontweight="bold", color=sf.SCA)
 
-    for m, (kind, (dx, dy), ha, va) in PLOT.items():
+    for m, (kind, offset, ha, va) in PLOT.items():
         v = values[m]
         ax.plot([v["seconds"]], [v["ir"]], ls="none", **KIND[kind])
+        if offset is None:
+            continue
         green = kind in ("sca", "budget", "prog")
-        ax.annotate(NAME[m], (v["seconds"], v["ir"]), xytext=(dx, dy), textcoords="offset points", ha=ha, va=va,
-                    fontsize=FS_LABEL, color=sf.SCA if green else sf.MID,
-                    fontweight="bold" if kind == "prog" else "normal")
-
-    below = sorted(OFF_AXIS, key=lambda m: -values[m]["ir"])
-    note = ("Below the plotted range (ImageReward):\n"
-            + ", ".join(f"{NAME[m]} {signed(values[m]['ir'])}" for m in below))
-    ax.text(0.012, 0.045, note, transform=ax.transAxes, ha="left", va="bottom", fontsize=sf.FS_SMALL,
-            color=sf.MID, linespacing=1.25)
+        color = sf.SCA if green else sf.METHOD_COLOR["area"] if kind == "area" else sf.MID
+        ax.annotate(NAME[m], (v["seconds"], v["ir"]), xytext=offset, textcoords="offset points", ha=ha, va=va,
+                    fontsize=FS_LABEL, color=color, fontweight="bold" if kind == "prog" else "normal")
     return fig
 
 
 def write_snippet(path, values, paired):
-    lo, hi = paired["ci_low"], paired["ci_high"]
-    cap = (
-        r"\textbf{Progressive \sca{} reaches HRDiT's ImageReward region in less than half its time; more "
-        r"single-pass steps raise ImageReward only at a higher time cost.}" "\n"
-        rf"  Panel of {N_PROMPTS} prompts at $4096^2$, seed~0; times are campaign means on shared GH200 nodes; "
-        r"diamonds: multi-stage methods; star: progressive \sca{}." "\n"
-        rf"  Progressive minus HRDiT ImageReward: ${paired['delta']:.2f}$ $[{lo:.2f},{hi:.2f}]$ (95\% paired "
-        r"interval). Table~\ref{tab:panel46} lists all values."
+    """At most 50 words: a bold claim, then two sentences of conditions. The paired interval stays
+    in the provenance and Table prog_deltas; it no longer fits the caption budget."""
+    below = sorted(OFF_AXIS, key=lambda m: -values[m]["ir"])
+    cap = (  # at most 50 words: a bold claim, then two sentences of measurement conditions
+        r"\textbf{Progressive \sca{} reaches HRDiT's ImageReward in less than half its time; extra "
+        r"single-pass steps gain less per second.}" "\n"
+        rf"  {N_PROMPTS} prompts at $4096^2$, campaign means on shared nodes; diamonds: multi-stage recipes; "
+        r"open circles: \sca{} at guidance 7, 42 and 56 steps." "\n"
+        r"  Below the range: " + ", ".join(NAME[m] for m in below[:-1]) + f" and {NAME[below[-1]]} "
+        r"(Table~\ref{tab:panel46})."
     )
     with open(path, "w") as fh:
         fh.write("% Generated by paper/figures/src/fig_quality_time.py from the 46-prompt panel summaries\n"
                  "% (results/baseline46, results/budget, results/progressive46) and " + PAIRED + ".\n")
-        fh.write("\\begin{figure}[t]\n  \\centering\n  \\includegraphics[width=\\linewidth]{figures/quality_time.pdf}\n")
+        fh.write("\\begin{figure}[t]\n  \\centering\n  \\includegraphics{figures/quality_time.pdf}\n")
         fh.write("  \\caption{" + cap + "}\n  \\label{fig:quality_time}\n\\end{figure}\n")
     return path
 
@@ -227,7 +230,7 @@ def main():
     if not (steps[0]["ir"] < steps[1]["ir"] < steps[2]["ir"] < p["ir"] and gain_prog < 0 < gain_steps):
         raise ValueError("caption lead no longer holds: more single-pass steps do not trail progressive SCA")
     if not paired["ci_low"] < 0 < paired["ci_high"]:
-        raise ValueError("caption wording assumes the paired interval includes zero")
+        raise ValueError("the claim 'reaches HRDiT's ImageReward' assumes the paired interval includes zero")
     print(f"speedup HRDiT / progressive SCA: {speedup:.3f}x; progressive minus HRDiT IR {paired['delta']:+.4f} "
           f"[{paired['ci_low']:+.4f}, {paired['ci_high']:+.4f}]")
 
@@ -248,7 +251,9 @@ def main():
                         for c, (s, i, ms) in SOURCES.items()},
             "values": values,
             "printed_check": {m: dict(seconds=PRINTED[m][0], ir=PRINTED[m][1], matches=True) for m in PRINTED},
-            "plotted": sorted(set(values) - OFF_AXIS), "off_axis_note": sorted(OFF_AXIS),
+            "plotted": sorted(set(values) - OFF_AXIS), "off_axis_named_in_caption": sorted(OFF_AXIS),
+            "unlabelled_markers": [m for m, (_, off, *_r) in PLOT.items() if off is None],
+            "figure_size_in": [W, H],
             "axes": dict(xlim=XLIM, xscale="log", ylim=YLIM, xticks=XTICKS, yticks=YTICKS),
             "encoding": {m: dict(kind=k, label=NAME[m]) for m, (k, *_rest) in PLOT.items()},
             "guide": dict(from_method="hrdit_dev_author", to_method="sca_prog", speedup=round(speedup, 4),

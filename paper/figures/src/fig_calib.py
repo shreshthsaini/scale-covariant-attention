@@ -85,6 +85,23 @@ def pi_colorbar(fig, cax, image):
              fontsize=sf.FS_TICK, color=sf.pi_color(0.0))
 
 
+def end_labels(fig, ax, lines, names, fontsize):
+    """Label each line just right of its last point, outside the axes, nudged apart to stay legible."""
+    fig.canvas.draw()
+    probe = ax.text(0, 0, "Ag", fontsize=fontsize)
+    gap = probe.get_window_extent(fig.canvas.get_renderer()).height * 1.05
+    probe.remove()
+    ends = sorted(((ax.transData.transform((ln.get_xdata()[-1], ln.get_ydata()[-1]))[1], ln, name)
+                   for ln, name in zip(lines, names)), key=lambda e: e[0])
+    placed = []
+    for y_px, ln, name in ends:
+        placed.append(max(y_px, placed[-1] + gap) if placed else y_px)
+    for (y_px, ln, name), y in zip(ends, placed):
+        ax.annotate(name, (ln.get_xdata()[-1], ln.get_ydata()[-1]), xytext=(4, (y - y_px) * 72 / fig.dpi),
+                    textcoords="offset points", ha="left", va="center", fontsize=fontsize,
+                    color=ln.get_color(), annotation_clip=False)
+
+
 def letter(fig, ax, text, note=None):
     """Bold panel letter above the axes' top-left corner, with an optional plain note after it."""
     bb = ax.get_position()
@@ -129,13 +146,13 @@ def main():
             ax.set_ylabel("head (sorted)", labelpad=1)
         else:
             ax.tick_params(axis="y", length=0, labelleft=False)
-        letter(fig, ax, "abc"[i], rf"$\sigma = {sig[b]:.2f}$")
+        letter(fig, ax, "abc"[i])  # the sigma of each panel is stated in the caption
     hax[1].set_xlabel("transformer block (stream type)", labelpad=2)
     pi_colorbar(fig, cax, img)
 
     # bottom row geometry
     by, bh = 0.37, hy - 0.58 - 0.37
-    dw, ex = 2.12, left + 2.12 + 0.58
+    dw, ex = 1.80, left + 1.80 + 1.02  # room right of (d) for the direct labels
     dax = fig.add_axes(box(left, by, dw, bh))
     eax = fig.add_axes(box(ex, by, W - ex - 0.04, bh))
 
@@ -144,25 +161,27 @@ def main():
     dax.axvspan(GATE, 1.0, color=sf.GLOBAL_LIGHT, lw=0, zorder=0)
     dax.text(1.0, 1.02, "global-only opening", ha="right", va="bottom",
              fontsize=sf.FS_SMALL, color=sf.GLOBAL, transform=dax.get_xaxis_transform())
+    lines = []
     for key, lbl, col in CONFIGS:
         p = tables[key][1][:, :, bins].reshape(-1, len(bins))
         q1, q3 = np.percentile(p, [25, 75], axis=0)
         dax.fill_between(sig[bins], q1, q3, color=col, alpha=0.08, lw=0, zorder=1)
-        dax.plot(sig[bins], p.mean(0), color=col, lw=1.4, label=lbl, zorder=3, solid_capstyle="round")
+        lines += dax.plot(sig[bins], p.mean(0), color=col, lw=1.4, zorder=3, solid_capstyle="round")
     dax.set_xlim(0.08, 1.0)
     dax.set_ylim(0, 1)
     dax.set_yticks([0, 0.5, 1.0], ["0", "0.5", "1"])
     dax.set_yticks([0.25, 0.75], minor=True)
     dax.set_xticks([0.2, 0.4, 0.6, 0.8, 1.0], ["0.2", "0.4", "0.6", "0.8", "1"])
-    dax.set_xlabel(r"noise level $\sigma$ (1 = pure noise)")
+    dax.set_xlabel(r"noise level $\sigma$")
     dax.set_ylabel(r"local weight $\pi$ over heads")
-    dax.legend(loc="lower left", handlelength=1.4, borderaxespad=0.4, labelspacing=0.3,
-               fontsize=sf.FS_TICK)
+    end_labels(fig, dax, lines, [lbl for _, lbl, _ in CONFIGS], sf.FS_TICK)  # direct labels, no legend
     letter(fig, dax, "d")
 
     # (e) transfer: excess error over the target's own per-head table, bars coloured by source table
     width, step = 0.22, 0.25
-    top = 0.0
+    top, drawn = 0.0, []  # (x, value, colour, source name) of every bar
+    source_name = {col: lbl + " table" for _, lbl, col in CONFIGS}
+    source_name[LAYER_COLOR] = "per-layer fit"
     for ti, (tgt, _, _) in enumerate(CONFIGS):
         own = err[tgt, tgt]
         bars = [(100 * (err[src, tgt] / own - 1), col) for src, _, col in CONFIGS if src != tgt]
@@ -170,16 +189,22 @@ def main():
         for k, (val, col) in enumerate(bars):
             x = ti + (k - 1) * step
             eax.bar(x, val, width=width, color=col, lw=0, zorder=2)
-            eax.text(x, val + 0.5, f"{val:.1f}", ha="center", va="bottom", fontsize=sf.FS_SMALL)
+            drawn.append((x, val, col))
             top = max(top, val)
-            if ti == 0 and col == LAYER_COLOR:
-                eax.text(x, val / 2, "per-layer fit", rotation=90, ha="center", va="center",
-                         fontsize=sf.FS_SMALL, color=sf.INK)
+    # Direct labels instead of a legend or bar values: each source is named once, above the
+    # tallest bar of its colour; the greens read upward, the grey reference sits flat on its bar.
+    for col, name in source_name.items():
+        x, val, _ = max((b for b in drawn if b[2] == col), key=lambda b: b[1])
+        if col == LAYER_COLOR:
+            eax.text(x, val + 0.6, name, ha="center", va="bottom", fontsize=sf.FS_SMALL, color=sf.MID)
+        else:
+            eax.text(x, val + 0.6, name, rotation=90, ha="center", va="bottom", fontsize=sf.FS_SMALL,
+                     color=col)
     eax.set_xticks(range(len(CONFIGS)), [lbl for _, lbl, _ in CONFIGS])
     eax.tick_params(axis="x", length=0)
     eax.set_xlim(-0.5, len(CONFIGS) - 0.5)
     eax.set_ylim(0, top * 1.14)
-    eax.set_xlabel("calibration target (bar colour: source table)")
+    eax.set_xlabel("calibration target")
     eax.set_ylabel("excess error (%)")
     letter(fig, eax, "e")
     sf.save(fig, os.path.join(FIGDIR, "calib"))

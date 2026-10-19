@@ -4,7 +4,7 @@
     weights, the best shared weight, and AReA's schedule read as a weight.
 (b) Relative output error per sigma bin of four mixing rules.
 Rule colours keep their meaning across the paper: per-head (SCA) accent, shared rules neutral grey,
-local only amber, global only blue, AReA's schedule dark grey dashed.
+local only amber, global only blue, AReA's schedule the AReA hue, dashed. Direct labels, no legend.
 
 Regenerate: <sca env python> paper/figures/src/fig_pi_sigma.py
 """
@@ -78,20 +78,25 @@ def main():
     mesh = ax.pcolormesh(edges, PI_BINS, dens, cmap=DENSITY, vmin=0, vmax=vmax, shading="flat",
                          edgecolors="face", lw=0.05, rasterized=False)
     xs = np.array([edges[0], SIGMA_STAR, SIGMA_STAR, 1.0])
-    ax.plot(xs, [1, 1, 0, 0], color=AREA, lw=1.1, ls=(0, (3.5, 2)), label="AReA hard switch", zorder=3)
-    ax.plot(sig[bins], z[f"s{SCALE}_pi_uniform"][bins], color=SHARED, lw=1.3,
-            label=r"best shared $\pi(\sigma)$", zorder=4)
-    ax.plot(sig[bins], pi[:, :, bins].mean((0, 1)), color=sf.SCA, lw=1.6,
-            label=r"mean of per-head $\pi_h$", zorder=5)
+    shared, mean = z[f"s{SCALE}_pi_uniform"][bins], pi[:, :, bins].mean((0, 1))
+    ax.plot(xs, [1, 1, 0, 0], color=AREA, lw=1.1, ls=(0, (3.5, 2)), zorder=3)
+    ax.plot(sig[bins], shared, color=SHARED, lw=1.3, zorder=4)
+    ax.plot(sig[bins], mean, color=sf.SCA, lw=1.5, zorder=5)
+    # direct labels (no legend box): the switch named left of its drop, the curves along themselves
+    ax.text(SIGMA_STAR - 0.02, 0.42, "AReA hard switch", ha="right", va="center", fontsize=sf.FS_TICK,
+            color=AREA)
+    k = int(np.argmin(np.abs(sig[bins] - 0.28)))
+    ax.text(sig[bins][k], shared[k] + 0.015, r"best shared $\pi(\sigma)$", ha="left", va="bottom",
+            fontsize=sf.FS_TICK, color=SHARED)
+    ax.text(sig[bins][k], mean[k] - 0.02, r"mean of per-head $\pi_h$", ha="left", va="top",
+            fontsize=sf.FS_TICK, color=sf.SCA)
     ax.set_xlim(edges[0], 1.0)
     ax.set_ylim(-0.03, 1.03)
     ax.set_xticks([0.2, 0.4, 0.6, 0.8, 1.0], ["0.2", "0.4", "0.6", "0.8", "1"])
     ax.set_yticks([0, 0.5, 1.0], ["0", "0.5", "1"])
-    ax.set_xlabel(r"noise level $\sigma$ (1 = pure noise)")
+    ax.set_xlabel(r"noise level $\sigma$")
     ax.set_ylabel(r"local weight $\pi$")
     ax.grid(visible=False)
-    ax.legend(loc="lower left", fontsize=sf.FS_TICK, handlelength=1.8, labelspacing=0.3,
-              frameon=True, framealpha=0.92, facecolor="white", edgecolor="none", borderpad=0.35)
     cb = fig.colorbar(mesh, cax=cax, ticks=np.arange(0, vmax + 1e-9, 0.1))
     cb.ax.set_yticklabels([f"{t:g}" for t in np.arange(0, vmax + 1e-9, 0.1)])
     cb.outline.set_visible(False)
@@ -115,7 +120,7 @@ def main():
     bx.set_xticks([0.2, 0.4, 0.6, 0.8, 1.0], ["0.2", "0.4", "0.6", "0.8", "1"])
     bx.set_xlabel(r"noise level $\sigma$")
     bx.set_ylabel("relative output error")
-    bx.grid(axis="y", visible=True)
+    bx.grid(visible=False)
     end_labels(bx, lines, [name for name, *_ in rules], fontsize=sf.FS_TICK)
     sf.panel_label(fig, bx, "b", dy=0.035 / H)
     sf.save(fig, os.path.join(FIGDIR, "pi_sigma"))

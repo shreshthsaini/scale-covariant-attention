@@ -141,8 +141,8 @@ UNRESOLVED = "#8A939C"
 
 def plot_deltas(records):
     """One row of four panels sharing the baseline axis; dot = mean paired difference, whisker = 95%."""
-    W, H = sf.TEXT, 1.88
-    left, gap, right, bottom, top = 0.72, 0.15, 0.03, 0.53, 0.20
+    W, H = sf.TEXT, 1.55  # the figure must not grow; the value labels and footer are gone
+    left, gap, right, bottom, top = 0.72, 0.15, 0.05, 0.40, 0.08
     pw = (W - left - right - 3 * gap) / 4
     fig = plt.figure(figsize=(W, H))
     axes = []
@@ -154,52 +154,28 @@ def plot_deltas(records):
         rows = [r for r in records if r["metric"] == metric]
         ax.axvline(0, color=sf.INK, lw=0.6, zorder=1)
         ax.axhline(0.7, color=sf.RULE, lw=0.5, zorder=1)
-        labels = []
+        # No per-dot values (house rule 9): the tables hold the numbers. Colour carries the verdict:
+        # SCA green for a significant gain, LOSS orange for a significant loss, open grey otherwise.
         for r in rows:
             yy, d, lo, hi = ROW[r["baseline"]], r["delta"], r["ci_low"], r["ci_high"]
             col = sf.SCA if lo > 0 else sf.LOSS if hi < 0 else UNRESOLVED
             ax.errorbar(d, yy, xerr=[[d - lo], [hi - d]], fmt="o", ms=4.2, mew=0.9, mec=col,
                         mfc="white" if lo <= 0 <= hi else col, ecolor=col, elinewidth=1.0,
                         capsize=1.8, capthick=0.8, zorder=3)
-            text = f"{d:+.{digits}f}".replace("-", "\u2212")
-            ink = sf.MID if col == UNRESOLVED else col  # grey text needs more contrast than the marker
-            # Labels sit outside the whisker and never cross the zero line.
-            if hi < 0:
-                labels.append(ax.annotate(text, (lo, yy), xytext=(-3, 0), textcoords="offset points",
-                                          ha="right", va="center", fontsize=sf.FS_SMALL, color=ink))
-            else:
-                labels.append(ax.annotate(text, (hi, yy), xytext=(3, 0), textcoords="offset points",
-                                          ha="left", va="center", fontsize=sf.FS_SMALL, color=ink))
         lo_x = min(0.0, min(r["ci_low"] for r in rows))
         hi_x = max(r["ci_high"] for r in rows)
-        pad = 0.04 * (hi_x - lo_x)
+        pad = 0.06 * (hi_x - lo_x)
         ax.set_xlim(lo_x - pad, hi_x + pad)
-        for _ in range(4):  # widen the limits until every value label sits inside the panel
-            fig.canvas.draw()
-            inv = ax.transData.inverted()
-            x0 = min(inv.transform(t.get_window_extent())[0, 0] for t in labels)
-            x1 = max(inv.transform(t.get_window_extent())[1, 0] for t in labels)
-            cur = ax.get_xlim()
-            ax.set_xlim(min(cur[0], x0 - pad), max(cur[1], x1 + pad))
         ax.xaxis.set_major_locator(MultipleLocator(step))
-        ax.grid(axis="x", visible=True)
-        ax.grid(axis="y", visible=False)
+        ax.grid(visible=False)
         ax.spines["left"].set_visible(False)
         ax.set_xlabel(rf"$\Delta$ {name}")
         if i == 0:
             ax.set_yticks(list(ROW.values()), [NAME[k] for k in ROW])
             ax.tick_params(axis="y", length=0, pad=3)
-            # The method column gets a header in the panel-letter row instead of a rotated label.
-            ax.set_ylabel("baseline", rotation=0, ha="left", va="baseline", color=sf.MID,
-                          fontsize=sf.FS_TICK)
-            ax.yaxis.set_label_coords(-(left - 0.03) / pw, 1 + 0.035 / (H - bottom - top))
         else:
             ax.tick_params(axis="y", length=0, labelleft=False)
         ax.set_ylim(-0.6, 5.0)
-        sf.panel_label(fig, ax, "abcd"[i], dy=0.035 / H)
-    x_mid = (left + (W - right)) / 2 / W
-    fig.text(x_mid, 0.03 / H, "SCA minus baseline; positive values favour SCA", ha="center",
-             va="bottom", fontsize=sf.FS_TICK, color=sf.MID)
     return fig
 
 

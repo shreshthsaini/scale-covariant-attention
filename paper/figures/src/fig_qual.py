@@ -35,8 +35,8 @@ COLORS = ["#E69F00", "#56B4E9", "#009E73", "#D55E00"]  # Okabe-Ito, matches orx_
 GAP = 0.004  # gap between tiles, fraction of \linewidth
 LABW = 0.022  # width reserved for a rotated row label
 NAMES = {"sca": r"\textbf{SCA (ours)}", "area": "AReA", "full": "Full attention",
-         "abl_v0": "No gate", "abl_local": r"\scaTwo{$\pi{=}1$}{local only}", "abl_uniform": r"Uniform $\pi(\sigma)$",
-         "abl_global": r"\scaTwo{$\pi{=}0$}{global only}", "abl_mean": "Mean pooling", "abl_layer": r"Per-layer $\pi$",
+         "abl_v0": "No gate", "abl_local": "Local only", "abl_uniform": r"Uniform $\pi$",
+         "abl_global": "Global only", "abl_mean": "Mean pooling", "abl_layer": r"Per-layer $\pi$",
          "dev_w16": "No gate, window 16", "dev_w32": "No gate, window 32",
          "dypes": "DyPE", "sega": "SEGA", "ultraimage": "UltraImage"}
 
@@ -186,69 +186,62 @@ def boxes_for(specs, workers):
 # ---------------------------------------------------------------- appendix grids: one vector style
 # The appendix galleries, the ablation grid and the failure grid share the macros in
 # snippets/_scagrid.tex. Every tile of a figure has one height, \scaT, which TeX sets so that the
-# widest row fills \linewidth. A full image is followed 1 pt later by its native crop; method groups
-# are 4 pt apart, rows 2 pt, prompts set side by side 9 pt. The crop window is a vector rectangle in
-# scaZoom over a thin dark casing, so it reads on light and dark images, and its crop tile carries
-# the same frame. The JPEGs stay clean: full images at GRID_DPI of their printed size, crops native.
+# widest row fills \linewidth. Gutters are white and 1 to 2 pt: a full image is followed 1 pt later by
+# its native crop, everything else is 2 pt apart. The crop window is a 0.6 pt vector rectangle in one
+# neutral colour (scaFrame), and its crop tile carries the same frame; images have no borders and no
+# text. The JPEGs stay clean: full images at GRID_DPI of their printed size, crops native.
 JPEG_Q = 85  # quality of every grid tile; imgsel.save_jpeg uses 4:2:0 and optimize (deterministic)
 GRID_DPI = 500  # full-image previews, pixels per printed inch
 TEXT_PT = 397.48  # \linewidth of the 5.5 in text block; sizes the JPEGs only, TeX sizes the tiles
-G_PAIR, G_GROUP, G_ROW, G_BLOCK, G_SECTION = 1, 4, 2, 9, 5  # gutters in pt
+G_PAIR, G_GROUP, G_ROW, G_BLOCK, G_SECTION = 1, 2, 2, 2, 2  # gutters in pt
 LAB_PT = 11  # \scaLW + \scaLG: the rotated row-label column and its gap
 ACCENT = {"sca", "flux2_sca", "krea_sca"}  # columns headed "SCA (ours)" in the accent colour
 
 GRID_MACROS = r"""% Shared macros for the SCA image grids. Written by paper/figures/src/fig_qual.py; do not edit by hand.
 % Each grid snippet inputs this file first. The guard makes repeated input harmless, and every
 % definition is global, so input inside a group is safe too. Needs graphicx, xcolor and tikz.
+% House style: no image borders, 1 to 2 pt white gutters, one neutral frame colour about 0.6 pt wide
+% for crop windows and crop tiles, no text inside images, SCA green only for the "SCA (ours)" label.
 \ifcsname scaGridLoaded\endcsname\else
 \expandafter\gdef\csname scaGridLoaded\endcsname{}%
 \xglobal\providecolor{scaInk}{HTML}{1F2328}%
 \xglobal\providecolor{scaMid}{HTML}{5B6570}%
 \xglobal\providecolor{scaAccent}{HTML}{13865F}%
-\xglobal\providecolor{scaZoom}{HTML}{FFC21A}%
+\xglobal\providecolor{scaFrame}{HTML}{BFC5CB}%
 \newlength{\scaT}% tile height; each figure sets it so that its widest row fills \linewidth
+\newlength{\scaU}% second tile height for a figure whose rows differ in tile count
 \newlength{\scaLW}\global\scaLW=9.5pt% rotated row-label column
 \newlength{\scaLG}\global\scaLG=1.5pt% gap between a row label and its tiles
-\newlength{\scaZW}\global\scaZW=0.8pt% crop window and crop frame, in scaZoom
-\newlength{\scaZC}\global\scaZC=1.4pt% dark casing under that line, 0.3 pt on each side
-\newlength{\scaZI}\global\scaZI=0.7pt% half the casing: frames and border windows stay inside the tile
+\newlength{\scaZW}\global\scaZW=0.6pt% crop window and crop frame, in scaFrame
+\newlength{\scaZI}\global\scaZI=0.3pt% half the line: frames and border windows stay inside the tile
 \newlength{\scaHT}\global\scaHT=1.5pt% trim at each end of a header rule
 \newlength{\scaTW}\newlength{\scaTH}%
 % \scaImg{width}{height}{file}: a plain tile.
 \gdef\scaImg#1#2#3{\includegraphics[width=#1,height=#2]{#3}}%
-% \scaImgTag{width}{height}{file}{tag}: a plain tile with a small label in its top left corner.
-\gdef\scaImgTag#1#2#3#4{\scaTW=#1\relax\scaTH=#2\relax%
-\begin{tikzpicture}[x=\scaTW,y=\scaTH]%
-\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (0,0) {\includegraphics[width=\scaTW,height=\scaTH]{#3}};%
-\useasboundingbox (0,0) rectangle (1,1);%
-\node[anchor=north west,inner sep=1.2pt,fill=black,fill opacity=.6,text opacity=1,text=white,font=\sffamily\scriptsize] at ([shift={(1.5pt,-1.5pt)}]0,1) {#4};%
-\end{tikzpicture}}%
 % \scaFull{width}{height}{file}{(x0,y0)}{(x1,y1)}: a full image with its crop window outlined.
 % Corners are fractions of the tile, origin at the bottom left.
 \gdef\scaFull#1#2#3#4#5{\scaTW=#1\relax\scaTH=#2\relax%
 \begin{tikzpicture}[x=\scaTW,y=\scaTH]%
 \node[anchor=south west,inner sep=0pt,outer sep=0pt] at (0,0) {\includegraphics[width=\scaTW,height=\scaTH]{#3}};%
 \useasboundingbox (0,0) rectangle (1,1);%
-\draw[black,draw opacity=.55,line width=\scaZC] #4 rectangle #5;%
-\draw[scaZoom,line width=\scaZW] #4 rectangle #5;%
+\draw[scaFrame,line width=\scaZW] #4 rectangle #5;%
 \end{tikzpicture}}%
 % \scaCrop{width}{height}{file}: a native crop, framed like its window.
 \gdef\scaCrop#1#2#3{\scaTW=#1\relax\scaTH=#2\relax%
 \begin{tikzpicture}[x=\scaTW,y=\scaTH]%
 \node[anchor=south west,inner sep=0pt,outer sep=0pt] at (0,0) {\includegraphics[width=\scaTW,height=\scaTH]{#3}};%
 \useasboundingbox (0,0) rectangle (1,1);%
-\draw[black,draw opacity=.55,line width=\scaZC] ([shift={(\scaZI,\scaZI)}]0,0) rectangle ([shift={(-\scaZI,-\scaZI)}]1,1);%
-\draw[scaZoom,line width=\scaZW] ([shift={(\scaZI,\scaZI)}]0,0) rectangle ([shift={(-\scaZI,-\scaZI)}]1,1);%
+\draw[scaFrame,line width=\scaZW] ([shift={(\scaZI,\scaZI)}]0,0) rectangle ([shift={(-\scaZI,-\scaZI)}]1,1);%
 \end{tikzpicture}}%
-% \scaHead{width}{rule colour}{text}: a one-line header centred over a group of tiles, ruled like
-% \cmidrule(lr); text a little wider than its group may overhang into the gutters.
-\gdef\scaHead#1#2#3{\parbox[b]{#1}{\centering\makebox[\linewidth][c]{\color{scaInk}\strut#3}\par\nointerlineskip
-\vskip1.2pt\hbox to\hsize{\hskip\scaHT{\color{#2}\leaders\hrule height .5pt\hfill}\hskip\scaHT}}}%
-% \scaTwo{line}{line}: two-line header text, bottom aligned with one-line headers.
-\gdef\scaTwo#1#2{\begin{tabular}[b]{@{}c@{}}#1\\#2\end{tabular}}%
+% \scaHead{width}{text}: a one-line header centred over a group of tiles, with a thin neutral rule
+% like \cmidrule(lr); text a little wider than its group may overhang into the gutters.
+\gdef\scaHead#1#2{\parbox[b]{#1}{\centering\makebox[\linewidth][c]{\color{scaInk}\strut#2}\par\nointerlineskip
+\vskip1.2pt\hbox to\hsize{\hskip\scaHT{\color{scaMid}\leaders\hrule height .4pt\hfill}\hskip\scaHT}}}%
+% \scaOurs{text}: the one accent-coloured, bold label of a figure.
+\gdef\scaOurs#1{\textcolor{scaAccent}{\textbf{#1}}}%
 % \scaRowLabel{height}{text}: a row label rotated 90 degrees and centred on a row of that height.
 \gdef\scaRowLabel#1#2{\makebox[\scaLW][l]{\rotatebox{90}{\makebox[#1][c]{\color{scaInk}\strut#2}}}}%
-% \scaGridStyle: typography and exact spacing for a grid; use inside a group.
+% \scaGridStyle: typography (8 pt sans) and exact spacing for a grid; use inside a group.
 \gdef\scaGridStyle{\centering\sffamily\footnotesize\offinterlineskip\parskip=0pt\relax}%
 \fi
 """
@@ -302,18 +295,14 @@ class Geo:
             self.gaps, lab, round(self.units * 1000))
 
 
-def tdim(units, gaps=0):
-    """TeX width of `units` tile heights plus `gaps` pt."""
-    u = r"\scaT" if units == 1 else r"%g\scaT" % units
+def tdim(units, gaps=0, unit=r"\scaT"):
+    """TeX width of `units` tile heights (of length `unit`) plus `gaps` pt."""
+    u = unit if units == 1 else r"%g%s" % (units, unit)
     return r"\dimexpr%s+%gpt\relax" % (u, gaps) if gaps else u
 
 
-def t_img(path, aspect=1):
-    return r"\scaImg{%s}{\scaT}{%s}" % (tdim(aspect), rel(path))
-
-
-def t_tag(path, tag, aspect=1):
-    return r"\scaImgTag{%s}{\scaT}{%s}{%s}" % (tdim(aspect), rel(path), tag)
+def t_img(path, aspect=1, unit=r"\scaT"):
+    return r"\scaImg{%s}{%s}{%s}" % (tdim(aspect, unit=unit), unit, rel(path))
 
 
 def t_crop(path):
@@ -344,24 +333,32 @@ def g_row(cells, label=None, indent=False):
     return r"\makebox[\linewidth][c]{%s}" % body
 
 
-def head_cell(text, units, gaps=0, accent=False):
+def head_cell(text, units, gaps=0, accent=False, unit=r"\scaT"):
+    """A header over `units` tiles; accent=True gives the figure's one green, bold "ours" label."""
     if accent:
-        text = r"\textcolor{scaAccent}{\textbf{%s}}" % text
-    return r"\scaHead{%s}{%s}{%s}" % (tdim(units, gaps), "scaAccent" if accent else "scaMid", text)
+        text = r"\scaOurs{%s}" % text
+    return r"\scaHead{%s}{%s}" % (tdim(units, gaps, unit), text)
 
 
-def method_head(m, units, gaps=0, names=None):
+def method_head(m, units, gaps=0, names=None, unit=r"\scaT"):
     if m in ACCENT:
-        return head_cell("SCA (ours)", units, gaps, accent=True)
-    return head_cell((names or NAMES).get(m, m), units, gaps)
+        return head_cell("SCA (ours)", units, gaps, accent=True, unit=unit)
+    return head_cell((names or NAMES).get(m, m), units, gaps, unit=unit)
 
 
-def grid_snippet(name, geo, rows, caption, label, comments=(), source=None, env="figure*"):
-    """Write snippets/<name>.tex. rows: [(tex, gap after in pt)]; the last gap is unused."""
+ROW_OURS = r"\scaOurs{SCA (ours)}"  # the same label as a rotated row label
+
+
+def grid_snippet(name, geo, rows, caption, label, comments=(), source=None, env="figure*", pre=()):
+    """Write snippets/<name>.tex. rows: [(tex, gap after in pt)]; the last gap is unused.
+
+    `pre` lines (for example a second tile length) go between the tile height and the first row.
+    """
     write_grid_macros()
     lines = [f"% Generated by paper/figures/src/{source or 'fig_qual.py ' + name}; do not edit by hand."]
     lines += [f"% {c}" for c in comments]
     lines += [r"\input{figures/snippets/_scagrid}%", rf"\begin{{{env}}}[t]", r"\begingroup\scaGridStyle", geo.tex()]
+    lines += list(pre)
     lines += [tex + (r"\par\vskip%gpt" % gap if i < len(rows) - 1 else r"\par") for i, (tex, gap) in enumerate(rows)]
     lines += [r"\endgroup", rf"\caption{{{caption}}}", rf"\label{{{label}}}", rf"\end{{{env}}}", ""]
     p = os.path.join(SNIP, f"{name}.tex")
@@ -690,25 +687,24 @@ def fig_ablation(a):
     if man["methods"] != methods:
         raise ValueError(f"ablation is frozen for methods {man['methods']}")
     nm = len(methods)
-    geo = Geo(nm, (nm - 1) * G_GROUP, label=True)
+    geo = Geo(nm, (nm - 1) * G_GROUP)
     jobs = [dict(out=out, name=f"{e['short_id']}_{m}", label=m, res=res, sid=e["short_id"], px=geo.px(),
                  crops=[(tuple(e["crop_xy_size"]), "crop")]) for e in man["prompts"] for m in methods]
     t = run_grid(jobs, a.workers)
     head = []
     for k, m in enumerate(methods):
         head += ([G_GROUP] if k else []) + [method_head(m, 1)]
-    rows = [(g_row(head, indent=True), G_ROW)]
-    for e in man["prompts"]:
+    rows = [(g_row(head), G_ROW)]
+    for e in man["prompts"]:  # per prompt: the full images, then 1 pt below the 1:1 crops of one window
         s, b = e["short_id"], tuple(e["crop_xy_size"])
         full, crop = [], []
         for k, m in enumerate(methods):
             full += ([G_GROUP] if k else []) + [t_full(t[f"{s}_{m}"]["full"], b, res)]
             crop += ([G_GROUP] if k else []) + [t_crop(t[f"{s}_{m}"]["crop"])]
-        rows += [(g_row(full, label="Full image"), G_PAIR), (g_row(crop, label="1:1 crop"), G_SECTION)]
-    cap = (r"\textbf{Without the gate the subject repeats; $\pi=0$ leaves the pooled branch's coarse grid, and "
-           r"mean pooling loses the layout.} Four ablation prompts at 4096$\times$4096, seed~0, 28 steps, guidance "
-           r"4.5; variants as in Table~\ref{tab:ablation}; crops show native pixels of the outlined 512$\times$512 "
-           r"windows. $\pi=1$ and uniform $\pi(\sigma)$ look close to SCA here; their deficits show in the metrics.")
+        rows += [(g_row(full), G_PAIR), (g_row(crop), G_SECTION)]
+    cap = (r"\textbf{Without the gate the subject repeats; global only leaves the pooled branch's coarse grid; "
+           r"mean pooling loses the layout.} Four ablation prompts at $4096^2$ (Table~\ref{tab:ablation}); "
+           r"full images above 1:1 crops of one window.")
     grid_snippet("ablation", geo, rows, cap, "fig:ablation_grid",
                  comments=prompt_comments([("sca", res, s) for s in ABL]))
     record_outputs("ablation", man, t)
@@ -729,34 +725,41 @@ def fig_failures(a):
 
     man = frozen("failures", compute, a.workers)
     box = {e["short_id"]: tuple(e["crop_xy_size"]) for e in man["prompts"] if e["crop_xy_size"]}
-    geo = Geo(6, 2 * (G_PAIR + G_GROUP) + G_BLOCK)
-    jobs = [dict(out=out, name=f"dup_{s}_{m}", label=m, res=res, sid=s, px=geo.px())
+    # Top block: six tiles of height \scaU, grouped by setting (window 64, window 16, with gate), two
+    # development prompts per group, so each setting is named once. Bottom block: one row per method
+    # (AReA, then SCA), eight tiles of height \scaT: for each of the four errors the full image with the
+    # shared window, then its 1:1 crop. Method names appear once, as the two row labels.
+    n_dup, n_err = len(FAIL_DUP) * len(dup_methods), 2 * len(FAIL_SCA)
+    geo = Geo(n_err, len(FAIL_SCA) * G_PAIR + (len(FAIL_SCA) - 1) * G_GROUP, label=True)
+    dup_gaps = len(dup_methods) * (len(FAIL_DUP) - 1) * G_PAIR + (len(dup_methods) - 1) * G_GROUP
+    dup_in = (TEXT_PT - dup_gaps) / n_dup / 72.27
+    pre = [r"\setlength{\scaU}{\dimexpr(\linewidth-%gpt)*1000/%d\relax}%%" % (dup_gaps, n_dup * 1000)]
+    jobs = [dict(out=out, name=f"dup_{s}_{m}", label=m, res=res, sid=s, px=round(dup_in * GRID_DPI))
             for s in FAIL_DUP for m in dup_methods]
     for s, _ in FAIL_SCA:
-        jobs.append(dict(out=out, name=f"err_{s}_sca", label="sca", res=res, sid=s, px=geo.px(),
-                         crops=[(box[s], "crop")]))
-        jobs.append(dict(out=out, name=f"err_{s}_area", label="area", res=res, sid=s, crops=[(box[s], "crop")]))
+        for m in ("sca", "area"):
+            jobs.append(dict(out=out, name=f"err_{s}_{m}", label=m, res=res, sid=s, px=geo.px(),
+                             crops=[(box[s], "crop")]))
     t = run_grid(jobs, a.workers)
-    head1, row1, head2 = [], [], []
-    for j, s in enumerate(FAIL_DUP):  # duplication without the gate, two development prompts
-        head1 += ([G_BLOCK] if j else []) + [head_cell("No gate", 2, 2), 3, method_head("sca", 1)]
-        row1 += ([G_BLOCK] if j else []) + [t_tag(t[f"dup_{s}_abl_v0"]["full"], r"$w{=}64$"), 2,
-                                            t_tag(t[f"dup_{s}_dev_w16"]["full"], r"$w{=}16$"), 3,
-                                            t_img(t[f"dup_{s}_sca"]["full"])]
-        head2 += ([G_BLOCK] if j else []) + [method_head("sca", 2, G_PAIR), G_GROUP, method_head("area", 1)]
-    rows = [(g_row(head1), G_ROW), (g_row(row1), G_SECTION), (g_row(head2), G_ROW)]
-    for pair in (FAIL_SCA[:2], FAIL_SCA[2:]):  # errors SCA still makes, each beside AReA's same window
+    dup_names = {"abl_v0": "No gate, window 64", "dev_w16": "No gate, window 16", "sca": "With gate"}
+    head1, row1 = [], []
+    for k, m in enumerate(dup_methods):
+        head1 += ([G_GROUP] if k else []) + [head_cell(dup_names[m], len(FAIL_DUP), (len(FAIL_DUP) - 1) * G_PAIR,
+                                                       unit=r"\scaU")]
+        for j, s in enumerate(FAIL_DUP):
+            row1 += ([G_GROUP if j == 0 and k else G_PAIR] if (j or k) else []) + \
+                [t_img(t[f"dup_{s}_{m}"]["full"], unit=r"\scaU")]
+    rows = [(g_row(head1), G_ROW), (g_row(row1), G_SECTION)]
+    for m, lab in (("area", "AReA"), ("sca", ROW_OURS)):  # errors SCA still makes, AReA's same window above
         cells = []
-        for j, (s, _) in enumerate(pair):
-            cells += ([G_BLOCK] if j else []) + [t_full(t[f"err_{s}_sca"]["full"], box[s], res), G_PAIR,
-                                                 t_crop(t[f"err_{s}_sca"]["crop"]), G_GROUP,
-                                                 t_crop(t[f"err_{s}_area"]["crop"])]
-        rows.append((g_row(cells), G_ROW))
+        for j, (s, _) in enumerate(FAIL_SCA):
+            cells += ([G_GROUP] if j else []) + [t_full(t[f"err_{s}_{m}"]["full"], box[s], res), G_PAIR,
+                                                 t_crop(t[f"err_{s}_{m}"]["crop"])]
+        rows.append((g_row(cells, label=lab), G_ROW))
     cap = (r"\textbf{Without the gate, windows duplicate the subject; SCA still makes local errors.} "
-           r"Top (development prompts): no gate with 64- and 16-token windows ($w$), then SCA. Below: a staircase "
-           r"sword, a grid beside a coat, a foot for an arm, border speckle, each next to AReA's same window; AReA "
-           r"composes differently and avoids them. 4096$\times$4096, seed~0, 28 steps, guidance 4.5.")
-    grid_snippet("failures", geo, rows, cap, "fig:failures",
+           r"Top: two development prompts. Below, 1:1 crops of outlined windows: staircase sword, blocky patch, "
+           r"foot for an arm, border speckle; AReA composes differently.")
+    grid_snippet("failures", geo, rows, cap, "fig:failures", pre=pre,
                  comments=prompt_comments([("sca", res, s) for s in FAIL_DUP] + [("sca", res, s) for s, _ in FAIL_SCA]))
     record_outputs("failures", man, t)
 

@@ -43,7 +43,8 @@ W = 5.5           # text width, inches
 G = 0.05          # gutter
 DPI = 600         # pixel budget for downsampled full images
 M = 0.035         # margin of insets and badges from image edges
-HALO = 1.15 / 72  # width of the dark halo under boxes and frames, inches
+LW = 0.6 / 72     # width of the one neutral frame line (windows and insets), inches
+FRAME = "BFC5CB"  # the one neutral frame colour; leader lines use it too
 PANO_INSET = 0.80
 SQ_INSET = 0.44
 METHOD = "sca_nb"
@@ -152,11 +153,9 @@ def main() -> None:
                    r"{\includegraphics[width=%.4fin,height=%.4fin]{%s}};" % (x, -y, w, hh, name))
 
     def rect(x0, y0, x1, y1, style):
-        tex.append(r"\draw[halo] (%.4f,%.4f) rectangle (%.4f,%.4f);" % (x0, -y0, x1, -y1))
         tex.append(r"\draw[%s] (%.4f,%.4f) rectangle (%.4f,%.4f);" % (style, x0, -y0, x1, -y1))
 
     def leader(a, b):
-        tex.append(r"\draw[leaderhalo] (%.4f,%.4f) -- (%.4f,%.4f);" % (a[0], -a[1], b[0], -b[1]))
         tex.append(r"\draw[leader] (%.4f,%.4f) -- (%.4f,%.4f);" % (a[0], -a[1], b[0], -b[1]))
 
     def badge(x, y, w, h, img, at="top-left"):
@@ -199,8 +198,8 @@ def main() -> None:
             for a, b in pairs:
                 leader(a, b)
         rect(*b0, *b1, "zoombox")
-        # On a docked side the frame moves in by half its halo, so it stays inside the image.
-        dx, dy = (HALO / 2 if mx == 0 else 0.0), (HALO / 2 if my == 0 else 0.0)
+        # On a docked side the frame moves in by half its line width, so it stays inside the image.
+        dx, dy = (LW / 2 if mx == 0 else 0.0), (LW / 2 if my == 0 else 0.0)
         rect(i0[0] + dx, i0[1] + dy, i1[0] - dx, i1[1] - dy, "zoomframe")
         return dict(box_xys=list(z["box"]), crop=crop.name, crop_px=bs,
                     inset_in=q, magnification=round((q / bs) / (w / img.width), 2),
@@ -258,13 +257,12 @@ def main() -> None:
 \usepackage{tikz}
 \graphicspath{{../showcase/}}
 \input{sca_colors.tex}
+\definecolor{scaFrame}{HTML}{%s}
 \begin{document}
 \begin{tikzpicture}[x=1in,y=1in,
-  halo/.style={draw=black,draw opacity=0.35,line width=1.15pt},
-  leaderhalo/.style={draw=black,draw opacity=0.22,line width=0.85pt},
-  zoombox/.style={draw=scaZoom,line width=0.6pt},
-  zoomframe/.style={draw=scaZoom,line width=0.7pt},
-  leader/.style={draw=scaZoom,line width=0.4pt},
+  zoombox/.style={draw=scaFrame,line width=0.6pt},
+  zoomframe/.style={draw=scaFrame,line width=0.6pt},
+  leader/.style={draw=scaFrame,line width=0.4pt},
   badge/.style={fill=black,fill opacity=0.58,text opacity=1,text=white,rounded corners=1.2pt,
                 inner xsep=2.2pt,inner ysep=1.3pt,font=\sffamily\fontsize{7}{7.5}\selectfont},
   ]
@@ -272,7 +270,7 @@ def main() -> None:
 %s
 \end{tikzpicture}
 \end{document}
-""" % (W, -total_h, "\n".join(tex))
+""" % (FRAME, W, -total_h, "\n".join(tex))
     TEX.write_text(doc)
     subprocess.run([TECTONIC, "-X", "compile", TEX.name, "--outdir", str(FIG)], cwd=HERE,
                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -280,9 +278,8 @@ def main() -> None:
 
     caption = (
         r"\textbf{\sca{} keeps layout and fine detail across three aspect ratios without training.} "
-        r"Curated \sca{} outputs at $4096^2$, $2048\times4096$ and $2048\times6144$ on evaluation prompts, "
-        r"picked by eye for variety (FLUX.1-dev, seed 0, 28 steps, guidance 4.5). Insets are native-pixel "
-        r"crops of the outlined windows.")
+        r"Curated \sca{} outputs at $4096^2$, $2048\times4096$ and $2048\times6144$, picked by eye for "
+        r"variety; insets are 1:1 crops of the outlined windows.")
     comments = ["%% %s %s (%s): %s" % (r["role"], r["config"]["prompt_id"].split("_")[-1],
                                        r["config"]["res"], " ".join(r["prompt"].split())[:140])
                 for r in records]

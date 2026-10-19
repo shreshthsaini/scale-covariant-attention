@@ -16,20 +16,18 @@ Input, one of:
                guard, code 2d11740) from run "latency3"; the band-guard SCA runs are dropped.
 The lines and filled markers are clean batch-1 measurements only.
 
-Campaign means are a separate, marked layer: hollow markers at 4096^2 for SCA, HRDiT and
-UltraImage, read from results/baseline46/base_summary.csv (metric "seconds", the same 46 prompts
-for every method, run on shared nodes). They are never joined to the clean curves. UltraImage's
-191-prompt campaign mean (results/e1_ultraimage_base_summary.csv) is only recorded in the provenance.
-HRDiT's clean batch-1 time at 4096^2 (median of the three hrdit_dev_author rows of
-results/latency_curve_batch1.csv; that run has no excluded warm-up) is quoted in the caption and
-not plotted.
+Campaign means (results/baseline46/base_summary.csv, 46 prompts on shared nodes), UltraImage's
+191-prompt campaign mean (results/e1_ultraimage_base_summary.csv) and HRDiT's clean batch-1 time
+(median of the three hrdit_dev_author rows of results/latency_curve_batch1.csv) are read, checked
+and recorded in the provenance file, but not plotted: the figure follows the house style of
+figures/REFERENCE_STYLE.md (AReA Fig 6) and shows the clean sweep only.
 
 With several resolutions the figure is one log-log panel:
-  median seconds per image against resolution, whiskers = observed min and max, a light fill
-  between AReA and SCA, the least-squares exponent b of seconds ~ N^b (N = image tokens,
-  (W/16)(H/16)) fitted to each method's medians, SCA's speedup over AReA as a top row, the
-  campaign means as hollow markers, and a note that full attention stops at 6144^2 because
-  8192^2 was not run by design.
+  median seconds per image against resolution (units in the ticks), whiskers = observed min and
+  max, a light fill between AReA and SCA, the least-squares exponent b of seconds ~ N^b (N = image
+  tokens, (W/16)(H/16)) as a direct label at each line's end, SCA's speedup over AReA as small grey
+  ratios inside the gap, one bold headline ratio at the largest size, and the model name in a
+  corner. No legend, no grid, no top or right spine.
 With one resolution it is a bar chart. Speedups and exponents are printed, and the caption
 snippet figures/snippets/latency.tex is written from the same numbers (trial runs with --out
 write it beside the output instead).
@@ -47,10 +45,10 @@ os.environ.setdefault("SOURCE_DATE_EPOCH", "0")  # byte-identical PDF/SVG on rer
 import sys
 from collections import defaultdict
 
+import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FixedLocator, NullLocator
-from matplotlib.transforms import offset_copy
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import scafig as sf  # noqa: E402
@@ -79,9 +77,8 @@ CAMPAIGN = {  # base_summary.csv method -> (label, color, marker); baselines in 
     "hrdit_dev_author": ("HRDiT", "#6F7C89", "D"),
     "ultraimage": ("UltraImage", sf.METHOD_COLOR["ultraimage"], "D"),
 }
-FULL_STOP_NOTE = ("8192\u00b2 not run", "by design (quadratic cost)")  # two lines of the in-plot note
 PATCH = 16  # pixels per image token side: VAE factor 8 times 2x2 latent packing
-W, H = sf.TEXT, 2.05  # inches; the main-text figure must not grow
+W, H = sf.TEXT, 1.90  # inches; the main-text figure must not grow
 
 
 def rel(path):
@@ -231,10 +228,40 @@ def bar_chart(med, speed, big):
     return fig
 
 
-def curve_figure(med, ranges, resolutions, speed, expo, camp):
-    """Seconds per image (log-log) with SCA's speedup over AReA printed above each resolution."""
+def exponent_label(fig, ax, x, y, name, col, b, side, bold=False):
+    """Two-line direct label at a line's end: the method name over "proportional to N^b".
+
+    The exponent is set as its own small text so it stays legible (a mathtext superscript at 8 pt
+    would print below 6 pt). `side` "right" hangs the label right of the point, "left" sets it
+    above and to the left, where a line that stops short of the largest size has free space.
+    """
+    px = 72 / fig.dpi
+    x_disp, y_disp = ax.transData.transform((x, y))
+    if side == "right":
+        ax.annotate(name, (x, y), xytext=(7, 2.5), textcoords="offset points", ha="left", va="center",
+                    fontsize=sf.FS, color=col, fontweight="bold" if bold else "normal")
+        base = ax.annotate(r"$\propto N$", (x, y), xytext=(7, -3.5), textcoords="offset points",
+                           ha="left", va="top", fontsize=sf.FS, color=col)
+        fig.canvas.draw()
+        bb = base.get_window_extent()
+        ax.annotate(f"{b:.2f}", (x, y), xytext=((bb.x1 - x_disp) * px + 0.6, (bb.y1 - y_disp) * px + 2.2),
+                    textcoords="offset points", ha="left", va="top", fontsize=sf.FS_SMALL, color=col)
+        return
+    ax.annotate(name, (x, y), xytext=(-4, 10.5), textcoords="offset points", ha="right", va="bottom",
+                fontsize=sf.FS, color=col, fontweight="bold" if bold else "normal")
+    ex = ax.annotate(f"{b:.2f}", (x, y), xytext=(-4, 3.2), textcoords="offset points", ha="right",
+                     va="bottom", fontsize=sf.FS_SMALL, color=col)
+    fig.canvas.draw()
+    bb = ex.get_window_extent()
+    ax.annotate(r"$\propto N$", (x, y), xytext=((bb.x0 - x_disp) * px - 0.6, 1.0), textcoords="offset points",
+                ha="right", va="bottom", fontsize=sf.FS, color=col)
+
+
+def curve_figure(med, ranges, resolutions, speed, expo):
+    """Seconds per image (log-log): baseline lines against SCA, the gap to AReA shaded, one bold
+    headline ratio, the per-size ratios small and grey inside the gap, exponents as direct labels."""
     fig = plt.figure(figsize=(W, H))
-    left, right, bottom, top = 0.47, 0.04, 0.37, 0.36
+    left, right, bottom, top = 0.56, 0.04, 0.37, 0.08
     ax = fig.add_axes(box(left, bottom, W - left - right, H - bottom - top))
     n = {r: tokens(r) for r in resolutions}
     xt = [n[r] for r in resolutions]
@@ -251,7 +278,7 @@ def curve_figure(med, ranges, resolutions, speed, expo, camp):
         # whiskers: observed minimum and maximum over the three timed prompts, not intervals
         ax.vlines(xs, [min(ranges[r, m]) for r in rs], [max(ranges[r, m]) for r in rs], color=col,
                   lw=0.8, zorder=2)
-        ax.plot(xs, ys, color=col, lw=1.6 if m == "sca" else 1.1, marker=mk,
+        ax.plot(xs, ys, color=col, lw=1.5 if m == "sca" else 1.1, marker=mk,
                 ms=3.8 if m == "sca" else 3.3, mec="white", mew=0.4, zorder=3 if m == "sca" else 2.5,
                 solid_capstyle="round")
         ends[m] = (rs[-1], xs[-1], ys[-1])
@@ -266,86 +293,32 @@ def curve_figure(med, ranges, resolutions, speed, expo, camp):
     yt = [t for t in yt if min(ys) / 1.5 <= t <= max(ys) * 1.5]
     ax.yaxis.set_major_locator(FixedLocator(yt))
     ax.yaxis.set_minor_locator(NullLocator())
-    ax.set_yticklabels([f"{t:g}" for t in yt])
+    ax.set_yticklabels([f"{t:g} s" for t in yt])  # units in the ticks
     ax.set_xlim(xt[0] / 1.2, xt[-1] * 2.3)
-    ax.set_ylim(min(ys) / 1.35, max(ys) * 1.3)
+    ax.set_ylim(min(ys) / 1.35, max(ys) * 1.75)  # headroom for the full-attention label
     ax.grid(visible=False)
-    ax.set_xlabel("output resolution (log scale)")
-    ax.set_ylabel("seconds per image")
+    ax.set_xlabel("output resolution")
+    ax.set_ylabel("time per image")
 
-    # direct labels: name and fitted exponent at each line's end (full attention, when it stops
-    # short of the largest size, is named by a keyed note instead)
-    full_stops = "full" in ends and ends["full"][0] != resolutions[-1]
-    for m, (_, x, y) in ends.items():
+    # direct labels: name and fitted exponent at each line's end
+    for m, (res, x, y) in ends.items():
         lbl, col, _ = METHODS[m]
-        if m == "full" and full_stops:
-            continue
-        ax.annotate(lbl, (x, y), xytext=(7, 2.5), textcoords="offset points", ha="left", va="center",
-                    fontsize=sf.FS, color=col, fontweight="bold" if m == "sca" else "normal")
-        # "proportional to N^b": the exponent is set as its own 7 pt text so it stays legible
-        base = ax.annotate(r"$\propto N$", (x, y), xytext=(7, -3.5), textcoords="offset points",
-                           ha="left", va="top", fontsize=sf.FS, color=col)
-        fig.canvas.draw()
-        bb = base.get_window_extent()
-        px = 72 / fig.dpi
-        x_disp, y_disp = ax.transData.transform((x, y))
-        ax.annotate(f"{expo[m]:.2f}", (x, y), xytext=((bb.x1 - x_disp) * px + 0.6, (bb.y1 - y_disp) * px + 2.2),
-                    textcoords="offset points", ha="left", va="top", fontsize=sf.FS_SMALL, color=col)
+        side = "left" if m == "full" and res != resolutions[-1] else "right"
+        exponent_label(fig, ax, x, y, lbl, col, expo[m], side, bold=(m == "sca"))
 
-    # Why the full-attention curve stops: a note keyed by the line's own marker, in the free space
-    # below the SCA line, with the marker in the column of the line's last point. No leader: from
-    # there it would cross the AReA and SCA lines, and a label above the point would sit under the
-    # speedup row and in line with the key.
-    if full_stops:
-        _, fx, _ = ends["full"]
-        lbl, col, mk = METHODS["full"]
-        ny = 0.36  # top of the note, axes fraction
-        at = ax.get_xaxis_transform()  # x in data, y in axes fraction
-        ax.plot([fx], [ny], transform=offset_copy(at, fig=fig, y=-4.6, units="points"), color=col,
-                marker=mk, ms=3.3, mec="white", mew=0.4, ls="none", zorder=4)
-        ax.annotate(f"{lbl}: {FULL_STOP_NOTE[0]}\n{FULL_STOP_NOTE[1]}", (fx, ny), xycoords=at,
-                    xytext=(5.5, 0), textcoords="offset points", ha="left", va="top",
-                    fontsize=sf.FS_TICK, color=sf.MID, linespacing=1.15)
-
-    # Campaign means at 4096^2 (shared nodes): hollow markers on the clean column, never joined.
-    xc = n[CAMPAIGN_RES]
-    for key, (lbl, col, mk) in CAMPAIGN.items():
-        v = camp[key]["mean"]
-        if key == "sca_nb":  # a ring around SCA's clean point, which it nearly equals
-            ax.plot([xc], [v], ls="none", marker="o", ms=7.4, mfc="none", mec=col, mew=0.85, zorder=3.6)
-            continue
-        ax.plot([xc], [v], ls="none", marker=mk, ms=4.0, mfc="white", mec=col, mew=0.9, zorder=3.6)
-        dy = -3.0 if key == "hrdit_dev_author" else 0  # clear the full-attention line just above it
-        ax.annotate(lbl, (xc, v), xytext=(-5.5, dy), textcoords="offset points", ha="right", va="center",
-                    fontsize=sf.FS_TICK, color=col)
-
-    # key: filled = clean batch-1 sweep, hollow = campaign mean (grey baselines, green SCA)
-    kx, ky, dy, dx = 0.020, 0.955, 0.13, 0.019  # axes fractions
-    base_col = METHODS["area"][1]
-    glyphs = [  # (row, slot, marker, size, face, edge, edge width)
-        (0, 0, "s", 3.3, base_col, "white", 0.4), (0, 1, "o", 3.8, sf.SCA, "white", 0.4),
-        (1, 0, "D", 3.6, "white", base_col, 0.85), (1, 1, "o", 5.0, "none", sf.SCA, 0.85)]
-    for row, slot, mk, ms, face, edge, mew in glyphs:
-        ax.plot([kx + slot * dx], [ky - row * dy], transform=ax.transAxes, ls="none", marker=mk, ms=ms,
-                mfc=face, mec=edge, mew=mew, clip_on=False, zorder=4)
-    texts = ["batch 1, one GH200, median of three prompts",
-             f"campaign mean at {res_label(CAMPAIGN_RES)}, shared nodes, {camp['sca_nb']['n_prompts']} prompts"]
-    for row, t in enumerate(texts):
-        ax.text(kx + dx + 0.017, ky - row * dy, t, transform=ax.transAxes, ha="left", va="center",
-                fontsize=sf.FS_TICK, color=sf.MID)
-
-    # speedup row: SCA over AReA at every resolution, as tick labels on a top axis
-    top_ax = ax.secondary_xaxis("top")
-    top_ax.xaxis.set_major_locator(FixedLocator([n[r] for r in both]))
-    top_ax.xaxis.set_minor_locator(NullLocator())
-    top_ax.set_xticklabels([f"{speed[r]['area']:.2f}\u00d7" for r in both])
-    top_ax.tick_params(axis="x", length=0, pad=2, labelsize=sf.FS_TICK, labelcolor=sf.SCA)
-    top_ax.spines["top"].set_visible(False)
-    labels = top_ax.get_xticklabels()
-    labels[-1].set_fontweight("bold")
-    labels[-1].set_fontsize(sf.FS)
-    top_ax.set_xlabel("speedup of SCA over AReA", fontsize=sf.FS_TICK, color=sf.MID, labelpad=3)
-    return fig, ax, top_ax
+    # per-size ratios: small and grey, inside the shaded gap (a halo in the gap colour keeps them
+    # legible where the full-attention line crosses); the largest size is the headline
+    for r in both[:-1]:
+        xr = n[r] * (1.14 if r == both[0] else 1.0)  # the gap is narrowest at the smallest size
+        ax.text(xr, np.sqrt(med[r, "sca"][0] * med[r, "area"][0]), f"{speed[r]['area']:.2f}\u00d7",
+                ha="center", va="center", fontsize=sf.FS_SMALL, color=sf.MID, zorder=4,
+                path_effects=[pe.withStroke(linewidth=2.2, foreground=sf.SCA_LIGHT)])
+    big = both[-1]
+    ax.text(0.02, 0.96, f"{speed[big]['area']:.2f}\u00d7 faster at {res_label(big)}", transform=ax.transAxes,
+            ha="left", va="top", fontsize=sf.FS, fontweight="bold", color=sf.SCA)
+    ax.text(0.985, 0.03, "FLUX.1-dev", transform=ax.transAxes, ha="right", va="bottom",
+            fontsize=sf.FS_TICK, color=sf.MID)
+    return fig, ax
 
 
 def tex_res(res):
@@ -367,24 +340,23 @@ def hrdit_clean_seconds(path=BATCH1_CSV, res=CAMPAIGN_RES):
     return vals
 
 
-def write_snippet(path, resolutions, speed, expo, camp, hrdit_clean, sources):
-    """Caption numbers come from the same CSVs as the plot (HRDiT's clean time from the batch-1 CSV)."""
+def write_snippet(path, resolutions, med, speed, expo, sources):
+    """Caption numbers come from the same CSVs as the plot. At most 50 words: a bold claim, then the
+    measurement conditions in two sentences (HRDiT's clean time is quoted in the main text)."""
     big = resolutions[-1]
-    n_camp = camp["sca_nb"]["n_prompts"]
+    full_last = max((r for r in resolutions if (r, "full") in med), key=tokens, default=None)
+    stops = f" full attention was not run at {tex_res(big)}." if full_last not in (None, big) else ""
     cap = (
-        rf"\textbf{{\sca{{}} is the fastest of the methods measured at each size, and its lead over AReA "
-        rf"grows to ${speed[big]['area']:.2f}\times$ at {tex_res(big)}.}}" "\n"
-        r"  Filled markers: batch-1 seconds per image on one GH200 (median and range of three prompts; speedup labels use unrounded medians); "
-        rf"full attention scales as $N^{{{expo['full']:.2f}}}$ ($N$: image tokens)." "\n"
-        rf"  Hollow markers: \mbox{{{n_camp}-prompt}} campaign means at {tex_res(CAMPAIGN_RES)} on shared nodes; HRDiT "
-        r"runs 30, 17, 10 steps at $1024^2$, $2048^2$, $4096^2$, UltraImage two 30-step stages. "
-        rf"HRDiT's clean batch-1 time is {hrdit_clean:.1f}\,s (median of three)."
+        rf"\textbf{{\sca{{}} is fastest at every size; its lead over AReA grows to "
+        rf"${speed[big]['area']:.2f}\times$ at {tex_res(big)}.}}" "\n"
+        rf"  Batch 1 on one GH200, median of three prompts, whiskers min to max;{stops}" "\n"
+        r"  Grey ratios: speedup over AReA per size; exponents fit seconds $\propto N^b$ ($N$ image tokens)."
     )
     curves = " and ".join(rel(p) for p in sources)
     with open(path, "w") as fh:
         fh.write(f"% Generated by paper/figures/src/fig_latency.py from {curves}\n"
-                 f"% (clean batch-1 sweep), {rel(BATCH1_CSV)} (HRDiT's clean time) and\n"
-                 "% results/baseline46/base_summary.csv (46-prompt campaign means).\n")
+                 f"% (clean batch-1 sweep) and {rel(BATCH1_CSV)} (HRDiT's clean time); the\n"
+                 "% results/baseline46/base_summary.csv campaign means are recorded in the provenance only.\n")
         fh.write("\\begin{figure}[tp]\n  \\centering\n  \\includegraphics{figures/latency.pdf}\n")
         fh.write("  \\caption{" + cap + "}\n  \\label{fig:latency}\n\\end{figure}\n")
     return path
@@ -455,8 +427,8 @@ def main():
         hrdit = hrdit_clean_seconds()
         hrdit_med = float(np.median(hrdit))
         print(f"HRDiT clean batch-1 at {CAMPAIGN_RES}: median {hrdit_med:.2f} s of {hrdit} (caption only)")
-        fig, _, _ = curve_figure(med, ranges, resolutions, speed, expo, camp)
-        print("wrote", write_snippet(snippet, resolutions, speed, expo, camp, hrdit_med, srcs))
+        fig, _ = curve_figure(med, ranges, resolutions, speed, expo)
+        print("wrote", write_snippet(snippet, resolutions, med, speed, expo, srcs))
     sf.save(fig, args.out)
     full_res = sorted((r for r in resolutions if (r, "full") in med), key=tokens)
     hrdit_prov = {} if hrdit is None else {"hrdit_clean_batch1": {
@@ -490,7 +462,7 @@ def main():
                        "source": CAMPAIGN_CSV, "sha256": sha256(CAMPAIGN_CSV), "res": CAMPAIGN_RES,
                        "statistic": "mean seconds per image over the campaign's prompts on shared nodes, "
                                     "bootstrap 95% interval; not clean batch-1 latency",
-                       "drawn_as": "hollow markers at 4096^2, not joined to the clean curves",
+                       "drawn_as": "not plotted (house style: clean sweep only); recorded for reconciliation",
                        "methods": {k: {**v, "label": CAMPAIGN[k][0]} for k, v in camp.items()},
                        "protocols": {"hrdit_dev_author": "progressive 30 + 17 + 10 steps at 1024^2, 2048^2, "
                                                          "4096^2 (scripts/sample_progressive.py HRDIT)",

@@ -39,7 +39,7 @@ Compiled 2026-10-19 from the arXiv PDFs (renders: `/scratch/09032/saini_2/sca/re
 11. Crops appear only where detail is the claim, in one frame colour about 0.6 pt wide. The caption says "1:1 crop" once.
 12. Figure text is 6 to 8 pt. Bold is only for "SCA (ours)" and panel letters.
 13. Use panel letters only when the caption cites them; otherwise use a short corner title.
-14. Tables use booktabs, with a vertical rule only between model groups. Best is bold, second is underlined, and our row is shaded.
+14. Tables use booktabs, with a vertical rule only between model groups. Best is bold, second is underlined, and our row is shaded in a pale tint of the SCA green used in the plots (amended in (e)).
 15. Gutters are 1 to 2 pt white, and images have no borders.
 
 ## (d) Changes to our figures
@@ -59,3 +59,35 @@ Compiled 2026-10-19 from the arXiv PDFs (renders: `/scratch/09032/saini_2/sca/re
 **Figs 6 to 9 (p15 to 16; 29 to 67 labels).** Move the σ panel titles and "(1 = pure noise)" into the captions. Drop the Fig 6 bar values and the in-bar "per-layer fit", and replace legends with direct labels.
 
 **Galleries (Figs 12 to 24).** Drop the "Full image" and "1:1 crop" row labels from Figs 16, 17, 19, 20 and 22. In Fig 19, write "local only" and "global only" without the π= prefixes. Trim captions to 35 words (Fig 22 has 144) with the shared protocol in one paragraph. Keep Fig 13.
+
+## (e) Additional references: 2610.23653 and 2610.23854
+
+Added 2026-10-19 from the PDFs (renders: `/scratch/09032/saini_2/sca/review_style/{lilie,mflow}/`). Both are 10 pt single-column ICLR-style preprints dated 16 Oct 2026, no venue yet.
+
+- **LILIE**: A Language-Informed Loss for Visual Generation (Agarwal, Chandrasegaran, Chen, Sargent, Niebles, Fei-Fei, Wu; Stanford). [arXiv 2610.23653](https://arxiv.org/abs/2610.23653), 29 pages.
+- **MFlow**: Rethinking the design space of Vanilla Pixel Diffusion Transformers (Mukhopadhyay, Mai, Shrivastava, Mahapatra; Maryland, Adobe Research). [arXiv 2610.23854](https://arxiv.org/abs/2610.23854), 33 pages, "submission under review".
+
+**Teaser.** MFlow Fig 1 is a 9-image mosaic, no text, hairline gutters, 12-word caption. LILIE Fig 1 pairs a 30-image mosaic with one small bar panel (2 series, black and pink, 4 printed values, own value bold, 12 labels at about 0.6x) and 4 prompt excerpts at 0.46x; 73-word caption. LILIE shows the one sanctioned way to put a number in a teaser: a single 2-series panel, not metric rows.
+
+**Method diagram.** LILIE Fig 3 is the model: two panels "(a) Encoder Pretraining" and "(b) Generative Model Training", 11 labels of at most 3 words, rounded boxes in 3 pastel fills plus grey, real thumbnails, math limited to L_CE and L_2, text 0.6 to 0.7x. Its Fig 4 (about 90 labels, indexed z, mu, alpha) and MFlow Fig 7 (3 nested panels, about 40 labels, one equation, "xN", a fire emoji for trainable) are the counter-examples. MFlow Fig 3 is split: four schematic gain curves on the left (about 28 labels), and on the right four spatial strips "x0 - [m] (x) eps = u" over real cat thumbnails with a grey bar "black = x0-pred, white = u-pred"; the right half carries the idea on its own.
+
+**Results plots.** LILIE: 3 fixed colours paper-wide (Pixel black, LILIE green, Pixel+LILIE pink), one marker per series, 1 to 1.5 pt lines, legend above the axes without a box, faint horizontal grid, no top or right spine, x ticks only at tested values, "gFD ↓" as y label, text 0.5 to 0.75x. Every bar is labelled (0.36x in Fig 5, own value bold); Fig 6 has a 0.54x corner title. MFlow: matplotlib defaults, all four spines, grid, legends inside every panel (12 entries across Fig 8 left, 13 in Fig 11), one shaded grey band 0.5 to 0.7 with the word "corner" inside, per-panel titles coloured by method. Fig 12 has 4 bold corner titles plus bold letters (a) to (d) and one 2-word arrow annotation "u-pred / x0-pred" outside the axes.
+
+**Qualitative grids.** LILIE Fig 8: 5 rows by 10 columns, 1 pt gutters, no frames, row labels left at 0.77x, the default row boxed in pink with bold text, two 0.73x strips stating what varies. Fig 7 right: 3 by 3 by 3 with prompts above at 0.45x and step numbers below. MFlow Fig 16: full rotated page, 10 methods with sizes at 0.66x, own method last, prompts run between rows. Crops: LILIE Fig 2 uses two orange frames with leader lines to enlarged patches labelled "L2 = 1000"; MFlow Fig 9 inverts the usual order, crop as the main tile and the whole image as a black-framed inset, headed "w/o" and "w/ ConvRefiner".
+
+**Tables.** Both booktabs, no vertical rules, arrows in headers, bold best, MFlow underlines second. LILIE shades its own rows in the same pink as its plot series and the Fig 8 highlight frame, greys the baseline row, uses green ticks and orange crosses for "GPIC compliant", and sets an italic note row between budgets; its Table 1 caption runs about 190 words. MFlow Table 6 shades two groups in two greys and keeps citations inside the Method column.
+
+**Rules.** Rule 14 changes: the shaded row is now a pale tint of the SCA green, so plot colour, grid highlight and table shading agree (LILIE Tables 1 to 3, Fig 8). Rules 1, 7, 9, 11 and 13 stand: MFlow's text-free teaser, AReA's direct labels, and LILIE's 11-label diagram all back them, and the 0.36 pt bar values in LILIE and the unreadable 3 pt labels in MFlow Fig 4 are what rule 12 prevents.
+
+## (f) Checklist
+
+1. Teaser: images only, at most one 2-series panel, no prompts or metric rows?
+2. Method diagram: at most 12 labels of at most 3 words, single symbols only?
+3. Mechanism drawn over a real thumbnail, at most two panels?
+4. Plot: at most 4 series, direct labels, no legend box, no grid, top and right spines off?
+5. At most 2 annotations per plot, one bold ratio per panel, per-size ratios small and grey?
+6. Colours: SCA green, one AReA hue, grey baselines, at most 3 saturated hues?
+7. Text 6 to 8 pt, one family, bold only for "SCA (ours)" and panel letters?
+8. Grid: methods named once, "SCA (ours)" last, 1 to 2 pt gutters, no frames?
+9. Crops only where detail is the claim, one frame colour, "1:1 crop" once in the caption?
+10. Caption: bold claim plus at most two sentences, under 50 words (35 in galleries); table shading is the SCA green tint?

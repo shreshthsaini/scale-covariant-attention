@@ -462,14 +462,14 @@ Any rule that assigns one weight per cell, such as a per-layer table, a weight s
 \begin{figure}[!htbp]
   \centering
   \includegraphics[width=\linewidth]{figures/rel_err.pdf}
-  \caption{\textbf{Per-head weights explain full attention best, and transfer across scales.} Relative output error of each mixing rule at emulated scales 2 (a) and 4 (b), 32 prompts. ``Other scale'' applies the scale-4 table at scale 2 and vice versa; the best hard switch has $\sigma^\star=1$ and so equals local only. In-sample and held-out errors agree within 0.0003.}
+  \caption{\textbf{Per-head weights explain full attention best, and transfer across scales.} Relative output error per mixing rule at emulated scales 2 (a) and 4 (b), 32 prompts; ``other scale'' swaps the scale-2 and scale-4 tables; the best hard switch ($\sigma^\star = 1$) equals local only. In-sample and held-out errors agree within 0.0003.}
   \label{fig:relerr}
 \end{figure}
 
 \begin{figure}[!htbp]
   \centering
   \includegraphics[width=\linewidth]{figures/pi_sigma.pdf}
-  \caption{\textbf{In output energy, no noise level prefers the global branch.} (a)~Fraction of the 1368 heads per $\pi$ bin and noise bin (shading), with the mean of $\pih$, the best shared $\pi(\sigma)$, and AReA's schedule read as a weight; emulated scale 2, 32 prompts. (b)~Relative output error per noise bin: local alone beats global alone everywhere, and per-head mixing beats both.}
+  \caption{\textbf{In output energy, no noise level prefers the global branch.} (a)~Fraction of heads per $\pi$ and noise bin, with mean $\pih$, best shared $\pi(\sigma)$ and AReA's switch; scale 2, 32 prompts, $\sigma = 1$: pure noise. (b)~Error per noise bin: local beats global everywhere; per-head mixing beats both.}
   \label{fig:pisigma}
 \end{figure}
 
@@ -482,7 +482,7 @@ Any rule that assigns one weight per cell, such as a per-layer table, a weight s
 \begin{figure}[!htbp]
   \centering
   \includegraphics[width=\linewidth]{figures/pi_heatmap.pdf}
-  \caption{\textbf{Heads in the same block differ widely at every noise level.} $\pih$ of the scale-2 table for all 57 blocks and 24 heads of FLUX.1-dev, 32 prompts; heads are sorted within each block by their weight at $\sigma=0.54$, in the same order in every panel. The median within-block range is 0.66 to 0.84. Figure~\ref{fig:calib} shows the scale-4 table used at inference.}
+  \caption{\textbf{Heads in the same block differ widely at every noise level.} $\pih$ of the scale-2 table at $\sigma = 0.10$ (a), $0.54$ (b), $0.97$ (c), 57 blocks by 24 heads, 32 prompts, heads sorted per block by (b). Median within-block range 0.66 to 0.84; Figure~\ref{fig:calib} shows the scale-4 inference table.}
   \label{fig:heatmap}
 \end{figure}
 
@@ -1160,7 +1160,7 @@ The local branch then contributes only its difference from the global branch abo
 \section{Qualitative galleries}
 \label{app:galleries}
 
-Figure~\ref{fig:hero} shows curated \sca{} outputs. The other galleries, Figures~\ref{fig:gallery_4096} to~\ref{fig:gallery_8192_complete}, are uncurated unless stated: prompts are drawn at random from the evaluation prompts, excluding the development prompts and those shown in the main text.
+Figure~\ref{fig:hero} shows curated \sca{} outputs. The other galleries, Figures~\ref{fig:gallery_4096} to~\ref{fig:gallery_8192_complete}, are uncurated unless stated: prompts are drawn at random from the evaluation prompts, excluding the development prompts and those shown in the main text, and the selection seed, source hashes and crop coordinates of every gallery are archived in its \texttt{provenance.json}. Unless a caption says otherwise, images are FLUX.1-dev outputs at seed 0 with 28 steps and guidance 4.5. Every crop, here and in Figures~\ref{fig:qual_main} and~\ref{fig:progressive}, shows native pixels of the outlined window, which is placed automatically at the highest edge energy averaged over the methods shown, never by hand. Figure~\ref{fig:gallery_flux2} uses FLUX.2-dev with guidance 4.0 and a FLUX.2 calibration table. Figure~\ref{fig:gallery_krea_complete} uses the FLUX.1-Krea-dev transformer with FLUX.1-dev text encoders and VAE and a Krea-calibrated \sca{} table; DyPE and SEGA come from the recorded Krea campaign, in which seven SEGA outputs were regenerated from an archived runtime because their original source snapshots could not be recovered, and the inherited baselines span several runtime revisions. In Figure~\ref{fig:gallery_baselines}, UltraImage runs its two-stage defaults (30+30 steps, guidance 3.5 then 7), so that comparison is not equal-cost.
 
 \snippet{hero}{}
 \snippet{gallery_4096}{}

@@ -32,43 +32,38 @@ import re
 from PIL import Image
 
 import imgsel
-from fig_qual import (G_GROUP, G_PAIR, G_ROW, G_SECTION, GRID_DPI, JPEG_Q, NAMES, SNIP, Geo, g_row,
-                      head_cell, method_head, rel, t_crop, t_full)
+from fig_qual import (G_GROUP, G_PAIR, G_ROW, G_SECTION, GRID_DPI, JPEG_Q, NAMES, ROW_OURS, SNIP, Geo, g_row,
+                      method_head, rel, t_crop, t_full)
 
 SCRIPT = "paper/figures/src/fig_gallery_large.py"
-FLUX1 = r"FLUX.1-dev, seed~0, 28 steps, guidance 4.5"
-CROP512 = (r"Each image is followed by a native-pixel crop of its outlined 512$\times$512 window of highest "
-           r"edge energy averaged over the methods.")
-VS = r"AReA and \textbf{SCA (ours)}"
 HEAD_NAMES = dict(NAMES, flux2_full="Full attention")
-ROW_LABEL = {"area": "AReA", "sca": r"\textcolor{scaAccent}{\textbf{SCA (ours)}}"}
+ROW_LABEL = {"area": "AReA", "sca": ROW_OURS}
 
-
-def wide_caption(hw, k):
-    return (rf"\textbf{{Uncurated samples at {hw} (height$\times$width): {VS}.}} "
-            rf"The first {k} of six evaluation prompts drawn at random, disjoint from the other galleries, "
-            rf"excluding development and main-text prompts. {FLUX1}. Crops are native-pixel views of the "
-            r"outlined 512$\times$512 window of highest edge energy averaged over the methods.")
-
-
+# Captions: a bold claim, then at most 35 words in all; the shared protocol (model, seed, steps, guidance,
+# crop placement, exclusions) is stated once in the appendix text, not repeated here.
 SPECS = {
     "gallery_4096": dict(
         k=10, parts=[("gallery_4096", 5), ("gallery_4096_p2", 5)], retired=["gallery_4096_p3"],
         captions=[
-            r"\textbf{Uncurated samples at 4096$\times$4096: " + VS + r".} The first five of 32 evaluation "
-            r"prompts drawn at random (selection seed~0), excluding development and main-text prompts. "
-            + FLUX1 + ". " + CROP512,
-            r"\textbf{Uncurated samples at 4096$\times$4096: " + VS + r", continued.} Prompts six to ten of "
-            r"the same draw; same protocol as Figure~\ref{fig:gallery_4096}.",
+            r"\textbf{On uncurated prompts at $4096^2$, SCA keeps the fine detail that AReA blurs or tiles.} "
+            r"The first five of 32 prompts drawn at random (seed~0); after each image, a 1:1 crop of its "
+            r"outlined window.",
+            r"\textbf{Uncurated samples at $4096^2$, continued.} Prompts six to ten of the same draw; "
+            r"protocol as in Figure~\ref{fig:gallery_4096}.",
         ]),
-    "gallery_4096x2048": dict(k=2, captions=[wide_caption(r"2048$\times$4096", "two")]),
-    "gallery_6144x2048": dict(k=2, captions=[wide_caption(r"2048$\times$6144", "two")]),
+    "gallery_4096x2048": dict(k=2, captions=[
+        r"\textbf{At $4096\times2048$ both methods keep the layout; SCA resolves finer texture.} The first "
+        r"two of six prompts drawn at random; AReA above, SCA below, each followed by a 1:1 crop of the "
+        r"outlined window."]),
+    "gallery_6144x2048": dict(k=2, captions=[
+        r"\textbf{At $6144\times2048$ both methods keep the layout; SCA resolves finer texture.} The first "
+        r"two of six prompts drawn at random; AReA above, SCA below, each followed by a 1:1 crop of the "
+        r"outlined window."]),
     "gallery_flux2": dict(
         k=4, captions=[
             r"\textbf{FLUX.2-dev at $4096^2$: SCA can still distort face geometry and fine texture (first "
-            r"row).} Four of the 50 paired evaluation prompts, sampled at random (selection seed~17), in draw "
-            r"order. Seed~0, 28 steps, guidance 4.0, FLUX.2 calibration table for SCA; each image is followed "
-            r"by a native-pixel crop of its outlined window."]),
+            r"row).} Four of 50 paired prompts drawn at random (seed~17), in draw order; after each image, "
+            r"a 1:1 crop of its outlined window."]),
 }
 
 
@@ -128,13 +123,15 @@ def square_rows(t, sids, methods, by, res):
 
 
 def stacked_rows(t, sids, methods, by, res, asp):
-    """Wide images: one labelled row per method, prompts G_SECTION apart."""
-    rows = [(g_row([head_cell("Full image", asp), G_PAIR, head_cell("1:1 crop", 1)], indent=True), G_ROW)]
-    for sid in sids:
+    """Wide images: one row per method, prompts G_SECTION apart; no header row, and the method names
+    appear once, as rotated labels on the first prompt's rows (the caption states the order)."""
+    rows = []
+    for i, sid in enumerate(sids):
         box = tuple(by[sid]["crop_xy_size"])
         for k, m in enumerate(methods):
             full, crop = t[sid, m]
-            rows.append((g_row([t_full(full, box, res), G_PAIR, t_crop(crop)], label=ROW_LABEL[m]),
+            rows.append((g_row([t_full(full, box, res), G_PAIR, t_crop(crop)],
+                               label=ROW_LABEL[m] if i == 0 else None, indent=i > 0),
                          G_PAIR if k < len(methods) - 1 else G_SECTION))
     return rows
 
@@ -193,7 +190,8 @@ def build(name):
                  "recomputed from eligible_ids and checked against the frozen selection; shown in draw order"),
         "k": k, "n": n, "draw_order": draw, "shown": shown, "figures": figures,
         "retired_figures": [f"fig:{p}" for p in spec.get("retired", [])],
-        "layout": ("one labelled row per method (full image, then its native crop); prompts stacked" if stacked
+        "layout": ("one row per method (full image, then its native crop), labelled on the first prompt only; "
+                   "prompts stacked" if stacked
                    else "one prompt per row; per method the full image, then its native crop"),
         "tile_height_in": round(geo.tile_in(), 4),
         "full_image_long_side_px": px, "full_image_dpi": GRID_DPI, "jpeg_quality": JPEG_Q,
