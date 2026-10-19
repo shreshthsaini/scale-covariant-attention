@@ -44,3 +44,11 @@ Do not duplicate the watcher. Render history is under
 - Fresh-unzip build: /scratch/09032/saini_2/sca/zipcheck/fable_fix_20261019_001102/delivery_hmyrl93d (42 = 42 pages, 0 overfull, 0 undefined)
 - Content: supervisor (Fable) fixes, 8-method Table 2, corrected HRDiT timing, calibration panel restored in Fig 2.
 - Pending rows: HRDiT 191, HRDiT clean timing, SCA 42 steps, progressive SCA, E2 6144/8192, E9 Krea.
+
+## 2026-10-19 03:50 delivery (final text polish, Claude subagent)
+- paper/main.pdf: 47 pages, main text 9 pages (references begin on page 9), 26.1 MB (26,102,171 bytes), SHA256 58be9fdab82fe4dc2669caa2fbe434dd28ab9bed6e3770b394f31fb0bcf42685
+- paper/sca_overleaf.zip: 273 source files, SHA256 259fc17fd0d0e81db24918f70f2acd0f638fa6e5fdde1967d1ce14a14b5fc78a
+- Fresh-unzip build: /scratch/09032/saini_2/sca/zipcheck/final2_20261019_034855/delivery_3fjwxmt_ (47 = 47 pages, 0 overfull, 0 undefined). No red markers in any page.
+- Text: abstract 169 words with three numbers; HRDiT overclaim replaced by "matches HRDiT's preference scores (no per-image metric significantly worse; HPSv2 and ARNIQA significantly better)" in abstract, contribution 4, Section 4.1, conclusion and the Table 23 caption; Section 4.1 at 54% and 4.3 at 58% of their former word counts; related work in three paragraphs; limitations 12 lines.
+- New numbers: HRDiT corrected patch FID 103.9 (cached crop features via repro/evaluate_corrected.py, output /scratch/09032/saini_2/tmp/tmp/claude-883311/hrdit_fidp/hrdit191_corrected; not yet archived under results/). Full attention 762.7 s at 6144^2 (median of the three timed images after the excluded warm-up, results/latency_curve_batch1.csv). Table 2 FID marks for 42 steps and progressive from results/progressive46/base_paired_deltas_distribution.csv. Budget-run patch FIDs 175.1 and 167.2 from results/evidence/distributions/checks/budget_base_rows_*patch_fid*.csv.
+- Figures: only caption text and the latency data point changed (generators updated to match); every includegraphics path and label is unchanged for the restyle. The quality-versus-time scatter stays in Appendix J.

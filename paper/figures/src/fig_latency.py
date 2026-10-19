@@ -1,9 +1,16 @@
 """Seconds per image against resolution for full attention, AReA and SCA (batch 1, one GH200).
 
 Input, one of:
-  --csv PATH   columns res,method,seconds; res like 4096x4096, one row per image (the median
-               over rows of a (res, method) pair is plotted). Default:
-               results/latency_curve.csv (the verified clean batch-1 sweep)
+  --csv PATH [PATH ...]   columns res,method,seconds plus an image id (image or prompt_id); res
+               like 4096x4096, one row per image (the median over rows of a (res, method) cell is
+               plotted). Rows whose id starts with sca_latency_warmup are the excluded warm-up
+               images and are dropped. A file with a warmup_verified column must have it True on
+               every row; a file without one must hold exactly one warm-up row per cell. A cell
+               comes from the first file that has it; a later file holding the same cell must agree
+               with it image for image to the coarser file's rounding. Default, in this order:
+               results/latency_curve.csv (the audited clean batch-1 sweep, full precision), then
+               results/latency_curve_batch1.csv (the same sweep rounded to 0.01 s with its warm-up
+               rows, plus full attention at 6144^2, which only this file holds)
   results/latency_4096_batch1.csv (repo), used when the curve CSV does not exist or with
                --source 4096. Adapter: full and AReA from run "latency", SCA final (no band
                guard, code 2d11740) from run "latency3"; the band-guard SCA runs are dropped.
@@ -13,18 +20,21 @@ Campaign means are a separate, marked layer: hollow markers at 4096^2 for SCA, H
 UltraImage, read from results/baseline46/base_summary.csv (metric "seconds", the same 46 prompts
 for every method, run on shared nodes). They are never joined to the clean curves. UltraImage's
 191-prompt campaign mean (results/e1_ultraimage_base_summary.csv) is only recorded in the provenance.
-A clean batch-1 HRDiT timing is queued but not measured; it is not plotted.
+HRDiT's clean batch-1 time at 4096^2 (median of the three hrdit_dev_author rows of
+results/latency_curve_batch1.csv; that run has no excluded warm-up) is quoted in the caption and
+not plotted.
 
 With several resolutions the figure is one log-log panel:
   median seconds per image against resolution, whiskers = observed min and max, a light fill
   between AReA and SCA, the least-squares exponent b of seconds ~ N^b (N = image tokens,
   (W/16)(H/16)) fitted to each method's medians, SCA's speedup over AReA as a top row, the
-  campaign means as hollow markers, and a note on why full attention stops at 4096^2.
+  campaign means as hollow markers, and a note that full attention stops at 6144^2 because
+  8192^2 was not run by design.
 With one resolution it is a bar chart. Speedups and exponents are printed, and the caption
 snippet figures/snippets/latency.tex is written from the same numbers (trial runs with --out
 write it beside the output instead).
 
-Regenerate: <sca env python> paper/figures/src/fig_latency.py [--csv PATH] [--out STEM]
+Regenerate: <sca env python> paper/figures/src/fig_latency.py [--csv PATH [PATH ...]] [--out STEM]
 """
 
 import argparse
@@ -40,13 +50,17 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FixedLocator, NullLocator
+from matplotlib.transforms import offset_copy
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import scafig as sf  # noqa: E402
 from k1data import FIGDIR  # noqa: E402
 
 REPO = os.path.normpath(os.path.join(FIGDIR, "..", ".."))
-CURVE_CSV = os.path.join(REPO, "results", "latency_curve.csv")
+CURVE_CSV = os.path.join(REPO, "results", "latency_curve.csv")  # audited sweep, full precision
+BATCH1_CSV = os.path.join(REPO, "results", "latency_curve_batch1.csv")  # 0.01 s, adds full at 6144^2
+CURVE_CSVS = (CURVE_CSV, BATCH1_CSV)  # a cell comes from the first file that has it
+WARMUP_PREFIX = "sca_latency_warmup"  # id of the excluded first image of every timed process
 CSV_4096 = os.path.join(REPO, "results", "latency_4096_batch1.csv")
 CAMPAIGN_CSV = os.path.join(REPO, "results", "baseline46", "base_summary.csv")
 CAMPAIGN_191_CSV = os.path.join(REPO, "results", "e1_ultraimage_base_summary.csv")
@@ -65,23 +79,79 @@ CAMPAIGN = {  # base_summary.csv method -> (label, color, marker); baselines in 
     "hrdit_dev_author": ("HRDiT", "#6F7C89", "D"),
     "ultraimage": ("UltraImage", sf.METHOD_COLOR["ultraimage"], "D"),
 }
-FULL_STOP_NOTE = ("6144\u00b2 timing pending,", "8192\u00b2 not run by design (quadratic cost)")
+FULL_STOP_NOTE = ("8192\u00b2 not run", "by design (quadratic cost)")  # two lines of the in-plot note
 PATCH = 16  # pixels per image token side: VAE factor 8 times 2x2 latent packing
 W, H = sf.TEXT, 2.05  # inches; the main-text figure must not grow
 
 
+def rel(path):
+    """Repository-relative name for messages and the snippet header; other paths stay absolute."""
+    path = os.path.abspath(path)
+    return os.path.relpath(path, REPO) if path.startswith(REPO + os.sep) else path
+
+
 def read_curve(path):
-    rows = []
+    """Rows (res, method, seconds) of one curve CSV without its warm-up images, and the file's
+    rounding: half a unit in the last decimal it prints."""
+    rows, warm, skipped, decimals = [], defaultdict(int), defaultdict(int), 0
     with open(path) as fh:
-        for r in csv.DictReader(fh):
-            if r.get("warmup_verified", "True").lower() != "true":
+        reader = csv.DictReader(fh)
+        verified = "warmup_verified" in reader.fieldnames
+        id_col = next((c for c in ("image", "prompt_id") if c in reader.fieldnames), None)
+        for r in reader:
+            if verified and r["warmup_verified"].strip().lower() != "true":
                 raise ValueError("Latency figure requires verified warm-up ordering")
             m = ALIASES.get(r["method"].strip().lower())
             if m is None:
-                print(f"skipping unknown method {r['method']!r}")
+                skipped[r["method"]] += 1
                 continue
-            rows.append((r["res"].strip(), m, float(r["seconds"])))
-    return rows
+            res = r["res"].strip()
+            if id_col and r[id_col].strip().startswith(WARMUP_PREFIX):
+                warm[res, m] += 1
+                continue
+            seconds = r["seconds"].strip()
+            decimals = max(decimals, len(seconds.partition(".")[2]))
+            rows.append((res, m, float(seconds)))
+    name = rel(path)
+    for method, k in sorted(skipped.items()):
+        print(f"skipping {k} rows of unplotted method {method!r} in {name}")
+    print(f"dropped {sum(warm.values())} warm-up rows ({WARMUP_PREFIX}*) from {name}")
+    if not verified:  # the warm-up row is this file's only record that the warm-up ran
+        cells = {(res, m) for res, m, _ in rows}
+        bad = sorted(c for c in cells | set(warm) if warm[c] != 1)
+        if bad:
+            raise ValueError(f"{name} lacks warmup_verified and does not hold exactly one warm-up "
+                             f"row per cell: {bad}")
+    return rows, 0.5 * 10.0 ** -decimals
+
+
+def read_curves(paths):
+    """Merge curve CSVs: each (res, method) cell comes from the first file that has it, and a later
+    file holding the same cell must match it image for image within the coarser file's rounding."""
+    cells, origin, tol = {}, {}, {}
+    for path in paths:
+        rows, tol[path] = read_curve(path)
+        acc = defaultdict(list)
+        for res, m, s in rows:
+            acc[res, m].append(s)
+        n_new, worst, limit = 0, 0.0, 0.0
+        for key, vals in acc.items():
+            if key not in cells:
+                cells[key], origin[key], n_new = vals, path, n_new + 1
+                continue
+            a, b = sorted(cells[key]), sorted(vals)
+            limit = max(limit, tol[path], tol[origin[key]])
+            gap = max(abs(x - y) for x, y in zip(a, b)) if len(a) == len(b) else float("inf")
+            if gap > max(tol[path], tol[origin[key]]) + 1e-9:
+                raise ValueError(f"{key} differs between {origin[key]} and {path} beyond rounding")
+            worst = max(worst, gap)
+        msg = f"{rel(path)}: {len(acc)} cells, {n_new} taken from this file"
+        if len(acc) > n_new:
+            msg += (f"; {len(acc) - n_new} already read, matched image for image within {worst:.6f} s "
+                    f"(rounding bound {limit:g} s)")
+        print(msg)
+    rows = [(res, m, s) for (res, m), vals in cells.items() for s in vals]
+    return rows, origin
 
 
 def read_4096(path):
@@ -203,10 +273,12 @@ def curve_figure(med, ranges, resolutions, speed, expo, camp):
     ax.set_xlabel("output resolution (log scale)")
     ax.set_ylabel("seconds per image")
 
-    # direct labels: name and fitted exponent at each line's end (full attention gets a note)
+    # direct labels: name and fitted exponent at each line's end (full attention, when it stops
+    # short of the largest size, is named by a keyed note instead)
+    full_stops = "full" in ends and ends["full"][0] != resolutions[-1]
     for m, (_, x, y) in ends.items():
         lbl, col, _ = METHODS[m]
-        if m == "full":
+        if m == "full" and full_stops:
             continue
         ax.annotate(lbl, (x, y), xytext=(7, 2.5), textcoords="offset points", ha="left", va="center",
                     fontsize=sf.FS, color=col, fontweight="bold" if m == "sca" else "normal")
@@ -220,18 +292,19 @@ def curve_figure(med, ranges, resolutions, speed, expo, camp):
         ax.annotate(f"{expo[m]:.2f}", (x, y), xytext=((bb.x1 - x_disp) * px + 0.6, (bb.y1 - y_disp) * px + 2.2),
                     textcoords="offset points", ha="left", va="top", fontsize=sf.FS_SMALL, color=col)
 
-    # Why the full-attention curve stops: a note below the SCA line, tied to the last point.
-    if "full" in ends and ends["full"][0] != resolutions[-1]:
-        _, fx, fy = ends["full"]
+    # Why the full-attention curve stops: a note keyed by the line's own marker, in the free space
+    # below the SCA line, with the marker in the column of the line's last point. No leader: from
+    # there it would cross the AReA and SCA lines, and a label above the point would sit under the
+    # speedup row and in line with the key.
+    if full_stops:
+        _, fx, _ = ends["full"]
         lbl, col, mk = METHODS["full"]
-        nx, ny = fx * 1.16, fy / 3.3  # note anchor (top left), in data coordinates
-        gx, gy = nx * 1.035, ny / 1.075  # the note's line glyph, where the leader ends
-        ax.annotate("", (fx, fy), xytext=(gx, gy), textcoords="data",
-                    arrowprops=dict(arrowstyle="-", color=sf.MID, lw=0.45, shrinkA=2.8, shrinkB=3.2),
-                    zorder=1.5)
-        ax.plot([gx], [gy], color=col, marker=mk, ms=3.3, mec="white", mew=0.4, ls="none", zorder=4)
-        ax.annotate(f"{lbl}: " + FULL_STOP_NOTE[0] + "\n" + FULL_STOP_NOTE[1], (nx, ny),
-                    xytext=(9.5, 0), textcoords="offset points", ha="left", va="top",
+        ny = 0.36  # top of the note, axes fraction
+        at = ax.get_xaxis_transform()  # x in data, y in axes fraction
+        ax.plot([fx], [ny], transform=offset_copy(at, fig=fig, y=-4.6, units="points"), color=col,
+                marker=mk, ms=3.3, mec="white", mew=0.4, ls="none", zorder=4)
+        ax.annotate(f"{lbl}: {FULL_STOP_NOTE[0]}\n{FULL_STOP_NOTE[1]}", (fx, ny), xycoords=at,
+                    xytext=(5.5, 0), textcoords="offset points", ha="left", va="top",
                     fontsize=sf.FS_TICK, color=sf.MID, linespacing=1.15)
 
     # Campaign means at 4096^2 (shared nodes): hollow markers on the clean column, never joined.
@@ -242,7 +315,8 @@ def curve_figure(med, ranges, resolutions, speed, expo, camp):
             ax.plot([xc], [v], ls="none", marker="o", ms=7.4, mfc="none", mec=col, mew=0.85, zorder=3.6)
             continue
         ax.plot([xc], [v], ls="none", marker=mk, ms=4.0, mfc="white", mec=col, mew=0.9, zorder=3.6)
-        ax.annotate(lbl, (xc, v), xytext=(-5.5, 0), textcoords="offset points", ha="right", va="center",
+        dy = -3.0 if key == "hrdit_dev_author" else 0  # clear the full-attention line just above it
+        ax.annotate(lbl, (xc, v), xytext=(-5.5, dy), textcoords="offset points", ha="right", va="center",
                     fontsize=sf.FS_TICK, color=col)
 
     # key: filled = clean batch-1 sweep, hollow = campaign mean (grey baselines, green SCA)
@@ -279,35 +353,38 @@ def tex_res(res):
     return f"${w}^2$" if w == h else rf"${w}\times{h}$"
 
 
-HRDIT_CLEAN = "/scratch/09032/saini_2/sca/out/latency_hrdit/hrdit_dev_author/4096x4096"
+HRDIT_SIDECARS = "/scratch/09032/saini_2/sca/out/latency_hrdit/hrdit_dev_author/4096x4096"  # per image
 
 
-def hrdit_clean_seconds():
-    """Median of the three batch-1 HRDiT sidecars on the latency prompts, or None if they are absent."""
-    import glob
-    import json
-    vals = [json.load(open(f))["seconds"] for f in sorted(glob.glob(os.path.join(HRDIT_CLEAN, "*_seed0.json")))]
-    return float(np.median(vals)) if len(vals) == 3 else None
+def hrdit_clean_seconds(path=BATCH1_CSV, res=CAMPAIGN_RES):
+    """HRDiT's three clean batch-1 timings at 4096^2: the hrdit_dev_author rows of the batch-1 CSV.
+    The run timed three images with no excluded warm-up (timing_scope in the sidecars)."""
+    with open(path) as fh:
+        vals = [float(r["seconds"]) for r in csv.DictReader(fh)
+                if r["method"].strip() == "hrdit_dev_author" and r["res"].strip() == res]
+    if len(vals) != 3:
+        raise ValueError(f"expected three HRDiT batch-1 rows at {res} in {path}, found {len(vals)}")
+    return vals
 
 
-def write_snippet(path, resolutions, speed, expo, camp):
-    """Caption numbers come from the same CSVs as the plot (HRDiT's clean time from its three sidecars)."""
-    hrdit_clean = hrdit_clean_seconds()
+def write_snippet(path, resolutions, speed, expo, camp, hrdit_clean, sources):
+    """Caption numbers come from the same CSVs as the plot (HRDiT's clean time from the batch-1 CSV)."""
     big = resolutions[-1]
     n_camp = camp["sca_nb"]["n_prompts"]
     cap = (
         rf"\textbf{{\sca{{}} is the fastest of the methods measured at each size, and its lead over AReA "
         rf"grows to ${speed[big]['area']:.2f}\times$ at {tex_res(big)}.}}" "\n"
-        r"  Filled markers: batch-1 seconds per image on one GH200 (median of three prompts, whiskers min to "
-        rf"max); full attention scales as $N^{{{expo['full']:.2f}}}$ ($N$: image tokens)." "\n"
-        rf"  Hollow markers: {n_camp}-prompt campaign means at {tex_res(CAMPAIGN_RES)} on shared nodes; HRDiT "
+        r"  Filled markers: batch-1 seconds per image on one GH200 (median and range of three prompts; speedup labels use unrounded medians); "
+        rf"full attention scales as $N^{{{expo['full']:.2f}}}$ ($N$: image tokens)." "\n"
+        rf"  Hollow markers: \mbox{{{n_camp}-prompt}} campaign means at {tex_res(CAMPAIGN_RES)} on shared nodes; HRDiT "
         r"runs 30, 17, 10 steps at $1024^2$, $2048^2$, $4096^2$, UltraImage two 30-step stages. "
-        + (rf"HRDiT's clean batch-1 time is {hrdit_clean:.1f}\,s (median of three)." if hrdit_clean
-           else r"HRDiT's clean batch-1 timing is pending.")
+        rf"HRDiT's clean batch-1 time is {hrdit_clean:.1f}\,s (median of three)."
     )
+    curves = " and ".join(rel(p) for p in sources)
     with open(path, "w") as fh:
-        fh.write("% Generated by paper/figures/src/fig_latency.py from results/latency_curve.csv (clean "
-                 "batch-1 sweep)\n% and results/baseline46/base_summary.csv (46-prompt campaign means).\n")
+        fh.write(f"% Generated by paper/figures/src/fig_latency.py from {curves}\n"
+                 f"% (clean batch-1 sweep), {rel(BATCH1_CSV)} (HRDiT's clean time) and\n"
+                 "% results/baseline46/base_summary.csv (46-prompt campaign means).\n")
         fh.write("\\begin{figure}[tp]\n  \\centering\n  \\includegraphics{figures/latency.pdf}\n")
         fh.write("  \\caption{" + cap + "}\n  \\label{fig:latency}\n\\end{figure}\n")
     return path
@@ -320,7 +397,8 @@ def sha256(path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default=CURVE_CSV)
+    ap.add_argument("--csv", nargs="+", default=list(CURVE_CSVS),
+                    help="curve CSVs; a (res, method) cell comes from the first file that has it")
     ap.add_argument("--source", choices=("auto", "curve", "4096"), default="auto")
     default_out = os.path.join(FIGDIR, "latency")
     ap.add_argument("--out", default=default_out)
@@ -328,18 +406,20 @@ def main():
     # The paper snippet is written only for the default output; trial runs put it beside --out.
     snippet = SNIPPET if os.path.abspath(args.out) == default_out else args.out + "_snippet.tex"
 
-    if args.source == "4096" or (args.source == "auto" and not os.path.exists(args.csv)):
-        src, rows = CSV_4096, read_4096(CSV_4096)
+    if args.source == "4096" or (args.source == "auto" and not any(os.path.exists(p) for p in args.csv)):
+        rows = read_4096(CSV_4096)
+        origin = {(r, m): CSV_4096 for r, m, _ in rows}
     else:
-        src, rows = args.csv, read_curve(args.csv)
-    print(f"latency source: {src}")
+        rows, origin = read_curves(args.csv)
+    srcs = [p for p in dict.fromkeys([*args.csv, CSV_4096]) if p in origin.values()]
+    print("latency sources: " + ", ".join(srcs))
     med = medians(rows)
     ranges = {}
     for res, method, seconds in rows:
         ranges.setdefault((res, method), []).append(seconds)
     resolutions = sorted({r for r, _ in med}, key=lambda r: np.prod(parse_res(r)))
-    for (res, m), (s, n) in sorted(med.items()):
-        print(f"  {res} {m}: median {s:.2f} s over {n} images")
+    for (res, m), (s, n) in sorted(med.items(), key=lambda kv: (tokens(kv[0][0]), kv[0][1])):
+        print(f"  {res} {m}: median {s:.2f} s over {n} images ({os.path.basename(origin[res, m])})")
 
     speed = {r: {b: med[r, b][0] / med[r, "sca"][0] for b in ("full", "area")
                  if (r, b) in med and (r, "sca") in med} for r in resolutions}
@@ -366,27 +446,46 @@ def main():
     fastest &= camp["sca_nb"]["mean"] == min(v["mean"] for v in camp.values())
     if not fastest:
         raise ValueError("caption lead no longer holds: SCA is not the fastest measured method at some size")
-
     sf.use_style()
     plt.rcParams["svg.hashsalt"] = "sca"
+    hrdit = None  # HRDiT's clean time is quoted in the caption, which only the curve figure has
     if len(resolutions) == 1:
         fig = bar_chart(med, speed, resolutions[0])
     else:
+        hrdit = hrdit_clean_seconds()
+        hrdit_med = float(np.median(hrdit))
+        print(f"HRDiT clean batch-1 at {CAMPAIGN_RES}: median {hrdit_med:.2f} s of {hrdit} (caption only)")
         fig, _, _ = curve_figure(med, ranges, resolutions, speed, expo, camp)
-        print("wrote", write_snippet(snippet, resolutions, speed, expo, camp))
+        print("wrote", write_snippet(snippet, resolutions, speed, expo, camp, hrdit_med, srcs))
     sf.save(fig, args.out)
     full_res = sorted((r for r in resolutions if (r, "full") in med), key=tokens)
+    hrdit_prov = {} if hrdit is None else {"hrdit_clean_batch1": {
+        "source": BATCH1_CSV, "sha256": sha256(BATCH1_CSV), "res": CAMPAIGN_RES,
+        "method": "hrdit_dev_author", "seconds": hrdit, "median_seconds": hrdit_med,
+        "n": len(hrdit), "sidecars": HRDIT_SIDECARS,
+        "timing_scope": "pipeline including text encoding and decoding, not model load; three "
+                        "timed images with no excluded warm-up",
+        "use": "quoted in the caption; not plotted"}}
     with open(args.out + "_provenance.json", "w") as handle:
-        json.dump({"source": src, "sha256": sha256(src), "statistic": "median of three timed prompts",
+        json.dump({"sources": [{"path": p, "sha256": sha256(p), "cells": sum(o == p for o in origin.values())}
+                               for p in srcs],
+                   "cell_rule": "each (res, method) cell comes from the first source that holds it; a later "
+                                "source holding the same cell matched it image for image within the coarser "
+                                "file's rounding (half a unit in its last printed decimal)",
+                   "warmup": f"rows whose image id starts with {WARMUP_PREFIX} (the one excluded warm-up "
+                             "image per process) are dropped; latency_curve.csv rows carry warmup_verified "
+                             "from scripts/audit_latency.py",
+                   "statistic": "median of three timed prompts",
                    "whiskers": "observed minimum and maximum, not a confidence interval",
                    "exponent_fit": "least squares of log median seconds on log N, N = (W/16)(H/16) tokens",
                    "exponents": {m: round(v, 6) for m, v in sorted(expo.items())},
-                   "groups": [{"res": r, "method": m, "median_seconds": value, "n": n}
+                   "groups": [{"res": r, "method": m, "median_seconds": value, "n": n,
+                               "source": os.path.basename(origin[r, m])}
                               for (r, m), (value, n) in sorted(med.items())],
                    "speedup_sca_over_area": {r: round(v["area"], 4) for r, v in speed.items() if "area" in v},
                    "full_attention": {"measured": full_res,
-                                      "not_plotted": "6144x6144 clean timing run pending; 8192x8192 not run "
-                                                     "by design (quadratic attention cost)"},
+                                      "not_plotted": "8192x8192 not run by design (quadratic attention cost)"},
+                   **hrdit_prov,
                    "campaign_means": {
                        "source": CAMPAIGN_CSV, "sha256": sha256(CAMPAIGN_CSV), "res": CAMPAIGN_RES,
                        "statistic": "mean seconds per image over the campaign's prompts on shared nodes, "
@@ -398,8 +497,7 @@ def main():
                                      "ultraimage": "released two-stage recipe, 30 steps per stage",
                                      "sca_nb": "28 steps at the target size"},
                        "ultraimage_191_prompts": {"source": CAMPAIGN_191_CSV, "sha256": sha256(CAMPAIGN_191_CSV),
-                                                  **ultra191, "use": "not plotted; recorded to reconcile with the 191-prompt tables"},
-                       "pending": "clean batch-1 HRDiT timing queued, not measured; not plotted"}},
+                                                  **ultra191, "use": "not plotted; recorded to reconcile with the 191-prompt tables"}}},
                   handle, indent=2)
         handle.write("\n")
 

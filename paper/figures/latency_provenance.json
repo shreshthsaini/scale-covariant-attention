@@ -1,12 +1,24 @@
 {
-  "source": "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/latency_curve.csv",
-  "sha256": "ee76c281f845d41d7264e4c499e0c29ce34dbc7495a2d73ae3618ea370398151",
+  "sources": [
+    {
+      "path": "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/latency_curve.csv",
+      "sha256": "ee76c281f845d41d7264e4c499e0c29ce34dbc7495a2d73ae3618ea370398151",
+      "cells": 13
+    },
+    {
+      "path": "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/latency_curve_batch1.csv",
+      "sha256": "3ca6cc2765626de3f41bdbe0d958d0a4c8f5a3a8e5d7e6cd90e534e0bcfe53ab",
+      "cells": 1
+    }
+  ],
+  "cell_rule": "each (res, method) cell comes from the first source that holds it; a later source holding the same cell matched it image for image within the coarser file's rounding (half a unit in its last printed decimal)",
+  "warmup": "rows whose image id starts with sca_latency_warmup (the one excluded warm-up image per process) are dropped; latency_curve.csv rows carry warmup_verified from scripts/audit_latency.py",
   "statistic": "median of three timed prompts",
   "whiskers": "observed minimum and maximum, not a confidence interval",
   "exponent_fit": "least squares of log median seconds on log N, N = (W/16)(H/16) tokens",
   "exponents": {
     "area": 1.116173,
-    "full": 1.508208,
+    "full": 1.596216,
     "sca": 0.99712
   },
   "groups": [
@@ -14,79 +26,99 @@
       "res": "2048x2048",
       "method": "area",
       "median_seconds": 40.9936890732497,
-      "n": 3
+      "n": 3,
+      "source": "latency_curve.csv"
     },
     {
       "res": "2048x2048",
       "method": "full",
       "median_seconds": 22.909890758804977,
-      "n": 3
+      "n": 3,
+      "source": "latency_curve.csv"
     },
     {
       "res": "2048x2048",
       "method": "sca",
       "median_seconds": 18.201440702192485,
-      "n": 3
+      "n": 3,
+      "source": "latency_curve.csv"
     },
     {
       "res": "3072x3072",
       "method": "area",
       "median_seconds": 114.30009070038795,
-      "n": 3
+      "n": 3,
+      "source": "latency_curve.csv"
     },
     {
       "res": "3072x3072",
       "method": "full",
       "median_seconds": 73.89101541414857,
-      "n": 3
+      "n": 3,
+      "source": "latency_curve.csv"
     },
     {
       "res": "3072x3072",
       "method": "sca",
       "median_seconds": 40.16230481676757,
-      "n": 3
+      "n": 3,
+      "source": "latency_curve.csv"
     },
     {
       "res": "4096x4096",
       "method": "area",
       "median_seconds": 202.43776634894311,
-      "n": 3
+      "n": 3,
+      "source": "latency_curve.csv"
     },
     {
       "res": "4096x4096",
       "method": "full",
       "median_seconds": 186.5384593643248,
-      "n": 3
+      "n": 3,
+      "source": "latency_curve.csv"
     },
     {
       "res": "4096x4096",
       "method": "sca",
       "median_seconds": 71.06495948787779,
-      "n": 3
+      "n": 3,
+      "source": "latency_curve.csv"
     },
     {
       "res": "6144x6144",
       "method": "area",
       "median_seconds": 482.28441291395575,
-      "n": 3
+      "n": 3,
+      "source": "latency_curve.csv"
+    },
+    {
+      "res": "6144x6144",
+      "method": "full",
+      "median_seconds": 762.66,
+      "n": 3,
+      "source": "latency_curve_batch1.csv"
     },
     {
       "res": "6144x6144",
       "method": "sca",
       "median_seconds": 161.55849900469184,
-      "n": 3
+      "n": 3,
+      "source": "latency_curve.csv"
     },
     {
       "res": "8192x8192",
       "method": "area",
       "median_seconds": 951.9874265119433,
-      "n": 3
+      "n": 3,
+      "source": "latency_curve.csv"
     },
     {
       "res": "8192x8192",
       "method": "sca",
       "median_seconds": 287.63978986348957,
-      "n": 3
+      "n": 3,
+      "source": "latency_curve.csv"
     }
   ],
   "speedup_sca_over_area": {
@@ -100,9 +132,26 @@
     "measured": [
       "2048x2048",
       "3072x3072",
-      "4096x4096"
+      "4096x4096",
+      "6144x6144"
     ],
-    "not_plotted": "6144x6144 clean timing run pending; 8192x8192 not run by design (quadratic attention cost)"
+    "not_plotted": "8192x8192 not run by design (quadratic attention cost)"
+  },
+  "hrdit_clean_batch1": {
+    "source": "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/latency_curve_batch1.csv",
+    "sha256": "3ca6cc2765626de3f41bdbe0d958d0a4c8f5a3a8e5d7e6cd90e534e0bcfe53ab",
+    "res": "4096x4096",
+    "method": "hrdit_dev_author",
+    "seconds": [
+      107.94,
+      144.4,
+      108.59
+    ],
+    "median_seconds": 108.59,
+    "n": 3,
+    "sidecars": "/scratch/09032/saini_2/sca/out/latency_hrdit/hrdit_dev_author/4096x4096",
+    "timing_scope": "pipeline including text encoding and decoding, not model load; three timed images with no excluded warm-up",
+    "use": "quoted in the caption; not plotted"
   },
   "campaign_means": {
     "source": "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/baseline46/base_summary.csv",
@@ -146,7 +195,6 @@
       "ci_high": 313.2781598283114,
       "n_prompts": 191,
       "use": "not plotted; recorded to reconcile with the 191-prompt tables"
-    },
-    "pending": "clean batch-1 HRDiT timing queued, not measured; not plotted"
+    }
   }
 }

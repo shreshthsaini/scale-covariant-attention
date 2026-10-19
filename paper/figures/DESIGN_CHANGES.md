@@ -46,7 +46,7 @@ batch-1 medians after warm-up (`results/latency_curve_summary.csv`) cover full a
 |---|---|---|---|
 | `fig:calib` (`calib.pdf`) | 5.5 x 3.55 in | 5.5 x 3.30 in | pi map, one colourbar (global 0, local 1); panel e is now grouped bars of extra error with the per-layer fit as a grey reference. |
 | `fig:baseline_quality` (`baseline_deltas.pdf`) | 5.5 x 4.15 in | 5.5 x 1.88 in | One row of four panels, baselines named once; filled marker when the 95% interval excludes zero; statistics CSV byte-identical. |
-| `fig:latency` (`latency.pdf`) | 5.5 x 2.34 in | 5.5 x 2.05 in | Clean batch-1 curves, plus hollow 46-prompt campaign-mean markers at 4096^2 (HRDiT 106.5 s, UltraImage 322.0 s, SCA 71.6 s) and an in-plot note (full attention: 6144^2 pending, 8192^2 not run by design); caption written by `src/fig_latency.py`; fill between AReA and SCA, fitted exponents (SCA N^1.00, AReA N^1.12; full attention N^1.51 in the caption), top row of speedups over AReA. |
+| `fig:latency` (`latency.pdf`) | 5.5 x 2.34 in | 5.5 x 2.05 in | Clean batch-1 curves, plus hollow 46-prompt campaign-mean markers at 4096^2 (HRDiT 106.5 s, UltraImage 322.0 s, SCA 71.6 s) and an in-plot note keyed by the full-attention marker (8192^2 not run by design; full attention now ends at 6144^2); caption written by `src/fig_latency.py`; fill between AReA and SCA, fitted exponents (SCA N^1.00, AReA N^1.12; full attention N^1.60 in the caption), top row of speedups over AReA. |
 | `fig:pisigma`, `fig:relerr`, `fig:heatmap` | | rel_err now built at 5.5 in | Same visual language; rule colours keep their meaning. |
 
 Edits needed in `main.tex` (appendix figures whose captions live there):
