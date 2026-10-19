@@ -398,3 +398,20 @@ Presentation: hero figure (page 1), TikZ method diagram, calibration figures, ma
 calibration, propositions on relative-position range and cost, proofs in appendix).
 Owners: experiments-engineer agent (E1-E7, E9 task scripts), FLUX.2 port agent (E8), figures agent
 (paper/figures only, no main.tex edits; writes paper/figures/snippets.tex), writing agent (owns main.tex).
+
+## 13. Gold-standard rubric scorecard (lead review, 2026-10-19 13:10, build delivery_92w8dqp6, 48 pp)
+Scale: 0 below, 1 meets, 2 above. Ship rule: no 0 and mean >= 1.2.
+Page 1: abstract 169 words with numbers 1; no URL 0; hero on p2 not p1, no panel walk-through 0; footnotes 3 (one in text) 0.
+Intro: question by end of para 1: 1; no motivating wrapfigure beside para 2: 0; "we introduce" + numbers 1; 4 bullets (max 3) 0;
+  median sentence 21 words 1; 21 sentences over 35 words, max 108: 0.
+Method: diagram 23 labels, 4 hues, real data, two panels 1; panels not lettered and no appendix zoom referenced 0;
+  equations introduced with clauses, "where" lines 1; no boxed algorithms side by side 0.
+Experiments: setup paragraph exists but no Data/Models/Baselines/Evaluation run-ins with counts/hours 0;
+  main table booktabs, arrows, shaded row, bold best 2 (adds time + steps columns); captions lack "Key result:" 0;
+  finding paragraphs open with bold claims and before/after numbers 1; ablation table shaded default 1, not side by side 0;
+  plots: palette, markers, no legends 1; bars lack value labels (rubric wants them) 0; qualitative grid 1.
+Discussion: confounds named, limitations concrete 1; no reproducibility statement mapping details to appendix 0.
+Appendix: no table of contents 0; no zoomed method diagram 0; no "expands Table N" sentences 0; random samples labelled 1;
+  config tables present 1; pseudocode: none 0.
+Layout: zero wrapfigures (rubric: at least three) 0; captions bold lead 1; colours consistent 1; no em dashes/section symbol 1.
+Mean ~0.6 -> NOT shippable yet. Fix pass ordered (Opus max).

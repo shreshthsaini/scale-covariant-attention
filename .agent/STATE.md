@@ -153,3 +153,8 @@ Next: paper editor (running) integrates these; then Fable final review; rebuild;
 Running: final text/placeholder editor (max effort) on main.tex; reference-style study -> paper/figures/REFERENCE_STYLE.md.
 Then: figure restyle pass (remove text from diagrams, follow REFERENCE_STYLE house rules), lead re-review, deliver.
 All compute done; all results archived (incl. latency_curve_batch1.csv, progressive46 distribution intervals).
+## 2026-10-19 12:15 (Fable operator) Opus WEEKLY limit hit (resets Oct 22 12:00 CT): Opus subagents unavailable.
+Teaser restyle finished before cutoff and committed (e683c34: 53 -> 9 labels). Remaining restyle running on
+Fable subagents with disjoint ownership: method diagram (method.tex/pdf + Fig 2 caption), data plots (latency,
+scatter, deltas, calibration plots + captions), galleries/qualitative (fig_qual.py, fig_phase2.py, galleries + captions).
+Then: lead rebuilds PDF+zip, re-reviews pages, delivers. Text is final at c123913.
