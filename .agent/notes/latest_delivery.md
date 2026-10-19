@@ -37,3 +37,10 @@ Evidence: `results/evidence/continuation/unit_validation_1077042.json`.
 The PDF and source ZIP above remain unchanged. Read HANDOVER.md for ownership.
 Do not duplicate the watcher. Render history is under
 `/scratch/09032/saini_2/sca/paper_review_20261017/redesign_final_bibliography`.
+
+## 2026-10-19 00:15 delivery (Claude operator)
+- paper/main.pdf: 42 pages, main text 9 pages, 24.9 MB, SHA256 785f1947d36dfb73a32aaa71b53aeaa3d765a02b1effb2058afd5a29bd3aa123
+- paper/sca_overleaf.zip: SHA256 1b7e79c96faa6d8085763c5a15bb48b7fa9c1ec19c71554d3fdbd30141b28c63
+- Fresh-unzip build: /scratch/09032/saini_2/sca/zipcheck/fable_fix_20261019_001102/delivery_hmyrl93d (42 = 42 pages, 0 overfull, 0 undefined)
+- Content: supervisor (Fable) fixes, 8-method Table 2, corrected HRDiT timing, calibration panel restored in Fig 2.
+- Pending rows: HRDiT 191, HRDiT clean timing, SCA 42 steps, progressive SCA, E2 6144/8192, E9 Krea.

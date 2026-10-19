@@ -4,17 +4,19 @@ The figure is generated as figures/src/method_diagram.tex (paper fonts:
 Helvetica text, Computer Modern math, colours from sca_colors.tex) and
 compiled with tectonic.
 
-Panel a draws a small target grid at one scale (s = 4, n0 = 8, t = 2, so 32 x 32
-tokens): one t x t query tile, its native n0 x n0 window (start a(tau) of
-Section 2.2) and the n0 x n0 block-centre keys kappa(b) = s b + floor(s/2) of
-the global branch. FLUX.1 itself has n0 = 64 and t = 8.
+Panel a (calibration, schematic icons plus real data): the native 1024^2 run,
+the three operators at emulated scale s_c = 4, the closed-form weight and the
+fitted table of block 29 (zero-based 28) of the archived scale-4 table: 24
+heads in original order by 14 noise bins, sigma decreasing left to right. Bin 0
+is unpopulated and holds the nearest populated bin, as in the stored table. The
+region sigma > sigma_g, which inference never reads, is veiled.
 
-Panel b carries the real data: the weight pi_h(sigma) that each of the 24 heads
-of block 29 (zero-based 28) of the archived scale-4 table uses at each of the 28
-sampling steps. Steps with sigma > sigma_g use the global branch only (weight 0);
-later steps interpolate the table linearly in sigma between bin centres, as
-sca/attn.py PiTable.__call__ does at inference. The 28 noise levels follow the
-FLUX.1 shifted schedule (mu = 1.15). Heads are in original order.
+Panel b (apply): the per-head mix, the 28-step schedule (steps with
+sigma > sigma_g use the global branch only; FLUX.1 shifted schedule, mu = 1.15)
+and a small target grid drawn at one scale (s = 4, n0 = 8, t = 2, so 32 x 32
+tokens): one t x t query tile, its native n0 x n0 window (start a(tau) of
+Section 2.2) and the n0 x n0 block-centre keys kappa(b) = s b + floor(s/2).
+FLUX.1 itself has n0 = 64 and t = 8.
 
 Run on compute from paper/figures/src (pymupdf refreshes the SVG preview and
 checks that no text is smaller than MIN_PT or outside the page):
@@ -45,7 +47,7 @@ BLOCK = 28          # zero-based index; labelled "block 29"
 SIGMA_G = 0.89
 MU = 1.15
 STEPS = 28
-S, N0, TQ = 4, 8, 2  # drawn example of panel a: scale, native grid side, query tile side
+S, N0, TQ = 4, 8, 2  # drawn example of panel b: scale, native grid side, query tile side
 TILE = (8, 6)        # drawn query tile index (x, y)
 MIN_PT = 6.5         # smallest allowed glyph size in PDF points (figure is placed at 100%)
 
@@ -58,17 +60,6 @@ def rgb(hexcolor: str) -> str:
 def schedule(steps: int = STEPS) -> list[float]:
     t = np.linspace(1.0, 1.0 / steps, steps)
     return [float(math.exp(MU) / (math.exp(MU) + (1.0 / s - 1.0))) for s in t]
-
-
-def pi_at(table: np.ndarray, centers: np.ndarray, sigma: float) -> np.ndarray:
-    """Per-head weight at noise level sigma, as sca/attn.py PiTable.__call__."""
-    j = int(np.searchsorted(centers, sigma))
-    if j <= 0:
-        return table[..., 0]
-    if j >= len(centers):
-        return table[..., -1]
-    a = (sigma - centers[j - 1]) / (centers[j] - centers[j - 1])
-    return (1 - a) * table[..., j - 1] + a * table[..., j]
 
 
 class Tikz:
@@ -92,27 +83,32 @@ class Tikz:
     def text(self, x, y, s, style="lbl", anchor="west", extra=""):
         self.add(r"\node[%s,anchor=%s%s] at (%.4f,%.4f) {%s};" % (style, anchor, extra, x, -y, s))
 
+    def grid(self, x, y, side, n):
+        self.rect(x, y, x + side, y + side, "fill=white")
+        step = side / n
+        self.segs([((x + k * step, y), (x + k * step, y + side)) for k in range(1, n)]
+                  + [((x, y + k * step), (x + side, y + k * step)) for k in range(1, n)], "icoln")
+        self.rect(x, y, x + side, y + side, "draw=scaMid,line width=0.5pt")
+
 
 def main() -> None:
     scafig.write_tikz_colors(str(HERE / "sca_colors.tex"))
     z = np.load(DATA)
     table = z["s4_pi_head"]
-    centers = np.asarray(z["sigma_centers"], dtype=np.float64)
     assert table.shape == (57, 24, 14) and np.isfinite(table).all()
-    assert np.all((table >= 0) & (table <= 1)) and np.all(np.diff(centers) > 0)
+    assert np.all((table >= 0) & (table <= 1))
     a, b = z["s4_stats"][:2]
     fitted = np.clip(np.divide(b, a, out=np.ones_like(a), where=a > 0), 0, 1)
     populated = np.flatnonzero(z["populated"])
     nearest = populated[np.abs(np.arange(14)[:, None] - populated[None, :]).argmin(1)]
     np.testing.assert_allclose(table, fitted[..., nearest], rtol=1e-12, atol=1e-12)
+    pi = table[BLOCK]                                             # 24 heads x 14 bins, original order
     sig = schedule()
     gated = [k for k, s in enumerate(sig) if s > SIGMA_G]
     ng = len(gated)
     assert gated == list(range(8)), gated
-    pi = np.stack([np.zeros(24) if k < ng else pi_at(table[BLOCK], centers, s)
-                   for k, s in enumerate(sig)], axis=1)          # 24 heads x 28 steps
 
-    # drawn example of panel a, from the definitions in Section 2.2
+    # drawn example of panel b, from the definitions in Section 2.2
     nt = S * N0
     def start(tau: int) -> int:                                   # window start a(tau) per axis
         return int(np.clip(TQ * tau + TQ // 2 - N0 // 2, 0, nt - N0))
@@ -123,15 +119,102 @@ def main() -> None:
     assert not any(tx <= i < tx + TQ for i in kappa) or not any(ty <= j < ty + TQ for j in kappa)
 
     t = Tikz()
-    AW, GAP = 2.2, 0.06
-    G, gy = 1.40, 0.29
-    gx, c = 0.12, G / nt
-    ly = [gy + G + 0.135 + k * 0.148 for k in range(4)]
-    H = ly[-1] + 0.115
+    AW, GAP = 2.0, 0.06
+    bx0 = AW + GAP
+    G, gy = 1.30, 1.15                                            # panel b target grid
+    H = gy + G + 0.09
 
-    # ---------------- panel a: one query tile at the target, one scale -------------
+    # ---------------- panel a: calibrate once at the native resolution -------------
     t.rect(0, 0, AW, H, "panel")
-    t.text(0.09, 0.145, r"\textbf{a}\hspace{6pt}\textbf{Keys of one query tile, to scale}", "ttl")
+    t.text(0.09, 0.145, r"\textbf{a}\hspace{6pt}\textbf{Calibrate once at 1024\textsuperscript{2}}", "ttl")
+    nx, ny, ns = 0.12, 0.30, 0.44                                 # native run (schematic)
+    t.grid(nx, ny, ns, 8)
+    t.text(nx + ns / 2, ny + ns + 0.05, "native run", "lbl", "north")
+    ix, isz, rows = 0.86, 0.16, (0.36, 0.55, 0.74)
+    for yc in rows:
+        t.line([(nx + ns + 0.04, ny + ns / 2), (ix - 0.04, yc)], "arr")
+    y = rows[0] - isz / 2                                         # full attention: every key
+    t.rect(ix, y, ix + isz, y + isz, "fill=scaMid!30")
+    t.segs([((ix + k * isz / 4, y), (ix + k * isz / 4, y + isz)) for k in range(1, 4)]
+           + [((ix, y + k * isz / 4), (ix + isz, y + k * isz / 4)) for k in range(1, 4)],
+           "draw=white,line width=0.3pt")
+    t.rect(ix, y, ix + isz, y + isz, "draw=scaMid,line width=0.5pt")
+    y = rows[1] - isz / 2                                         # global: one key per block
+    t.grid(ix, y, isz, 4)
+    for i in range(4):
+        for j in range(4):
+            t.add(r"\fill[scaGlobal] (%.4f,%.4f) circle (0.014);" % (ix + (i + .5) * isz / 4, -(y + (j + .5) * isz / 4)))
+    y = rows[2] - isz / 2                                         # local: window around a tile
+    t.grid(ix, y, isz, 8)
+    c8 = isz / 8
+    t.rect(ix + 2 * c8, y + 2 * c8, ix + 6 * c8, y + 6 * c8, "fill=scaLocalLight,draw=scaLocal,line width=0.6pt")
+    t.rect(ix + 3.5 * c8, y + 3.5 * c8, ix + 4.5 * c8, y + 4.5 * c8, "fill=scaInk")
+    sx = ix + isz + 0.06
+    for yc, sym, style in zip(rows, (r"$\Ofull$", r"$\Oglob$", r"$\Oloc$"), ("math", "mathg", "mathl")):
+        t.text(sx, yc, sym, style)
+    t.text(ix + 0.28, rows[2] + isz / 2 + 0.03, r"emulated $s_c=4$", "note", "north")
+    fy = 1.085                                                    # closed-form weight
+    t.text(AW / 2 - 0.06, fy, r"$\pi^{\star}=\operatorname{clip}(B/A,\,0,\,1)$", "fbox", "center")
+    bx = sx + 0.39                                                # brace: all three operators feed the fit
+    t.add(r"\draw[brace] (%.4f,%.4f) -- (%.4f,%.4f);" % (bx, -(rows[0] - 0.085), bx, -(rows[2] + 0.085)))
+    t.line([(bx + 0.07, rows[1]), (1.82, rows[1]), (1.82, fy), (1.62, fy)], "arr")
+    hx0, hx1, hy0, hy1 = 0.38, 1.38, 1.36, 2.22                   # fitted table, real data
+    t.line([(0.90, fy + 0.11), (0.90, hy0 - 0.03)], "arr")
+    cw, rh = (hx1 - hx0) / 14, (hy1 - hy0) / 24
+    for h in range(24):
+        for k in range(14):
+            x = hx0 + (13 - k) * cw                               # sigma decreases left to right
+            x1 = hx1 if k == 0 else x + cw + 0.005
+            y1 = hy1 if h == 23 else hy0 + (h + 1) * rh + 0.005
+            t.rect(x, hy0 + h * rh, x1, y1, "fill=%s" % rgb(scafig.pi_color(pi[h, k])))
+    xg = hx0 + (1 - SIGMA_G) * (hx1 - hx0)
+    t.rect(hx0, hy0, xg, hy1, "fill=white,fill opacity=0.55")
+    t.rect(hx0, hy0, hx1, hy1, "draw=scaMid,line width=0.4pt")
+    t.line([(xg, hy0 - 0.05), (xg, hy1)], "draw=scaInk,line width=0.5pt,dash pattern=on 1.4pt off 1pt")
+    t.text(xg, hy0 - 0.06, r"$\sigma_g$", "lbl", "south")
+    for v in (1.0, 0.5, 0.0):
+        x = hx0 + (1 - v) * (hx1 - hx0)
+        t.line([(x, hy1), (x, hy1 + 0.035)], "tick")
+        t.text(x, hy1 + 0.055, "%g" % v, "tck", "north")
+    t.text((hx0 + hx1) / 2, hy1 + 0.17, r"noise level $\sigma$", "lbl", "north")
+    for h in (1, 12, 24):
+        yy = hy0 + (h - 0.5) * rh
+        t.line([(hx0 - 0.035, yy), (hx0, yy)], "tick")
+        t.text(hx0 - 0.055, yy, str(h), "tck", "east")
+    t.text(0.13, (hy0 + hy1) / 2, "head, block %d" % (BLOCK + 1), "lbl", "center", ",rotate=90")
+    cb0, cb1, n = hx1 + 0.08, hx1 + 0.145, 48
+    for k in range(n):
+        y1 = hy1 - k * (hy1 - hy0) / n
+        y0 = hy0 if k == n - 1 else y1 - (hy1 - hy0) / n - 0.005
+        t.rect(cb0, y0, cb1, y1, "fill=%s" % rgb(scafig.pi_color((k + .5) / n)))
+    t.rect(cb0, hy0, cb1, hy1, "draw=scaMid,line width=0.4pt")
+    for v, lab in ((1.0, r"1 \textcolor{scaLocalText}{local}"), (0.5, "0.5"),
+                   (0.0, r"0 \textcolor{scaGlobal}{global}")):
+        yy = hy1 - v * (hy1 - hy0)
+        t.line([(cb1, yy), (cb1 + 0.03, yy)], "tick")
+        t.text(cb1 + 0.045, yy, lab, "tck", "west")
+    t.text((cb0 + cb1) / 2, hy0 - 0.06, r"$\pi_h(\sigma)$", "lbl", "south")
+
+    # ---------------- panel b: apply at the target -------------------------------
+    t.rect(bx0, 0, W, H, "panel")
+    t.text(bx0 + 0.09, 0.145, r"\textbf{b}\hspace{6pt}\textbf{Apply at the target}", "ttl")
+    t.text((bx0 + W) / 2, 0.42, r"$O_h=\pi_h(\sigma)\,\textcolor{scaLocalText}{\Oloc_h}"
+           r"+\bigl(1-\pi_h(\sigma)\bigr)\,\textcolor{scaGlobal}{\Oglob_h}$", "mixbox", "center")
+    sx0, sx1, sy0, sy1 = bx0 + 0.22, W - 0.22, 0.70, 0.84         # 28-step schedule
+    sw_ = (sx1 - sx0) / STEPS
+    t.rect(sx0, sy0, sx0 + ng * sw_, sy1, "fill=scaGlobal")
+    t.rect(sx0 + ng * sw_, sy0, sx1, sy1, "fill=scaAccentLight")
+    t.segs([((sx0 + k * sw_, sy0), (sx0 + k * sw_, sy1)) for k in range(ng + 1, STEPS)],
+           "draw=white,line width=0.6pt,opacity=0.75")
+    t.text(sx0 + ng * sw_ / 2, (sy0 + sy1) / 2, "global only", "lblw", "center")
+    t.text(sx0 + (ng + STEPS) * sw_ / 2, (sy0 + sy1) / 2, "per-head mix", "lbla", "center")
+    for k in (1, 8, 14, 21, 28):
+        x = sx0 + (k - 0.5) * sw_
+        t.line([(x, sy1), (x, sy1 + 0.035)], "tick")
+        t.text(x, sy1 + 0.055, str(k), "tck", "north")
+    t.text((sx0 + sx1) / 2, sy1 + 0.165, "denoising step", "lbl", "north")
+    gx = bx0 + 0.12                                               # target grid at one scale
+    c = G / nt
     t.rect(gx, gy, gx + G, gy + G, "fill=white")
     t.rect(gx + wx * c, gy + wy * c, gx + (wx + N0) * c, gy + (wy + N0) * c, "fill=scaLocalLight")
     t.segs([((gx + k * c, gy), (gx + k * c, gy + G)) for k in range(1, nt) if k % S]
@@ -145,65 +228,18 @@ def main() -> None:
     t.rect(gx + wx * c, gy + wy * c, gx + (wx + N0) * c, gy + (wy + N0) * c,
            "draw=scaLocal,line width=0.8pt")
     t.rect(gx, gy, gx + G, gy + G, "draw=scaMid,line width=0.5pt")
-    sw, lx = 0.085, 0.12
-    lt = lx + sw + 0.06
-    for y, style in ((ly[0], "fill=scaInk"), (ly[1], "fill=scaLocalLight,draw=scaLocal,line width=0.8pt"),
-                     (ly[2], "fill=scaGlobal")):
-        t.rect(lx, y - sw / 2, lx + sw, y + sw / 2, style)
+    sw, lx = 0.085, gx + G + 0.14
+    lt, ly = lx + sw + 0.06, [gy + 0.08 + k * 0.152 for k in range(5)]
+    for yy, style in ((ly[0], "fill=scaInk"), (ly[1], "fill=scaLocalLight,draw=scaLocal,line width=0.8pt"),
+                      (ly[3], "fill=scaGlobal")):
+        t.rect(lx, yy - sw / 2, lx + sw, yy + sw / 2, style)
     t.text(lt, ly[0], r"query tile, $t\times t$", "lbl")
-    px = gx + G + 0.08                                            # drawn parameters, right of the grid
-    t.text(px, gy + 0.07, "drawn with", "note")
-    for k, s_ in enumerate((r"$s=%d$" % S, r"$n_0=%d$" % N0, r"$t=%d$" % TQ)):
-        t.text(px, gy + 0.235 + k * 0.15, s_, "lbl")
-    t.text(lt, ly[1], r"\textcolor{scaLocalText}{local:} $n_0\times n_0$ window, query at $p$", "lbl")
-    t.text(lt, ly[2], r"\textcolor{scaGlobal}{global:} $n_0\times n_0$ block centres,", "lbl")
-    t.text(lt, ly[3], r"query at $\lfloor p/s\rfloor$", "lbl")
-
-    # ---------------- panel b: per-head mix and the 28-step schedule ----------------
-    bx0 = AW + GAP
-    t.rect(bx0, 0, W, H, "panel")
-    t.text(bx0 + 0.09, 0.145, r"\textbf{b}\hspace{6pt}\textbf{Per-head mix and schedule}", "ttl")
-    t.text((bx0 + W) / 2, 0.45, r"$O_h=\pi_h(\sigma)\,\textcolor{scaLocalText}{\Oloc_h}"
-           r"+\bigl(1-\pi_h(\sigma)\bigr)\,\textcolor{scaGlobal}{\Oglob_h}$", "mixbox", "center")
-    hx0, hx1, hy0, hy1 = bx0 + 0.45, W - 0.70, 0.88, H - 0.36
-    cw, rh = (hx1 - hx0) / STEPS, (hy1 - hy0) / 24
-    for h in range(24):
-        for k in range(ng, STEPS):
-            x, y = hx0 + k * cw, hy0 + h * rh
-            # each cell overlaps its right and lower neighbours, which are drawn later: no seams
-            x1 = hx1 if k == STEPS - 1 else x + cw + 0.005
-            y1 = hy1 if h == 23 else y + rh + 0.005
-            t.rect(x, y, x1, y1, "fill=%s" % rgb(scafig.pi_color(pi[h, k])))
-    t.rect(hx0, hy0, hx0 + ng * cw, hy1, "fill=%s" % rgb(scafig.pi_color(0.0)))
-    t.rect(hx0, hy0, hx1, hy1, "draw=scaMid,line width=0.4pt")
-    xm, ym = hx0 + ng * cw / 2, (hy0 + hy1) / 2
-    t.text(xm, ym - 0.07, "global", "lblw", "center")
-    t.text(xm, ym + 0.07, "only", "lblw", "center")
-    xg = hx0 + ng * cw
-    t.line([(xg, hy0 - 0.06), (xg, hy1)], "draw=scaInk,line width=0.6pt")
-    t.text(xg, hy0 - 0.085, r"$\sigma_g=%.2f$" % SIGMA_G, "lbl", "south")
-    for k in (1, 8, 14, 21, 28):
-        x = hx0 + (k - 0.5) * cw
-        t.line([(x, hy1), (x, hy1 + 0.035)], "tick")
-        t.text(x, hy1 + 0.055, str(k), "tck", "north")
-    t.text((hx0 + hx1) / 2, hy1 + 0.2, "denoising step", "lbl", "north")
-    for h in (1, 12, 24):
-        y = hy0 + (h - 0.5) * rh
-        t.line([(hx0 - 0.035, y), (hx0, y)], "tick")
-        t.text(hx0 - 0.055, y, str(h), "tck", "east")
-    t.text(bx0 + 0.15, ym, "head, block %d" % (BLOCK + 1), "lbl", "center", ",rotate=90")
-    cb0, cb1, n = hx1 + 0.13, hx1 + 0.205, 48
-    for k in range(n):
-        y1 = hy1 - k * (hy1 - hy0) / n
-        y0 = hy0 if k == n - 1 else y1 - (hy1 - hy0) / n - 0.005
-        t.rect(cb0, y0, cb1, y1, "fill=%s" % rgb(scafig.pi_color((k + .5) / n)))
-    t.rect(cb0, hy0, cb1, hy1, "draw=scaMid,line width=0.4pt")
-    for v, lab in ((1.0, r"1 \textcolor{scaLocalText}{local}"), (0.5, "0.5"),
-                   (0.0, r"0 \textcolor{scaGlobal}{global}")):
-        y = hy1 - v * (hy1 - hy0)
-        t.line([(cb1, y), (cb1 + 0.03, y)], "tick")
-        t.text(cb1 + 0.05, y, lab, "tck", "west")
-    t.text((cb0 + cb1) / 2, hy0 - 0.085, r"$\pi_h(\sigma)$", "lbl", "south")
+    t.text(lt, ly[1], r"\textcolor{scaLocalText}{local:} $n_0\times n_0$ window,", "lbl")
+    t.text(lt, ly[2], r"query at $p$", "lbl")
+    t.text(lt, ly[3], r"\textcolor{scaGlobal}{global:} $n_0\times n_0$ block centres,", "lbl")
+    t.text(lt, ly[4], r"query at $\lfloor p/s\rfloor$", "lbl")
+    t.text(lx, ly[4] + 0.26, "drawn to scale with", "note")
+    t.text(lx, ly[4] + 0.41, r"$s=%d$, $n_0=%d$, $t=%d$" % (S, N0, TQ), "note")
 
     doc = r"""%% Generated by fig_method.py; edit the script, not this file.
 \RequirePackage{fix-cm}
@@ -212,6 +248,7 @@ def main() -> None:
 \usepackage{times}
 \usepackage{amsmath,amssymb}
 \usepackage{tikz}
+\usetikzlibrary{arrows.meta,decorations.pathreplacing}
 \DeclareMathSizes{7}{7}{6.75}{6.75}
 \DeclareMathSizes{8}{8}{6.75}{6.75}
 \DeclareMathSizes{9}{9}{7}{6.75}
@@ -220,19 +257,29 @@ def main() -> None:
 \colorlet{scaLocalText}{scaLocal!85!black}
 \newcommand{\Oloc}{O^{\mathrm{loc}}}
 \newcommand{\Oglob}{O^{\mathrm{glob}}}
+\newcommand{\Ofull}{O^{\mathrm{full}}}
 \begin{document}
 \begin{tikzpicture}[x=1in,y=1in,
   panel/.style={fill=scaGrid!55,rounded corners=3pt},
   mixbox/.style={fill=white,draw=scaAccent,line width=0.9pt,rounded corners=2.5pt,
     inner xsep=6pt,inner ysep=4pt,font=\small,text=scaInk},
+  fbox/.style={fill=white,draw=scaRule,line width=0.5pt,rounded corners=2pt,
+    inner xsep=5pt,inner ysep=3pt,font=\small,text=scaAccent},
+  icoln/.style={draw=scaRule,line width=0.25pt},
   cellln/.style={draw=scaGrid,line width=0.25pt},
   blockln/.style={draw=scaRule,line width=0.45pt},
   tick/.style={draw=scaInk,line width=0.4pt},
+  arr/.style={draw=scaMid,line width=0.55pt,-{Stealth[length=3.4pt,width=2.8pt]}},
+  brace/.style={draw=scaMid,line width=0.55pt,decorate,decoration={brace,amplitude=3pt}},
   ttl/.style={font=\sffamily\small,text=scaInk,inner sep=0pt},
   lbl/.style={font=\sffamily\footnotesize,text=scaInk,inner sep=0pt},
   lblw/.style={lbl,text=white},
+  lbla/.style={lbl,text=scaAccent!80!black},
   note/.style={font=\sffamily\footnotesize,text=scaMid,inner sep=0pt},
-  tck/.style={font=\sffamily\scriptsize,text=scaInk,inner sep=0pt}]
+  tck/.style={font=\sffamily\scriptsize,text=scaInk,inner sep=0pt},
+  math/.style={font=\small,text=scaInk,inner sep=0pt},
+  mathg/.style={math,text=scaGlobal},
+  mathl/.style={math,text=scaLocalText}]
 \useasboundingbox (0,0) rectangle (%.4f,%.4f);
 %s
 \end{tikzpicture}
@@ -262,17 +309,19 @@ def main() -> None:
         script="paper/figures/src/fig_method.py", tikz="paper/figures/src/method_diagram.tex",
         data=str(DATA.relative_to(FIG.parent.parent)),
         data_sha256=hashlib.sha256(DATA.read_bytes()).hexdigest(),
-        panel_a=dict(drawn_example=dict(s=S, n0=N0, t=TQ, target_side_tokens=nt),
+        panel_a=dict(icons="schematic: native run and the three operators at emulated scale s_c = 4",
+                     table="s4_pi_head", block_zero_based=BLOCK, block_label=BLOCK + 1,
+                     heads="24, original order, head 1 at the top",
+                     bins="14 noise bins of width 1/14, sigma decreasing left to right; bin 0 is unpopulated "
+                          "and holds the nearest populated bin, as stored; sigma > sigma_g veiled",
+                     sigma_centers=[round(float(v), 6) for v in z["sigma_centers"]],
+                     pi_head_by_bin=[[round(float(v), 4) for v in row] for row in pi]),
+        panel_b=dict(drawn_example=dict(s=S, n0=N0, t=TQ, target_side_tokens=nt),
                      tile_index_xy=list(TILE), tile_cells_xy=[tx, ty], window_start_xy=[wx, wy],
                      block_centre_cells=kappa,
                      rules="window start a(tau)=clip(t*tau+floor(t/2)-floor(n0/2),0,s*n0-n0); "
-                           "block centre kappa(b)=s*b+floor(s/2) (Section 2.2)"),
-        panel_b=dict(table="s4_pi_head", block_zero_based=BLOCK, block_label=BLOCK + 1,
-                     heads="24, original order, head 1 at the top",
-                     rule="steps with sigma > sigma_g drawn as 0 (global only); other steps interpolate "
-                          "the table linearly in sigma between sigma_centers (sca/attn.py PiTable.__call__)",
-                     sigma_centers=[round(float(v), 6) for v in centers],
-                     pi_head_by_step=[[round(float(v), 4) for v in row] for row in pi]),
+                           "block centre kappa(b)=s*b+floor(s/2) (Section 2.2)",
+                     schedule_strip="steps with sigma > sigma_g global only, the rest per-head mix"),
         schedule=dict(mu=MU, steps=STEPS, sigma=[round(s, 4) for s in sig], sigma_g=SIGMA_G,
                       global_only_steps=[k + 1 for k in gated]),
         height_in=round(H, 4), width_in=W, min_text_pt=min_pt,

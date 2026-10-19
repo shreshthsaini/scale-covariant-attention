@@ -193,7 +193,7 @@ So the per-head table has the lowest output error of any rule constant within a 
 We calibrate FLUX.1-dev on 32 prompts at $1024^2$ and 16 at $1280^2$, written for this purpose and disjoint from the evaluation sets. Errors are relative, $\sum J/\sum\|\Ofull\|^2$, pooled over blocks, heads, and steps.
 
 
-\paragraph{Heads differ.} Over the 1368 heads, the standard deviation of $\pih$ is 0.24 to 0.26 at every noise level (emulated scale 2). Half of the (head, noise level) cells lie in $[0.2,0.8]$, 11.7\% exceed 0.95, and 2.9\% are below 0.05 (Figure~\ref{fig:method}b; full tables in Figure~\ref{fig:calib}, Appendix~\ref{app:calib}). The mean weight is 0.64 to 0.74, so the typical head leans local but still draws on the global branch.
+\paragraph{Heads differ.} Over the 1368 heads, the standard deviation of $\pih$ is 0.24 to 0.26 at every noise level (emulated scale 2). Half of the (head, noise level) cells lie in $[0.2,0.8]$, 11.7\% exceed 0.95, and 2.9\% are below 0.05 (Figure~\ref{fig:method}a; full tables in Figure~\ref{fig:calib}, Appendix~\ref{app:calib}). The mean weight is 0.64 to 0.74, so the typical head leans local but still draws on the global branch.
 
 \paragraph{The table is stable across tested prompt splits.} Tables fitted on disjoint halves of the prompts correlate at 0.989 over all cells (0.986 at scale 4; 0.974 for 16 prompts at $1280^2$), and each half's table scored on the other half gives a relative error of 0.0576 against 0.0574 in sample. Tables from 4, 8, or 16 prompts also generate similarly (Section~\ref{sec:generality}).
 
@@ -1117,7 +1117,6 @@ The local branch then contributes only its difference from the global branch abo
 
 \paragraph{History: what it fixes and what it costs.} On the development prompts, the band alone (no opening phase) fixed the boats but left extra statues and faces on the Moai and woman-and-bear prompts; the opening phase alone got the main subject right, but small extra figures appeared late on some prompts; both together gave one subject on the boats, Moai, and woman-and-bear prompts. This was our first full configuration. On 46 prompts, however, removing the guard improves HPSv2 ($+0.54$), HPSv2.1 ($+1.17$), PickScore ($+0.25$), CLIP-IQA ($+1.7$), and MUSIQ ($+2.9$), all significant, leaves the other metrics within noise, and saves 17\,s per image on an idle GPU. The guard also hid what the per-head mix contributes. With it (Table~\ref{tab:ablation_band}), local only matched the per-head mix within 2\% on preference metrics, because the guard replaces the low band of every head's output with that of the global branch whatever the head's weight, so it injects global low frequencies even at $\pi=1$; without the guard local only loses on nearly every metric (Section~\ref{sec:ablations}). Likewise, with the guard one shared weight and per-layer weights matched the per-head table on preference metrics and lost only on no-reference quality, and hard per-head routing (10 to 17\% of heads global at threshold 0.5, about 6\% at 0.3) stayed within 2\% of the mix. The guard is an option for prompts where late duplication is visible, not part of the default method.
 
-\FloatBarrier
 \section{Compute and reproducibility}
 \label{app:compute}
 
