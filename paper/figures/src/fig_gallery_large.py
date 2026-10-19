@@ -62,8 +62,8 @@ SPECS = {
     "gallery_flux2": dict(
         k=4, captions=[
             r"\textbf{FLUX.2-dev at $4096^2$: SCA can still distort face geometry and fine texture (first "
-            r"row).} Four of 50 paired prompts drawn at random (seed~17), in draw order; after each image, "
-            r"a 1:1 crop of its outlined window."]),
+            r"row).} Four of 50 paired prompts drawn at random (seed~17); after each image, a 1:1 crop of "
+            r"its outlined window."]),
 }
 
 

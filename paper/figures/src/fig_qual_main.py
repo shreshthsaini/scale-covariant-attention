@@ -52,7 +52,7 @@ CROP_W, CROP_H = 736, 512   # native crop window, width x height
 G_IN, G_OUT = 1 / 72, 2 / 72  # white gutters (in): 1 pt inside a group, 2 pt between groups
 HEAD, GV = 0.14, 2 / 72     # header band and row gap (in)
 DPI = 600                   # downscaled full images: at most 600 dpi of printed width
-FRAME = "BFC5CB"            # the one neutral frame colour (crop windows and crop tiles)
+FRAME = "A6ADB4"            # the one neutral frame colour (crop windows and crop tiles)
 OLD_BOXES = {"2100482621711410240": (928, 3288), "m6394968997939197542": (1408, 1880),
              "m2729538226706404616": (1520, 256), "m1057810871814672649": (1896, 3328)}  # 512^2, v1
 

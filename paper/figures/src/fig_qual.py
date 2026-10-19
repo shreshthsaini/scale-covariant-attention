@@ -207,7 +207,7 @@ GRID_MACROS = r"""% Shared macros for the SCA image grids. Written by paper/figu
 \xglobal\providecolor{scaInk}{HTML}{1F2328}%
 \xglobal\providecolor{scaMid}{HTML}{5B6570}%
 \xglobal\providecolor{scaAccent}{HTML}{13865F}%
-\xglobal\providecolor{scaFrame}{HTML}{BFC5CB}%
+\xglobal\providecolor{scaFrame}{HTML}{A6ADB4}%
 \newlength{\scaT}% tile height; each figure sets it so that its widest row fills \linewidth
 \newlength{\scaU}% second tile height for a figure whose rows differ in tile count
 \newlength{\scaLW}\global\scaLW=9.5pt% rotated row-label column

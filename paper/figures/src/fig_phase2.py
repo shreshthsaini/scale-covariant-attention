@@ -61,8 +61,8 @@ SPECS = {
         "expected": 100, "prompt_manifest": EVAL100,
         "caption": (
             r"\textbf{At $6144^2$ AReA's crops dissolve into speckle or streaks; SCA keeps recognisable "
-            r"detail.} Four of 100 paired prompts, drawn at random; after each image, a 1:1 crop of its "
-            r"window. Four examples do not establish general quality."
+            r"detail.} Four of 100 prompts, drawn at random; after each image, a 1:1 crop of its window; "
+            r"not evidence of general quality."
         ),
     },
     "krea_complete": {
