@@ -148,3 +148,8 @@ and leads single-pass. CPU bootstraps for E2 6144 / E9 Krea queued as a_cpu_* on
 - results/e9_krea (100 prompts, Krea checkpoint): SCA ~ AReA (IR 1.198 vs 1.240; HPS2.1 .297 vs .290; FID 165.8 vs 166.6;
   patch FID 123.9 vs 115.5); 73 vs 217 s. SEGA strong on Krea (FID 164.2).
 Next: paper editor (running) integrates these; then Fable final review; rebuild; send PDF+zip.
+## 03:35 (Fable operator) User: figures/diagrams/plots must follow the style of the reference papers (AReA/Toronto,
+"left loop diffusion transformer", "budget picks", a ByteDance paper, a DeepMind paper) and carry much LESS text.
+Running: final text/placeholder editor (max effort) on main.tex; reference-style study -> paper/figures/REFERENCE_STYLE.md.
+Then: figure restyle pass (remove text from diagrams, follow REFERENCE_STYLE house rules), lead re-review, deliver.
+All compute done; all results archived (incl. latency_curve_batch1.csv, progressive46 distribution intervals).
