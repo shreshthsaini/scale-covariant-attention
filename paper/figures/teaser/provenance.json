@@ -1,4 +1,5 @@
 {
+  "layout": "Pictures only (REFERENCE_STYLE.md house rule 1): one size tag per mosaic image, method names once, one frame colour; numbers moved to the caption and Table 1.",
   "selection": "Curated by visual inspection; no metric ranking. Mosaic: SCA outputs. Strip: chosen from the 191 evaluation prompts at 4096x4096 where all six methods have a complete seed-0 output, for a visible layout difference.",
   "strip_selection": {
     "procedure": "Six-method contact sheets of all 191 prompts (256 px thumbnails) were screened for layout failures (duplication, stripes, broken structure) in the baselines with a coherent SCA output; shortlisted prompts were then viewed at 512 px per method and SCA at full size. Prompts where SCA itself duplicated subjects or broke structure were rejected.",
@@ -122,12 +123,17 @@
       "steps": "28"
     }
   },
+  "caption_speedup": {
+    "shown": "2.85",
+    "raw": 2.8486298705830517,
+    "definition": "AReA / SCA clean batch-1 medians, 4096x4096"
+  },
   "width_in": 5.5,
-  "height_in": 3.148,
+  "height_in": 3.0861,
   "pdf": "paper/figures/teaser.pdf",
   "records": [
     {
-      "role": "mosaic panorama",
+      "role": "mosaic pano",
       "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/2048x6144/a4k_eval_4096_minus2742856837225126754_577ab52908_seed0.png",
       "png_sha256": "651a2c36acf43524792b127f6246f332f1d68e03a3733eb4147e4ea69384b095",
       "prompt": "A vibrant village with colorful houses and a picturesque castle is set against a backdrop of mountains and a clear blue sky, with bustling crowds walking along a stone bridge and a serene lake reflecting the scenery.",
@@ -202,37 +208,23 @@
       },
       "preview": "pano.jpg",
       "preview_px": [
-        1928,
-        643
+        1965,
+        655
       ],
       "zooms": [
         {
-          "file": "pano_zoom1.jpg",
+          "file": "pano_zoom.jpg",
           "box_xys": [
             4064,
             832,
             384
           ],
-          "color": "scaZoomB",
-          "tile_xy_in": [
-            3.258,
-            0.0
+          "inset_in": 0.5,
+          "inset_xy_in": [
+            2.75,
+            0.5667
           ],
-          "tile_in": 0.513
-        },
-        {
-          "file": "pano_zoom2.jpg",
-          "box_xys": [
-            2304,
-            1088,
-            384
-          ],
-          "color": "scaZoom",
-          "tile_xy_in": [
-            3.258,
-            0.558
-          ],
-          "tile_in": 0.513
+          "magnification": 2.44
         }
       ]
     },
@@ -312,39 +304,106 @@
       },
       "preview": "square.jpg",
       "preview_px": [
-        643,
-        643
+        655,
+        655
       ],
       "zooms": [
         {
-          "file": "square_zoom1.jpg",
-          "box_xys": [
-            3420,
-            1520,
-            448
-          ],
-          "color": "scaZoomB",
-          "tile_xy_in": [
-            4.987,
-            0.0
-          ],
-          "tile_in": 0.513
-        },
-        {
-          "file": "square_zoom2.jpg",
+          "file": "square_zoom.jpg",
           "box_xys": [
             1792,
             1536,
             448
           ],
-          "color": "scaZoom",
-          "tile_xy_in": [
-            4.987,
-            0.558
+          "inset_in": 0.44,
+          "inset_xy_in": [
+            0.6267,
+            0.6267
           ],
-          "tile_in": 0.513
+          "magnification": 3.69
         }
       ]
+    },
+    {
+      "role": "mosaic portrait",
+      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_3657338173664010496_d4df7d19bb_seed0.png",
+      "png_sha256": "d880432271388f828b958fbe302937411baec2afb0848948ac3a908e8004120c",
+      "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+      "config": {
+        "schema_version": 1,
+        "method": "sca_nb",
+        "res": "4096x4096",
+        "prompt_id": "a4k_eval_4096_3657338173664010496",
+        "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+        "seed": 0,
+        "derived_seed": 2256563941301075758,
+        "steps": 28,
+        "guidance": 4.5,
+        "model": "black-forest-labs/FLUX.1-dev",
+        "dtype": "bfloat16",
+        "batch_size": 1,
+        "attention": "sca:sca",
+        "diffusers": "0.39.0",
+        "torch": "2.11.0+cu128",
+        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "grid": [
+          256,
+          256
+        ],
+        "mu_mode": "max_shift",
+        "sca": {
+          "n0": 64,
+          "tile": 8,
+          "window": 64,
+          "pool": "center",
+          "chunk": null,
+          "gate_sigma": 0.89,
+          "band": 0,
+          "route": 0.0,
+          "pool_factors": [
+            4,
+            4
+          ],
+          "pi_variant": "head",
+          "pi_const": null,
+          "sigma_star": null,
+          "pi_scale": 4,
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+        },
+        "scheduler": {
+          "num_train_timesteps": 1000,
+          "shift": 3.0,
+          "use_dynamic_shifting": true,
+          "base_shift": 0.5,
+          "max_shift": 1.15,
+          "base_image_seq_len": 256,
+          "max_image_seq_len": 65536,
+          "invert_sigmas": false,
+          "shift_terminal": null,
+          "use_karras_sigmas": false,
+          "use_exponential_sigmas": false,
+          "use_beta_sigmas": false,
+          "time_shift_type": "exponential",
+          "stochastic_sampling": false,
+          "_use_default_values": [
+            "use_beta_sigmas",
+            "use_exponential_sigmas",
+            "invert_sigmas",
+            "shift_terminal",
+            "time_shift_type",
+            "use_karras_sigmas",
+            "stochastic_sampling"
+          ],
+          "_class_name": "FlowMatchEulerDiscreteScheduler",
+          "_diffusers_version": "0.30.0.dev0"
+        }
+      },
+      "preview": "portrait.jpg",
+      "preview_px": [
+        655,
+        655
+      ],
+      "zooms": []
     },
     {
       "role": "strip full",
@@ -407,11 +466,6 @@
         1408,
         768
       ],
-      "steps": "28",
-      "seconds": 186.5,
-      "seconds_kind": "clean",
-      "imagereward": -2.18,
-      "hpsv21_x100": 7.61,
       "full": "strip_full_full.jpg",
       "crop": "strip_full_crop.jpg"
     },
@@ -645,11 +699,6 @@
         1408,
         768
       ],
-      "steps": "28",
-      "seconds": 196.1,
-      "seconds_kind": "campaign",
-      "imagereward": -0.11,
-      "hpsv21_x100": 20.52,
       "full": "strip_dype_full.jpg",
       "crop": "strip_dype_crop.jpg"
     },
@@ -883,11 +932,6 @@
         1408,
         768
       ],
-      "steps": "28",
-      "seconds": 190.5,
-      "seconds_kind": "campaign",
-      "imagereward": 0.55,
-      "hpsv21_x100": 24.37,
       "full": "strip_sega_official_full.jpg",
       "crop": "strip_sega_official_crop.jpg"
     },
@@ -1002,11 +1046,6 @@
         1408,
         768
       ],
-      "steps": "28",
-      "seconds": 202.4,
-      "seconds_kind": "clean",
-      "imagereward": 0.92,
-      "hpsv21_x100": 27.2,
       "full": "strip_area_full.jpg",
       "crop": "strip_area_crop.jpg"
     },
@@ -1237,11 +1276,6 @@
         1408,
         768
       ],
-      "steps": "30+30",
-      "seconds": 308.5,
-      "seconds_kind": "campaign",
-      "imagereward": 1.28,
-      "hpsv21_x100": 30.8,
       "full": "strip_ultraimage_full.jpg",
       "crop": "strip_ultraimage_crop.jpg"
     },
@@ -1324,33 +1358,27 @@
         1408,
         768
       ],
-      "steps": "28",
-      "seconds": 71.1,
-      "seconds_kind": "clean",
-      "imagereward": 1.23,
-      "hpsv21_x100": 29.71,
       "full": "strip_sca_nb_full.jpg",
       "crop": "strip_sca_nb_crop.jpg"
     }
   ],
   "asset_sha256": {
-    "pano.jpg": "cfaaeec18605139b906b45589f60139b52145ca41349bee183228519891ea973",
-    "pano_zoom1.jpg": "108703f5618367b03495cdbba9d8d91ca0f6199041f282d6c9ab962670737917",
-    "pano_zoom2.jpg": "eaec1a82510438eb57280d5cb023e38032575ae778223b39627e2ce3f5eb0f74",
-    "square.jpg": "c93e63d20f11797bf73b1b6e0046b731f70a5b21b0f2d79eda7d4dc7ad607479",
-    "square_zoom1.jpg": "c23faa7be00a612db1731b5c7085c30e2c2630993fa4f323935ee05de4903a3a",
-    "square_zoom2.jpg": "376a882c275e612586c306d89bd946ca5008c2b75d232a753afc059d8e6e5f09",
+    "pano.jpg": "ecc44b77ef5362f4dfe43f53e79bab514a7d722e6f4c44a6fb444d908f32b7d5",
+    "pano_zoom.jpg": "108703f5618367b03495cdbba9d8d91ca0f6199041f282d6c9ab962670737917",
+    "portrait.jpg": "8fd46b32f2047c1fd4a139885c808e16235ab84be1fb0eb6e84da0825eb794d9",
+    "square.jpg": "cb2f6d6da5b75058ae1950fb1ab68def6aea3a7fa66846ea72abad8afb588770",
+    "square_zoom.jpg": "376a882c275e612586c306d89bd946ca5008c2b75d232a753afc059d8e6e5f09",
     "strip_area_crop.jpg": "dd0908b6d2e9b173bd62250fc82163e6120d52c6f2020ca30e456bd200840f94",
-    "strip_area_full.jpg": "9d1d354e0636789943350c0dd30deb835e5b58d8feb90d7deecb7538bd34b368",
+    "strip_area_full.jpg": "1c86fbf470649d23f394a47e23f389e3f5ef02a23a8c9673fddd82c0ddaa519e",
     "strip_dype_crop.jpg": "d4c766937013b8f6a13e0f736832097f9317ea83d7e9f718d8fc7ae58f253405",
-    "strip_dype_full.jpg": "ee0ebc015767fd1c712a220e6a4131577a810f6142f2d2f323e1d0f2032d169d",
+    "strip_dype_full.jpg": "55d10892b9640cc74b41bdf41f2f2e8aaa03b132de6b17aec4d7330d475f494a",
     "strip_full_crop.jpg": "08ee6be2ff00411b085c1daa382c6cb5845f9ec6e50f43b9ad8daf867498b351",
-    "strip_full_full.jpg": "44b0bf3156e39b215aa6d1b2238ce5d0ecb94d124090994aff7b5f169a29180c",
+    "strip_full_full.jpg": "02769e53c78dc8dc268ec259dc5d0626b8d21da532267a80d5f0fb37abf76767",
     "strip_sca_nb_crop.jpg": "f882aeed0d84b0351aae2a2181ed903a2bf65a82b1789b11e12b249a6686e8a1",
-    "strip_sca_nb_full.jpg": "bb140b3acfc8e15d0d693f65b48d67e80cea8709c5e2c748e5887961d50729b4",
+    "strip_sca_nb_full.jpg": "bcd34565c328c9c7d4475f05ca39c0dc75e2a447920d25d7e63ed53a07dc923a",
     "strip_sega_official_crop.jpg": "75c0712d469937928614964bd137f482424e88d0fc7d8f8aaf69520fffea4336",
-    "strip_sega_official_full.jpg": "736c2f938b8451a9f7f8f25ddc261f09b59b65cb57c8f8b560756494fa4246f6",
+    "strip_sega_official_full.jpg": "ec6c206eaba5a94c462414fd10fa68a58fc5c2c52d9c3712307214d506d8978b",
     "strip_ultraimage_crop.jpg": "3156d1e9ff814e2809464bb25d0a0d1b853fa375b2d70b78090d112ccc9aabd8",
-    "strip_ultraimage_full.jpg": "24f85b555efae76fb98e2b6ed39bda58f4ba9c524a990730e63561c77f762e14"
+    "strip_ultraimage_full.jpg": "f09726b42adc21c4fbfc6b70a45f47e3afbba5d126ad8fd4ea085af16df7f299"
   }
 }

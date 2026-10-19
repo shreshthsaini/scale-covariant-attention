@@ -1,21 +1,21 @@
-"""Page-1 hero (fig:teaser): curated SCA outputs, a six-method strip, timing and metrics.
+"""Page-1 hero (fig:teaser): pictures only, in the reference style (REFERENCE_STYLE.md).
 
-Top row: two curated SCA outputs from the 191 evaluation prompts (seed 0, 28 steps,
-guidance 4.5), a 2048x6144 panorama and a 4096^2 interior. Each has two native-pixel zoom
-tiles beside it; every crop window and its tile share one colour, and no leader line
-crosses an image. All four tiles have the same printed size.
+Top: a mosaic of three curated SCA outputs from the 191 evaluation prompts (seed 0, 28 steps,
+guidance 4.5) in one row: a 2048x6144 panorama and two 4096^2 squares, one size tag each. The
+panorama and the cathedral carry one native-pixel inset each, framed in the one zoom colour
+together with its source window.
 
-Bottom: one curated evaluation prompt at 4096^2 for six methods, the full image above the
-same native-pixel crop, then a small table: sampling steps, seconds per image labelled
-clean or campaign, and the 191-prompt mean ImageReward / HPSv2.1 (x100).
+Bottom: one curated evaluation prompt at 4096^2 for six methods, names once with SCA (ours)
+last, the full image above the same native-pixel (1:1) crop. No prompt, timing, metric or
+footnote text: the caption carries the claim and Table 1 the numbers.
 
-Timing (FLUX.1-dev, 4096^2, one GH200):
+Timing and metrics are still re-derived (FLUX.1-dev, 4096^2, one GH200) and stored in the
+provenance; the caption quotes one ratio, AReA over SCA in clean batch-1 medians:
   clean    = batch-1 median of three prompts after warm-up on an idle GPU
              (results/latency_curve_summary.csv): full attention, AReA, SCA.
   campaign = mean over the 191-prompt evaluation campaign on shared nodes
              (results/e1_*_base_summary.csv, metric "seconds"): DyPE, SEGA, UltraImage.
-Every number shown is checked against those CSVs (and the steps against the source
-sidecars) before anything is written; a mismatch stops the build.
+A mismatch with those CSVs or the source sidecars stops the build.
 
 Everything is generated: JPEG assets (deterministic PIL encoding), a TikZ source with
 vector boxes and labels, its PDF (tectonic), the snippet, and provenance with source
@@ -49,23 +49,25 @@ OUT_PDF = FIG / "teaser.pdf"
 SNIPPET = FIG / "snippets" / "teaser_six.tex"
 TECTONIC = os.path.expanduser("~/.local/bin/tectonic")
 
-W = 5.5          # text width, inches
-G = 0.045        # gutter inside a mosaic group (image and its tiles, stacked tiles)
-G2 = 0.10        # gutter between the panorama group and the square group
-M = 0.02         # margin of badges from image edges
-DPI = 600        # pixel budget for downsampled full images
-ZOOM_B = "38C6F4"  # second zoom colour (cyan); the first is the house scaZoom yellow
+W = 5.5            # text width, inches
+G = 1.5 / 72       # white gutter between images (house rule: 1 to 2 pt)
+M = 0.025          # margin of size tags and insets from image edges
+DPI = 600          # pixel budget for downsampled full images
+FRAME = 0.6 / 72   # line width of the one frame colour (scaZoom), inches
 
-# Mosaic. Zoom windows are (x, y, side) in native pixels plus the colour of the window and
-# its tile ("a" = house yellow, "b" = cyan); tiles stack top to bottom in list order.
-# Panorama: the stone bridge with its crowd and the town houses, two of the prompt's subjects.
-# Square: one of the near chandeliers and the rose window.
-PANO = dict(method="sca_nb", res="2048x6144", pid="minus2742856837225126754",
-            zooms=[(4064, 832, 384, "b"),     # houses with flower boxes
-                   (2304, 1088, 384, "a")])   # crowd on the bridge and an arch
-SQUARE = dict(method="sca_nb", res="4096x4096", pid="minus8737279395568207187",
-              zooms=[(3420, 1520, 448, "b"),  # right chandelier
-                     (1792, 1536, 448, "a")]) # rose window
+# Mosaic: three curated SCA outputs in one row of equal height (panorama 3h, squares h). A zoom
+# window is (x, y, side) in native pixels; its native-pixel inset sits inside the image at the
+# bottom-right corner, `inset` inches wide. Panorama: the town houses with flower boxes, inset on
+# the lake. Cathedral: the rose window, inset on the pews. Portrait: no inset, since any corner
+# large enough would cover the subject or the headscarf.
+MOSAIC = [
+    (dict(method="sca_nb", res="2048x6144", pid="minus2742856837225126754",
+          zoom=dict(box=(4064, 832, 384), inset=0.50)), "pano"),
+    (dict(method="sca_nb", res="4096x4096", pid="minus8737279395568207187",
+          zoom=dict(box=(1792, 1536, 448), inset=0.44)), "square"),
+    (dict(method="sca_nb", res="4096x4096", pid="3657338173664010496"), "portrait"),
+]
+SPEEDUP_SHOWN = "2.85"  # AReA over SCA, clean batch-1 medians at 4096^2; quoted in the caption
 
 # Six-method strip: one curated prompt; the crop window is shared by all methods.
 # Chosen from the 191 evaluation prompts after viewing all six methods side by side (contact
@@ -78,7 +80,7 @@ STRIP_BOX = (1664, 1408, 768)                 # x, y, side in native pixels
 STRIP = [("full", "Full attention"), ("dype", "DyPE"), ("sega_official", "SEGA"),
          ("area", "AReA"), ("ultraimage", "UltraImage"), ("sca_nb", "SCA (ours)")]
 
-# Numbers printed in the figure (exactly as specified for the paper); check_numbers()
+# Numbers kept in the provenance (no longer printed in the figure); check_numbers()
 # re-derives each from the result CSVs and the sidecars.
 SECONDS = {"full": (186.5, "clean"), "dype": (196.1, "campaign"),
            "sega_official": (190.5, "campaign"), "area": (202.4, "clean"),
@@ -185,73 +187,70 @@ def num(v: float, digits: int) -> str:
 
 def main() -> None:
     scafig.write_tikz_colors(str(HERE / "sca_colors.tex"))
-    records, tex = [], []
+    records, tex, written = [], [], []
     # Geometry, inches; origin at the top-left corner, y grows downward (negated in TikZ).
-    h = (W - G - G2) / 5               # mosaic row: pano 3h, tiles, square h, tiles
-    zt = (h - G) / 2                   # zoom tile side (all four tiles)
-    pano_w = 3 * h
-    zx1 = pano_w + G                   # panorama tile column
-    sq_x = zx1 + zt + G2               # square
-    zx2 = sq_x + h + G                 # square tile column
-    col = 0.695                        # method column width (thumbnail = crop side)
-    gs = 0.05                          # gutter between method columns
-    lw = W - 6 * col - 5 * gs          # label column on the left of the strip
-    y0 = h + 0.165                     # top of the strip thumbnails
-    gv = 0.03                          # gap between a thumbnail and its crop
-    y_tab = y0 + 2 * col + gv + 0.028  # top rule of the table
-    pitch = 0.108                      # table row pitch
-    base = [y_tab + 0.09 + k * pitch for k in range(3)]
-    y_rule2 = base[-1] + 0.04
-    y_leg = y_rule2 + 0.093
-    total_h = y_leg + 0.025
+    h = (W - 2 * G) / 5                # mosaic row: panorama 3h and two squares h
+    col = (W - 5 * G) / 6              # strip column: full image and crop side
+    y_name = h + 0.135                 # baseline of the method names
+    y0 = y_name + 0.04                 # top of the strip
+    total_h = y0 + 2 * col + G
 
     def node(x, y, w, hh, name):
         tex.append(r"\node[anchor=north west,inner sep=0pt] at (%.4f,%.4f) "
                    r"{\includegraphics[width=%.4fin,height=%.4fin]{%s}};" % (x, -y, w, hh, name))
 
-    def box(x0, y0_, x1, y1, color="scaZoom"):
-        tex.append(r"\draw[halo] (%.4f,%.4f) rectangle (%.4f,%.4f);" % (x0, -y0_, x1, -y1))
-        tex.append(r"\draw[zoombox,draw=%s] (%.4f,%.4f) rectangle (%.4f,%.4f);"
-                   % (color, x0, -y0_, x1, -y1))
-
-    def frame(x0, y0_, x1, y1, style, color="scaZoom"):
-        tex.append(r"\draw[%s,draw=%s] (%.4f,%.4f) rectangle (%.4f,%.4f);"
-                   % (style, color, x0, -y0_, x1, -y1))
+    def box(x0, y0_, x1, y1, halo=True):
+        """The one frame colour, drawn just inside the rectangle; a dark halo on images."""
+        d = FRAME / 2
+        r = (x0 + d, -(y0_ + d), x1 - d, -(y1 - d))
+        if halo:
+            tex.append(r"\draw[halo] (%.4f,%.4f) rectangle (%.4f,%.4f);" % r)
+        tex.append(r"\draw[frame] (%.4f,%.4f) rectangle (%.4f,%.4f);" % r)
 
     def text(x, y, body, style, anchor="base"):
         tex.append(r"\node[%s,anchor=%s] at (%.4f,%.4f) {%s};" % (style, anchor, x, -y, body))
 
-    color_of = {"a": "scaZoom", "b": "scaZoomB"}
+    def jpeg(img, name, quality, subsampling):
+        p = save_jpeg(img, ASSETS / name, quality, subsampling)
+        written.append(p)
+        return p
 
-    def mosaic(spec, x_img, w_img, h_img, x_tiles, stem, size, role, badge_text):
+    # --- mosaic: three curated SCA outputs, one size tag each ----------------------------
+    x = 0.0
+    for spec, stem in MOSAIC:
         png, meta = source(spec["method"], spec["res"], spec["pid"])
         img = Image.open(png).convert("RGB")
-        assert img.size == size, img.size
-        full = save_jpeg(preview(img, w_img), ASSETS / f"{stem}.jpg", 88, 2)
-        node(x_img, 0, w_img, h_img, full.name)
-        sx = w_img / img.width
-        tiles = []
-        for k, (x, y, s, ck) in enumerate(spec["zooms"]):
-            p = save_jpeg(img.crop((x, y, x + s, y + s)), ASSETS / f"{stem}_zoom{k + 1}.jpg", 90, 0)
-            ty = k * (zt + G)
-            node(x_tiles, ty, zt, zt, p.name)
-            box(x_img + x * sx, y * sx, x_img + (x + s) * sx, (y + s) * sx, color_of[ck])
-            frame(x_tiles, ty, x_tiles + zt, ty + zt, "zoomframe", color_of[ck])
-            tiles.append(dict(file=p.name, box_xys=[x, y, s], color=color_of[ck],
-                              tile_xy_in=[round(x_tiles, 4), round(ty, 4)], tile_in=round(zt, 4)))
-        text(x_img + M, M, badge_text, "badge", "north west")
-        records.append(dict(role=role, source=str(png), png_sha256=sha(png),
+        hpx, wpx = map(int, spec["res"].split("x"))          # res is height x width
+        assert img.size == (wpx, hpx), img.size
+        w_img = h * img.width / img.height
+        full = jpeg(preview(img, w_img), f"{stem}.jpg", 88, 2)
+        node(x, 0, w_img, h, full.name)
+        zooms = []
+        z = spec.get("zoom")
+        if z:
+            bx, by, bs = z["box"]
+            q = z["inset"]
+            crop = jpeg(img.crop((bx, by, bx + bs, by + bs)), f"{stem}_zoom.jpg", 90, 0)
+            s = w_img / img.width
+            b0, b1 = (x + bx * s, by * s), (x + (bx + bs) * s, (by + bs) * s)
+            i0 = (x + w_img - M - q, h - M - q)               # bottom-right corner
+            i1 = (i0[0] + q, i0[1] + q)
+            assert not (i0[0] < b1[0] and b0[0] < i1[0] and i0[1] < b1[1] and b0[1] < i1[1]), stem
+            node(i0[0], i0[1], q, q, crop.name)
+            box(*b0, *b1)
+            box(*i0, *i1)
+            zooms.append(dict(file=crop.name, box_xys=[bx, by, bs], inset_in=q,
+                              inset_xy_in=[round(i0[0] - x, 4), round(i0[1], 4)],
+                              magnification=round((q / bs) / s, 2)))
+        text(x + M, M, r"%d\,$\times$\,%d" % (img.height, img.width), "badge", "north west")
+        records.append(dict(role="mosaic " + stem, source=str(png), png_sha256=sha(png),
                             prompt=meta["config"]["prompt"], config=meta["config"],
                             preview=full.name, preview_px=list(Image.open(full).size),
-                            zooms=tiles))
+                            zooms=zooms))
+        x += w_img + G
+    assert abs(x - G - W) < 1e-6, x
 
-    # --- top row: panorama and square, each with two tiles beside it ------------------
-    mosaic(PANO, 0, pano_w, h, zx1, "pano", (6144, 2048), "mosaic panorama",
-           r"2048\,$\times$\,6144")           # height x width, as in the text
-    mosaic(SQUARE, sq_x, h, h, zx2, "square", (4096, 4096), "mosaic square",
-           r"4096\,$\times$\,4096")
-
-    # --- bottom: six-method strip with a table underneath --------------------------------
+    # --- six-method strip: names once, each full image above the same 1:1 crop -----------
     metas = {}
     bx, by, bs = STRIP_BOX
     for k, (method, label) in enumerate(STRIP):
@@ -259,52 +258,23 @@ def main() -> None:
         metas[method] = meta
         img = Image.open(png).convert("RGB")
         assert img.size == (4096, 4096)
-        x0 = lw + k * (col + gs)
-        fullp = save_jpeg(preview(img, col), ASSETS / f"strip_{method}_full.jpg", 88, 2)
-        cropp = save_jpeg(img.crop((bx, by, bx + bs, by + bs)), ASSETS / f"strip_{method}_crop.jpg", 90, 0)
+        x0 = k * (col + G)
+        fullp = jpeg(preview(img, col), f"strip_{method}_full.jpg", 88, 2)
+        cropp = jpeg(img.crop((bx, by, bx + bs, by + bs)), f"strip_{method}_crop.jpg", 90, 0)
         node(x0, y0, col, col, fullp.name)
-        node(x0, y0 + col + gv, col, col, cropp.name)
+        node(x0, y0 + col + G, col, col, cropp.name)
         sx = col / 4096
         box(x0 + bx * sx, y0 + by * sx, x0 + (bx + bs) * sx, y0 + (by + bs) * sx)
-        frame(x0, y0 + col + gv, x0 + col, y0 + 2 * col + gv, "cropframe")
-        ours = method == "sca_nb"
-        xc = x0 + col / 2
-        text(xc, y0 - 0.05, label, "headours" if ours else "head")
-        secs, kind = SECONDS[method]
-        ir, hps = METRICS[method]
-        best_ir = ir == max(v[0] for v in METRICS.values())
-        best_hps = hps == max(v[1] for v in METRICS.values())
-        fast = secs == min(v[0] for v in SECONDS.values())
-        text(xc, base[0], STEPS[method], "val")
-        t = r"%.1f" % secs
-        t = (r"\textbf{\color{scaAccent}%s}" % t) if fast else t
-        text(xc, base[1], t + r"\,\,{\tagfont %s}" % kind, "val")
-        a, b = num(ir, 2), num(hps, 2)
-        a = r"\textbf{%s}" % a if best_ir else a
-        b = r"\textbf{%s}" % b if best_hps else b
-        text(xc, base[2], a + r"\,/\," + b, "val")
+        box(x0, y0 + col + G, x0 + col, y0 + 2 * col + G, halo=False)
+        text(x0 + col / 2, y_name, label, "headours" if method == "sca_nb" else "head")
         records.append(dict(role="strip " + method, source=str(png), png_sha256=sha(png),
                             prompt=meta["config"]["prompt"], config=meta["config"],
-                            crop_xys=list(STRIP_BOX), steps=STEPS[method], seconds=secs,
-                            seconds_kind=kind, imagereward=ir, hpsv21_x100=hps,
-                            full=fullp.name, crop=cropp.name))
+                            crop_xys=list(STRIP_BOX), full=fullp.name, crop=cropp.name))
     numbers = check_numbers(metas)
-
-    # Label column: the prompt beside the full images, then right-aligned row labels.
     prompt = metas["sca_nb"]["config"]["prompt"]
     assert all(metas[m]["config"]["prompt"] == prompt for m in metas)
-    text(0, y0 - 0.05, "Prompt", "labhead", "base west")
-    tex.append(r"\node[prompt,text width=%.4fin,anchor=north west] at (0,%.4f) {\hyphenpenalty=10000 ``%s''};"
-               % (lw - 0.1, -(y0 - 0.005), latex_escape(prompt)))
-    xr = lw - 0.06
-    text(xr, y0 + 1.5 * col + gv, r"%d$^2$ crop, 1:1" % bs, "lab", "east")
-    for y, s in zip(base, ["Steps", "Time (s)", "ImageReward / HPSv2.1"]):
-        text(xr, y, s, "lab", "base east")
-    tex.append(r"\draw[tabrule] (0,%.4f) -- (%.4f,%.4f);" % (-y_tab, W, -y_tab))
-    tex.append(r"\draw[tabrule] (0,%.4f) -- (%.4f,%.4f);" % (-y_rule2, W, -y_rule2))
-    text(0, y_leg, r"\textbf{clean}: batch-1 median of three after warm-up, idle GPU;\enspace "
-                   r"\textbf{campaign}: mean over the 191-prompt run, shared nodes.\enspace "
-                   r"HPSv2.1 is $\times$100.", "legend", "base west")
+    speedup = numbers["area"]["seconds"]["raw"] / numbers["sca_nb"]["seconds"]["raw"]
+    assert "%.2f" % speedup == SPEEDUP_SHOWN, speedup
 
     doc = r"""%% Generated by fig_hero.py; edit the script, not this file.
 \documentclass[border=0pt]{standalone}
@@ -316,44 +286,33 @@ def main() -> None:
 \usepackage{tikz}
 \graphicspath{{../teaser/}}
 \input{sca_colors.tex}
-\definecolor{scaZoomB}{HTML}{%s}
-\newcommand{\tagfont}{\fontsize{6.5}{7.8}\selectfont\color{scaMid}}
 \begin{document}
 \begin{tikzpicture}[x=1in,y=1in,
   halo/.style={draw=black,draw opacity=0.35,line width=1.15pt},
-  zoombox/.style={line width=0.55pt},
-  zoomframe/.style={line width=0.8pt},
-  cropframe/.style={line width=0.5pt},
-  tabrule/.style={draw=scaRule,line width=0.4pt},
-  badge/.style={fill=black,fill opacity=0.58,text opacity=1,text=white,rounded corners=1.2pt,
-                inner xsep=1.8pt,inner ysep=1.15pt,font=\sffamily\fontsize{6.5}{7}\selectfont},
-  head/.style={inner sep=0pt,font=\sffamily\fontsize{8}{9.6}\selectfont,text=scaInk},
-  headours/.style={inner sep=0pt,font=\sffamily\bfseries\fontsize{8}{9.6}\selectfont,text=scaAccent},
-  lab/.style={inner sep=0pt,font=\sffamily\fontsize{6.5}{7.8}\selectfont,text=scaMid},
-  labhead/.style={inner sep=0pt,font=\sffamily\fontsize{8}{9.6}\selectfont,text=scaInk},
-  prompt/.style={inner sep=0pt,align=left,font=\sffamily\itshape\fontsize{6.5}{7.7}\selectfont,text=scaMid},
-  val/.style={inner sep=0pt,font=\sffamily\fontsize{7}{8.4}\selectfont,text=scaInk},
-  legend/.style={inner sep=0pt,font=\sffamily\fontsize{6.5}{7.8}\selectfont,text=scaMid},
+  frame/.style={draw=scaZoom,line width=0.6pt},
+  badge/.style={fill=black,fill opacity=0.55,text opacity=1,text=white,rounded corners=1pt,
+                inner xsep=1.6pt,inner ysep=1.0pt,font=\sffamily\fontsize{6}{7}\selectfont},
+  head/.style={inner sep=0pt,font=\sffamily\fontsize{7.5}{9}\selectfont,text=scaInk},
+  headours/.style={inner sep=0pt,font=\sffamily\bfseries\fontsize{7.5}{9}\selectfont,text=scaAccent},
   ]
 \useasboundingbox (0,0) rectangle (%.4f,%.4f);
 %s
 \end{tikzpicture}
 \end{document}
-""" % (ZOOM_B, W, -total_h, "\n".join(tex))
+""" % (W, -total_h, "\n".join(tex))
     TEX.write_text(doc)
     subprocess.run([TECTONIC, "-X", "compile", TEX.name, "--outdir", str(FIG)], cwd=HERE,
-                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                   env=dict(os.environ, SOURCE_DATE_EPOCH="0"))  # byte-identical PDF per run
     produced = FIG / "teaser.pdf"
     assert produced == OUT_PDF and produced.exists()
 
     caption = (
         r"\textbf{\sca{} keeps layout and fine detail at $4096^2$ and $2048\times6144$ without "
-        r"training and is the fastest method shown.} "
-        r"Top: curated \sca{} outputs; tiles show same-colour boxes at native pixels. "
-        r"Bottom: one curated prompt at $4096^2$, seed 0; UltraImage uses its own two-stage "
-        r"recipe. Times (one GH200): clean batch-1 median for full attention, campaign mean for "
-        r"DyPE and SEGA, clean for AReA, campaign for UltraImage, clean for \sca{}; metrics are 191-prompt "
-        r"means.")
+        r"training, $%s\times$ faster than AReA.} " % SPEEDUP_SHOWN
+        + r"Top: curated \sca{} outputs with native-pixel insets. Bottom: one curated prompt at "
+        r"$4096^2$, each full image above the same 1:1 crop; UltraImage uses its own two-stage "
+        r"recipe.")
     SNIPPET.write_text("\n".join([
         "% Generated by src/fig_hero.py (TikZ source src/teaser.tex, assets figures/teaser/).",
         "% Intended placement: top of page 2, full text width; see DESIGN_CHANGES.md.",
@@ -364,6 +323,8 @@ def main() -> None:
         r"  \label{fig:teaser}",
         r"\end{figure*}", ""]))
     (ASSETS / "provenance.json").write_text(json.dumps(dict(
+        layout="Pictures only (REFERENCE_STYLE.md house rule 1): one size tag per mosaic image, "
+               "method names once, one frame colour; numbers moved to the caption and Table 1.",
         selection="Curated by visual inspection; no metric ranking. Mosaic: SCA outputs. "
                   "Strip: chosen from the 191 evaluation prompts at 4096x4096 where all six "
                   "methods have a complete seed-0 output, for a visible layout difference.",
@@ -391,13 +352,14 @@ def main() -> None:
                      "(results/e1_*_base_summary.csv, metric seconds)"),
         metrics_definition="ImageReward and HPSv2.1 (x100), means over the 191 evaluation "
                            "prompts at 4096x4096",
-        numbers=numbers, width_in=W, height_in=round(total_h, 4),
+        numbers=numbers, caption_speedup=dict(shown=SPEEDUP_SHOWN, raw=speedup,
+                                              definition="AReA / SCA clean batch-1 medians, 4096x4096"),
+        width_in=W, height_in=round(total_h, 4),
         pdf=str(OUT_PDF.relative_to(REPO)), records=records,
-        asset_sha256={p.name: sha(p) for p in sorted(ASSETS.glob("*.jpg"))}),
+        asset_sha256={p.name: sha(p) for p in sorted(set(written))}),
         indent=2) + "\n")
-    print(f"teaser.pdf {OUT_PDF.stat().st_size/1e6:.2f} MB, height {total_h:.3f} in, "
-          f"label column {lw:.3f} in, assets "
-          f"{sum(p.stat().st_size for p in ASSETS.glob('*.jpg'))/1e6:.2f} MB")
+    print(f"teaser.pdf {OUT_PDF.stat().st_size/1e6:.2f} MB, height {total_h:.3f} in, assets "
+          f"{sum(p.stat().st_size for p in set(written))/1e6:.2f} MB")
 
 
 if __name__ == "__main__":

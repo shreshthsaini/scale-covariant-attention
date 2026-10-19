@@ -10,9 +10,12 @@ One visual language across the paper, layered on the vendored orx_figstyle:
 * Colour has fixed meanings. GLOBAL (blue) is the image-anchored branch and
   LOCAL (amber) the pixel-anchored branch. The local weight pi runs from blue
   (pi = 0, global) through a light neutral (0.5) to amber (pi = 1, local).
-  SCA is the single accent (green). Baselines are neutral greys, darkest for
-  the strongest baseline. Crop windows and their zoom tiles share one ZOOM
-  colour.
+  SCA is the accent (green) and AReA, the strongest baseline, the one
+  contrasting hue (purple); every other baseline is a neutral grey. Amber and
+  blue mean only local and global. Crop windows and their zoom tiles share
+  one ZOOM colour.
+* Reference style (figures/REFERENCE_STYLE.md): text 6 to 8 pt, no grid,
+  top and right spines off, direct labels instead of legend boxes.
 * Panel letters are bold lowercase without parentheses, top left.
 
 Diagrams and image grids written in TikZ load the same colours from
@@ -45,11 +48,13 @@ SCA_LIGHT = "#D7EEE4"
 NEUTRAL = "#F4F1EA"  # midpoint of the pi map
 ZOOM = "#FFC21A"     # crop windows and the frames of their zoom tiles
 LOSS = "#B85C00"     # significant loss for SCA (matches the paper's \dn colour)
+AREA = "#7A4EA3"     # AReA: the one contrasting hue (not amber, blue or green)
+AREA_LIGHT = "#E9E0F1"
 
-# Baselines: neutral and ordered by strength (AReA darkest).
+# AReA purple; the other baselines neutral greys, darker for stronger ones.
 METHOD_COLOR = {
     "sca": SCA,
-    "area": "#3E4A57",
+    "area": AREA,
     "full": "#9AA3AC",
     "dype": "#6F7C89",
     "sega": "#828E9A",
@@ -67,10 +72,10 @@ PI_CMAP = LinearSegmentedColormap.from_list(
     "sca_pi", [(0.0, "#1F4F8A"), (0.22, GLOBAL), (0.5, NEUTRAL),
                (0.78, LOCAL), (1.0, "#9C5512")])
 
-FS = 8.5        # labels, legends, annotations
-FS_TICK = 7.5   # tick labels
-FS_PANEL = 9.5  # panel letters
-FS_SMALL = 7.0  # the smallest allowed text (in-plot value labels)
+FS = 8.0        # labels, direct labels, the bold headline (house rule: 6 to 8 pt)
+FS_TICK = 7.0   # tick labels
+FS_PANEL = 8.0  # panel letters
+FS_SMALL = 6.5  # the smallest text (small grey per-size ratios)
 
 
 def use_style() -> None:
@@ -95,7 +100,8 @@ def use_style() -> None:
         "grid.color": GRID,
         "grid.linewidth": 0.5,
         "lines.linewidth": 1.4,
-        "lines.markersize": 4.0,
+        "lines.markersize": 3.5,
+        "axes.grid": False,
         "legend.handlelength": 1.6,
         "axes.labelpad": 2.5,
         "xtick.major.pad": 2.0,
@@ -129,7 +135,7 @@ def write_tikz_colors(path: str) -> str:
         "scaLocal": LOCAL, "scaLocalLight": LOCAL_LIGHT,
         "scaAccent": SCA, "scaAccentLight": SCA_LIGHT,
         "scaNeutral": NEUTRAL, "scaZoom": ZOOM, "scaLoss": LOSS,
-        "scaArea": METHOD_COLOR["area"], "scaFull": METHOD_COLOR["full"],
+        "scaArea": METHOD_COLOR["area"], "scaAreaLight": AREA_LIGHT, "scaFull": METHOD_COLOR["full"],
     }
     lines = ["% Written by scafig.py; the same palette as the matplotlib figures."]
     lines += [r"\definecolor{%s}{HTML}{%s}" % (k, v.lstrip("#").upper()) for k, v in names.items()]
