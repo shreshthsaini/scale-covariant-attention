@@ -6,14 +6,23 @@
 % three words each, no equations, single symbols only (sigma, pi, s). Blue is
 % the global operator, amber the local one, grey everything else.
 %
+% Panel titles are lettered, "(a) Apply at target" and "(b) Calibrate at
+% 1024^2", in 9 pt bold sans; the panels are 6.45 cm tall to make room for them.
+% Single math symbols (sigma, sigma_g, pi, s) share the style sym: CM math at
+% 8.5 pt with 6.5 pt scripts, so their x-height matches the 7 pt sans labels and
+% the g of sigma_g reads as a subscript.
+%
 % Left panel, "Apply at target": a 28-step denoising strip, sigma 1 -> 0.
 % The first 8 steps (sigma > sigma_g = 0.89, FLUX.1 shifted schedule, mu = 1.15)
 % are global-only and drawn solid blue; afterwards each step cell is split into
 % an amber (local) share pi and a blue (global) share 1 - pi, with pi the mean
 % of the archived scale-4 table (src/data/k1_1024_pi.npz, s4_pi_head, all 57
 % blocks and 24 heads) interpolated at that step's sigma. Below it, a 32 x 32
-% token grid drawn over a real SCA output (../teaser/square.jpg, the cathedral
-% of Figure 1, downsized by \includegraphics) at one scale, s = 4, n0 = 8,
+% token grid drawn over a real SCA output (../teaser/square_bright.jpg, a
+% brightened copy of the Figure 1 cathedral ../teaser/square.jpg: same image and
+% crop, gamma 0.6, then gain 1.3 with a soft highlight shoulder
+% y = 1.3 x / (1 + 0.3 x^2) so the white grid and blue key dots read; downsized
+% by \includegraphics) at one scale, s = 4, n0 = 8,
 % t = 2: the t x t query tile, its native n0 x n0 sliding window (start a(tau)
 % of Section 2.2) and the n0 x n0 block-centre keys kappa(b) = s b + floor(s/2).
 % FLUX.1 itself has n0 = 64 and t = 8.
@@ -35,14 +44,16 @@
 \DeclareMathSizes{6.5}{6.5}{6.5}{6.5}
 \DeclareMathSizes{7}{7}{6.75}{6.75}
 \DeclareMathSizes{8}{8}{6.75}{6.75}
+\DeclareMathSizes{8.5}{8.5}{6.5}{6.5}  % single-symbol labels: CM math x-height matches 7 pt sans
 \usetikzlibrary{arrows.meta, calc, decorations.pathreplacing}
 \input{sca_colors.tex}
 
 \tikzset{
   every node/.style={inner sep=0pt, outer sep=0pt},
   lbl/.style={font=\sffamily\fontsize{7}{8.4}\selectfont, text=scaInk},
+  sym/.style={font=\fontsize{8.5}{10}\selectfont, text=scaInk},   % math symbols, scripts at 6.5 pt
   tick/.style={font=\sffamily\fontsize{6.5}{7.5}\selectfont, text=scaMid},
-  ttl/.style={font=\sffamily\bfseries\fontsize{8}{9.6}\selectfont, text=scaInk},
+  ttl/.style={font=\sffamily\bfseries\fontsize{9}{10.8}\selectfont, text=scaInk},
   panel/.style={fill=scaGrid!55, rounded corners=2.5pt},
   flow/.style={->, >={Stealth[round, length=3.5pt, width=3pt]}, draw=scaMid, line width=0.5pt},
   leader/.style={draw=scaMid, line width=0.4pt},
@@ -58,7 +69,7 @@
 \begin{tikzpicture}[x=1cm, y=1cm]
 
 % ---------------------------------------------------------------- geometry
-\def\H{6.2}         % panel height (cm); total width 13.97 cm = 5.5 in
+\def\H{6.45}        % panel height (cm); total width 13.97 cm = 5.5 in
 \def\PA{7.75}       % right edge of the left panel
 \def\PB{7.87}       % left edge of the right panel
 \def\PW{13.97}
@@ -67,10 +78,10 @@
 \path[panel] (\PB,0) rectangle (\PW,\H);
 
 % ================================================================ left panel
-\node[ttl, anchor=north west] at (0.18, \H-0.17) {Apply at target};
+\node[ttl, anchor=north west] at (0.18, \H-0.17) {(a) Apply at target};
 
 % --- denoising strip, 28 steps, sigma 1 -> 0 ---------------------------------
-\def\sx{0.35}  \def\sw{7.05}  \def\sy{5.05}  \def\sh{0.35}
+\def\sx{0.35}  \def\sw{7.0}  \def\sy{5.05}  \def\sh{0.35}
 \pgfmathsetmacro{\cw}{\sw/28}
 \foreach \k/\p in \stepmix {
   \pgfmathsetmacro{\xa}{\sx+(\k-1)*\cw}
@@ -89,27 +100,27 @@
 \draw[scaMid, line width=0.4pt] (\sx,\sy) rectangle (\sx+\sw,\sy+\sh);
 % opening phase and the gate
 \pgfmathsetmacro{\xg}{\sx+8*\cw}
-\node[lbl, text=white, anchor=center] at (\sx+4*\cw, \sy+0.5*\sh) {global only};
+\node[lbl, text=white, anchor=center, fill=scaGlobal, inner xsep=1.2pt, minimum height=0.33cm] at (\sx+4*\cw, \sy+0.5*\sh) {global only};
 \draw[scaInk, line width=0.5pt] (\xg,\sy-0.08) -- (\xg,\sy+\sh+0.1);
-\node[lbl, anchor=south] at (\xg, \sy+\sh+0.14) {$\sigma_g$};
+\node[sym, anchor=south] at (\xg, \sy+\sh+0.14) {$\sigma_g$};
 \node[lbl, anchor=south] at (\sx+18*\cw, \sy+\sh+0.14) {per-head mix};
 % the local share at the last step, labelled pi
 \pgfmathsetmacro{\ylast}{\sy+(1-0.77)*\sh}
 \draw[scaInk, line width=0.4pt] (\sx+\sw+0.05,\ylast) -- ++(0.07,0) -- (\sx+\sw+0.12,\sy+\sh) -- ++(-0.07,0);
-\node[lbl, anchor=west] at (\sx+\sw+0.17, 0.5*\ylast+0.5*\sy+0.5*\sh) {$\pi$};
+\node[sym, anchor=west] at (\sx+\sw+0.17, 0.5*\ylast+0.5*\sy+0.5*\sh) {$\pi$};
 % sigma axis
 \draw[flow] (\sx+0.35, \sy-0.3) -- (\sx+\sw-0.35, \sy-0.3);
 \node[tick, anchor=east] at (\sx+0.28, \sy-0.3) {1};
 \node[tick, anchor=west] at (\sx+\sw-0.28, \sy-0.3) {0};
-\node[lbl, anchor=south, fill=scaGrid!55, inner sep=1.2pt] at (\sx+0.5*\sw, \sy-0.3-0.09) {$\sigma$};
+\node[sym, anchor=south, fill=scaGrid!55, inner sep=1.2pt] at (\sx+0.5*\sw, \sy-0.3-0.09) {$\sigma$};
 
 % --- token grid over a real SCA output ----------------------------------------
 \def\gx{0.35} \def\gy{0.25} \def\G{4.2}
 \pgfmathsetmacro{\tc}{\G/32}
-\node[anchor=south west, inner sep=0pt] at (\gx,\gy) {\includegraphics[width=\G cm]{../teaser/square.jpg}};
+\node[anchor=south west, inner sep=0pt] at (\gx,\gy) {\includegraphics[width=\G cm]{../teaser/square_bright.jpg}};
 \begin{scope}[shift={(\gx,\gy+\G)}, x=\tc cm, y=-\tc cm]   % token (i,j), j down
   \foreach \i in {1,...,31} {
-    \draw[white, opacity=0.35, line width=0.2pt] (\i,0) -- (\i,32) (0,\i) -- (32,\i);
+    \draw[white, opacity=0.5, line width=0.25pt] (\i,0) -- (\i,32) (0,\i) -- (32,\i);
   }
   % local window of the query tile: tokens 13..20 on both axes
   \fill[scaLocal, opacity=0.22] (13,9) rectangle (21,17);
@@ -130,7 +141,7 @@
   \coordinate (wref) at (21,9);
   \coordinate (kref) at (30.8,22.5);
 \end{scope}
-\node[lbl, anchor=south, fill=white, inner sep=0.8pt, rounded corners=1pt] at ($(sref)+(0,0.12)$) {$s$};
+\node[sym, anchor=south, fill=white, inner sep=0.8pt, rounded corners=1pt] at ($(sref)+(0,0.12)$) {$s$};
 % leaders and labels
 \coordinate (lq) at (4.85, 2.2);
 \coordinate (lw) at (4.85, 3.5);
@@ -141,7 +152,7 @@
 \node[lbl, anchor=west, text=scaGlobal] at ($(lk)+(0.05,0)$) {global keys};
 
 % =============================================================== right panel
-\node[ttl, anchor=north west] at (\PB+0.18, \H-0.17) {Calibrate at 1024\textsuperscript{2}};
+\node[ttl, anchor=north west] at (\PB+0.18, \H-0.17) {(b) Calibrate at 1024\textsuperscript{2}};
 
 % native run thumbnail
 \def\tx{8.1} \def\ty{3.95} \def\T{1.4}
@@ -181,7 +192,7 @@
 \draw[flow] (\hx+0.35, \hy-0.28) -- (\hx+\hw-0.35, \hy-0.28);
 \node[tick, anchor=east] at (\hx+0.28, \hy-0.28) {1};
 \node[tick, anchor=west] at (\hx+\hw-0.28, \hy-0.28) {0};
-\node[lbl, anchor=south, fill=scaGrid!55, inner sep=1.2pt] at (\hx+0.5*\hw, \hy-0.28-0.09) {$\sigma$};
+\node[sym, anchor=south, fill=scaGrid!55, inner sep=1.2pt] at (\hx+0.5*\hw, \hy-0.28-0.09) {$\sigma$};
 
 % pi colour bar
 \def\bx{12.85} \def\bwid{0.2}
@@ -193,7 +204,7 @@
 \draw[scaMid, line width=0.4pt] (\bx,\hy) rectangle (\bx+\bwid,\hy+\hh);
 \node[tick, anchor=west] at (\bx+\bwid+0.07, \hy+\hh-0.05) {1};
 \node[tick, anchor=west] at (\bx+\bwid+0.07, \hy+0.05) {0};
-\node[lbl, anchor=south] at (\bx+0.5*\bwid, \hy+\hh+0.1) {$\pi$};
+\node[sym, anchor=south] at (\bx+0.5*\bwid, \hy+\hh+0.1) {$\pi$};
 
 \end{tikzpicture}
 \end{document}

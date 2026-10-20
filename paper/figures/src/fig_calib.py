@@ -3,7 +3,10 @@
 (a-c) pi_h(sigma) of the scale-4 table used at inference, three sigma bins below the gate.
 (d)   Mean and interquartile range of pi over all 57 x 24 heads against sigma, three calibrations.
 (e)   Relative output error of each table on each calibration target, as excess over the
-      target's own per-head table, with the target's own per-layer fit as a reference.
+      target's own per-head table, with the target's own per-layer fit as a reference. Each bar
+      carries its value (%, one decimal, 6.5 pt) above it, the lowest of each target in bold.
+Panels (d) and (e) carry thin light-grey horizontal gridlines behind the data (plot standard of
+2026-10-19); the heatmaps (a-c) carry none.
 
 Data (compact copies, so the figure does not depend on scratch):
   data/k1_1024_pi.npz, data/k1_1024.json   1024^2, 32 prompts, emulated s = 2 and 4
@@ -40,6 +43,8 @@ CONFIGS = [  # key, label, color
 ]
 LAYER_COLOR = sf.RULE  # the per-layer reference is a neutral grey
 W, H = sf.TEXT, 3.30   # inches, final printed size
+VALUE_PAD, NAME_PAD = 1.2, 10.0  # points above a bar: its value label; a source name above that
+E_HEADROOM = 1.3       # (e) y-axis reaches 1.3 times the tallest bar: room for value and name
 
 
 def load_all():
@@ -77,7 +82,7 @@ def pi_colorbar(fig, cax, image):
     cb.ax.set_yticklabels(["0", "0.5", "1"])
     cb.outline.set_visible(False)
     cb.ax.tick_params(length=2, width=0.5, pad=1.5)
-    cb.set_label(r"local weight $\pi_h$", labelpad=3)
+    cb.set_label(r"local weight $\pi$", labelpad=3)  # no subscript: it would print below 6 pt
     off = 0.075 / (cax.get_position().height * H)  # clear of the end tick labels
     cax.text(0.5, 1 + off, "local", transform=cax.transAxes, ha="center", va="bottom",
              fontsize=sf.FS_TICK, color=sf.pi_color(1.0))
@@ -174,6 +179,7 @@ def main():
     dax.set_xticks([0.2, 0.4, 0.6, 0.8, 1.0], ["0.2", "0.4", "0.6", "0.8", "1"])
     dax.set_xlabel(r"noise level $\sigma$")
     dax.set_ylabel(r"local weight $\pi$ over heads")
+    sf.value_grid(dax, "y")
     end_labels(fig, dax, lines, [lbl for _, lbl, _ in CONFIGS], sf.FS_TICK)  # direct labels, no legend
     letter(fig, dax, "d")
 
@@ -186,24 +192,29 @@ def main():
         own = err[tgt, tgt]
         bars = [(100 * (err[src, tgt] / own - 1), col) for src, _, col in CONFIGS if src != tgt]
         bars.append((100 * (layer[tgt] / own - 1), LAYER_COLOR))
+        best = min(val for val, _ in bars)
         for k, (val, col) in enumerate(bars):
             x = ti + (k - 1) * step
             eax.bar(x, val, width=width, color=col, lw=0, zorder=2)
+            # value above the bar; the lowest excess for this target in bold
+            eax.annotate(f"{val:.1f}", (x, val), xytext=(0, VALUE_PAD), textcoords="offset points",
+                         ha="center", va="bottom", fontsize=sf.FS_VALUE, color=sf.INK,
+                         fontweight="bold" if val == best else "normal")
             drawn.append((x, val, col))
             top = max(top, val)
-    # Direct labels instead of a legend or bar values: each source is named once, above the
-    # tallest bar of its colour; the greens read upward, the grey reference sits flat on its bar.
+    # Direct labels instead of a legend: each source is named once, above the value of the tallest
+    # bar of its colour; the greens read upward, the grey reference sits flat above its value.
     for col, name in source_name.items():
         x, val, _ = max((b for b in drawn if b[2] == col), key=lambda b: b[1])
-        if col == LAYER_COLOR:
-            eax.text(x, val + 0.6, name, ha="center", va="bottom", fontsize=sf.FS_SMALL, color=sf.MID)
-        else:
-            eax.text(x, val + 0.6, name, rotation=90, ha="center", va="bottom", fontsize=sf.FS_SMALL,
-                     color=col)
+        flat = col == LAYER_COLOR
+        eax.annotate(name, (x, val), xytext=(0, NAME_PAD), textcoords="offset points", ha="center",
+                     va="bottom", rotation=0 if flat else 90, fontsize=sf.FS_SMALL,
+                     color=sf.MID if flat else col)
     eax.set_xticks(range(len(CONFIGS)), [lbl for _, lbl, _ in CONFIGS])
     eax.tick_params(axis="x", length=0)
     eax.set_xlim(-0.5, len(CONFIGS) - 0.5)
-    eax.set_ylim(0, top * 1.14)
+    eax.set_ylim(0, top * E_HEADROOM)
+    sf.value_grid(eax, "y")
     eax.set_xlabel("calibration target")
     eax.set_ylabel("excess error (%)")
     letter(fig, eax, "e")

@@ -14,8 +14,12 @@ One visual language across the paper, layered on the vendored orx_figstyle:
   contrasting hue (purple); every other baseline is a neutral grey. Amber and
   blue mean only local and global. Crop windows and their zoom tiles share
   one ZOOM colour.
-* Reference style (figures/REFERENCE_STYLE.md): text 6 to 8 pt, no grid,
-  top and right spines off, direct labels instead of legend boxes.
+* Reference style (figures/REFERENCE_STYLE.md): text 6 to 8 pt, top and
+  right spines off, direct labels instead of legend boxes. The binding plot
+  standard of 2026-10-19 overrides that note's "no grid": plots and bar charts
+  carry thin light-grey gridlines along the value axis, behind the data
+  (value_grid below); heatmaps and image grids carry none. Bar charts print
+  each value at the bar end, the best one bold (FS_VALUE).
 * Panel letters are bold lowercase without parentheses, top left.
 
 Diagrams and image grids written in TikZ load the same colours from
@@ -76,6 +80,19 @@ FS = 8.0        # labels, direct labels, the bold headline (house rule: 6 to 8 p
 FS_TICK = 7.0   # tick labels
 FS_PANEL = 8.0  # panel letters
 FS_SMALL = 6.5  # the smallest text (small grey per-size ratios)
+FS_VALUE = 6.5  # values printed at bar ends
+GRIDLINE = "#E3E6EA"  # value-axis gridlines (plot standard of 2026-10-19)
+GRIDLINE_LW = 0.45
+
+
+def value_grid(ax, axis: str = "y") -> None:
+    """Thin light-grey gridlines at the major ticks of the value axis, behind the data.
+
+    `axis` is "y" for line plots and vertical bars, "x" for horizontal bars. The rcParams keep
+    axes.axisbelow True, so the grid draws at zorder 0.5, under every artist at zorder >= 1.
+    """
+    ax.set_axisbelow(True)
+    ax.grid(visible=True, axis=axis, which="major", color=GRIDLINE, linewidth=GRIDLINE_LW)
 
 
 def use_style() -> None:

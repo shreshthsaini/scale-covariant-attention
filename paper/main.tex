@@ -20,6 +20,36 @@
 \usepackage{subcaption}
 \usepackage{colortbl}
 \usepackage{placeins}
+\usepackage{wrapfig}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{listings}
+% Code and project link; swap for an anonymous mirror at submission time.
+\newcommand{\codeurl}{\url{https://github.com/shreshthsaini/scale-covariant-attention}}
+% Python-like listings in the paper palette: keywords blue, function names dark amber, comments green.
+\definecolor{lstkw}{HTML}{2F6DB3}
+\definecolor{lstfn}{HTML}{B85C00}
+\definecolor{lstcm}{HTML}{13865F}
+\definecolor{lststr}{HTML}{5B6570}
+\lstdefinelanguage{scapy}{
+  morekeywords={def,return,for,in,if,else,elif,with,not,and,or,None,True,False,import,from,as,class,while,break,continue,lambda,yield,is,del,pass,raise,try,except},
+  sensitive=true,
+  morecomment=[l]{\#},
+  morestring=[b]', morestring=[b]",
+}
+\lstdefinestyle{scacode}{
+  language=scapy,
+  basicstyle=\fontfamily{lmtt}\selectfont\scriptsize,
+  keywordstyle=\color{lstkw}\bfseries,
+  commentstyle=\color{lstcm}\itshape,
+  stringstyle=\color{lststr},
+  emphstyle=\color{lstfn},
+  columns=fullflexible, keepspaces=true, showstringspaces=false,
+  frame=tb, framerule=0.6pt, framesep=3pt, rulecolor=\color{black},
+  xleftmargin=0pt, xrightmargin=0pt, aboveskip=3pt, belowskip=3pt,
+  escapeinside={(*@}{@*)},
+  breaklines=true, breakatwhitespace=true, upquote=true,
+}
 % Appendix figure pages (galleries onward): figures start at the top of the page with a fixed gap.
 \makeatletter
 \newcommand{\topfloatpages}{\setlength{\@fptop}{0pt}\setlength{\@fpsep}{16pt}\setlength{\@fpbot}{0pt plus 1fil}}
@@ -78,40 +108,62 @@
 \begin{document}
 
 \maketitle
+\renewcommand{\topfraction}{0.55}
 
 \suppressfloats[t]
 
 \begin{abstract}
-Diffusion transformers trained near one megapixel fail at higher resolutions: attention meets unseen token counts and position offsets, and its cost grows quadratically. Each head's balance between local detail and global layout, we find, is measurable at the training resolution and transfers to larger images. Scale-Covariant Attention (\sca{}) calibrates once, fitting one weight per head and noise level in closed form against the model's full attention, and reuses that table at the target. Each head mixes a native-size sliding window with block-centre global attention, both in the trained position range, after a short global-only opening that sets the layout. For FLUX.1-dev at $4096^2$, \sca{} is the strongest single-pass training-free operator we tested: it beats every shared-sampler baseline on all per-image metrics, has the best FID and fine detail of eight methods, and runs $2.85\times$ faster than AReA. Dropped into HRDiT's progressive schedule, it matches HRDiT's preference scores in less than half the time. Gains hold at $6144^2$, with two more seeds, and on FLUX.2-dev; on FLUX.1-Krea-dev \sca{} matches AReA.
+Diffusion transformers trained near one megapixel fail at higher resolutions: attention meets unseen token counts and position offsets, and its cost grows quadratically. Each head's balance between local detail and global layout, we find, is measurable at the training resolution and transfers to larger images. We introduce Scale-Covariant Attention (\sca{}), which calibrates once, fitting one weight per head and noise level in closed form against the model's full attention, and reuses that table at the target. Each head mixes a native-size sliding window with block-centre global attention, both in the trained position range, after a short global-only opening that sets the layout. For FLUX.1-dev at $4096^2$, \sca{} is the strongest single-pass training-free operator we tested. It beats every shared-sampler baseline on all per-image metrics, has the best FID and fine detail of eight methods, and runs $2.85\times$ faster than AReA. Dropped into HRDiT's progressive schedule, it matches HRDiT's preference scores in less than half the time. Gains hold at $6144^2$, with two more seeds, and on FLUX.2-dev; on FLUX.1-Krea-dev \sca{} matches AReA. Code: \codeurl.
 \end{abstract}
 
-\input{figures/snippets/teaser_six.tex}
+\begin{center}
+  \vspace{-4pt}
+  \includegraphics[width=\linewidth]{figures/teaser.pdf}
+  \captionof{figure}{\textbf{\sca{} at 4K without training.} Top: curated \sca{} outputs of FLUX.1-dev at $2048\times6144$ and $4096^2$; each yellow box is shown enlarged at native pixels in the inset. Bottom: one curated $4096^2$ prompt under six methods, each full image above a 1:1 crop of its boxed window. Bottom, left to right: full attention collapses to a flat field, the DyPE and SEGA crops show lattice and streak artifacts, and AReA, UltraImage, and \sca{} keep the ridge. UltraImage runs its own two-stage recipe at over four times \sca{}'s time; \sca{} is $2.85\times$ faster than AReA.}
+  \label{fig:teaser}
+\end{center}
 
 % =====================================================================================
 \section{Introduction}
 \label{sec:intro}
 
-Diffusion transformers~\citep{peebles2022dit} such as FLUX.1~\citep{flux2024} and Stable Diffusion~3~\citep{esser2024sd3} are trained at about one megapixel. At $4096\times4096$ the image-token count grows 16-fold and full-attention cost about 256-fold, and every attention layer sees token counts and position offsets outside its training distribution. Outputs show duplicated subjects, broken layouts, and blurred texture~\citep{he2023scalecrafter,du2023demofusion,issachar2025dype,rajabi2026area}; in FLUX.1-dev at $4096^2$, full attention collapses into stripes or a flat field (Figure~\ref{fig:teaser}).
+Diffusion transformers~\citep{peebles2022dit} such as FLUX.1~\citep{flux2024} and Stable Diffusion~3~\citep{esser2024sd3} are trained at about one megapixel. At $4096\times4096$ the image-token count grows 16-fold and full-attention cost about 256-fold. Every attention layer then sees token counts and position offsets outside its training distribution. Outputs show duplicated subjects, broken layouts, and blurred texture~\citep{he2023scalecrafter,du2023demofusion,issachar2025dype,rajabi2026area}. In FLUX.1-dev at $4096^2$, full attention collapses into stripes or a flat field (Figure~\ref{fig:teaser}).
 
-Training-free fixes edit the positional encoding~\citep{zhuo2024lumina,issachar2025dype,zhao2025ultraimage,rajabi2026sega} or restrict the keys each query sees~\citep{zhang2023hidiffusion,ma2025resdit,xue2026hrdit,rajabi2026area}. AReA~\citep{rajabi2026area}, the most recent of the second kind, attends to keys subsampled onto a native-size grid for the first 8 of 28 steps, then to windows that shrink to native size, and shares this schedule across heads. Head-specific receptive fields are also established: HRDiT assigns per-head scopes under a cost budget~\citep{xue2026hrdit}, and UltraImage concentrates attention per head using entropy~\citep{zhao2025ultraimage}. We ask whether a head's local/global output mixture can be fitted at native resolution and transferred to larger images.
+\begin{wrapfigure}{r}{0.42\linewidth}
+  \vspace{-14pt}
+  \centering
+  \begin{minipage}[t]{0.495\linewidth}\centering
+    \includegraphics[width=\linewidth]{figures/failure/moai_v0w64.jpg}\\[1pt]
+    {\sffamily\scriptsize (a) mix from step 1}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.495\linewidth}\centering
+    \includegraphics[width=\linewidth]{figures/failure/moai_sca.jpg}\\[1pt]
+    {\sffamily\scriptsize (b) \sca{}}
+  \end{minipage}
+  \vspace{-6pt}
+  \caption{\textbf{Windows repeat the subject.} $4096^2$, a development prompt asking for one Moai statue. (a)~A per-head mix with native-size windows from the first step draws five. (b)~\sca{}'s global-only opening keeps one.}
+  \label{fig:motivation}
+  \vspace{-10pt}
+\end{wrapfigure}
+Training-free fixes edit the positional encoding~\citep{zhuo2024lumina,issachar2025dype,zhao2025ultraimage,rajabi2026sega}. Others restrict the keys each query sees~\citep{zhang2023hidiffusion,ma2025resdit,xue2026hrdit,rajabi2026area}. Restricting keys keeps position offsets in range, but a native-size window cannot see an object larger than itself. At high noise, when the layout forms, windows settle it independently and repeat the subject (Figure~\ref{fig:motivation}a). AReA~\citep{rajabi2026area}, the most recent key-restricting method, therefore attends to keys subsampled onto a native-size grid for the first 8 of 28 steps. It then attends to windows that shrink to native size, and all heads share this schedule. Head-specific receptive fields are also established: HRDiT assigns per-head scopes under a cost budget~\citep{xue2026hrdit}, and UltraImage concentrates attention per head using entropy~\citep{zhao2025ultraimage}. We ask whether a head's local/global output mixture can be fitted at native resolution and transferred to larger images.
 
-We answer it by emulation. To mimic a target $s$ times larger, we shrink both a native-size neighbourhood and a downsampled view of the whole image by $s$, so the image-to-window ratio matches the target while full attention stays in distribution and serves as ground truth. A convex mix of the two views fits each head well. The fitted weight differs strongly between heads, is stable across tested prompt splits (correlation 0.99), and transfers: the table fitted at emulated scale 2 explains scale 4 with 2.4\% more output error than the scale-4 table, and a $1024^2$ table explains $1280^2$ with 0.8\% more (Section~\ref{sec:analysis}). We call this measured transfer scale covariance: the local view follows a law fixed in tokens, the global view a law fixed in image fractions, and over the tested scales the weight between them stays nearly constant.
+We answer it by emulation. To mimic a target $s$ times larger, we shrink both a native-size neighbourhood and a downsampled view of the whole image by $s$. The image-to-window ratio then matches the target, while full attention stays in distribution and serves as ground truth. A convex mix of the two views fits each head well. The fitted weight differs strongly between heads and is stable across tested prompt splits (correlation 0.99). It also transfers: the table fitted at emulated scale 2 explains scale 4 with 2.4\% more output error than the scale-4 table, and a $1024^2$ table explains $1280^2$ with 0.8\% more (Section~\ref{sec:analysis}). We call this measured transfer scale covariance. The local view follows a law fixed in tokens and the global view a law fixed in image fractions, and over the tested scales the weight between them stays nearly constant.
 
-Scale-Covariant Attention (\sca{}) turns this measurement into an attention operator (Figure~\ref{fig:method}). Each head uses its calibrated weight to mix two branches: a global branch that attends to block-centre keys on the native grid with rescaled coordinates, and a local branch that is an exact native-size sliding window. The calibrated mix alone does not preserve layout: applied from the first step at $4096^2$, it draws five Moai statues for a prompt asking for one (Figure~\ref{fig:failure}). \sca{} therefore runs the global branch alone for the first 8 of 28 steps (the opening phase), as a frequency argument suggests (Argument~\ref{arg:freq}). Our contributions are:
+We introduce Scale-Covariant Attention (\sca{}), which turns this measurement into an attention operator (Figure~\ref{fig:method}). Each head uses its calibrated weight to mix two branches. The global branch attends to block-centre keys on the native grid with rescaled coordinates; the local branch is an exact native-size sliding window. The calibrated mix alone does not preserve layout: applied from the first step at $4096^2$, it draws five Moai statues for a prompt asking for one (Figure~\ref{fig:motivation}a). \sca{} therefore runs the global branch alone for the first 8 of 28 steps (the opening phase), as a frequency argument suggests (Argument~\ref{arg:freq}).
+
+To summarize, we measure each head's local/global mix at the training resolution and reuse it at the target. Against seven baselines with paired bootstrap intervals, \sca{} beats AReA on every per-image metric at $4096^2$, at 71.1\,s per image against 202.4\,s (Section~\ref{sec:main}). Inside HRDiT's progressive schedule it matches HRDiT's preference scores in less than half the time. We highlight our main contributions below.
 \begin{itemize}
-  \item \textbf{Calibration by emulation.} A closed-form procedure that emulates the target scale inside the training distribution and fits each head's receptive-field mix to the model's own full attention from one pass of statistics (Proposition~\ref{prop:opt}). On FLUX.1-dev the mix is head-specific, prompt-stable, and transfers across scale and calibration resolution.
-  \item \textbf{The \sca{} operator.} A per-head, per-noise-level mix of two branches whose image query-key offsets stay in the trained range (Proposition~\ref{prop:range}) at a cost linear in the token count (Proposition~\ref{prop:cost}). One attention layer at $4096^2$ takes 18.7\,ms, full attention 87.3\,ms.
-  \item \textbf{Paired evidence against seven baselines.} Full attention, AReA, DyPE, SEGA, and SigMa under one FLUX.1-dev protocol, and UltraImage and HRDiT under their own multi-stage recipes, with paired bootstrap intervals, ablations, failure galleries, and checks on \mbox{HRGen-1K}, extra seeds, and FLUX.2-dev. Against AReA on 191 prompts at $4096^2$, \sca{} wins 11 of 15 metrics with paired 95\% intervals excluding zero, loses none, and runs $2.85\times$ faster.
-  \item \textbf{A drop-in operator for progressive sampling.} Replacing all four of HRDiT's attention changes inside its schedule, \sca{} matches HRDiT's preference scores (no per-image metric significantly worse; HPSv2 and ARNIQA significantly better) in less than half the time.
+  \item We fit each head's mix of local and global attention in closed form at the training resolution and show that the fit transfers across scales (Section~\ref{sec:analysis}).
+  \item We propose \sca{}, a per-head mix of a native-size window and block-centre global keys whose offsets stay in the trained range at a cost linear in the token count.
+  \item We show that at $4096^2$ on FLUX.1-dev, \sca{} beats AReA on 11 of 15 metrics with paired 95\% intervals excluding zero, loses none, and runs $2.85\times$ faster.
 \end{itemize}
 
-\snippet{method}{%
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/method.pdf}
-  \caption{\textbf{\sca{} mixes a native-size local window with block-centre global keys.} The opening steps, $\sigma>\sigma_g$, use the global operator alone, since high-noise windows repeat structure. Afterwards each head weights the local output by $\pi$, fitted once at $1024^2$ by matching full attention (right: one block's 24 heads by 14 noise bins).}
+  \caption{\textbf{Scale-Covariant Attention.} (a)~At the target size, each head mixes a native-size local window and block-centre global keys with weight $\pi$, after global-only opening steps ($\sigma>\sigma_g$; schematic grid, $s=4$). (b)~Calibration at $1024^2$ runs full attention, evaluates both operators at an emulated scale, and fits $\pi$ per head and noise bin (one block's 24 heads shown). Figure~\ref{fig:method_zoom} in Appendix~\ref{app:impl} zooms into both operators and shows the table for all 57 blocks.}
   \label{fig:method}
-\end{figure}}
+\end{figure}
 
 % =====================================================================================
 \section{Scale-Covariant Attention}
@@ -119,17 +171,17 @@ Scale-Covariant Attention (\sca{}) turns this measurement into an attention oper
 
 \subsection{Setting and notation}
 \label{sec:setting}
-A multimodal diffusion transformer such as FLUX.1 concatenates $T$ text tokens $\Tset$ with $N=HW$ image tokens on the grid $\Gset=[H]\times[W]$, $[n]=\{0,\dots,n-1\}$, and applies joint attention in each block (57 blocks of 24 heads in FLUX.1). It is trained at about $1024^2$ pixels, a native grid of $n_0\times n_0$ tokens with $n_0=64$. Rotary embeddings~\citep{su2021roformer} give token $j$ a position $p_j\in\mathbb{Z}^2$ (FLUX.1 puts all text tokens at $0$) and a rotation $R_p$ with $R_p^\top R_{p'}=R_{p'-p}$. For one head, a pre-rotation query $q$ placed at $u$, and a set $\Kset$ of (key, value, key position) triples,
+A multimodal diffusion transformer such as FLUX.1 concatenates $T$ text tokens $\Tset$ with $N=HW$ image tokens on the grid $\Gset=[H]\times[W]$, where $[n]=\{0,\dots,n-1\}$. Each block applies joint attention (57 blocks of 24 heads in FLUX.1). It is trained at about $1024^2$ pixels, a native grid of $n_0\times n_0$ tokens with $n_0=64$. Rotary embeddings~\citep{su2021roformer} give token $j$ a position $p_j\in\mathbb{Z}^2$ (FLUX.1 puts all text tokens at $0$) and a rotation $R_p$ with $R_p^\top R_{p'}=R_{p'-p}$. For one head, a pre-rotation query $q$ placed at $u$, and a set $\Kset$ of (key, value, key position) triples,
 \begin{equation}
-  \Attn(q,u;\Kset) \;=\; \textstyle\sum_{(k,v,u')\in\Kset} \operatorname{softmax}_{\Kset}\!\big(q^\top R_{u'-u}\,k/\sqrt d\big)\; v .
+  \Attn(q,u;\Kset) \;=\; \textstyle\sum_{(k,v,u')\in\Kset} \operatorname{softmax}_{\Kset}\!\big(q^\top R_{u'-u}\,k/\sqrt d\big)\; v ,
   \label{eq:attn}
 \end{equation}
-Full attention is $\Ofull_i=\Attn\big(q_i,p_i;\{(k_j,v_j,p_j)\}_{j\in\Tset\cup\Gset}\big)$. The target grid is $H=s_H n_0$, $W=s_W n_0$ with integer factors ($s$ when equal), so full attention meets offsets $s$ times the trained range. The latent at noise level $\sigma$ is $x_\sigma=(1-\sigma)x_0+\sigma\epsilon$. Splitting the keys into a near and a far set gives exactly $\Ofull_i=m_iO^{\mathrm{near}}_i+(1-m_i)O^{\mathrm{far}}_i$, where $O^{\mathrm{near}}_i$ and $O^{\mathrm{far}}_i$ attend only to their own set and $m_i$ is the softmax mass on the near set (Lemma~\ref{lem:split}): every head is a query-dependent mix of a near and a far field. \sca{} approximates this mix with two separately normalized operators and one weight per head. Because both branches include text keys and their image key sets can overlap, the identity does not decompose \sca{} exactly.
+where $d$ is the head dimension. Full attention is $\Ofull_i=\Attn\big(q_i,p_i;\{(k_j,v_j,p_j)\}_{j\in\Tset\cup\Gset}\big)$. The target grid is $H=s_H n_0$, $W=s_W n_0$ with integer factors ($s$ when equal), so full attention meets offsets $s$ times the trained range. The latent at noise level $\sigma$ is $x_\sigma=(1-\sigma)x_0+\sigma\epsilon$. Splitting the keys into a near and a far set gives exactly $\Ofull_i=m_iO^{\mathrm{near}}_i+(1-m_i)O^{\mathrm{far}}_i$ (Lemma~\ref{lem:split}). Here $O^{\mathrm{near}}_i$ and $O^{\mathrm{far}}_i$ attend only to their own set, and $m_i$ is the softmax mass on the near set. Every head is thus a query-dependent mix of a near and a far field. \sca{} approximates this mix with two separately normalized operators and one weight per head. Because both branches include text keys and their image key sets can overlap, the identity does not decompose \sca{} exactly.
 
 \subsection{Two operators with native-range image geometry}
 \label{sec:branches}
 
-\paragraph{Global operator.} Let $\Gnat=[H/s_H]\times[W/s_W]$ be the $n_0\times n_0$ grid of blocks. Block-centre subsampling keeps for each block $b$ the token at $\kappa(b)=(s_H b_1+\lfloor s_H/2\rfloor,\, s_W b_2+\lfloor s_W/2\rfloor)$, and the coarse map $c(p)=(\lfloor p_1/s_H\rfloor,\lfloor p_2/s_W\rfloor)$ sends a position to its block, so $c(\kappa(b))=b$:
+\paragraph{Global operator.} Let $\Gnat=[H/s_H]\times[W/s_W]$ be the $n_0\times n_0$ grid of blocks. Block-centre subsampling keeps for each block $b$ the token at $\kappa(b)=(s_H b_1+\lfloor s_H/2\rfloor,\, s_W b_2+\lfloor s_W/2\rfloor)$. The coarse map $c(p)=(\lfloor p_1/s_H\rfloor,\lfloor p_2/s_W\rfloor)$ sends a position to its block, so $c(\kappa(b))=b$, and
 \begin{equation}
   \Kset^{\mathrm{glob}}=\{(k_j,v_j,0)\}_{j\in\Tset}\cup\{(k_{\kappa(b)},v_{\kappa(b)},b)\}_{b\in\Gnat},\qquad
   \Oglob_i=\Attn\big(q_i,\,c(p_i);\,\Kset^{\mathrm{glob}}\big),
@@ -137,7 +189,7 @@ Full attention is $\Ofull_i=\Attn\big(q_i,p_i;\{(k_j,v_j,p_j)\}_{j\in\Tset\cup\G
 \end{equation}
 with $c(p_i)$ replaced by 0 for text queries. This is AReA's first phase with the pooling factor fixed at $s$. It models content whose extent is a fixed fraction of the image: layout, object count, identity.
 
-\paragraph{Local operator.} Image queries form tiles of $t\times t$ tokens ($t=8$); query $i$ lies in tile $\tau=\lfloor p_i/t\rfloor$. With window side $w=\min(n_0,H)$, the window of tile $\tau$ starts at $a(\tau)=\clip\big(t\tau+\lfloor t/2\rfloor-\lfloor w/2\rfloor,0,H-w\big)$ per axis, centred on the tile and clamped to the grid. With $\Win(i)$ the $w\times w$ window of $i$'s tile,
+\paragraph{Local operator.} Image queries form tiles of $t\times t$ tokens ($t=8$); query $i$ lies in tile $\tau=\lfloor p_i/t\rfloor$. The window side is $w=\min(n_0,H)$. The window of tile $\tau$ starts at $a(\tau)=\clip\big(t\tau+\lfloor t/2\rfloor-\lfloor w/2\rfloor,0,H-w\big)$ per axis, centred on the tile and clamped to the grid. With $\Win(i)$ the $w\times w$ window of $i$'s tile,
 \begin{equation}
   \Kset^{\mathrm{loc}}_i=\{(k_j,v_j,0)\}_{j\in\Tset}\cup\{(k_j,v_j,p_j)\}_{p_j\in\Win(i)},\qquad
   \Oloc_i=\Attn\big(q_i,\,p_i;\,\Kset^{\mathrm{loc}}_i\big),
@@ -147,14 +199,14 @@ an exact sliding window with the original positions. It models content whose ext
 
 \begin{proposition}[Trained position range]
 \label{prop:range}
-Assume exact integer position coordinates and $t\le n_0\le\min(H,W)$. Every query-key offset of the global operator and every image query-key offset of the local operator is at most $n_0-1$ per axis, and each image query sees $T+n_0^2$ keys in either operator, as in full attention on the native grid.
+Assume exact integer position coordinates and $t\le n_0\le\min(H,W)$. Every query-key offset of the global operator and every image query-key offset of the local operator is at most $n_0-1$ per axis. Each image query sees $T+n_0^2$ keys in either operator, as in full attention on the native grid.
 \end{proposition}
 
 \begin{proposition}[Cost]
 \label{prop:cost}
 Per head and layer, full attention scores $(N+T)^2$ query-key pairs, the global operator $(N+T)(T+N_0)$ with $N_0=|\Gnat|=n_0^2$, and the local operator $N(T+w^2)$. For fixed $n_0$ and $T$ the total is $O\big(N(T+w^2+N_0)\big)$, linear in $N$.
 \end{proposition}
-Proofs are in Appendix~\ref{app:proofs}. Proposition~\ref{prop:range} assumes exact coordinates; the frozen FLUX.1 implementation rounds positions in bf16 beyond 256 tokens per axis (Appendix~\ref{app:impl}). Native-range geometry also does not make hidden states in-distribution, and text-image offsets in the local operator equal $p_i$, as in full attention at the target (Remark~\ref{rem:text}). At $4096^2$ \sca{} scores 7.2 times fewer query-key pairs than full attention, 8.4 times fewer with the opening phase (Table~\ref{tab:flops}).
+Proofs are in Appendix~\ref{app:proofs}. Proposition~\ref{prop:range} assumes exact coordinates; the frozen FLUX.1 implementation rounds positions in bf16 beyond 256 tokens per axis (Appendix~\ref{app:impl}). Native-range geometry also does not make hidden states in-distribution. Text-image offsets in the local operator equal $p_i$, as in full attention at the target (Remark~\ref{rem:text}). At $4096^2$ \sca{} scores 7.2 times fewer query-key pairs than full attention, 8.4 times fewer with the opening phase (Table~\ref{tab:flops}).
 
 \subsection{Per-head mixing and the opening phase}
 \label{sec:mix}
@@ -164,34 +216,88 @@ For an image query of head $h$ in block $l$ at noise level $\sigma$,
   O_i \;=\; \pi_{lh}(\sigma)\,\Oloc_i + \big(1-\pi_{lh}(\sigma)\big)\,\Oglob_i \;\;\text{otherwise},
   \label{eq:mix}
 \end{equation}
-and text queries use $\Oglob_i$. The weight $\pi_{lh}(\sigma)$, written $\pih$, stands in for the near-field mass $m_i$; one weight per head is cheap and a few prompts determine it.
+where $\sigma_g$ is the gate and text queries use $\Oglob_i$. The weight $\pi_{lh}(\sigma)$, written $\pih$, stands in for the near-field mass $m_i$; one weight per head is cheap and a few prompts determine it.
 
 \begin{argument}[A frequency-based explanation for the opening phase]
 \label{arg:freq}
-At noise level $\sigma$ a spatial frequency band has signal-to-noise ratio $\big((1-\sigma)/\sigma\big)^2 S(f)$ for image spectrum $S$. If latent power falls with frequency, only low frequencies carry signal at high noise, and a window of $w$ tokens spans less than one period of any frequency below $1/w$. Independently attended windows may then repeat local structures instead of forming one large object, while a global branch supplies context across windows. Hidden states also carry information from earlier layers, so this is a mechanistic hypothesis, not an impossibility result (Appendix~\ref{app:proofs}).
+At noise level $\sigma$ a spatial frequency band has signal-to-noise ratio $\big((1-\sigma)/\sigma\big)^2 S(f)$ for image spectrum $S$. If latent power falls with frequency, only low frequencies carry signal at high noise. A window of $w$ tokens spans less than one period of any frequency below $1/w$. Independently attended windows may then repeat local structures instead of forming one large object, while a global branch supplies context across windows. Hidden states also carry information from earlier layers, so this is a mechanistic hypothesis, not an impossibility result (Appendix~\ref{app:proofs}).
 \end{argument}
-Output matching cannot see this failure: a tokenwise squared error can favour local detail without preserving layout. We have not measured per-band signal-to-noise ratios of FLUX.1 latents, but a 16-token window gives smaller and more numerous copies than a 64-token one, as predicted (Figure~\ref{fig:failure}). We set $\sigma_g=0.89$ (the first 8 of 28 steps at maximum shift, as in AReA); gating 13 steps gives a $4\times4$ block mosaic, because all queries of a block share one coarse position.
+Output matching cannot see this failure: a tokenwise squared error can favour local detail without preserving layout. We have not measured per-band signal-to-noise ratios of FLUX.1 latents, but a 16-token window gives smaller and more numerous copies than a 64-token one, as predicted (Figure~\ref{fig:failure}). We set $\sigma_g=0.89$ (the first 8 of 28 steps at maximum shift, as in AReA). Gating 13 steps gives a $4\times4$ block mosaic, because all queries of a block share one coarse position.
+
+\begin{figure}[t]
+  \centering
+  \begin{minipage}[t]{0.48\linewidth}
+    \hrule height 0.6pt\vspace{2pt}
+    \captionof{algorithm}{\textbf{Calibration}, once per model}
+    \label{alg:calib}
+    \vspace{-4pt}
+\begin{lstlisting}[style=scacode, emph={calibrate,attn,global_branch,local_branch,clip,fill_empty_bins}]
+# Input: prompts; full-attention sampler at (*@$1024^2$@*)
+# Output: pi*[s_c, l, h, beta]; code in App. (*@\ref{app:code}@*)
+def calibrate(q, k, v, l, sigma):  # every block
+  O_full = attn(q, k, v)        # Eq. (*@\ref{eq:attn}@*), all keys
+  beta = min(int(14 * sigma), 13)    # noise bin
+  for s_c in (2, 4):            # emulation, App. (*@\ref{app:calib}@*)
+    f, w = s_c, n // s_c        # subsample, window
+    t_c = round(t * w / n0)     # tile t n/(s_c n0)
+    O_glob = global_branch(q, k, v, f)    # Eq. (*@\ref{eq:glob}@*)
+    O_loc = local_branch(q, k, v, w, t_c) # Eq. (*@\ref{eq:loc}@*)
+    dl, df = O_loc - O_glob, O_full - O_glob
+    A[s_c, l, :, beta] += sum(dl * dl)    # Eq. (*@\ref{eq:stats}@*)
+    B[s_c, l, :, beta] += sum(df * dl)  # sums over rows
+    E[s_c, l, :, beta] += sum(df * df)
+  return O_full                 # sampler unchanged
+pi = clip(B / A, 0, 1); pi[A == 0] = 1  # Prop. (*@\ref{prop:opt}@*)
+pi = fill_empty_bins(pi)      # nearest bin
+\end{lstlisting}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\linewidth}
+    \hrule height 0.6pt\vspace{2pt}
+    \captionof{algorithm}{\textbf{Sampling}, one \sca{} attention call}
+    \label{alg:sample}
+    \vspace{-4pt}
+\begin{lstlisting}[style=scacode, emph={rope,sdpa,cat,flex_layout,flex_attention,interp}]
+# Input: q, k, v (T text, then H x W image), l, (*@$\sigma$@*)
+# Output: O for all T + HW queries; App. (*@\ref{app:code}@*)
+fh, fw = H // n0, W // n0       # subsampling s
+kb = k_img[fh//2::fh, fw//2::fw]        # (*@$\kappa(b)$@*)
+vb = v_img[fh//2::fh, fw//2::fw]
+Q = cat(rope(q_txt, 0), rope(q_img, c(p)))
+K = cat(rope(k_txt, 0), rope(kb, b))
+O_glob = sdpa(Q, K, cat(v_txt, vb))     # Eq. (*@\ref{eq:glob}@*)
+if sigma > sigma_g:                 # 0.89, Eq. (*@\ref{eq:mix}@*)
+  return O_glob       # opening phase: no local
+# keys: text + w x w window of the tile
+mask = flex_layout(T, t=8, w=min(n0, H))  # App. (*@\ref{app:impl}@*)
+O_loc = flex_attention(rope(q_img, p), rope(k, p),
+    v, block_mask=mask)                 # Eq. (*@\ref{eq:loc}@*)
+pi = interp(sigma, centres, table[l])   # per head
+O_img = pi*O_loc + (1-pi)*O_glob[T:]    # Eq. (*@\ref{eq:mix}@*)
+return cat(O_glob[:T], O_img)     # text: O_glob
+\end{lstlisting}
+  \end{minipage}
+\end{figure}
 
 \subsection{Calibration by output matching}
 \label{sec:calib}
-The weights must come from where the model is trustworthy, which the target is not. On an in-distribution $n\times n$ grid ($n=64$ at $1024^2$), emulated scale $s_c$ uses subsampling factor $s_c$, window side $n/s_c$, and tile side $\mathrm{round}(tn/(s_cn_0))$, so that the ratio of grid to window is $s_c$, as at a target of scale $s_c$. The sampler runs unmodified full attention; at every block and step both emulated operators are evaluated on the same queries, keys, and values. For block $l$, head $h$, and noise bin $\beta$, sums over prompts, steps with $\sigma\in\beta$, image queries, and channels give
+The weights must come from where the model is trustworthy, which the target is not. On an in-distribution $n\times n$ grid ($n=64$ at $1024^2$), emulated scale $s_c$ uses subsampling factor $s_c$, window side $n/s_c$, and tile side $\mathrm{round}(tn/(s_cn_0))$. The ratio of grid to window is then $s_c$, as at a target of scale $s_c$. The sampler runs unmodified full attention; at every block and step both emulated operators are evaluated on the same queries, keys, and values. For block $l$, head $h$, and noise bin $\beta$, sums over prompts, steps with $\sigma\in\beta$, image queries, and channels give
 \begin{equation}
   A=\textstyle\sum\|\Oloc-\Oglob\|^2,\quad
   B=\sum\langle \Ofull-\Oglob,\,\Oloc-\Oglob\rangle,\quad
   E=\sum\|\Ofull-\Oglob\|^2,
   \label{eq:stats}
 \end{equation}
-and the squared error of the mix with weight $\pi$ is $J(\pi)=E-2\pi B+\pi^2A$.
+where $\Oloc$ and $\Oglob$ use the emulated geometry. The squared error of the mix with weight $\pi$ is $J(\pi)=E-2\pi B+\pi^2A$.
 
 \begin{proposition}[Closed-form calibration and transfer cost]
 \label{prop:opt}
 In each cell $(l,h,\beta)$, $J$ is minimized on $[0,1]$ by $\pi^\star=\clip(B/A,0,1)$, with $\pi^\star=1$ if $A=0$. Any other weight $\pi'\in[0,1]$ (fitted at another scale or resolution, per layer, shared, or a hard switch) has $J(\pi')-J(\pi^\star)\ge A(\pi'-\pi^\star)^2$, with equality when $0<\pi^\star<1$.
 \end{proposition}
-So the per-head table has the lowest output error of any rule constant within a cell, and replacing it costs an $A$-weighted squared distance. This holds at the emulation scale; Section~\ref{sec:analysis} measures how well tables transfer between scales and resolutions. The same sums score every alternative rule without another forward pass. We use 14 noise bins of width $1/14$ and interpolate linearly between the mean noise levels of occupied bins at inference. One pass collects emulated scales 2 and 4. A target with factors $(s_H,s_W)$ uses the table whose scale is nearest $\max(s_H,s_W)$ in log space, here always 4. The local operator is one FlexAttention call~\citep{dong2024flex} over tile-major tokens with the window as an exact block mask (Algorithm~\ref{alg:sca}, Appendix~\ref{app:impl}).
+So the per-head table has the lowest output error of any rule constant within a cell, and replacing it costs an $A$-weighted squared distance. This holds at the emulation scale; Section~\ref{sec:analysis} measures how well tables transfer between scales and resolutions. The same sums score every alternative rule without another forward pass. We use 14 noise bins of width $1/14$ and interpolate linearly between the mean noise levels of occupied bins at inference. One pass collects emulated scales 2 and 4. A target with factors $(s_H,s_W)$ uses the table whose scale is nearest $\max(s_H,s_W)$ in log space, here always 4. The local operator is one FlexAttention call~\citep{dong2024flex} over tile-major tokens with the window as an exact block mask (Algorithm~\ref{alg:sample}, Appendix~\ref{app:impl}).
 
 \subsection{\texorpdfstring{\sca{}}{SCA} inside a progressive schedule}
 \label{sec:progressive}
-\sca{} replaces only the attention, so it can serve inside a multi-stage sampler. HRDiT~\citep{xue2026hrdit} denoises at $1024^2$ for 30 steps, then upsamples, re-noises, and repeats the last 17 and 10 steps of the same schedule at $2048^2$ and $4096^2$, pulling each estimate's low frequencies toward the previous stage. At those two stages it changes attention in four ways: NTK-scaled RoPE, a proportional attention scale, per-head key pruning, and position alignment. Progressive \sca{} keeps HRDiT's schedule, transitions, guidance, and seeds, and replaces all four changes with \sca{}: native RoPE with the scale-2 table at $2048^2$ and the scale-4 table at $4096^2$. The stages re-enter at $\sigma=0.81$ and $0.61$, below $\sigma_g=0.89$, so the opening phase never runs; the $1024^2$ stage sets the layout. All settings were fixed before any evaluation image was generated (Appendix~\ref{app:additional_protocols}).
+\sca{} replaces only the attention, so it can serve inside a multi-stage sampler. HRDiT~\citep{xue2026hrdit} denoises at $1024^2$ for 30 steps, then upsamples, re-noises, and repeats the last 17 and 10 steps of the same schedule at $2048^2$ and $4096^2$. Each later stage pulls the estimate's low frequencies toward the previous stage. At those two stages HRDiT changes attention in four ways: NTK-scaled RoPE, a proportional attention scale, per-head key pruning, and position alignment. Progressive \sca{} keeps HRDiT's schedule, transitions, guidance, and seeds, and replaces all four changes with \sca{}. It uses native RoPE with the scale-2 table at $2048^2$ and the scale-4 table at $4096^2$. The stages re-enter at $\sigma=0.81$ and $0.61$, below $\sigma_g=0.89$, so the opening phase never runs; the $1024^2$ stage sets the layout. All settings were fixed before any evaluation image was generated (Appendix~\ref{app:additional_protocols}).
 
 % =====================================================================================
 \section{What the heads want}
@@ -199,23 +305,20 @@ So the per-head table has the lowest output error of any rule constant within a 
 
 We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $1280^2$, disjoint from the evaluation sets. Errors are relative, $\sum J/\sum\|\Ofull\|^2$, pooled over blocks, heads, and steps.
 
+\paragraph{Heads differ.} Over the 1368 heads, the standard deviation of $\pih$ is 0.24 to 0.26 at every noise level (emulated scale 2). Half of the (head, noise level) cells lie in $[0.2,0.8]$, 11.7\% exceed 0.95, and 2.9\% are below 0.05 (Figure~\ref{fig:method}b; full tables in Figure~\ref{fig:calib}, Appendix~\ref{app:calib}). The mean weight is 0.64 to 0.74, so the typical head leans local but still draws on the global branch.
 
-\paragraph{Heads differ.} Over the 1368 heads, the standard deviation of $\pih$ is 0.24 to 0.26 at every noise level (emulated scale 2). Half of the (head, noise level) cells lie in $[0.2,0.8]$, 11.7\% exceed 0.95, and 2.9\% are below 0.05 (Figure~\ref{fig:method}a; full tables in Figure~\ref{fig:calib}, Appendix~\ref{app:calib}). The mean weight is 0.64 to 0.74, so the typical head leans local but still draws on the global branch.
-
-\paragraph{The table is stable across tested prompt splits.} Tables fitted on disjoint halves of the prompts correlate at 0.989 over all cells (0.986 at scale 4; 0.974 for 16 prompts at $1280^2$), and each half's table scored on the other half gives a relative error of 0.0576 against 0.0574 in sample. Tables from 4, 8, or 16 prompts also generate similarly (Section~\ref{sec:generality}).
+\paragraph{The table is stable across tested prompt splits.} Tables fitted on disjoint halves of the prompts correlate at 0.989 over all cells (0.986 at scale 4; 0.974 for 16 prompts at $1280^2$). Each half's table, scored on the other half, gives a relative error of 0.0576 against 0.0574 in sample. Tables from 4, 8, or 16 prompts also generate similarly (Section~\ref{sec:generality}).
 
 \paragraph{The weights transfer across the tested scales and resolutions.} The scale-2 table applied at scale 4 gives a relative error of 0.205 against 0.200 for the scale-4 table, still below every shared rule fitted at scale 4. The $1024^2$ table scored at $1280^2$ gives 0.0589 against 0.0585. Over all pairs of calibration targets, a transferred table adds at most 5.45\% error, while each target's own per-layer fit adds 12 to 24\%. The two resolutions emulate scale 2 with windows of 32 and 40 tokens, so this transfer is consistent with weights that depend mainly on the image-to-window ratio.
 
-\paragraph{Per-head beats coarser rules; output error misses layout.} Relative to the best hard switch, per-head mixing lowers the relative error from 0.092 to 0.057 at scale 2 and from 0.261 to 0.200 at scale 4; per-layer tables reach 0.071 and 0.223, one shared weight per noise level 0.077 and 0.230 (Figure~\ref{fig:relerr}). In output energy the best hard switch never switches to global (Appendix~\ref{app:calib}), so the opening phase deliberately overrides the fit (Argument~\ref{arg:freq}).
+\paragraph{Per-head beats coarser rules; output error misses layout.} Relative to the best hard switch, per-head mixing lowers the relative error from 0.092 to 0.057 at scale 2 and from 0.261 to 0.200 at scale 4. Per-layer tables reach 0.071 and 0.223, and one shared weight per noise level 0.077 and 0.230 (Figure~\ref{fig:relerr}). In output energy the best hard switch never switches to global (Appendix~\ref{app:calib}), so the opening phase deliberately overrides the fit (Argument~\ref{arg:freq}).
 
 % =====================================================================================
 \section{Experiments}
 \label{sec:experiments}
 
-\paragraph{Protocol.} All FLUX.1-dev comparisons share AReA's sampler: 28 Euler flow-matching steps, guidance 4.5, shift $\mu=1.15$ at every size, bf16, tiled VAE decoding, and seed label 0 for every prompt. The main prompts are the Aesthetic-4K evaluation split with 4K references~\citep{zhang2025diffusion4k}: 191 prompts after excluding four development prompts, with a fixed 46-prompt subset for ablations. Sizes, written height$\times$width, are $4096^2$, $2048\times4096$, and $2048\times6144$ (191 prompts each), $6144^2$ (100 prompts), and $8192^2$ (12 exploratory prompts). Baselines are full attention, AReA from its released code (Appendix~\ref{app:area}), DyPE~\citep{issachar2025dype}, SEGA~\citep{rajabi2026sega}, UltraImage~\citep{zhao2025ultraimage}, and HRDiT~\citep{xue2026hrdit} on all 191 prompts, plus SigMa~\citep{zhao2026sigma} on the 46-prompt subset; this fixes the sampler rather than each baseline's tuned defaults (Appendix~\ref{app:additional_protocols}). UltraImage runs its released guided two-stage recipe (30 steps per stage, guidance 3.5 then 7) and HRDiT its progressive recipe (30, 17, and 10 steps at $1024^2$, $2048^2$, and $4096^2$); both are system-level comparisons with their own budgets. We report preference and alignment scores (ImageReward, HPSv2/2.1, PickScore, CLIP, aesthetic; \citealp{xu2023imagereward,wu2023hpsv2,kirstain2023pickapic,radford2021clip,schuhmann2022aesthetic}), distribution scores (FID, KID, patch FID/KID, Inception score; \citealp{heusel2017fid,salimans2016improved}), and no-reference quality (MUSIQ on the full image and on $1024^2$ crops, MUSIQ$_\text{c}$; CLIP-IQA; ARNIQA; \citealp{ke2021musiq,wang2022clipiqa,agnolucci2024arniqa}), with 95\% paired bootstrap intervals over prompts. \sca{} uses $t=8$, $w=64$, $\sigma_g=0.89$, and the scale-4 table from 32 prompts at $1024^2$. Each process uses one NVIDIA GH200 120GB. Table~\ref{tab:protocol} and Appendices~\ref{app:hparams} and~\ref{app:metrics} define every setting and metric.
-
 \begin{table}[t]
-  \caption{\textbf{Among single-pass methods, \sca{} has the best mean on every metric shown, and it is the fastest.} $4096^2$, 191 Aesthetic-4K prompts, FLUX.1-dev. HPSv2.1 $\times100$; MUSIQ$_\text{c}$: MUSIQ on $1024^2$ crops; FID$_\text{p}$: patch FID. \textbf{Bold} / \underline{underline}: best / second best. Seconds per image on one GH200: clean: batch-1 median of three images after warm-up (for HRDiT, including its cold first run); camp.: campaign mean on shared nodes; n/m: not measured. All metrics: Table~\ref{tab:all_metrics}.}
+  \caption{\textbf{Main comparison at $4096^2$.} FLUX.1-dev, 191 Aesthetic-4K prompts, seed label 0. HPSv2.1 $\times100$; MUSIQ$_\text{c}$: MUSIQ on $1024^2$ crops; FID$_\text{p}$: patch FID. \textbf{Bold} / \underline{underline}: best / second best; our row is shaded. Seconds per image on one GH200: clean: batch-1 median of three images after warm-up (for HRDiT, including its cold first run); camp.: campaign mean on shared nodes; n/m: not measured. Table~\ref{tab:all_metrics} expands this table to all metrics. Key result: among single-pass methods, \sca{} has the best mean on every metric shown and is the fastest, $2.85\times$ faster than AReA.}
   \label{tab:main}
   \centering\footnotesize
   \setlength{\tabcolsep}{3.1pt}
@@ -239,8 +342,22 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
   \end{tabular}
 \end{table}
 
+\paragraph{Data.} The main prompts are the Aesthetic-4K evaluation split with 4K references~\citep{zhang2025diffusion4k}: 191 prompts after excluding four development prompts. A fixed 46-prompt subset serves the ablations and the panel comparison, and HRGen-1K~\citep{rajabi2026area} adds 200 prompts without references. Sizes, written height$\times$width, are $4096^2$, $2048\times4096$, and $2048\times6144$ (191 prompts each), $6144^2$ (100 prompts), and $8192^2$ (12 exploratory prompts). Every prompt uses seed label 0; seeds 1 and 2 repeat the 46-prompt subset.
+
+\paragraph{Models.} FLUX.1-dev~\citep{flux2024} is the main model. FLUX.2-dev (50 prompts, against full attention) and FLUX.1-Krea-dev (100 prompts, against AReA) test other checkpoints, each calibrated separately on 16 prompts at $1024^2$ (Appendix~\ref{app:additional_protocols}).
+
+\paragraph{Baselines.} Full attention, AReA from its released code (Appendix~\ref{app:area}), DyPE~\citep{issachar2025dype}, and SEGA~\citep{rajabi2026sega} run on all 191 prompts, and SigMa~\citep{zhao2026sigma} on the 46-prompt subset. They share AReA's sampler: 28 Euler flow-matching steps, guidance 4.5, shift $\mu=1.15$ at every size, bf16, and tiled VAE decoding. This fixes the sampler rather than each baseline's tuned defaults (Appendix~\ref{app:additional_protocols}). UltraImage~\citep{zhao2025ultraimage} runs its released guided two-stage recipe (30 steps per stage, guidance 3.5 then 7). HRDiT~\citep{xue2026hrdit} runs its progressive recipe (30, 17, and 10 steps at $1024^2$, $2048^2$, and $4096^2$). Both run on all 191 prompts as system-level comparisons with their own budgets.
+
+\paragraph{Evaluation.} Preference and alignment scores are ImageReward, HPSv2 and HPSv2.1, PickScore, CLIP score, and aesthetic score~\citep{xu2023imagereward,wu2023hpsv2,kirstain2023pickapic,radford2021clip,schuhmann2022aesthetic}. Distribution scores are FID, KID, patch FID and KID, and Inception score~\citep{heusel2017fid,salimans2016improved}. No-reference quality uses MUSIQ on the full image and on $1024^2$ crops (MUSIQ$_\text{c}$), CLIP-IQA, and ARNIQA~\citep{ke2021musiq,wang2022clipiqa,agnolucci2024arniqa}. Intervals are 95\% paired bootstrap intervals over prompts; Appendix~\ref{app:metrics} defines every metric.
+
+\paragraph{Hyperparameters.} \sca{} uses tile side $t=8$, window $w=64$, gate $\sigma_g=0.89$, and the scale-4 table from 32 prompts at $1024^2$ (Appendix~\ref{app:hparams}). The window equals the native grid by construction, and the gate reproduces AReA's 8 global steps of 28. The opening phase was tuned on development prompts only, and all progressive settings were fixed before any evaluation image was generated.
+
+\paragraph{Compute.} Each process uses one NVIDIA GH200 120GB. At $4096^2$ and batch 1, \sca{} takes 71.1\,s per image, AReA 202.4\,s, and full attention 186.5\,s (median of three images). Main comparisons, ablations, and non-square sizes span over 2000 images. Surviving worker logs give a lower bound of 123.3 GH200-hours, including calibration and evaluation (Appendix~\ref{app:compute}).
+
+\subsection{Main results}
+\label{sec:main}
 \begin{table}[t]
-  \caption{\textbf{On a 46-prompt panel, \sca{} leads the single-pass methods, and in HRDiT's schedule it matches HRDiT's preference scores in less than half the time.} Columns as in Table~\ref{tab:main}; campaign times from this panel. Against \sca{} at 28 steps (Tables~\ref{tab:panel46_deltas}, \ref{tab:phase2_budget}, and~\ref{tab:prog_deltas}): $^{+}$ significantly better, $^{\circ}$ 95\% paired interval includes zero, unmarked significantly worse. \textbf{Bold}: best. 46-image FID is exploratory; budget runs lack whole-image FID (n/a); $^{\ast}$: patch FID without interval. 42 steps: sized to HRDiT's campaign time; progressive: HRDiT's schedule with \sca{} attention (Section~\ref{sec:progressive}).}
+  \caption{\textbf{Panel of 46 prompts.} Columns as in Table~\ref{tab:main}; campaign times from this panel. Marks against \sca{} at 28 steps: $^{+}$ significantly better, $^{\circ}$ 95\% paired interval includes zero, unmarked significantly worse. \textbf{Bold}: best; shaded: ours. 46-image FID is exploratory; budget runs lack whole-image FID (n/a); $^{\ast}$: patch FID without interval. 42 steps: sized to HRDiT's campaign time; progressive: HRDiT's schedule with \sca{} attention (Section~\ref{sec:progressive}). Tables~\ref{tab:panel46_deltas}, \ref{tab:phase2_budget}, and~\ref{tab:prog_deltas} add intervals. Key result: \sca{} leads the single-pass methods, and progressive \sca{} matches HRDiT's preference scores at 49.0\,s against 106.5\,s.}
   \label{tab:panel46}
   \centering\footnotesize
   \setlength{\tabcolsep}{3.1pt}
@@ -271,78 +388,131 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
   \end{tabular}
 \end{table}
 
-\subsection{Main results}
-\label{sec:main}
-\paragraph{Against AReA.} At $4096^2$, \sca{} beats AReA on every per-image metric at $2.85\times$ the speed (Table~\ref{tab:main}, Figures~\ref{fig:teaser} and~\ref{fig:qual_main}). Eleven of 15 metrics improve significantly, including ImageReward ($+0.31$ $[0.24,0.38]$) and FID ($-7.6$ $[-12.8,-2.9]$), and the other four are unresolved (Table~\ref{tab:app_4k}).
+\begin{wrapfigure}[13]{r}{0.42\linewidth}
+  \vspace{-15pt}
+  \centering
+  \includegraphics{figures/quality_time_wrap.pdf}
+  \vspace{-17pt}
+  \caption{\textbf{Quality against time.} 46 prompts, $4096^2$. Diamonds: multi-stage recipes; open circles: \sca{} at guidance 7, 42 and 56 steps.}
+  \label{fig:quality_time}
+  \vspace{-10pt}
+\end{wrapfigure}
+\paragraph{Against AReA.} At $4096^2$, \sca{} beats AReA on every per-image metric at $2.85\times$ the speed (Table~\ref{tab:main}; Figures~\ref{fig:teaser}, \ref{fig:quality_time}, and~\ref{fig:qual_main}). Eleven of 15 metrics improve significantly, including ImageReward ($+0.31$ $[0.24,0.38]$) and FID ($-7.6$ $[-12.8,-2.9]$), and the other four are unresolved (Table~\ref{tab:app_4k}).
 
-\paragraph{Other baselines.} \sca{} also beats DyPE and SEGA on every per-image metric over 191 prompts (Figure~\ref{fig:baseline_quality}), and all five shared-sampler baselines on the 46-prompt panel (Table~\ref{tab:panel46_deltas}). UltraImage, at over four times \sca{}'s time, is significantly better on five per-image metrics, including HPSv2.1 and PickScore, and worse on CLIP score and both MUSIQ scores, with ImageReward unresolved and higher FID (Tables~\ref{tab:phase2_baselines} and~\ref{tab:phase2_distribution}).
+\paragraph{Other baselines.} \sca{} also beats DyPE and SEGA on every per-image metric over 191 prompts (Figure~\ref{fig:baseline_quality}), and all five shared-sampler baselines on the 46-prompt panel (Table~\ref{tab:panel46_deltas}). UltraImage, at over four times \sca{}'s time, is significantly better on five per-image metrics, including HPSv2.1 and PickScore. It is worse on CLIP score and both MUSIQ scores, leaves ImageReward unresolved, and has higher FID (Tables~\ref{tab:phase2_baselines} and~\ref{tab:phase2_distribution}).
 
-\paragraph{HRDiT and progressive \sca{}.} HRDiT's three-stage recipe leads single-pass \sca{} on learned preference scores at $1.5\times$ \sca{}'s time (Table~\ref{tab:main}). The lead comes from HRDiT's schedule: progressive \sca{}, that schedule with \sca{} attention, matches HRDiT's preference scores in less than half the time (Table~\ref{tab:panel46}; Figures~\ref{fig:quality_time} and~\ref{fig:progressive}). ImageReward differs by $-0.08$ $[-0.20,0.03]$, HPSv2.1 by $+0.28$ $[-0.21,0.77]$, and PickScore by $-0.02$ $[-0.18,0.14]$; no per-image metric is significantly worse, HPSv2 and ARNIQA are significantly better, and none of this establishes equivalence (Table~\ref{tab:prog_deltas}). Spending HRDiT's time on 42 single-pass steps does not close the gap. The parity costs fidelity: progressive \sca{} has significantly higher FID and patch FID and lower MUSIQ$_\text{c}$ than single-pass \sca{}, which keeps the fidelity lead (Table~\ref{tab:panel46}, Appendix~\ref{app:budget}).
-
-\paragraph{Other sizes.} Gains depend on the aspect ratio (Tables~\ref{tab:app_wide} and~\ref{tab:krea_6144}): \sca{} beats AReA on 14 of 15 metrics at $6144^2$ and on ten at $2048\times6144$, where it loses on aesthetic score, but results are mixed at $2048\times4096$. At $8192^2$, 12 exploratory prompts favour \sca{} on preference and alignment scores, though grid artifacts remain (Appendix~\ref{app:8k}).
+\paragraph{HRDiT and progressive \sca{}.} HRDiT's three-stage recipe leads single-pass \sca{} on learned preference scores at $1.5\times$ \sca{}'s time (Table~\ref{tab:main}). The lead comes from HRDiT's schedule. Progressive \sca{}, that schedule with \sca{} attention, matches HRDiT's preference scores in less than half the time (Table~\ref{tab:panel46}; Figures~\ref{fig:quality_time} and~\ref{fig:progressive}). ImageReward differs by $-0.08$ $[-0.20,0.03]$, HPSv2.1 by $+0.28$ $[-0.21,0.77]$, and PickScore by $-0.02$ $[-0.18,0.14]$. No per-image metric is significantly worse, HPSv2 and ARNIQA are significantly better, and none of this establishes equivalence (Table~\ref{tab:prog_deltas}). Spending HRDiT's time on 42 single-pass steps does not close the gap. The parity costs fidelity: progressive \sca{} has significantly higher FID and patch FID and lower MUSIQ$_\text{c}$ than single-pass \sca{}, which keeps the fidelity lead (Table~\ref{tab:panel46}, Appendix~\ref{app:budget}).
 
 % A main-text float page stacks its floats from the top with the normal float gap, like a page of
 % top floats, instead of spreading them over the page; the defaults are restored after Section 6.
 \csname @fptop\endcsname=0pt\relax \csname @fpsep\endcsname=\floatsep \csname @fpbot\endcsname=0pt plus 1fil\relax
 % Keep the qualitative figure on a text page: no main-text float page that is less than 80% full.
 \renewcommand{\floatpagefraction}{0.8}
-\snippet{qual_main}{}
-
-\paragraph{Latency.} \sca{} is the fastest method we timed at every size, and its time grows nearly linearly with pixel count (Figure~\ref{fig:latency}, Table~\ref{tab:latency}). At $6144^2$ it takes 161.6\,s per image, $4.7\times$ faster than full attention and $3.0\times$ faster than AReA.
+\begin{figure}[tp]
+  \centering
+  \includegraphics[width=0.94\linewidth]{figures/qual_main.pdf}
+  \caption{\textbf{Qualitative comparison at $4096^2$.} Full attention collapses, AReA blurs or tiles fine structure, and \sca{} keeps both layout and detail. Four curated prompts, seed~0, picked for variety from the 191 evaluation prompts. Beside each AReA and \sca{} image is a 1:1 crop of the same ${736\times512}$ window (placement: Appendix~\ref{app:galleries}). Uncurated samples: Figure~\ref{fig:gallery_4096}.}
+  \label{fig:qual_main}
+\end{figure}
 
 \subsection{Ablations}
 \label{sec:ablations}
 
 \begin{table}[t]
-  \caption{\textbf{Every ablation significantly lowers HPSv2.1 and PickScore.} $4096^2$, 46 prompts. First row: \sca{}'s absolute values; other rows: paired difference after changing one component, in \up{bold blue} / \textcolor{sigdn}{orange} when significantly better / worse (95\% interval excludes zero). HPSv2.1 and \mbox{CLIP-IQA} are $\times100$. Mix err.: relative output error at emulated scale 4. Full results: Table~\ref{tab:app_abl}.}
-  \label{tab:ablation}
   \centering
-  \footnotesize
-  \setlength{\tabcolsep}{4.5pt}
-  \begin{tabular}{@{}lrrrrrr@{}}
-    \toprule
-    Variant & Mix err. & ImageReward & HPSv2.1 & PickScore & CLIP-IQA & MUSIQ$_\text{c}$ \\
-    \midrule
-    \rowcolor[HTML]{EAF4F1}\sca{} (reference) & 0.200 & 1.12 & 29.98 & 22.96 & 71.3 & 62.5 \\
-    \midrule
-    \multicolumn{7}{@{}l}{\emph{Weight rule after the opening phase}} \\
-    \quad local only ($\pi=1$) & 0.261 & \dn{$-0.36$} & \dn{$-2.86$} & \dn{$-1.20$} & \dn{$-4.6$} & $-0.3$ \\
-    \quad one shared $\pi(\sigma)$ & 0.230 & \dn{$-0.09$} & \dn{$-1.83$} & \dn{$-0.38$} & \dn{$-7.7$} & \dn{$-10.4$} \\
-    \quad per-layer $\pi_\ell(\sigma)$ & 0.223 & $-0.05$ & \dn{$-0.70$} & \dn{$-0.16$} & $-0.9$ & \dn{$-2.4$} \\
-    \multicolumn{7}{@{}l}{\emph{Global branch and opening phase}} \\
-    \quad global only ($\pi=0$) & 0.627 & \dn{$-0.40$} & \dn{$-5.66$} & \dn{$-1.44$} & \dn{$-27.0$} & \dn{$-11.7$} \\
-    \quad mean pooling & n/a & \dn{$-1.52$} & \dn{$-9.75$} & \dn{$-2.60$} & \dn{$-10.1$} & \dn{$-4.2$} \\
-    \quad no opening phase (v0) & 0.200 & \dn{$-1.33$} & \dn{$-4.07$} & \dn{$-2.18$} & \up{$+2.9$} & $+2.5$ \\
-    \bottomrule
-  \end{tabular}
+  \begin{minipage}[t]{0.47\linewidth}
+    \caption{\textbf{Ablations.} $4096^2$, 46 prompts. First row (shaded): default \sca{}'s absolute values. Other rows: paired difference after changing one component, in \textcolor{sigdn}{orange} when significantly worse (95\% interval excludes zero); no variant is significantly better on these metrics. IR: ImageReward; HPS: HPSv2.1 $\times100$; Pick: PickScore; M$_\text{c}$: MUSIQ$_\text{c}$; Err.: relative output error at emulated scale 4. Table~\ref{tab:app_abl} expands this table to all metrics. Key result: every variant significantly lowers HPSv2.1 and PickScore.}
+    \label{tab:ablation}
+    \centering\footnotesize
+    \setlength{\tabcolsep}{1.4pt}
+    \begin{tabular}{@{}lrrrrr@{}}
+      \toprule
+      Variant & Err. & IR & HPS & Pick & M$_\text{c}$ \\
+      \midrule
+      \rowcolor[HTML]{EAF4F1}\sca{} (default) & 0.200 & 1.12 & 29.98 & 22.96 & 62.5 \\
+      \midrule
+      \multicolumn{6}{@{}l}{\emph{Weight rule after the opening phase}} \\
+      local only & 0.261 & \dn{$-0.36$} & \dn{$-2.86$} & \dn{$-1.20$} & $-0.3$ \\
+      shared $\pi(\sigma)$ & 0.230 & \dn{$-0.09$} & \dn{$-1.83$} & \dn{$-0.38$} & \dn{$-10.4$} \\
+      per-layer $\pi_\ell(\sigma)$ & 0.223 & $-0.05$ & \dn{$-0.70$} & \dn{$-0.16$} & \dn{$-2.4$} \\
+      \multicolumn{6}{@{}l}{\emph{Global branch and opening phase}} \\
+      global only & 0.627 & \dn{$-0.40$} & \dn{$-5.66$} & \dn{$-1.44$} & \dn{$-11.7$} \\
+      mean pooling & n/a & \dn{$-1.52$} & \dn{$-9.75$} & \dn{$-2.60$} & \dn{$-4.2$} \\
+      no opening (v0) & 0.200 & \dn{$-1.33$} & \dn{$-4.07$} & \dn{$-2.18$} & $+2.5$ \\
+      \bottomrule
+    \end{tabular}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.47\linewidth}
+    \caption{\textbf{Generality and sensitivity.} Paired differences at $4096^2$; $n$: evaluation prompts; IR: ImageReward; HPS: HPSv2.1 $\times100$; M$_\text{c}$: MUSIQ$_\text{c}$. Rows compare \sca{} with AReA, with default \sca{} (32 calibration prompts, $\sigma_g=0.89$), or, on FLUX.2-dev and FLUX.1-Krea-dev, with the named reference. Tables~\ref{tab:phase2_general}, \ref{tab:phase2_sensitivity}, and~\ref{tab:krea_6144} expand this table with intervals. Key result: gains over AReA hold on a second prompt set and two more seeds, and 4 to 16 calibration prompts change ImageReward by at most 0.012.}
+    \label{tab:generality}
+    \centering\footnotesize
+    \setlength{\tabcolsep}{2.6pt}
+    \begin{tabular}{@{}lrrrr@{}}
+      \toprule
+      Setting & $n$ & $\Delta$IR & $\Delta$HPS & $\Delta$M$_\text{c}$ \\
+      \midrule
+      \multicolumn{5}{@{}l}{\emph{Against AReA}} \\
+      HRGen-1K & 200 & $+0.642$ & $+4.48$ & $+12.71$ \\
+      Seed 1 & 46 & $+0.305$ & $+2.19$ & $+11.58$ \\
+      Seed 2 & 46 & $+0.355$ & $+2.80$ & $+11.04$ \\
+      \multicolumn{5}{@{}l}{\emph{Against default \sca{}: calibration prompts, gate}} \\
+      4 prompts & 46 & $+0.012$ & $-0.02$ & $+0.09$ \\
+      8 prompts & 46 & $+0.010$ & $+0.01$ & $-0.03$ \\
+      16 prompts & 46 & $-0.007$ & $-0.01$ & $-0.11$ \\
+      $\sigma_g=0.85$ & 46 & $-0.015$ & $-0.85$ & $-2.04$ \\
+      $\sigma_g=0.93$ & 46 & $-0.004$ & $-0.15$ & $+0.65$ \\
+      \multicolumn{5}{@{}l}{\emph{Other checkpoints}} \\
+      FLUX.2 vs.\ full & 50 & $+0.456$ & $+1.84$ & $+21.44$ \\
+      Krea vs.\ AReA & 100 & ${-}0.042$ & $+0.78$ & $+4.61$ \\
+      \bottomrule
+    \end{tabular}
+  \end{minipage}
 \end{table}
 
-Table~\ref{tab:ablation} changes one component at a time (examples in Figure~\ref{fig:ablation_grid}). \textbf{The opening phase is essential.} Without it (v0), ImageReward falls by 1.33 $[1.06,1.60]$ and subjects repeat; CLIP-IQA and ARNIQA rise because each copy is sharp. \textbf{The per-head mix carries global context after the opening phase.} Local-only attention in the last 20 steps lowers ImageReward by 0.36 $[0.21,0.52]$, HPSv2.1 by 2.86, PickScore by 1.20, and CLIP score by 1.93. \textbf{Per-head weights beat shared and per-layer weights, in the order output error predicts.} One shared weight per noise level (mix error 0.230) lowers ImageReward by 0.09 $[0.01,0.17]$ and MUSIQ$_\text{c}$ by 10.4; per-layer weights (0.223) still lose significantly on HPSv2.1, PickScore, ARNIQA, and MUSIQ$_\text{c}$. \textbf{Neither branch works alone, and block centres beat block means.} Global only loses on every metric, and mean pooling blurs the global keys (ImageReward $-1.52$). Band-guard ablations, including hard per-head routing, are in Appendix~\ref{app:band}.
+Table~\ref{tab:ablation} changes one component at a time (examples in Figure~\ref{fig:ablation_grid}). \textbf{The opening phase is essential.} Without it (v0), ImageReward falls by 1.33 $[1.06,1.60]$ and subjects repeat; CLIP-IQA and ARNIQA rise because each copy is sharp (Table~\ref{tab:app_abl}). \textbf{The per-head mix carries global context after the opening phase.} Local-only attention in the last 20 steps lowers ImageReward by 0.36 $[0.21,0.52]$, HPSv2.1 by 2.86, PickScore by 1.20, and CLIP score by 1.93. \textbf{Per-head weights beat shared and per-layer weights, in the order output error predicts.} One shared weight per noise level (mix error 0.230) lowers ImageReward by 0.09 $[0.01,0.17]$ and MUSIQ$_\text{c}$ by 10.4. Per-layer weights (0.223) still lose significantly on HPSv2.1, PickScore, ARNIQA, and MUSIQ$_\text{c}$. \textbf{Neither branch works alone, and block centres beat block means.} Global only loses on every metric, and mean pooling blurs the global keys (ImageReward $-1.52$). Band-guard ablations, including hard per-head routing, are in Appendix~\ref{app:band}.
 
 \subsection{Generality and sensitivity}
 \label{sec:generality}
 
-\sca{}'s gains over AReA hold with seeds 1 and 2 and on 200 HRGen-1K prompts~\citep{rajabi2026area}, where all ten per-image metrics improve. They barely depend on the calibration set: 4 to 16 prompts instead of 32 change ImageReward by at most 0.012 (Table~\ref{tab:generality}). Moving the gate to 0.85 or 0.93 loses on some metrics. On FLUX.2-dev, \sca{} raises ImageReward over full attention from 0.75 to 1.20 in half the time. On FLUX.1-Krea-dev, in a third of the time, it wins six per-image metrics, leaves ImageReward unresolved, and has higher patch FID (Table~\ref{tab:krea_6144}).
+\sca{}'s gains over AReA hold with seeds 1 and 2 and on 200 HRGen-1K prompts~\citep{rajabi2026area}, where all ten per-image metrics improve (Table~\ref{tab:generality}). They barely depend on the calibration set: 4 to 16 prompts instead of 32 change ImageReward by at most 0.012. Moving the gate to 0.85 or 0.93 loses on some metrics. On FLUX.2-dev, \sca{} raises ImageReward over full attention from 0.75 to 1.20 in half the time. On FLUX.1-Krea-dev, in a third of the time, it wins six per-image metrics, leaves ImageReward unresolved, and has higher patch FID (Table~\ref{tab:krea_6144}).
+
+\subsection{Other sizes and latency}
+\label{sec:sizes}
+
+\begin{wrapfigure}[15]{l}{0.47\linewidth}
+  \vspace{-12pt}
+  \centering
+  \includegraphics[width=\linewidth]{figures/latency_wrap.pdf}
+  \vspace{-14pt}
+  \caption{\textbf{Latency against size.} Batch 1, one GH200, median of three prompts; grey: speedup over AReA.}
+  \label{fig:latency}
+  \vspace{-10pt}
+\end{wrapfigure}
+\paragraph{Other sizes.} Gains depend on the aspect ratio (Tables~\ref{tab:app_wide} and~\ref{tab:krea_6144}). \sca{} beats AReA on 14 of 15 metrics at $6144^2$ and on ten at $2048\times6144$, where it loses on aesthetic score. Results are mixed at $2048\times4096$. At $8192^2$, 12 exploratory prompts favour \sca{} on preference and alignment scores, though grid artifacts remain (Appendix~\ref{app:8k}).
+
+\paragraph{Latency.} \sca{} is the fastest method we timed at every size, and its time grows nearly linearly with pixel count (Figure~\ref{fig:latency}, Table~\ref{tab:latency}). Fitting seconds $\propto N^b$ over the $N$ image tokens gives $b=1.00$ for \sca{} and $b=1.12$ for AReA. At $6144^2$ it takes 161.6\,s per image, $4.7\times$ faster than full attention and $3.0\times$ faster than AReA. At $8192^2$ it takes 287.6\,s against 952.0\,s for AReA, $3.31\times$ faster.
 
 % =====================================================================================
 \section{Related work}
 \label{sec:related}
-\paragraph{Training-free high-resolution sampling.} Training-free methods alter convolutions, spectra, or attention temperature~\citep{he2023scalecrafter,zhang2023hidiffusion,huang2024fouriscale,jin2023training}, fuse global and patch paths~\citep{du2023demofusion,yang2024fam,qiu2024freescale}, add native-resolution guidance~\citep{du2024imax,bu2025hiflow,koh2025scalediff}, or adapt RoPE~\citep{zhuo2024lumina,issachar2025dype,zhao2026sigma,rajabi2026sega,liu2026tide}. Closest to \sca{}, AReA shares one schedule of pooled global attention and shrinking windows across heads~\citep{rajabi2026area}; ResDiT spectrally fuses position-scaled global and native-size patch attention between global-only and local-only phases~\citep{ma2025resdit}; and FreeScale fuses attention outputs by frequency~\citep{qiu2024freescale}.
+\paragraph{Training-free high-resolution sampling.} Training-free methods alter convolutions, spectra, or attention temperature~\citep{he2023scalecrafter,zhang2023hidiffusion,huang2024fouriscale,jin2023training}. Others fuse global and patch paths~\citep{du2023demofusion,yang2024fam,qiu2024freescale} or add native-resolution guidance~\citep{du2024imax,bu2025hiflow,koh2025scalediff}. Several adapt RoPE~\citep{zhuo2024lumina,issachar2025dype,zhao2026sigma,rajabi2026sega,liu2026tide}. Closest to \sca{}, AReA shares one schedule of pooled global attention and shrinking windows across heads~\citep{rajabi2026area}. ResDiT spectrally fuses position-scaled global and native-size patch attention between global-only and local-only phases~\citep{ma2025resdit}, and FreeScale fuses attention outputs by frequency~\citep{qiu2024freescale}.
 
-\paragraph{Head- and layer-specific attention.} HRDiT picks per-head scopes by loss sensitivity under a cost budget~\citep{xue2026hrdit}, and UltraImage concentrates attention per head by entropy, noting stable local/global head roles before us~\citep{zhao2025ultraimage}. Sparse attention in diffusion transformers~\citep{yuan2024ditfastattn,xi2025svg,zhang2025sta}, language models~\citep{fu2024moa,xiao2024duoattention}, and vision transformers~\citep{pan2022hilo} varies windows, spans, or key scales across layers or heads. Our local branch is neighbourhood attention~\citep{hassani2022nat}, and ToDo attends to downsampled keys without rescaling coordinates~\citep{smith2024todo}.
-
-Head specialization, two branches, and a global opening phase thus all have precedents; \sca{} adds calibration by emulation, a closed-form per-head, per-noise-level mixture fitted at native resolution and transferred to an operator with native key counts.
+\paragraph{Head- and layer-specific attention.} HRDiT picks per-head scopes by loss sensitivity under a cost budget~\citep{xue2026hrdit}, and UltraImage concentrates attention per head by entropy, noting stable local/global head roles before us~\citep{zhao2025ultraimage}. Sparse attention in diffusion transformers varies windows, spans, or key scales across layers or heads~\citep{yuan2024ditfastattn,xi2025svg,zhang2025sta}. Language models~\citep{fu2024moa,xiao2024duoattention} and vision transformers~\citep{pan2022hilo} do the same. Our local branch is neighbourhood attention~\citep{hassani2022nat}, and ToDo attends to downsampled keys without rescaling coordinates~\citep{smith2024todo}. Head specialization, two branches, and a global opening phase thus all have precedents. \sca{} adds calibration by emulation: a closed-form per-head, per-noise-level mixture fitted at native resolution and transferred to an operator with native key counts.
 
 % =====================================================================================
 \section{Limitations and conclusion}
 \label{sec:limits}
-\paragraph{Limitations.} Multi-stage recipes keep higher learned preference scores than single-pass \sca{}, HRDiT at $1.5\times$ and UltraImage at over four times its time; progressive \sca{} closes the gap to HRDiT but costs fidelity, with timings from different code bases. At $2048\times4096$ \sca{} has no resolved ImageReward or FID advantage over AReA and trails on aesthetic score, CLIP-IQA, and patch FID/KID. The 191-prompt comparisons use one seed; extra seeds, SigMa, and progressive \sca{} cover 46 prompts, and FLUX.2-dev 50 prompts against full attention only. On \mbox{FLUX.1-Krea-dev} the ImageReward gain over AReA is unresolved and patch FID is higher. SigMa's dev-matched profile gives lattice-degraded images, possibly from our port or profile, not the method. We did not run ResDiT (no verified official code) or UltraImage's direct-extrapolation variant, so we claim no advantage over either. Late-appearing small extra subjects, $8192^2$ grid artifacts, and one prompt's doubled limbs remain (Appendix~\ref{app:failures}), and the opening phase was tuned on development prompts. All metrics are automatic, low-sample FID is noisy, and intervals ignore multiple comparisons.
+\paragraph{Limitations.} Multi-stage recipes keep higher learned preference scores than single-pass \sca{}, HRDiT at $1.5\times$ and UltraImage at over four times its time. Progressive \sca{} closes the gap to HRDiT but costs fidelity, with timings from different code bases. At $2048\times4096$ \sca{} has no resolved ImageReward or FID advantage over AReA and trails on aesthetic score, CLIP-IQA, and patch FID/KID. The 191-prompt comparisons use one seed; extra seeds, SigMa, and progressive \sca{} cover 46 prompts, and FLUX.2-dev 50 prompts against full attention only. On \mbox{FLUX.1-Krea-dev} the ImageReward gain over AReA is unresolved and patch FID is higher. SigMa's dev-matched profile gives lattice-degraded images, possibly from our port or profile, not the method. We did not run ResDiT (no verified official code) or UltraImage's direct-extrapolation variant, so we claim no advantage over either. Late-appearing small extra subjects, $8192^2$ grid artifacts, and one prompt's doubled limbs remain (Appendix~\ref{app:failures}). All metrics are automatic, low-sample FID is noisy, and intervals ignore multiple comparisons.
 
-\paragraph{Conclusion.} How much each head relies on a neighbourhood fixed in tokens versus a view of the whole image can be measured once at the training resolution and reused at 4K. With that table and a global-only opening, \sca{} is the strongest and fastest single-pass training-free operator we tested for FLUX.1-dev at $4096^2$, at about a third of AReA's time. Multi-stage recipes lead on learned preference metrics through their schedules: as a drop-in operator in HRDiT's progressive schedule, \sca{} matches HRDiT's preference scores (no per-image metric significantly worse; HPSv2 and ARNIQA significantly better) in less than half its time.
+\paragraph{Conclusion.} How much each head relies on a neighbourhood fixed in tokens versus a view of the whole image can be measured once at the training resolution and reused at 4K. With that table and a global-only opening, \sca{} is the strongest and fastest single-pass training-free operator we tested for FLUX.1-dev at $4096^2$, at about a third of AReA's time. Multi-stage recipes lead on learned preference metrics through their schedules. As a drop-in operator in HRDiT's progressive schedule, \sca{} matches HRDiT's preference scores in less than half its time, with no per-image metric significantly worse. Code: \codeurl.
+
+\section*{Reproducibility statement}
+Section~\ref{sec:experiments} states the protocol, and Appendix~\ref{app:metrics} defines every metric and interval. Appendix~\ref{app:calib} gives the calibration geometry, statistics, and noise bins; Algorithms~\ref{alg:calib} and~\ref{alg:sample} and Appendix~\ref{app:code} give the procedure and its core code. Appendix~\ref{app:hparams} lists every hyperparameter, and Appendix~\ref{app:impl} the kernel layout, numerical checks, and position rounding. Appendices~\ref{app:area} and~\ref{app:additional_protocols} give each baseline's code revision, recipe, and seeds, and Appendix~\ref{app:compute} the hardware and logged compute. Code, calibration table, per-image metrics, and the paired-difference files behind every table will be released at \codeurl.
 
 % Restore the article.cls float-page defaults (set before Figure 3) for the appendix.
 \csname @fptop\endcsname=0pt plus 1fil\relax \csname @fpsep\endcsname=8pt plus 2fil\relax \csname @fpbot\endcsname=0pt plus 1fil\relax
 \renewcommand{\floatpagefraction}{0.5}
+\renewcommand{\topfraction}{0.95}
 
 \bibliography{references}
 \bibliographystyle{iclr2026_conference}
@@ -351,6 +521,8 @@ Head specialization, two branches, and a global opening phase thus all have prec
 \clearpage
 \appendix
 \topfloatpages
+\counterwithin{figure}{section}
+\counterwithin{table}{section}
 
 \section*{Appendix contents}
 \newcommand{\appline}[2]{\ref{#1} & #2\dotfill & \pageref{#1}\\}
@@ -360,7 +532,9 @@ Head specialization, two branches, and a global opening phase thus all have prec
 \multicolumn{3}{@{}l}{\textbf{Method}}\\
 \appline{app:proofs}{Proofs}
 \appline{app:calib}{Calibration details and statistics}
+\appline{app:prompts}{Calibration prompts}
 \appline{app:impl}{Implementation details and cost}
+\appline{app:code}{Core code}
 \appline{app:hparams}{Hyperparameters}
 \multicolumn{3}{@{}l}{\textbf{Evaluation setup}}\\
 \appline{app:metrics}{Evaluation protocol and metrics}
@@ -450,8 +624,9 @@ Any rule that assigns one weight per cell, such as a per-layer table, a weight s
 \section{Calibration details and statistics}
 \label{app:calib}
 
-\snippet{calib}{}
+This section expands Section~\ref{sec:analysis} and Figure~\ref{fig:method}b. Figure~\ref{fig:calib} shows the calibrated tables, and Figures~\ref{fig:relerr}, \ref{fig:pisigma}, and~\ref{fig:heatmap} the output errors per rule, per noise level, and per block.
 
+\snippet{calib}{}
 
 \paragraph{Statistics.} For every emulated scale, block, head, and noise bin, the pass stores $A$, $B$, $E$, the error of the local branch alone $\sum\|\Ofull-\Oloc\|^2$, $\sum\|\Ofull\|^2$, and the query count, in float64, summed over image queries and channels (\texttt{sca/calib.py}). The sampler's trajectory is that of unmodified full attention; the emulated operators only observe. Statistics are written per prompt and merged by summation, so prompts can be added later and split-half fits need no extra pass. Text-query outputs are not in the objective, because \sca{} sends text queries through the global branch only.
 
@@ -487,27 +662,77 @@ Any rule that assigns one weight per cell, such as a per-layer table, a weight s
 \end{figure}
 
 \FloatBarrier
+\section{Calibration prompts}
+\label{app:prompts}
+
+This section lists the prompts behind the calibration of Section~\ref{sec:analysis} and Algorithm~\ref{alg:calib} (\texttt{scripts/calib\_prompts.jsonl}). The $1024^2$ table uses prompts 1 to 32 and the $1280^2$ table prompts 1 to 16. None of them is an evaluation prompt.
+
+{\scriptsize
+\begin{multicols}{2}
+\begin{enumerate}[leftmargin=1.6em,itemsep=0pt,topsep=0pt,parsep=0pt]
+  \item A candid street portrait of an elderly fisherman with a weathered face and a knitted wool cap, harbor in the background, overcast light
+  \item Two children laughing while running through a lawn sprinkler on a summer afternoon, backlit by the sun
+  \item A professional headshot of a young woman with curly red hair and freckles, soft studio lighting, neutral grey backdrop
+  \item A jazz trio performing in a dim basement club, saxophone player in the foreground, warm stage lights and haze
+  \item A chef plating a dessert in a busy restaurant kitchen, steam rising, stainless steel counters
+  \item A ballet dancer mid-leap in an empty rehearsal studio with tall windows and wooden floors
+  \item A red fox standing in fresh snow at the edge of a birch forest, early morning light
+  \item A macro photograph of a honeybee covered in pollen on a purple lavender flower
+  \item A herd of elephants crossing a dusty savanna river at sunset, long shadows
+  \item A tabby cat sleeping curled up on a stack of old books next to a window
+  \item A school of tropical fish swimming around a coral reef, sun rays through clear blue water
+  \item A bald eagle perched on a dead pine branch above a misty lake
+  \item A neon sign reading ``OPEN 24 HOURS'' in the window of a rainy diner at night, reflections on the wet sidewalk
+  \item A hand-painted wooden sign that says ``Fresh Eggs'' leaning against a farm fence, chickens nearby
+  \item A vintage movie theater marquee with the words ``NOW SHOWING'' lit by hundreds of bulbs
+  \item A chalkboard menu in a cafe listing coffee drinks and prices in neat handwriting
+  \item A highway road sign reading ``Exit 42 Pine Valley'' against a clear blue sky
+  \item A bookstore storefront with gold lettering ``Second Chapter Books'' on the glass, autumn leaves on the ground
+  \item A wide alpine valley with a winding river, snow-capped peaks and wildflower meadows, midsummer
+  \item Sand dunes in the desert at golden hour with sharp ridges and wind ripples
+  \item A rugged coastline with sea stacks and crashing waves under a stormy sky
+  \item A terraced rice field on a hillside in morning fog, farmers in conical hats
+  \item The northern lights over a frozen lake with a small wooden cabin, stars visible
+  \item A dense tropical rainforest with a waterfall and hanging vines, light filtering through the canopy
+  \item A cozy Scandinavian living room with a fireplace, sheepskin rug, and large windows showing snow outside
+  \item A modern open-plan kitchen with a marble island, pendant lights, and potted herbs
+  \item A cluttered artist studio with canvases, paint tubes, brushes in jars, and afternoon sunlight
+  \item A grand library reading room with long oak tables, green lamps, and arched ceilings
+  \item A small Japanese tatami room with a low table, sliding paper doors, and a garden view
+  \item A product photograph of a matte black wristwatch on a slate surface, dramatic side light
+  \item A pair of white running shoes floating against a pastel gradient background, studio product shot
+  \item A glass bottle of olive oil with a sprig of rosemary on a rustic wooden table, soft daylight
+  \item A flat lay of a leather notebook, fountain pen, glasses, and a cup of espresso on a desk
+  \item A ceramic teapot with a blue glaze and matching cups arranged on a linen tablecloth
+  \item A crowded night market in Taipei with food stalls, lanterns, and hundreds of people
+  \item A packed football stadium during a night match, floodlights and cheering fans
+  \item Commuters crossing a huge intersection in Tokyo during rush hour, seen from above
+  \item A music festival crowd at sunset with raised hands and confetti in the air
+  \item A busy train station concourse with travelers, departure boards, and a glass roof
+  \item A gothic cathedral facade with intricate stone carvings and a rose window, low angle
+  \item A row of colorful Victorian townhouses on a hilly street with a cable car
+  \item A brutalist concrete apartment block with repeating balconies under a pale sky
+  \item A glass skyscraper reflecting clouds, shot looking straight up from the street
+  \item A traditional Chinese pagoda beside a lake with cherry blossoms in full bloom
+  \item An old stone bridge over a canal in Venice with gondolas and laundry lines
+  \item An astronaut riding a horse across a red desert planet with two moons, cinematic
+  \item A detailed watercolor illustration of a lighthouse on a rocky island with seagulls
+  \item A steampunk airship floating above a Victorian city at dusk, intricate brass details
+\end{enumerate}
+\end{multicols}}
+
+\FloatBarrier
 \section{Implementation details and cost}
 \label{app:impl}
 
-\begin{algorithm}[t]
-  \caption{\sca{}: calibration (once per model) and one attention layer at sampling time.}
-  \label{alg:sca}
-  \small
-  \begin{algorithmic}[1]
-    \Statex \textbf{Calibrate}(prompts, $s_c$) on an in-distribution $n\times n$ grid:
-    \State sample with full attention; at every block $l$, step $\sigma$, and head $h$:
-    \State \quad $\Oglob,\Oloc\gets$ Eqs.~\ref{eq:glob}, \ref{eq:loc} with subsampling $s_c$, window $n/s_c$, tile $tn/(s_cn_0)$
-    \State \quad add $\|\Oloc{-}\Oglob\|^2$ and $\langle\Ofull{-}\Oglob,\Oloc{-}\Oglob\rangle$ to $A_{lh\beta(\sigma)}$, $B_{lh\beta(\sigma)}$ \Comment{float64}
-    \State \Return $\pi_{lh\beta}\gets\clip(B_{lh\beta}/A_{lh\beta},0,1)$ \Comment{Proposition~\ref{prop:opt}}
-    \Statex \textbf{Layer}$(Q,K,V,\sigma)$ at target factors $(s_H,s_W)$:
-    \State $\Oglob\gets$ Eq.~\ref{eq:glob} for all queries \Comment{block-centre keys, coarse positions}
-    \If{$\sigma>\sigma_g$} \Return $\Oglob$ \Comment{opening phase}
-    \EndIf
-    \State $\Oloc\gets$ Eq.~\ref{eq:loc} for image queries \Comment{one FlexAttention call}
-    \State \Return $[\,\Oglob_{\Tset},\;\pih\,\Oloc+(1-\pih)\,\Oglob_{\Gset}\,]$ \Comment{interpolated table; fp32 mix}
-  \end{algorithmic}
-\end{algorithm}
+This section expands Section~\ref{sec:branches} and Figure~\ref{fig:method}. Figure~\ref{fig:method_zoom} draws the two operators, the gate, and the mix at component level, together with the calibrated table for all 57 blocks; Appendix~\ref{app:code} lists the corresponding code.
+
+\begin{figure}[!htbp]
+  \centering
+  \IfFileExists{figures/method_zoom.pdf}{\includegraphics[width=\linewidth]{figures/method_zoom.pdf}}{\fbox{\parbox{0.9\linewidth}{\centering method\_zoom.pdf pending}}}
+  \caption{\textbf{The operators at component level.} (a)~The global operator keeps the centre token $\kappa(b)$ of each $s\times s$ block as a key at coarse position $b$ and places query $i$ at $c(p_i)$, so each softmax sees $T+n_0^2$ keys (Equation~\ref{eq:glob}). (b)~The local operator lets each $t\times t$ query tile attend to a $w\times w$ window at original positions, clipped at the border (dashed: unclipped $a'$); one FlexAttention call applies the exact block mask (inset; grey: text keys; Equation~\ref{eq:loc}). (c)~Each head's weight $\pi_{lh}(\sigma)$ (block 29, head 18) is interpolated linearly between bin centres; for $\sigma>\sigma_g$, the first 8 of 28 steps, every head returns $\Oglob_i$ and skips the local branch (Equation~\ref{eq:mix}). (d)~The scale-4 table used at inference covers all $57\times24$ heads, sorted by mean $\pi$ within each block, and 14 noise bins; over the populated bins, $\pi$ averages 0.67 in the double-stream and 0.76 in the single-stream blocks. Panels (a) and (b) use a toy grid with $H=24$, $s=4$, $n_0=w=6$, and $t=2$.}
+  \label{fig:method_zoom}
+\end{figure}
 
 \paragraph{FlexAttention window.} Image tokens are reordered tile-major, so that a sparse block is a small spatial tile. Query blocks cover $8\times16$ tokens (128 queries) and key blocks $8\times8$ (64 keys), shifted so that unclamped windows start on a block edge; text keys come first. The mask function states window membership per query-key pair, so the result does not depend on the block layout, only the amount of skipped work does. On GH200, $8\times16$ query blocks with $8\times8$ key blocks were fastest at $2048^2$, $4096^2$, and $2048\times6144$. RoPE, subsampling, both branches, and the mix compile into one graph per layer; the mix is in fp32.
 
@@ -558,16 +783,186 @@ Any rule that assigns one weight per cell, such as a per-layer table, a weight s
   \end{tabular}
 \end{table}
 
-\snippet{latency}{}
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/latency.pdf}
+  \caption{\textbf{Latency at every size.} Figure~\ref{fig:latency} at full width: batch 1 on one GH200, median of three prompts, whiskers min to max; full attention was not run at $8192^2$. Grey ratios: speedup over AReA per size; exponents fit seconds $\propto N^b$ ($N$ image tokens).}
+  \label{fig:latency_full}
+\end{figure}
 
 \paragraph{End-to-end latency.} Table~\ref{tab:latency} comes from one matched protocol on one GH200 (\texttt{results/\allowbreak latency\_curve\_batch1.csv}, which also lists the excluded warm-up images; \texttt{results/\allowbreak latency\_curve\_summary.csv} summarizes all cells but full attention at $6144^2$). At each size, each method generates one excluded warm-up image and then three timed images in the same process, at batch 1 and 28 steps; we report the median. At $4096^2$ the medians are 186.5\,s for full attention (186.0, 186.6, 186.5), 202.4\,s for AReA (192.7, 202.4, 204.3), and 71.1\,s for \sca{} (71.0, 71.1, 71.1). At $2048^2$ and $3072^2$ they are 22.9 and 73.9\,s for full attention, 41.0 and 114.3\,s for AReA, and 18.2 and 40.2\,s for \sca{}. At $6144^2$ and $8192^2$, AReA takes 482.3 and 952.0\,s and \sca{} 161.6 and 287.6\,s, so \sca{} reduces measured time by 66.5\% and 69.8\%. At $6144^2$ full attention takes 762.7\,s (763.5, 762.7, 762.5), $4.7\times$ \sca{}'s time. An earlier $4096^2$ benchmark, kept as a separate repeat (\texttt{results/\allowbreak latency\_4096\_batch1.csv}), gave 184.6\,s for full attention (184.1, 184.7, 184.6), 212.6\,s for AReA (207.3, 225.8, 212.6), 88.1\,s for \sca{} + band guard (88.1, 98.7, 88.1; single-pass compiled band), and 71.0\,s for \sca{} final (71.0, 83.1, 70.9). On the shared campaign nodes, per-image times at $4096^2$ were 71\,s for \sca{} final, 120\,s for \sca{} + band guard, and 262\,s for AReA; the campaign code used an unfused band, so dropping it saved more there (49\,s) than in the clean measurement (17\,s). At the non-square sizes we have only campaign timings, with both methods on the same pool of shared nodes (mean over 191 prompts): \sca{} takes 38.1\,s and AReA 112.4\,s at $2048\times4096$, and 55.8\,s and 150.5\,s at $2048\times6144$.
 
+\FloatBarrier
+\section{Core code}
+\label{app:code}
+
+This section expands Algorithms~\ref{alg:calib} and~\ref{alg:sample} with the core of the code (\codeurl). The first listings implement one \sca{} attention call (Equations~\ref{eq:glob} to~\ref{eq:mix}); the last three accumulate the calibration statistics of Equation~\ref{eq:stats} and solve Proposition~\ref{prop:opt}. Listings are verbatim except that docstrings, logging, compile set-up, and device arguments are removed; \texttt{\# ...} marks omitted lines, and each comment names the equation a line implements.
+
+\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: SCAProcessor.sca}, emph={sca,geometry,_split,coarse_rope,rope,global_branch,pi_now,flex_layout,sca_flex_fn}]
+def sca(self, q, k, v, image_rotary_emb):
+    ctx = self.ctx
+    f, tile, win = ctx.geometry()      # f = (H/n0, W/n0), t = 8, w = min(n0, H) per axis
+    if ctx.gate_sigma > 0 and ctx.sigma is not None and float(ctx.sigma) > ctx.gate_sigma:
+        L, rope_txt = self._split(q, image_rotary_emb)
+        cos, sin = image_rotary_emb
+        rq, rk = ctx.coarse_rope(f, q.device)
+        kr_txt = rope(k[:, :L], rope_txt)
+        return global_branch(q, k, v, L, ctx.grid, f, ctx.pool, rope_txt, rq, rk,
+                             rope(q[:, :L], rope_txt), kr_txt)  # opening phase, Eq. (*@\ref{eq:mix}@*)
+    pi = ctx.pi_now(self.layer, q.shape[2], q.device).view(1, 1, -1, 1)  # (*@$\pi_{lh}(\sigma)$@*), per head
+    # ... route > 0 (hard per-head routing) and band (App. (*@\ref{app:band}@*)): variants, off by default
+    if ctx.local_impl == "flex" and ctx.fused:
+        L, _ = self._split(q, image_rotary_emb)
+        rq, rk = ctx.coarse_rope(f, q.device)
+        layout = ctx.flex_layout(L, tile, win, q.device)    # BlockMask, cached per layout
+        return sca_flex_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L,
+                                     ctx.grid, f, ctx.pool, layout)
+    # ... unfused path: the same arithmetic through self.branches() and mix_branches()
+\end{lstlisting}
+
+\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: sca\_flex\_forward}, emph={sca_flex_forward,rope,global_branch,local_branch_flex,mix_branches}]
+def sca_flex_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout):
+    cos, sin = rot                        # q, k, v: pre-RoPE [B, S, h, D], text first
+    kr = rope(k, rot)                                   # all keys at their own positions
+    qi = rope(q[:, L:], (cos[L:], sin[L:]))             # image queries at p_i
+    q_txt = rope(q[:, :L], (cos[:L], sin[:L]))          # text queries (FLUX.1: position 0)
+    o_glob = global_branch(q, k, v, L, grid, f, pool, (cos[:L], sin[:L]), rope_q, rope_k,
+                           q_txt, kr[:, :L])                                    # Eq. (*@\ref{eq:glob}@*)
+    o_loc = local_branch_flex(qi, kr, v, L, layout, permuted=True)            # Eq. (*@\ref{eq:loc}@*)
+    return mix_branches(o_glob, o_loc, pi, L, layout.q_inv)                    # Eq. (*@\ref{eq:mix}@*)
+\end{lstlisting}
+
+\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: global\_branch}, emph={global_branch,pool_tokens,rope,sdpa}]
+def global_branch(q, k, v, L, grid, f, pool, rope_txt, rope_q, rope_k,
+                  q_txt=None, k_txt=None):                                     # Eq. (*@\ref{eq:glob}@*)
+    kp = pool_tokens(k[:, L:], grid, f, pool)            # block-centre keys (*@$k_{\kappa(b)}$@*)
+    vp = pool_tokens(v[:, L:], grid, f, pool)
+    q_txt = rope(q[:, :L], rope_txt) if q_txt is None else q_txt
+    k_txt = rope(k[:, :L], rope_txt) if k_txt is None else k_txt
+    qr = torch.cat([q_txt, rope(q[:, L:], rope_q)], 1)   # image queries at (*@$c(p_i)$@*)
+    kr = torch.cat([k_txt, rope(kp, rope_k)], 1)         # pooled keys at block index (*@$b$@*)
+    return sdpa(qr, kr, torch.cat([v[:, :L], vp], 1))    # every query, text and image
+\end{lstlisting}
+
+\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: pool\_tokens}, emph={pool_tokens}]
+def pool_tokens(x, grid, f, pool):                       # x: image tokens [B, H*W, h, D]
+    B, N, h, D = x.shape
+    (H, W), (fh, fw) = grid, f
+    if fh == fw == 1:
+        return x
+    g = x.view(B, H, W, h, D)
+    if pool == "center":                 # token (*@$\kappa(b)$@*) of every (*@$f_h\times f_w$@*) block, Eq. (*@\ref{eq:glob}@*)
+        g = g[:, fh // 2::fh, fw // 2::fw]
+    # ... pool == "mean" averages each block instead (the mean-pooling ablation)
+    return g.reshape(B, -1, h, D)
+\end{lstlisting}
+
+\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: SCAContext.coarse\_rope}, emph={coarse_rope,pos_embed}]
+def coarse_rope(self, f, device):                        # returns (rope_q, rope_k)
+    key = (f, str(device))
+    if key not in self._rope_cache:
+        ids = self._img_ids.float()                      # FLUX ids (0, row, col), [N, 3]
+        div = torch.tensor([1.0, f[0], f[1]])
+        q_ids = torch.cat([ids[:, :1],                   # queries at (*@$c(p)=\lfloor p/f\rfloor$@*), Eq. (*@\ref{eq:glob}@*)
+                           torch.floor((ids[:, 1:] - ids[:, 1:].amin(0)) / div[1:])], 1)
+        H, W = self.grid                                 # keys at (*@$c(\kappa(b))=b$@*):
+        k_ids = q_ids.view(H, W, 3)[f[0] // 2::f[0], f[1] // 2::f[1]].reshape(-1, 3)
+        self._rope_cache[key] = (self.pos_embed(q_ids), self.pos_embed(k_ids))
+    return self._rope_cache[key]
+\end{lstlisting}
+
+\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: local\_branch\_flex}, emph={local_branch_flex,flex_fn}]
+def local_branch_flex(qi, kr, v, L, layout, permuted=False):                  # Eq. (*@\ref{eq:loc}@*)
+    qp = qi.index_select(1, layout.q_gather)                  # image queries, tile-major
+    kp = torch.cat([kr[:, :L], kr[:, L:].index_select(1, layout.k_gather)], 1)
+    vp = torch.cat([v[:, :L], v[:, L:].index_select(1, layout.k_gather)], 1)  # text first
+    kw = {"kernel_options": layout.kernel_options} if layout.kernel_options else {}
+    o = flex_fn(qi.device)(qp.transpose(1, 2), kp.transpose(1, 2), vp.transpose(1, 2),
+                           block_mask=layout.block_mask, **kw)    # one FlexAttention call
+    return o if permuted else o.transpose(1, 2).index_select(1, layout.q_inv)
+\end{lstlisting}
+
+\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: flex\_layout}, emph={flex_layout,tile_order,mask_mod,create_block_mask,FlexLayout}]
+def flex_layout(L, grid, tile, window, device, q_tile=None, k_tile=None, kernel_options=None):
+    # ... imports and torch.compile set-up
+    (H, W), (th, tw), (Wh, Ww) = grid, tile, window
+    q_tile, k_tile = q_tile or FLEX_Q_TILE, k_tile or FLEX_K_TILE    # (8, 16), (8, 8)
+    # window start (*@$a(\tau)$@*) of each query's tile, per row and column, Eq. (*@\ref{eq:loc}@*)
+    r_start = (torch.arange(H) // th * th + th // 2 - Wh // 2).clamp(0, H - Wh)
+    c_start = (torch.arange(W) // tw * tw + tw // 2 - Ww // 2).clamp(0, W - Ww)
+    k_off = ((Wh // 2 - th // 2) % k_tile[0], (Ww // 2 - tw // 2) % k_tile[1])
+    qo = tile_order(grid, q_tile)             # tile-major slot -> image index, -1 = pad
+    ko = tile_order(grid, k_tile, k_off)      # key tiles shifted so windows start on a tile
+    q_gather, k_gather = qo.clamp(min=0), ko.clamp(min=0)
+    # ... q_inv: inverse query permutation (image index -> slot), used to un-permute O_loc
+    qr0 = r_start[q_gather // W]              # window corner of every query slot
+    qc0 = c_start[q_gather % W]
+    far = -(1 << 30)
+    krow = torch.where(ko >= 0, k_gather // W, far)     # row and column of every key slot
+    kcol = torch.where(ko >= 0, k_gather % W, far)
+    def mask_mod(b, h, q, kv):                # kv in (*@$\mathcal{K}^{\mathrm{loc}}_q$@*): text key, or in q's window
+        j = (kv - L).clamp(min=0)
+        r, c, r0, c0 = krow[j], kcol[j], qr0[q], qc0[q]
+        return (kv < L) | ((r >= r0) & (r < r0 + Wh) & (c >= c0) & (c < c0 + Ww))
+    nq, nk = qo.numel(), L + ko.numel()
+    bs = (q_tile[0] * q_tile[1], k_tile[0] * k_tile[1])  # blocks of 128 queries, 64 keys
+    # ... static shapes for dynamo; _compile=True on CUDA
+    bm = create_block_mask(mask_mod, None, None, nq, nk, BLOCK_SIZE=bs)
+    # ... ko = kernel options for flex_attention (BLOCK_M, BLOCK_N, USE_TMA)
+    return FlexLayout(q_gather, q_inv, k_gather, bm, ko)
+\end{lstlisting}
+
+\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: mix\_branches}, emph={mix_branches}]
+def mix_branches(o_glob, o_loc, pi, L, inv=None):
+    if inv is not None:                                     # un-permute the flex output
+        o_loc = o_loc.transpose(1, 2).index_select(1, inv)
+    img = (pi * o_loc.float() + (1 - pi) * o_glob[:, L:].float()).to(o_glob.dtype)  # Eq. (*@\ref{eq:mix}@*)
+    return torch.cat([o_glob[:, :L], img], 1)               # text queries keep O_glob
+\end{lstlisting}
+
+\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: SCAProcessor.calibrate}, emph={calibrate,rope,sdpa,geometry,branches,add}]
+def calibrate(self, q, k, v, image_rotary_emb):
+    ctx = self.ctx
+    qr, kr = rope(q, image_rotary_emb), rope(k, image_rotary_emb)
+    full = sdpa(qr, kr, v)                   # O_full, returned: the sampler runs unmodified
+    for i, s in enumerate(ctx.calib_scales):                   # emulated scales s_c = 2, 4
+        f, tile, win = ctx.geometry(s)       # f = s_c, w = n / s_c, t = round(8 w / n0)
+        L, o_loc, o_glob, _ = self.branches(q, k, v, image_rotary_emb, f, tile, win, qr, kr)
+        ctx.calib.add(self.layer, i, ctx.sigma, full[:, L:], o_loc, o_glob[:, L:])  # Eq. (*@\ref{eq:stats}@*)
+    # ... add_mass(): attention-mass diagnostics on 256 sampled queries
+    return full
+\end{lstlisting}
+
+\begin{lstlisting}[style=scacode, title={\texttt{sca/calib.py}: CalibStats.add}, emph={add,bin}]
+@torch.no_grad()
+def add(self, layer, i, sigma, full, loc, glob):     # image rows only, [B, N, h, D]
+    f, l, g = full.float(), loc.float(), glob.float()
+    dl, df = l - g, f - g
+    red = lambda x: x.sum((0, 1, 3)).double()        # per head (sum over B, N, D)
+    n = torch.full_like(red(f[..., :1]), f.shape[0] * f.shape[1])
+    vals = torch.stack([red(dl * dl), red(df * dl), red(df * df),  # A, B, E of Eq. (*@\ref{eq:stats}@*)
+                        red((f - l) ** 2), red(f * f), n])        # E_fl, F2, count
+    self.stats[i, :, layer, :, self.bin(sigma)] += vals   # bin = min(int(14 sigma), 13)
+\end{lstlisting}
+
+\begin{lstlisting}[style=scacode, title={\texttt{sca/calib.py}: \_ratio}, emph={_ratio}]
+def _ratio(b, a):                           # Prop. (*@\ref{prop:opt}@*): clip(B / A, 0, 1), and 1 where A = 0
+    return np.clip(np.where(a > 0, b / np.where(a > 0, a, 1.0), 1.0), 0.0, 1.0)
+\end{lstlisting}
+
+\begin{lstlisting}[style=scacode, title={\texttt{sca/calib.py}: fit}, emph={fit,fill,_ratio}]
+def fit(S, pop):                    # S: [6, layers, heads, bins] for one scale
+    A, B = S[0], S[1]               # fill(): empty bins copy the nearest populated bin
+    return {"pi_head": fill(_ratio(B, A), pop),                  # the table SCA uses
+            "pi_layer": fill(_ratio(B.sum(1), A.sum(1)), pop),   # ablations: per layer and
+            "pi_uniform": fill(_ratio(B.sum((0, 1)), A.sum((0, 1))), pop)}  # shared
+\end{lstlisting}
 
 \FloatBarrier
 \section{Hyperparameters}
 \label{app:hparams}
 
-Table~\ref{tab:hparams} lists every setting of the main runs.
+Table~\ref{tab:hparams} expands the Hyperparameters paragraph of Section~\ref{sec:experiments} and lists every setting of the main runs.
 
 \begin{table}[!htbp]
   \caption{\raggedright\textbf{All hyperparameters} of the main runs (code commit \texttt{2d11740}), produced by \texttt{scripts/sample.py -{}-method sca -{}-pi-table calib/k1\_1024.npz -{}-gate-sigma 0.89}. Appendix~\ref{app:additional_protocols} gives the settings that differ for UltraImage, HRDiT, SigMa, and FLUX.2-dev.}
@@ -602,6 +997,8 @@ Table~\ref{tab:hparams} lists every setting of the main runs.
 \FloatBarrier
 \section{Evaluation protocol and metrics}
 \label{app:metrics}
+
+This section expands the Evaluation paragraph of Section~\ref{sec:experiments}: Table~\ref{tab:protocol} summarizes the protocol, and the paragraphs below define each metric and interval.
 
 \begin{table}[!htbp]
   \caption{\textbf{Evaluation protocol.} The FLUX.1-dev attention comparisons share sampler settings and prompt seeds. UltraImage and HRDiT use their own multi-stage protocols; FLUX.2-dev uses its own native-resolution schedule (Appendix~\ref{app:additional_protocols}). Prompt counts exclude four development prompts. Table~\ref{tab:hparams} lists the hyperparameters; the paragraphs below define the metrics.}
@@ -658,6 +1055,8 @@ We run AReA's released code with its FLUX.1 defaults (block-centre pooling, firs
 \FloatBarrier
 \section{Extended results with intervals}
 \label{app:tables}
+
+This section expands the main tables to all metrics and sizes. Table~\ref{tab:all_metrics} expands Table~\ref{tab:main}, Table~\ref{tab:app_4k} gives its paired intervals against AReA, and Table~\ref{tab:app_wide} covers the non-square sizes. Table~\ref{tab:app_abl} expands Table~\ref{tab:ablation}; the remaining tables cover the band guard and the calibration rule at non-square sizes.
 
 \begin{table}[!htbp]
   \caption{\textbf{At $4096^2$, \sca{} beats AReA on every per-image metric at about a third of its latency.} Aesthetic-4K with FLUX.1-dev, 191 prompts (100 at $6144^2$). HPS, CLIP-IQA, and ARNIQA are $\times100$; higher is better except latency and FID. Bold: best per size. \sg{} / \sw{} on full-attention and \sca{} rows: significantly better / worse than AReA (95\% paired interval excludes zero). Latency at $4096^2$: seconds per image, batch 1, idle GH200, median of three. $^\ddagger$Mean campaign time on shared nodes, not clean latency. $^\circ$UltraImage uses its two-stage defaults.}
@@ -875,38 +1274,11 @@ Tables~\ref{tab:app_4k} and~\ref{tab:app_wide} give every metric with its paired
 \end{table}
 %%% END GENERATED TABLES
 
-
 \FloatBarrier
 \section{Additional paired intervals}
 \label{app:phase2}
 
-\begin{table}[!htbp]
-  \caption{\textbf{Gains over AReA hold on a second prompt set and two more seeds, calibration size barely matters, and on FLUX.1-Krea-dev \sca{} matches AReA.} Paired differences at $4096^2$ from the stated reference; HPSv2.1 is $\times100$ and $n$ counts evaluation prompts. Calibration and gate rows compare with default \sca{} (32 calibration prompts, $\sigma_g=0.89$). Tables~\ref{tab:phase2_general}, \ref{tab:phase2_sensitivity}, and~\ref{tab:krea_6144} give the intervals.}
-  \label{tab:generality}
-  \centering\footnotesize
-  \setlength{\tabcolsep}{6pt}
-  \begin{tabular}{@{}lrlrrr@{}}
-    \toprule
-    Setting & $n$ & Reference & $\Delta$ImageReward & $\Delta$HPSv2.1 & $\Delta$MUSIQ$_\text{c}$ \\
-    \midrule
-    HRGen-1K & 200 & AReA & $+0.642$ & $+4.48$ & $+12.71$ \\
-    Seed 1 & 46 & AReA & $+0.305$ & $+2.19$ & $+11.58$ \\
-    Seed 2 & 46 & AReA & $+0.355$ & $+2.80$ & $+11.04$ \\
-    \midrule
-    4 calibration prompts & 46 & \sca{} & $+0.012$ & $-0.02$ & $+0.09$ \\
-    8 calibration prompts & 46 & \sca{} & $+0.010$ & $+0.01$ & $-0.03$ \\
-    16 calibration prompts & 46 & \sca{} & $-0.007$ & $-0.01$ & $-0.11$ \\
-    \midrule
-    Gate $\sigma_g=0.85$ & 46 & \sca{} & $-0.015$ & $-0.85$ & $-2.04$ \\
-    Gate $\sigma_g=0.93$ & 46 & \sca{} & $-0.004$ & $-0.15$ & $+0.65$ \\
-    \midrule
-    FLUX.2-dev & 50 & Full attention & $+0.456$ & $+1.84$ & $+21.44$ \\
-    FLUX.1-Krea-dev & 100 & AReA & ${-}0.042$ & $+0.78$ & $+4.61$ \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-Per-metric intervals are in Tables~\ref{tab:phase2_baselines} and~\ref{tab:phase2_distribution} for the added baselines, Table~\ref{tab:phase2_general} for the prompt-set, seed, and model checks, and Table~\ref{tab:phase2_sensitivity} for the calibration-budget and gate checks. Figure~\ref{fig:baseline_quality} plots four of these metrics for five of the six baselines run on all 191 prompts (HRDiT is in Table~\ref{tab:phase2_baselines}), signed as \sca{} minus baseline. Every difference in the tables is method minus the named reference. Positive values favour the method for the ten per-image metrics, and \up{blue} / \dn{orange} mark intervals that exclude zero in favour of / against the method. These comparisons resample matched prompt ids, with 2000 draws and seed 0; they do not treat multiple crops as independent images. The HRGen-1K sample has 200 prompts, the two extra seeds and sensitivity experiments each have 46, FLUX.2-dev has 50, and the main baseline comparison has 191. Tables use the separately recomputed per-image CSVs; these intervals differ slightly from the original 1000-draw evaluator summaries. No multiplicity correction is applied.
+This section expands Table~\ref{tab:generality} and the baseline rows of Tables~\ref{tab:main} and~\ref{tab:panel46} with per-metric intervals. Tables~\ref{tab:phase2_baselines} and~\ref{tab:phase2_distribution} cover the added baselines, Table~\ref{tab:phase2_general} the prompt-set, seed, and model checks, Table~\ref{tab:phase2_sensitivity} the calibration-budget and gate checks, and Table~\ref{tab:panel46_deltas} the single-pass rows of Table~\ref{tab:panel46}. Figure~\ref{fig:baseline_quality} plots four of these metrics for five of the six baselines run on all 191 prompts (HRDiT is in Table~\ref{tab:phase2_baselines}), signed as \sca{} minus baseline. Every difference in the tables is method minus the named reference. Positive values favour the method for the ten per-image metrics, and \up{blue} / \dn{orange} mark intervals that exclude zero in favour of / against the method. These comparisons resample matched prompt ids, with 2000 draws and seed 0; they do not treat multiple crops as independent images. The HRGen-1K sample has 200 prompts, the two extra seeds and sensitivity experiments each have 46, FLUX.2-dev has 50, and the main baseline comparison has 191. Tables use the separately recomputed per-image CSVs; these intervals differ slightly from the original 1000-draw evaluator summaries. No multiplicity correction is applied.
 
 \input{figures/snippets/baseline_deltas.tex}
 
@@ -1054,6 +1426,8 @@ Time (s)$\downarrow$ & \dn{$+250.4$} {\tiny[$+235.6$, $+269.0$]} & \dn{$+34.9$} 
 \section{Sampling-budget, guidance, and schedule checks}
 \label{app:budget}
 
+This section expands the budget and schedule rows of Table~\ref{tab:panel46}: Table~\ref{tab:phase2_budget} gives the budget and guidance checks and Table~\ref{tab:prog_deltas} the progressive schedule against HRDiT.
+
 On the same 46 evaluation prompts, we compare the default 28-step \sca{} run with 56 steps at guidance 4.5 and with 28 steps at guidance 7 (Table~\ref{tab:phase2_budget}). The 56-step run keeps the noise threshold at 0.89; it therefore changes the discretization of both the opening and mixed phases. It improves ImageReward by 0.097 $[0.039,0.159]$, HPSv2.1 by 1.01, PickScore by 0.16, and MUSIQ$_\text{c}$ by 2.26, but increases corrected patch FID by 7.05 $[1.16,13.03]$ with reference-image cluster resampling. Increasing guidance to 7 alone lowers HPSv2.1 and PickScore and does not resolve an ImageReward difference. Thus the default schedule does not maximize every metric, and extra sampling can change the preference-quality balance.
 
 Against UltraImage on this subset, 56-step \sca{} has ImageReward difference $-0.038$ $[-0.159,0.078]$, HPSv2.1 difference $-0.56$ $[-1.21,0.09]$, and PickScore difference $-0.19$ $[-0.40,0.01]$. These intervals span zero and do not establish equivalence. Its MUSIQ advantage is 9.94 $[5.69,13.98]$ and its MUSIQ$_\text{c}$ advantage 21.83 $[18.67,24.73]$. Campaign means are 71.6\,s for default \sca{}, 140.1\,s for 56-step \sca{}, and 322.0\,s for UltraImage on these 46 prompts. This is a sampling-budget sensitivity check, not an equal-FLOP or equal-wall-clock experiment: UltraImage has two resolutions, different guidance, and per-prompt preparation. Against HRDiT on the same prompts (Table~\ref{tab:panel46}), the 56-step run stays lower on ImageReward (1.22 against 1.37), HPSv2.1 (30.99 against 31.60), and PickScore (23.12 against 23.42) while taking longer (140.1 against 106.5\,s); these are point estimates without paired intervals. Table~\ref{tab:prog_deltas} adds a 42-step run sized to HRDiT's campaign time (110.4 against 106.5\,s) and progressive \sca{} (Section~\ref{sec:progressive}). The extra steps raise HPSv2, HPSv2.1, ARNIQA, and MUSIQ$_\text{c}$ over 28 steps but leave ImageReward unresolved, and HRDiT stays significantly ahead of the 42-step run on ImageReward, PickScore, HPSv2.1, aesthetic score, and CLIP-IQA while trailing it on both MUSIQ scores. Progressive \sca{} is significantly worse than HRDiT on no per-image metric and better on HPSv2 and ARNIQA; against single-pass \sca{} it gains ImageReward, PickScore, both HPS scores, CLIP-IQA, and ARNIQA, and loses MUSIQ$_\text{c}$. Figure~\ref{fig:quality_time} places every setting of the panel by ImageReward and time, and Figure~\ref{fig:progressive} shows HRDiT, progressive \sca{}, and single-pass \sca{} on two random prompts.
@@ -1084,7 +1458,6 @@ ARNIQA ($\times100$) & \up{$+1.3$} {\tiny[$+0.3$, $+2.4$]} & \dn{${-}1.4$} {\tin
 \paragraph{Distribution metrics of the progressive and 42-step runs.} Against single-pass \sca{} at 28 steps (46 generated images, 168 reference identities, 1000 bootstrap draws; \texttt{results/\allowbreak progressive46/\allowbreak base\_paired\_deltas\_distribution.csv}), progressive \sca{} has significantly higher FID ($+7.0$ $[0.5,17.2]$), patch FID ($+13.7$ $[5.6,23.2]$), and patch KID ($+0.009$ $[0.005,0.015]$), while its KID difference spans zero. For 42-step \sca{} all four intervals span zero (FID $+2.8$ $[-4.4,10.0]$, patch FID $+2.3$ $[-2.3,7.9]$).
 
 \input{figures/snippets/prog_deltas.tex}
-\input{figures/snippets/quality_time.tex}
 \input{figures/snippets/progressive.tex}
 
 \FloatBarrier
@@ -1183,6 +1556,5 @@ Figure~\ref{fig:hero} shows curated \sca{} outputs. The other galleries, Figures
 Figure~\ref{fig:failures} shows the duplication that windows cause without the gate, and local errors that \sca{} still makes.
 
 \paragraph{Late duplication.} With the final method, small extra figures can appear on some prompts in the last 20 steps, when the local branch dominates most heads. The band guard suppresses some of them but costs preference scores. \paragraph{Articulated subjects.} The underwater-surfer development prompt keeps doubled limbs in every variant; AReA's image shows a large translucent ghost. \paragraph{Small factors.} At $2048\times4096$ the window covers half the image height, so the local branch alone already sees most of the image along that axis, and the per-head mix gains little over AReA's shrinking windows; aesthetic score and corrected patch FID are significantly worse. \paragraph{Larger scales and another backbone.} The gallery sampled from the completed 12-prompt $8192^2$ run still shows grid and stripe artifacts in both methods (Figure~\ref{fig:gallery_8192_complete}); this exploratory set does not establish general 8K quality. In FLUX.2-dev, improved aggregate metrics coexist with distorted facial geometry and fine texture in the randomly selected portrait example (Figure~\ref{fig:gallery_flux2}). \paragraph{Text-image offsets.} The local branch keeps out-of-range text-image offsets (Remark~\ref{rem:text}). \paragraph{Metrics.} No-reference quality metrics reward sharp repeated subjects (v0 scores higher on CLIP-IQA and ARNIQA), and FID against 195 references at $299^2$ resolution sees little of the 4K detail; we therefore report every metric and the qualitative galleries.
-
 
 \end{document}

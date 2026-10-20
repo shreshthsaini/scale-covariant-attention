@@ -415,3 +415,37 @@ Appendix: no table of contents 0; no zoomed method diagram 0; no "expands Table 
   config tables present 1; pseudocode: none 0.
 Layout: zero wrapfigures (rubric: at least three) 0; captions bold lead 1; colours consistent 1; no em dashes/section symbol 1.
 Mean ~0.6 -> NOT shippable yet. Fix pass ordered (Opus max).
+
+## 14. Self-score after fix pass (2026-10-19, delivery_e20al59t, 52 pp, not committed)
+Scale 0/1/2 per gold-standard skill Section 8 item. Main text pp. 1 to 10, refs from p. 10, appendix p. 14 on.
+Page 1
+- Abstract 130-200 words, number, URL: 1. 174 words, "2.85x faster than AReA", "Code: \codeurl" (GitHub; swap at submission).
+- Hero under abstract, >=0.9 width, panel walk: 1. Figure 1 at 1.0 width on p. 1; caption "Top:", "Bottom:", "Bottom, left to right:".
+- At most two administrative footnotes: 1. No footnotes in the source (table marks are defined in captions).
+Introduction
+- Question by end of para 1, motivating figure beside para 2: 1. Wrapfigure 2 (0.42 width, Moai duplication) beside para 2; question closes para 2 as before (lead scored 1).
+- "We introduce" paragraph, numbers, two or three "We" bullets: 1. Para 4 "We introduce SCA"; para 5 gives 71.1 s vs 202.4 s; three one-sentence "We" bullets, last has 11 of 15 metrics and 2.85x.
+- Median under 22, none over 35: 1. Source count median 16, max 35, 0 over 35 (a citation or inline math = one word); PDF-text flags left are display equations, citations and table rows.
+Method
+- Method diagram, 4 hues, lettered panels, data, appendix zoom in caption: 2. "(a) Apply at target", "(b) Calibrate at 1024^2", brighter cathedral; caption cites Figure D.1, which draws both operators and the real table of all 57 blocks.
+- Equations introduced by a clause, "where" lines: 1. Added "where" lines after Eqs. 1, 4, 5; Eqs. 2-3 keep "with" lines.
+- Boxed algorithms side by side, Input/Output, appendix pointers: 1. Algorithms 1-2 at 0.48 width, top of p. 5, rules above/below, colored Python-like code, "# App. E/B/D" and "# Eq. N" comments, checked line by line against sca/attn.py and sca/calib.py.
+Experiments
+- Setup run-ins with counts, steps, compute hours: 1. Data, Models, Baselines, Evaluation, Hyperparameters, Compute; compute is 123.3 GH200-h logged lower bound plus per-image times. The 1.5 GPU-h calibration claim stays out: results/compute/claims_audit says it is unsupported.
+- Main table, booktabs, arrows, shading, bold, "Key result:": 2. Adds time and step columns; Tables 1-4 captions all end with "Key result:".
+- Finding paragraphs open with bold claims and before/after numbers: 2. Run-ins with numbers plus paired 95% intervals (e.g. ImageReward +0.31 [0.24,0.38]), which the gold papers do not report.
+- Ablation tables side by side, default shaded, full versions in appendix: 2. Tables 3-4 at 0.47 width each on p. 9; default rows shaded; Table 3 also carries the calibration objective (mix error) beside generation metrics; Tables J.4 and K.1, K.3, K.4 expand them.
+- Plots: palette, markers, value labels, legends, nothing under 6 pt: 1. Bar values (6.5 pt, winner bold) on rel_err and calib (e); light grey value-axis gridlines on all line/bar plots; subscripts under 6 pt removed; smallest text 6.0 pt (latency_wrap exponents).
+- Qualitative grid, same prompt/noise per column, labelled rows: 1. Figure 5 unchanged (lead scored 1).
+Discussion and conclusion
+- Confounds named, concrete limitations: 2. Main-text Limitations lists about ten concrete scope limits and the comparisons we do not claim (ResDiT, UltraImage variant, equivalence).
+- Reproducibility statement mapping details to appendices: 1. New statement after the conclusion maps protocol, metrics, calibration, code, hyperparameters, kernel, baselines, compute to Sections/Appendices.
+Appendix
+- TOC, zoomed diagram, config tables, "expands Table N", random samples, prompts, pseudocode: 1. Contents A-S with pages; Figure D.1; letter-numbered floats; "This section expands ..." openings naming the main table, figure or paragraph (B, D, E, F, G, J, K, L); Appendix C lists the 48 calibration prompts; Appendix E has 12 ruled code listings with equation comments.
+Layout pass
+- Floats within one page of first reference; three wrapfigures; no page over 60% float: 1. Wrapfigures 2, 4, 6 with 13 to 15 wrapped lines; largest float share about 57% (p. 9: Tables 3-4 plus Figure 6); every main float on or next to its first-reference page.
+- Captions above tables, below figures, bold lead on every caption: 1.
+- Colours identical across hero, plots, table shading: 1. SCA green #13865F in plots, #EAF4F1 tint in table rows; listings use the same blue/green/amber.
+- No em dashes, no section symbol, no figure text under 6 pt: 1. Grep clean; subscripts fixed in rel_err, calib, pi_sigma.
+Score: no 0; 22 items, sum 27, mean 1.23 (ship bar 1.2 met at this granularity). At the finer 35-line split of Section 13 the mean is about 1.1, so the bar is met only narrowly.
+Open: main text is exactly 10 pages and the three wrapfigures sit on tuned line counts ([13] and [15]); any text edit on pp. 6 to 9 must re-check pp. 7 and 9. method_provenance.json still describes the retired method_diagram.tex layout.

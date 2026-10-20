@@ -21,6 +21,12 @@ the plotted range (full attention, SigMa, DyPE) are named in the caption, not pl
 guide joins HRDiT to progressive SCA and carries the one bold ratio of their campaign times. The
 figure is 3.6 x 1.8 in (2:1) and is included at natural size.
 
+Every run also writes STEM_wrap.pdf/.svg (default figures/quality_time_wrap.pdf), the main-text
+wrapfigure at 0.42 text width: 166 x 112 pt at natural size, the same data, markers and direct
+labels re-placed for the smaller canvas, tick labels 7 pt, direct labels 7 pt, axis titles 8 pt,
+and thin light-grey horizontal gridlines behind the data (plot standard of 2026-10-19). The
+2:1 figure above stays as it was, without gridlines.
+
 Regenerate on a compute node: <sca env python> paper/figures/src/fig_quality_time.py [--out STEM]
 (a trial --out writes the snippet and provenance beside STEM instead of into the paper tree).
 """
@@ -92,6 +98,24 @@ PLOT = {
     "sca_s42": ("budget", None, "center", "top"),     # caption names them (house rule 9)
     "sca_s56": ("budget", None, "left", "center"),
     "sca_prog": ("prog", (-9, 6.5), "left", "bottom"),
+}
+
+# Main-text wrap version: 166 x 112 pt (0.42 of the 396 pt text width), included at natural size.
+WRAP_W, WRAP_H = 166 / 72, 112 / 72
+WRAP_LEFT, WRAP_RIGHT, WRAP_BOTTOM, WRAP_TOP = 29 / 72, 3 / 72, 24 / 72, 2 / 72  # axes margins (in)
+WRAP_YLIM = (0.35, 1.55)  # the band above 1.4 holds the progressive label clear of HRDiT
+WRAP_FS_LABEL, WRAP_FS_RATIO = 7.0, 7.0  # direct labels; the bold ratio on the guide
+WRAP_GUIDE_T = 0.55  # where the ratio sits along the guide (0 = progressive SCA, 1 = HRDiT)
+WRAP_PLOT = {  # as PLOT, offsets re-placed for the smaller canvas
+    "sega_official": ("single", (4.5, 0), "left", "center"),
+    "area": ("area", (4.5, 0), "left", "center"),
+    "ultraimage": ("multi", (-5, 0), "right", "center"),
+    "hrdit_dev_author": ("multi", (4.5, 0), "left", "center"),
+    "sca_nb": ("sca", (4, -3), "left", "top"),
+    "sca_g7": ("budget", None, "left", "bottom"),
+    "sca_s42": ("budget", None, "center", "top"),
+    "sca_s56": ("budget", None, "left", "center"),
+    "sca_prog": ("prog", (-12, 10), "left", "bottom"),
 }
 
 
@@ -183,6 +207,44 @@ def figure(values, speedup):
     return fig
 
 
+def figure_wrap(values, speedup):
+    """The main-text wrapfigure: the same encoding as figure() on a 166 x 112 pt canvas, with
+    light-grey horizontal gridlines at the ImageReward ticks."""
+    fig = plt.figure(figsize=(WRAP_W, WRAP_H))
+    ax = fig.add_axes([WRAP_LEFT / WRAP_W, WRAP_BOTTOM / WRAP_H, (WRAP_W - WRAP_LEFT - WRAP_RIGHT) / WRAP_W,
+                       (WRAP_H - WRAP_BOTTOM - WRAP_TOP) / WRAP_H])
+    ax.set_xscale("log")
+    ax.set_xlim(*XLIM)
+    ax.set_ylim(*WRAP_YLIM)
+    ax.xaxis.set_major_locator(FixedLocator(XTICKS))
+    ax.xaxis.set_minor_locator(NullLocator())
+    ax.set_xticklabels([f"{t:g}" for t in XTICKS])
+    ax.yaxis.set_major_locator(FixedLocator(YTICKS))
+    ax.set_yticklabels([f"{t:.1f}" for t in YTICKS])
+    ax.set_xlabel("seconds per image (campaign mean)")
+    ax.set_ylabel("ImageReward")
+    sf.value_grid(ax, "y")
+
+    h, p = values["hrdit_dev_author"], values["sca_prog"]
+    ax.plot([h["seconds"], p["seconds"]], [h["ir"], p["ir"]], ls=(0, (2.5, 2)), lw=0.7, color=sf.MID, zorder=1)
+    t = WRAP_GUIDE_T
+    xm = h["seconds"] ** t * p["seconds"] ** (1 - t)
+    ym = t * h["ir"] + (1 - t) * p["ir"]
+    ax.annotate(f"{speedup:.1f}\u00d7 faster", (xm, ym), xytext=(0, -3.5), textcoords="offset points",
+                ha="center", va="top", fontsize=WRAP_FS_RATIO, fontweight="bold", color=sf.SCA)
+
+    for m, (kind, offset, ha, va) in WRAP_PLOT.items():
+        v = values[m]
+        ax.plot([v["seconds"]], [v["ir"]], ls="none", **KIND[kind])
+        if offset is None:
+            continue
+        green = kind in ("sca", "budget", "prog")
+        color = sf.SCA if green else sf.METHOD_COLOR["area"] if kind == "area" else sf.MID
+        ax.annotate(NAME[m], (v["seconds"], v["ir"]), xytext=offset, textcoords="offset points", ha=ha, va=va,
+                    fontsize=WRAP_FS_LABEL, color=color, fontweight="bold" if kind == "prog" else "normal")
+    return fig
+
+
 def write_snippet(path, values, paired):
     """At most 50 words: a bold claim, then two sentences of conditions. The paired interval stays
     in the provenance and Table prog_deltas; it no longer fits the caption budget."""
@@ -237,6 +299,7 @@ def main():
     sf.use_style()
     fig = figure(values, speedup)
     sf.save(fig, args.out)
+    sf.save(figure_wrap(values, speedup), args.out + "_wrap")  # main-text wrapfigure, 166 x 112 pt
     print("wrote", write_snippet(snippet, values, paired))
     prov = os.path.join(os.path.dirname(args.out), "quality_time_provenance.json") if not trial \
         else args.out + "_provenance.json"

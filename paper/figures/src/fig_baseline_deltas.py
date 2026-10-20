@@ -2,6 +2,8 @@
 
 Run with the csd-figs uv environment. No generation or scoring is performed.
 Whiskers quantify prompt sampling at one generation seed, not seed variability.
+Thin light-grey gridlines run along the value (x) axis, behind the data (plot standard of
+2026-10-19, which puts the gridlines of horizontal bar-like charts on the value axis).
 """
 from __future__ import annotations
 
@@ -167,7 +169,7 @@ def plot_deltas(records):
         pad = 0.06 * (hi_x - lo_x)
         ax.set_xlim(lo_x - pad, hi_x + pad)
         ax.xaxis.set_major_locator(MultipleLocator(step))
-        ax.grid(visible=False)
+        sf.value_grid(ax, "x")
         ax.spines["left"].set_visible(False)
         ax.set_xlabel(rf"$\Delta$ {name}")
         if i == 0:

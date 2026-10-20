@@ -1,7 +1,9 @@
 """Relative output error of each mixing rule at emulated scales 2 and 4.
 
 Rule colours keep their meaning across the paper: per-head (SCA) accent, the other scale's per-head
-table light accent, local only amber, global only blue, the shared rules neutral greys.
+table light accent, local only amber, global only blue, the shared rules neutral greys. Each bar
+carries its value to three decimals at its end (6.5 pt), the lowest error per panel in bold, over
+thin light-grey gridlines along the value axis (plot standard of 2026-10-19).
 
 Regenerate: <sca env python> paper/figures/src/fig_rel_err.py
 """
@@ -19,15 +21,16 @@ import scafig as sf  # noqa: E402
 from k1data import FIGDIR, check, errors, load  # noqa: E402
 
 ROWS = [  # (key, label, color)
-    ("per_head", r"per-head $\pi_h(\sigma)$, SCA", sf.SCA),
-    ("transfer_from", "per-head, other scale", "#9AD3BA"),
-    ("per_layer", r"per-layer $\pi_\ell(\sigma)$", "#7D8893"),
-    ("uniform", r"shared $\pi(\sigma)$", "#A3ABB3"),
+    ("per_head", "per head (SCA)", sf.SCA),  # plain words: a subscript would print below 6 pt
+    ("transfer_from", "per head, other scale", "#9AD3BA"),
+    ("per_layer", "per layer", "#7D8893"),
+    ("uniform", "shared over heads", "#A3ABB3"),
     ("switch", "best hard switch", "#C6CBD0"),
     ("loc", "local only", sf.LOCAL),
     ("glob", "global only", sf.GLOBAL),
 ]
-W, H = sf.TEXT, 1.62  # no bar values (house rule 9): the text and tables hold the numbers
+W, H = sf.TEXT, 1.62
+XROOM = 1.17  # x-axis reaches 1.17 times the longest bar, room for its value label
 
 
 def main():
@@ -47,9 +50,14 @@ def main():
         e = errors(z, s)
         vals = [e[k] for k, _, _ in ROWS]
         ax.barh(y, vals, color=[c for _, _, c in ROWS], height=0.68, lw=0, zorder=2)
-        ax.set_xlim(0, max(vals) * 1.06)
+        best = min(vals)
+        for yi, v in zip(y, vals):  # value at the bar end; the lowest error in bold
+            ax.annotate(f"{v:.3f}", (v, yi), xytext=(2, 0), textcoords="offset points", ha="left",
+                        va="center", fontsize=sf.FS_VALUE, color=sf.INK,
+                        fontweight="bold" if v == best else "normal")
+        ax.set_xlim(0, max(vals) * XROOM)
         ax.set_xlabel("relative output error")
-        ax.grid(visible=False)
+        sf.value_grid(ax, "x")
         ax.spines["left"].set_visible(False)
         if i == 0:
             ax.set_yticks(y, [lbl for _, lbl, _ in ROWS])

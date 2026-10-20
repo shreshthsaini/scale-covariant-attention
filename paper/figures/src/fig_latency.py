@@ -28,6 +28,12 @@ With several resolutions the figure is one log-log panel:
   tokens, (W/16)(H/16)) as a direct label at each line's end, SCA's speedup over AReA as small grey
   ratios inside the gap, one bold headline ratio at the largest size, and the model name in a
   corner. No legend, no grid, no top or right spine.
+  Every curve run also writes STEM_wrap.pdf/.svg (default figures/latency_wrap.pdf), the
+  main-text wrapfigure at about 0.47 text width: 186 x 135 pt at natural size, the same data and
+  encodings thinned to fit (labels 7 pt, the per-size ratios and exponents 6.5 and 6 pt, the
+  per-size ratios just under the SCA line, the headline in the empty lower right, "SCA" without
+  "(ours)", no whiskers), with thin light-grey horizontal gridlines behind the data (plot standard
+  of 2026-10-19). The 5.5 in figure stays as it was.
 With one resolution it is a bar chart. Speedups and exponents are printed, and the caption
 snippet figures/snippets/latency.tex is written from the same numbers (trial runs with --out
 write it beside the output instead).
@@ -321,6 +327,121 @@ def curve_figure(med, ranges, resolutions, speed, expo):
     return fig, ax
 
 
+# Main-text wrap version: 186 x 135 pt (about 0.47 of the 396 pt text width), natural size.
+WRAP_WPT, WRAP_HPT = 186, 135  # points
+WRAP_MARGIN = dict(left=37, right=1, bottom=24, top=3)  # points
+WRAP_FS, WRAP_FS_EXP, WRAP_FS_HEAD = 7.0, 6.0, 7.5  # labels and ticks; exponents; the headline
+WRAP_NAME = {"full": "Full attention", "area": "AReA", "sca": "SCA"}
+WRAP_XPAD_LEFT, WRAP_XPAD = 1.15, 2.2  # left margin of the data; right room for the end labels
+WRAP_YLIM_PAD = (1.45, 1.3)  # below the fastest time (room for the 2048^2 ratio); above the slowest
+# Each per-size ratio sits just under the SCA line, right of SCA's point at that size, offset
+# (dx, dy) points (text top-left corner); the line rises to the right, so the label stays clear of
+# it and of every marker. In the band the full-attention line leaves no line-free room at 2048^2
+# and 3072^2, so all four follow this one rule.
+WRAP_RATIO_OFFSET = (3.0, 0.5)
+WRAP_FULL_OFFSET = (-4.5, 0.0)  # one-line full-attention label, left of its last point (baseline)
+WRAP_HEAD_Y = 0.13  # headline bottom, axes fraction, above the model name
+
+
+def chain_label(fig, ax, x, y, parts, dx, dy, color, ha="left"):
+    """Text pieces set side by side on one baseline at offset (dx, dy) points from data point (x, y).
+
+    parts: (text, fontsize, bold, raise_pt, gap_before_pt). The pieces are measured first, so a
+    raised exponent keeps its own size (a mathtext superscript would print below 6 pt). `ha`
+    "right" ends the run at dx instead of starting it there.
+    """
+    px = 72 / fig.dpi
+    renderer = fig.canvas.get_renderer()
+    widths = []
+    for text, fs, bold, _, _ in parts:
+        probe = ax.text(0, 0, text, fontsize=fs, fontweight="bold" if bold else "normal")
+        widths.append(probe.get_window_extent(renderer).width * px)
+        probe.remove()
+    total = sum(w + gap for w, (*_, gap) in zip(widths, parts))
+    ox = dx - total if ha == "right" else dx
+    out = []
+    for (text, fs, bold, lift, gap), w in zip(parts, widths):
+        ox += gap
+        out.append(ax.annotate(text, (x, y), xytext=(ox, dy + lift), textcoords="offset points", ha="left",
+                               va="baseline", fontsize=fs, color=color, clip_on=False,
+                               fontweight="bold" if bold else "normal"))
+        ox += w
+    return out
+
+
+def curve_figure_wrap(med, resolutions, speed, expo):
+    """curve_figure on the main-text wrap canvas: same lines, markers, shaded gap, per-size ratios,
+    exponents and bold headline, without whiskers, laid out for 186 x 135 pt with horizontal
+    gridlines."""
+    w, h, m = WRAP_WPT, WRAP_HPT, WRAP_MARGIN
+    fig = plt.figure(figsize=(w / 72, h / 72))
+    ax = fig.add_axes([m["left"] / w, m["bottom"] / h, (w - m["left"] - m["right"]) / w,
+                       (h - m["bottom"] - m["top"]) / h])
+    n = {r: tokens(r) for r in resolutions}
+    xt = [n[r] for r in resolutions]
+
+    both = [r for r in resolutions if (r, "area") in med and (r, "sca") in med]
+    # above the gridlines (zorder 0.5), below every line
+    ax.fill_between([n[r] for r in both], [med[r, "sca"][0] for r in both],
+                    [med[r, "area"][0] for r in both], color=sf.SCA_LIGHT, lw=0, zorder=0.8)
+    ends = {}
+    for k, (lbl, col, mk) in METHODS.items():
+        rs = [r for r in resolutions if (r, k) in med]
+        if not rs:
+            continue
+        xs, ys = [n[r] for r in rs], [med[r, k][0] for r in rs]
+        # no whiskers here (the main-text figure carries no error bars); the 5.5 in figure keeps them
+        ax.plot(xs, ys, color=col, lw=1.5 if k == "sca" else 1.1, marker=mk,
+                ms=3.8 if k == "sca" else 3.3, mec="white", mew=0.4, zorder=3 if k == "sca" else 2.5,
+                solid_capstyle="round")
+        ends[k] = (rs[-1], xs[-1], ys[-1])
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.xaxis.set_major_locator(FixedLocator(xt))
+    ax.xaxis.set_minor_locator(NullLocator())
+    ax.set_xticklabels([res_label(r) for r in resolutions])
+    ys = [v for v, _ in med.values()]
+    lo, hi = np.floor(np.log10(min(ys))), np.ceil(np.log10(max(ys)))
+    yt = [k * 10 ** e for e in np.arange(lo, hi + 1) for k in (1, 2, 5)]
+    yt = [t for t in yt if min(ys) / 1.5 <= t <= max(ys) * 1.5]
+    ax.yaxis.set_major_locator(FixedLocator(yt))
+    ax.yaxis.set_minor_locator(NullLocator())
+    ax.set_yticklabels([f"{t:g} s" for t in yt])
+    ax.set_xlim(xt[0] / WRAP_XPAD_LEFT, xt[-1] * WRAP_XPAD)
+    ax.set_ylim(min(ys) / WRAP_YLIM_PAD[0], max(ys) * WRAP_YLIM_PAD[1])
+    sf.value_grid(ax, "y")
+    ax.set_xlabel("output resolution")
+    ax.set_ylabel("time per image")
+    fig.canvas.draw()
+
+    # direct labels: AReA and SCA hang right of their last point (name over the exponent); full
+    # attention, which stops short of the largest size, reads on one line left of its end
+    for k, (res, x, y) in ends.items():
+        col = METHODS[k][1]
+        exp = [(r"$\propto N$", WRAP_FS, False, 0, 0), (f"{expo[k]:.2f}", WRAP_FS_EXP, False, 2.6, 0.5)]
+        if k == "full" and res != resolutions[-1]:
+            exp[0] = (r"$\propto N$", WRAP_FS, False, 0, 2.5)  # a word space after the name
+            chain_label(fig, ax, x, y, [(WRAP_NAME[k], WRAP_FS, False, 0, 0)] + exp, *WRAP_FULL_OFFSET, col,
+                        ha="right")
+        else:
+            chain_label(fig, ax, x, y, [(WRAP_NAME[k], WRAP_FS, k == "sca", 0, 0)], 5, 3.0, col)
+            chain_label(fig, ax, x, y, exp, 5, -7.2, col)
+
+    # per-size ratios: small and grey, just under the SCA line at each size; the largest size is the
+    # bold headline in the empty lower right
+    for r in both[:-1]:
+        ax.annotate(f"{speed[r]['area']:.2f}\u00d7", (n[r], med[r, "sca"][0]), xytext=WRAP_RATIO_OFFSET,
+                    textcoords="offset points", ha="left", va="top", fontsize=sf.FS_SMALL, color=sf.MID,
+                    zorder=4)
+    big = both[-1]
+    ax.text(0.985, WRAP_HEAD_Y, f"{speed[big]['area']:.2f}\u00d7 faster at {res_label(big)}",
+            transform=ax.transAxes, ha="right", va="bottom", fontsize=WRAP_FS_HEAD, fontweight="bold",
+            color=sf.SCA)
+    ax.text(0.985, 0.03, "FLUX.1-dev", transform=ax.transAxes, ha="right", va="bottom",
+            fontsize=sf.FS_SMALL, color=sf.MID)
+    return fig, ax
+
+
 def tex_res(res):
     w, h = parse_res(res)
     return f"${w}^2$" if w == h else rf"${w}\times{h}$"
@@ -429,6 +550,8 @@ def main():
         print(f"HRDiT clean batch-1 at {CAMPAIGN_RES}: median {hrdit_med:.2f} s of {hrdit} (caption only)")
         fig, _ = curve_figure(med, ranges, resolutions, speed, expo)
         print("wrote", write_snippet(snippet, resolutions, med, speed, expo, srcs))
+        # the main-text wrapfigure, 186 x 135 pt, from the same numbers
+        sf.save(curve_figure_wrap(med, resolutions, speed, expo)[0], args.out + "_wrap")
     sf.save(fig, args.out)
     full_res = sorted((r for r in resolutions if (r, "full") in med), key=tokens)
     hrdit_prov = {} if hrdit is None else {"hrdit_clean_batch1": {

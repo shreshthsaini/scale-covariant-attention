@@ -5,6 +5,8 @@
 (b) Relative output error per sigma bin of four mixing rules.
 Rule colours keep their meaning across the paper: per-head (SCA) accent, shared rules neutral grey,
 local only amber, global only blue, AReA's schedule the AReA hue, dashed. Direct labels, no legend.
+The line panel (b) carries thin light-grey horizontal gridlines behind the data (plot standard of
+2026-10-19); the density map (a) carries none.
 
 Regenerate: <sca env python> paper/figures/src/fig_pi_sigma.py
 """
@@ -88,8 +90,13 @@ def main():
     k = int(np.argmin(np.abs(sig[bins] - 0.28)))
     ax.text(sig[bins][k], shared[k] + 0.015, r"best shared $\pi(\sigma)$", ha="left", va="bottom",
             fontsize=sf.FS_TICK, color=SHARED)
-    ax.text(sig[bins][k], mean[k] - 0.02, r"mean of per-head $\pi_h$", ha="left", va="top",
-            fontsize=sf.FS_TICK, color=sf.SCA)
+    lab = ax.text(sig[bins][k], mean[k] - 0.02, r"mean per-head $\pi$", ha="left", va="top",
+                  fontsize=sf.FS_TICK, color=sf.SCA)
+    # the mean falls to the right, so hang the label 0.02 below the line at the label's right end,
+    # where the line comes closest; anchored at its left end it would cut the label
+    fig.canvas.draw()
+    right = ax.transData.inverted().transform(lab.get_window_extent().corners()[-1])[0]
+    lab.set_y(np.interp(right, sig[bins], mean) - 0.02)
     ax.set_xlim(edges[0], 1.0)
     ax.set_ylim(-0.03, 1.03)
     ax.set_xticks([0.2, 0.4, 0.6, 0.8, 1.0], ["0.2", "0.4", "0.6", "0.8", "1"])
@@ -109,7 +116,7 @@ def main():
     rules = [("global only", 0.0, sf.GLOBAL, 1.2),
              ("local only", 1.0, sf.LOCAL, 1.2),
              (r"shared $\pi(\sigma)$", z[f"s{SCALE}_pi_uniform"][None, None], SHARED, 1.2),
-             (r"per-head $\pi_h$", z[f"s{SCALE}_pi_head"], sf.SCA, 1.6)]
+             (r"per-head $\pi$", z[f"s{SCALE}_pi_head"], sf.SCA, 1.6)]  # no subscript below 6 pt
     lines = []
     for name, p, c, lw in rules:
         (ln,) = bx.plot(sig[bins], S_b(p), color=c, lw=lw, solid_capstyle="round")
@@ -120,7 +127,7 @@ def main():
     bx.set_xticks([0.2, 0.4, 0.6, 0.8, 1.0], ["0.2", "0.4", "0.6", "0.8", "1"])
     bx.set_xlabel(r"noise level $\sigma$")
     bx.set_ylabel("relative output error")
-    bx.grid(visible=False)
+    sf.value_grid(bx, "y")
     end_labels(bx, lines, [name for name, *_ in rules], fontsize=sf.FS_TICK)
     sf.panel_label(fig, bx, "b", dy=0.035 / H)
     sf.save(fig, os.path.join(FIGDIR, "pi_sigma"))
