@@ -25,7 +25,7 @@
 \usepackage{enumitem}
 \usepackage{listings}
 % Code and project link; swap for an anonymous mirror at submission time.
-\newcommand{\codeurl}{\url{https://github.com/shreshthsaini/scale-covariant-attention}}
+\newcommand{\codeurl}{\href{https://github.com/shreshthsaini/scale-covariant-attention}{\mbox{github.com/shreshthsaini/scale-covariant-attention}}}
 % Python-like listings in the paper palette: keywords blue, function names dark amber, comments green.
 \definecolor{lstkw}{HTML}{2F6DB3}
 \definecolor{lstfn}{HTML}{B85C00}
@@ -224,6 +224,21 @@ At noise level $\sigma$ a spatial frequency band has signal-to-noise ratio $\big
 \end{argument}
 Output matching cannot see this failure: a tokenwise squared error can favour local detail without preserving layout. We have not measured per-band signal-to-noise ratios of FLUX.1 latents, but a 16-token window gives smaller and more numerous copies than a 64-token one, as predicted (Figure~\ref{fig:failure}). We set $\sigma_g=0.89$ (the first 8 of 28 steps at maximum shift, as in AReA). Gating 13 steps gives a $4\times4$ block mosaic, because all queries of a block share one coarse position.
 
+\subsection{Calibration by output matching}
+\label{sec:calib}
+The weights must come from where the model is trustworthy, which the target is not. On an in-distribution $n\times n$ grid ($n=64$ at $1024^2$), emulated scale $s_c$ uses subsampling factor $s_c$, window side $n/s_c$, and tile side $\mathrm{round}(tn/(s_cn_0))$. The ratio of grid to window is then $s_c$, as at a target of scale $s_c$. The sampler runs unmodified full attention; at every block and step both emulated operators are evaluated on the same queries, keys, and values. For block $l$, head $h$, and noise bin $\beta$, sums over prompts, steps with $\sigma\in\beta$, image queries, and channels give
+\begin{equation}
+  A=\textstyle\sum\|\Oloc-\Oglob\|^2,\quad
+  B=\sum\langle \Ofull-\Oglob,\,\Oloc-\Oglob\rangle,\quad
+  E=\sum\|\Ofull-\Oglob\|^2,
+  \label{eq:stats}
+\end{equation}
+where $\Oloc$ and $\Oglob$ use the emulated geometry. The squared error of the mix with weight $\pi$ is $J(\pi)=E-2\pi B+\pi^2A$.
+
+\begin{proposition}[Closed-form calibration and transfer cost]
+\label{prop:opt}
+In each cell $(l,h,\beta)$, $J$ is minimized on $[0,1]$ by $\pi^\star=\clip(B/A,0,1)$, with $\pi^\star=1$ if $A=0$. Any other weight $\pi'\in[0,1]$ (fitted at another scale or resolution, per layer, shared, or a hard switch) has $J(\pi')-J(\pi^\star)\ge A(\pi'-\pi^\star)^2$, with equality when $0<\pi^\star<1$.
+\end{proposition}
 \begin{figure}[t]
   \centering
   \begin{minipage}[t]{0.48\linewidth}
@@ -244,7 +259,7 @@ def calibrate(q, k, v, l, sigma):  # every block
     O_loc = local_branch(q, k, v, w, t_c) # Eq. (*@\ref{eq:loc}@*)
     dl, df = O_loc - O_glob, O_full - O_glob
     A[s_c, l, :, beta] += sum(dl * dl)    # Eq. (*@\ref{eq:stats}@*)
-    B[s_c, l, :, beta] += sum(df * dl)  # sums over rows
+    B[s_c, l, :, beta] += sum(df * dl)  # over rows
     E[s_c, l, :, beta] += sum(df * df)
   return O_full                 # sampler unchanged
 pi = clip(B / A, 0, 1); pi[A == 0] = 1  # Prop. (*@\ref{prop:opt}@*)
@@ -277,22 +292,6 @@ return cat(O_glob[:T], O_img)     # text: O_glob
 \end{lstlisting}
   \end{minipage}
 \end{figure}
-
-\subsection{Calibration by output matching}
-\label{sec:calib}
-The weights must come from where the model is trustworthy, which the target is not. On an in-distribution $n\times n$ grid ($n=64$ at $1024^2$), emulated scale $s_c$ uses subsampling factor $s_c$, window side $n/s_c$, and tile side $\mathrm{round}(tn/(s_cn_0))$. The ratio of grid to window is then $s_c$, as at a target of scale $s_c$. The sampler runs unmodified full attention; at every block and step both emulated operators are evaluated on the same queries, keys, and values. For block $l$, head $h$, and noise bin $\beta$, sums over prompts, steps with $\sigma\in\beta$, image queries, and channels give
-\begin{equation}
-  A=\textstyle\sum\|\Oloc-\Oglob\|^2,\quad
-  B=\sum\langle \Ofull-\Oglob,\,\Oloc-\Oglob\rangle,\quad
-  E=\sum\|\Ofull-\Oglob\|^2,
-  \label{eq:stats}
-\end{equation}
-where $\Oloc$ and $\Oglob$ use the emulated geometry. The squared error of the mix with weight $\pi$ is $J(\pi)=E-2\pi B+\pi^2A$.
-
-\begin{proposition}[Closed-form calibration and transfer cost]
-\label{prop:opt}
-In each cell $(l,h,\beta)$, $J$ is minimized on $[0,1]$ by $\pi^\star=\clip(B/A,0,1)$, with $\pi^\star=1$ if $A=0$. Any other weight $\pi'\in[0,1]$ (fitted at another scale or resolution, per layer, shared, or a hard switch) has $J(\pi')-J(\pi^\star)\ge A(\pi'-\pi^\star)^2$, with equality when $0<\pi^\star<1$.
-\end{proposition}
 So the per-head table has the lowest output error of any rule constant within a cell, and replacing it costs an $A$-weighted squared distance. This holds at the emulation scale; Section~\ref{sec:analysis} measures how well tables transfer between scales and resolutions. The same sums score every alternative rule without another forward pass. We use 14 noise bins of width $1/14$ and interpolate linearly between the mean noise levels of occupied bins at inference. One pass collects emulated scales 2 and 4. A target with factors $(s_H,s_W)$ uses the table whose scale is nearest $\max(s_H,s_W)$ in log space, here always 4. The local operator is one FlexAttention call~\citep{dong2024flex} over tile-major tokens with the window as an exact block mask (Algorithm~\ref{alg:sample}, Appendix~\ref{app:impl}).
 
 \subsection{\texorpdfstring{\sca{}}{SCA} inside a progressive schedule}
@@ -507,7 +506,7 @@ Table~\ref{tab:ablation} changes one component at a time (examples in Figure~\re
 \paragraph{Conclusion.} How much each head relies on a neighbourhood fixed in tokens versus a view of the whole image can be measured once at the training resolution and reused at 4K. With that table and a global-only opening, \sca{} is the strongest and fastest single-pass training-free operator we tested for FLUX.1-dev at $4096^2$, at about a third of AReA's time. Multi-stage recipes lead on learned preference metrics through their schedules. As a drop-in operator in HRDiT's progressive schedule, \sca{} matches HRDiT's preference scores in less than half its time, with no per-image metric significantly worse. Code: \codeurl.
 
 \section*{Reproducibility statement}
-Section~\ref{sec:experiments} states the protocol, and Appendix~\ref{app:metrics} defines every metric and interval. Appendix~\ref{app:calib} gives the calibration geometry, statistics, and noise bins; Algorithms~\ref{alg:calib} and~\ref{alg:sample} and Appendix~\ref{app:code} give the procedure and its core code. Appendix~\ref{app:hparams} lists every hyperparameter, and Appendix~\ref{app:impl} the kernel layout, numerical checks, and position rounding. Appendices~\ref{app:area} and~\ref{app:additional_protocols} give each baseline's code revision, recipe, and seeds, and Appendix~\ref{app:compute} the hardware and logged compute. Code, calibration table, per-image metrics, and the paired-difference files behind every table will be released at \codeurl.
+Section~\ref{sec:experiments} states the protocol, and Appendix~\ref{app:metrics} defines every metric and interval. Appendix~\ref{app:calib} gives the calibration geometry, statistics, and noise bins; Algorithms~\ref{alg:calib} and~\ref{alg:sample} and Appendix~\ref{app:code} give the procedure and its core code. Appendix~\ref{app:hparams} lists every hyperparameter, and Appendix~\ref{app:impl} the kernel layout, numerical checks, and position rounding. Appendices~\ref{app:area} and~\ref{app:additional_protocols} give each baseline's code revision, recipe, and seeds, and Appendix~\ref{app:compute} the hardware and logged compute. Code, calibration table, per-image metrics, and the paired-difference files behind every table will be released in the code repository (link in the abstract).
 
 % Restore the article.cls float-page defaults (set before Figure 3) for the appendix.
 \csname @fptop\endcsname=0pt plus 1fil\relax \csname @fpsep\endcsname=8pt plus 2fil\relax \csname @fpbot\endcsname=0pt plus 1fil\relax
@@ -727,7 +726,7 @@ This section lists the prompts behind the calibration of Section~\ref{sec:analys
 
 This section expands Section~\ref{sec:branches} and Figure~\ref{fig:method}. Figure~\ref{fig:method_zoom} draws the two operators, the gate, and the mix at component level, together with the calibrated table for all 57 blocks; Appendix~\ref{app:code} lists the corresponding code.
 
-\begin{figure}[!htbp]
+\begin{figure}[t]
   \centering
   \IfFileExists{figures/method_zoom.pdf}{\includegraphics[width=\linewidth]{figures/method_zoom.pdf}}{\fbox{\parbox{0.9\linewidth}{\centering method\_zoom.pdf pending}}}
   \caption{\textbf{The operators at component level.} (a)~The global operator keeps the centre token $\kappa(b)$ of each $s\times s$ block as a key at coarse position $b$ and places query $i$ at $c(p_i)$, so each softmax sees $T+n_0^2$ keys (Equation~\ref{eq:glob}). (b)~The local operator lets each $t\times t$ query tile attend to a $w\times w$ window at original positions, clipped at the border (dashed: unclipped $a'$); one FlexAttention call applies the exact block mask (inset; grey: text keys; Equation~\ref{eq:loc}). (c)~Each head's weight $\pi_{lh}(\sigma)$ (block 29, head 18) is interpolated linearly between bin centres; for $\sigma>\sigma_g$, the first 8 of 28 steps, every head returns $\Oglob_i$ and skips the local branch (Equation~\ref{eq:mix}). (d)~The scale-4 table used at inference covers all $57\times24$ heads, sorted by mean $\pi$ within each block, and 14 noise bins; over the populated bins, $\pi$ averages 0.67 in the double-stream and 0.76 in the single-stream blocks. Panels (a) and (b) use a toy grid with $H=24$, $s=4$, $n_0=w=6$, and $t=2$.}
@@ -796,7 +795,7 @@ This section expands Section~\ref{sec:branches} and Figure~\ref{fig:method}. Fig
 \section{Core code}
 \label{app:code}
 
-This section expands Algorithms~\ref{alg:calib} and~\ref{alg:sample} with the core of the code (\codeurl). The first listings implement one \sca{} attention call (Equations~\ref{eq:glob} to~\ref{eq:mix}); the last three accumulate the calibration statistics of Equation~\ref{eq:stats} and solve Proposition~\ref{prop:opt}. Listings are verbatim except that docstrings, logging, compile set-up, and device arguments are removed; \texttt{\# ...} marks omitted lines, and each comment names the equation a line implements.
+This section expands Algorithms~\ref{alg:calib} and~\ref{alg:sample} with the core of the code repository (link in the abstract). The first listings implement one \sca{} attention call (Equations~\ref{eq:glob} to~\ref{eq:mix}); the last three accumulate the calibration statistics of Equation~\ref{eq:stats} and solve Proposition~\ref{prop:opt}. Listings are verbatim except that docstrings, logging, compile set-up, and device arguments are removed; \texttt{\# ...} marks omitted lines, and each comment names the equation a line implements.
 
 \begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: SCAProcessor.sca}, emph={sca,geometry,_split,coarse_rope,rope,global_branch,pi_now,flex_layout,sca_flex_fn}]
 def sca(self, q, k, v, image_rotary_emb):
@@ -1547,7 +1546,7 @@ Figure~\ref{fig:hero} shows curated \sca{} outputs. The other galleries, Figures
 \snippet{gallery_krea_complete}{}
 \snippet{gallery_8192_complete}{Exploratory $8192^2$ generation with native-pixel crops.}
 
-\FloatBarrier
+\clearpage
 \section{Failure cases}
 \label{app:failures}
 
