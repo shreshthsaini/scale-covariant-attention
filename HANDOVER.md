@@ -449,3 +449,17 @@ Layout pass
 - No em dashes, no section symbol, no figure text under 6 pt: 1. Grep clean; subscripts fixed in rel_err, calib, pi_sigma.
 Score: no 0; 22 items, sum 27, mean 1.23 (ship bar 1.2 met at this granularity). At the finer 35-line split of Section 13 the mean is about 1.1, so the bar is met only narrowly.
 Open: main text is exactly 10 pages and the three wrapfigures sit on tuned line counts ([13] and [15]); any text edit on pp. 6 to 9 must re-check pp. 7 and 9. method_provenance.json still describes the retired method_diagram.tex layout.
+
+## 15. In flight 2026-10-19 23:55 CT: 191-prompt extension of Table 2 and the extra seeds
+Goal: every Table 2 row (SigMa, progressive SCA, sca_g7, sca_s42, sca_s56) and seeds 1 and 2 (sca_nb, area) on all 191
+Aesthetic-4K prompts at 4096^2, then the same metrics, corrected patch FID and paired bootstraps as hrdit191.
+Spool: /scratch/09032/saini_2/sca/taskq. Smoke tasks a190_smoke_* run first; each one that passes publishes its group
+from taskq/hold_191 into pending (261 generation tasks of 5 prompts, 29 per row, plus evals z910-z950, about 54 GPU-h).
+A CUDA OOM requeues a task (at most 30 times). Results: eval/{sigma191,prog191,budget191,e5_seed1_191,e5_seed2_191},
+CSV copies to results/<same> with SHA256SUMS; then Table 2, Table 4 (seeds) and the 46-prompt caveats in main.tex change.
+Workers: guest_worker_shared.sh on c611-012 c608-101 c611-011 c619-141 c611-071 c635-062 c621-061 c621-092 c639-042
+c638-002 (other projects' nodes, claim only when the GPU is free; Correction_Flow cf5 is also borrowing seven of them),
+plus dedicated fleet SCA13 job 1083327 (8 gh nodes, 9 h, IDLE_MAX 5400) submitted 23:55 CT. taskq/STOP was moved to
+STOP.until_20261019; recreate STOP when the evals are done so every worker exits.
+Paper: delivery_i3592753 (50 pp) committed 9e4a585 and pushed to github.com/shreshthsaini/scale-covariant-attention
+(private, origin). Code link is the \codeurl macro (swap for an anonymous link at submission).
