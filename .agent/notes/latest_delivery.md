@@ -1,39 +1,32 @@
-# Latest verified paper delivery, 2026-10-19 (four-defect fix pass)
+# Latest verified paper delivery, 2026-10-20 (195-prompt switch and layout pass)
 
-- [Paper PDF](../../paper/main.pdf), 50 pages: main text pages 1 to 10, references from page 10, appendix from page 14.
-- [Overleaf source ZIP](../../paper/sca_overleaf.zip), 279 source files.
+- [Paper PDF](../../paper/main.pdf), 48 pages: main text pages 1 to 10 (Section 6 ends at y = 694 pt on page 10),
+  reproducibility statement and references from page 11, appendix from page 14.
+- [Overleaf source ZIP](../../paper/sca_overleaf.zip), 285 source files.
 - [Build receipt](../../paper/delivery_receipt.json); build and fresh-unzip check in
-  `/scratch/09032/saini_2/sca/paper_builds/delivery_i3592753/` (`primary/`, `extracted/`, `standalone/`).
+  `/scratch/09032/saini_2/sca/paper_builds/delivery_m1gkdr8f/` (`primary/`, `extracted/`, `standalone/`).
 
-The source ZIP builds on its own from a fresh unzip (50 pages, page-for-page identical text layout).
-Both builds have zero overfull boxes and zero undefined references. PDF size 26,974,785 bytes
-(under the 35 MB cap). No reported number changed.
+The source ZIP builds on its own from a fresh unzip (48 pages). Both builds have zero overfull boxes and zero
+undefined references. PDF size 26,441,395 bytes.
 
-What changed in this pass (the lead's four defects, `paper/main.tex` only):
-- Algorithm 1: the B-line comment is now `# over rows`, so no listing line wraps; both algorithms
-  have 17 lines. Algorithm 2 had no wraps (its two-line `flex_attention` call is a deliberate
-  continuation). The one-line-shorter float would jump to the top of page 4, so its source now sits
-  after Proposition 3; it stays at the top of page 5.
-- `\codeurl` is `\href` with roman display text `github.com/shreshthsaini/scale-covariant-attention`
-  in an `\mbox` (one line in the abstract and conclusion; swap the macro for an anonymous mirror).
-  The reproducibility statement and Appendix E opening say "the code repository (link in the abstract)".
-- Figure D.1 is `[t]` (was `[!htbp]`, which made a float-only page 19); Appendix D text now follows it
-  on page 19, Tables D.1 and D.2 and Figure D.2 share page 20 (75% full), and Section E starts on
-  page 21 under the end of the latency paragraph (old page 21 was 37% full).
-- `\clearpage` replaces `\FloatBarrier` before Appendix S, so Figure S.1 sits at the top of page 50
-  with the section below it (85% full) instead of a half-empty text page plus a figure-only last page.
-- Pages 2 to 4, 6 to 9, 11 to 13 and 15 to 18 are line-for-line identical to the previous build, so the
-  hand-tuned wrapfigures (pages 2, 7, 9) are unchanged; old pages 29 to 50 are new pages 28 to 49.
-- Only page below two-thirds full in the appendix: page 33, a table-only float page (Tables K.4 and
-  K.5, 57% full) between other K float pages; no running text exists that could fill it.
+What changed in this pass:
+- Evaluation protocol: all 195 Aesthetic-4K prompts (`\nmain`, `\npanel`, `\nseed` = 195; ablations stay at the
+  fixed 46-prompt subset, HRGen-1K at 200, FLUX.1-Krea-dev at 100). Tables 1, 2, 3, 5, J.1 to J.3, K.2, K.3, K.5,
+  K.6, L.1, L.2 and Figures 5, 7, K.1 regenerated from `results/a4k195_{main,panel,2048x4096,2048x6144,seed1,seed2}`
+  through `paper/figures/src/data195.py`; table script `/scratch/09032/saini_2/sca/finish_agent/switch/apply_tables.py`
+  (seeds: `apply_seeds.py`). The band-guard row of J.1 and columns of J.2 stay on the 191-prompt run (no 195 run), as
+  their captions say.
+- Headline numbers: still 11 of 15 metrics significantly better than AReA; ImageReward +0.31 [0.23, 0.38] (was
+  [0.24, 0.38]); FID -7.7 [-13.1, -2.6] (was -7.6 [-12.8, -2.9]). Progressive SCA vs HRDiT: ImageReward -0.02
+  [-0.09, 0.03] at 49.5 s against 110.4 s; its FID gap to single-pass SCA is no longer significant (patch FID still is).
+  At 2048x6144 SCA wins nine metrics (was ten) and now loses patch FID. Both extra seeds improve all ten per-image
+  metrics.
+- Layout: Design choices and Inference are proper paragraphs; Section 4 order is Main results, Other sizes and
+  latency, Ablations, Generality, so Tables 4 and 5 (page 10) follow their first citation (page 9); Figure 7 sits
+  beside the HRDiT paragraph at the top of page 8 and Figure 8 beside Coverage; `\newpage` before the
+  reproducibility statement keeps page 10 at natural spacing. Appendix J order is app_4k, app_wide, app_ps2,
+  app_abl, band, band2 (also in gen_tables.py); J float pages are 71 to 97 percent full.
 
-Previous pass (gold-standard fixes, build `delivery_e20al59t`): page-1 hero, three "We" bullets,
-Moai wrapfigure, lettered method diagram, setup run-ins, "Key result:" captions, reproducibility
-statement, appendix contents, method zoom, core-code listings; see HANDOVER Section 13 and 14.
-
-Compute claim: the 1.5 GPU-hour calibration figure stays out (unsupported per
-`results/compute/claims_audit/`); the paper cites the 123.3 GH200-hour worker-log lower bound.
-
-PDF SHA256: `2c80e8f43127a0b5a55429f7f56e7c041b1b960ccdd9cd31773ef863ec68cab7`.
-ZIP SHA256: `d341629b13126e1bda6d07634e48a9bbce11c1345c6ef41505f14958b6fd703c`.
-Nothing is committed; HANDOVER.md Section 14 holds the self-score.
+PDF SHA256: `8c8e1bb1c60146139f397f3c533dc4f9abe894e12413c396ad9f31351cb2ecbf`.
+ZIP SHA256: `251c3d8dfdd8a417dd0e2ce7ede1f0e1782c54ea3fcabf3711bcdd28598ac7e1`.
+Nothing is committed.

@@ -204,6 +204,23 @@ W("  \\end{tabular}}")
 W("\\end{table}")
 W("")
 
+# ---- ps2 at 2048x4096 (46 prompts), reference sca_nb with the scale-4 table
+dps = deltas(["ps2_abl_ps2_vs_scanb.csv", "ps2_area_vs_scanb.csv"])
+W("\\begin{table}[h]")
+W("  \\caption{\\textbf{Calibration table at $2048\\times4096$}, 46 prompts, paired against \\sca{} final with the scale-4 table. Sources: \\texttt{results/ps2\\_*}.}")
+W("  \\label{tab:app_ps2}")
+W("  \\centering\\scriptsize\\setlength{\\tabcolsep}{3pt}")
+W("  \\begin{tabular}{lcc}")
+W("    \\toprule")
+W("    Metric & \\sca{}, scale-2 table & AReA (released code) \\\\")
+W("    \\midrule")
+for m in PM:
+    W("    " + " & ".join([METD[m][1], dcell(dps.get(("abl_ps2", m)), m), dcell(dps.get(("area", m)), m)]) + " \\\\")
+W("    \\bottomrule")
+W("  \\end{tabular}")
+W("\\end{table}")
+W("")
+
 # ---- ablations, final (no band) setting
 PM = ["ir", "aesthetic", "clip", "pickscore", "hpsv2", "hpsv21", "musiq", "musiq_crop1024", "clipiqa", "arniqa"]
 snb = summary("ablnb")
@@ -259,22 +276,6 @@ for part, chunk in enumerate((varb[:5], varb[5:])):
     W("  \\end{tabular}}")
     W("\\end{table}")
     W("")
-
-# ---- ps2 at 2048x4096 (46 prompts), reference sca_nb with the scale-4 table
-dps = deltas(["ps2_abl_ps2_vs_scanb.csv", "ps2_area_vs_scanb.csv"])
-W("\\begin{table}[h]")
-W("  \\caption{\\textbf{Calibration table at $2048\\times4096$}, 46 prompts, paired against \\sca{} final with the scale-4 table. Sources: \\texttt{results/ps2\\_*}.}")
-W("  \\label{tab:app_ps2}")
-W("  \\centering\\scriptsize\\setlength{\\tabcolsep}{3pt}")
-W("  \\begin{tabular}{lcc}")
-W("    \\toprule")
-W("    Metric & \\sca{}, scale-2 table & AReA (released code) \\\\")
-W("    \\midrule")
-for m in PM:
-    W("    " + " & ".join([METD[m][1], dcell(dps.get(("abl_ps2", m)), m), dcell(dps.get(("area", m)), m)]) + " \\\\")
-W("    \\bottomrule")
-W("  \\end{tabular}")
-W("\\end{table}")
 
 OUT.write_text("\n".join(out) + "\n")
 print("wrote", OUT, len(out), "lines")

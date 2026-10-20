@@ -1,210 +1,245 @@
-% SCA method diagram (Figure 2), TikZ, self-contained.
+% SCA method diagram (main.tex Figure 3, fig:method), TikZ, self-contained.
 %
-% Build from this directory:  tectonic --outdir .. method.tex   (writes ../method.pdf)
+% Build from this directory:  ~/.local/bin/tectonic --outdir .. method.tex   (writes ../method.pdf)
+% Assets and data macros live in ../method_flow/ and are written by
+% fig_method_flow.py (its docstring and ../method_provenance.json record every
+% source). Full text width (5.5 in) and placed at 100%, so sizes here are
+% printed sizes: sans labels 7.5 to 9 pt (Helvetica metrics), math in Computer
+% Modern at 9 pt with 7.2 pt scripts, so no glyph is below 7 pt. Titles have
+% their own row; the 28-step strip sits below the (a) title and ends at the
+% output's right edge, clear of panel (b).
 %
-% Layout follows REFERENCE_STYLE.md: two panels, at most 12 labels of at most
-% three words each, no equations, single symbols only (sigma, pi, s). Blue is
-% the global operator, amber the local one, grey everything else.
+% Colour meanings (sca_colors.tex): blue = global branch, amber = local
+% branch, green = SCA's mix and output, grey = neutral. The pi colormap runs
+% from blue (pi = 0, global) through a light neutral to amber (pi = 1, local).
 %
-% Panel titles are lettered, "(a) Apply at target" and "(b) Calibrate at
-% 1024^2", in 9 pt bold sans; the panels are 6.45 cm tall to make room for them.
-% Single math symbols (sigma, sigma_g, pi, s) share the style sym: CM math at
-% 8.5 pt with 6.5 pt scripts, so their x-height matches the 7 pt sans labels and
-% the g of sigma_g reads as a subscript.
-%
-% Left panel, "Apply at target": a 28-step denoising strip, sigma 1 -> 0.
-% The first 8 steps (sigma > sigma_g = 0.89, FLUX.1 shifted schedule, mu = 1.15)
-% are global-only and drawn solid blue; afterwards each step cell is split into
-% an amber (local) share pi and a blue (global) share 1 - pi, with pi the mean
-% of the archived scale-4 table (src/data/k1_1024_pi.npz, s4_pi_head, all 57
-% blocks and 24 heads) interpolated at that step's sigma. Below it, a 32 x 32
-% token grid drawn over a real SCA output (../teaser/square_bright.jpg, a
-% brightened copy of the Figure 1 cathedral ../teaser/square.jpg: same image and
-% crop, gamma 0.6, then gain 1.3 with a soft highlight shoulder
-% y = 1.3 x / (1 + 0.3 x^2) so the white grid and blue key dots read; downsized
-% by \includegraphics) at one scale, s = 4, n0 = 8,
-% t = 2: the t x t query tile, its native n0 x n0 sliding window (start a(tau)
-% of Section 2.2) and the n0 x n0 block-centre keys kappa(b) = s b + floor(s/2).
-% FLUX.1 itself has n0 = 64 and t = 8.
-%
-% Right panel, "Calibrate at 1024^2": a native-size run (thumbnail is the SCA
-% output ../qual_main/cmp_m2729538226706404616_sca_nb.jpg, a stand-in for the
-% calibration prompts), the three operators as glyphs (full, global, local),
-% and the fitted table of block 29 (zero-based 28) of the same scale-4 table:
-% 24 heads (rows, original order) by 14 noise bins (columns, sigma decreasing
-% left to right), coloured with the paper-wide pi colormap of scafig.py. The
-% data macros at the end were written from the .npz with that colormap.
+% (a) Sample at 4096^2, left to right: the input latent x_sigma (a real SCA
+%     output, forward-noised for illustration) with a schematic token grid
+%     (s = 4, n0 = 8, t = 2, so 32 x 32 tokens): blue dots are the block-centre
+%     tokens kappa(b) = s b + floor(s/2), the amber square the native n0 x n0
+%     window of the black t x t query tile. The global branch keys on the
+%     n0 x n0 grid of block centres (query at its coarse cell c(p)); the local
+%     branch on the window at full resolution. Each head h mixes them with
+%     pi_h(sigma), the chips (24 heads of block 8 at the drawn step), and the
+%     output is the clean 4096^2 sample. Header strip: the 28 steps, the first
+%     8 (sigma > sigma_g = 0.89) global only, then each step split into the
+%     mean local share (amber) and global share (blue); the drawn step is
+%     outlined in green. The local view sits level with the window, joined by
+%     dashed zoom lines; the global grid is fed by the whole image.
+% (b) Calibrate at 1024^2: full attention and the two operators at emulated
+%     scale s_c = 4 on the native grid (16 x 16 schematic) fit the table of
+%     block 8 (24 heads x 14 noise bins, sigma 1 -> 0 left to right); sigma >
+%     sigma_g is veiled, and the outlined column is the bin read in (a).
 
 \RequirePackage{fix-cm}
 \documentclass[border=0pt]{standalone}
 \usepackage[T1]{fontenc}
 \usepackage{helvet}
 \usepackage{amsmath}
+\usepackage{graphicx}
 \usepackage{tikz}
-\DeclareMathSizes{6.5}{6.5}{6.5}{6.5}
-\DeclareMathSizes{7}{7}{6.75}{6.75}
-\DeclareMathSizes{8}{8}{6.75}{6.75}
-\DeclareMathSizes{8.5}{8.5}{6.5}{6.5}  % single-symbol labels: CM math x-height matches 7 pt sans
-\usetikzlibrary{arrows.meta, calc, decorations.pathreplacing}
+\DeclareMathSizes{9}{9}{7.2}{7.2}
+\usetikzlibrary{arrows.meta, calc}
 \input{sca_colors.tex}
+\input{../method_flow/data.tex}
 
+\newcommand{\sq}{\raisebox{0.58ex}{\fontsize{7.2}{8}\selectfont 2}}   % superscript 2, 7.2 pt
 \tikzset{
   every node/.style={inner sep=0pt, outer sep=0pt},
-  lbl/.style={font=\sffamily\fontsize{7}{8.4}\selectfont, text=scaInk},
-  sym/.style={font=\fontsize{8.5}{10}\selectfont, text=scaInk},   % math symbols, scripts at 6.5 pt
-  tick/.style={font=\sffamily\fontsize{6.5}{7.5}\selectfont, text=scaMid},
+  lbl/.style={font=\sffamily\fontsize{8}{9.6}\selectfont, text=scaInk},
+  sym/.style={font=\fontsize{9}{10.8}\selectfont, text=scaInk},
+  tick/.style={font=\sffamily\fontsize{7.5}{9}\selectfont, text=scaMid},
   ttl/.style={font=\sffamily\bfseries\fontsize{9}{10.8}\selectfont, text=scaInk},
-  panel/.style={fill=scaGrid!55, rounded corners=2.5pt},
-  flow/.style={->, >={Stealth[round, length=3.5pt, width=3pt]}, draw=scaMid, line width=0.5pt},
-  leader/.style={draw=scaMid, line width=0.4pt},
-  halo/.style={draw=white, line width=1.1pt},
+  flow/.style={-{Stealth[length=3.4pt, width=3pt]}, line width=0.65pt},
+  halo/.style={draw=white, line width=1.3pt},
 }
-
-% ---- data written by a helper from src/data/k1_1024_pi.npz (see header) ----
-\def\picells{0/0/201/120/34,0/1/231/175/112,0/2/200/119/34,0/3/232/181/123,0/4/241/224/203,0/5/239/217/190,0/6/231/174/110,0/7/236/201/160,0/8/230/168/99,0/9/237/206/168,0/10/234/188/136,0/11/236/198/155,0/12/36/89/152,0/13/218/133/41,0/14/172/97/24,0/15/240/222/198,0/16/227/154/72,0/17/99/144/194,0/18/243/235/222,0/19/193/207/220,0/20/224/138/43,0/21/225/141/48,0/22/80/131/188,0/23/41/98/164,1/0/226/147/59,1/1/233/187/134,1/2/192/113/31,1/3/232/181/123,1/4/238/209/174,1/5/233/184/128,1/6/230/171/104,1/7/237/206/168,1/8/231/172/107,1/9/232/177/115,1/10/234/188/136,1/11/239/213/182,1/12/135/168/204,1/13/229/164/91,1/14/183/106/28,1/15/238/211/179,1/16/232/177/115,1/17/132/166/203,1/18/242/232/217,1/19/223/227/228,1/20/232/177/115,1/21/225/142/51,1/22/149/177/207,1/23/107/149/196,2/0/227/155/75,2/1/233/185/131,2/2/191/112/31,2/3/233/187/134,2/4/235/197/152,2/5/232/178/118,2/6/230/168/99,2/7/236/200/158,2/8/231/172/107,2/9/230/167/96,2/10/236/200/158,2/11/239/213/182,2/12/201/212/222,2/13/231/172/107,2/14/196/116/33,2/15/238/211/179,2/16/231/175/112,2/17/179/198/216,2/18/242/230/214,2/19/244/239/230,2/20/231/175/112,2/21/225/142/51,2/22/193/207/220,2/23/146/175/207,3/0/228/157/78,3/1/232/180/120,3/2/190/111/30,3/3/234/188/136,3/4/233/185/131,3/5/231/174/110,3/6/229/165/94,3/7/235/193/144,3/8/230/167/96,3/9/228/158/80,3/10/235/196/150,3/11/238/209/174,3/12/234/235/231,3/13/231/174/110,3/14/203/122/35,3/15/237/204/166,3/16/232/177/115,3/17/244/239/230,3/18/241/224/203,3/19/241/227/209,3/20/230/171/104,3/21/224/139/45,3/22/223/227/228,3/23/171/192/214,4/0/228/158/80,4/1/230/171/104,4/2/190/111/30,4/3/232/180/120,4/4/231/175/112,4/5/231/172/107,4/6/228/161/86,4/7/234/188/136,4/8/228/161/86,4/9/226/151/67,4/10/234/191/142,4/11/236/200/158,4/12/244/239/230,4/13/231/172/107,4/14/202/121/35,4/15/235/197/152,4/16/231/175/112,4/17/239/217/190,4/18/238/211/179,4/19/238/210/176,4/20/230/168/99,4/21/221/136/42,4/22/243/240/234,4/23/198/210/221,5/0/228/161/86,5/1/229/164/91,5/2/190/111/30,5/3/231/172/107,5/4/230/167/96,5/5/231/172/107,5/6/228/157/78,5/7/233/184/128,5/8/228/158/80,5/9/226/147/59,5/10/233/185/131,5/11/235/193/144,5/12/242/232/217,5/13/230/171/104,5/14/204/123/36,5/15/234/190/139,5/16/231/172/107,5/17/236/201/160,5/18/236/201/160,5/19/234/191/142,5/20/229/164/91,5/21/218/133/41,5/22/242/233/219,5/23/223/227/228,6/0/229/165/94,6/1/227/154/72,6/2/190/111/30,6/3/230/167/96,6/4/228/157/78,6/5/231/175/112,6/6/227/152/69,6/7/232/178/118,6/8/227/155/75,6/9/225/142/51,6/10/233/183/126,6/11/233/185/131,6/12/241/227/209,6/13/230/171/104,6/14/212/128/38,6/15/233/187/134,6/16/230/170/102,6/17/232/180/120,6/18/234/188/136,6/19/231/172/107,6/20/228/158/80,6/21/214/130/39,6/22/240/223/201,6/23/243/237/227,7/0/229/165/94,7/1/226/147/59,7/2/190/111/30,7/3/229/164/91,7/4/226/149/64,7/5/231/174/110,7/6/226/149/64,7/7/231/172/107,7/8/227/152/69,7/9/225/141/48,7/10/233/183/126,7/11/232/180/120,7/12/240/220/195,7/13/230/168/99,7/14/214/130/39,7/15/232/181/123,7/16/229/165/94,7/17/228/161/86,7/18/232/178/118,7/19/227/152/69,7/20/227/155/75,7/21/212/128/38,7/22/239/216/187,7/23/241/224/203,8/0/229/162/88,8/1/224/139/45,8/2/189/111/30,8/3/228/161/86,8/4/225/142/51,8/5/230/170/102,8/6/226/147/59,8/7/230/168/99,8/8/226/149/64,8/9/224/139/45,8/10/232/178/118,8/11/231/172/107,8/12/239/214/185,8/13/229/164/91,8/14/213/129/39,8/15/230/171/104,8/16/228/161/86,8/17/226/148/61,8/18/230/170/102,8/19/224/138/43,8/20/226/151/67,8/21/208/126/37,8/22/238/211/179,8/23/239/213/182,9/0/229/162/88,9/1/220/135/42,9/2/189/111/30,9/3/228/161/86,9/4/223/137/43,9/5/230/167/96,9/6/225/144/53,9/7/229/162/88,9/8/226/147/59,9/9/224/138/43,9/10/231/175/112,9/11/230/167/96,9/12/238/209/174,9/13/228/161/86,9/14/213/129/39,9/15/229/165/94,9/16/228/158/80,9/17/220/135/42,9/18/228/161/86,9/19/209/127/38,9/20/226/147/59,9/21/204/123/36,9/22/237/204/166,9/23/237/203/163,10/0/228/159/83,10/1/213/129/39,10/2/190/111/30,10/3/228/158/80,10/4/215/131/40,10/5/229/162/88,10/6/225/142/51,10/7/228/157/78,10/8/225/142/51,10/9/224/138/43,10/10/230/170/102,10/11/228/159/83,10/12/237/203/163,10/13/227/155/75,10/14/212/128/38,10/15/227/154/72,10/16/227/154/72,10/17/204/123/36,10/18/227/152/69,10/19/192/113/31,10/20/225/144/53,10/21/201/120/34,10/22/235/197/152,10/23/235/193/144,11/0/227/155/75,11/1/207/125/37,11/2/189/111/30,11/3/227/152/69,11/4/209/127/38,11/5/227/154/72,11/6/223/137/43,11/7/226/151/67,11/8/223/137/43,11/9/224/139/45,11/10/228/161/86,11/11/227/152/69,11/12/235/197/152,11/13/226/149/64,11/14/206/124/36,11/15/225/141/48,11/16/225/145/56,11/17/181/105/27,11/18/225/142/51,11/19/180/104/27,11/20/224/138/43,11/21/197/117/33,11/22/233/185/131,11/23/232/180/120,12/0/226/148/61,12/1/198/118/34,12/2/189/111/30,12/3/226/148/61,12/4/202/121/35,12/5/224/139/45,12/6/215/131/40,12/7/224/139/45,12/8/215/131/40,12/9/225/141/48,12/10/225/145/56,12/11/225/145/56,12/12/234/190/139,12/13/224/138/43,12/14/190/111/30,12/15/208/126/37,12/16/220/135/42,12/17/162/90/20,12/18/219/134/41,12/19/156/85/18,12/20/217/132/40,12/21/191/112/31,12/22/230/167/96,12/23/229/164/91,13/0/226/148/61,13/1/198/118/34,13/2/189/111/30,13/3/226/148/61,13/4/202/121/35,13/5/224/139/45,13/6/215/131/40,13/7/224/139/45,13/8/215/131/40,13/9/225/141/48,13/10/225/145/56,13/11/225/145/56,13/12/234/190/139,13/13/224/138/43,13/14/190/111/30,13/15/208/126/37,13/16/220/135/42,13/17/162/90/20,13/18/219/134/41,13/19/156/85/18,13/20/217/132/40,13/21/191/112/31,13/22/230/167/96,13/23/229/164/91}
-\def\stepmix{1/0.676,2/0.676,3/0.676,4/0.677,5/0.680,6/0.683,7/0.686,8/0.690,9/0.693,10/0.696,11/0.698,12/0.702,13/0.704,14/0.707,15/0.710,16/0.714,17/0.718,18/0.721,19/0.725,20/0.729,21/0.733,22/0.736,23/0.740,24/0.745,25/0.750,26/0.755,27/0.760,28/0.770}
-\def\pibar{0/31/79/138,1/34/85/146,2/37/91/154,3/40/97/162,4/44/103/170,5/47/108/178,6/74/127/187,7/105/148/195,8/138/170/204,9/168/190/213,10/198/210/221,11/229/231/230,12/242/233/219,13/239/217/190,14/236/201/160,15/233/185/131,16/230/168/99,17/227/152/69,18/223/137/43,19/209/127/38,20/196/116/33,21/183/106/28,22/169/95/23,23/156/85/18}
 
 \begin{document}
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-% ---------------------------------------------------------------- geometry
-\def\H{6.45}        % panel height (cm); total width 13.97 cm = 5.5 in
-\def\PA{7.75}       % right edge of the left panel
-\def\PB{7.87}       % left edge of the right panel
-\def\PW{13.97}
+% ================================================================== geometry
+\def\W{13.97}        % 5.5 in
+\def\H{4.45}         % height; ratio H/W = 0.319
+% rows: titles in [4.05, 4.45]; strip in (a) at [3.64, 3.90]; images below
+\useasboundingbox (0,0) rectangle (\W,\H);
 
-\path[panel] (0,0) rectangle (\PA,\H);
-\path[panel] (\PB,0) rectangle (\PW,\H);
+% (a) columns
+\def\IX{0}     \def\IY{0.55}  \def\IS{3.35}     % input (top 3.90, level with the strip top)
+\def\VX{3.67}  \def\VS{1.60}                    % views (local above, level with the window; global below)
+\def\LY{1.92}  \def\GY{0.00}
+\def\MX{6.19}  \def\MW{0.72}                    % mix box
+\def\CYa{0.52} \def\CYb{3.45}                   % chip rows
+\def\OX{7.25}  \def\OY{0.55}  \def\OS{2.97}     % output (top 3.52, below the strip)
+% (b)
+\def\BX{10.42}                                  % panel left edge; the strip ends at 10.22
+\colorlet{panelbg}{scaAccentLight!55}
+\def\TXa{11.50} \def\TXb{13.22}                 % table columns
+\def\RYa{0.52}  \def\RYb{3.90}                  % table rows
+% scope units
+\pgfmathsetmacro{\iu}{\IS/32}
+\pgfmathsetmacro{\vu}{\VS/8}
 
-% ================================================================ left panel
-\node[ttl, anchor=north west] at (0.18, \H-0.17) {(a) Apply at target};
+% ================================================================ (a) header
+\node[ttl, anchor=north west] at (0, \H) {(a) Sample at 4096\sq};
 
-% --- denoising strip, 28 steps, sigma 1 -> 0 ---------------------------------
-\def\sx{0.35}  \def\sw{7.0}  \def\sy{5.05}  \def\sh{0.35}
-\pgfmathsetmacro{\cw}{\sw/28}
-\foreach \k/\p in \stepmix {
-  \pgfmathsetmacro{\xa}{\sx+(\k-1)*\cw}
+% 28-step strip: steps 1..8 global only, then local share (amber, top) / global (blue)
+\def\sxa{3.67} \def\sxb{10.22} \def\sya{3.64} \def\syb{3.90}
+\pgfmathsetmacro{\cw}{(\sxb-\sxa)/28}
+\foreach \k/\p in \stepshare {
+  \pgfmathsetmacro{\xa}{\sxa+(\k-1)*\cw}
   \pgfmathsetmacro{\xb}{\xa+\cw}
-  \ifnum\k>8
-    \pgfmathsetmacro{\ys}{\sy+(1-\p)*\sh}
-    \fill[scaGlobal] (\xa,\sy) rectangle (\xb,\ys);
-    \fill[scaLocal]  (\xa,\ys) rectangle (\xb,\sy+\sh);
+  \ifnum\k>\nglobal
+    \pgfmathsetmacro{\ys}{\sya+(1-\p)*(\syb-\sya)}
+    \fill[scaGlobal] (\xa,\sya) rectangle (\xb,\ys);
+    \fill[scaLocal]  (\xa,\ys) rectangle (\xb,\syb);
   \else
-    \fill[scaGlobal] (\xa,\sy) rectangle (\xb,\sy+\sh);
+    \fill[scaGlobal] (\xa,\sya) rectangle (\xb,\syb);
   \fi
 }
-\foreach \k in {1,...,27} {
-  \draw[white, line width=0.3pt] (\sx+\k*\cw,\sy) -- (\sx+\k*\cw,\sy+\sh);
-}
-\draw[scaMid, line width=0.4pt] (\sx,\sy) rectangle (\sx+\sw,\sy+\sh);
-% opening phase and the gate
-\pgfmathsetmacro{\xg}{\sx+8*\cw}
-\node[lbl, text=white, anchor=center, fill=scaGlobal, inner xsep=1.2pt, minimum height=0.33cm] at (\sx+4*\cw, \sy+0.5*\sh) {global only};
-\draw[scaInk, line width=0.5pt] (\xg,\sy-0.08) -- (\xg,\sy+\sh+0.1);
-\node[sym, anchor=south] at (\xg, \sy+\sh+0.14) {$\sigma_g$};
-\node[lbl, anchor=south] at (\sx+18*\cw, \sy+\sh+0.14) {per-head mix};
-% the local share at the last step, labelled pi
-\pgfmathsetmacro{\ylast}{\sy+(1-0.77)*\sh}
-\draw[scaInk, line width=0.4pt] (\sx+\sw+0.05,\ylast) -- ++(0.07,0) -- (\sx+\sw+0.12,\sy+\sh) -- ++(-0.07,0);
-\node[sym, anchor=west] at (\sx+\sw+0.17, 0.5*\ylast+0.5*\sy+0.5*\sh) {$\pi$};
-% sigma axis
-\draw[flow] (\sx+0.35, \sy-0.3) -- (\sx+\sw-0.35, \sy-0.3);
-\node[tick, anchor=east] at (\sx+0.28, \sy-0.3) {1};
-\node[tick, anchor=west] at (\sx+\sw-0.28, \sy-0.3) {0};
-\node[sym, anchor=south, fill=scaGrid!55, inner sep=1.2pt] at (\sx+0.5*\sw, \sy-0.3-0.09) {$\sigma$};
+\foreach \k in {1,...,27} { \draw[white, line width=0.35pt] (\sxa+\k*\cw,\sya) -- (\sxa+\k*\cw,\syb); }
+\node[lbl, text=white, anchor=center, fill=scaGlobal, inner xsep=1.5pt, inner ysep=0.5pt] at (\sxa+0.5*\nglobal*\cw, 0.5*\sya+0.5*\syb) {global only};
+\pgfmathsetmacro{\xg}{\sxa+\nglobal*\cw}
+\draw[scaInk, line width=0.6pt] (\xg,\sya-0.06) -- (\xg,\syb+0.04);
+\node[sym, anchor=north west] at (\xg+0.06, \sya-0.03) {$\sigma_g$};
+% drawn step (green outline, like the bin read in (b))
+\draw[white, line width=1.3pt] (\sxa+\curstep*\cw-\cw,\sya-0.02) rectangle (\sxa+\curstep*\cw,\syb+0.02);
+\draw[scaAccent, line width=0.8pt] (\sxa+\curstep*\cw-\cw,\sya-0.02) rectangle (\sxa+\curstep*\cw,\syb+0.02);
 
-% --- token grid over a real SCA output ----------------------------------------
-\def\gx{0.35} \def\gy{0.25} \def\G{4.2}
-\pgfmathsetmacro{\tc}{\G/32}
-\node[anchor=south west, inner sep=0pt] at (\gx,\gy) {\includegraphics[width=\G cm]{../teaser/square_bright.jpg}};
-\begin{scope}[shift={(\gx,\gy+\G)}, x=\tc cm, y=-\tc cm]   % token (i,j), j down
-  \foreach \i in {1,...,31} {
-    \draw[white, opacity=0.5, line width=0.25pt] (\i,0) -- (\i,32) (0,\i) -- (32,\i);
-  }
-  % local window of the query tile: tokens 13..20 on both axes
-  \fill[scaLocal, opacity=0.22] (13,9) rectangle (21,17);
-  \draw[scaLocal, line width=0.9pt] (13,9) rectangle (21,17);
-  % block-centre keys kappa = s b + 2
-  \foreach \i in {2,6,...,30} \foreach \j in {2,6,...,30} {
-    \fill[white] (\i+0.5,\j+0.5) circle (0.42);
-    \fill[scaGlobal] (\i+0.5,\j+0.5) circle (0.3);
-  }
-  % query tile t x t
-  \fill[white] (15.8,11.8) rectangle (18.2,14.2);
-  \fill[scaInk] (16,12) rectangle (18,14);
-  % key stride s between two block centres
-  \draw[halo] (26.5,2.5) -- (30.5,2.5);
-  \draw[scaInk, line width=0.5pt, {Bar[width=3pt]}-{Bar[width=3pt]}] (26.5,2.5) -- (30.5,2.5);
-  \coordinate (sref) at (28.5,2.5);
-  \coordinate (qref) at (18,13);
-  \coordinate (wref) at (21,9);
-  \coordinate (kref) at (30.8,22.5);
+% ================================================================ (a) flow
+% == input x_sigma with the schematic token grid
+\node[anchor=south west] at (\IX,\IY) {\includegraphics[width=\IS cm]{../method_flow/input.jpg}};
+\draw[scaMid, line width=0.4pt] (\IX,\IY) rectangle ++(\IS,\IS);
+\begin{scope}[shift={(\IX,\IY+\IS)}, x=\iu cm, y=-\iu cm]   % token (i, j), j down
+  \foreach \i in {1,...,31} { \draw[white, opacity=0.30, line width=0.15pt] (\i,0) -- (\i,32) (0,\i) -- (32,\i); }
+  \foreach \i in {4,8,...,28} { \draw[white, opacity=0.85, line width=0.3pt] (\i,0) -- (\i,32) (0,\i) -- (32,\i); }
+  \fill[scaLocal, opacity=0.22] (13,7) rectangle (21,15);
+  \draw[halo] (13,7) rectangle (21,15);
+  \draw[scaLocal, line width=0.85pt] (13,7) rectangle (21,15);
+  % block size s: the stride between two neighbouring block-centre keys (drawn under the dots)
+  \draw[halo] (2.5,6.5) -- (6.5,6.5);
+  \draw[scaInk, line width=0.55pt] (2.5,6.5) -- (6.5,6.5);
+  \coordinate (sref) at (4.5,6.5);
+  \foreach \i in {2,6,...,30} { \foreach \j in {2,6,...,30} {
+    \fill[white] (\i+0.5,\j+0.5) circle[radius=1.35pt];
+    \fill[scaGlobal] (\i+0.5,\j+0.5) circle[radius=0.95pt];
+  } }
+  \fill[white] (15.75,9.75) rectangle (18.25,12.25);
+  \fill[scaInk] (16,10) rectangle (18,12);
 \end{scope}
-\node[sym, anchor=south, fill=white, inner sep=0.8pt, rounded corners=1pt] at ($(sref)+(0,0.12)$) {$s$};
-% leaders and labels
-\coordinate (lq) at (4.85, 2.2);
-\coordinate (lw) at (4.85, 3.5);
-\coordinate (lk) at (4.85, 1.3);
-\foreach \a/\b in {qref/lq, wref/lw, kref/lk} { \draw[halo] (\a) -- (\b); \draw[leader] (\a) -- (\b); }
-\node[lbl, anchor=west] at ($(lq)+(0.05,0)$) {query};
-\node[lbl, anchor=west, text=scaLocal!80!black] at ($(lw)+(0.05,0)$) {local window};
-\node[lbl, anchor=west, text=scaGlobal] at ($(lk)+(0.05,0)$) {global keys};
+\node[sym, anchor=south, fill=white, inner sep=0.6pt, rounded corners=1pt] at ($(sref)+(0,0.06)$) {$s$};
+\node[sym, anchor=north] at (\IX+0.5*\IS, \IY-0.08) {$x_\sigma$};
 
-% =============================================================== right panel
-\node[ttl, anchor=north west] at (\PB+0.18, \H-0.17) {(b) Calibrate at 1024\textsuperscript{2}};
+% == global branch: block-centre keys on the n0 x n0 native grid
+\node[anchor=south west] at (\VX,\GY) {\includegraphics[width=\VS cm]{../method_flow/global.png}};
+\begin{scope}[shift={(\VX,\GY+\VS)}, x=\vu cm, y=-\vu cm]
+  \foreach \i in {1,...,7} { \draw[white, opacity=0.8, line width=0.3pt] (\i,0) -- (\i,8) (0,\i) -- (8,\i); }
+  \foreach \i in {0,...,7} { \foreach \j in {0,...,7} {
+    \fill[white] (\i+0.5,\j+0.5) circle[radius=1.25pt];
+    \fill[scaGlobal] (\i+0.5,\j+0.5) circle[radius=0.9pt];
+  } }
+  \draw[halo] (4,2) rectangle (5,3);
+  \draw[scaInk, line width=0.8pt] (4,2) rectangle (5,3);
+\end{scope}
+\draw[scaGlobal, line width=0.9pt] (\VX,\GY) rectangle ++(\VS,\VS);
 
-% native run thumbnail
-\def\tx{8.1} \def\ty{3.95} \def\T{1.4}
-\node[anchor=south west, inner sep=0pt] at (\tx,\ty) {\includegraphics[width=\T cm]{../qual_main/cmp_m2729538226706404616_sca_nb.jpg}};
-\draw[white, opacity=0.45, line width=0.2pt] (\tx,\ty) grid[step=\T/8] (\tx+\T,\ty+\T);
-\node[lbl, anchor=north] at (\tx+0.5*\T, \ty-0.1) {native run};
-\draw[flow] (\tx+\T+0.1, \ty+0.5*\T) -- (\tx+\T+0.45, \ty+0.5*\T);
+% == local branch: the native window at full resolution
+\node[anchor=south west] at (\VX,\LY) {\includegraphics[width=\VS cm]{../method_flow/local.jpg}};
+\begin{scope}[shift={(\VX,\LY+\VS)}, x=\vu cm, y=-\vu cm]
+  \foreach \i in {1,...,7} { \draw[white, opacity=0.45, line width=0.25pt] (\i,0) -- (\i,8) (0,\i) -- (8,\i); }
+  \draw[halo] (3,3) rectangle (5,5);
+  \draw[scaInk, line width=0.8pt] (3,3) rectangle (5,5);
+\end{scope}
+\draw[scaLocal, line width=0.9pt] (\VX,\LY) rectangle ++(\VS,\VS);
 
-% three operator glyphs: full, global, local (8 x 8 token grids)
-\def\gs{0.62}
-\pgfmathsetmacro{\gc}{\gs/8}
-\pgfmathsetmacro{\gyy}{\ty+0.5*\T-0.5*\gs}
-\foreach \gxx/\name/\col/\kind in {10.05/full/scaMid/0, 10.95/global/scaGlobal/1, 11.85/local/scaLocal!80!black/2} {
-  \begin{scope}[shift={(\gxx,\gyy)}, x=\gc cm, y=\gc cm]
-    \ifnum\kind=0 \fill[scaFull!45] (0,0) rectangle (8,8); \else \fill[white] (0,0) rectangle (8,8); \fi
-    \ifnum\kind=2 \fill[scaLocalLight] (2,2) rectangle (6,6); \fi
-    \draw[scaRule, line width=0.2pt] (0,0) grid[step=1] (8,8);
-    \ifnum\kind=1 \foreach \i in {1,3,5,7} \foreach \j in {1,3,5,7} \fill[scaGlobal] (\i,\j) circle (0.33); \fi
-    \ifnum\kind=2 \draw[scaLocal, line width=0.6pt] (2,2) rectangle (6,6); \fi
-    \fill[scaInk] (3.5,3.5) rectangle (4.5,4.5);
-    \draw[scaMid, line width=0.4pt] (0,0) rectangle (8,8);
+% == into the branches: the whole image to the global grid, the window zoomed to the local view
+\pgfmathsetmacro{\gc}{\GY+0.5*\VS}
+\pgfmathsetmacro{\lc}{\LY+0.5*\VS}
+\draw[flow, draw=scaGlobal] (\IX+\IS+0.06,\gc) -- (\VX-0.05,\gc);
+\pgfmathsetmacro{\wxr}{\IX+21*\iu}          % window right edge (token 21)
+\pgfmathsetmacro{\wyt}{\IY+\IS-7*\iu}       % window top (token 7)
+\pgfmathsetmacro{\wyb}{\IY+\IS-15*\iu}      % window bottom (token 15)
+\foreach \ya/\yb in {\wyt/\LY+\VS, \wyb/\LY} {
+  \draw[white, line width=1.4pt] (\wxr,\ya) -- (\VX,\yb);
+  \draw[scaLocal, line width=0.6pt, dash pattern=on 2pt off 1.2pt] (\wxr,\ya) -- (\VX,\yb);
+}
+
+% == per-head mix: pi_h(sigma) of the 24 heads, read from the table in (b)
+\draw[flow, draw=scaGlobal] (\VX+\VS+0.06,\gc) -- (\MX-0.04,\gc);
+\draw[flow, draw=scaLocal]  (\VX+\VS+0.06,\lc) -- (\MX-0.04,\lc);
+\node[lbl, text=scaGlobal, anchor=south] at (0.5*\VX+0.5*\VS+0.5*\MX, \gc+0.07) {global};
+\node[lbl, text=scaLocal!85!black, anchor=south] at (0.5*\VX+0.5*\VS+0.5*\MX, \lc+0.07) {local};
+\node[sym, anchor=center] at (0.5*\VX+0.5*\VS+0.5*\MX, 0.5*\gc+0.5*\lc) {$\pi_h(\sigma)$};
+\pgfmathsetmacro{\ch}{(\CYb-\CYa)/24}
+\fill[scaAccentLight, rounded corners=1.5pt] (\MX,\CYa-0.07) rectangle (\MX+\MW,\CYb+0.07);
+\foreach \r/\R/\Gc/\B in \pichips {
+  \definecolor{chipc}{RGB}{\R,\Gc,\B}
+  \fill[chipc, rounded corners=0.6pt] (\MX+0.10, {\CYb-(\r+1)*\ch+0.009}) rectangle (\MX+\MW-0.10, {\CYb-\r*\ch-0.009});
+}
+\draw[scaAccent, line width=0.9pt, rounded corners=1.5pt] (\MX,\CYa-0.07) rectangle (\MX+\MW,\CYb+0.07);
+
+% == output
+\pgfmathsetmacro{\oc}{\OY+0.5*\OS}
+\draw[flow, draw=scaAccent] (\MX+\MW+0.04,\oc) -- (\OX-0.05,\oc);
+\node[anchor=south west] at (\OX,\OY) {\includegraphics[width=\OS cm]{../method_flow/output.jpg}};
+\draw[scaAccent, line width=0.9pt] (\OX,\OY) rectangle ++(\OS,\OS);
+\node[sym, anchor=north] at (\OX+0.5*\OS, \OY-0.08) {$x_0$};
+
+% ================================================================ (b) calibration
+\path[fill=panelbg, rounded corners=2.5pt] (\BX,0) rectangle (\W,\H);
+\node[ttl, anchor=north west] at (\BX+0.12, \H-0.06) {(b) Calibrate at 1024\sq};
+
+% operators on the native grid at emulated scale s_c = 4 (16 x 16 schematic, 4 x 4 blocks):
+% full attention (all keys, grey), global (block centres kappa = 4b + 2, blue),
+% local (window n/s_c = 4 around the query, amber), top to bottom: full, local,
+% global, as in (a); query token (8, 8) in black
+\def\gs{0.58}
+\def\gx{10.55}
+\pgfmathsetmacro{\gu}{\gs/16}
+\foreach \yy/\kind in {3.00/0, 1.78/2, 0.56/1} {
+  \begin{scope}[shift={(\gx,\yy)}, x=\gu cm, y=\gu cm]
+    \ifnum\kind=0 \fill[scaFull!50] (0,0) rectangle (16,16); \else \fill[white] (0,0) rectangle (16,16); \fi
+    \ifnum\kind=2 \fill[scaLocalLight] (6,6) rectangle (10,10); \fi
+    \ifnum\kind=0 \def\blk{white}\else \def\blk{scaRule}\fi
+    \foreach \i in {4,8,12} { \draw[draw=\blk, line width=0.3pt] (\i,0) -- (\i,16) (0,\i) -- (16,\i); }
+    \ifnum\kind=2 \draw[scaLocal, line width=0.75pt] (6,6) rectangle (10,10); \fi
+    \ifnum\kind=1 \foreach \i in {2,6,10,14} { \foreach \j in {2,6,10,14} { \fill[scaGlobal] (\i+0.5,\j+0.5) circle[radius=0.95pt]; } } \fi
+    \fill[scaInk] (8,8) rectangle (9,9);
+    \draw[scaMid, line width=0.45pt] (0,0) rectangle (16,16);
   \end{scope}
-  \node[lbl, text=\col, anchor=north] at (\gxx+0.5*\gs, \gyy-0.08) {\name};
 }
-% to the fitted table
-\draw[flow] (10.95+0.5*\gs, \gyy-0.42) -- (10.95+0.5*\gs, 3.5);
+\node[lbl, anchor=south] at (\gx+0.5*\gs, 3.00+\gs+0.04) {full};
+\draw[scaMid, line width=0.5pt] (\gx+\gs+0.05,0.56) -- (\gx+\gs+0.1,0.56) -- (\gx+\gs+0.1,3.00+\gs) -- (\gx+\gs+0.05,3.00+\gs);
+\draw[flow, draw=scaMid] (\gx+\gs+0.1,0.5*0.56+0.5*3.00+0.5*\gs) -- (\TXa-0.06,0.5*0.56+0.5*3.00+0.5*\gs);
 
-% pi heat strip: 24 heads x 14 noise bins, sigma 1 -> 0 left to right
-\def\hx{8.1} \def\hy{0.6} \def\hw{4.5} \def\hh{2.8}
-\pgfmathsetmacro{\bw}{\hw/14}
-\pgfmathsetmacro{\bh}{\hh/24}
-\foreach \cc/\rr/\R/\Gc/\B in \picells {
+% pi table of block 8: 24 heads x 14 noise bins, sigma decreasing left to right
+\pgfmathsetmacro{\tw}{(\TXb-\TXa)/14}
+\pgfmathsetmacro{\rh}{(\RYb-\RYa)/24}
+\foreach \c/\r/\R/\Gc/\B in \pitable {
   \definecolor{cellc}{RGB}{\R,\Gc,\B}
-  \fill[cellc] (\hx+\cc*\bw, {\hy+\hh-(\rr+1)*\bh}) rectangle ++(\bw,\bh);
+  \fill[cellc] (\TXa+\c*\tw, {\RYb-(\r+1)*\rh}) rectangle ++(\tw,\rh);
 }
-\draw[scaMid, line width=0.4pt] (\hx,\hy) rectangle (\hx+\hw,\hy+\hh);
-\draw[flow] (\hx+0.35, \hy-0.28) -- (\hx+\hw-0.35, \hy-0.28);
-\node[tick, anchor=east] at (\hx+0.28, \hy-0.28) {1};
-\node[tick, anchor=west] at (\hx+\hw-0.28, \hy-0.28) {0};
-\node[sym, anchor=south, fill=scaGrid!55, inner sep=1.2pt] at (\hx+0.5*\hw, \hy-0.28-0.09) {$\sigma$};
-
+\fill[white, opacity=0.55] (\TXa,\RYa) rectangle (\TXa+\gatex*\tw,\RYb);
+\draw[scaInk, line width=0.5pt, dash pattern=on 1.5pt off 1pt] (\TXa+\gatex*\tw,\RYa) -- (\TXa+\gatex*\tw,\RYb);
+\draw[scaMid, line width=0.45pt] (\TXa,\RYa) rectangle (\TXb,\RYb);
+\draw[halo] (\TXa+\readcol*\tw,\RYa) rectangle ++(\tw,\RYb-\RYa);
+\draw[scaAccent, line width=0.9pt] (\TXa+\readcol*\tw,\RYa) rectangle ++(\tw,\RYb-\RYa);
+% sigma axis
+\def\ay{0.26}
+\draw[flow, draw=scaMid, line width=0.5pt] (\TXa+0.22,\ay) -- (\TXb-0.22,\ay);
+\node[tick, anchor=east] at (\TXa+0.16,\ay) {1};
+\node[tick, anchor=west] at (\TXb-0.16,\ay) {0};
+\node[sym, anchor=center, fill=panelbg, inner sep=1.2pt] at (0.5*\TXa+0.5*\TXb,\ay) {$\sigma$};
 % pi colour bar
-\def\bx{12.85} \def\bwid{0.2}
-\pgfmathsetmacro{\seg}{\hh/24}
+\def\bxa{13.34} \def\bxb{13.45}
+\pgfmathsetmacro{\seg}{(\RYb-\RYa)/24}
 \foreach \k/\R/\Gc/\B in \pibar {
   \definecolor{barc}{RGB}{\R,\Gc,\B}
-  \fill[barc] (\bx, \hy+\k*\seg) rectangle ++(\bwid,\seg);
+  \fill[barc] (\bxa,\RYa+\k*\seg) rectangle (\bxb,\RYa+\k*\seg+\seg);
 }
-\draw[scaMid, line width=0.4pt] (\bx,\hy) rectangle (\bx+\bwid,\hy+\hh);
-\node[tick, anchor=west] at (\bx+\bwid+0.07, \hy+\hh-0.05) {1};
-\node[tick, anchor=west] at (\bx+\bwid+0.07, \hy+0.05) {0};
-\node[sym, anchor=south] at (\bx+0.5*\bwid, \hy+\hh+0.1) {$\pi$};
+\draw[scaMid, line width=0.45pt] (\bxa,\RYa) rectangle (\bxb,\RYb);
+\node[tick, anchor=west] at (\bxb+0.06,\RYb-0.09) {1};
+\node[tick, anchor=west] at (\bxb+0.06,\RYa+0.09) {0};
+\node[sym, anchor=west] at (\bxb+0.05,0.5*\RYa+0.5*\RYb) {$\pi$};
 
 \end{tikzpicture}
 \end{document}

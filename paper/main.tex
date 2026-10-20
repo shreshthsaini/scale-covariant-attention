@@ -24,6 +24,33 @@
 \usepackage{multicol}
 \usepackage{enumitem}
 \usepackage{listings}
+% Captions at 9 pt; every caption opens with a bold lead. One caption skip for all floats.
+\captionsetup{font=small,skip=5pt}
+% Float spacing, set once: top and bottom floats, stacked floats, here-floats and wrapped figures.
+\setlength{\textfloatsep}{11pt plus 2pt minus 3pt}
+\setlength{\floatsep}{9pt plus 2pt minus 2pt}
+\setlength{\intextsep}{9pt plus 2pt minus 2pt}
+% Wrapped figures: one top and bottom correction for all of them (wrapfig adds \intextsep above and below).
+\newcommand{\wraptop}{\vspace{-8pt}}
+\newcommand{\wrapbot}{\vspace{-6pt}}
+% No widow or club lines.
+\widowpenalty=10000
+\clubpenalty=10000
+% Prompt counts in captions and text. To move to the full 195-prompt split, set \nmain, \npanel, and \nseed
+% to 195 (\nhrgen to 1000 and \nkrea to 195 when those runs land) and regenerate the tables; the sentences
+% that describe the development prompts, the panel, and HRGen-1K switch on these values.
+\newcommand{\nmain}{195}  % Aesthetic-4K main set: Table main, non-square sizes, added baselines
+\newcommand{\npanel}{195}  % baseline panel: SigMa, sampling budgets, progressive SCA
+\newcommand{\nseed}{195}   % extra seed labels 1 and 2
+\newcommand{\nabl}{46}    % fixed ablation subset; stays at 46
+\newcommand{\nhrgen}{200} % HRGen-1K prompts evaluated, of 1000
+\newcommand{\nkrea}{100}  % FLUX.1-Krea-dev comparison
+\newcommand{\devprompts}{boats, Moai, woman and bear, underwater surfer}
+\newcommand{\ifmainfull}[2]{\ifnum\nmain=195\relax #1\else #2\fi}
+\newcommand{\ifpanelfull}[2]{\ifnum\npanel=195\relax #1\else #2\fi}
+\newcommand{\ifhrgenfull}[2]{\ifnum\nhrgen=1000\relax #1\else #2\fi}
+\newcommand{\ifseedfull}[2]{\ifnum\nseed=195\relax #1\else #2\fi}
+
 % Code and project link; swap for an anonymous mirror at submission time.
 \newcommand{\codeurl}{\href{https://github.com/shreshthsaini/scale-covariant-attention}{\mbox{github.com/shreshthsaini/scale-covariant-attention}}}
 % Python-like listings in the paper palette: keywords blue, function names dark amber, comments green.
@@ -108,7 +135,7 @@
 \begin{document}
 
 \maketitle
-\renewcommand{\topfraction}{0.55}
+\renewcommand{\topfraction}{0.6}
 
 \suppressfloats[t]
 
@@ -119,7 +146,7 @@ Diffusion transformers trained near one megapixel fail at higher resolutions: at
 \begin{center}
   \vspace{-4pt}
   \includegraphics[width=\linewidth]{figures/teaser.pdf}
-  \captionof{figure}{\textbf{\sca{} at 4K without training.} Top: curated \sca{} outputs of FLUX.1-dev at $2048\times6144$ and $4096^2$; each yellow box is shown enlarged at native pixels in the inset. Bottom: one curated $4096^2$ prompt under six methods, each full image above a 1:1 crop of its boxed window. Bottom, left to right: full attention collapses to a flat field, the DyPE and SEGA crops show lattice and streak artifacts, and AReA, UltraImage, and \sca{} keep the ridge. UltraImage runs its own two-stage recipe at over four times \sca{}'s time; \sca{} is $2.85\times$ faster than AReA.}
+  \captionof{figure}{\textbf{\sca{} at 4K without training.} Top: curated \sca{} outputs of FLUX.1-dev at $2048\times6144$ and $4096^2$; insets enlarge each yellow box at native pixels. Bottom: one curated $4096^2$ prompt under six methods, each above a 1:1 crop of its boxed window. Full attention collapses to a flat field, DyPE and SEGA show lattice and streak artifacts, and AReA, UltraImage, and \sca{} keep the ridge. UltraImage's two-stage recipe takes over four times \sca{}'s time; \sca{} is $2.85\times$ faster than AReA.}
   \label{fig:teaser}
 \end{center}
 
@@ -127,10 +154,10 @@ Diffusion transformers trained near one megapixel fail at higher resolutions: at
 \section{Introduction}
 \label{sec:intro}
 
-Diffusion transformers~\citep{peebles2022dit} such as FLUX.1~\citep{flux2024} and Stable Diffusion~3~\citep{esser2024sd3} are trained at about one megapixel. At $4096\times4096$ the image-token count grows 16-fold and full-attention cost about 256-fold. Every attention layer then sees token counts and position offsets outside its training distribution. Outputs show duplicated subjects, broken layouts, and blurred texture~\citep{he2023scalecrafter,du2023demofusion,issachar2025dype,rajabi2026area}. In FLUX.1-dev at $4096^2$, full attention collapses into stripes or a flat field (Figure~\ref{fig:teaser}).
+Diffusion transformers~\citep{peebles2022dit} such as FLUX.1~\citep{flux2024} and Stable Diffusion~3~\citep{esser2024sd3} are trained at about one megapixel. At $4096\times4096$ the image-token count grows 16-fold and full-attention cost about 256-fold, and every attention layer sees token counts and position offsets outside its training distribution. Outputs show duplicated subjects, broken layouts, and blurred texture~\citep{he2023scalecrafter,du2023demofusion,issachar2025dype,rajabi2026area}; in FLUX.1-dev at $4096^2$, full attention collapses into stripes or a flat field (Figure~\ref{fig:teaser}).
 
 \begin{wrapfigure}{r}{0.42\linewidth}
-  \vspace{-14pt}
+  \wraptop
   \centering
   \begin{minipage}[t]{0.495\linewidth}\centering
     \includegraphics[width=\linewidth]{figures/failure/moai_v0w64.jpg}\\[1pt]
@@ -140,18 +167,17 @@ Diffusion transformers~\citep{peebles2022dit} such as FLUX.1~\citep{flux2024} an
     \includegraphics[width=\linewidth]{figures/failure/moai_sca.jpg}\\[1pt]
     {\sffamily\scriptsize (b) \sca{}}
   \end{minipage}
-  \vspace{-6pt}
   \caption{\textbf{Windows repeat the subject.} $4096^2$, a development prompt asking for one Moai statue. (a)~A per-head mix with native-size windows from the first step draws five. (b)~\sca{}'s global-only opening keeps one.}
   \label{fig:motivation}
-  \vspace{-10pt}
+  \wrapbot
 \end{wrapfigure}
-Training-free fixes edit the positional encoding~\citep{zhuo2024lumina,issachar2025dype,zhao2025ultraimage,rajabi2026sega}. Others restrict the keys each query sees~\citep{zhang2023hidiffusion,ma2025resdit,xue2026hrdit,rajabi2026area}. Restricting keys keeps position offsets in range, but a native-size window cannot see an object larger than itself. At high noise, when the layout forms, windows settle it independently and repeat the subject (Figure~\ref{fig:motivation}a). AReA~\citep{rajabi2026area}, the most recent key-restricting method, therefore attends to keys subsampled onto a native-size grid for the first 8 of 28 steps. It then attends to windows that shrink to native size, and all heads share this schedule. Head-specific receptive fields are also established: HRDiT assigns per-head scopes under a cost budget~\citep{xue2026hrdit}, and UltraImage concentrates attention per head using entropy~\citep{zhao2025ultraimage}. We ask whether a head's local/global output mixture can be fitted at native resolution and transferred to larger images.
+Training-free fixes either edit the positional encoding~\citep{zhuo2024lumina,issachar2025dype,zhao2025ultraimage,rajabi2026sega} or restrict the keys each query sees~\citep{zhang2023hidiffusion,ma2025resdit,xue2026hrdit,rajabi2026area}. Restricting keys keeps position offsets in range, but a native-size window cannot see an object larger than itself. At high noise, when the layout forms, windows settle it independently and repeat the subject (Figure~\ref{fig:motivation}a). AReA~\citep{rajabi2026area}, the most recent key-restricting method, therefore attends to keys subsampled onto a native-size grid for the first 8 of 28 steps, then to windows that shrink to native size, with one schedule for all heads. HRDiT and UltraImage give heads their own receptive fields, chosen under a cost budget or by entropy~\citep{xue2026hrdit,zhao2025ultraimage}. We ask whether a head's local/global output mixture can be fitted at native resolution and transferred to larger images.
 
-We answer it by emulation. To mimic a target $s$ times larger, we shrink both a native-size neighbourhood and a downsampled view of the whole image by $s$. The image-to-window ratio then matches the target, while full attention stays in distribution and serves as ground truth. A convex mix of the two views fits each head well. The fitted weight differs strongly between heads and is stable across tested prompt splits (correlation 0.99). It also transfers: the table fitted at emulated scale 2 explains scale 4 with 2.4\% more output error than the scale-4 table, and a $1024^2$ table explains $1280^2$ with 0.8\% more (Section~\ref{sec:analysis}). We call this measured transfer scale covariance. The local view follows a law fixed in tokens and the global view a law fixed in image fractions, and over the tested scales the weight between them stays nearly constant.
+We answer by emulation. To mimic a target $s$ times larger, we shrink both a native-size neighbourhood and a downsampled view of the whole image by $s$, so the image-to-window ratio matches the target while full attention stays in distribution and serves as ground truth. A convex mix of the two views fits each head; its weight differs strongly between heads and is stable across prompt splits (correlation 0.99). It also transfers: the emulated scale-2 table explains scale 4 with 2.4\% more output error than the scale-4 table, and a $1024^2$ table explains $1280^2$ with 0.8\% more (Section~\ref{sec:analysis}). We call this measured transfer scale covariance: the local view follows a law fixed in tokens, the global view one fixed in image fractions, and their weight stays nearly constant over the tested scales.
 
-We introduce Scale-Covariant Attention (\sca{}), which turns this measurement into an attention operator (Figure~\ref{fig:method}). Each head uses its calibrated weight to mix two branches. The global branch attends to block-centre keys on the native grid with rescaled coordinates; the local branch is an exact native-size sliding window. The calibrated mix alone does not preserve layout: applied from the first step at $4096^2$, it draws five Moai statues for a prompt asking for one (Figure~\ref{fig:motivation}a). \sca{} therefore runs the global branch alone for the first 8 of 28 steps (the opening phase), as a frequency argument suggests (Argument~\ref{arg:freq}).
+We introduce Scale-Covariant Attention (\sca{}), which turns this measurement into an operator (Figure~\ref{fig:method}). Each head's calibrated weight mixes a global branch over block-centre keys on the native grid, with rescaled coordinates, and a local branch, an exact native-size sliding window. Applied from the first step, the calibrated mix repeats the subject (Figure~\ref{fig:motivation}a), so \sca{} runs the global branch alone for the first 8 of 28 steps (the opening phase), as a frequency argument suggests (Argument~\ref{arg:freq}).
 
-To summarize, we measure each head's local/global mix at the training resolution and reuse it at the target. Against seven baselines with paired bootstrap intervals, \sca{} beats AReA on every per-image metric at $4096^2$, at 71.1\,s per image against 202.4\,s (Section~\ref{sec:main}). Inside HRDiT's progressive schedule it matches HRDiT's preference scores in less than half the time. We highlight our main contributions below.
+Against seven baselines with paired bootstrap intervals, \sca{} beats AReA on every per-image metric at $4096^2$, at 71.1\,s per image against 202.4\,s (Section~\ref{sec:main}). In HRDiT's progressive schedule it matches HRDiT's preference scores in less than half the time. We highlight our contributions below.
 \begin{itemize}
   \item We fit each head's mix of local and global attention in closed form at the training resolution and show that the fit transfers across scales (Section~\ref{sec:analysis}).
   \item We propose \sca{}, a per-head mix of a native-size window and block-centre global keys whose offsets stay in the trained range at a cost linear in the token count.
@@ -161,7 +187,7 @@ To summarize, we measure each head's local/global mix at the training resolution
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/method.pdf}
-  \caption{\textbf{Scale-Covariant Attention.} (a)~At the target size, each head mixes a native-size local window and block-centre global keys with weight $\pi$, after global-only opening steps ($\sigma>\sigma_g$; schematic grid, $s=4$). (b)~Calibration at $1024^2$ runs full attention, evaluates both operators at an emulated scale, and fits $\pi$ per head and noise bin (one block's 24 heads shown). Figure~\ref{fig:method_zoom} in Appendix~\ref{app:impl} zooms into both operators and shows the table for all 57 blocks.}
+  \caption{\textbf{\sca{} sampling and calibration.} (a)~Each head mixes a native-size local window and block-centre global keys with weight $\pi_h(\sigma)$; steps with $\sigma>\sigma_g$ are global only (schematic grid, $s=4$). (b)~Calibration at $1024^2$ fits $\pi$ per head and noise bin to full attention, with both operators at an emulated scale. Figure~\ref{fig:method_zoom} in Appendix~\ref{app:impl} zooms into each component.}
   \label{fig:method}
 \end{figure}
 
@@ -176,7 +202,7 @@ A multimodal diffusion transformer such as FLUX.1 concatenates $T$ text tokens $
   \Attn(q,u;\Kset) \;=\; \textstyle\sum_{(k,v,u')\in\Kset} \operatorname{softmax}_{\Kset}\!\big(q^\top R_{u'-u}\,k/\sqrt d\big)\; v ,
   \label{eq:attn}
 \end{equation}
-where $d$ is the head dimension. Full attention is $\Ofull_i=\Attn\big(q_i,p_i;\{(k_j,v_j,p_j)\}_{j\in\Tset\cup\Gset}\big)$. The target grid is $H=s_H n_0$, $W=s_W n_0$ with integer factors ($s$ when equal), so full attention meets offsets $s$ times the trained range. The latent at noise level $\sigma$ is $x_\sigma=(1-\sigma)x_0+\sigma\epsilon$. Splitting the keys into a near and a far set gives exactly $\Ofull_i=m_iO^{\mathrm{near}}_i+(1-m_i)O^{\mathrm{far}}_i$ (Lemma~\ref{lem:split}). Here $O^{\mathrm{near}}_i$ and $O^{\mathrm{far}}_i$ attend only to their own set, and $m_i$ is the softmax mass on the near set. Every head is thus a query-dependent mix of a near and a far field. \sca{} approximates this mix with two separately normalized operators and one weight per head. Because both branches include text keys and their image key sets can overlap, the identity does not decompose \sca{} exactly.
+where $d$ is the head dimension. Full attention is $\Ofull_i=\Attn\big(q_i,p_i;\{(k_j,v_j,p_j)\}_{j\in\Tset\cup\Gset}\big)$. The target grid is $H=s_H n_0$, $W=s_W n_0$ with integer factors ($s$ when equal), so full attention meets offsets $s$ times the trained range. The latent at noise level $\sigma$ is $x_\sigma=(1-\sigma)x_0+\sigma\epsilon$. Splitting the keys into a near and a far set gives exactly $\Ofull_i=m_iO^{\mathrm{near}}_i+(1-m_i)O^{\mathrm{far}}_i$ (Lemma~\ref{lem:split}), where each $O$ attends only to its own set and $m_i$ is the softmax mass on the near set. Every head is thus a query-dependent mix of a near and a far field. \sca{} approximates this mix with two separately normalized operators and one weight per head; because both branches include text keys and their image key sets can overlap, the identity does not decompose \sca{} exactly.
 
 \subsection{Two operators with native-range image geometry}
 \label{sec:branches}
@@ -189,13 +215,13 @@ where $d$ is the head dimension. Full attention is $\Ofull_i=\Attn\big(q_i,p_i;\
 \end{equation}
 with $c(p_i)$ replaced by 0 for text queries. This is AReA's first phase with the pooling factor fixed at $s$. It models content whose extent is a fixed fraction of the image: layout, object count, identity.
 
-\paragraph{Local operator.} Image queries form tiles of $t\times t$ tokens ($t=8$); query $i$ lies in tile $\tau=\lfloor p_i/t\rfloor$. The window side is $w=\min(n_0,H)$. The window of tile $\tau$ starts at $a(\tau)=\clip\big(t\tau+\lfloor t/2\rfloor-\lfloor w/2\rfloor,0,H-w\big)$ per axis, centred on the tile and clamped to the grid. With $\Win(i)$ the $w\times w$ window of $i$'s tile,
+\paragraph{Local operator.} Image queries form tiles of $t\times t$ tokens ($t=8$); query $i$ lies in tile $\tau=\lfloor p_i/t\rfloor$. The window $\Win(i)$ of tile $\tau$ has side $w=\min(n_0,H)$ and starts at $a(\tau)=\mbox{$\clip\big(t\tau+\lfloor t/2\rfloor-\lfloor w/2\rfloor,0,H-w\big)$}$ per axis, centred on the tile and clamped to the grid:
 \begin{equation}
   \Kset^{\mathrm{loc}}_i=\{(k_j,v_j,0)\}_{j\in\Tset}\cup\{(k_j,v_j,p_j)\}_{p_j\in\Win(i)},\qquad
   \Oloc_i=\Attn\big(q_i,\,p_i;\,\Kset^{\mathrm{loc}}_i\big),
   \label{eq:loc}
 \end{equation}
-an exact sliding window with the original positions. It models content whose extent is fixed in tokens: edges, texture, fine structure.
+an exact sliding window with the original positions. It models content whose extent is fixed in tokens: edges, texture, fine structure. Appendix~\ref{app:proofs} proves the two propositions below.
 
 \begin{proposition}[Trained position range]
 \label{prop:range}
@@ -206,39 +232,10 @@ Assume exact integer position coordinates and $t\le n_0\le\min(H,W)$. Every quer
 \label{prop:cost}
 Per head and layer, full attention scores $(N+T)^2$ query-key pairs, the global operator $(N+T)(T+N_0)$ with $N_0=|\Gnat|=n_0^2$, and the local operator $N(T+w^2)$. For fixed $n_0$ and $T$ the total is $O\big(N(T+w^2+N_0)\big)$, linear in $N$.
 \end{proposition}
-Proofs are in Appendix~\ref{app:proofs}. Proposition~\ref{prop:range} assumes exact coordinates; the frozen FLUX.1 implementation rounds positions in bf16 beyond 256 tokens per axis (Appendix~\ref{app:impl}). Native-range geometry also does not make hidden states in-distribution. Text-image offsets in the local operator equal $p_i$, as in full attention at the target (Remark~\ref{rem:text}). At $4096^2$ \sca{} scores 7.2 times fewer query-key pairs than full attention, 8.4 times fewer with the opening phase (Table~\ref{tab:flops}).
+Proposition~\ref{prop:range} assumes exact coordinates; FLUX.1 rounds positions in bf16 beyond 256 tokens per axis (Appendix~\ref{app:impl}). Native-range geometry also does not make hidden states in-distribution.
 
-\subsection{Per-head mixing and the opening phase}
-\label{sec:mix}
-For an image query of head $h$ in block $l$ at noise level $\sigma$,
-\begin{equation}
-  O_i \;=\; \Oglob_i \;\;\text{if } \sigma>\sigma_g,\qquad
-  O_i \;=\; \pi_{lh}(\sigma)\,\Oloc_i + \big(1-\pi_{lh}(\sigma)\big)\,\Oglob_i \;\;\text{otherwise},
-  \label{eq:mix}
-\end{equation}
-where $\sigma_g$ is the gate and text queries use $\Oglob_i$. The weight $\pi_{lh}(\sigma)$, written $\pih$, stands in for the near-field mass $m_i$; one weight per head is cheap and a few prompts determine it.
+\paragraph{Design choices.} A block centre is a real token, so the global branch attends to keys and values the model produced; mean pooling instead lowers ImageReward by 1.52 (Section~\ref{sec:ablations}). The centre also lies within $\lfloor s/2\rfloor$ tokens of its whole block per axis, against $s-1$ for a corner token. A window of side $n_0$ is the largest that keeps image offsets in the trained range and gives each query the native key count, so \sca{} keeps FLUX.1's RoPE and softmax scale. Text keys sit at position 0 in both branches; text queries take $\Oglob$, whose $T+n_0^2$ keys match the native size, and image queries keep offset $p_i$ to text keys in the local branch, as in full attention (Remark~\ref{rem:text}). At $4096^2$ \sca{} scores 7.2 times fewer query-key pairs than full attention (8.4 with the opening phase), and an attention layer takes 18.7\,ms instead of 87.3\,ms (Table~\ref{tab:flops}).
 
-\begin{argument}[A frequency-based explanation for the opening phase]
-\label{arg:freq}
-At noise level $\sigma$ a spatial frequency band has signal-to-noise ratio $\big((1-\sigma)/\sigma\big)^2 S(f)$ for image spectrum $S$. If latent power falls with frequency, only low frequencies carry signal at high noise. A window of $w$ tokens spans less than one period of any frequency below $1/w$. Independently attended windows may then repeat local structures instead of forming one large object, while a global branch supplies context across windows. Hidden states also carry information from earlier layers, so this is a mechanistic hypothesis, not an impossibility result (Appendix~\ref{app:proofs}).
-\end{argument}
-Output matching cannot see this failure: a tokenwise squared error can favour local detail without preserving layout. We have not measured per-band signal-to-noise ratios of FLUX.1 latents, but a 16-token window gives smaller and more numerous copies than a 64-token one, as predicted (Figure~\ref{fig:failure}). We set $\sigma_g=0.89$ (the first 8 of 28 steps at maximum shift, as in AReA). Gating 13 steps gives a $4\times4$ block mosaic, because all queries of a block share one coarse position.
-
-\subsection{Calibration by output matching}
-\label{sec:calib}
-The weights must come from where the model is trustworthy, which the target is not. On an in-distribution $n\times n$ grid ($n=64$ at $1024^2$), emulated scale $s_c$ uses subsampling factor $s_c$, window side $n/s_c$, and tile side $\mathrm{round}(tn/(s_cn_0))$. The ratio of grid to window is then $s_c$, as at a target of scale $s_c$. The sampler runs unmodified full attention; at every block and step both emulated operators are evaluated on the same queries, keys, and values. For block $l$, head $h$, and noise bin $\beta$, sums over prompts, steps with $\sigma\in\beta$, image queries, and channels give
-\begin{equation}
-  A=\textstyle\sum\|\Oloc-\Oglob\|^2,\quad
-  B=\sum\langle \Ofull-\Oglob,\,\Oloc-\Oglob\rangle,\quad
-  E=\sum\|\Ofull-\Oglob\|^2,
-  \label{eq:stats}
-\end{equation}
-where $\Oloc$ and $\Oglob$ use the emulated geometry. The squared error of the mix with weight $\pi$ is $J(\pi)=E-2\pi B+\pi^2A$.
-
-\begin{proposition}[Closed-form calibration and transfer cost]
-\label{prop:opt}
-In each cell $(l,h,\beta)$, $J$ is minimized on $[0,1]$ by $\pi^\star=\clip(B/A,0,1)$, with $\pi^\star=1$ if $A=0$. Any other weight $\pi'\in[0,1]$ (fitted at another scale or resolution, per layer, shared, or a hard switch) has $J(\pi')-J(\pi^\star)\ge A(\pi'-\pi^\star)^2$, with equality when $0<\pi^\star<1$.
-\end{proposition}
 \begin{figure}[t]
   \centering
   \begin{minipage}[t]{0.48\linewidth}
@@ -248,7 +245,7 @@ In each cell $(l,h,\beta)$, $J$ is minimized on $[0,1]$ by $\pi^\star=\clip(B/A,
     \vspace{-4pt}
 \begin{lstlisting}[style=scacode, emph={calibrate,attn,global_branch,local_branch,clip,fill_empty_bins}]
 # Input: prompts; full-attention sampler at (*@$1024^2$@*)
-# Output: pi*[s_c, l, h, beta]; code in App. (*@\ref{app:code}@*)
+# Output: pi*[s_c, l, h, beta]; full in App. (*@\ref{app:code}@*)
 def calibrate(q, k, v, l, sigma):  # every block
   O_full = attn(q, k, v)        # Eq. (*@\ref{eq:attn}@*), all keys
   beta = min(int(14 * sigma), 13)    # noise bin
@@ -292,21 +289,61 @@ return cat(O_glob[:T], O_img)     # text: O_glob
 \end{lstlisting}
   \end{minipage}
 \end{figure}
-So the per-head table has the lowest output error of any rule constant within a cell, and replacing it costs an $A$-weighted squared distance. This holds at the emulation scale; Section~\ref{sec:analysis} measures how well tables transfer between scales and resolutions. The same sums score every alternative rule without another forward pass. We use 14 noise bins of width $1/14$ and interpolate linearly between the mean noise levels of occupied bins at inference. One pass collects emulated scales 2 and 4. A target with factors $(s_H,s_W)$ uses the table whose scale is nearest $\max(s_H,s_W)$ in log space, here always 4. The local operator is one FlexAttention call~\citep{dong2024flex} over tile-major tokens with the window as an exact block mask (Algorithm~\ref{alg:sample}, Appendix~\ref{app:impl}).
+
+\subsection{Per-head mixing and the opening phase}
+\label{sec:mix}
+For an image query of head $h$ in block $l$ at noise level $\sigma$,
+\begin{equation}
+  O_i \;=\; \Oglob_i \;\;\text{if } \sigma>\sigma_g,\qquad
+  O_i \;=\; \pi_{lh}(\sigma)\,\Oloc_i + \big(1-\pi_{lh}(\sigma)\big)\,\Oglob_i \;\;\text{otherwise},
+  \label{eq:mix}
+\end{equation}
+where $\sigma_g$ is the gate and text queries use $\Oglob_i$. The weight $\pi_{lh}(\sigma)$, written $\pih$, stands in for the near-field mass $m_i$; one weight per head is cheap and a few prompts determine it.
+
+\begin{argument}[A frequency-based explanation for the opening phase]
+\label{arg:freq}
+At noise level $\sigma$ a spatial frequency band has signal-to-noise ratio $\big((1-\sigma)/\sigma\big)^2 S(f)$ for image spectrum $S$. If latent power falls with frequency, only low frequencies carry signal at high noise. A window of $w$ tokens spans less than one period of any frequency below $1/w$. Independently attended windows may then repeat local structures instead of forming one large object, while a global branch supplies context across windows. Hidden states also carry information from earlier layers, so this is a mechanistic hypothesis, not an impossibility result (Appendix~\ref{app:proofs}).
+\end{argument}
+Output matching cannot see this failure, because a tokenwise squared error can favour local detail without preserving layout. We have not measured per-band signal-to-noise ratios of FLUX.1 latents, but a 16-token window gives smaller and more numerous copies than a 64-token one, as predicted (Figure~\ref{fig:failure}). We set $\sigma_g=0.89$, the first 8 of 28 steps at maximum shift as in AReA; gating 13 steps gives a $4\times4$ block mosaic, because all queries of a block share one coarse position.
+
+\subsection{Calibration by output matching}
+\label{sec:calib}
+The weights must come from where the model is trustworthy, which the target is not. On an in-distribution $n\times n$ grid ($n=64$ at $1024^2$), emulated scale $s_c$ uses subsampling factor $s_c$, window side $n/s_c$, and tile side $\mathrm{round}(tn/(s_cn_0))$. The ratio of grid to window is then $s_c$, as at a target of scale $s_c$. The sampler runs unmodified full attention (Algorithm~\ref{alg:calib}), and at every block and step both emulated operators see the same queries, keys, and values. For block $l$, head $h$, and noise bin $\beta$, sums over prompts, steps with $\sigma\in\beta$, image queries, and channels give
+\begin{equation}
+  A=\textstyle\sum\|\Oloc-\Oglob\|^2,\quad
+  B=\sum\langle \Ofull-\Oglob,\,\Oloc-\Oglob\rangle,\quad
+  E=\sum\|\Ofull-\Oglob\|^2,
+  \label{eq:stats}
+\end{equation}
+where $\Oloc,\Oglob$ are emulated. The mix with weight $\pi$ has squared error $J(\pi)=E-2\pi B+\pi^2A$.
+
+\begin{proposition}[Closed-form calibration and transfer cost]
+\label{prop:opt}
+In each cell $(l,h,\beta)$, $J$ is minimized on $[0,1]$ by $\pi^\star=\clip(B/A,0,1)$, with $\pi^\star=1$ if $A=0$. Any other weight $\pi'\in[0,1]$ (fitted at another scale or resolution, per layer, shared, or a hard switch) has $J(\pi')-J(\pi^\star)\ge A(\pi'-\pi^\star)^2$, with equality when $0<\pi^\star<1$.
+\end{proposition}
+So the per-head table has the lowest output error of any rule constant within a cell, and replacing it costs an $A$-weighted squared distance. This holds at the emulation scale; Section~\ref{sec:analysis} measures transfer between scales and resolutions. The same sums score every alternative rule without another forward pass, and one pass collects emulated scales 2 and 4.
+
+\paragraph{Inference.} A target with factors $(s_H,s_W)$ uses the table scale nearest $\max(s_H,s_W)$ in log space, here always 4. Each step interpolates each head's weight linearly in $\sigma$ between the mean noise levels of occupied bins (14 bins of width $1/14$), constant beyond them. At $2048\times4096$, $(s_H,s_W)=(2,4)$: $2\times4$ blocks keep the global grid at $n_0\times n_0$, the window stays $n_0\times n_0$, and the scale-2 table would change metrics only slightly (Appendix~\ref{app:ps2}). The local operator is one exact FlexAttention call~\citep{dong2024flex} (Algorithm~\ref{alg:sample}).
 
 \subsection{\texorpdfstring{\sca{}}{SCA} inside a progressive schedule}
 \label{sec:progressive}
-\sca{} replaces only the attention, so it can serve inside a multi-stage sampler. HRDiT~\citep{xue2026hrdit} denoises at $1024^2$ for 30 steps, then upsamples, re-noises, and repeats the last 17 and 10 steps of the same schedule at $2048^2$ and $4096^2$. Each later stage pulls the estimate's low frequencies toward the previous stage. At those two stages HRDiT changes attention in four ways: NTK-scaled RoPE, a proportional attention scale, per-head key pruning, and position alignment. Progressive \sca{} keeps HRDiT's schedule, transitions, guidance, and seeds, and replaces all four changes with \sca{}. It uses native RoPE with the scale-2 table at $2048^2$ and the scale-4 table at $4096^2$. The stages re-enter at $\sigma=0.81$ and $0.61$, below $\sigma_g=0.89$, so the opening phase never runs; the $1024^2$ stage sets the layout. All settings were fixed before any evaluation image was generated (Appendix~\ref{app:additional_protocols}).
+\sca{} replaces only the attention, so it fits inside a multi-stage sampler (Algorithm~\ref{alg:prog}). HRDiT~\citep{xue2026hrdit} denoises at $1024^2$ for 30 steps, then upsamples, re-noises, and repeats the last 17 and 10 steps of the same schedule at $2048^2$ and $4096^2$. At those two stages HRDiT changes attention in four ways: NTK-scaled RoPE, a proportional attention scale, per-head key pruning, and position alignment. Progressive \sca{} keeps HRDiT's schedule, transitions, guidance, and seeds, and replaces all four with \sca{}, using native RoPE and the scale-2 and scale-4 tables. The stages re-enter at $\sigma=0.81$ and $0.61$, below $\sigma_g=0.89$, so the opening phase never runs; the $1024^2$ stage sets the layout. All settings were fixed before any evaluation image was generated (Appendix~\ref{app:additional_protocols}).
 
 % =====================================================================================
 \section{What the heads want}
 \label{sec:analysis}
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/pi_heads.pdf}
+  \caption{\textbf{Heads want different mixes.} (a--c)~$\pi_h(\sigma)$ of all 1368 heads at emulated scale 2; amber: mean above 0.8, blue: below 0.2, green: median; $\sigma>\sigma_g$ veiled. (d)~Tables from disjoint prompt halves agree ($r=0.989$).}
+  \label{fig:pi_heads}
+\end{figure}
 We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $1280^2$, disjoint from the evaluation sets. Errors are relative, $\sum J/\sum\|\Ofull\|^2$, pooled over blocks, heads, and steps.
 
-\paragraph{Heads differ.} Over the 1368 heads, the standard deviation of $\pih$ is 0.24 to 0.26 at every noise level (emulated scale 2). Half of the (head, noise level) cells lie in $[0.2,0.8]$, 11.7\% exceed 0.95, and 2.9\% are below 0.05 (Figure~\ref{fig:method}b; full tables in Figure~\ref{fig:calib}, Appendix~\ref{app:calib}). The mean weight is 0.64 to 0.74, so the typical head leans local but still draws on the global branch.
+\paragraph{Heads differ.} Over the 1368 heads, the standard deviation of $\pih$ is 0.24 to 0.26 at every noise level (emulated scale 2). Half of the (head, noise level) cells lie in $[0.2,0.8]$, 11.7\% exceed 0.95, and 2.9\% are below 0.05 (Figure~\ref{fig:pi_heads}a--c; full tables in Figure~\ref{fig:calib}, Appendix~\ref{app:calib}). The mean weight is 0.64 to 0.74, so the typical head leans local but still draws on the global branch.
 
-\paragraph{The table is stable across tested prompt splits.} Tables fitted on disjoint halves of the prompts correlate at 0.989 over all cells (0.986 at scale 4; 0.974 for 16 prompts at $1280^2$). Each half's table, scored on the other half, gives a relative error of 0.0576 against 0.0574 in sample. Tables from 4, 8, or 16 prompts also generate similarly (Section~\ref{sec:generality}).
+\paragraph{The table is stable across tested prompt splits.} Tables fitted on disjoint halves of the prompts correlate at 0.989 over all cells (Figure~\ref{fig:pi_heads}d; 0.986 at scale 4; 0.974 for 16 prompts at $1280^2$). Each half's table, scored on the other half, gives a relative error of 0.0576 against 0.0574 in sample.
 
 \paragraph{The weights transfer across the tested scales and resolutions.} The scale-2 table applied at scale 4 gives a relative error of 0.205 against 0.200 for the scale-4 table, still below every shared rule fitted at scale 4. The $1024^2$ table scored at $1280^2$ gives 0.0589 against 0.0585. Over all pairs of calibration targets, a transferred table adds at most 5.45\% error, while each target's own per-layer fit adds 12 to 24\%. The two resolutions emulate scale 2 with windows of 32 and 40 tokens, so this transfer is consistent with weights that depend mainly on the image-to-window ratio.
 
@@ -317,7 +354,7 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
 \label{sec:experiments}
 
 \begin{table}[t]
-  \caption{\textbf{Main comparison at $4096^2$.} FLUX.1-dev, 191 Aesthetic-4K prompts, seed label 0. HPSv2.1 $\times100$; MUSIQ$_\text{c}$: MUSIQ on $1024^2$ crops; FID$_\text{p}$: patch FID. \textbf{Bold} / \underline{underline}: best / second best; our row is shaded. Seconds per image on one GH200: clean: batch-1 median of three images after warm-up (for HRDiT, including its cold first run); camp.: campaign mean on shared nodes; n/m: not measured. Table~\ref{tab:all_metrics} expands this table to all metrics. Key result: among single-pass methods, \sca{} has the best mean on every metric shown and is the fastest, $2.85\times$ faster than AReA.}
+  \caption{\textbf{Main comparison at $4096^2$.} FLUX.1-dev, \nmain{} Aesthetic-4K prompts, seed label 0. HPSv2.1 $\times100$; MUSIQ$_\text{c}$: MUSIQ on $1024^2$ crops; FID$_\text{p}$: patch FID. \textbf{Bold} / \underline{underline}: best / second best; ours shaded. Seconds per image on one GH200: clean: batch-1 median of three images after warm-up (HRDiT: including its cold first run); camp.: campaign mean on shared nodes; n/m: not measured. Table~\ref{tab:all_metrics} expands it to all metrics. Key result: among single-pass methods, \sca{} is best on every metric shown and $2.85\times$ faster than AReA.}
   \label{tab:main}
   \centering\footnotesize
   \setlength{\tabcolsep}{3.1pt}
@@ -328,35 +365,53 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
     Method & Steps & clean & camp. & Reward & HPSv2.1 & Score & CLIP & MUSIQ$_\text{c}$ & FID$\downarrow$ & FID$_\text{p}\!\downarrow$ \\
     \midrule
     \multicolumn{11}{@{}l}{\emph{Single pass, shared sampler (28 steps, guidance 4.5)}} \\
-    Full attention & 28 & 186.5 & 196.5 & $-2.18$ & 7.61 & 17.94 & 15.38 & 33.2 & 312.7 & 252.4 \\
-    DyPE & 28 & n/m & 196.1 & $-0.11$ & 20.52 & 20.49 & 24.84 & 50.4 & 206.2 & 172.7 \\
-    SEGA & 28 & n/m & 190.5 & 0.55 & 24.37 & 21.64 & 26.93 & 50.4 & 165.4 & 126.0 \\
-    AReA & 28 & 202.4 & 261.7 & 0.92 & 27.20 & 22.35 & 27.67 & 50.4 & 146.0 & \underline{103.4} \\
-    \rowcolor[HTML]{EAF4F1}\textbf{\sca{} (ours)} & 28 & \textbf{71.1} & \textbf{71.5} & 1.23 & 29.71 & 23.09 & \textbf{29.11} & \textbf{61.2} & \textbf{138.4} & \textbf{99.8} \\
+    Full attention & 28 & 186.5 & 196.2 & $-2.18$ & 7.60 & 17.94 & 15.37 & 33.1 & 312.4 & 252.2 \\
+    DyPE & 28 & n/m & 195.9 & $-0.10$ & 20.55 & 20.51 & 24.92 & 50.3 & 205.5 & 171.9 \\
+    SEGA & 28 & n/m & 190.4 & 0.56 & 24.34 & 21.64 & 26.95 & 50.3 & 164.9 & 125.8 \\
+    AReA & 28 & 202.4 & 264.4 & 0.92 & 27.16 & 22.36 & 27.69 & 50.4 & 145.8 & \underline{102.9} \\
+    \rowcolor[HTML]{EAF4F1}\textbf{\sca{} (ours)} & 28 & \textbf{71.1} & \textbf{71.5} & 1.23 & 29.67 & 23.09 & \textbf{29.14} & \textbf{61.2} & \textbf{138.1} & \textbf{99.1} \\
     \midrule
     \multicolumn{11}{@{}l}{\emph{Multi-stage, own recipe and budget}} \\
-    UltraImage & 30+30 & n/m & 308.5 & \underline{1.28} & \underline{30.80} & \underline{23.32} & 28.80 & 41.8 & 142.7 & 110.6 \\
-    HRDiT & 30+17+10 & \underline{108.6} & \underline{110.2} & \textbf{1.34} & \textbf{30.96} & \textbf{23.45} & \underline{29.10} & \underline{53.5} & \underline{139.1} & 103.9 \\
+    UltraImage & 30+30 & n/m & 308.5 & \underline{1.28} & \underline{30.77} & \underline{23.33} & 28.84 & 41.7 & 142.0 & 109.5 \\
+    HRDiT & 30+17+10 & \underline{108.6} & \underline{110.4} & \textbf{1.34} & \textbf{30.92} & \textbf{23.46} & \underline{29.12} & \underline{53.5} & \underline{138.4} & 103.0 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\paragraph{Data.} The main prompts are the Aesthetic-4K evaluation split with 4K references~\citep{zhang2025diffusion4k}: 191 prompts after excluding four development prompts. A fixed 46-prompt subset serves the ablations and the panel comparison, and HRGen-1K~\citep{rajabi2026area} adds 200 prompts without references. Sizes, written height$\times$width, are $4096^2$, $2048\times4096$, and $2048\times6144$ (191 prompts each), $6144^2$ (100 prompts), and $8192^2$ (12 exploratory prompts). Every prompt uses seed label 0; seeds 1 and 2 repeat the 46-prompt subset.
+\paragraph{Data and seeds.} The main set is the Aesthetic-4K evaluation split with 4K references~\citep{zhang2025diffusion4k}: \ifmainfull{all 195 prompts; four of them (\devprompts) were used during development, which favours \sca{} slightly}{\nmain{} prompts after excluding the four used during development (\devprompts)}. A fixed \nabl-prompt subset, chosen before any ablation ran, serves the ablations\ifpanelfull{}{ and the panel comparison}. HRGen-1K~\citep{rajabi2026area} has 1000 prompts without references; we evaluate \ifhrgenfull{all of them}{the first \nhrgen}. Sizes (height$\times$width) are $4096^2$, $2048\times4096$, and $2048\times6144$ (main set), and the subsets $6144^2$ (100 prompts) and $8192^2$ (12 exploratory prompts). All methods share each image's seed, a hash of prompt id and seed label 0; labels 1 and 2 repeat \ifseedfull{all prompts}{\nseed{} prompts}.
 
-\paragraph{Models.} FLUX.1-dev~\citep{flux2024} is the main model. FLUX.2-dev (50 prompts, against full attention) and FLUX.1-Krea-dev (100 prompts, against AReA) test other checkpoints, each calibrated separately on 16 prompts at $1024^2$ (Appendix~\ref{app:additional_protocols}).
+\paragraph{Models and hyperparameters.} FLUX.1-dev~\citep{flux2024} is the main model. FLUX.2-dev (50 prompts, against full attention) and FLUX.1-Krea-dev (\nkrea{} prompts, against AReA) test other checkpoints, each calibrated separately on 16 prompts at $1024^2$ (Appendix~\ref{app:additional_protocols}). On FLUX.1-dev, \sca{} uses $t=8$, $w=64$, $\sigma_g=0.89$, and the scale-4 table at every size (Table~\ref{tab:hparams}); the opening phase and window were chosen on the development prompts only. Each process uses one NVIDIA GH200 120GB, and worker logs give at least 123.3 GH200-hours (Appendix~\ref{app:compute}).
 
-\paragraph{Baselines.} Full attention, AReA from its released code (Appendix~\ref{app:area}), DyPE~\citep{issachar2025dype}, and SEGA~\citep{rajabi2026sega} run on all 191 prompts, and SigMa~\citep{zhao2026sigma} on the 46-prompt subset. They share AReA's sampler: 28 Euler flow-matching steps, guidance 4.5, shift $\mu=1.15$ at every size, bf16, and tiled VAE decoding. This fixes the sampler rather than each baseline's tuned defaults (Appendix~\ref{app:additional_protocols}). UltraImage~\citep{zhao2025ultraimage} runs its released guided two-stage recipe (30 steps per stage, guidance 3.5 then 7). HRDiT~\citep{xue2026hrdit} runs its progressive recipe (30, 17, and 10 steps at $1024^2$, $2048^2$, and $4096^2$). Both run on all 191 prompts as system-level comparisons with their own budgets.
+\paragraph{Baselines.} Full attention, AReA from its released code (Appendix~\ref{app:area}), DyPE~\citep{issachar2025dype}, SEGA~\citep{rajabi2026sega}, and SigMa~\citep{zhao2026sigma} run on the main set (Tables~\ref{tab:main} and~\ref{tab:panel46}). They share AReA's sampler on FLUX.1-dev: 28 Euler flow-matching steps, guidance 4.5, shift $\mu=1.15$ at every size, bf16, and tiled VAE decoding; this fixes the sampler, not each baseline's tuned defaults (Appendix~\ref{app:additional_protocols}). UltraImage~\citep{zhao2025ultraimage} runs its released guided two-stage recipe (30 steps per stage, guidance 3.5 then 7) and HRDiT~\citep{xue2026hrdit} its progressive recipe (Section~\ref{sec:progressive}), both on the main set with their own budgets.
 
-\paragraph{Evaluation.} Preference and alignment scores are ImageReward, HPSv2 and HPSv2.1, PickScore, CLIP score, and aesthetic score~\citep{xu2023imagereward,wu2023hpsv2,kirstain2023pickapic,radford2021clip,schuhmann2022aesthetic}. Distribution scores are FID, KID, patch FID and KID, and Inception score~\citep{heusel2017fid,salimans2016improved}. No-reference quality uses MUSIQ on the full image and on $1024^2$ crops (MUSIQ$_\text{c}$), CLIP-IQA, and ARNIQA~\citep{ke2021musiq,wang2022clipiqa,agnolucci2024arniqa}. Intervals are 95\% paired bootstrap intervals over prompts; Appendix~\ref{app:metrics} defines every metric.
+\paragraph{Metrics.} Preference and alignment scores are ImageReward, HPSv2, HPSv2.1, PickScore, CLIP score, and aesthetic score~\citep{xu2023imagereward,wu2023hpsv2,kirstain2023pickapic,radford2021clip,schuhmann2022aesthetic}. No-reference quality is MUSIQ on the full image and over four $1024^2$ crops (MUSIQ$_\text{c}$), CLIP-IQA, and ARNIQA~\citep{ke2021musiq,wang2022clipiqa,agnolucci2024arniqa}. Distribution scores are FID, KID, and Inception score at $299^2$, and patch FID and KID on the same crops~\citep{heusel2017fid,salimans2016improved}; FID and KID use all 195 official Aesthetic-4K reference rows (168 distinct images). Crops depend only on the prompt id, so all methods share them. Patch FID is our own definition; AReA and SEGA do not define theirs, so we never compare it across papers. Table~\ref{tab:published_compare} places our numbers beside the published ones under AReA's own protocol. Intervals are 95\% paired percentile bootstraps over prompt ids (1000 or 2000 draws); for the main FID and KID comparisons they also resample reference images (Appendix~\ref{app:metrics}).
 
-\paragraph{Hyperparameters.} \sca{} uses tile side $t=8$, window $w=64$, gate $\sigma_g=0.89$, and the scale-4 table from 32 prompts at $1024^2$ (Appendix~\ref{app:hparams}). The window equals the native grid by construction, and the gate reproduces AReA's 8 global steps of 28. The opening phase was tuned on development prompts only, and all progressive settings were fixed before any evaluation image was generated.
 
-\paragraph{Compute.} Each process uses one NVIDIA GH200 120GB. At $4096^2$ and batch 1, \sca{} takes 71.1\,s per image, AReA 202.4\,s, and full attention 186.5\,s (median of three images). Main comparisons, ablations, and non-square sizes span over 2000 images. Surviving worker logs give a lower bound of 123.3 GH200-hours, including calibration and evaluation (Appendix~\ref{app:compute}).
+\input{figures/snippets/published_compare.tex}
 
 \subsection{Main results}
 \label{sec:main}
+
+\begin{wrapfigure}[21]{r}{0.46\linewidth}
+  \wraptop
+  \centering
+  \includegraphics{figures/paired_area.pdf}
+  \caption{\textbf{Eleven of 15 metrics improve.} \sca{} minus AReA at $4096^2$, as percent of AReA's mean, with 95\% paired intervals; FID and KID are negated so right is better. Grey: interval spans zero.}
+  \label{fig:paired_area}
+  \wrapbot
+\end{wrapfigure}
+\paragraph{Against AReA.} \sca{} beats AReA on every per-image metric at $2.85\times$ the speed (Table~\ref{tab:main}; Figures~\ref{fig:teaser} and~\ref{fig:qual_main}). Eleven of 15 metrics improve significantly, including ImageReward ($+0.31$ $[0.23,0.38]$) and FID ($-7.7$ $[-13.1,-2.6]$); four are unresolved (Figure~\ref{fig:paired_area}; Table~\ref{tab:app_4k}). AReA's published numbers come from FLUX.1-Krea-dev, the checkpoint its released code loads, and there our run of that code reproduces its CLIP, PickScore, aesthetic score, and MUSIQ within 0.1 (Table~\ref{tab:published_compare}).
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/zoom4k.pdf}
+  \caption{\textbf{\sca{} keeps native detail at $4096^2$.} Three curated prompts (seed~0) from the main evaluation set; left, \sca{}'s image; right, a 1:1 crop of the red window from each method, with that image's MUSIQ$_\text{c}$ above it (best in bold). Full attention collapses to flat texture, and \sca{} scores highest on two of the three images. Uncurated samples: Figure~\ref{fig:gallery_4096}.}
+  \label{fig:qual_main}
+\end{figure}
+\paragraph{Other baselines.} \sca{} also beats DyPE and SEGA on every per-image metric over the main set (Figure~\ref{fig:baseline_quality}), and all five shared-sampler baselines, SigMa included (Table~\ref{tab:panel46_deltas}). UltraImage, at over four times \sca{}'s time, is significantly better on five per-image metrics, including HPSv2.1 and PickScore. It is worse on CLIP score and both MUSIQ scores, leaves ImageReward unresolved, and has higher FID (142.0 against 138.1; Tables~\ref{tab:phase2_baselines} and~\ref{tab:phase2_distribution}). HRDiT's three-stage recipe leads single-pass \sca{} on learned preference scores at $1.5\times$ its time (Table~\ref{tab:main}).
+
 \begin{table}[t]
-  \caption{\textbf{Panel of 46 prompts.} Columns as in Table~\ref{tab:main}; campaign times from this panel. Marks against \sca{} at 28 steps: $^{+}$ significantly better, $^{\circ}$ 95\% paired interval includes zero, unmarked significantly worse. \textbf{Bold}: best; shaded: ours. 46-image FID is exploratory; budget runs lack whole-image FID (n/a); $^{\ast}$: patch FID without interval. 42 steps: sized to HRDiT's campaign time; progressive: HRDiT's schedule with \sca{} attention (Section~\ref{sec:progressive}). Tables~\ref{tab:panel46_deltas}, \ref{tab:phase2_budget}, and~\ref{tab:prog_deltas} add intervals. Key result: \sca{} leads the single-pass methods, and progressive \sca{} matches HRDiT's preference scores at 49.0\,s against 106.5\,s.}
+  \caption{\textbf{Multi-stage recipes and sampling budgets.} $4096^2$, \npanel{} prompts; columns as in Table~\ref{tab:main}, campaign times from this panel. Marks against \sca{} at 28 steps: $^{+}$ significantly better, $^{\circ}$ 95\% paired interval includes zero, unmarked significantly worse. \textbf{Bold}: best; shaded: ours. 42 steps: sized to HRDiT's campaign time; progressive: HRDiT's schedule with \sca{} attention (Section~\ref{sec:progressive}). Tables~\ref{tab:panel46_deltas}, \ref{tab:phase2_budget}, and~\ref{tab:prog_deltas} add intervals. Key result: \sca{} leads the single-pass methods, and progressive \sca{} matches HRDiT's preference scores at 49.5\,s against 110.4\,s.}
   \label{tab:panel46}
   \centering\footnotesize
   \setlength{\tabcolsep}{3.1pt}
@@ -367,52 +422,51 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
     Method & Steps & clean & camp. & Reward & HPSv2.1 & Score & CLIP & MUSIQ$_\text{c}$ & FID$\downarrow$ & FID$_\text{p}\!\downarrow$ \\
     \midrule
     \multicolumn{11}{@{}l}{\emph{Single pass, shared sampler (28 steps, guidance 4.5)}} \\
-    Full attention & 28 & 186.5 & 191.6 & $-2.21$ & 7.00 & 17.73 & 14.89 & 33.6 & 370.1 & 292.4 \\
-    DyPE & 28 & n/m & 204.2 & $-0.23$ & 20.24 & 20.25 & 24.86 & 50.9 & 282.4 & 251.5 \\
-    SigMa & 28 & n/m & 185.5 & $-0.77$ & 18.16 & 19.67 & 22.95 & 50.4 & 289.5 & 255.4 \\
-    SEGA & 28 & n/m & 189.7 & 0.47 & 24.82 & 21.56 & 27.36 & 51.3 & 243.4 & 198.3 \\
-    AReA & 28 & 202.4 & 241.0 & 0.83 & 27.76 & 22.31 & 27.85 & 52.0 & 212.7\rlap{$^{\circ}$} & 168.4\rlap{$^{\circ}$} \\
-    \rowcolor[HTML]{EAF4F1}\textbf{\sca{} (ours)} & 28 & \textbf{71.1} & 71.6 & 1.12 & 29.98 & 22.96 & \textbf{29.41} & 62.5 & \textbf{206.4} & 168.0 \\
+    Full attention & 28 & 186.5 & 196.2 & $-2.18$ & 7.60 & 17.94 & 15.37 & 33.1 & 312.4 & 252.2 \\
+    DyPE & 28 & n/m & 195.9 & $-0.10$ & 20.55 & 20.51 & 24.92 & 50.3 & 205.5 & 171.9 \\
+    SigMa & 28 & n/m & 192.5 & $-0.52$ & 18.65 & 20.01 & 23.51 & 49.9 & 216.9 & 184.6 \\
+    SEGA & 28 & n/m & 190.4 & 0.56 & 24.34 & 21.64 & 26.95 & 50.3 & 164.9 & 125.8 \\
+    AReA & 28 & 202.4 & 264.4 & 0.92 & 27.16 & 22.36 & 27.69 & 50.4 & 145.8 & 102.9\rlap{$^{\circ}$} \\
+    \rowcolor[HTML]{EAF4F1}\textbf{\sca{} (ours)} & 28 & \textbf{71.1} & 71.5 & 1.23 & 29.67 & 23.09 & 29.14 & 61.2 & \textbf{138.1} & 99.1 \\
     \midrule
     \multicolumn{11}{@{}l}{\emph{Multi-stage, own recipe and budget}} \\
-    UltraImage & 30+30 & n/m & 322.0 & 1.26\rlap{$^{\circ}$} & 31.54\rlap{$^{+}$} & 23.31\rlap{$^{+}$} & 28.77 & 42.9 & 213.8\rlap{$^{\circ}$} & 182.2 \\
-    HRDiT & 30+17+10 & 108.6 & 106.5 & \textbf{1.37}\rlap{$^{+}$} & 31.60\rlap{$^{+}$} & \textbf{23.42}\rlap{$^{+}$} & 29.38\rlap{$^{\circ}$} & 54.1 & 216.9\rlap{$^{\circ}$} & 178.1 \\
+    UltraImage & 30+30 & n/m & 308.5 & 1.28\rlap{$^{\circ}$} & 30.77\rlap{$^{+}$} & 23.33\rlap{$^{+}$} & 28.84 & 41.7 & 142.0 & 109.5 \\
+    HRDiT & 30+17+10 & 108.6 & 110.4 & \textbf{1.34}\rlap{$^{+}$} & 30.92\rlap{$^{+}$} & \textbf{23.46}\rlap{$^{+}$} & 29.12\rlap{$^{\circ}$} & 53.5 & 138.4\rlap{$^{\circ}$} & 103.0 \\
     \midrule
     \multicolumn{11}{@{}l}{\emph{\sca{} with other budgets or schedules}} \\
-    \quad 56 steps & 56 & n/m & 140.1 & 1.22\rlap{$^{+}$} & 30.99\rlap{$^{+}$} & 23.12\rlap{$^{+}$} & 29.09\rlap{$^{\circ}$} & \textbf{64.7}\rlap{$^{+}$} & n/a & 175.1 \\
-    \quad guidance 7 & 28 & n/m & 71.9 & 1.14\rlap{$^{\circ}$} & 29.24 & 22.69 & 28.98\rlap{$^{\circ}$} & 63.4\rlap{$^{\circ}$} & n/a & \textbf{167.2}\rlap{$^{\ast}$} \\
-    \quad 42 steps & 42 & n/m & 110.4 & 1.19\rlap{$^{\circ}$} & 30.62\rlap{$^{+}$} & 23.02\rlap{$^{\circ}$} & 29.12\rlap{$^{\circ}$} & 64.0\rlap{$^{+}$} & 209.2\rlap{$^{\circ}$} & 170.3\rlap{$^{\circ}$} \\
-    \rowcolor[HTML]{EAF4F1}\quad progressive & 30+17+10 & n/m & \textbf{49.0} & 1.30\rlap{$^{+}$} & \textbf{31.88}\rlap{$^{+}$} & 23.41\rlap{$^{+}$} & 29.02\rlap{$^{\circ}$} & 54.7 & 213.4 & 181.7 \\
+    \quad 56 steps & 56 & n/m & 139.9 & 1.26\rlap{$^{+}$} & 30.55\rlap{$^{+}$} & 23.22\rlap{$^{+}$} & 29.14\rlap{$^{\circ}$} & \textbf{64.1}\rlap{$^{+}$} & 139.8\rlap{$^{\circ}$} & 102.9 \\
+    \quad guidance 7 & 28 & n/m & 71.9 & 1.16 & 29.07 & 22.82 & 28.94\rlap{$^{\circ}$} & 61.4\rlap{$^{\circ}$} & 140.4\rlap{$^{\circ}$} & \textbf{98.4}\rlap{$^{\circ}$} \\
+    \quad 42 steps & 42 & n/m & 106.8 & 1.26\rlap{$^{\circ}$} & 30.27\rlap{$^{+}$} & 23.17\rlap{$^{+}$} & 29.14\rlap{$^{\circ}$} & 63.1\rlap{$^{+}$} & 140.5 & 100.6\rlap{$^{\circ}$} \\
+    \rowcolor[HTML]{EAF4F1}\quad progressive & 30+17+10 & n/m & \textbf{49.5} & 1.32\rlap{$^{+}$} & \textbf{30.99}\rlap{$^{+}$} & 23.42\rlap{$^{+}$} & \textbf{29.36}\rlap{$^{\circ}$} & 54.2 & 141.1\rlap{$^{\circ}$} & 106.3 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\begin{wrapfigure}[13]{r}{0.42\linewidth}
-  \vspace{-15pt}
+\begin{wrapfigure}{r}{0.42\linewidth}
+  \wraptop
   \centering
   \includegraphics{figures/quality_time_wrap.pdf}
-  \vspace{-17pt}
-  \caption{\textbf{Quality against time.} 46 prompts, $4096^2$. Diamonds: multi-stage recipes; open circles: \sca{} at guidance 7, 42 and 56 steps.}
+  \caption{\textbf{Quality against time.} \npanel{} prompts, $4096^2$. Open circles: \sca{} at guidance 7, 42 and 56 steps.}
   \label{fig:quality_time}
-  \vspace{-10pt}
+  \wrapbot
 \end{wrapfigure}
-\paragraph{Against AReA.} At $4096^2$, \sca{} beats AReA on every per-image metric at $2.85\times$ the speed (Table~\ref{tab:main}; Figures~\ref{fig:teaser}, \ref{fig:quality_time}, and~\ref{fig:qual_main}). Eleven of 15 metrics improve significantly, including ImageReward ($+0.31$ $[0.24,0.38]$) and FID ($-7.6$ $[-12.8,-2.9]$), and the other four are unresolved (Table~\ref{tab:app_4k}).
+\paragraph{HRDiT and progressive \sca{}.} Progressive \sca{}, HRDiT's schedule with \sca{} attention, matches HRDiT's preference scores in less than half the time, so HRDiT's lead comes from the schedule (Table~\ref{tab:panel46}; Figures~\ref{fig:quality_time} and~\ref{fig:progressive}). ImageReward differs by $-0.02$ $[-0.09,0.03]$, HPSv2.1 by $+0.08$ $[-0.17,0.32]$, and PickScore by $-0.04$ $[-0.13,0.05]$. No per-image metric is significantly worse, HPSv2, MUSIQ, and ARNIQA are significantly better, and none of this establishes equivalence (Table~\ref{tab:prog_deltas}). Spending HRDiT's time on 42 single-pass steps does not close the gap. The parity costs fidelity: progressive \sca{} has significantly higher patch FID and lower MUSIQ$_\text{c}$ than single-pass \sca{}, and a higher FID that is not resolved (Appendix~\ref{app:budget}).
 
-\paragraph{Other baselines.} \sca{} also beats DyPE and SEGA on every per-image metric over 191 prompts (Figure~\ref{fig:baseline_quality}), and all five shared-sampler baselines on the 46-prompt panel (Table~\ref{tab:panel46_deltas}). UltraImage, at over four times \sca{}'s time, is significantly better on five per-image metrics, including HPSv2.1 and PickScore. It is worse on CLIP score and both MUSIQ scores, leaves ImageReward unresolved, and has higher FID (Tables~\ref{tab:phase2_baselines} and~\ref{tab:phase2_distribution}).
 
-\paragraph{HRDiT and progressive \sca{}.} HRDiT's three-stage recipe leads single-pass \sca{} on learned preference scores at $1.5\times$ \sca{}'s time (Table~\ref{tab:main}). The lead comes from HRDiT's schedule. Progressive \sca{}, that schedule with \sca{} attention, matches HRDiT's preference scores in less than half the time (Table~\ref{tab:panel46}; Figures~\ref{fig:quality_time} and~\ref{fig:progressive}). ImageReward differs by $-0.08$ $[-0.20,0.03]$, HPSv2.1 by $+0.28$ $[-0.21,0.77]$, and PickScore by $-0.02$ $[-0.18,0.14]$. No per-image metric is significantly worse, HPSv2 and ARNIQA are significantly better, and none of this establishes equivalence (Table~\ref{tab:prog_deltas}). Spending HRDiT's time on 42 single-pass steps does not close the gap. The parity costs fidelity: progressive \sca{} has significantly higher FID and patch FID and lower MUSIQ$_\text{c}$ than single-pass \sca{}, which keeps the fidelity lead (Table~\ref{tab:panel46}, Appendix~\ref{app:budget}).
+\subsection{Other sizes and latency}
+\label{sec:sizes}
 
-% A main-text float page stacks its floats from the top with the normal float gap, like a page of
-% top floats, instead of spreading them over the page; the defaults are restored after Section 6.
-\csname @fptop\endcsname=0pt\relax \csname @fpsep\endcsname=\floatsep \csname @fpbot\endcsname=0pt plus 1fil\relax
-% Keep the qualitative figure on a text page: no main-text float page that is less than 80% full.
-\renewcommand{\floatpagefraction}{0.8}
-\begin{figure}[tp]
+\begin{wrapfigure}[15]{l}{0.47\linewidth}
+  \wraptop
   \centering
-  \includegraphics[width=0.94\linewidth]{figures/qual_main.pdf}
-  \caption{\textbf{Qualitative comparison at $4096^2$.} Full attention collapses, AReA blurs or tiles fine structure, and \sca{} keeps both layout and detail. Four curated prompts, seed~0, picked for variety from the 191 evaluation prompts. Beside each AReA and \sca{} image is a 1:1 crop of the same ${736\times512}$ window (placement: Appendix~\ref{app:galleries}). Uncurated samples: Figure~\ref{fig:gallery_4096}.}
-  \label{fig:qual_main}
-\end{figure}
+  \includegraphics[width=\linewidth]{figures/latency_wrap.pdf}
+  \caption{\textbf{Latency against size.} Batch 1, one GH200, median of three prompts; grey: speedup over AReA.}
+  \label{fig:latency}
+  \wrapbot
+\end{wrapfigure}
+\paragraph{Coverage.} \sca{} runs at every size and on every checkpoint we tried, and it is the fastest method we timed at each. Quality depends on the aspect ratio (Tables~\ref{tab:app_wide} and~\ref{tab:krea_6144}): \sca{} beats AReA on 14 of 15 metrics at $6144^2$ and on nine at $2048\times6144$, where it loses on aesthetic score and patch FID, and results are mixed at $2048\times4096$. At $8192^2$, 12 exploratory prompts favour \sca{} on preference and alignment scores, though grid artifacts remain (Appendix~\ref{app:8k}).
+
+\paragraph{Latency.} Clean time (Table~\ref{tab:main}) is measured on an idle GPU, including text encoding and VAE decoding, not model loading. Latency spans $2048^2$, $3072^2$, $4096^2$, $6144^2$, and $8192^2$ (Figure~\ref{fig:latency}); at $2048\times4096$ and $2048\times6144$, campaign times are 38.1 and 55.8\,s for \sca{} against 112.4 and 150.5\,s for AReA. \sca{}'s clean time grows nearly linearly with pixel count (Table~\ref{tab:latency}): fitting seconds $\propto N^b$ over the $N$ image tokens gives $b=1.00$ for \sca{} and 1.12 for AReA. At $6144^2$ it takes 161.6\,s, $4.7\times$ faster than full attention and $3.0\times$ faster than AReA. At $8192^2$ it takes 287.6\,s against AReA's 952.0\,s, $3.31\times$ faster; from $2048^2$ to $8192^2$, pixels grow $16\times$ and \sca{}'s time $15.8\times$.
 
 \subsection{Ablations}
 \label{sec:ablations}
@@ -420,7 +474,7 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
 \begin{table}[t]
   \centering
   \begin{minipage}[t]{0.47\linewidth}
-    \caption{\textbf{Ablations.} $4096^2$, 46 prompts. First row (shaded): default \sca{}'s absolute values. Other rows: paired difference after changing one component, in \textcolor{sigdn}{orange} when significantly worse (95\% interval excludes zero); no variant is significantly better on these metrics. IR: ImageReward; HPS: HPSv2.1 $\times100$; Pick: PickScore; M$_\text{c}$: MUSIQ$_\text{c}$; Err.: relative output error at emulated scale 4. Table~\ref{tab:app_abl} expands this table to all metrics. Key result: every variant significantly lowers HPSv2.1 and PickScore.}
+    \caption{\textbf{Ablations.} $4096^2$, fixed \nabl-prompt subset. Shaded: default \sca{}, absolute values; other rows: paired change from swapping one component, \textcolor{sigdn}{orange} if significantly worse (95\% interval excludes zero; none is significantly better). IR: ImageReward; HPS: HPSv2.1 $\times100$; Pick: PickScore; M$_\text{c}$: MUSIQ$_\text{c}$; Err.: relative output error at emulated scale 4. Table~\ref{tab:app_abl} adds all metrics. Key result: every variant significantly lowers HPSv2.1 and PickScore.}
     \label{tab:ablation}
     \centering\footnotesize
     \setlength{\tabcolsep}{1.4pt}
@@ -442,7 +496,7 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
     \end{tabular}
   \end{minipage}\hfill
   \begin{minipage}[t]{0.47\linewidth}
-    \caption{\textbf{Generality and sensitivity.} Paired differences at $4096^2$; $n$: evaluation prompts; IR: ImageReward; HPS: HPSv2.1 $\times100$; M$_\text{c}$: MUSIQ$_\text{c}$. Rows compare \sca{} with AReA, with default \sca{} (32 calibration prompts, $\sigma_g=0.89$), or, on FLUX.2-dev and FLUX.1-Krea-dev, with the named reference. Tables~\ref{tab:phase2_general}, \ref{tab:phase2_sensitivity}, and~\ref{tab:krea_6144} expand this table with intervals. Key result: gains over AReA hold on a second prompt set and two more seeds, and 4 to 16 calibration prompts change ImageReward by at most 0.012.}
+    \caption{\textbf{Generality and sensitivity.} Paired differences at $4096^2$ against each group's reference; default \sca{}: 32 calibration prompts, $\sigma_g=0.89$; $n$: prompts; symbols as in Table~\ref{tab:ablation}; Tables~\ref{tab:phase2_general}, \ref{tab:phase2_sensitivity}, and~\ref{tab:krea_6144} add intervals. Key result: gains over AReA hold on HRGen-1K and with two more seeds.}
     \label{tab:generality}
     \centering\footnotesize
     \setlength{\tabcolsep}{2.6pt}
@@ -451,66 +505,51 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
       Setting & $n$ & $\Delta$IR & $\Delta$HPS & $\Delta$M$_\text{c}$ \\
       \midrule
       \multicolumn{5}{@{}l}{\emph{Against AReA}} \\
-      HRGen-1K & 200 & $+0.642$ & $+4.48$ & $+12.71$ \\
-      Seed 1 & 46 & $+0.305$ & $+2.19$ & $+11.58$ \\
-      Seed 2 & 46 & $+0.355$ & $+2.80$ & $+11.04$ \\
+      HRGen-1K & \nhrgen & $+0.642$ & $+4.48$ & $+12.71$ \\
+      Seed 1 & \nseed & $+0.274$ & $+2.28$ & $+11.51$ \\
+      Seed 2 & \nseed & $+0.250$ & $+2.50$ & $+12.06$ \\
       \multicolumn{5}{@{}l}{\emph{Against default \sca{}: calibration prompts, gate}} \\
-      4 prompts & 46 & $+0.012$ & $-0.02$ & $+0.09$ \\
-      8 prompts & 46 & $+0.010$ & $+0.01$ & $-0.03$ \\
-      16 prompts & 46 & $-0.007$ & $-0.01$ & $-0.11$ \\
-      $\sigma_g=0.85$ & 46 & $-0.015$ & $-0.85$ & $-2.04$ \\
-      $\sigma_g=0.93$ & 46 & $-0.004$ & $-0.15$ & $+0.65$ \\
+      4 prompts & \nabl & $+0.012$ & $-0.02$ & $+0.09$ \\
+      8 prompts & \nabl & $+0.010$ & $+0.01$ & $-0.03$ \\
+      16 prompts & \nabl & $-0.007$ & $-0.01$ & $-0.11$ \\
+      $\sigma_g=0.85$ & \nabl & $-0.015$ & $-0.85$ & $-2.04$ \\
+      $\sigma_g=0.93$ & \nabl & $-0.004$ & $-0.15$ & $+0.65$ \\
       \multicolumn{5}{@{}l}{\emph{Other checkpoints}} \\
       FLUX.2 vs.\ full & 50 & $+0.456$ & $+1.84$ & $+21.44$ \\
-      Krea vs.\ AReA & 100 & ${-}0.042$ & $+0.78$ & $+4.61$ \\
+      Krea vs.\ AReA & \nkrea & ${-}0.042$ & $+0.78$ & $+4.61$ \\
       \bottomrule
     \end{tabular}
   \end{minipage}
 \end{table}
 
-Table~\ref{tab:ablation} changes one component at a time (examples in Figure~\ref{fig:ablation_grid}). \textbf{The opening phase is essential.} Without it (v0), ImageReward falls by 1.33 $[1.06,1.60]$ and subjects repeat; CLIP-IQA and ARNIQA rise because each copy is sharp (Table~\ref{tab:app_abl}). \textbf{The per-head mix carries global context after the opening phase.} Local-only attention in the last 20 steps lowers ImageReward by 0.36 $[0.21,0.52]$, HPSv2.1 by 2.86, PickScore by 1.20, and CLIP score by 1.93. \textbf{Per-head weights beat shared and per-layer weights, in the order output error predicts.} One shared weight per noise level (mix error 0.230) lowers ImageReward by 0.09 $[0.01,0.17]$ and MUSIQ$_\text{c}$ by 10.4. Per-layer weights (0.223) still lose significantly on HPSv2.1, PickScore, ARNIQA, and MUSIQ$_\text{c}$. \textbf{Neither branch works alone, and block centres beat block means.} Global only loses on every metric, and mean pooling blurs the global keys (ImageReward $-1.52$). Band-guard ablations, including hard per-head routing, are in Appendix~\ref{app:band}.
+Table~\ref{tab:ablation} changes one component at a time (examples in Figure~\ref{fig:ablation_grid}). \textbf{The opening phase is essential.} Without it (v0), ImageReward falls by 1.33 $[1.06,1.60]$ and subjects repeat; CLIP-IQA and ARNIQA rise because each copy is sharp (Table~\ref{tab:app_abl}). \textbf{The per-head mix carries global context after the opening phase.} Local-only attention in the last 20 steps lowers ImageReward by 0.36 $[0.21,0.52]$ and CLIP score by 1.93. \textbf{Per-head weights beat shared and per-layer weights, in the order output error predicts.} One shared weight per noise level (mix error 0.230) lowers ImageReward by 0.09 $[0.01,0.17]$ and MUSIQ$_\text{c}$ by 10.4. Per-layer weights (0.223) still lose significantly on HPSv2.1, PickScore, ARNIQA, and MUSIQ$_\text{c}$. \textbf{Neither branch works alone, and block centres beat block means.} Global only loses on every metric; mean pooling blurs the global keys (ImageReward $-1.52$). Appendix~\ref{app:band} ablates a band guard and hard per-head routing.
 
 \subsection{Generality and sensitivity}
 \label{sec:generality}
 
-\sca{}'s gains over AReA hold with seeds 1 and 2 and on 200 HRGen-1K prompts~\citep{rajabi2026area}, where all ten per-image metrics improve (Table~\ref{tab:generality}). They barely depend on the calibration set: 4 to 16 prompts instead of 32 change ImageReward by at most 0.012. Moving the gate to 0.85 or 0.93 loses on some metrics. On FLUX.2-dev, \sca{} raises ImageReward over full attention from 0.75 to 1.20 in half the time. On FLUX.1-Krea-dev, in a third of the time, it wins six per-image metrics, leaves ImageReward unresolved, and has higher patch FID (Table~\ref{tab:krea_6144}).
-
-\subsection{Other sizes and latency}
-\label{sec:sizes}
-
-\begin{wrapfigure}[15]{l}{0.47\linewidth}
-  \vspace{-12pt}
-  \centering
-  \includegraphics[width=\linewidth]{figures/latency_wrap.pdf}
-  \vspace{-14pt}
-  \caption{\textbf{Latency against size.} Batch 1, one GH200, median of three prompts; grey: speedup over AReA.}
-  \label{fig:latency}
-  \vspace{-10pt}
-\end{wrapfigure}
-\paragraph{Other sizes.} Gains depend on the aspect ratio (Tables~\ref{tab:app_wide} and~\ref{tab:krea_6144}). \sca{} beats AReA on 14 of 15 metrics at $6144^2$ and on ten at $2048\times6144$, where it loses on aesthetic score. Results are mixed at $2048\times4096$. At $8192^2$, 12 exploratory prompts favour \sca{} on preference and alignment scores, though grid artifacts remain (Appendix~\ref{app:8k}).
-
-\paragraph{Latency.} \sca{} is the fastest method we timed at every size, and its time grows nearly linearly with pixel count (Figure~\ref{fig:latency}, Table~\ref{tab:latency}). Fitting seconds $\propto N^b$ over the $N$ image tokens gives $b=1.00$ for \sca{} and $b=1.12$ for AReA. At $6144^2$ it takes 161.6\,s per image, $4.7\times$ faster than full attention and $3.0\times$ faster than AReA. At $8192^2$ it takes 287.6\,s against 952.0\,s for AReA, $3.31\times$ faster.
+Gains over AReA hold with seeds 1 and 2 and on \nhrgen{} HRGen-1K prompts, improving all ten per-image metrics (Table~\ref{tab:generality}). Calibrating on 4 to 16 prompts, not 32, moves ImageReward by ${\le}\,0.012$; gates of 0.85 and 0.93 lose some metrics. On FLUX.2-dev it beats full attention on nine of ten per-image metrics in half the time (ImageReward 0.75 to 1.20). On FLUX.1-Krea-dev it wins six per-image metrics in a third of the time, with ImageReward unresolved, patch FID higher (Table~\ref{tab:krea_6144}).
 
 % =====================================================================================
 \section{Related work}
 \label{sec:related}
-\paragraph{Training-free high-resolution sampling.} Training-free methods alter convolutions, spectra, or attention temperature~\citep{he2023scalecrafter,zhang2023hidiffusion,huang2024fouriscale,jin2023training}. Others fuse global and patch paths~\citep{du2023demofusion,yang2024fam,qiu2024freescale} or add native-resolution guidance~\citep{du2024imax,bu2025hiflow,koh2025scalediff}. Several adapt RoPE~\citep{zhuo2024lumina,issachar2025dype,zhao2026sigma,rajabi2026sega,liu2026tide}. Closest to \sca{}, AReA shares one schedule of pooled global attention and shrinking windows across heads~\citep{rajabi2026area}. ResDiT spectrally fuses position-scaled global and native-size patch attention between global-only and local-only phases~\citep{ma2025resdit}, and FreeScale fuses attention outputs by frequency~\citep{qiu2024freescale}.
+\paragraph{Training-free high-resolution sampling.} Training-free methods alter convolutions, spectra, or attention temperature~\citep{he2023scalecrafter,zhang2023hidiffusion,huang2024fouriscale,jin2023training}. Others fuse global and patch paths~\citep{du2023demofusion,yang2024fam}, FreeScale by frequency~\citep{qiu2024freescale}, or add native-resolution guidance~\citep{du2024imax,bu2025hiflow,koh2025scalediff}. Several adapt RoPE~\citep{zhuo2024lumina,issachar2025dype,zhao2026sigma,rajabi2026sega,liu2026tide}. Closest to \sca{}, AReA shares one schedule of pooled global attention and shrinking windows across heads~\citep{rajabi2026area}. ResDiT spectrally fuses position-scaled global and native-size patch attention between global-only and local-only phases~\citep{ma2025resdit}.
 
-\paragraph{Head- and layer-specific attention.} HRDiT picks per-head scopes by loss sensitivity under a cost budget~\citep{xue2026hrdit}, and UltraImage concentrates attention per head by entropy, noting stable local/global head roles before us~\citep{zhao2025ultraimage}. Sparse attention in diffusion transformers varies windows, spans, or key scales across layers or heads~\citep{yuan2024ditfastattn,xi2025svg,zhang2025sta}. Language models~\citep{fu2024moa,xiao2024duoattention} and vision transformers~\citep{pan2022hilo} do the same. Our local branch is neighbourhood attention~\citep{hassani2022nat}, and ToDo attends to downsampled keys without rescaling coordinates~\citep{smith2024todo}. Head specialization, two branches, and a global opening phase thus all have precedents. \sca{} adds calibration by emulation: a closed-form per-head, per-noise-level mixture fitted at native resolution and transferred to an operator with native key counts.
+\paragraph{Head- and layer-specific attention.} HRDiT picks per-head scopes under a cost budget~\citep{xue2026hrdit}, and UltraImage concentrates attention per head by entropy, noting stable local/global head roles before us~\citep{zhao2025ultraimage}. Sparse attention varies windows, spans, or key scales across layers or heads in diffusion transformers~\citep{yuan2024ditfastattn,xi2025svg,zhang2025sta}, language models~\citep{fu2024moa,xiao2024duoattention}, and vision transformers~\citep{pan2022hilo}. Our local branch is neighbourhood attention~\citep{hassani2022nat}; ToDo attends to downsampled keys without rescaling coordinates~\citep{smith2024todo}. Head specialization, two branches, and a global opening all have precedents. \sca{} adds calibration by emulation: a closed-form per-head, per-noise-level mixture fitted at native resolution and reused by an operator with native key counts.
 
 % =====================================================================================
 \section{Limitations and conclusion}
 \label{sec:limits}
-\paragraph{Limitations.} Multi-stage recipes keep higher learned preference scores than single-pass \sca{}, HRDiT at $1.5\times$ and UltraImage at over four times its time. Progressive \sca{} closes the gap to HRDiT but costs fidelity, with timings from different code bases. At $2048\times4096$ \sca{} has no resolved ImageReward or FID advantage over AReA and trails on aesthetic score, CLIP-IQA, and patch FID/KID. The 191-prompt comparisons use one seed; extra seeds, SigMa, and progressive \sca{} cover 46 prompts, and FLUX.2-dev 50 prompts against full attention only. On \mbox{FLUX.1-Krea-dev} the ImageReward gain over AReA is unresolved and patch FID is higher. SigMa's dev-matched profile gives lattice-degraded images, possibly from our port or profile, not the method. We did not run ResDiT (no verified official code) or UltraImage's direct-extrapolation variant, so we claim no advantage over either. Late-appearing small extra subjects, $8192^2$ grid artifacts, and one prompt's doubled limbs remain (Appendix~\ref{app:failures}). All metrics are automatic, low-sample FID is noisy, and intervals ignore multiple comparisons.
+\paragraph{Limitations.} Multi-stage recipes keep higher learned preference scores than single-pass \sca{}, HRDiT at $1.5\times$ and UltraImage at over $4\times$ its time. Progressive \sca{} closes the gap to HRDiT but costs fidelity, with timings from different codebases. At $2048\times4096$ \sca{} has no resolved ImageReward or FID advantage over AReA and trails on aesthetic score, CLIP-IQA, and patch FID/KID. % Seeds and panel sentence: correct for any combination of \nseed and \npanel at 46 or 195.
+\ifseedfull{}{Main-set comparisons use one seed; extra seeds\ifpanelfull{}{, SigMa, and progressive \sca{}} cover \nseed{} prompts. }\ifseedfull{\ifpanelfull{}{SigMa and progressive \sca{} cover \npanel{} prompts. }}{}FLUX.2-dev covers 50 prompts, against full attention only. On \mbox{FLUX.1-Krea-dev} the ImageReward gain is unresolved and patch FID higher. SigMa's dev-matched profile gives lattice-degraded images, possibly from our port or profile. We did not run ResDiT (no verified official code) or UltraImage's direct-extrapolation variant and claim no advantage over them. Late-appearing small extra subjects, $8192^2$ grid artifacts, and one prompt's doubled limbs remain (Appendix~\ref{app:failures}). Metrics are automatic, low-sample FID is noisy, and intervals ignore multiple comparisons.
 
-\paragraph{Conclusion.} How much each head relies on a neighbourhood fixed in tokens versus a view of the whole image can be measured once at the training resolution and reused at 4K. With that table and a global-only opening, \sca{} is the strongest and fastest single-pass training-free operator we tested for FLUX.1-dev at $4096^2$, at about a third of AReA's time. Multi-stage recipes lead on learned preference metrics through their schedules. As a drop-in operator in HRDiT's progressive schedule, \sca{} matches HRDiT's preference scores in less than half its time, with no per-image metric significantly worse. Code: \codeurl.
+\paragraph{Conclusion.} Each head's mix of a neighbourhood fixed in tokens and a view of the whole image can be measured once at the training resolution and reused at 4K. With that table and a global-only opening, \sca{} is the strongest and fastest single-pass training-free operator we tested for FLUX.1-dev at $4096^2$, at about a third of AReA's time; in HRDiT's progressive schedule it matches HRDiT's preference scores in less than half the time, with no per-image metric significantly worse. Code: \codeurl.
 
+% Section 6 ends the main text; the statement starts the next page with natural spacing above.
+\newpage
 \section*{Reproducibility statement}
-Section~\ref{sec:experiments} states the protocol, and Appendix~\ref{app:metrics} defines every metric and interval. Appendix~\ref{app:calib} gives the calibration geometry, statistics, and noise bins; Algorithms~\ref{alg:calib} and~\ref{alg:sample} and Appendix~\ref{app:code} give the procedure and its core code. Appendix~\ref{app:hparams} lists every hyperparameter, and Appendix~\ref{app:impl} the kernel layout, numerical checks, and position rounding. Appendices~\ref{app:area} and~\ref{app:additional_protocols} give each baseline's code revision, recipe, and seeds, and Appendix~\ref{app:compute} the hardware and logged compute. Code, calibration table, per-image metrics, and the paired-difference files behind every table will be released in the code repository (link in the abstract).
+Section~\ref{sec:experiments} states the protocol, including timing (Section~\ref{sec:sizes}), and Appendix~\ref{app:metrics} defines every metric and interval. Appendix~\ref{app:calib} gives the calibration geometry, statistics, and noise bins; Algorithms~\ref{alg:calib} and~\ref{alg:sample} give the procedure, and Appendix~\ref{app:code} gives it in full together with progressive \sca{}. Appendix~\ref{app:hparams} lists every hyperparameter, and Appendix~\ref{app:impl} the kernel layout, numerical checks, and position rounding. Appendices~\ref{app:area} and~\ref{app:additional_protocols} give each baseline's code revision, recipe, and seeds, and Appendix~\ref{app:compute} the hardware and logged compute. Code, calibration table, per-image metrics, and the paired-difference files behind every table will be released in the code repository (link in the abstract).
 
-% Restore the article.cls float-page defaults (set before Figure 3) for the appendix.
-\csname @fptop\endcsname=0pt plus 1fil\relax \csname @fpsep\endcsname=8pt plus 2fil\relax \csname @fpbot\endcsname=0pt plus 1fil\relax
-\renewcommand{\floatpagefraction}{0.5}
+% Appendix: allow tall top floats.
 \renewcommand{\topfraction}{0.95}
 
 \bibliography{references}
@@ -533,7 +572,7 @@ Section~\ref{sec:experiments} states the protocol, and Appendix~\ref{app:metrics
 \appline{app:calib}{Calibration details and statistics}
 \appline{app:prompts}{Calibration prompts}
 \appline{app:impl}{Implementation details and cost}
-\appline{app:code}{Core code}
+\appline{app:code}{Algorithms in full}
 \appline{app:hparams}{Hyperparameters}
 \multicolumn{3}{@{}l}{\textbf{Evaluation setup}}\\
 \appline{app:metrics}{Evaluation protocol and metrics}
@@ -651,7 +690,7 @@ This section expands Section~\ref{sec:analysis} and Figure~\ref{fig:method}b. Fi
 
 \paragraph{Attention mass.} For 256 random image queries per block and step, the pass also records the softmax mass on text keys and on image keys within Chebyshev distance 2, 4, 8, and 16. At $1024^2$, averaged over heads and queries, text receives 15 to 19\% of the mass; image keys within distance 16 receive 52\% at $\sigma=0.10$ and 40\% at $\sigma=0.97$, and keys outside that $33\times33$ neighbourhood still receive 29\% and 41\%. A purely local receptive field cannot account for any step, even at native resolution.
 
-\paragraph{Calibration budget.} We merge the stored sufficient statistics from the first 4, 8, or 16 calibration prompts and rerun the 46 evaluation prompts with each resulting table. Table~\ref{tab:phase2_sensitivity} reports generation-level differences from the 32-prompt table. The test reuses calibration observations but uses separate prompts for generation evaluation; it is not a held-out output-error benchmark.
+\paragraph{Calibration budget.} We merge the stored sufficient statistics from the first 4, 8, or 16 calibration prompts and rerun the \nabl{} ablation prompts with each resulting table. Table~\ref{tab:phase2_sensitivity} reports generation-level differences from the 32-prompt table. The test reuses calibration observations but uses separate prompts for generation evaluation; it is not a held-out output-error benchmark.
 
 \begin{figure}[!htbp]
   \centering
@@ -724,7 +763,7 @@ This section lists the prompts behind the calibration of Section~\ref{sec:analys
 \section{Implementation details and cost}
 \label{app:impl}
 
-This section expands Section~\ref{sec:branches} and Figure~\ref{fig:method}. Figure~\ref{fig:method_zoom} draws the two operators, the gate, and the mix at component level, together with the calibrated table for all 57 blocks; Appendix~\ref{app:code} lists the corresponding code.
+This section expands Section~\ref{sec:branches} and Figure~\ref{fig:method}. Figure~\ref{fig:method_zoom} draws the two operators, the gate, and the mix at component level, together with the calibrated table for all 57 blocks; Appendix~\ref{app:code} writes out the corresponding algorithms.
 
 \begin{figure}[t]
   \centering
@@ -789,179 +828,116 @@ This section expands Section~\ref{sec:branches} and Figure~\ref{fig:method}. Fig
   \label{fig:latency_full}
 \end{figure}
 
-\paragraph{End-to-end latency.} Table~\ref{tab:latency} comes from one matched protocol on one GH200 (\texttt{results/\allowbreak latency\_curve\_batch1.csv}, which also lists the excluded warm-up images; \texttt{results/\allowbreak latency\_curve\_summary.csv} summarizes all cells but full attention at $6144^2$). At each size, each method generates one excluded warm-up image and then three timed images in the same process, at batch 1 and 28 steps; we report the median. At $4096^2$ the medians are 186.5\,s for full attention (186.0, 186.6, 186.5), 202.4\,s for AReA (192.7, 202.4, 204.3), and 71.1\,s for \sca{} (71.0, 71.1, 71.1). At $2048^2$ and $3072^2$ they are 22.9 and 73.9\,s for full attention, 41.0 and 114.3\,s for AReA, and 18.2 and 40.2\,s for \sca{}. At $6144^2$ and $8192^2$, AReA takes 482.3 and 952.0\,s and \sca{} 161.6 and 287.6\,s, so \sca{} reduces measured time by 66.5\% and 69.8\%. At $6144^2$ full attention takes 762.7\,s (763.5, 762.7, 762.5), $4.7\times$ \sca{}'s time. An earlier $4096^2$ benchmark, kept as a separate repeat (\texttt{results/\allowbreak latency\_4096\_batch1.csv}), gave 184.6\,s for full attention (184.1, 184.7, 184.6), 212.6\,s for AReA (207.3, 225.8, 212.6), 88.1\,s for \sca{} + band guard (88.1, 98.7, 88.1; single-pass compiled band), and 71.0\,s for \sca{} final (71.0, 83.1, 70.9). On the shared campaign nodes, per-image times at $4096^2$ were 71\,s for \sca{} final, 120\,s for \sca{} + band guard, and 262\,s for AReA; the campaign code used an unfused band, so dropping it saved more there (49\,s) than in the clean measurement (17\,s). At the non-square sizes we have only campaign timings, with both methods on the same pool of shared nodes (mean over 191 prompts): \sca{} takes 38.1\,s and AReA 112.4\,s at $2048\times4096$, and 55.8\,s and 150.5\,s at $2048\times6144$.
+\paragraph{End-to-end latency.} Table~\ref{tab:latency} comes from one matched protocol on one GH200 (\texttt{results/\allowbreak latency\_curve\_batch1.csv}, which also lists the excluded warm-up images; \texttt{results/\allowbreak latency\_curve\_summary.csv} summarizes all cells but full attention at $6144^2$). At each size, each method generates one excluded warm-up image and then three timed images in the same process, at batch 1 and 28 steps; we report the median. At $4096^2$ the medians are 186.5\,s for full attention (186.0, 186.6, 186.5), 202.4\,s for AReA (192.7, 202.4, 204.3), and 71.1\,s for \sca{} (71.0, 71.1, 71.1). At $2048^2$ and $3072^2$ they are 22.9 and 73.9\,s for full attention, 41.0 and 114.3\,s for AReA, and 18.2 and 40.2\,s for \sca{}. At $6144^2$ and $8192^2$, AReA takes 482.3 and 952.0\,s and \sca{} 161.6 and 287.6\,s, so \sca{} reduces measured time by 66.5\% and 69.8\%. At $6144^2$ full attention takes 762.7\,s (763.5, 762.7, 762.5), $4.7\times$ \sca{}'s time. An earlier $4096^2$ benchmark, kept as a separate repeat (\texttt{results/\allowbreak latency\_4096\_batch1.csv}), gave 184.6\,s for full attention (184.1, 184.7, 184.6), 212.6\,s for AReA (207.3, 225.8, 212.6), 88.1\,s for \sca{} + band guard (88.1, 98.7, 88.1; single-pass compiled band), and 71.0\,s for \sca{} final (71.0, 83.1, 70.9). On the shared campaign nodes, per-image times at $4096^2$ were 71\,s for \sca{} final, 120\,s for \sca{} + band guard, and 262\,s for AReA; the campaign code used an unfused band, so dropping it saved more there (49\,s) than in the clean measurement (17\,s). At the non-square sizes we have only campaign timings, with both methods on the same pool of shared nodes (mean over \nmain{} prompts): \sca{} takes 38.1\,s and AReA 112.4\,s at $2048\times4096$, and 55.8\,s and 150.5\,s at $2048\times6144$.
 
 \FloatBarrier
-\section{Core code}
+\clearpage
+\section{Algorithms in full}
 \label{app:code}
 
-This section expands Algorithms~\ref{alg:calib} and~\ref{alg:sample} with the core of the code repository (link in the abstract). The first listings implement one \sca{} attention call (Equations~\ref{eq:glob} to~\ref{eq:mix}); the last three accumulate the calibration statistics of Equation~\ref{eq:stats} and solve Proposition~\ref{prop:opt}. Listings are verbatim except that docstrings, logging, compile set-up, and device arguments are removed; \texttt{\# ...} marks omitted lines, and each comment names the equation a line implements.
+Algorithms~\ref{alg:calib_full} and~\ref{alg:sample_full} expand Algorithms~\ref{alg:calib} and~\ref{alg:sample} to every step the code performs, and Algorithm~\ref{alg:prog} gives progressive \sca{} (Section~\ref{sec:progressive}). Each step follows \texttt{sca/calib.py}, \texttt{sca/attn.py}, or \texttt{scripts/sample\_progressive.py} in the code repository (link in the abstract), and each comment names the equation or setting that a line implements.
 
-\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: SCAProcessor.sca}, emph={sca,geometry,_split,coarse_rope,rope,global_branch,pi_now,flex_layout,sca_flex_fn}]
-def sca(self, q, k, v, image_rotary_emb):
-    ctx = self.ctx
-    f, tile, win = ctx.geometry()      # f = (H/n0, W/n0), t = 8, w = min(n0, H) per axis
-    if ctx.gate_sigma > 0 and ctx.sigma is not None and float(ctx.sigma) > ctx.gate_sigma:
-        L, rope_txt = self._split(q, image_rotary_emb)
-        cos, sin = image_rotary_emb
-        rq, rk = ctx.coarse_rope(f, q.device)
-        kr_txt = rope(k[:, :L], rope_txt)
-        return global_branch(q, k, v, L, ctx.grid, f, ctx.pool, rope_txt, rq, rk,
-                             rope(q[:, :L], rope_txt), kr_txt)  # opening phase, Eq. (*@\ref{eq:mix}@*)
-    pi = ctx.pi_now(self.layer, q.shape[2], q.device).view(1, 1, -1, 1)  # (*@$\pi_{lh}(\sigma)$@*), per head
-    # ... route > 0 (hard per-head routing) and band (App. (*@\ref{app:band}@*)): variants, off by default
-    if ctx.local_impl == "flex" and ctx.fused:
-        L, _ = self._split(q, image_rotary_emb)
-        rq, rk = ctx.coarse_rope(f, q.device)
-        layout = ctx.flex_layout(L, tile, win, q.device)    # BlockMask, cached per layout
-        return sca_flex_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L,
-                                     ctx.grid, f, ctx.pool, layout)
-    # ... unfused path: the same arithmetic through self.branches() and mix_branches()
+\noindent\begin{minipage}[t]{0.48\linewidth}
+    \hrule height 0.6pt\vspace{2pt}
+    \captionof{algorithm}{\textbf{Calibration}, in full}
+    \label{alg:calib_full}
+    \vspace{-4pt}
+\begin{lstlisting}[style=scacode, emph={bin,on_step,calibrate,attn,global_branch,local_branch,sample,clip,where,arange,fill_empty_bins}]
+# Input: 32 prompts; FLUX.1-dev at (*@$1024^2$@*) (n = 64),
+#   28 steps, guidance 4.5, full attention
+# Output: pi[s_c, l, h, beta], centres[beta]
+def bin(sigma): return min(int(14 * sigma), 13)
+def on_step(sigma):          # once per step
+  S[bin(sigma)] += sigma; C[bin(sigma)] += 1
+def calibrate(q, k, v, l, sigma):  # every block
+  O_full = attn(q, k, v)     # Eq. (*@\ref{eq:attn}@*), all keys
+  beta = bin(sigma)          # 14 bins, width 1/14
+  for s_c in (2, 4):         # emulation, App. (*@\ref{app:calib}@*)
+    f, w = s_c, n // s_c     # subsample, window
+    t_c = round(t * w / n0)  # tile sides 4 and 2
+    O_glob = global_branch(q, k, v, f)    # Eq. (*@\ref{eq:glob}@*)
+    O_loc = local_branch(q, k, v, w, t_c) # Eq. (*@\ref{eq:loc}@*)
+    dl, df = O_loc - O_glob, O_full - O_glob
+    # Eq. (*@\ref{eq:stats}@*): per head, over image rows, channels
+    A[s_c, l, :, beta] += sum(dl * dl)
+    B[s_c, l, :, beta] += sum(df * dl)
+    E[s_c, l, :, beta] += sum(df * df)
+    F[s_c, l, :, beta] += sum(O_full * O_full)
+  return O_full              # sampler unchanged
+sample(prompts, on_step, calibrate)
+pop = C > 0                  # 13 of 14 bins
+centres = where(pop, S / C, (arange(14)+0.5)/14)
+pi = clip(B / A, 0, 1); pi[A == 0] = 1  # Prop. (*@\ref{prop:opt}@*)
+pi = fill_empty_bins(pi, pop)  # nearest bin
+J = E - 2 * pi * B + pi**2 * A # error of the mix
+rel_err = J.sum() / F.sum()    # Section (*@\ref{sec:analysis}@*)
 \end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+    \hrule height 0.6pt\vspace{2pt}
+    \captionof{algorithm}{\textbf{Sampling}, in full}
+    \label{alg:sample_full}
+    \vspace{-4pt}
+\begin{lstlisting}[style=scacode, emph={rope,sdpa,cat,clip,tile_major,block_mask,flex_attention,interp,inverse}]
+# Input: q, k, v before RoPE (T text, then H x W
+#   image), block l, noise level sigma
+# Output: O for all T + HW queries; sca/attn.py
+# Per image: s_H, s_W = H // n0, W // n0, and the
+#   table entry s_c nearest max(s_H, s_W) in log
+# Per step, all 57 x 24 heads, ends held:
+pi = interp(sigma, centres, table[s_c])
+kb = k_img[s_H//2::s_H, s_W//2::s_W]  # (*@$\kappa(b)$@*)
+vb = v_img[s_H//2::s_H, s_W//2::s_W]
+cp = p // (s_H, s_W)          # (*@$c(p_i)$@*); text at 0
+Q = cat(rope(q_txt, 0), rope(q_img, cp))
+K = cat(rope(k_txt, 0), rope(kb, b))
+O_glob = sdpa(Q, K, cat(v_txt, vb))   # Eq. (*@\ref{eq:glob}@*)
+if sigma > sigma_g:                   # 0.89, Eq. (*@\ref{eq:mix}@*)
+  return O_glob               # opening phase
+w = (min(n0, H), min(n0, W))  # window sides
+a = clip(t*(p//t) + t//2 - w//2, 0, (H, W) - w)
+keep(i, j) = j < T or a_i <= p_j < a_i + w  # Eq. (*@\ref{eq:loc}@*)
+perm = tile_major(H, W)       # 8 x 16 query blocks
+mask = block_mask(keep, perm) # 8 x 8 key blocks
+O_loc = flex_attention(rope(q_img, p)[perm],
+    rope(k, p), v, mask)[inverse(perm)]
+O_img = pi[l] * O_loc + (1 - pi[l]) * O_glob[T:]
+return cat(O_glob[:T], O_img) # fp32 mix, Eq. (*@\ref{eq:mix}@*)
+\end{lstlisting}
+\end{minipage}
 
-\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: sca\_flex\_forward}, emph={sca_flex_forward,rope,global_branch,local_branch_flex,mix_branches}]
-def sca_flex_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout):
-    cos, sin = rot                        # q, k, v: pre-RoPE [B, S, h, D], text first
-    kr = rope(k, rot)                                   # all keys at their own positions
-    qi = rope(q[:, L:], (cos[L:], sin[L:]))             # image queries at p_i
-    q_txt = rope(q[:, :L], (cos[:L], sin[:L]))          # text queries (FLUX.1: position 0)
-    o_glob = global_branch(q, k, v, L, grid, f, pool, (cos[:L], sin[:L]), rope_q, rope_k,
-                           q_txt, kr[:, :L])                                    # Eq. (*@\ref{eq:glob}@*)
-    o_loc = local_branch_flex(qi, kr, v, L, layout, permuted=True)            # Eq. (*@\ref{eq:loc}@*)
-    return mix_branches(o_glob, o_loc, pi, L, layout.q_inv)                    # Eq. (*@\ref{eq:mix}@*)
+\vspace{10pt}
+\noindent\begin{minipage}{\linewidth}
+    \hrule height 0.6pt\vspace{2pt}
+    \captionof{algorithm}{\textbf{Progressive \sca{}}, HRDiT's schedule with \sca{} attention (Section~\ref{sec:progressive})}
+    \label{alg:prog}
+    \vspace{-4pt}
+\begin{lstlisting}[style=scacode, emph={shift,linspace,noise,flux,decode,encode,bicubic,sharpen,lowpass,up,momentum,use_sca}]
+# Input: prompt, seed; FLUX.1-dev in bf16; SCA tables at scales 2 and 4
+# Output: (*@$4096^2$@*) image; scripts/sample_progressive.py
+sig = shift(linspace(1, 1/30, 30), mu=1.15)     # one 30-step schedule serves all stages, as in HRDiT
+x = noise((*@$1024^2$@*), seed)                         # stage 1: stock dense attention, native RoPE
+for i in range(30):                             # Euler; ref keeps each step's x0 estimate
+  v = flux(x, sig[i], g=3.5); ref[i] = x - sig[i] * v; x = x + (sig[i+1] - sig[i]) * v
+for res, k, g, s_c, a in ((2048, 13, 4.5, 2, 1.0), (4096, 20, 6.0, 4, 0.25)):
+  img = sharpen(bicubic(decode(x), res))        # 2 img - blur(img), blur width ~ U(0.1, 2.0)
+  x = sig[k] * noise + (1 - sig[k]) * encode(img)   # re-enter at sigma 0.81, then 0.61
+  use_sca(table[s_c], n0=64, t=8, sigma_g=0.89) # replaces NTK RoPE, attention scale, pruning, alignment
+  N = 30 - k                                    # 17, then 10 steps; sig[k] < sigma_g: no opening phase
+  for n, i in enumerate(range(k, 30)):
+    v = flux(x, sig[i], g); x0 = x - sig[i] * v; r, ref[i] = ref[i], x0    # SCA in every block
+    x0 = x0 + a * (N - n) / N * (lowpass(up(r)) - lowpass(x0))  # Butterworth, order 4, cut-off 0.2
+    u = momentum((x - x0) / sig[i], 0.5 * (N - n) / N)           # HRDiT's velocity momentum
+    x = x + (sig[i+1] - sig[i]) * u
+return decode(x)
 \end{lstlisting}
-
-\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: global\_branch}, emph={global_branch,pool_tokens,rope,sdpa}]
-def global_branch(q, k, v, L, grid, f, pool, rope_txt, rope_q, rope_k,
-                  q_txt=None, k_txt=None):                                     # Eq. (*@\ref{eq:glob}@*)
-    kp = pool_tokens(k[:, L:], grid, f, pool)            # block-centre keys (*@$k_{\kappa(b)}$@*)
-    vp = pool_tokens(v[:, L:], grid, f, pool)
-    q_txt = rope(q[:, :L], rope_txt) if q_txt is None else q_txt
-    k_txt = rope(k[:, :L], rope_txt) if k_txt is None else k_txt
-    qr = torch.cat([q_txt, rope(q[:, L:], rope_q)], 1)   # image queries at (*@$c(p_i)$@*)
-    kr = torch.cat([k_txt, rope(kp, rope_k)], 1)         # pooled keys at block index (*@$b$@*)
-    return sdpa(qr, kr, torch.cat([v[:, :L], vp], 1))    # every query, text and image
-\end{lstlisting}
-
-\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: pool\_tokens}, emph={pool_tokens}]
-def pool_tokens(x, grid, f, pool):                       # x: image tokens [B, H*W, h, D]
-    B, N, h, D = x.shape
-    (H, W), (fh, fw) = grid, f
-    if fh == fw == 1:
-        return x
-    g = x.view(B, H, W, h, D)
-    if pool == "center":                 # token (*@$\kappa(b)$@*) of every (*@$f_h\times f_w$@*) block, Eq. (*@\ref{eq:glob}@*)
-        g = g[:, fh // 2::fh, fw // 2::fw]
-    # ... pool == "mean" averages each block instead (the mean-pooling ablation)
-    return g.reshape(B, -1, h, D)
-\end{lstlisting}
-
-\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: SCAContext.coarse\_rope}, emph={coarse_rope,pos_embed}]
-def coarse_rope(self, f, device):                        # returns (rope_q, rope_k)
-    key = (f, str(device))
-    if key not in self._rope_cache:
-        ids = self._img_ids.float()                      # FLUX ids (0, row, col), [N, 3]
-        div = torch.tensor([1.0, f[0], f[1]])
-        q_ids = torch.cat([ids[:, :1],                   # queries at (*@$c(p)=\lfloor p/f\rfloor$@*), Eq. (*@\ref{eq:glob}@*)
-                           torch.floor((ids[:, 1:] - ids[:, 1:].amin(0)) / div[1:])], 1)
-        H, W = self.grid                                 # keys at (*@$c(\kappa(b))=b$@*):
-        k_ids = q_ids.view(H, W, 3)[f[0] // 2::f[0], f[1] // 2::f[1]].reshape(-1, 3)
-        self._rope_cache[key] = (self.pos_embed(q_ids), self.pos_embed(k_ids))
-    return self._rope_cache[key]
-\end{lstlisting}
-
-\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: local\_branch\_flex}, emph={local_branch_flex,flex_fn}]
-def local_branch_flex(qi, kr, v, L, layout, permuted=False):                  # Eq. (*@\ref{eq:loc}@*)
-    qp = qi.index_select(1, layout.q_gather)                  # image queries, tile-major
-    kp = torch.cat([kr[:, :L], kr[:, L:].index_select(1, layout.k_gather)], 1)
-    vp = torch.cat([v[:, :L], v[:, L:].index_select(1, layout.k_gather)], 1)  # text first
-    kw = {"kernel_options": layout.kernel_options} if layout.kernel_options else {}
-    o = flex_fn(qi.device)(qp.transpose(1, 2), kp.transpose(1, 2), vp.transpose(1, 2),
-                           block_mask=layout.block_mask, **kw)    # one FlexAttention call
-    return o if permuted else o.transpose(1, 2).index_select(1, layout.q_inv)
-\end{lstlisting}
-
-\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: flex\_layout}, emph={flex_layout,tile_order,mask_mod,create_block_mask,FlexLayout}]
-def flex_layout(L, grid, tile, window, device, q_tile=None, k_tile=None, kernel_options=None):
-    # ... imports and torch.compile set-up
-    (H, W), (th, tw), (Wh, Ww) = grid, tile, window
-    q_tile, k_tile = q_tile or FLEX_Q_TILE, k_tile or FLEX_K_TILE    # (8, 16), (8, 8)
-    # window start (*@$a(\tau)$@*) of each query's tile, per row and column, Eq. (*@\ref{eq:loc}@*)
-    r_start = (torch.arange(H) // th * th + th // 2 - Wh // 2).clamp(0, H - Wh)
-    c_start = (torch.arange(W) // tw * tw + tw // 2 - Ww // 2).clamp(0, W - Ww)
-    k_off = ((Wh // 2 - th // 2) % k_tile[0], (Ww // 2 - tw // 2) % k_tile[1])
-    qo = tile_order(grid, q_tile)             # tile-major slot -> image index, -1 = pad
-    ko = tile_order(grid, k_tile, k_off)      # key tiles shifted so windows start on a tile
-    q_gather, k_gather = qo.clamp(min=0), ko.clamp(min=0)
-    # ... q_inv: inverse query permutation (image index -> slot), used to un-permute O_loc
-    qr0 = r_start[q_gather // W]              # window corner of every query slot
-    qc0 = c_start[q_gather % W]
-    far = -(1 << 30)
-    krow = torch.where(ko >= 0, k_gather // W, far)     # row and column of every key slot
-    kcol = torch.where(ko >= 0, k_gather % W, far)
-    def mask_mod(b, h, q, kv):                # kv in (*@$\mathcal{K}^{\mathrm{loc}}_q$@*): text key, or in q's window
-        j = (kv - L).clamp(min=0)
-        r, c, r0, c0 = krow[j], kcol[j], qr0[q], qc0[q]
-        return (kv < L) | ((r >= r0) & (r < r0 + Wh) & (c >= c0) & (c < c0 + Ww))
-    nq, nk = qo.numel(), L + ko.numel()
-    bs = (q_tile[0] * q_tile[1], k_tile[0] * k_tile[1])  # blocks of 128 queries, 64 keys
-    # ... static shapes for dynamo; _compile=True on CUDA
-    bm = create_block_mask(mask_mod, None, None, nq, nk, BLOCK_SIZE=bs)
-    # ... ko = kernel options for flex_attention (BLOCK_M, BLOCK_N, USE_TMA)
-    return FlexLayout(q_gather, q_inv, k_gather, bm, ko)
-\end{lstlisting}
-
-\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: mix\_branches}, emph={mix_branches}]
-def mix_branches(o_glob, o_loc, pi, L, inv=None):
-    if inv is not None:                                     # un-permute the flex output
-        o_loc = o_loc.transpose(1, 2).index_select(1, inv)
-    img = (pi * o_loc.float() + (1 - pi) * o_glob[:, L:].float()).to(o_glob.dtype)  # Eq. (*@\ref{eq:mix}@*)
-    return torch.cat([o_glob[:, :L], img], 1)               # text queries keep O_glob
-\end{lstlisting}
-
-\begin{lstlisting}[style=scacode, title={\texttt{sca/attn.py}: SCAProcessor.calibrate}, emph={calibrate,rope,sdpa,geometry,branches,add}]
-def calibrate(self, q, k, v, image_rotary_emb):
-    ctx = self.ctx
-    qr, kr = rope(q, image_rotary_emb), rope(k, image_rotary_emb)
-    full = sdpa(qr, kr, v)                   # O_full, returned: the sampler runs unmodified
-    for i, s in enumerate(ctx.calib_scales):                   # emulated scales s_c = 2, 4
-        f, tile, win = ctx.geometry(s)       # f = s_c, w = n / s_c, t = round(8 w / n0)
-        L, o_loc, o_glob, _ = self.branches(q, k, v, image_rotary_emb, f, tile, win, qr, kr)
-        ctx.calib.add(self.layer, i, ctx.sigma, full[:, L:], o_loc, o_glob[:, L:])  # Eq. (*@\ref{eq:stats}@*)
-    # ... add_mass(): attention-mass diagnostics on 256 sampled queries
-    return full
-\end{lstlisting}
-
-\begin{lstlisting}[style=scacode, title={\texttt{sca/calib.py}: CalibStats.add}, emph={add,bin}]
-@torch.no_grad()
-def add(self, layer, i, sigma, full, loc, glob):     # image rows only, [B, N, h, D]
-    f, l, g = full.float(), loc.float(), glob.float()
-    dl, df = l - g, f - g
-    red = lambda x: x.sum((0, 1, 3)).double()        # per head (sum over B, N, D)
-    n = torch.full_like(red(f[..., :1]), f.shape[0] * f.shape[1])
-    vals = torch.stack([red(dl * dl), red(df * dl), red(df * df),  # A, B, E of Eq. (*@\ref{eq:stats}@*)
-                        red((f - l) ** 2), red(f * f), n])        # E_fl, F2, count
-    self.stats[i, :, layer, :, self.bin(sigma)] += vals   # bin = min(int(14 sigma), 13)
-\end{lstlisting}
-
-\begin{lstlisting}[style=scacode, title={\texttt{sca/calib.py}: \_ratio}, emph={_ratio}]
-def _ratio(b, a):                           # Prop. (*@\ref{prop:opt}@*): clip(B / A, 0, 1), and 1 where A = 0
-    return np.clip(np.where(a > 0, b / np.where(a > 0, a, 1.0), 1.0), 0.0, 1.0)
-\end{lstlisting}
-
-\begin{lstlisting}[style=scacode, title={\texttt{sca/calib.py}: fit}, emph={fit,fill,_ratio}]
-def fit(S, pop):                    # S: [6, layers, heads, bins] for one scale
-    A, B = S[0], S[1]               # fill(): empty bins copy the nearest populated bin
-    return {"pi_head": fill(_ratio(B, A), pop),                  # the table SCA uses
-            "pi_layer": fill(_ratio(B.sum(1), A.sum(1)), pop),   # ablations: per layer and
-            "pi_uniform": fill(_ratio(B.sum((0, 1)), A.sum((0, 1))), pop)}  # shared
-\end{lstlisting}
+\end{minipage}
 
 \FloatBarrier
 \section{Hyperparameters}
 \label{app:hparams}
 
-Table~\ref{tab:hparams} expands the Hyperparameters paragraph of Section~\ref{sec:experiments} and lists every setting of the main runs.
+Table~\ref{tab:hparams} expands the Models and hyperparameters paragraph of Section~\ref{sec:experiments} and lists every setting of the main runs.
 
 \begin{table}[!htbp]
   \caption{\raggedright\textbf{All hyperparameters} of the main runs (code commit \texttt{2d11740}), produced by \texttt{scripts/sample.py -{}-method sca -{}-pi-table calib/k1\_1024.npz -{}-gate-sigma 0.89}. Appendix~\ref{app:additional_protocols} gives the settings that differ for UltraImage, HRDiT, SigMa, and FLUX.2-dev.}
@@ -997,41 +973,43 @@ Table~\ref{tab:hparams} expands the Hyperparameters paragraph of Section~\ref{se
 \section{Evaluation protocol and metrics}
 \label{app:metrics}
 
-This section expands the Evaluation paragraph of Section~\ref{sec:experiments}: Table~\ref{tab:protocol} summarizes the protocol, and the paragraphs below define each metric and interval.
+This section expands the Data and Metrics paragraphs of Section~\ref{sec:experiments}: Table~\ref{tab:protocol} summarizes the protocol, and the paragraphs below define each metric and interval.
 
 \begin{table}[!htbp]
-  \caption{\textbf{Evaluation protocol.} The FLUX.1-dev attention comparisons share sampler settings and prompt seeds. UltraImage and HRDiT use their own multi-stage protocols; FLUX.2-dev uses its own native-resolution schedule (Appendix~\ref{app:additional_protocols}). Prompt counts exclude four development prompts. Table~\ref{tab:hparams} lists the hyperparameters; the paragraphs below define the metrics.}
+  \caption{\textbf{Evaluation protocol.} The FLUX.1-dev attention comparisons share sampler settings and prompt seeds. UltraImage and HRDiT use their own multi-stage protocols; FLUX.2-dev uses its own native-resolution schedule (Appendix~\ref{app:additional_protocols}). \ifmainfull{Prompt counts include the four development prompts.}{Prompt counts exclude the four development prompts.} Table~\ref{tab:hparams} lists the hyperparameters; the paragraphs below define the metrics.}
   \label{tab:protocol}
   \centering\footnotesize
   \setlength{\tabcolsep}{4pt}
   \begin{tabular}{@{}p{0.13\linewidth}p{0.83\linewidth}@{}}
     \toprule
-    Models & FLUX.1-dev~\citep{flux2024} (main results); FLUX.1-Krea-dev~\citep{krea2025flux} (100 prompts); FLUX.2-dev~\citep{flux2_2025} (50 prompts); bf16. \\
+    Models & FLUX.1-dev~\citep{flux2024} (main results); FLUX.1-Krea-dev~\citep{krea2025flux} (\nkrea{} prompts); FLUX.2-dev~\citep{flux2_2025} (50 prompts); bf16. \\
     Sampler & 28 Euler flow-matching steps, guidance 4.5, shift $\mu=1.15$ at every size, seed label 0 per prompt, tiled VAE decoding; UltraImage, HRDiT, and FLUX.2-dev exceptions are detailed in Appendix~\ref{app:additional_protocols}. \\
-    Sizes & $4096^2$, $2048\times4096$, $2048\times6144$ (191 prompts each); $6144^2$ (100 prompts); $8192^2$ (12 exploratory paired prompts, metrics and qualitative examples). \\
-    Prompts & Aesthetic-4K evaluation set with 4K references~\citep{zhang2025diffusion4k}, 191 prompts, fixed 46-prompt ablation subset; HRGen-1K~\citep{rajabi2026area}, 200 prompts. \\
-    Baselines & Full attention; AReA, released code~\citep{rajabi2026area}; DyPE~\citep{issachar2025dype}, SEGA~\citep{rajabi2026sega}, UltraImage~\citep[two-stage defaults;][]{zhao2025ultraimage}; on the 46-prompt subset also SigMa~\citep{zhao2026sigma} and HRDiT~\citep[released progressive protocol;][]{xue2026hrdit}. \\
+    Sizes & $4096^2$, $2048\times4096$, $2048\times6144$ (\nmain{} prompts each); $6144^2$ (100-prompt subset); $8192^2$ (12 exploratory paired prompts, metrics and qualitative examples). \\
+    Prompts & Aesthetic-4K evaluation set with 4K references~\citep{zhang2025diffusion4k}, \nmain{} prompts, fixed \nabl-prompt ablation subset; HRGen-1K~\citep{rajabi2026area}, \ifhrgenfull{all 1000 prompts}{\nhrgen{} of 1000 prompts}. \\
+    Baselines & Full attention; AReA, released code~\citep{rajabi2026area}; DyPE~\citep{issachar2025dype}, SEGA~\citep{rajabi2026sega}, UltraImage~\citep[two-stage defaults;][]{zhao2025ultraimage}, HRDiT~\citep[released progressive protocol;][]{xue2026hrdit}; SigMa~\citep{zhao2026sigma} on \npanel{} prompts. \\
     Metrics & ImageReward, HPSv2/2.1, PickScore, CLIP, aesthetic; FID, KID, IS, patch FID/KID; MUSIQ (full, $1024^2$ crops), CLIP-IQA, ARNIQA; 95\% paired bootstrap intervals over prompts. \\
     Hardware & One NVIDIA GH200 per process; verified timing logs identify the GH200 120\,GB model. Clean latency uses batch 1; campaign timings are marked separately. \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\paragraph{Prompts and references.} The Aesthetic-4K evaluation split~\citep{zhang2025diffusion4k} has 195 prompts with 4K reference images. Four (boats, Moai, woman and bear, underwater surfer) were used to choose the opening phase and window and are excluded from generation evaluation, leaving 191. Distribution metrics retain all 195 official reference rows. The 46-prompt ablation subset was fixed before any ablation was run. HRGen-1K~\citep{rajabi2026area} has 1000 prompts and no references; we use source rows 0--199, with ids \texttt{hrgen\_0000}--\texttt{hrgen\_0199}. The 48 calibration prompts were written for this purpose and share no prompt with Aesthetic-4K (the largest word-set Jaccard overlap with any evaluation prompt is 0.26).
+\paragraph{Prompts and references.} The Aesthetic-4K evaluation split~\citep{zhang2025diffusion4k} has 195 prompts with 4K reference images. Four of them (\devprompts) were used to choose the opening phase and window\ifmainfull{; they stay in the evaluation set for every method, which favours \sca{} slightly}{ and are excluded from generation evaluation, leaving \nmain}. The 195 reference rows hold 168 distinct images (27 duplicate rows, each with its own caption); distribution metrics keep the official rows and weights, as Diffusion-4K's statistics do. The \nabl-prompt ablation subset was fixed before any ablation was run. HRGen-1K~\citep{rajabi2026area} has 1000 prompts and no references; \ifhrgenfull{we use all of them}{we use source rows 0--199, with ids \texttt{hrgen\_0000}--\texttt{hrgen\_0199}}. The 48 calibration prompts were written for this purpose and share no prompt with Aesthetic-4K (the largest word-set Jaccard overlap with any evaluation prompt is 0.26).
+
+\paragraph{Implementations.} torch-fidelity 0.3.0, pyiqa 0.1.16 (MUSIQ) and 0.1.15 (CLIP-IQA, ARNIQA), hpsv2 1.2.0, and image-reward 1.5.
 
 \paragraph{Preference and alignment metrics.} ImageReward v1.0~\citep{xu2023imagereward} (bicubic resize to 224, centre crop). HPSv2 and HPSv2.1~\citep{wu2023hpsv2}: cosine of normalized image and text features with the official validation transform (longest side 224, padded). PickScore~\citep{kirstain2023pickapic}: $\exp(\text{logit scale})$ times the cosine. CLIP score~\citep{radford2021clip}: $100\max(\cos,0)$ with ViT-L/14. Aesthetic: the LAION improved aesthetic predictor (sac+logos+ava1, linear MSE) on the L2-normalized CLIP ViT-L/14 image embedding~\citep{schuhmann2022aesthetic}.
 
 \paragraph{No-reference quality.} MUSIQ~\citep{ke2021musiq} (pyiqa defaults) on the full image at native resolution, and MUSIQ$_\text{c}$, its mean over four fixed random $1024^2$ crops per image; crop positions depend only on the prompt id, so they are identical across methods. CLIP-IQA~\citep{wang2022clipiqa} and ARNIQA~\citep{agnolucci2024arniqa} (pyiqa defaults) on the image downscaled with antialiased bicubic resampling to a long side of 1024 pixels, the scale both were trained on.
 
-\paragraph{Distribution metrics and reference correction.} FID~\citep{heusel2017fid} and KID compare the generated images (191, or 46 on the subset) with all 195 official reference rows, using Inception-v3 features (torch-fidelity) after bilinear resizing to $299^2$. The reference rows contain 168 distinct image contents; repeated rows retain their official weights. Patch metrics use four $1024^2$ crops per row (764 generated and 780 reference crops). An audit found that the original feature-bank assembly keyed reference crops by resolved image path, so repeated images reused the last row's crop features. We corrected the lookup to retain each row's intended cached crops. Whole-image FID/KID are unchanged; all patch point estimates reported here use the corrected assembly. Original CSVs remain archived for provenance. Inception score uses full images at $299^2$, with 10 splits.
+\paragraph{Distribution metrics and reference correction.} FID~\citep{heusel2017fid} and KID compare the generated images (\nmain{} on the main set, \npanel{} on the panel) with all 195 official reference rows, using Inception-v3 features (torch-fidelity) after bilinear resizing to $299^2$. The reference rows contain 168 distinct image contents; repeated rows retain their official weights. Patch FID and KID are our own definition: the same Inception features on four fixed random $1024^2$ crops per generated image and per reference row (\the\numexpr4*\nmain\relax{} generated and 780 reference crops on the main set). AReA and SEGA report a patch FID without defining its crops, so patch FID is never compared across papers. An audit found that the original feature-bank assembly keyed reference crops by resolved image path, so repeated images reused the last row's crop features. We corrected the lookup to retain each row's intended cached crops. Whole-image FID/KID are unchanged; all patch point estimates reported here use the corrected assembly. Original CSVs remain archived for provenance. Inception score uses full images at $299^2$, with 10 splits.
 
-\paragraph{Intervals.} Per-image intervals are 95\% paired percentile bootstraps over prompt ids: original summaries use 1000 draws; separately recomputed comparisons use 2000 draws with seed 0. For the main \sca{}--AReA FID/KID and patch-FID/KID comparison, 1000 draws resample generated prompt ids jointly across methods and resample the 168 distinct reference-image identities, keeping all rows and crops from each sampled identity together. This retains the 195-row weighted point estimate while accounting for repeated reference images. The resulting FID difference is $-7.63$ $[-12.79,-2.94]$; patch FID is $-3.60$ $[-7.39,1.15]$ and patch KID ($\times10^3$) is $-2.27$ $[-4.73,0.12]$. An earlier version of this analysis reported a significant patch-KID improvement; under the corrected evaluation its interval includes zero. The whole-image and patch FID/KID comparisons at both non-square sizes and on the 46-prompt panel, the added baselines' patch comparisons, and the 56-step patch-FID comparison also use reference-image clusters. Other whole-image FID/KID intervals are labelled historical reference-row bootstraps; they have not been recomputed with image-identity clusters. Historical patch intervals are not attached to corrected estimates and are omitted where recomputation is incomplete. FID's finite-sample bias can place point estimates outside percentile intervals. Intervals are unadjusted for multiple comparisons and measure prompt/reference sampling uncertainty, not variability over independent model training runs.
+\paragraph{Intervals.} Per-image intervals are 95\% paired percentile bootstraps over prompt ids: original summaries use 1000 draws; separately recomputed comparisons use 2000 draws with seed 0. For the main \sca{}--AReA FID/KID and patch-FID/KID comparison, 1000 draws resample generated prompt ids jointly across methods and resample the 168 distinct reference-image identities, keeping all rows and crops from each sampled identity together. This retains the 195-row weighted point estimate while accounting for repeated reference images. The resulting FID difference is $-7.74$ $[-13.11,-2.61]$; patch FID is $-3.79$ $[-7.46,1.29]$ and patch KID ($\times10^3$) is $-2.29$ $[-4.60,0.05]$. An earlier version of this analysis reported a significant patch-KID improvement; under the corrected evaluation its interval includes zero. The whole-image and patch FID/KID comparisons at both non-square sizes, against every added baseline, and for the sampling-budget and progressive runs also use reference-image clusters. Other whole-image FID/KID intervals are labelled historical reference-row bootstraps; they have not been recomputed with image-identity clusters. Historical patch intervals are not attached to corrected estimates and are omitted where recomputation is incomplete. FID's finite-sample bias can place point estimates outside percentile intervals. Intervals are unadjusted for multiple comparisons and measure prompt/reference sampling uncertainty, not variability over independent model training runs.
 
 \FloatBarrier
 \section{Reproducing AReA}
 \label{app:area}
 
-We run AReA's released code with its FLUX.1 defaults (block-centre pooling, first phase for 8 of 28 steps, halo width 8, bridge ratio 0.5), the FLUX.1-dev checkpoint, guidance 4.5, 28 steps, $\mu$ at its maximum, and the seeds shared with the other methods. AReA's paper reports ImageReward 1.32 at 4K under its own settings; our shared protocol gives 0.92, so cross-paper numbers are not comparable, while our direct \sca{}--AReA comparison holds these settings fixed. UltraImage and FLUX.2-dev use separate protocols (Appendix~\ref{app:additional_protocols}). AReA's paper reports 151\,s for AReA and 314\,s for full attention at $4096^2$ on an H100; the matched sweep measures 202.4\,s and 186.5\,s on one GH200 (medians of three images). We use commit \texttt{9e38ec2} of the released repository, which includes a cost cap on halo and bridge tokens and a jagged halo edge; neither appears in AReA's paper, which does not say whether its Table~1 used them. Recomputed from the code with 512 text tokens, the first-phase pooling factors are 4, 4, 4, 4, 2, 2, 2, 2 at $4096\times4096$ and $2048\times4096$, and 8, 8, 8, 4, 4, 4, 2, 2 at $2048\times6144$. The second-phase windows shrink over 20 steps from 180, 151, and 192 tokens respectively to 64. At $2048\times6144$ no window is cheaper than full attention once the text tokens are counted, so the first window falls back to 192 tokens and the cap drops the bridge and halo on the first three second-phase steps. Other differences from the release defaults are the FLUX.1-dev checkpoint instead of FLUX.1-Krea-dev, and one seed per prompt shared across methods instead of one seed for all prompts. On FLUX.1-Krea-dev, AReA's default checkpoint, we rerun AReA and recalibrate \sca{} (16 prompts at $1024^2$, scale-4 table, other settings unchanged) with the same 28-step, guidance-4.5 sampler on 100 prompts; DyPE and SEGA run the Krea transformer through the frozen baseline harness. There \sca{} matches AReA at a third of its time (Table~\ref{tab:krea_6144}).
+We run AReA's released code with its FLUX.1 defaults (block-centre pooling, first phase for 8 of 28 steps, halo width 8, bridge ratio 0.5), the FLUX.1-dev checkpoint, guidance 4.5, 28 steps, $\mu$ at its maximum, and the seeds shared with the other methods. AReA's published numbers match FLUX.1-Krea-dev, the default of its released code: rerunning that code on Krea-dev reproduces its published CLIP, PickScore, aesthetic score, and MUSIQ within 0.1 (Table~\ref{tab:published_compare}), while on FLUX.1-dev the same code gives ImageReward 0.92 against the published 1.32. Our direct \sca{}--AReA comparison holds the FLUX.1-dev settings fixed. UltraImage and FLUX.2-dev use separate protocols (Appendix~\ref{app:additional_protocols}). AReA's paper reports 151\,s for AReA and 314\,s for full attention at $4096^2$ on an H100; the matched sweep measures 202.4\,s and 186.5\,s on one GH200 (medians of three images). We use commit \texttt{9e38ec2} of the released repository, which includes a cost cap on halo and bridge tokens and a jagged halo edge; neither appears in AReA's paper, which does not say whether its Table~1 used them. Recomputed from the code with 512 text tokens, the first-phase pooling factors are 4, 4, 4, 4, 2, 2, 2, 2 at $4096\times4096$ and $2048\times4096$, and 8, 8, 8, 4, 4, 4, 2, 2 at $2048\times6144$. The second-phase windows shrink over 20 steps from 180, 151, and 192 tokens respectively to 64. At $2048\times6144$ no window is cheaper than full attention once the text tokens are counted, so the first window falls back to 192 tokens and the cap drops the bridge and halo on the first three second-phase steps. Other differences from the release defaults are the FLUX.1-dev checkpoint instead of FLUX.1-Krea-dev, and one seed per prompt shared across methods instead of one seed for all prompts. On FLUX.1-Krea-dev, AReA's default checkpoint, we rerun AReA and recalibrate \sca{} (16 prompts at $1024^2$, scale-4 table, other settings unchanged) with the same 28-step, guidance-4.5 sampler on \nkrea{} prompts; DyPE and SEGA run the Krea transformer through the frozen baseline harness. There \sca{} matches AReA at a third of its time (Table~\ref{tab:krea_6144}).
 
 \FloatBarrier
 \section{Other baselines and FLUX.2-dev}
@@ -1041,24 +1019,24 @@ We run AReA's released code with its FLUX.1 defaults (block-centre pooling, firs
 
 \paragraph{UltraImage.} We run a guided two-stage configuration from the FLUX branch of the released implementation through \texttt{scripts/run\_ultraimage.py}. It uses a $1024^2$ first stage and a $4096^2$ second stage, 30 steps per stage, guidance 3.5 then 7, the \texttt{super\_imax} guidance schedule, shifted-window patchification, proportional attention, RIFLEx positions, and attention decay. Each prompt also needs a 2+2-step block-average preparation pass. The reported campaign time includes preparation when not cached and the two-stage call; main-stage and preparation times are retained separately in sidecars. Each call reseeds both the generator and the global RNG, including the VAE sampling path, from the prompt id and seed label. Thus seed labels are paired, but the two-stage method does not share an identical latent trajectory with the one-stage methods. The wrapper preserves an upstream scheduler behaviour: assigning \texttt{scheduler.config.shift} does not update the scheduler's internal shift in the installed diffusers version, so both stages retain shift 3.0. This is a reproduction caveat, not a newly tuned setting. We report this system-level comparison separately from the common-sampler attention comparisons.
 
-\paragraph{HRDiT.} We run the released progressive protocol of the official repository (commit \texttt{f3be935}) on FLUX.1-dev in fp16: 30 steps at $1024^2$ with guidance 3.5, then 17 steps at $2048^2$ with guidance 4.5 and 10 steps at $4096^2$ with guidance 6, 57 steps in all, with latent upsampling and the shipped per-head scope plan and attention settings. Its sampling budget therefore differs from the shared protocol, and we report it with the multi-stage recipes. HRDiT's global Torch random state is reset per prompt because its Gaussian blur draws a random width. Its clean time, 108.6\,s, is the median of three batch-1 runs on the latency prompts (the first, 144.4\,s, includes warm-up). The 191-prompt HRDiT evaluation used the original crop assembly, under which patch FID is 110.7 for HRDiT and 106.5 for \sca{}. Recomputed from the cached crop features with the corrected assembly of Table~\ref{tab:main} (\texttt{repro/\allowbreak evaluate\_corrected.py}), HRDiT's patch FID is 103.9, against 99.8 for \sca{} and 103.4 for AReA.
+\paragraph{HRDiT.} We run the released progressive protocol of the official repository (commit \texttt{f3be935}) on FLUX.1-dev in fp16: 30 steps at $1024^2$ with guidance 3.5, then 17 steps at $2048^2$ with guidance 4.5 and 10 steps at $4096^2$ with guidance 6, 57 steps in all, with latent upsampling and the shipped per-head scope plan and attention settings. Its sampling budget therefore differs from the shared protocol, and we report it with the multi-stage recipes. HRDiT's global Torch random state is reset per prompt because its Gaussian blur draws a random width. Its clean time, 108.6\,s, is the median of three batch-1 runs on the latency prompts (the first, 144.4\,s, includes warm-up). The \nmain-prompt HRDiT evaluation used the original crop assembly, under which patch FID is 109.9 for HRDiT and 105.9 for \sca{}. Recomputed from the cached crop features with the corrected assembly of Table~\ref{tab:main} (\texttt{repro/\allowbreak evaluate\_corrected.py}), HRDiT's patch FID is 103.0, against 99.1 for \sca{} and 102.9 for AReA.
 
 \paragraph{Progressive \sca{}.} \texttt{scripts/sample\_progressive.py} reimplements HRDiT's released schedule with the stock diffusers FLUX components and changes only the attention (Section~\ref{sec:progressive}). One 30-step schedule with dynamic shift $\mu=1.15$ (from the $1024^2$ sequence length) serves all stages, and the recorded HRDiT noise levels are reproduced to $10^{-6}$. The $2048^2$ stage repeats steps 14 to 30 and the $4096^2$ stage steps 21 to 30. Each transition decodes the latent, upsamples it bicubically, applies HRDiT's unsharp mask with a blur width drawn from the per-prompt global seed, re-encodes it, and re-noises it with the per-prompt generator; guidance is 3.5, 4.5, and 6.0, and HRDiT's low-band structure guidance and velocity momentum are kept. At $1024^2$ both methods use dense attention with native RoPE. At $2048^2$ and $4096^2$ we remove NTK RoPE, the proportional scale, head pruning, and position alignment, and use \sca{} with the FLUX.1-dev table at scales 2 and 4, $n_0=64$, $t=8$, and $\sigma_g=0.89$, which no high-resolution step exceeds. Deliberate differences from HRDiT's runner are bf16 instead of fp16 and a finite-value check at the end of each stage instead of after every step; with bf16 and stock components the $1024^2$ images, and hence the layouts, differ from HRDiT's for the same seed (Figure~\ref{fig:progressive}). Reported time is CUDA-synchronized and covers text encoding, all stages, transitions, and the final decode, excluding model loading; per-stage means are 5.1, 12.3, and 26.1\,s, peak memory 37.8\,GiB. The gate and every other setting were fixed before generation; two development prompts served as a smoke test.
 
 \paragraph{SigMa.} The dev-matched profile runs the released code (commit \texttt{fbe3a86}) on FLUX.1-dev under the shared sampler: 28 steps, guidance 4.5, bf16, YaRN positions, and the shift capped at its maximum from the target sequence length. SigMa's paper states FLUX.1-dev with guidance 3.5, while its released command line hardcodes FLUX.1-Krea-dev with guidance 4.5; we ran only the profile that matches our protocol. The outputs are finite, fully decoded $4096^2$ images, but the images we inspected show a regular lattice of dots, as DyPE's do at $4096^2$ on FLUX.1-dev. This may reflect our port or profile rather than the method, so the SigMa row should not be read as the method's best result.
 
-\paragraph{Adapter for HRDiT and SigMa.} SigMa runs on the 46-prompt subset and HRDiT on all 191 prompts, both through one adapter with campaign per-prompt CPU generators, resident models, and tiled VAE decoding. These differ from the upstream command-line seed, offload, and decode choices, so the runs are controlled adaptations, not reproductions of the authors' tables. Campaign time includes text encoding, decoding, and finite-value checks after every step, which add synchronization overhead; it excludes model loading and is not a clean latency benchmark.
+\paragraph{Adapter for HRDiT and SigMa.} SigMa runs on \npanel{} prompts and HRDiT on all \nmain{} prompts, both through one adapter with campaign per-prompt CPU generators, resident models, and tiled VAE decoding. These differ from the upstream command-line seed, offload, and decode choices, so the runs are controlled adaptations, not reproductions of the authors' tables. Campaign time includes text encoding, decoding, and finite-value checks after every step, which add synchronization overhead; it excludes model loading and is not a clean latency benchmark.
 
-\paragraph{FLUX.2-dev.} The model has 56 attention blocks and 48 heads per block. We reuse the two branches and calibration rule with a native grid of $64^2$ tokens, local window 64, and query tile 8. The four-axis positions preserve the time and text axes while coarsening the two spatial axes. Calibration uses 16 prompts at $1024^2$, 14 noise bins, and emulated scales 2 and 4; sampling uses the scale-4 table. Both full attention and \sca{} use 28 steps, guidance 4.0, seed label 0, and a shift fixed to the native sequence length, $\mu=2.1514$. The pipeline's default extrapolated shift at $4096^2$ would be about 11.55; we therefore do not interpret this comparison as a default-pipeline benchmark. The gate is 0.959 so that the first 8 steps use only global attention. The 50 evaluation prompts are the first 50 Aesthetic-4K prompts remaining after development-prompt exclusion. Prompt embeddings are cached for both methods; reported times include denoising and tiled VAE decoding, and exclude text encoding and model loading. At emulated scale 4, fitted per-head relative output error is 0.1790, versus 0.1889 for per-layer weights and 0.1924 for local-only attention; split-half correlation is 0.950 and cross-half error 0.1794. These are calibration diagnostics, not generation ablations of the individual components on FLUX.2.
+\paragraph{FLUX.2-dev.} The model has 56 attention blocks and 48 heads per block. We reuse the two branches and calibration rule with a native grid of $64^2$ tokens, local window 64, and query tile 8. The four-axis positions preserve the time and text axes while coarsening the two spatial axes. Calibration uses 16 prompts at $1024^2$, 14 noise bins, and emulated scales 2 and 4; sampling uses the scale-4 table. Both full attention and \sca{} use 28 steps, guidance 4.0, seed label 0, and a shift fixed to the native sequence length, $\mu=2.1514$. The pipeline's default extrapolated shift at $4096^2$ would be about 11.55; we therefore do not interpret this comparison as a default-pipeline benchmark. The gate is 0.959 so that the first 8 steps use only global attention. The 50 evaluation prompts are Aesthetic-4K rows 4--53, a 50-prompt subset. Prompt embeddings are cached for both methods; reported times include denoising and tiled VAE decoding, and exclude text encoding and model loading. At emulated scale 4, fitted per-head relative output error is 0.1790, versus 0.1889 for per-layer weights and 0.1924 for local-only attention; split-half correlation is 0.950 and cross-half error 0.1794. These are calibration diagnostics, not generation ablations of the individual components on FLUX.2.
 
 \FloatBarrier
 \section{Extended results with intervals}
 \label{app:tables}
 
-This section expands the main tables to all metrics and sizes. Table~\ref{tab:all_metrics} expands Table~\ref{tab:main}, Table~\ref{tab:app_4k} gives its paired intervals against AReA, and Table~\ref{tab:app_wide} covers the non-square sizes. Table~\ref{tab:app_abl} expands Table~\ref{tab:ablation}; the remaining tables cover the band guard and the calibration rule at non-square sizes.
+This section expands the main tables to all metrics and sizes. Table~\ref{tab:all_metrics} expands Table~\ref{tab:main}, Table~\ref{tab:app_4k} gives its paired intervals against AReA, Table~\ref{tab:app_wide} covers the non-square sizes, and Table~\ref{tab:app_ps2} checks the calibration table there. Table~\ref{tab:app_abl} expands Table~\ref{tab:ablation}; the remaining tables cover the band guard.
 
 \begin{table}[!htbp]
-  \caption{\textbf{At $4096^2$, \sca{} beats AReA on every per-image metric at about a third of its latency.} Aesthetic-4K with FLUX.1-dev, 191 prompts (100 at $6144^2$). HPS, CLIP-IQA, and ARNIQA are $\times100$; higher is better except latency and FID. Bold: best per size. \sg{} / \sw{} on full-attention and \sca{} rows: significantly better / worse than AReA (95\% paired interval excludes zero). Latency at $4096^2$: seconds per image, batch 1, idle GH200, median of three. $^\ddagger$Mean campaign time on shared nodes, not clean latency. $^\circ$UltraImage uses its two-stage defaults.}
+  \caption{\textbf{At $4096^2$, \sca{} beats AReA on every per-image metric at about a third of its latency.} FLUX.1-dev, \nmain{} prompts (100 at $6144^2$). HPS, CLIP-IQA, and ARNIQA are $\times100$; higher is better except latency and FID. Bold: best per size. \sg{} / \sw{}: significantly better / worse than AReA (95\% paired interval; none for full attention's FID and FID$_\text{p}$). \sca{} + band guard: the 191-prompt run without the development prompts. Latency at $4096^2$: batch-1 seconds per image on an idle GH200, median of three. $^\ddagger$Campaign mean on shared nodes, not clean latency. $^\circ$UltraImage uses its two-stage defaults.}
   \label{tab:all_metrics}
   \centering
   \scriptsize
@@ -1069,21 +1047,21 @@ This section expands the main tables to all metrics and sizes. Table~\ref{tab:al
     Method & Lat.\,(s)$\downarrow$ & \begin{tabular}[b]{@{}c@{}}Image\\Reward\end{tabular} & Aesth. & CLIP & \begin{tabular}[b]{@{}c@{}}Pick\\Score\end{tabular} & HPSv2 & HPSv2.1 & FID$\downarrow$ & FID$_\text{p}\!\downarrow$ & MUSIQ & MUSIQ$_\text{c}$ & CLIP-IQA & ARNIQA \\
     \midrule
     \multicolumn{14}{l}{\emph{$4096\times4096$}, scale factors (4, 4)} \\
-    Full attention & 186.5 & $-2.18$\sw & 4.51\sw & 15.38\sw & 17.94\sw & 20.75\sw & 7.61\sw & 312.7\sw & 252.4 & 22.9\sw & 33.2\sw & 49.0\sw & 54.5\sw \\
-    DyPE & 196.1\rlap{$^\ddagger$} & $-0.11$ & 5.73 & 24.84 & 20.49 & 25.52 & 20.52 & 206.2 & 172.7 & 36.3 & 50.4 & 59.5 & 60.1 \\
-    SEGA & 190.5\rlap{$^\ddagger$} & 0.55 & 6.03 & 26.93 & 21.64 & 27.15 & 24.37 & 165.4 & 126.0 & 37.4 & 50.4 & 66.8 & 64.8 \\
-    UltraImage$^{\circ}$ & 308.5\rlap{$^\ddagger$} & \textbf{1.28} & \textbf{6.50} & 28.80 & \textbf{23.32} & \textbf{29.97} & \textbf{30.80} & 142.7 & 110.6 & 33.5 & 41.8 & 72.7 & \textbf{72.3} \\
-    AReA (released code) & 202.4 & 0.92 & 6.28 & 27.67 & 22.35 & 28.64 & 27.20 & 146.0 & 103.4 & 39.4 & 50.4 & 67.5 & 67.3 \\
+    Full attention & 186.5 & $-2.18$\sw & 4.50\sw & 15.37\sw & 17.94\sw & 20.75\sw & 7.60\sw & 312.4 & 252.2 & 22.9\sw & 33.1\sw & 49.0\sw & 54.4\sw \\
+    DyPE & 195.9\rlap{$^\ddagger$} & $-0.10$ & 5.72 & 24.92 & 20.51 & 25.53 & 20.55 & 205.5 & 171.9 & 36.3 & 50.3 & 59.6 & 60.2 \\
+    SEGA & 190.4\rlap{$^\ddagger$} & 0.56 & 6.02 & 26.95 & 21.64 & 27.13 & 24.34 & 164.9 & 125.8 & 37.3 & 50.3 & 66.7 & 64.8 \\
+    UltraImage$^{\circ}$ & 308.5\rlap{$^\ddagger$} & \textbf{1.28} & \textbf{6.50} & 28.84 & \textbf{23.33} & \textbf{29.96} & \textbf{30.77} & 142.0 & 109.5 & 33.6 & 41.7 & 72.8 & \textbf{72.3} \\
+    AReA (released code) & 202.4 & 0.92 & 6.27 & 27.69 & 22.36 & 28.62 & 27.16 & 145.8 & 102.9 & 39.4 & 50.4 & 67.7 & 67.4 \\
     \sca{} + band guard & 88.1 & 1.20\sg & 6.46\sg & 28.87\sg & 22.90\sg & 29.40\sg & 28.95\sg & 142.3 & \textbf{98.8} & 41.4\sg & 61.0\sg & 70.9\sg & 70.8\sg \\
-    \sca{} (final) & \textbf{71.1} & 1.23\sg & 6.45\sg & \textbf{29.11}\sg & 23.09\sg & 29.77\sg & 29.71\sg & \textbf{138.4}\sg & 99.8 & \textbf{45.3}\sg & \textbf{61.2}\sg & \textbf{72.9}\sg & 71.2\sg \\
+    \sca{} (final) & \textbf{71.1} & 1.23\sg & 6.44\sg & \textbf{29.14}\sg & 23.09\sg & 29.75\sg & 29.67\sg & \textbf{138.1}\sg & 99.1 & \textbf{45.4}\sg & \textbf{61.2}\sg & \textbf{73.0}\sg & 71.3\sg \\
     \midrule
     \multicolumn{14}{l}{\emph{$2048\times4096$}, scale factors (2, 4)} \\
-    AReA (released code) & 112.4\rlap{$^\ddagger$} & \textbf{1.13} & \textbf{6.41} & \textbf{28.51} & \textbf{22.67} & 28.38 & \textbf{27.66} & 144.8 & \textbf{112.8} & 51.8 & 61.6 & \textbf{74.8} & \textbf{73.0} \\
-    \sca{} (final) & \textbf{38.1}\rlap{$^\ddagger$} & \textbf{1.13} & 6.21\sw & 28.21 & 22.64 & \textbf{28.55}\sg & 27.46 & \textbf{143.8} & 118.3\sw & \textbf{55.9}\sg & \textbf{65.9}\sg & 73.5\sw & 72.8 \\
+    AReA (released code) & 112.4\rlap{$^\ddagger$} & \textbf{1.13} & \textbf{6.41} & \textbf{28.59} & \textbf{22.66} & 28.36 & \textbf{27.64} & 144.6 & \textbf{111.7} & 51.9 & 61.6 & \textbf{74.9} & \textbf{73.0} \\
+    \sca{} (final) & \textbf{38.1}\rlap{$^\ddagger$} & \textbf{1.13} & 6.21\sw & 28.24 & 22.65 & \textbf{28.54}\sg & 27.46 & \textbf{143.4} & 117.0\sw & \textbf{56.1}\sg & \textbf{65.9}\sg & 73.6\sw & 72.9 \\
     \midrule
     \multicolumn{14}{l}{\emph{$2048\times6144$}, scale factors (2, 6)} \\
-    AReA (released code) & 150.5\rlap{$^\ddagger$} & 0.39 & \textbf{6.15} & 26.49 & 21.51 & 26.41 & 23.35 & 163.6 & \textbf{106.5} & 42.9 & 53.1 & 67.3 & 69.3 \\
-    \sca{} (final) & \textbf{55.8}\rlap{$^\ddagger$} & \textbf{0.66}\sg & 6.00\sw & \textbf{27.01} & \textbf{21.74}\sg & \textbf{26.54}\sg & \textbf{23.48} & \textbf{143.8}\sg & 110.1 & \textbf{48.4}\sg & \textbf{60.6}\sg & \textbf{69.0}\sg & \textbf{70.2}\sg \\
+    AReA (released code) & 150.5\rlap{$^\ddagger$} & 0.39 & \textbf{6.14} & 26.52 & 21.51 & 26.41 & 23.36 & 163.0 & \textbf{105.7} & 42.8 & 53.0 & 67.5 & 69.3 \\
+    \sca{} (final) & \textbf{55.8}\rlap{$^\ddagger$} & \textbf{0.67}\sg & 5.99\sw & \textbf{27.07} & \textbf{21.74}\sg & \textbf{26.53} & \textbf{23.46} & \textbf{143.3}\sg & 109.3\sw & \textbf{48.5}\sg & \textbf{60.6}\sg & \textbf{69.1}\sg & \textbf{70.2}\sg \\
     \midrule
     \multicolumn{14}{l}{\emph{$6144\times6144$}, scale factors (6, 6), 100 prompts} \\
     AReA (released code) & 507.9\rlap{$^\ddagger$} & $-0.42$ & 5.80 & 23.84 & 20.30 & 24.95 & 18.78 & 216.7 & 188.6 & 28.3 & 44.5 & 53.8 & 47.8 \\
@@ -1092,7 +1070,7 @@ This section expands the main tables to all metrics and sizes. Table~\ref{tab:al
   \end{tabular}}
 \end{table}
 
-Tables~\ref{tab:app_4k} and~\ref{tab:app_wide} give every metric with its paired interval for the main comparisons, Tables~\ref{tab:app_abl} to~\ref{tab:app_abl_band2} the ablation intervals, and Table~\ref{tab:app_ps2} the non-square calibration check of Appendix~\ref{app:ps2}; Appendix~\ref{app:phase2} pairs the added baselines against \sca{}. All are populated from archived evaluation CSV files. Per-image means were checked against the corresponding per-image records; distribution-level estimates use archived cached features and corrected reference-row crop assembly (Appendix~\ref{app:metrics}). Set-level metrics (FID, KID, their patch versions, and Inception score) are computed on the whole set. The final \sca{} FID/KID and patch-FID/KID intervals resample reference-image clusters; other FID/KID intervals retain the historical reference-row bootstrap unless a corrected image-cluster interval is available, and Inception-score intervals resample only generated images.
+Appendix~\ref{app:phase2} pairs the added baselines against \sca{}. All these tables are populated from archived evaluation CSV files. Per-image means were checked against the per-image records; distribution-level estimates use cached features and the corrected crop assembly (Appendix~\ref{app:metrics}). Set-level metrics (FID, KID, their patch versions, Inception score) use the whole set. FID/KID and patch-FID/KID intervals on the 195-prompt sets resample reference-image clusters; other FID/KID intervals retain the historical reference-row bootstrap unless a corrected image-cluster interval exists, and Inception-score intervals resample only generated images.
 
 % Y{w}: centred cell of width w that sets a {\tiny[lo, hi]} interval on its own line below the estimate,
 % at the 7pt table size. Tables with inline intervals set \let\tiny\scriptsize for the same size.
@@ -1101,7 +1079,7 @@ Tables~\ref{tab:app_4k} and~\ref{tab:app_wide} give every metric with its paired
 %%% BEGIN GENERATED TABLES
 % Generated with gen_tables.py; corrected distribution checks override historical summaries.
 \begin{table}[!htbp]
-  \caption{\textbf{All metrics at $4096^2$}, 191 prompts, paired against AReA (released code). $\Delta$ is method minus AReA with its 95\% paired bootstrap interval (1000 draws); \up{blue} / \dn{orange}: significantly better / worse than AReA. Set-level intervals follow the policy stated after Table~\ref{tab:all_metrics}; corrected patch values without recomputed intervals have no significance marks. $^\ddagger$Mean campaign wall-clock on shared nodes; Table~\ref{tab:latency} gives clean latency. Sources: \texttt{results/final4k\_nb\_*}, \texttt{final4k\_*}, \texttt{final4k\_full\_*}.}
+  \caption{\textbf{All metrics at $4096^2$}, \nmain{} prompts, paired against AReA. $\Delta$ is method minus AReA with its 95\% paired bootstrap interval; \up{blue} / \dn{orange}: significantly better / worse than AReA. Intervals use 1000 prompt draws for \sca{} final (FID, KID, and patch versions also resample reference-image clusters) and 2000 for full attention's per-image metrics; full attention's set-level differences and campaign time are points without marks. \sca{} + band: the 191-prompt run without the development prompts, paired on those prompts; its corrected patch values have no intervals. $^\ddagger$Campaign mean on shared nodes (clean latency: Table~\ref{tab:latency}). Sources: \texttt{results/a4k195\_main/}, \texttt{final4k\_*}.}
   \label{tab:app_4k}
   \centering\scriptsize\setlength{\tabcolsep}{1.8pt}
   \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
@@ -1109,59 +1087,81 @@ Tables~\ref{tab:app_4k} and~\ref{tab:app_wide} give every metric with its paired
     \toprule
     Metric & AReA & \sca{} final & $\Delta$ [95\% CI] & \sca{} + band & $\Delta$ [95\% CI] & Full attention & $\Delta$ [95\% CI] \\
     \midrule
-    ImageReward & 0.917 & 1.229 & \up{$+0.312$} {\tiny[$+0.240$, $+0.384$]} & 1.198 & \up{$+0.281$} {\tiny[$+0.208$, $+0.358$]} & ${-}2.178$ & \dn{${-}3.095$} {\tiny[${-}3.216$, ${-}2.978$]} \\
-    Aesthetic & 6.28 & 6.45 & \up{$+0.17$} {\tiny[$+0.12$, $+0.22$]} & 6.46 & \up{$+0.18$} {\tiny[$+0.12$, $+0.24$]} & 4.51 & \dn{${-}1.77$} {\tiny[${-}1.87$, ${-}1.67$]} \\
-    CLIP score & 27.67 & 29.11 & \up{$+1.45$} {\tiny[$+1.06$, $+1.82$]} & 28.87 & \up{$+1.20$} {\tiny[$+0.79$, $+1.61$]} & 15.38 & \dn{${-}12.28$} {\tiny[${-}13.10$, ${-}11.44$]} \\
-    PickScore & 22.35 & 23.09 & \up{$+0.73$} {\tiny[$+0.62$, $+0.86$]} & 22.90 & \up{$+0.54$} {\tiny[$+0.40$, $+0.71$]} & 17.94 & \dn{${-}4.41$} {\tiny[${-}4.61$, ${-}4.18$]} \\
-    HPSv2 ($\times100$) & 28.64 & 29.77 & \up{$+1.12$} {\tiny[$+0.95$, $+1.31$]} & 29.40 & \up{$+0.75$} {\tiny[$+0.53$, $+0.99$]} & 20.75 & \dn{${-}7.89$} {\tiny[${-}8.23$, ${-}7.54$]} \\
-    HPSv2.1 ($\times100$) & 27.20 & 29.71 & \up{$+2.50$} {\tiny[$+2.17$, $+2.88$]} & 28.95 & \up{$+1.75$} {\tiny[$+1.31$, $+2.22$]} & 7.61 & \dn{${-}19.59$} {\tiny[${-}20.39$, ${-}18.71$]} \\
-    MUSIQ & 39.4 & 45.3 & \up{$+5.8$} {\tiny[$+4.1$, $+7.5$]} & 41.4 & \up{$+2.0$} {\tiny[$+0.0$, $+3.9$]} & 22.9 & \dn{${-}16.5$} {\tiny[${-}18.0$, ${-}15.0$]} \\
-    MUSIQ$_\text{c}$ & 50.4 & 61.2 & \up{$+10.9$} {\tiny[$+9.5$, $+12.4$]} & 61.0 & \up{$+10.6$} {\tiny[$+9.2$, $+12.3$]} & 33.2 & \dn{${-}17.1$} {\tiny[${-}18.8$, ${-}15.4$]} \\
-    CLIP-IQA ($\times100$) & 67.5 & 72.9 & \up{$+5.4$} {\tiny[$+4.0$, $+6.8$]} & 70.9 & \up{$+3.3$} {\tiny[$+1.8$, $+4.9$]} & 49.0 & \dn{${-}18.6$} {\tiny[${-}20.4$, ${-}16.7$]} \\
-    ARNIQA ($\times100$) & 67.3 & 71.2 & \up{$+3.9$} {\tiny[$+3.0$, $+4.9$]} & 70.8 & \up{$+3.5$} {\tiny[$+2.4$, $+4.6$]} & 54.5 & \dn{${-}12.8$} {\tiny[${-}14.3$, ${-}11.2$]} \\
-    Inception score & 6.42 & 6.52 & $+0.09$ {\tiny[${-}0.47$, $+0.49$]} & 6.10 & ${-}0.33$ {\tiny[${-}0.88$, $+0.18$]} & 3.83 & \dn{${-}2.60$} {\tiny[${-}3.14$, ${-}1.83$]} \\
-    FID$\downarrow$ & 146.0 & 138.4 & \up{${-}7.6$} {\tiny[${-}12.8$, ${-}2.9$]} & 142.3 & ${-}3.7$ {\tiny[${-}9.6$, $+1.0$]} & 312.7 & \dn{$+166.7$} {\tiny[$+145.2$, $+170.9$]} \\
-    KID$\downarrow$ ($\times10^3$) & 7.11 & 6.09 & ${-}1.02$ {\tiny[${-}3.12$, $+1.16$]} & 5.48 & ${-}1.63$ {\tiny[${-}3.84$, $+0.51$]} & 163.97 & \dn{$+156.86$} {\tiny[$+139.17$, $+174.94$]} \\
-    FID$_\text{p}\downarrow$ & 103.4 & 99.8 & ${-}3.6$ {\tiny[${-}7.4$, $+1.2$]} & 98.8 & ${-}4.7$ & 252.4 & $+149.0$ \\
-    KID$_\text{p}\downarrow$ ($\times10^3$) & 11.44 & 9.17 & ${-}2.27$ {\tiny[${-}4.73$, $+0.12$]} & 9.67 & ${-}1.77$ & 171.16 & $+159.72$ \\
-    Seconds per image$^\ddagger\downarrow$ & 261.7 & 71.5 & \up{${-}190.2$} {\tiny[${-}203.0$, ${-}176.8$]} & 120.0 & \up{${-}141.7$} {\tiny[${-}155.8$, ${-}127.1$]} & 196.5 & \up{${-}65.2$} {\tiny[${-}79.2$, ${-}50.5$]} \\
+    ImageReward & 0.921 & 1.228 & \up{$+0.308$} {\tiny[$+0.227$, $+0.384$]} & 1.198 & \up{$+0.281$} {\tiny[$+0.208$, $+0.358$]} & ${-}2.180$ & \dn{${-}3.101$} {\tiny[${-}3.218$, ${-}2.984$]} \\
+    Aesthetic & 6.27 & 6.44 & \up{$+0.17$} {\tiny[$+0.12$, $+0.22$]} & 6.46 & \up{$+0.18$} {\tiny[$+0.12$, $+0.24$]} & 4.50 & \dn{${-}1.77$} {\tiny[${-}1.87$, ${-}1.67$]} \\
+    CLIP score & 27.69 & 29.14 & \up{$+1.45$} {\tiny[$+1.12$, $+1.80$]} & 28.87 & \up{$+1.20$} {\tiny[$+0.79$, $+1.61$]} & 15.37 & \dn{${-}12.32$} {\tiny[${-}13.12$, ${-}11.54$]} \\
+    PickScore & 22.36 & 23.09 & \up{$+0.74$} {\tiny[$+0.61$, $+0.86$]} & 22.90 & \up{$+0.54$} {\tiny[$+0.40$, $+0.71$]} & 17.94 & \dn{${-}4.42$} {\tiny[${-}4.63$, ${-}4.22$]} \\
+    HPSv2 ($\times100$) & 28.62 & 29.75 & \up{$+1.13$} {\tiny[$+0.95$, $+1.31$]} & 29.40 & \up{$+0.75$} {\tiny[$+0.53$, $+0.99$]} & 20.75 & \dn{${-}7.87$} {\tiny[${-}8.24$, ${-}7.50$]} \\
+    HPSv2.1 ($\times100$) & 27.16 & 29.67 & \up{$+2.51$} {\tiny[$+2.12$, $+2.90$]} & 28.95 & \up{$+1.75$} {\tiny[$+1.31$, $+2.22$]} & 7.60 & \dn{${-}19.56$} {\tiny[${-}20.41$, ${-}18.72$]} \\
+    MUSIQ & 39.4 & 45.4 & \up{$+6.0$} {\tiny[$+4.2$, $+7.8$]} & 41.4 & \up{$+2.0$} {\tiny[$+0.0$, $+3.9$]} & 22.9 & \dn{${-}16.5$} {\tiny[${-}18.0$, ${-}14.9$]} \\
+    MUSIQ$_\text{c}$ & 50.4 & 61.2 & \up{$+10.8$} {\tiny[$+9.4$, $+12.2$]} & 61.0 & \up{$+10.6$} {\tiny[$+9.2$, $+12.3$]} & 33.1 & \dn{${-}17.3$} {\tiny[${-}19.1$, ${-}15.5$]} \\
+    CLIP-IQA ($\times100$) & 67.7 & 73.0 & \up{$+5.3$} {\tiny[$+3.9$, $+6.7$]} & 70.9 & \up{$+3.3$} {\tiny[$+1.8$, $+4.9$]} & 49.0 & \dn{${-}18.7$} {\tiny[${-}20.5$, ${-}16.9$]} \\
+    ARNIQA ($\times100$) & 67.4 & 71.3 & \up{$+3.9$} {\tiny[$+3.1$, $+4.9$]} & 70.8 & \up{$+3.5$} {\tiny[$+2.4$, $+4.6$]} & 54.4 & \dn{${-}12.9$} {\tiny[${-}14.5$, ${-}11.3$]} \\
+    Inception score & 6.66 & 6.62 & ${-}0.05$ {\tiny[${-}0.48$, $+0.62$]} & 6.10 & ${-}0.33$ {\tiny[${-}0.88$, $+0.18$]} & 3.82 & ${-}2.84$ \\
+    FID$\downarrow$ & 145.8 & 138.1 & \up{${-}7.7$} {\tiny[${-}13.1$, ${-}2.6$]} & 142.3 & ${-}3.7$ {\tiny[${-}9.6$, $+1.0$]} & 312.4 & $+166.6$ \\
+    KID$\downarrow$ ($\times10^3$) & 7.17 & 6.19 & ${-}0.98$ {\tiny[${-}3.23$, $+1.47$]} & 5.48 & ${-}1.63$ {\tiny[${-}3.84$, $+0.51$]} & 164.15 & $+156.98$ \\
+    FID$_\text{p}\downarrow$ & 102.9 & 99.1 & ${-}3.8$ {\tiny[${-}7.5$, $+1.3$]} & 98.8 & ${-}4.7$ & 252.2 & $+149.3$ \\
+    KID$_\text{p}\downarrow$ ($\times10^3$) & 11.40 & 9.11 & ${-}2.29$ {\tiny[${-}4.60$, $+0.05$]} & 9.67 & ${-}1.77$ & 171.01 & $+159.61$ \\
+    Seconds per image$^\ddagger\downarrow$ & 264.4 & 71.5 & \up{${-}192.9$} {\tiny[${-}206.4$, ${-}180.3$]} & 120.0 & \up{${-}141.7$} {\tiny[${-}155.8$, ${-}127.1$]} & 196.2 & ${-}68.1$ \\
     \bottomrule
   \end{tabular}}
 \end{table}
 
 \begin{table}[!htbp]
-  \caption{\textbf{All metrics at the non-square sizes}, 191 prompts each, \sca{} final paired against AReA (released code). Conventions as in Table~\ref{tab:app_4k}. Corrected patch intervals use reference-image clusters where available; absent intervals are omitted. Sources: \texttt{results/final\_2048x4096\_*}, \texttt{final\_2048x6144\_*}.}
+  \caption{\textbf{All metrics at the non-square sizes}, \nmain{} prompts each, \sca{} final paired against AReA (released code). Conventions as in Table~\ref{tab:app_4k}: evaluator intervals over 1000 prompt draws, and for FID, KID, and their patch versions 1000 draws that also resample reference-image clusters. Sources: \texttt{results/a4k195\_2048x4096/}, \texttt{a4k195\_2048x6144/}.}
   \label{tab:app_wide}
-  \centering\scriptsize\setlength{\tabcolsep}{3pt}\let\tiny\scriptsize
+  \centering\scriptsize\setlength{\tabcolsep}{1.8pt}
   \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
-  \begin{tabular}{lcccccc}
+  \begin{tabular}{lccY{57.5pt}ccY{57.5pt}}
     \toprule
     & \multicolumn{3}{c}{$2048\times4096$, factors (2, 4)} & \multicolumn{3}{c}{$2048\times6144$, factors (2, 6)} \\
     \cmidrule(lr){2-4}\cmidrule(lr){5-7}
     Metric & AReA & \sca{} & $\Delta$ [95\% CI] & AReA & \sca{} & $\Delta$ [95\% CI] \\
     \midrule
-    ImageReward & 1.133 & 1.130 & ${-}0.003$ {\tiny[${-}0.079$, $+0.073$]} & 0.389 & 0.664 & \up{$+0.275$} {\tiny[$+0.150$, $+0.400$]} \\
-    Aesthetic & 6.41 & 6.21 & \dn{${-}0.21$} {\tiny[${-}0.26$, ${-}0.15$]} & 6.15 & 6.00 & \dn{${-}0.15$} {\tiny[${-}0.25$, ${-}0.04$]} \\
-    CLIP score & 28.51 & 28.21 & ${-}0.30$ {\tiny[${-}0.70$, $+0.11$]} & 26.49 & 27.01 & $+0.52$ {\tiny[${-}0.01$, $+1.07$]} \\
-    PickScore & 22.67 & 22.64 & ${-}0.02$ {\tiny[${-}0.13$, $+0.09$]} & 21.51 & 21.74 & \up{$+0.23$} {\tiny[$+0.05$, $+0.43$]} \\
-    HPSv2 ($\times100$) & 28.38 & 28.55 & \up{$+0.17$} {\tiny[$+0.06$, $+0.28$]} & 26.41 & 26.54 & \up{$+0.13$} {\tiny[$+0.00$, $+0.27$]} \\
-    HPSv2.1 ($\times100$) & 27.66 & 27.46 & ${-}0.20$ {\tiny[${-}0.49$, $+0.05$]} & 23.35 & 23.48 & $+0.13$ {\tiny[${-}0.27$, $+0.54$]} \\
-    MUSIQ & 51.8 & 55.9 & \up{$+4.1$} {\tiny[$+2.7$, $+5.7$]} & 42.9 & 48.4 & \up{$+5.5$} {\tiny[$+3.6$, $+7.3$]} \\
-    MUSIQ$_\text{c}$ & 61.6 & 65.9 & \up{$+4.3$} {\tiny[$+3.3$, $+5.5$]} & 53.1 & 60.6 & \up{$+7.5$} {\tiny[$+6.2$, $+9.0$]} \\
-    CLIP-IQA ($\times100$) & 74.8 & 73.5 & \dn{${-}1.3$} {\tiny[${-}2.3$, ${-}0.4$]} & 67.3 & 69.0 & \up{$+1.6$} {\tiny[$+0.2$, $+3.1$]} \\
-    ARNIQA ($\times100$) & 73.0 & 72.8 & ${-}0.2$ {\tiny[${-}0.9$, $+0.5$]} & 69.3 & 70.2 & \up{$+0.9$} {\tiny[$+0.1$, $+1.7$]} \\
-    Inception score & 6.21 & 6.65 & $+0.44$ {\tiny[${-}0.16$, $+0.95$]} & 5.36 & 6.35 & \up{$+0.99$} {\tiny[$+0.13$, $+1.22$]} \\
-    FID$\downarrow$ & 144.8 & 143.8 & ${-}1.1$ {\tiny[${-}6.4$, $+4.3$]} & 163.6 & 143.8 & \up{${-}19.8$} {\tiny[${-}24.4$, ${-}11.8$]} \\
-    KID$\downarrow$ ($\times10^3$) & 7.95 & 7.87 & ${-}0.09$ {\tiny[${-}2.90$, $+2.97$]} & 18.08 & 8.46 & \up{${-}9.62$} {\tiny[${-}13.94$, ${-}5.60$]} \\
-    FID$_\text{p}\downarrow$ & 112.8 & 118.3 & \dn{$+5.5$} {\tiny[$+1.9$, $+9.5$]} & 106.5 & 110.1 & $+3.6$ {\tiny[${-}0.2$, $+11.3$]} \\
-    KID$_\text{p}\downarrow$ ($\times10^3$) & 14.53 & 16.48 & \dn{$+1.95$} {\tiny[$+0.39$, $+3.70$]} & 13.66 & 15.36 & $+1.70$ {\tiny[${-}2.22$, $+6.07$]} \\
-    Seconds per image$^\ddagger\downarrow$ & 112.4 & 38.1 & \up{${-}74.3$} {\tiny[${-}76.6$, ${-}72.0$]} & 150.5 & 55.8 & \up{${-}94.7$} {\tiny[${-}96.9$, ${-}92.4$]} \\
+    ImageReward & 1.132 & 1.126 & ${-}0.006$ {\tiny[${-}0.087$, $+0.062$]} & 0.391 & 0.670 & \up{$+0.279$} {\tiny[$+0.157$, $+0.399$]} \\
+    Aesthetic & 6.41 & 6.21 & \dn{${-}0.20$} {\tiny[${-}0.26$, ${-}0.14$]} & 6.14 & 5.99 & \dn{${-}0.15$} {\tiny[${-}0.26$, ${-}0.04$]} \\
+    CLIP score & 28.59 & 28.24 & ${-}0.35$ {\tiny[${-}0.76$, $+0.01$]} & 26.52 & 27.07 & $+0.55$ {\tiny[${-}0.01$, $+1.07$]} \\
+    PickScore & 22.66 & 22.65 & ${-}0.02$ {\tiny[${-}0.12$, $+0.10$]} & 21.51 & 21.74 & \up{$+0.23$} {\tiny[$+0.05$, $+0.41$]} \\
+    HPSv2 ($\times100$) & 28.36 & 28.54 & \up{$+0.18$} {\tiny[$+0.07$, $+0.29$]} & 26.41 & 26.53 & $+0.12$ {\tiny[${-}0.01$, $+0.27$]} \\
+    HPSv2.1 ($\times100$) & 27.64 & 27.46 & ${-}0.18$ {\tiny[${-}0.47$, $+0.08$]} & 23.36 & 23.46 & $+0.10$ {\tiny[${-}0.29$, $+0.53$]} \\
+    MUSIQ & 51.9 & 56.1 & \up{$+4.2$} {\tiny[$+2.7$, $+5.7$]} & 42.8 & 48.5 & \up{$+5.7$} {\tiny[$+3.8$, $+7.7$]} \\
+    MUSIQ$_\text{c}$ & 61.6 & 65.9 & \up{$+4.3$} {\tiny[$+3.1$, $+5.4$]} & 53.0 & 60.6 & \up{$+7.6$} {\tiny[$+6.2$, $+9.2$]} \\
+    CLIP-IQA ($\times100$) & 74.9 & 73.6 & \dn{${-}1.3$} {\tiny[${-}2.2$, ${-}0.4$]} & 67.5 & 69.1 & \up{$+1.6$} {\tiny[$+0.2$, $+3.1$]} \\
+    ARNIQA ($\times100$) & 73.0 & 72.9 & ${-}0.2$ {\tiny[${-}0.9$, $+0.5$]} & 69.3 & 70.2 & \up{$+0.9$} {\tiny[$+0.1$, $+1.7$]} \\
+    Inception score & 6.27 & 6.67 & $+0.41$ {\tiny[${-}0.14$, $+0.97$]} & 5.48 & 6.22 & \up{$+0.74$} {\tiny[$+0.13$, $+1.23$]} \\
+    FID$\downarrow$ & 144.6 & 143.4 & ${-}1.2$ {\tiny[${-}6.3$, $+4.0$]} & 163.0 & 143.3 & \up{${-}19.7$} {\tiny[${-}24.4$, ${-}11.4$]} \\
+    KID$\downarrow$ ($\times10^3$) & 7.81 & 7.74 & ${-}0.07$ {\tiny[${-}2.73$, $+3.12$]} & 17.92 & 8.36 & \up{${-}9.57$} {\tiny[${-}13.66$, ${-}5.35$]} \\
+    FID$_\text{p}\downarrow$ & 111.7 & 117.0 & \dn{$+5.3$} {\tiny[$+1.6$, $+9.4$]} & 105.7 & 109.3 & \dn{$+3.6$} {\tiny[$+0.2$, $+11.1$]} \\
+    KID$_\text{p}\downarrow$ ($\times10^3$) & 14.26 & 16.14 & \dn{$+1.88$} {\tiny[$+0.39$, $+3.64$]} & 13.56 & 15.14 & $+1.58$ {\tiny[${-}2.38$, $+6.01$]} \\
+    Seconds per image$^\ddagger\downarrow$ & 112.4 & 38.1 & \up{${-}74.3$} {\tiny[${-}76.3$, ${-}72.2$]} & 150.5 & 55.8 & \up{${-}94.7$} {\tiny[${-}97.1$, ${-}92.4$]} \\
     \bottomrule
   \end{tabular}}
 \end{table}
 
 \begin{table}[!htbp]
-  \caption{\textbf{Ablation intervals for Table~\ref{tab:ablation}}, 46 prompts at $4096^2$, paired against \sca{} final (2000 bootstrap draws); \up{blue} / \dn{orange}: significantly better / worse than \sca{} final. Panels group the variants as in Table~\ref{tab:ablation}; the \sca{} final column gives its absolute values, and the last row of each panel gives patch FID per variant (set-level, no paired interval). Sources: \texttt{results/ablnb\_*}.}
+  \caption{\textbf{Calibration table at $2048\times4096$}, \nabl{} ablation prompts, paired against \sca{} final with the scale-4 table; \up{blue} / \dn{orange}: significantly better / worse than this reference. Sources: \texttt{results/ps2\_*}.}
+  \label{tab:app_ps2}
+  \centering\scriptsize\setlength{\tabcolsep}{3pt}\let\tiny\scriptsize
+  \begin{tabular}{lcc}
+    \toprule
+    Metric & \sca{}, scale-2 table & AReA (released code) \\
+    \midrule
+    ImageReward & $+0.012$ {\tiny[${-}0.025$, $+0.050$]} & $+0.027$ {\tiny[${-}0.141$, $+0.192$]} \\
+    Aesthetic & ${-}0.00$ {\tiny[${-}0.03$, $+0.02$]} & \up{$+0.29$} {\tiny[$+0.16$, $+0.43$]} \\
+    CLIP score & ${-}0.02$ {\tiny[${-}0.22$, $+0.17$]} & $+0.19$ {\tiny[${-}0.53$, $+0.91$]} \\
+    PickScore & \up{$+0.05$} {\tiny[$+0.00$, $+0.09$]} & $+0.14$ {\tiny[${-}0.09$, $+0.39$]} \\
+    HPSv2 ($\times100$) & \up{$+0.09$} {\tiny[$+0.04$, $+0.13$]} & ${-}0.19$ {\tiny[${-}0.44$, $+0.06$]} \\
+    HPSv2.1 ($\times100$) & \up{$+0.17$} {\tiny[$+0.08$, $+0.26$]} & $+0.39$ {\tiny[${-}0.21$, $+1.01$]} \\
+    MUSIQ & $+0.0$ {\tiny[${-}0.5$, $+0.5$]} & ${-}3.1$ {\tiny[${-}7.5$, $+1.2$]} \\
+    MUSIQ$_\text{c}$ & ${-}0.0$ {\tiny[${-}0.4$, $+0.2$]} & \dn{${-}4.1$} {\tiny[${-}6.7$, ${-}1.3$]} \\
+    CLIP-IQA ($\times100$) & ${-}0.6$ {\tiny[${-}1.2$, $+0.0$]} & $+1.3$ {\tiny[${-}0.8$, $+3.4$]} \\
+    ARNIQA ($\times100$) & ${-}0.2$ {\tiny[${-}0.6$, $+0.1$]} & $+0.4$ {\tiny[${-}1.5$, $+2.8$]} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[!htbp]
+  \caption{\textbf{Ablation intervals for Table~\ref{tab:ablation}}, fixed \nabl-prompt ablation subset at $4096^2$, paired against \sca{} final (2000 bootstrap draws), whose column gives absolute values; \up{blue} / \dn{orange}: significantly better / worse. Panels group the variants as in Table~\ref{tab:ablation}; each panel's last row gives patch FID (set-level, no paired interval). Sources: \texttt{results/ablnb\_*}.}
   \label{tab:app_abl}
   \centering\scriptsize\setlength{\tabcolsep}{3pt}
   \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
@@ -1203,7 +1203,7 @@ Tables~\ref{tab:app_4k} and~\ref{tab:app_wide} give every metric with its paired
 \end{table}
 
 \begin{table}[!htbp]
-  \caption{\textbf{Intervals for the band-guard ablations} (Table~\ref{tab:ablation_band} and further variants), 46 prompts at $4096^2$, paired against \sca{} + band guard, whose absolute values form the first column; \up{blue} / \dn{orange}: significantly better / worse than this reference. Corrected patch FID is shown without intervals. Sources: \texttt{results/abl\_*}, \texttt{route\_*}.}
+  \caption{\textbf{Intervals for the band-guard ablations} (Table~\ref{tab:ablation_band} and further variants), \nabl{} ablation prompts at $4096^2$, paired against \sca{} + band guard, whose absolute values form the first column; \up{blue} / \dn{orange}: significantly better / worse than this reference. Corrected patch FID is shown without intervals. Sources: \texttt{results/abl\_*}, \texttt{route\_*}.}
   \label{tab:app_abl_band}
   \centering\scriptsize\setlength{\tabcolsep}{1.8pt}
   \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
@@ -1250,41 +1250,20 @@ Tables~\ref{tab:app_4k} and~\ref{tab:app_wide} give every metric with its paired
   \end{tabular}}
 \end{table}
 
-\begin{table}[!htbp]
-  \caption{\textbf{Calibration table at $2048\times4096$}, 46 prompts, paired against \sca{} final with the scale-4 table; \up{blue} / \dn{orange}: significantly better / worse than this reference. Sources: \texttt{results/ps2\_*}.}
-  \label{tab:app_ps2}
-  \centering\scriptsize\setlength{\tabcolsep}{3pt}\let\tiny\scriptsize
-  \begin{tabular}{lcc}
-    \toprule
-    Metric & \sca{}, scale-2 table & AReA (released code) \\
-    \midrule
-    ImageReward & $+0.012$ {\tiny[${-}0.025$, $+0.050$]} & $+0.027$ {\tiny[${-}0.141$, $+0.192$]} \\
-    Aesthetic & ${-}0.00$ {\tiny[${-}0.03$, $+0.02$]} & \up{$+0.29$} {\tiny[$+0.16$, $+0.43$]} \\
-    CLIP score & ${-}0.02$ {\tiny[${-}0.22$, $+0.17$]} & $+0.19$ {\tiny[${-}0.53$, $+0.91$]} \\
-    PickScore & \up{$+0.05$} {\tiny[$+0.00$, $+0.09$]} & $+0.14$ {\tiny[${-}0.09$, $+0.39$]} \\
-    HPSv2 ($\times100$) & \up{$+0.09$} {\tiny[$+0.04$, $+0.13$]} & ${-}0.19$ {\tiny[${-}0.44$, $+0.06$]} \\
-    HPSv2.1 ($\times100$) & \up{$+0.17$} {\tiny[$+0.08$, $+0.26$]} & $+0.39$ {\tiny[${-}0.21$, $+1.01$]} \\
-    MUSIQ & $+0.0$ {\tiny[${-}0.5$, $+0.5$]} & ${-}3.1$ {\tiny[${-}7.5$, $+1.2$]} \\
-    MUSIQ$_\text{c}$ & ${-}0.0$ {\tiny[${-}0.4$, $+0.2$]} & \dn{${-}4.1$} {\tiny[${-}6.7$, ${-}1.3$]} \\
-    CLIP-IQA ($\times100$) & ${-}0.6$ {\tiny[${-}1.2$, $+0.0$]} & $+1.3$ {\tiny[${-}0.8$, $+3.4$]} \\
-    ARNIQA ($\times100$) & ${-}0.2$ {\tiny[${-}0.6$, $+0.1$]} & $+0.4$ {\tiny[${-}1.5$, $+2.8$]} \\
-    \bottomrule
-  \end{tabular}
-\end{table}
 %%% END GENERATED TABLES
 
 \FloatBarrier
 \section{Additional paired intervals}
 \label{app:phase2}
 
-This section expands Table~\ref{tab:generality} and the baseline rows of Tables~\ref{tab:main} and~\ref{tab:panel46} with per-metric intervals. Tables~\ref{tab:phase2_baselines} and~\ref{tab:phase2_distribution} cover the added baselines, Table~\ref{tab:phase2_general} the prompt-set, seed, and model checks, Table~\ref{tab:phase2_sensitivity} the calibration-budget and gate checks, and Table~\ref{tab:panel46_deltas} the single-pass rows of Table~\ref{tab:panel46}. Figure~\ref{fig:baseline_quality} plots four of these metrics for five of the six baselines run on all 191 prompts (HRDiT is in Table~\ref{tab:phase2_baselines}), signed as \sca{} minus baseline. Every difference in the tables is method minus the named reference. Positive values favour the method for the ten per-image metrics, and \up{blue} / \dn{orange} mark intervals that exclude zero in favour of / against the method. These comparisons resample matched prompt ids, with 2000 draws and seed 0; they do not treat multiple crops as independent images. The HRGen-1K sample has 200 prompts, the two extra seeds and sensitivity experiments each have 46, FLUX.2-dev has 50, and the main baseline comparison has 191. Tables use the separately recomputed per-image CSVs; these intervals differ slightly from the original 1000-draw evaluator summaries. No multiplicity correction is applied.
+This section expands Table~\ref{tab:generality} and the baseline rows of Tables~\ref{tab:main} and~\ref{tab:panel46} with per-metric intervals. Tables~\ref{tab:phase2_baselines} and~\ref{tab:phase2_distribution} cover the added baselines, Table~\ref{tab:phase2_general} the prompt-set, seed, and model checks, Table~\ref{tab:phase2_sensitivity} the calibration-budget and gate checks, and Table~\ref{tab:panel46_deltas} the single-pass rows of Table~\ref{tab:panel46}. Figure~\ref{fig:baseline_quality} plots four of these metrics for five of the six baselines run on all \nmain{} prompts (HRDiT is in Table~\ref{tab:phase2_baselines}), signed as \sca{} minus baseline. Every difference in the tables is method minus the named reference. Positive values favour the method for the ten per-image metrics, and \up{blue} / \dn{orange} mark intervals that exclude zero in favour of / against the method. These comparisons resample matched prompt ids, with 2000 draws and seed 0; they do not treat multiple crops as independent images. The HRGen-1K sample has \nhrgen{} prompts, the two extra seeds \nseed, the sensitivity experiments \nabl, FLUX.2-dev 50, and the main baseline comparison \nmain. Tables use the separately recomputed per-image CSVs; these intervals differ slightly from the original 1000-draw evaluator summaries. No multiplicity correction is applied.
 
 \input{figures/snippets/baseline_deltas.tex}
 
 \paragraph{$6144^2$ and FLUX.1-Krea-dev.} Table~\ref{tab:krea_6144} gives every metric with its paired interval for the 100-prompt $6144^2$ comparison and for FLUX.1-Krea-dev, where DyPE and SEGA also trail AReA on ImageReward. The Krea table follows the FLUX.1-dev calibration procedure with 16 prompts at $1024^2$ (Appendix~\ref{app:area}).
 \input{figures/snippets/krea_6144.tex}
 \begin{table}[!htbp]
-\caption{\textbf{DyPE and SEGA trail \sca{} on every per-image metric; UltraImage and HRDiT are mixed.} Baseline minus \sca{} at $4096^2$, 191 prompts; \up{blue} / \dn{orange}: baseline significantly better / worse than \sca{}. UltraImage and HRDiT use their own multi-stage recipes; HRDiT's set-level metrics are in Table~\ref{tab:main}.}
+\caption{\textbf{DyPE and SEGA trail \sca{} on every per-image metric; UltraImage and HRDiT are mixed.} Baseline minus \sca{} at $4096^2$, \nmain{} prompts; \up{blue} / \dn{orange}: baseline significantly better / worse than \sca{}. UltraImage and HRDiT use their own multi-stage recipes; HRDiT's set-level metrics are in Table~\ref{tab:main}.}
 \label{tab:phase2_baselines}
 \centering\scriptsize\setlength{\tabcolsep}{3pt}\let\tiny\scriptsize
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
@@ -1292,16 +1271,16 @@ This section expands Table~\ref{tab:generality} and the baseline rows of Tables~
 \toprule
 Metric & DyPE & SEGA & UltraImage & HRDiT \\
 \midrule
-ImageReward & \dn{${-}1.334$} {\tiny[${-}1.478$, ${-}1.199$]} & \dn{${-}0.677$} {\tiny[${-}0.803$, ${-}0.562$]} & $+0.047$ {\tiny[${-}0.016$, $+0.111$]} & \up{$+0.109$} {\tiny[$+0.044$, $+0.175$]} \\
-Aesthetic & \dn{${-}0.72$} {\tiny[${-}0.81$, ${-}0.63$]} & \dn{${-}0.42$} {\tiny[${-}0.49$, ${-}0.35$]} & \up{$+0.06$} {\tiny[$+0.01$, $+0.10$]} & \up{$+0.09$} {\tiny[$+0.05$, $+0.14$]} \\
-CLIP score & \dn{${-}4.27$} {\tiny[${-}4.89$, ${-}3.66$]} & \dn{${-}2.19$} {\tiny[${-}2.65$, ${-}1.77$]} & \dn{${-}0.31$} {\tiny[${-}0.63$, ${-}0.01$]} & ${-}0.02$ {\tiny[${-}0.31$, $+0.29$]} \\
-PickScore & \dn{${-}2.60$} {\tiny[${-}2.79$, ${-}2.41$]} & \dn{${-}1.45$} {\tiny[${-}1.60$, ${-}1.31$]} & \up{$+0.24$} {\tiny[$+0.14$, $+0.33$]} & \up{$+0.36$} {\tiny[$+0.27$, $+0.46$]} \\
-HPSv2 ($\times100$) & \dn{${-}4.25$} {\tiny[${-}4.55$, ${-}3.97$]} & \dn{${-}2.61$} {\tiny[${-}2.85$, ${-}2.37$]} & \up{$+0.21$} {\tiny[$+0.05$, $+0.36$]} & $+0.14$ {\tiny[${-}0.03$, $+0.30$]} \\
-HPSv2.1 ($\times100$) & \dn{${-}9.18$} {\tiny[${-}9.95$, ${-}8.50$]} & \dn{${-}5.34$} {\tiny[${-}5.88$, ${-}4.81$]} & \up{$+1.10$} {\tiny[$+0.80$, $+1.40$]} & \up{$+1.26$} {\tiny[$+0.98$, $+1.55$]} \\
-MUSIQ & \dn{${-}9.0$} {\tiny[${-}11.1$, ${-}6.8$]} & \dn{${-}7.9$} {\tiny[${-}9.8$, ${-}6.0$]} & \dn{${-}11.7$} {\tiny[${-}13.6$, ${-}9.8$]} & \dn{${-}5.0$} {\tiny[${-}6.7$, ${-}3.2$]} \\
-MUSIQ$_\text{c}$ & \dn{${-}10.9$} {\tiny[${-}12.7$, ${-}9.0$]} & \dn{${-}10.8$} {\tiny[${-}12.5$, ${-}9.2$]} & \dn{${-}19.4$} {\tiny[${-}20.7$, ${-}18.2$]} & \dn{${-}7.7$} {\tiny[${-}9.0$, ${-}6.4$]} \\
-CLIP-IQA ($\times100$) & \dn{${-}13.4$} {\tiny[${-}15.3$, ${-}11.6$]} & \dn{${-}6.2$} {\tiny[${-}7.8$, ${-}4.6$]} & ${-}0.2$ {\tiny[${-}1.3$, $+0.8$]} & \up{$+2.8$} {\tiny[$+1.9$, $+3.8$]} \\
-ARNIQA ($\times100$) & \dn{${-}11.1$} {\tiny[${-}12.5$, ${-}9.7$]} & \dn{${-}6.5$} {\tiny[${-}7.5$, ${-}5.4$]} & \up{$+1.1$} {\tiny[$+0.4$, $+1.8$]} & $+0.4$ {\tiny[${-}0.2$, $+1.0$]} \\
+ImageReward & \dn{${-}1.326$} {\tiny[${-}1.466$, ${-}1.185$]} & \dn{${-}0.668$} {\tiny[${-}0.786$, ${-}0.551$]} & $+0.055$ {\tiny[${-}0.011$, $+0.120$]} & \up{$+0.114$} {\tiny[$+0.049$, $+0.181$]} \\
+Aesthetic & \dn{${-}0.72$} {\tiny[${-}0.81$, ${-}0.62$]} & \dn{${-}0.42$} {\tiny[${-}0.50$, ${-}0.35$]} & \up{$+0.06$} {\tiny[$+0.01$, $+0.10$]} & \up{$+0.09$} {\tiny[$+0.04$, $+0.13$]} \\
+CLIP score & \dn{${-}4.22$} {\tiny[${-}4.85$, ${-}3.62$]} & \dn{${-}2.19$} {\tiny[${-}2.66$, ${-}1.76$]} & \dn{${-}0.31$} {\tiny[${-}0.61$, ${-}0.01$]} & ${-}0.02$ {\tiny[${-}0.32$, $+0.27$]} \\
+PickScore & \dn{${-}2.59$} {\tiny[${-}2.78$, ${-}2.40$]} & \dn{${-}1.45$} {\tiny[${-}1.60$, ${-}1.31$]} & \up{$+0.24$} {\tiny[$+0.14$, $+0.33$]} & \up{$+0.37$} {\tiny[$+0.27$, $+0.46$]} \\
+HPSv2 ($\times100$) & \dn{${-}4.22$} {\tiny[${-}4.53$, ${-}3.95$]} & \dn{${-}2.61$} {\tiny[${-}2.84$, ${-}2.38$]} & \up{$+0.21$} {\tiny[$+0.06$, $+0.37$]} & $+0.13$ {\tiny[${-}0.02$, $+0.28$]} \\
+HPSv2.1 ($\times100$) & \dn{${-}9.12$} {\tiny[${-}9.83$, ${-}8.39$]} & \dn{${-}5.33$} {\tiny[${-}5.84$, ${-}4.78$]} & \up{$+1.10$} {\tiny[$+0.81$, $+1.39$]} & \up{$+1.25$} {\tiny[$+0.97$, $+1.53$]} \\
+MUSIQ & \dn{${-}9.1$} {\tiny[${-}11.2$, ${-}7.0$]} & \dn{${-}8.1$} {\tiny[${-}9.9$, ${-}6.3$]} & \dn{${-}11.8$} {\tiny[${-}13.7$, ${-}9.8$]} & \dn{${-}5.1$} {\tiny[${-}6.7$, ${-}3.4$]} \\
+MUSIQ$_\text{c}$ & \dn{${-}10.9$} {\tiny[${-}12.8$, ${-}9.2$]} & \dn{${-}11.0$} {\tiny[${-}12.6$, ${-}9.3$]} & \dn{${-}19.5$} {\tiny[${-}20.8$, ${-}18.2$]} & \dn{${-}7.7$} {\tiny[${-}9.0$, ${-}6.4$]} \\
+CLIP-IQA ($\times100$) & \dn{${-}13.4$} {\tiny[${-}15.2$, ${-}11.7$]} & \dn{${-}6.3$} {\tiny[${-}8.0$, ${-}4.8$]} & ${-}0.2$ {\tiny[${-}1.2$, $+0.9$]} & \up{$+2.8$} {\tiny[$+1.9$, $+3.8$]} \\
+ARNIQA ($\times100$) & \dn{${-}11.1$} {\tiny[${-}12.4$, ${-}9.7$]} & \dn{${-}6.5$} {\tiny[${-}7.6$, ${-}5.4$]} & \up{$+1.0$} {\tiny[$+0.3$, $+1.8$]} & $+0.3$ {\tiny[${-}0.3$, $+0.9$]} \\
 \bottomrule
 \end{tabular}}
 \end{table}
@@ -1314,21 +1293,21 @@ ARNIQA ($\times100$) & \dn{${-}11.1$} {\tiny[${-}12.5$, ${-}9.7$]} & \dn{${-}6.5
 \toprule
 Metric & HRGen-1K & Seed 1 & Seed 2 & FLUX.2-dev \\
 \midrule
-ImageReward & \up{$+0.642$} {\tiny[$+0.539$, $+0.755$]} & \up{$+0.305$} {\tiny[$+0.172$, $+0.458$]} & \up{$+0.355$} {\tiny[$+0.244$, $+0.470$]} & \up{$+0.456$} {\tiny[$+0.320$, $+0.598$]} \\
-Aesthetic & \up{$+0.26$} {\tiny[$+0.20$, $+0.33$]} & $+0.11$ {\tiny[${-}0.00$, $+0.23$]} & \up{$+0.16$} {\tiny[$+0.06$, $+0.25$]} & \up{$+0.30$} {\tiny[$+0.18$, $+0.42$]} \\
-CLIP score & \up{$+2.50$} {\tiny[$+1.99$, $+3.03$]} & \up{$+1.51$} {\tiny[$+0.94$, $+2.12$]} & \up{$+1.68$} {\tiny[$+1.05$, $+2.33$]} & $+0.38$ {\tiny[${-}0.38$, $+1.12$]} \\
-PickScore & \up{$+1.18$} {\tiny[$+1.06$, $+1.31$]} & \up{$+0.71$} {\tiny[$+0.51$, $+0.92$]} & \up{$+0.86$} {\tiny[$+0.62$, $+1.11$]} & \up{$+0.56$} {\tiny[$+0.29$, $+0.86$]} \\
-HPSv2 ($\times100$) & \up{$+1.87$} {\tiny[$+1.67$, $+2.07$]} & \up{$+1.02$} {\tiny[$+0.71$, $+1.31$]} & \up{$+1.35$} {\tiny[$+0.99$, $+1.71$]} & \up{$+0.85$} {\tiny[$+0.50$, $+1.21$]} \\
-HPSv2.1 ($\times100$) & \up{$+4.48$} {\tiny[$+3.96$, $+4.98$]} & \up{$+2.19$} {\tiny[$+1.63$, $+2.74$]} & \up{$+2.80$} {\tiny[$+2.08$, $+3.47$]} & \up{$+1.84$} {\tiny[$+1.10$, $+2.55$]} \\
-MUSIQ & \up{$+6.7$} {\tiny[$+4.7$, $+8.6$]} & \up{$+5.0$} {\tiny[$+1.0$, $+9.1$]} & $+3.5$ {\tiny[${-}0.9$, $+8.0$]} & \up{$+16.0$} {\tiny[$+11.9$, $+19.9$]} \\
-MUSIQ$_\text{c}$ & \up{$+12.7$} {\tiny[$+11.2$, $+14.3$]} & \up{$+11.6$} {\tiny[$+9.2$, $+13.9$]} & \up{$+11.0$} {\tiny[$+8.2$, $+14.3$]} & \up{$+21.4$} {\tiny[$+18.2$, $+24.8$]} \\
-CLIP-IQA ($\times100$) & \up{$+8.1$} {\tiny[$+6.5$, $+9.8$]} & \up{$+2.2$} {\tiny[$+0.0$, $+4.5$]} & \up{$+4.0$} {\tiny[$+1.7$, $+6.3$]} & \up{$+6.6$} {\tiny[$+4.7$, $+8.6$]} \\
-ARNIQA ($\times100$) & \up{$+7.0$} {\tiny[$+5.9$, $+8.0$]} & \up{$+3.2$} {\tiny[$+1.9$, $+4.4$]} & \up{$+3.8$} {\tiny[$+2.3$, $+5.4$]} & \up{$+7.1$} {\tiny[$+5.4$, $+8.8$]} \\
+ImageReward & \up{$+0.642$} {\tiny[$+0.539$, $+0.755$]} & \up{$+0.274$} {\tiny[$+0.204$, $+0.349$]} & \up{$+0.250$} {\tiny[$+0.183$, $+0.320$]} & \up{$+0.456$} {\tiny[$+0.320$, $+0.598$]} \\
+Aesthetic & \up{$+0.26$} {\tiny[$+0.20$, $+0.33$]} & \up{$+0.14$} {\tiny[$+0.08$, $+0.18$]} & \up{$+0.12$} {\tiny[$+0.06$, $+0.17$]} & \up{$+0.30$} {\tiny[$+0.18$, $+0.42$]} \\
+CLIP score & \up{$+2.50$} {\tiny[$+1.99$, $+3.03$]} & \up{$+1.33$} {\tiny[$+1.00$, $+1.63$]} & \up{$+1.45$} {\tiny[$+1.15$, $+1.74$]} & $+0.38$ {\tiny[${-}0.38$, $+1.12$]} \\
+PickScore & \up{$+1.18$} {\tiny[$+1.06$, $+1.31$]} & \up{$+0.72$} {\tiny[$+0.60$, $+0.83$]} & \up{$+0.72$} {\tiny[$+0.59$, $+0.84$]} & \up{$+0.56$} {\tiny[$+0.29$, $+0.86$]} \\
+HPSv2 ($\times100$) & \up{$+1.87$} {\tiny[$+1.67$, $+2.07$]} & \up{$+1.10$} {\tiny[$+0.94$, $+1.28$]} & \up{$+1.18$} {\tiny[$+0.99$, $+1.37$]} & \up{$+0.85$} {\tiny[$+0.50$, $+1.21$]} \\
+HPSv2.1 ($\times100$) & \up{$+4.48$} {\tiny[$+3.96$, $+4.98$]} & \up{$+2.28$} {\tiny[$+1.94$, $+2.62$]} & \up{$+2.50$} {\tiny[$+2.10$, $+2.89$]} & \up{$+1.84$} {\tiny[$+1.10$, $+2.55$]} \\
+MUSIQ & \up{$+6.7$} {\tiny[$+4.7$, $+8.6$]} & \up{$+5.6$} {\tiny[$+3.8$, $+7.4$]} & \up{$+5.9$} {\tiny[$+4.0$, $+7.6$]} & \up{$+16.0$} {\tiny[$+11.9$, $+19.9$]} \\
+MUSIQ$_\text{c}$ & \up{$+12.7$} {\tiny[$+11.2$, $+14.3$]} & \up{$+11.5$} {\tiny[$+10.2$, $+12.9$]} & \up{$+12.1$} {\tiny[$+10.5$, $+13.6$]} & \up{$+21.4$} {\tiny[$+18.2$, $+24.8$]} \\
+CLIP-IQA ($\times100$) & \up{$+8.1$} {\tiny[$+6.5$, $+9.8$]} & \up{$+4.9$} {\tiny[$+3.5$, $+6.3$]} & \up{$+5.0$} {\tiny[$+3.8$, $+6.2$]} & \up{$+6.6$} {\tiny[$+4.7$, $+8.6$]} \\
+ARNIQA ($\times100$) & \up{$+7.0$} {\tiny[$+5.9$, $+8.0$]} & \up{$+4.0$} {\tiny[$+3.1$, $+5.0$]} & \up{$+4.0$} {\tiny[$+3.1$, $+4.8$]} & \up{$+7.1$} {\tiny[$+5.4$, $+8.8$]} \\
 \bottomrule
 \end{tabular}}
 \end{table}
 \begin{table}[!htbp]
-\caption{\textbf{The calibration budget barely matters; a gate at $\sigma_g=0.85$ lowers seven metrics.} Variant minus default \sca{}, 46 prompts; \up{blue} / \dn{orange}: variant significantly better / worse than default \sca{}. Budgets use the first 4, 8, or 16 of the 32 calibration prompts; the default gate is $\sigma_g=0.89$.}
+\caption{\textbf{The calibration budget barely matters; a gate at $\sigma_g=0.85$ lowers seven metrics.} Variant minus default \sca{}, \nabl{} ablation prompts; \up{blue} / \dn{orange}: variant significantly better / worse than default \sca{}. Budgets use the first 4, 8, or 16 of the 32 calibration prompts; the default gate is $\sigma_g=0.89$.}
 \label{tab:phase2_sensitivity}
 \centering\scriptsize\setlength{\tabcolsep}{3pt}
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
@@ -1350,7 +1329,7 @@ ARNIQA ($\times100$) & $+0.1$ {\tiny[${-}0.1$, $+0.3$]} & $+0.0$ {\tiny[${-}0.1$
 \end{tabular}}
 \end{table}
 \begin{table}[!htbp]
-\caption{\textbf{All three added baselines have significantly higher FID, patch FID, and patch KID than \sca{}.} Method minus \sca{} on 191 prompts (negative favours the method); \dn{orange}: significantly worse than \sca{}. Whole-image FID/KID keep the historical 1000-draw reference-row bootstrap; patch estimates use corrected crops and 1000-draw reference-image cluster intervals.}
+\caption{\textbf{All three added baselines have significantly higher FID, patch FID, and patch KID than \sca{}.} Method minus \sca{} on \nmain{} prompts (negative favours the method); \dn{orange}: significantly worse than \sca{}. Patch estimates use corrected crops; all four intervals use 1000 draws that resample generated prompts and reference-image clusters.}
 \label{tab:phase2_distribution}
 \centering\scriptsize\setlength{\tabcolsep}{3pt}\let\tiny\scriptsize
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
@@ -1358,17 +1337,17 @@ ARNIQA ($\times100$) & $+0.1$ {\tiny[${-}0.1$, $+0.3$]} & $+0.0$ {\tiny[${-}0.1$
 \toprule
 Metric & DyPE & SEGA & UltraImage \\
 \midrule
-FID$\downarrow$ & \dn{$+67.8$} {\tiny[$+56.9$, $+79.3$]} & \dn{$+27.0$} {\tiny[$+21.0$, $+38.4$]} & \dn{$+4.4$} {\tiny[$+1.2$, $+10.5$]} \\
-KID$\downarrow$ ($\times10^3$) & \dn{$+41.49$} {\tiny[$+32.04$, $+52.45$]} & \dn{$+4.98$} {\tiny[$+0.95$, $+10.11$]} & $+0.31$ {\tiny[${-}1.69$, $+2.12$]} \\
-FID$_\text{p}\downarrow$ & \dn{$+72.9$} {\tiny[$+59.6$, $+81.6$]} & \dn{$+26.2$} {\tiny[$+17.9$, $+34.0$]} & \dn{$+10.7$} {\tiny[$+6.5$, $+14.7$]} \\
-KID$_\text{p}\downarrow$ ($\times10^3$) & \dn{$+49.57$} {\tiny[$+40.36$, $+59.66$]} & \dn{$+13.76$} {\tiny[$+8.95$, $+19.22$]} & \dn{$+7.48$} {\tiny[$+5.43$, $+9.83$]} \\
+FID$\downarrow$ & \dn{$+67.4$} {\tiny[$+56.2$, $+80.3$]} & \dn{$+26.9$} {\tiny[$+21.1$, $+39.1$]} & \dn{$+4.0$} {\tiny[$+1.1$, $+10.2$]} \\
+KID$\downarrow$ ($\times10^3$) & \dn{$+40.39$} {\tiny[$+30.63$, $+52.87$]} & \dn{$+4.70$} {\tiny[$+0.14$, $+10.48$]} & $+0.19$ {\tiny[${-}1.83$, $+2.18$]} \\
+FID$_\text{p}\downarrow$ & \dn{$+72.8$} {\tiny[$+58.7$, $+81.6$]} & \dn{$+26.7$} {\tiny[$+18.8$, $+35.3$]} & \dn{$+10.4$} {\tiny[$+6.2$, $+13.9$]} \\
+KID$_\text{p}\downarrow$ ($\times10^3$) & \dn{$+49.34$} {\tiny[$+40.09$, $+59.95$]} & \dn{$+13.97$} {\tiny[$+9.33$, $+20.00$]} & \dn{$+7.31$} {\tiny[$+5.10$, $+9.47$]} \\
 \bottomrule
 \end{tabular}}
 \end{table}
 
-\paragraph{46-prompt panel.} Table~\ref{tab:panel46_deltas} pairs each baseline of Table~\ref{tab:panel46} with \sca{} on the same 46 prompts and seeds. Per-image intervals use 2000 prompt draws with seed 0; FID, KID, and their patch versions use 1000 draws that resample generated prompts and reference-image clusters. With 46 generated images, the whole-image distribution metrics are exploratory. Table~\ref{tab:phase2_budget} gives the matching intervals for the 56-step and guidance-7 \sca{} runs.
+\paragraph{\npanel-prompt panel.} Table~\ref{tab:panel46_deltas} pairs each baseline of Table~\ref{tab:panel46} with \sca{} on the same \npanel{} prompts and seeds. Per-image intervals use 2000 prompt draws with seed 0; FID, KID, and their patch versions use 1000 draws that resample generated prompts and reference-image clusters. \ifpanelfull{}{With \npanel{} generated images, the whole-image distribution metrics are exploratory.} Table~\ref{tab:phase2_budget} gives the matching intervals for the 56-step and guidance-7 \sca{} runs.
 \begin{table}[!htbp]
-\caption{\textbf{On the 46-prompt panel, every shared-protocol baseline trails \sca{} on all ten per-image metrics, while HRDiT and UltraImage lead on several preference metrics.} Baseline minus \sca{} (28 steps) at $4096^2$ with 95\% paired intervals; HPSv2, HPSv2.1, CLIP-IQA, and ARNIQA are $\times100$, KID and KID$_\text{p}$ $\times10^3$. For FID, KID, their patch versions, and campaign time (seconds per image), lower is better, so negative favours the baseline. \up{Blue} / \dn{orange}: baseline significantly better / worse than \sca{}. SigMa uses its dev-matched profile; UltraImage and HRDiT use their own recipes (Appendix~\ref{app:additional_protocols}).}
+\caption{\textbf{On the \npanel-prompt panel, every shared-protocol baseline trails \sca{} on all ten per-image metrics, while HRDiT and UltraImage lead on several preference metrics.} Baseline minus \sca{} (28 steps) at $4096^2$ with 95\% paired intervals; HPSv2, HPSv2.1, CLIP-IQA, and ARNIQA are $\times100$, KID and KID$_\text{p}$ $\times10^3$. For FID, KID, their patch versions, and campaign time (seconds per image), lower is better, so negative favours the baseline. \up{Blue} / \dn{orange}: baseline significantly better / worse than \sca{}. SigMa uses its dev-matched profile; UltraImage and HRDiT use their own recipes (Appendix~\ref{app:additional_protocols}).}
 \label{tab:panel46_deltas}
 \centering\scriptsize\setlength{\tabcolsep}{2.5pt}\let\tiny\scriptsize
 \begin{tabular}{l*{5}{Y{62pt}}}
@@ -1377,21 +1356,21 @@ KID$_\text{p}\downarrow$ ($\times10^3$) & \dn{$+49.57$} {\tiny[$+40.36$, $+59.66
 \cmidrule(l){2-6}
 Metric & Full attn. & DyPE & SigMa & SEGA & AReA \\
 \midrule
-ImageReward & \dn{${-}3.338$} {\tiny[${-}3.532$, ${-}3.127$]} & \dn{${-}1.358$} {\tiny[${-}1.656$, ${-}1.065$]} & \dn{${-}1.895$} {\tiny[${-}2.224$, ${-}1.582$]} & \dn{${-}0.655$} {\tiny[${-}0.894$, ${-}0.436$]} & \dn{${-}0.291$} {\tiny[${-}0.434$, ${-}0.159$]} \\
-Aesthetic & \dn{${-}2.13$} {\tiny[${-}2.30$, ${-}1.96$]} & \dn{${-}0.80$} {\tiny[${-}0.96$, ${-}0.63$]} & \dn{${-}0.93$} {\tiny[${-}1.11$, ${-}0.74$]} & \dn{${-}0.41$} {\tiny[${-}0.53$, ${-}0.30$]} & \dn{${-}0.11$} {\tiny[${-}0.18$, ${-}0.03$]} \\
-CLIP score & \dn{${-}14.52$} {\tiny[${-}16.26$, ${-}12.74$]} & \dn{${-}4.55$} {\tiny[${-}5.77$, ${-}3.38$]} & \dn{${-}6.46$} {\tiny[${-}7.75$, ${-}5.22$]} & \dn{${-}2.05$} {\tiny[${-}2.78$, ${-}1.33$]} & \dn{${-}1.56$} {\tiny[${-}2.23$, ${-}0.87$]} \\
-PickScore & \dn{${-}5.23$} {\tiny[${-}5.63$, ${-}4.82$]} & \dn{${-}2.71$} {\tiny[${-}3.03$, ${-}2.41$]} & \dn{${-}3.29$} {\tiny[${-}3.66$, ${-}2.92$]} & \dn{${-}1.40$} {\tiny[${-}1.70$, ${-}1.11$]} & \dn{${-}0.65$} {\tiny[${-}0.88$, ${-}0.43$]} \\
-HPSv2 & \dn{${-}9.30$} {\tiny[${-}10.02$, ${-}8.61$]} & \dn{${-}4.42$} {\tiny[${-}4.93$, ${-}3.95$]} & \dn{${-}5.22$} {\tiny[${-}5.83$, ${-}4.71$]} & \dn{${-}2.53$} {\tiny[${-}2.99$, ${-}2.10$]} & \dn{${-}1.02$} {\tiny[${-}1.33$, ${-}0.70$]} \\
-HPSv2.1 & \dn{${-}22.98$} {\tiny[${-}24.54$, ${-}21.24$]} & \dn{${-}9.74$} {\tiny[${-}11.01$, ${-}8.52$]} & \dn{${-}11.82$} {\tiny[${-}13.26$, ${-}10.46$]} & \dn{${-}5.16$} {\tiny[${-}6.19$, ${-}4.16$]} & \dn{${-}2.22$} {\tiny[${-}2.89$, ${-}1.54$]} \\
-MUSIQ & \dn{${-}23.0$} {\tiny[${-}26.2$, ${-}19.5$]} & \dn{${-}9.3$} {\tiny[${-}13.9$, ${-}4.6$]} & \dn{${-}8.7$} {\tiny[${-}13.7$, ${-}3.5$]} & \dn{${-}9.6$} {\tiny[${-}12.8$, ${-}6.0$]} & \dn{${-}6.2$} {\tiny[${-}10.1$, ${-}1.9$]} \\
-MUSIQ$_\text{c}$ & \dn{${-}28.8$} {\tiny[${-}31.7$, ${-}25.9$]} & \dn{${-}11.6$} {\tiny[${-}15.2$, ${-}8.0$]} & \dn{${-}12.0$} {\tiny[${-}15.5$, ${-}8.7$]} & \dn{${-}11.2$} {\tiny[${-}15.0$, ${-}7.7$]} & \dn{${-}10.5$} {\tiny[${-}13.2$, ${-}7.6$]} \\
-CLIP-IQA & \dn{${-}24.2$} {\tiny[${-}26.9$, ${-}21.4$]} & \dn{${-}16.1$} {\tiny[${-}19.9$, ${-}12.3$]} & \dn{${-}15.6$} {\tiny[${-}19.7$, ${-}11.5$]} & \dn{${-}7.2$} {\tiny[${-}10.7$, ${-}3.8$]} & \dn{${-}2.9$} {\tiny[${-}5.1$, ${-}0.7$]} \\
-ARNIQA & \dn{${-}16.3$} {\tiny[${-}19.8$, ${-}12.8$]} & \dn{${-}11.2$} {\tiny[${-}14.0$, ${-}8.5$]} & \dn{${-}11.0$} {\tiny[${-}13.8$, ${-}8.3$]} & \dn{${-}6.3$} {\tiny[${-}8.7$, ${-}3.9$]} & \dn{${-}2.2$} {\tiny[${-}3.7$, ${-}1.0$]} \\
-FID$\downarrow$ & \dn{$+163.7$} {\tiny[$+126.4$, $+178.2$]} & \dn{$+76.0$} {\tiny[$+52.8$, $+105.0$]} & \dn{$+83.0$} {\tiny[$+59.5$, $+105.2$]} & \dn{$+36.9$} {\tiny[$+17.7$, $+62.0$]} & $+6.3$ {\tiny[${-}4.0$, $+17.4$]} \\
-KID$\downarrow$ & \dn{$+170.7$} {\tiny[$+134.5$, $+207.8$]} & \dn{$+46.9$} {\tiny[$+30.8$, $+70.7$]} & \dn{$+58.2$} {\tiny[$+42.0$, $+81.6$]} & $+6.4$ {\tiny[${-}1.6$, $+21.9$]} & $+1.0$ {\tiny[${-}3.3$, $+5.5$]} \\
-FID$_\text{p}\downarrow$ & \dn{$+124.4$} {\tiny[$+85.5$, $+124.2$]} & \dn{$+83.5$} {\tiny[$+58.8$, $+100.2$]} & \dn{$+87.4$} {\tiny[$+62.1$, $+100.0$]} & \dn{$+30.3$} {\tiny[$+15.0$, $+45.2$]} & $+0.4$ {\tiny[${-}9.8$, $+9.7$]} \\
-KID$_\text{p}\downarrow$ & \dn{$+162.9$} {\tiny[$+139.6$, $+184.8$]} & \dn{$+54.4$} {\tiny[$+35.4$, $+76.5$]} & \dn{$+67.9$} {\tiny[$+50.1$, $+88.8$]} & \dn{$+12.2$} {\tiny[$+3.5$, $+23.8$]} & ${-}1.2$ {\tiny[${-}8.1$, $+4.0$]} \\
-Time (s)$\downarrow$ & \dn{$+120.0$} {\tiny[$+116.0$, $+125.0$]} & \dn{$+132.6$} {\tiny[$+121.3$, $+145.0$]} & \dn{$+113.9$} {\tiny[$+113.3$, $+114.3$]} & \dn{$+118.1$} {\tiny[$+116.4$, $+120.0$]} & \dn{$+169.4$} {\tiny[$+156.2$, $+186.4$]} \\
+ImageReward & \dn{${-}3.409$} {\tiny[${-}3.509$, ${-}3.308$]} & \dn{${-}1.326$} {\tiny[${-}1.466$, ${-}1.185$]} & \dn{${-}1.751$} {\tiny[${-}1.898$, ${-}1.605$]} & \dn{${-}0.668$} {\tiny[${-}0.786$, ${-}0.551$]} & \dn{${-}0.308$} {\tiny[${-}0.381$, ${-}0.234$]} \\
+Aesthetic & \dn{${-}1.94$} {\tiny[${-}2.03$, ${-}1.85$]} & \dn{${-}0.72$} {\tiny[${-}0.81$, ${-}0.62$]} & \dn{${-}0.84$} {\tiny[${-}0.94$, ${-}0.75$]} & \dn{${-}0.42$} {\tiny[${-}0.50$, ${-}0.35$]} & \dn{${-}0.17$} {\tiny[${-}0.22$, ${-}0.12$]} \\
+CLIP score & \dn{${-}13.77$} {\tiny[${-}14.59$, ${-}12.98$]} & \dn{${-}4.22$} {\tiny[${-}4.85$, ${-}3.62$]} & \dn{${-}5.63$} {\tiny[${-}6.31$, ${-}4.95$]} & \dn{${-}2.19$} {\tiny[${-}2.66$, ${-}1.76$]} & \dn{${-}1.45$} {\tiny[${-}1.81$, ${-}1.11$]} \\
+PickScore & \dn{${-}5.15$} {\tiny[${-}5.37$, ${-}4.96$]} & \dn{${-}2.59$} {\tiny[${-}2.78$, ${-}2.40$]} & \dn{${-}3.08$} {\tiny[${-}3.29$, ${-}2.87$]} & \dn{${-}1.45$} {\tiny[${-}1.60$, ${-}1.31$]} & \dn{${-}0.74$} {\tiny[${-}0.86$, ${-}0.63$]} \\
+HPSv2 & \dn{${-}9.00$} {\tiny[${-}9.33$, ${-}8.66$]} & \dn{${-}4.22$} {\tiny[${-}4.53$, ${-}3.95$]} & \dn{${-}4.97$} {\tiny[${-}5.29$, ${-}4.69$]} & \dn{${-}2.61$} {\tiny[${-}2.84$, ${-}2.38$]} & \dn{${-}1.13$} {\tiny[${-}1.31$, ${-}0.95$]} \\
+HPSv2.1 & \dn{${-}22.07$} {\tiny[${-}22.89$, ${-}21.27$]} & \dn{${-}9.12$} {\tiny[${-}9.83$, ${-}8.39$]} & \dn{${-}11.02$} {\tiny[${-}11.78$, ${-}10.29$]} & \dn{${-}5.33$} {\tiny[${-}5.84$, ${-}4.78$]} & \dn{${-}2.51$} {\tiny[${-}2.87$, ${-}2.13$]} \\
+MUSIQ & \dn{${-}22.5$} {\tiny[${-}24.2$, ${-}20.8$]} & \dn{${-}9.1$} {\tiny[${-}11.2$, ${-}7.0$]} & \dn{${-}9.9$} {\tiny[${-}12.0$, ${-}7.8$]} & \dn{${-}8.1$} {\tiny[${-}9.9$, ${-}6.3$]} & \dn{${-}6.0$} {\tiny[${-}7.8$, ${-}4.4$]} \\
+MUSIQ$_\text{c}$ & \dn{${-}28.1$} {\tiny[${-}29.8$, ${-}26.5$]} & \dn{${-}10.9$} {\tiny[${-}12.8$, ${-}9.2$]} & \dn{${-}11.4$} {\tiny[${-}13.2$, ${-}9.6$]} & \dn{${-}11.0$} {\tiny[${-}12.6$, ${-}9.3$]} & \dn{${-}10.8$} {\tiny[${-}12.3$, ${-}9.4$]} \\
+CLIP-IQA & \dn{${-}24.0$} {\tiny[${-}25.5$, ${-}22.5$]} & \dn{${-}13.4$} {\tiny[${-}15.2$, ${-}11.7$]} & \dn{${-}15.0$} {\tiny[${-}16.9$, ${-}13.1$]} & \dn{${-}6.3$} {\tiny[${-}8.0$, ${-}4.8$]} & \dn{${-}5.3$} {\tiny[${-}6.7$, ${-}3.9$]} \\
+ARNIQA & \dn{${-}16.8$} {\tiny[${-}18.3$, ${-}15.4$]} & \dn{${-}11.1$} {\tiny[${-}12.4$, ${-}9.7$]} & \dn{${-}11.4$} {\tiny[${-}12.8$, ${-}10.0$]} & \dn{${-}6.5$} {\tiny[${-}7.6$, ${-}5.4$]} & \dn{${-}3.9$} {\tiny[${-}4.9$, ${-}3.0$]} \\
+FID$\downarrow$ & \dn{$+174.4$} {\tiny[$+150.2$, $+179.4$]} & \dn{$+67.4$} {\tiny[$+56.2$, $+80.3$]} & \dn{$+78.9$} {\tiny[$+66.7$, $+91.0$]} & \dn{$+26.9$} {\tiny[$+21.1$, $+39.1$]} & \dn{$+7.7$} {\tiny[$+2.6$, $+13.1$]} \\
+KID$\downarrow$ & \dn{$+158.0$} {\tiny[$+140.3$, $+176.0$]} & \dn{$+40.4$} {\tiny[$+30.6$, $+52.9$]} & \dn{$+50.4$} {\tiny[$+39.1$, $+64.0$]} & \dn{$+4.7$} {\tiny[$+0.1$, $+10.5$]} & $+1.0$ {\tiny[${-}1.5$, $+3.2$]} \\
+FID$_\text{p}\downarrow$ & \dn{$+153.1$} {\tiny[$+122.3$, $+149.6$]} & \dn{$+72.8$} {\tiny[$+58.7$, $+81.6$]} & \dn{$+85.5$} {\tiny[$+70.2$, $+93.7$]} & \dn{$+26.7$} {\tiny[$+18.8$, $+35.3$]} & $+3.8$ {\tiny[${-}1.3$, $+7.5$]} \\
+KID$_\text{p}\downarrow$ & \dn{$+161.9$} {\tiny[$+146.6$, $+178.2$]} & \dn{$+49.3$} {\tiny[$+40.1$, $+60.0$]} & \dn{$+62.4$} {\tiny[$+52.0$, $+74.7$]} & \dn{$+14.0$} {\tiny[$+9.3$, $+20.0$]} & $+2.3$ {\tiny[${-}0.1$, $+4.6$]} \\
+Time (s)$\downarrow$ & \dn{$+124.7$} {\tiny[$+120.8$, $+129.4$]} & \dn{$+124.4$} {\tiny[$+120.5$, $+128.6$]} & \dn{$+121.0$} {\tiny[$+119.0$, $+123.0$]} & \dn{$+118.9$} {\tiny[$+118.0$, $+119.7$]} & \dn{$+192.9$} {\tiny[$+180.3$, $+206.4$]} \\
 \bottomrule
 \end{tabular}
 
@@ -1402,21 +1381,21 @@ Time (s)$\downarrow$ & \dn{$+120.0$} {\tiny[$+116.0$, $+125.0$]} & \dn{$+132.6$}
 \cmidrule(l){2-3}
 Metric & UltraImage & HRDiT \\
 \midrule
-ImageReward & $+0.136$ {\tiny[${-}0.004$, $+0.270$]} & \up{$+0.249$} {\tiny[$+0.126$, $+0.378$]} \\
-Aesthetic & $+0.07$ {\tiny[${-}0.01$, $+0.15$]} & \up{$+0.12$} {\tiny[$+0.04$, $+0.21$]} \\
-CLIP score & \dn{${-}0.64$} {\tiny[${-}1.26$, ${-}0.05$]} & ${-}0.03$ {\tiny[${-}0.66$, $+0.60$]} \\
-PickScore & \up{$+0.35$} {\tiny[$+0.17$, $+0.53$]} & \up{$+0.46$} {\tiny[$+0.28$, $+0.66$]} \\
-HPSv2 & \up{$+0.36$} {\tiny[$+0.05$, $+0.70$]} & $+0.27$ {\tiny[${-}0.11$, $+0.66$]} \\
-HPSv2.1 & \up{$+1.56$} {\tiny[$+0.85$, $+2.28$]} & \up{$+1.62$} {\tiny[$+0.92$, $+2.36$]} \\
-MUSIQ & \dn{${-}11.2$} {\tiny[${-}15.1$, ${-}7.0$]} & \dn{${-}5.1$} {\tiny[${-}8.5$, ${-}1.6$]} \\
-MUSIQ$_\text{c}$ & \dn{${-}19.6$} {\tiny[${-}22.4$, ${-}16.6$]} & \dn{${-}8.4$} {\tiny[${-}11.9$, ${-}5.2$]} \\
-CLIP-IQA & $+0.4$ {\tiny[${-}1.9$, $+2.7$]} & \up{$+2.8$} {\tiny[$+0.9$, $+4.8$]} \\
-ARNIQA & \up{$+2.1$} {\tiny[$+0.3$, $+4.1$]} & $+1.0$ {\tiny[${-}0.5$, $+2.6$]} \\
-FID$\downarrow$ & $+7.4$ {\tiny[${-}2.0$, $+17.7$]} & $+10.5$ {\tiny[${-}0.6$, $+25.2$]} \\
-KID$\downarrow$ & $+2.0$ {\tiny[${-}2.6$, $+7.3$]} & $+0.2$ {\tiny[${-}3.8$, $+7.5$]} \\
-FID$_\text{p}\downarrow$ & \dn{$+14.2$} {\tiny[$+5.5$, $+22.3$]} & \dn{$+10.1$} {\tiny[$+2.5$, $+20.0$]} \\
-KID$_\text{p}\downarrow$ & \dn{$+12.0$} {\tiny[$+7.1$, $+17.4$]} & \dn{$+5.9$} {\tiny[$+1.6$, $+10.9$]} \\
-Time (s)$\downarrow$ & \dn{$+250.4$} {\tiny[$+235.6$, $+269.0$]} & \dn{$+34.9$} {\tiny[$+31.6$, $+39.4$]} \\
+ImageReward & $+0.055$ {\tiny[${-}0.011$, $+0.120$]} & \up{$+0.114$} {\tiny[$+0.049$, $+0.181$]} \\
+Aesthetic & \up{$+0.06$} {\tiny[$+0.01$, $+0.10$]} & \up{$+0.09$} {\tiny[$+0.04$, $+0.13$]} \\
+CLIP score & \dn{${-}0.31$} {\tiny[${-}0.61$, ${-}0.01$]} & ${-}0.02$ {\tiny[${-}0.32$, $+0.27$]} \\
+PickScore & \up{$+0.24$} {\tiny[$+0.14$, $+0.33$]} & \up{$+0.37$} {\tiny[$+0.27$, $+0.46$]} \\
+HPSv2 & \up{$+0.21$} {\tiny[$+0.06$, $+0.37$]} & $+0.13$ {\tiny[${-}0.02$, $+0.28$]} \\
+HPSv2.1 & \up{$+1.10$} {\tiny[$+0.81$, $+1.39$]} & \up{$+1.25$} {\tiny[$+0.97$, $+1.53$]} \\
+MUSIQ & \dn{${-}11.8$} {\tiny[${-}13.7$, ${-}9.8$]} & \dn{${-}5.1$} {\tiny[${-}6.7$, ${-}3.4$]} \\
+MUSIQ$_\text{c}$ & \dn{${-}19.5$} {\tiny[${-}20.8$, ${-}18.2$]} & \dn{${-}7.7$} {\tiny[${-}9.0$, ${-}6.4$]} \\
+CLIP-IQA & ${-}0.2$ {\tiny[${-}1.2$, $+0.9$]} & \up{$+2.8$} {\tiny[$+1.9$, $+3.8$]} \\
+ARNIQA & \up{$+1.0$} {\tiny[$+0.3$, $+1.8$]} & $+0.3$ {\tiny[${-}0.3$, $+0.9$]} \\
+FID$\downarrow$ & \dn{$+4.0$} {\tiny[$+1.1$, $+10.2$]} & $+0.4$ {\tiny[${-}2.3$, $+6.4$]} \\
+KID$\downarrow$ & $+0.2$ {\tiny[${-}1.8$, $+2.2$]} & ${-}1.6$ {\tiny[${-}3.6$, $+0.3$]} \\
+FID$_\text{p}\downarrow$ & \dn{$+10.4$} {\tiny[$+6.2$, $+13.9$]} & \dn{$+3.9$} {\tiny[$+0.7$, $+8.0$]} \\
+KID$_\text{p}\downarrow$ & \dn{$+7.3$} {\tiny[$+5.1$, $+9.5$]} & \dn{$+2.8$} {\tiny[$+0.9$, $+4.8$]} \\
+Time (s)$\downarrow$ & \dn{$+237.0$} {\tiny[$+233.5$, $+241.7$]} & \dn{$+38.8$} {\tiny[$+37.2$, $+40.5$]} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1427,12 +1406,12 @@ Time (s)$\downarrow$ & \dn{$+250.4$} {\tiny[$+235.6$, $+269.0$]} & \dn{$+34.9$} 
 
 This section expands the budget and schedule rows of Table~\ref{tab:panel46}: Table~\ref{tab:phase2_budget} gives the budget and guidance checks and Table~\ref{tab:prog_deltas} the progressive schedule against HRDiT.
 
-On the same 46 evaluation prompts, we compare the default 28-step \sca{} run with 56 steps at guidance 4.5 and with 28 steps at guidance 7 (Table~\ref{tab:phase2_budget}). The 56-step run keeps the noise threshold at 0.89; it therefore changes the discretization of both the opening and mixed phases. It improves ImageReward by 0.097 $[0.039,0.159]$, HPSv2.1 by 1.01, PickScore by 0.16, and MUSIQ$_\text{c}$ by 2.26, but increases corrected patch FID by 7.05 $[1.16,13.03]$ with reference-image cluster resampling. Increasing guidance to 7 alone lowers HPSv2.1 and PickScore and does not resolve an ImageReward difference. Thus the default schedule does not maximize every metric, and extra sampling can change the preference-quality balance.
+On the same \npanel{} evaluation prompts, we compare the default 28-step \sca{} run with 56 steps at guidance 4.5 and with 28 steps at guidance 7 (Table~\ref{tab:phase2_budget}). The 56-step run keeps the noise threshold at 0.89; it therefore changes the discretization of both the opening and mixed phases. It improves ImageReward by 0.032 $[0.0002,0.062]$, HPSv2.1 by 0.88, PickScore by 0.13, and MUSIQ$_\text{c}$ by 2.90, but increases corrected patch FID by 3.85 $[1.51,6.33]$ with reference-image cluster resampling. Increasing guidance to 7 alone lowers seven per-image metrics, ImageReward by 0.068 $[0.025,0.115]$ among them, and raises only MUSIQ. Thus the default schedule does not maximize every metric, and extra sampling can change the preference-quality balance.
 
-Against UltraImage on this subset, 56-step \sca{} has ImageReward difference $-0.038$ $[-0.159,0.078]$, HPSv2.1 difference $-0.56$ $[-1.21,0.09]$, and PickScore difference $-0.19$ $[-0.40,0.01]$. These intervals span zero and do not establish equivalence. Its MUSIQ advantage is 9.94 $[5.69,13.98]$ and its MUSIQ$_\text{c}$ advantage 21.83 $[18.67,24.73]$. Campaign means are 71.6\,s for default \sca{}, 140.1\,s for 56-step \sca{}, and 322.0\,s for UltraImage on these 46 prompts. This is a sampling-budget sensitivity check, not an equal-FLOP or equal-wall-clock experiment: UltraImage has two resolutions, different guidance, and per-prompt preparation. Against HRDiT on the same prompts (Table~\ref{tab:panel46}), the 56-step run stays lower on ImageReward (1.22 against 1.37), HPSv2.1 (30.99 against 31.60), and PickScore (23.12 against 23.42) while taking longer (140.1 against 106.5\,s); these are point estimates without paired intervals. Table~\ref{tab:prog_deltas} adds a 42-step run sized to HRDiT's campaign time (110.4 against 106.5\,s) and progressive \sca{} (Section~\ref{sec:progressive}). The extra steps raise HPSv2, HPSv2.1, ARNIQA, and MUSIQ$_\text{c}$ over 28 steps but leave ImageReward unresolved, and HRDiT stays significantly ahead of the 42-step run on ImageReward, PickScore, HPSv2.1, aesthetic score, and CLIP-IQA while trailing it on both MUSIQ scores. Progressive \sca{} is significantly worse than HRDiT on no per-image metric and better on HPSv2 and ARNIQA; against single-pass \sca{} it gains ImageReward, PickScore, both HPS scores, CLIP-IQA, and ARNIQA, and loses MUSIQ$_\text{c}$. Figure~\ref{fig:quality_time} places every setting of the panel by ImageReward and time, and Figure~\ref{fig:progressive} shows HRDiT, progressive \sca{}, and single-pass \sca{} on two random prompts.
+Against UltraImage on this subset, 56-step \sca{} has ImageReward difference $-0.023$ $[-0.089,0.040]$, HPSv2.1 difference $-0.22$ $[-0.51,0.05]$, and PickScore difference $-0.11$ $[-0.21,-0.01]$. The first two intervals span zero and do not establish equivalence; PickScore favours UltraImage. Its MUSIQ advantage is 11.61 $[9.54,13.60]$ and its MUSIQ$_\text{c}$ advantage 22.42 $[21.20,23.59]$. Campaign means are 71.5\,s for default \sca{}, 139.9\,s for 56-step \sca{}, and 308.5\,s for UltraImage on these \npanel{} prompts. This is a sampling-budget sensitivity check, not an equal-FLOP or equal-wall-clock experiment: UltraImage has two resolutions, different guidance, and per-prompt preparation. Against HRDiT on the same prompts (Table~\ref{tab:panel46}), the 56-step run stays lower on ImageReward (1.26 against 1.34), HPSv2.1 (30.55 against 30.92), and PickScore (23.22 against 23.46) while taking longer (139.9 against 110.4\,s); these are point estimates without paired intervals. Table~\ref{tab:prog_deltas} adds a 42-step run sized to HRDiT's campaign time (106.8 against 110.4\,s) and progressive \sca{} (Section~\ref{sec:progressive}). The extra steps raise PickScore, HPSv2, HPSv2.1, ARNIQA, and MUSIQ$_\text{c}$ over 28 steps but leave ImageReward unresolved, and HRDiT stays significantly ahead of the 42-step run on ImageReward, PickScore, HPSv2.1, aesthetic score, and CLIP-IQA while trailing it on both MUSIQ scores and ARNIQA. Progressive \sca{} is significantly worse than HRDiT on no per-image metric and better on HPSv2, MUSIQ, and ARNIQA; against single-pass \sca{} it gains ImageReward, PickScore, aesthetic score, both HPS scores, CLIP-IQA, and ARNIQA, and loses both MUSIQ scores. Figure~\ref{fig:quality_time} places every setting of the panel by ImageReward and time, and Figure~\ref{fig:progressive} shows HRDiT, progressive \sca{}, and single-pass \sca{} on two random prompts.
 
 \begin{table}[!htbp]
-\caption{\textbf{Doubling the steps raises seven metrics; guidance 7 lowers six.} On 46 prompts, the first two columns compare with default \sca{}; the last compares 56-step \sca{} with UltraImage. Per-image differences (first-named setting minus second) and 95\% paired intervals, 2000 draws; \up{blue} / \dn{orange}: the interval excludes zero in favour of / against the first-named setting.}
+\caption{\textbf{Doubling the steps raises eight metrics; guidance 7 lowers seven and raises MUSIQ.} On \npanel{} prompts, the first two columns compare with default \sca{}; the last compares 56-step \sca{} with UltraImage. Per-image differences (first-named setting minus second) and 95\% paired intervals, 2000 draws; \up{blue} / \dn{orange}: the interval excludes zero in favour of / against the first-named setting.}
 \label{tab:phase2_budget}
 \centering\scriptsize\setlength{\tabcolsep}{3pt}\let\tiny\scriptsize
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
@@ -1440,21 +1419,21 @@ Against UltraImage on this subset, 56-step \sca{} has ImageReward difference $-0
 \toprule
 Metric & 56 vs.\ 28 steps & Guidance 7 vs.\ 4.5 & 56 steps vs.\ UltraImage \\
 \midrule
-ImageReward & \up{$+0.097$} {\tiny[$+0.039$, $+0.159$]} & $+0.019$ {\tiny[${-}0.070$, $+0.113$]} & ${-}0.038$ {\tiny[${-}0.159$, $+0.078$]} \\
-Aesthetic & $+0.03$ {\tiny[${-}0.02$, $+0.09$]} & \dn{${-}0.10$} {\tiny[${-}0.18$, ${-}0.03$]} & ${-}0.03$ {\tiny[${-}0.12$, $+0.05$]} \\
-CLIP score & ${-}0.32$ {\tiny[${-}0.92$, $+0.19$]} & ${-}0.43$ {\tiny[${-}0.94$, $+0.01$]} & $+0.32$ {\tiny[${-}0.43$, $+1.01$]} \\
-PickScore & \up{$+0.16$} {\tiny[$+0.02$, $+0.31$]} & \dn{${-}0.27$} {\tiny[${-}0.41$, ${-}0.14$]} & ${-}0.19$ {\tiny[${-}0.40$, $+0.01$]} \\
-HPSv2 ($\times100$) & \up{$+0.34$} {\tiny[$+0.13$, $+0.57$]} & \dn{${-}0.30$} {\tiny[${-}0.51$, ${-}0.10$]} & ${-}0.02$ {\tiny[${-}0.34$, $+0.30$]} \\
-HPSv2.1 ($\times100$) & \up{$+1.01$} {\tiny[$+0.59$, $+1.48$]} & \dn{${-}0.74$} {\tiny[${-}1.08$, ${-}0.38$]} & ${-}0.56$ {\tiny[${-}1.21$, $+0.09$]} \\
-MUSIQ & ${-}1.3$ {\tiny[${-}3.5$, $+1.0$]} & $+1.3$ {\tiny[${-}1.2$, $+3.7$]} & \up{$+9.9$} {\tiny[$+5.7$, $+14.0$]} \\
-MUSIQ$_\text{c}$ & \up{$+2.3$} {\tiny[$+1.2$, $+3.4$]} & $+1.0$ {\tiny[${-}0.2$, $+2.3$]} & \up{$+21.8$} {\tiny[$+18.7$, $+24.7$]} \\
-CLIP-IQA ($\times100$) & \up{$+1.5$} {\tiny[$+0.2$, $+2.7$]} & \dn{${-}1.5$} {\tiny[${-}2.9$, ${-}0.1$]} & $+1.1$ {\tiny[${-}1.4$, $+3.4$]} \\
-ARNIQA ($\times100$) & \up{$+1.3$} {\tiny[$+0.3$, $+2.4$]} & \dn{${-}1.4$} {\tiny[${-}2.2$, ${-}0.7$]} & ${-}0.8$ {\tiny[${-}2.9$, $+1.0$]} \\
+ImageReward & \up{$+0.032$} {\tiny[$+0.000$, $+0.062$]} & \dn{${-}0.068$} {\tiny[${-}0.115$, ${-}0.025$]} & ${-}0.023$ {\tiny[${-}0.089$, $+0.040$]} \\
+Aesthetic & \up{$+0.03$} {\tiny[$+0.01$, $+0.06$]} & \dn{${-}0.10$} {\tiny[${-}0.14$, ${-}0.07$]} & ${-}0.03$ {\tiny[${-}0.07$, $+0.02$]} \\
+CLIP score & ${-}0.01$ {\tiny[${-}0.23$, $+0.22$]} & ${-}0.21$ {\tiny[${-}0.45$, $+0.03$]} & $+0.30$ {\tiny[${-}0.01$, $+0.62$]} \\
+PickScore & \up{$+0.13$} {\tiny[$+0.07$, $+0.18$]} & \dn{${-}0.27$} {\tiny[${-}0.34$, ${-}0.20$]} & \dn{${-}0.11$} {\tiny[${-}0.21$, ${-}0.01$]} \\
+HPSv2 ($\times100$) & \up{$+0.32$} {\tiny[$+0.23$, $+0.40$]} & \dn{${-}0.25$} {\tiny[${-}0.35$, ${-}0.16$]} & $+0.11$ {\tiny[${-}0.03$, $+0.26$]} \\
+HPSv2.1 ($\times100$) & \up{$+0.88$} {\tiny[$+0.71$, $+1.04$]} & \dn{${-}0.60$} {\tiny[${-}0.80$, ${-}0.41$]} & ${-}0.22$ {\tiny[${-}0.51$, $+0.05$]} \\
+MUSIQ & ${-}0.2$ {\tiny[${-}1.5$, $+1.0$]} & \up{$+1.4$} {\tiny[$+0.3$, $+2.6$]} & \up{$+11.6$} {\tiny[$+9.5$, $+13.6$]} \\
+MUSIQ$_\text{c}$ & \up{$+2.9$} {\tiny[$+2.2$, $+3.6$]} & $+0.2$ {\tiny[${-}0.4$, $+0.8$]} & \up{$+22.4$} {\tiny[$+21.2$, $+23.6$]} \\
+CLIP-IQA ($\times100$) & \up{$+0.9$} {\tiny[$+0.4$, $+1.4$]} & \dn{${-}1.0$} {\tiny[${-}1.7$, ${-}0.4$]} & \up{$+1.1$} {\tiny[$+0.0$, $+2.1$]} \\
+ARNIQA ($\times100$) & \up{$+1.5$} {\tiny[$+1.0$, $+1.9$]} & \dn{${-}1.2$} {\tiny[${-}1.5$, ${-}0.8$]} & $+0.4$ {\tiny[${-}0.4$, $+1.2$]} \\
 \bottomrule
 \end{tabular}}
 \end{table}
 
-\paragraph{Distribution metrics of the progressive and 42-step runs.} Against single-pass \sca{} at 28 steps (46 generated images, 168 reference identities, 1000 bootstrap draws; \texttt{results/\allowbreak progressive46/\allowbreak base\_paired\_deltas\_distribution.csv}), progressive \sca{} has significantly higher FID ($+7.0$ $[0.5,17.2]$), patch FID ($+13.7$ $[5.6,23.2]$), and patch KID ($+0.009$ $[0.005,0.015]$), while its KID difference spans zero. For 42-step \sca{} all four intervals span zero (FID $+2.8$ $[-4.4,10.0]$, patch FID $+2.3$ $[-2.3,7.9]$).
+\paragraph{Distribution metrics of the progressive and 42-step runs.} Against single-pass \sca{} at 28 steps (\npanel{} generated images, 168 reference identities, 1000 bootstrap draws; \texttt{results/\allowbreak a4k195\_panel/\allowbreak corrected\_fidp\_ci/\allowbreak paired\_deltas.csv}), progressive \sca{} has significantly higher patch FID ($+7.2$ $[3.2,11.0]$) and patch KID ($+0.005$ $[0.003,0.007]$), while its FID ($+3.0$ $[-0.2,8.3]$) and KID differences span zero. For 42-step \sca{} only FID is significantly higher ($+2.4$ $[0.1,5.7]$); KID, patch FID ($+1.5$ $[-0.5,3.6]$), and patch KID span zero.
 
 \input{figures/snippets/prog_deltas.tex}
 \input{figures/snippets/progressive.tex}
@@ -1473,7 +1452,7 @@ All 8K scores were computed on CPU. HPS uses float32 here, whereas the main GPU 
 \section{Calibration table at non-square sizes}
 \label{app:ps2}
 
-At $(s_H,s_W)=(2,4)$ the two axes have different factors, and \sca{} uses the table of the emulated scale nearest the larger factor, scale 4. On the 46 ablation prompts at $2048\times4096$, the scale-2 table changes the paired metrics negligibly (Table~\ref{tab:app_ps2}): HPSv2 $+0.09$, HPSv2.1 $+0.17$ (both $\times100$), and PickScore $+0.05$ are significant but small, and ImageReward ($+0.01$ $[-0.03,0.05]$) and the other metrics are within noise. These small changes do not resolve the mixed \sca{}--AReA results at this size, and we keep the default rule.
+At $(s_H,s_W)=(2,4)$ the two axes have different factors, and \sca{} uses the table of the emulated scale nearest the larger factor, scale 4. On the \nabl{} ablation prompts at $2048\times4096$, the scale-2 table changes the paired metrics negligibly (Table~\ref{tab:app_ps2}): HPSv2 $+0.09$, HPSv2.1 $+0.17$ (both $\times100$), and PickScore $+0.05$ are significant but small, and ImageReward ($+0.01$ $[-0.03,0.05]$) and the other metrics are within noise. These small changes do not resolve the mixed \sca{}--AReA results at this size, and we keep the default rule.
 
 \FloatBarrier
 \section{The low-band duplication guard}
@@ -1486,7 +1465,7 @@ At $(s_H,s_W)=(2,4)$ the two axes have different factors, and \sca{} uses the ta
 The local branch then contributes only its difference from the global branch above the cutoff. The cutoff should lie below $1/(2s)$, where the global branch aliases, and above $1/w$, below which the window cannot resolve; with $w=64$ and $s=4$ this leaves periods of 8 to 64 tokens. We used $p=16$; $p=8$ and $p=32$ were worse on four development prompts, and a noise-dependent cutoff behaved like $p=16$. FreeScale~\citep{qiu2024freescale} also fuses two self-attention outputs by frequency band, in the opposite direction: it keeps the blurred low band of attention over overlapping crops and takes the high band from full self-attention at the target size. ResDiT also combines global low frequencies and local high frequencies, using patch-wise FFT masks~\citep{ma2025resdit}. Our optional guard uses pooled global attention and preserves the fitted per-head weight on the local-minus-global high-band residual. Its global-low/local-high construction is therefore not itself novel.
 
 \begin{table}[!htbp]
-  \caption{\textbf{Ablations around the band-guard configuration at $4096^2$}, 46 prompts. The reference row gives absolute values for \sca{} + band guard (band 16); every other row changes one thing, keeps the guard unless stated, and reports its paired difference to the reference. Marks and units as in Table~\ref{tab:ablation}; corrected patch FID is shown without intervals.}
+  \caption{\textbf{Ablations around the band-guard configuration at $4096^2$}, \nabl{} ablation prompts. The reference row gives absolute values for \sca{} + band guard (band 16); every other row changes one thing, keeps the guard unless stated, and reports its paired difference to the reference. Marks and units as in Table~\ref{tab:ablation}; corrected patch FID is shown without intervals.}
   \label{tab:ablation_band}
   \centering
   \scriptsize
@@ -1512,7 +1491,7 @@ The local branch then contributes only its difference from the global branch abo
   \end{tabular}}
 \end{table}
 
-\paragraph{History: what it fixes and what it costs.} On the development prompts, the band alone (no opening phase) fixed the boats but left extra statues and faces on the Moai and woman-and-bear prompts; the opening phase alone got the main subject right, but small extra figures appeared late on some prompts; both together gave one subject on the boats, Moai, and woman-and-bear prompts. This was our first full configuration. On 46 prompts, however, removing the guard improves HPSv2 ($+0.54$), HPSv2.1 ($+1.17$), PickScore ($+0.25$), CLIP-IQA ($+1.7$), and MUSIQ ($+2.9$), all significant, leaves the other metrics within noise, and saves 17\,s per image on an idle GPU. The guard also hid what the per-head mix contributes. With it (Table~\ref{tab:ablation_band}), local only matched the per-head mix within 2\% on preference metrics, because the guard replaces the low band of every head's output with that of the global branch whatever the head's weight, so it injects global low frequencies even at $\pi=1$; without the guard local only loses on nearly every metric (Section~\ref{sec:ablations}). Likewise, with the guard one shared weight and per-layer weights matched the per-head table on preference metrics and lost only on no-reference quality, and hard per-head routing (10 to 17\% of heads global at threshold 0.5, about 6\% at 0.3) stayed within 2\% of the mix. The guard is an option for prompts where late duplication is visible, not part of the default method.
+\paragraph{History: what it fixes and what it costs.} On the development prompts, the band alone (no opening phase) fixed the boats but left extra statues and faces on the Moai and woman-and-bear prompts; the opening phase alone got the main subject right, but small extra figures appeared late on some prompts; both together gave one subject on the boats, Moai, and woman-and-bear prompts. This was our first full configuration. On the \nabl{} ablation prompts, however, removing the guard improves HPSv2 ($+0.54$), HPSv2.1 ($+1.17$), PickScore ($+0.25$), CLIP-IQA ($+1.7$), and MUSIQ ($+2.9$), all significant, leaves the other metrics within noise, and saves 17\,s per image on an idle GPU. The guard also hid what the per-head mix contributes. With it (Table~\ref{tab:ablation_band}), local only matched the per-head mix within 2\% on preference metrics, because the guard replaces the low band of every head's output with that of the global branch whatever the head's weight, so it injects global low frequencies even at $\pi=1$; without the guard local only loses on nearly every metric (Section~\ref{sec:ablations}). Likewise, with the guard one shared weight and per-layer weights matched the per-head table on preference metrics and lost only on no-reference quality, and hard per-head routing (10 to 17\% of heads global at threshold 0.5, about 6\% at 0.3) stayed within 2\% of the mix. The guard is an option for prompts where late duplication is visible, not part of the default method.
 
 \section{Compute and reproducibility}
 \label{app:compute}

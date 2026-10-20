@@ -1,0 +1,447 @@
+{
+  "figure": "zoom4k (replaces fig:qual_main)",
+  "script": "paper/figures/src/fig_zoom4k.py",
+  "pdf": "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/paper/figures/zoom4k.pdf",
+  "pdf_sha256": "582aa4b6d31cef594e0b5fc42f95bfdfa67833e1f91728d4670ba99a5cda3822",
+  "pdf_bytes": 859322,
+  "selection": "Curated. The first three, in order, of the four prompts of the previous fig:qual_main (fig_qual_main.PROMPTS), which were picked by hand for variety from the 191 evaluation prompts (fig_qual.py MAIN, kept by the 2026-10-18 redesign). The fourth, the ivy archway m1057810871814672649, is left out for space. History: a first draft dropped the portrait m2729538226706404616 instead, because its crops differed least between methods, a choice made before any per-image value was read. Its values, read afterwards, made it the one prompt of the four where SCA does not have the best MUSIQ_c (HRDiT does), so that visual criterion favoured SCA. It was replaced by the order rule, which looks at neither the images nor the values. No metric ranked the prompts. All six fig_qual.py MAIN prompts are excluded from the uncurated galleries.",
+  "crop_rule": "Automatic, not hand-placed: fig_qual_main.auto_box over full, area, hrdit and sca, i.e. the 320x240 (width x height) window with the largest mean PIL FIND_EDGES response of the 8x box-downsampled greyscale images, at least 256 px from every border. The same window is cropped from every method; layouts differ between methods, so the crops differ in content.",
+  "metric": "MUSIQ_c (CSV column musiq_crop1024): pyiqa MUSIQ averaged over four fixed random 1024^2 crops per image, crop positions set by the prompt id and shared across methods (Appendix app:metrics). It is a per-image score, not a score of the displayed window. Printed to one decimal; the best printed value per row is bold.",
+  "sources": {
+    "full_attention": "out/main/full",
+    "area": "out/main/area",
+    "hrdit": "out/baseline_expansion_20261017_{v1,rest145}/hrdit_dev_author via out/hrdit191eval",
+    "sca": "out/main/sca_nb"
+  },
+  "metric_files": {
+    "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv": "b0c81aee38feaa4acf2f571db02c9bc19fa8573c6286e777ee14222775a13c3a",
+    "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv": "f6e9d86479e73d9c24444af7f08b9ca4fff35780c39ecc26bc66d682197ba8e4",
+    "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv": "fe0073e26d00893f67468acf1d14174e72589bfa7a13865d4339a1c351a426b5",
+    "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv": "b0c81aee38feaa4acf2f571db02c9bc19fa8573c6286e777ee14222775a13c3a",
+    "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv": "f6e9d86479e73d9c24444af7f08b9ca4fff35780c39ecc26bc66d682197ba8e4"
+  },
+  "table_check": {
+    "full": {
+      "file": "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv",
+      "method": "full",
+      "n": 191,
+      "mean": 33.2463,
+      "table": 33.2
+    },
+    "area": {
+      "file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "method": "area",
+      "n": 191,
+      "mean": 50.3698,
+      "table": 50.4
+    },
+    "hrdit": {
+      "file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "method": "hrdit_dev_author",
+      "n": 191,
+      "mean": 53.5416,
+      "table": 53.5
+    },
+    "sca": {
+      "file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "method": "sca_nb",
+      "n": 191,
+      "mean": 61.2323,
+      "table": 61.2
+    }
+  },
+  "examples": [
+    {
+      "prompt_id": "2100482621711410240",
+      "prompt": "A blue-skinned character with pointed ears and glasses sits at a wooden desk cluttered with maps and navigational tools, including a compass and an astrolabe, illuminated by the glow of a candle. The character wears a formal white shirt and a brown vest, exuding an air of intelligence and focus.",
+      "derived_seed": 3016361728513854417,
+      "crop_xywh": [
+        976,
+        3344,
+        320,
+        240
+      ],
+      "full_image": "2100482621711410240_sca_full.jpg",
+      "full_image_px": 683
+    },
+    {
+      "prompt_id": "m6394968997939197542",
+      "prompt": "Dimly lit street scene featuring yellow taxis and cars reflecting on wet pavement, illuminated by neon signs and streetlights in a bustling urban environment.",
+      "derived_seed": 1650479750587155736,
+      "crop_xywh": [
+        1472,
+        1912,
+        320,
+        240
+      ],
+      "full_image": "m6394968997939197542_sca_full.jpg",
+      "full_image_px": 683
+    },
+    {
+      "prompt_id": "m2729538226706404616",
+      "prompt": "A woman\u2019s profile emerges among swirling clouds, with a deep gaze and delicate earrings, set against a gradient of blues and hints of gold.",
+      "derived_seed": 5722109350587978787,
+      "crop_xywh": [
+        1520,
+        416,
+        320,
+        240
+      ],
+      "full_image": "m2729538226706404616_sca_full.jpg",
+      "full_image_px": 683
+    }
+  ],
+  "values": [
+    {
+      "prompt_id": "2100482621711410240",
+      "csv_prompt_id": "a4k_eval_4096_2100482621711410240",
+      "seed": 0,
+      "method": "full",
+      "csv_method": "full",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 23.58754801750183,
+      "printed": "23.6",
+      "best": false,
+      "same_value_in": [
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
+      ],
+      "image": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_2100482621711410240_19484eec9d_seed0.png",
+      "image_sha256": "dc54d7e1f8978805aa904889e2627bcb360f1bffcaedba5235d9a29127dcb04b",
+      "derived_seed": 3016361728513854417,
+      "crop": "2100482621711410240_full_crop.jpg",
+      "crop_xywh": [
+        976,
+        3344,
+        320,
+        240
+      ]
+    },
+    {
+      "prompt_id": "2100482621711410240",
+      "csv_prompt_id": "a4k_eval_4096_2100482621711410240",
+      "seed": 0,
+      "method": "area",
+      "csv_method": "area",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 50.43320083618164,
+      "printed": "50.4",
+      "best": false,
+      "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv",
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
+      ],
+      "image": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_2100482621711410240_19484eec9d_seed0.png",
+      "image_sha256": "838bfa140e6f85bc84d9cb8bd4a4df96ed3681f05177f417e4bc5d1f83b5b0c6",
+      "derived_seed": 3016361728513854417,
+      "crop": "2100482621711410240_area_crop.jpg",
+      "crop_xywh": [
+        976,
+        3344,
+        320,
+        240
+      ]
+    },
+    {
+      "prompt_id": "2100482621711410240",
+      "csv_prompt_id": "a4k_eval_4096_2100482621711410240",
+      "seed": 0,
+      "method": "hrdit",
+      "csv_method": "hrdit_dev_author",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 56.396084785461426,
+      "printed": "56.4",
+      "best": false,
+      "same_value_in": [],
+      "image": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_2100482621711410240_19484eec9d_seed0.png",
+      "image_sha256": "8c321df4de48adc9ede02239648082b4b35c14ce788ca556d40abd0170eeb2ae",
+      "derived_seed": 3016361728513854417,
+      "crop": "2100482621711410240_hrdit_crop.jpg",
+      "crop_xywh": [
+        976,
+        3344,
+        320,
+        240
+      ]
+    },
+    {
+      "prompt_id": "2100482621711410240",
+      "csv_prompt_id": "a4k_eval_4096_2100482621711410240",
+      "seed": 0,
+      "method": "sca",
+      "csv_method": "sca_nb",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 61.2490177154541,
+      "printed": "61.2",
+      "best": true,
+      "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv"
+      ],
+      "image": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_2100482621711410240_19484eec9d_seed0.png",
+      "image_sha256": "f3ec9645879a5b910d740a3149c2af3791cb4b70e944e6883d7b64b65c318b3a",
+      "derived_seed": 3016361728513854417,
+      "crop": "2100482621711410240_sca_crop.jpg",
+      "crop_xywh": [
+        976,
+        3344,
+        320,
+        240
+      ]
+    },
+    {
+      "prompt_id": "m6394968997939197542",
+      "csv_prompt_id": "a4k_eval_4096_minus6394968997939197542",
+      "seed": 0,
+      "method": "full",
+      "csv_method": "full",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 23.036842823028564,
+      "printed": "23.0",
+      "best": false,
+      "same_value_in": [
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
+      ],
+      "image": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_minus6394968997939197542_cc7fc38e4a_seed0.png",
+      "image_sha256": "bfa6dd057350481171fc0e3a97942c9e2fdf14b1d84dcf0a18dd198982f8cd18",
+      "derived_seed": 1650479750587155736,
+      "crop": "m6394968997939197542_full_crop.jpg",
+      "crop_xywh": [
+        1472,
+        1912,
+        320,
+        240
+      ]
+    },
+    {
+      "prompt_id": "m6394968997939197542",
+      "csv_prompt_id": "a4k_eval_4096_minus6394968997939197542",
+      "seed": 0,
+      "method": "area",
+      "csv_method": "area",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 27.45732593536377,
+      "printed": "27.5",
+      "best": false,
+      "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv",
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
+      ],
+      "image": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_minus6394968997939197542_cc7fc38e4a_seed0.png",
+      "image_sha256": "2ba7e36da7172c6982c2438b530b8e3111d7dfc1dc4c69d67978534aff605ab4",
+      "derived_seed": 1650479750587155736,
+      "crop": "m6394968997939197542_area_crop.jpg",
+      "crop_xywh": [
+        1472,
+        1912,
+        320,
+        240
+      ]
+    },
+    {
+      "prompt_id": "m6394968997939197542",
+      "csv_prompt_id": "a4k_eval_4096_minus6394968997939197542",
+      "seed": 0,
+      "method": "hrdit",
+      "csv_method": "hrdit_dev_author",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 28.73052167892456,
+      "printed": "28.7",
+      "best": false,
+      "same_value_in": [],
+      "image": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_minus6394968997939197542_cc7fc38e4a_seed0.png",
+      "image_sha256": "ecee4a905e19eb0baae3c1870658910b49727383d0ed4f805921d3ed73907d96",
+      "derived_seed": 1650479750587155736,
+      "crop": "m6394968997939197542_hrdit_crop.jpg",
+      "crop_xywh": [
+        1472,
+        1912,
+        320,
+        240
+      ]
+    },
+    {
+      "prompt_id": "m6394968997939197542",
+      "csv_prompt_id": "a4k_eval_4096_minus6394968997939197542",
+      "seed": 0,
+      "method": "sca",
+      "csv_method": "sca_nb",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 36.615169525146484,
+      "printed": "36.6",
+      "best": true,
+      "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv"
+      ],
+      "image": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus6394968997939197542_cc7fc38e4a_seed0.png",
+      "image_sha256": "a5482089d5607bedcd4787609c318d570ab71d49ed72e10969d050a279508580",
+      "derived_seed": 1650479750587155736,
+      "crop": "m6394968997939197542_sca_crop.jpg",
+      "crop_xywh": [
+        1472,
+        1912,
+        320,
+        240
+      ]
+    },
+    {
+      "prompt_id": "m2729538226706404616",
+      "csv_prompt_id": "a4k_eval_4096_minus2729538226706404616",
+      "seed": 0,
+      "method": "full",
+      "csv_method": "full",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 26.52114486694336,
+      "printed": "26.5",
+      "best": false,
+      "same_value_in": [
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
+      ],
+      "image": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png",
+      "image_sha256": "6c50ea494b71d240562740df08adfca1010018f072ba3087f59739bb77db8b2b",
+      "derived_seed": 5722109350587978787,
+      "crop": "m2729538226706404616_full_crop.jpg",
+      "crop_xywh": [
+        1520,
+        416,
+        320,
+        240
+      ]
+    },
+    {
+      "prompt_id": "m2729538226706404616",
+      "csv_prompt_id": "a4k_eval_4096_minus2729538226706404616",
+      "seed": 0,
+      "method": "area",
+      "csv_method": "area",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 47.5830774307251,
+      "printed": "47.6",
+      "best": false,
+      "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv",
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
+      ],
+      "image": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png",
+      "image_sha256": "f10c94f6d167fd9ff04049e1e36a9df4ecd8f44bfbc48dc81ee3bb09196a3ad5",
+      "derived_seed": 5722109350587978787,
+      "crop": "m2729538226706404616_area_crop.jpg",
+      "crop_xywh": [
+        1520,
+        416,
+        320,
+        240
+      ]
+    },
+    {
+      "prompt_id": "m2729538226706404616",
+      "csv_prompt_id": "a4k_eval_4096_minus2729538226706404616",
+      "seed": 0,
+      "method": "hrdit",
+      "csv_method": "hrdit_dev_author",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 58.71836185455322,
+      "printed": "58.7",
+      "best": true,
+      "same_value_in": [],
+      "image": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_v1/hrdit_dev_author/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png",
+      "image_sha256": "b9dd4a29c200f88827d557ae10d927fc5314b855083ce6ef26cfb29a17ec63ea",
+      "derived_seed": 5722109350587978787,
+      "crop": "m2729538226706404616_hrdit_crop.jpg",
+      "crop_xywh": [
+        1520,
+        416,
+        320,
+        240
+      ]
+    },
+    {
+      "prompt_id": "m2729538226706404616",
+      "csv_prompt_id": "a4k_eval_4096_minus2729538226706404616",
+      "seed": 0,
+      "method": "sca",
+      "csv_method": "sca_nb",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 49.8045768737793,
+      "printed": "49.8",
+      "best": false,
+      "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv"
+      ],
+      "image": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png",
+      "image_sha256": "5297804f8854f14c86e5b29d2825380a19ac6651b70bf65bf1c0e7dbed99eefe",
+      "derived_seed": 5722109350587978787,
+      "crop": "m2729538226706404616_sca_crop.jpg",
+      "crop_xywh": [
+        1520,
+        416,
+        320,
+        240
+      ]
+    }
+  ],
+  "dropped": {
+    "prompt_id": "m1057810871814672649",
+    "values_read_after_selection": {
+      "full": 26.79091739654541,
+      "area": 57.07276916503906,
+      "hrdit": 60.0186710357666,
+      "sca": 68.6629467010498
+    }
+  },
+  "layout_pt": {
+    "width": 397.5,
+    "height": 220.711,
+    "row_height": 61.737,
+    "full_image": 61.737,
+    "crop_width": 82.316,
+    "gutters": {
+      "full_to_crops": 2.0,
+      "between_crops": 1.5
+    },
+    "header_band": 10.0,
+    "value_band": 8.5,
+    "box": {
+      "colour": "#D62728",
+      "width_pt": 0.7
+    },
+    "crop_ppi": 280.9
+  },
+  "jpeg": {
+    "full": "SCA full image, Lanczos to 800 px per printed inch, quality 90, 4:4:4",
+    "crop": "native pixels (1:1), quality 95, 4:4:4"
+  },
+  "asset_sha256": {
+    "2100482621711410240_area_crop.jpg": "cefae3a3cb4639835648c8c1b2c438d4e02bd5331cbf3ce74101dbdee76df159",
+    "2100482621711410240_full_crop.jpg": "3626b84debe012304e626977727c3332fa6fce7d1896d4ef69f5dc02d012b3c9",
+    "2100482621711410240_hrdit_crop.jpg": "544305a24539b0fd7b06056d0edef1d05722ece18034330f1b87980d623bfb0e",
+    "2100482621711410240_sca_crop.jpg": "cd51db8de5ba78d8458d733569a88c25ef6fd6c93a278501ae1144a0c89e9e49",
+    "2100482621711410240_sca_full.jpg": "f30406a3c7e8fe16e53990ba865b6de0c1bc1d9808d84d26922eec9c603de82c",
+    "m2729538226706404616_area_crop.jpg": "ef4b4df0dc5a1cc48e5c67fb60f2f13ffe25304ec5ead11876ff84b5f0a86e9c",
+    "m2729538226706404616_full_crop.jpg": "aaae732c969f3da3737c30a718f75b6ffd3e97e949bd0e81b6a7aa6a0e49d3b0",
+    "m2729538226706404616_hrdit_crop.jpg": "a2c5062b64bd54eb4a51e7e935a90e1ec856080ad64674a9ce45719300c5ac7c",
+    "m2729538226706404616_sca_crop.jpg": "63b4c0aa43b077e7629beeb9be0707afa02c5af4bedce9524659354f00af805f",
+    "m2729538226706404616_sca_full.jpg": "38e15a2f6624d8115f35d74d2cbe35d63842c9697b2d0d2c4385056eb673d45f",
+    "m6394968997939197542_area_crop.jpg": "70ab97f3bf6ec8ce5be5cf9c4489bfd07df5788600c7adc39a6b26e2e0fcf4fc",
+    "m6394968997939197542_full_crop.jpg": "20737e946dde28799805182c4a789b6f99dc32647c87b4f5fd9e093ab237e36a",
+    "m6394968997939197542_hrdit_crop.jpg": "e9e8b2f6520f334dbbc8e072b2d702d144509b32f7428bab06a7e39537930ce9",
+    "m6394968997939197542_sca_crop.jpg": "f0901e4932dc6743b9823deed456cb98ff02186fe4df1ac81ed0c13745863dc8",
+    "m6394968997939197542_sca_full.jpg": "b5e505f5229d875f3273452baaeba61ed9f4d446f46b97e7a15499c476b412c6"
+  }
+}

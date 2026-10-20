@@ -463,3 +463,12 @@ plus dedicated fleet SCA13 job 1083327 (8 gh nodes, 9 h, IDLE_MAX 5400) submitte
 STOP.until_20261019; recreate STOP when the evals are done so every worker exits.
 Paper: delivery_i3592753 (50 pp) committed 9e4a585 and pushed to github.com/shreshthsaini/scale-covariant-attention
 (private, origin). Code link is the \codeurl macro (swap for an anonymous link at submission).
+
+## 16. 2026-10-20 08:00 CT: standard protocol (195 prompts) and presentation overhaul landed
+Build delivery_m1gkdr8f (48 pp, main 1-10, 0 overfull, standalone pass). All main tables on the full Aesthetic-4K split
+(195 prompts, 4 development prompts disclosed); seeds 1-2 on 195; Krea 100 and HRGen-1K 200 until the running spool
+(a192 Krea-195, a193 HRGen-1K Krea, a194 HRGen-1K dev; evals z966-z968 auto-released by slurm/release_evals.sh) finishes.
+AReA's published numbers are FLUX.1-Krea-dev (Table 2, results/published_compare). Headline unchanged: 11 of 15 metrics,
+IR +0.31 [0.23,0.38], FID -7.7 [-13.1,-2.6]. Open: Table 3 rows duplicating Table 1; J.1 band-guard rows still 191;
+results/baseline_quality_deltas.csv stale. Workers: idle-only guest workers on all 28 held gh nodes (slurm/guest_worker_shared.sh);
+slurm/occupy_all.sh (co-tenant) is ready but needs the user to launch it. SCA13 job 1083327 still pending.

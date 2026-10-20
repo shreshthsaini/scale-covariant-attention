@@ -10,14 +10,16 @@ the target size.
 Selection (recorded in figures/progressive/provenance.json and stated in the caption):
 * Prompts are random, not curated: random.Random(17).sample(sorted(ids), 2) over the 46 prompt ids
   of the progressive panel manifest (PROMPTS_JSONL), with the a4k_eval_4096_ prefix stripped. The
-  script recomputes the draw and stops unless it gives PROMPTS in this order.
+  script recomputes the draw and stops unless it gives PROMPTS in this order. The paper's numbers now
+  cover all 195 Aesthetic-4K prompts; the draw stays on the original 46-prompt panel, as the caption says.
 * Crop windows are automatic, never placed by hand: fig_qual_main.auto_box with a 512x512 window,
   i.e. the window with the most edge energy (PIL FIND_EDGES response of the 8x box-downsampled
   greyscale image) averaged over the three methods of the row, at least 256 px from every border.
 
 Every source PNG must have a complete sidecar whose png_sha256 matches the file, config res 4096x4096,
-seed 0 and the expected prompt id. Header times are campaign mean seconds per image from
-results/progressive46/timing.csv, cross-checked against results/progressive46/base_summary.csv.
+seed 0 and the expected prompt id. Header times (not drawn; the caption points to Table tab:panel46) are
+the campaign mean seconds per image that the table prints over all 195 prompts, read through data195.py
+from results/a4k195_panel, with 28-step SCA cross-checked against results/a4k195_main (both runs hold it).
 
 Run on compute from paper/figures/src:
   /work/09032/saini_2/vista/library/uv-envs/sca/bin/python fig_progressive.py [--out-dir DIR]
@@ -25,7 +27,6 @@ Run on compute from paper/figures/src:
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 import os
 import random
@@ -35,6 +36,7 @@ from pathlib import Path
 
 from PIL import Image
 
+import data195  # results/a4k195_* loader
 import scafig
 from fig_qual_main import auto_box, sha
 
@@ -51,8 +53,9 @@ TECTONIC = os.path.expanduser("~/.local/bin/tectonic")
 CAMPAIGN = Path("/scratch/09032/saini_2/sca/eval/prog46_v1")
 PROMPTS_JSONL = CAMPAIGN / "prompts.jsonl"
 SAMPLES = CAMPAIGN / "samples"
-TIMING_CSV = REPO / "results" / "progressive46" / "timing.csv"
-SUMMARY_CSV = REPO / "results" / "progressive46" / "base_summary.csv"
+TIMES_RUN, CHECK_RUN, N_TIMES = "a4k195_panel", "a4k195_main", 195  # Table tab:panel46's campaign times
+TIMING_CSV = data195.RESULTS / TIMES_RUN / "base_summary.csv"  # seconds rows, read through data195.load
+SUMMARY_CSV = data195.RESULTS / CHECK_RUN / "base_summary.csv"  # cross-check for the method both runs hold
 PREFIX = "a4k_eval_4096_"
 SEED_DRAW, N_DRAW = 17, 2
 PROMPTS = ["minus5023570400257826529", "minus2679953061215100202"]  # ringed planet, dancer
@@ -84,19 +87,22 @@ def check_selection() -> tuple[list[str], dict, int]:
 
 
 def campaign_seconds() -> dict:
-    """Mean seconds per image from timing.csv, cross-checked against the summary CSV."""
-    timing = {r["method"]: r for r in csv.DictReader(TIMING_CSV.open())}
-    summary = {r["method"]: float(r["value"]) for r in csv.DictReader(SUMMARY_CSV.open())
-               if r["metric"] == "seconds" and r["res"] == f"{RES}x{RES}"}
+    """Campaign mean seconds per image as Table tab:panel46 prints them, from results/a4k195_panel through
+    data195.load, each row at RES over the same prompts, cross-checked against results/a4k195_main for every
+    method both runs hold (28-step SCA)."""
+    times, check = data195.load(TIMES_RUN)[0], data195.load(CHECK_RUN)[0]
+    rows = {r["method"]: r for r in data195._rows(TIMING_CSV)
+            if r["metric"] == "seconds" and r["res"] == f"{RES}x{RES}"}
     out = {}
     for m in METHODS:
-        mean, n = float(timing[m]["mean_seconds"]), int(timing[m]["n"])
-        if abs(mean - summary[m]) > 0.01:
-            raise ValueError(f"{m}: timing.csv mean {mean} differs from base_summary {summary[m]}")
-        out[m] = dict(mean_seconds=mean, n=n, median_seconds=float(timing[m]["median_seconds"]),
-                      steps=timing[m]["steps"] or None, label=f"{mean:.1f}")
-    if len({v["n"] for v in out.values()}) != 1:
-        raise ValueError("campaign means must cover the same prompts")
+        mean, n = times[(m, "seconds")], int(float(rows[m]["n_prompts"]))
+        if float(rows[m]["value"]) != mean:
+            raise ValueError(f"{m}: {TIMING_CSV.name} seconds differ from data195.load")
+        if (m, "seconds") in check and abs(mean - check[(m, "seconds")]) > 0.01:
+            raise ValueError(f"{m}: {TIMES_RUN} mean {mean} differs from {CHECK_RUN} {check[(m, 'seconds')]}")
+        out[m] = dict(mean_seconds=mean, n=n, run=TIMES_RUN, label=f"{mean:.1f}")
+    if {v["n"] for v in out.values()} != {N_TIMES}:
+        raise ValueError(f"campaign means must cover the same {N_TIMES} prompts")
     return out
 
 
@@ -224,10 +230,11 @@ def main() -> None:
     n_camp = secs["sca_prog"]["n"]
     caption = (
         r"\textbf{Progressive \sca{} keeps one large subject, as HRDiT does; single-pass \sca{} can shrink or "
-        r"repeat it.} Two prompts drawn at random from the %d-prompt panel; same 1:1 ${%d\times%d}$ crop per "
-        r"row; times in Table~\ref{tab:panel46}."
+        r"repeat it.} Two prompts drawn at random from the original %d-prompt panel; same 1:1 ${%d\times%d}$ "
+        r"crop per row; times in Table~\ref{tab:panel46}."
         % (n_panel, CROP, CROP))
-    assert n_camp == n_panel, (n_camp, n_panel)  # the table's campaign means cover the whole panel
+    # the table's campaign means cover all 195 prompts, of which the original panel is a part
+    assert n_panel < n_camp == N_TIMES, (n_panel, n_camp)
     snippet.write_text("\n".join([
         "% Generated by src/fig_progressive.py (TikZ source src/progressive.tex, assets "
         "figures/progressive/cmp_*).",
@@ -252,7 +259,9 @@ def main() -> None:
         crop_windows_xywh=boxes,
         headers=dict(source=str(TIMING_CSV.relative_to(REPO)), sha256=sha(TIMING_CSV),
                      cross_check=str(SUMMARY_CSV.relative_to(REPO)), cross_check_sha256=sha(SUMMARY_CSV),
-                     statistic="campaign mean seconds per image on shared GH200 nodes, one decimal",
+                     loader="paper/figures/src/data195.py",
+                     statistic=f"campaign mean seconds per image on shared GH200 nodes over all {N_TIMES} "
+                               "prompts (Table tab:panel46), one decimal; not drawn in the figure",
                      methods=secs),
         protocols={"hrdit_dev_author": "HRDiT (FLUX.1-dev), stages 1024^2, 2048^2, 4096^2 with 30, 17, 10 steps",
                    "sca_prog": "progressive SCA: HRDiT's stage schedule with SCA attention, 57 steps in all",

@@ -31,9 +31,12 @@ SPECS = {
     "baselines": {
         "res": "4096x4096", "n": 3,
         "methods": ["area", "dype", "sega_official", "ultraimage", "sca"],
-        "caption": (
+        # The frozen draw (2026-10-17) was over the main set without the four development prompts. The paper now
+        # evaluates all 195 prompts, so the caption names that pool; both counts come from the frozen manifest.
+        "caption": lambda manifest: (
             r"\textbf{DyPE and SEGA leave speckle at $4096^2$; UltraImage and SCA keep clean detail.} "
-            r"Three of 191 prompts drawn at random (seed~17); full images above 1:1 crops of one window. "
+            rf"{count_word(len(manifest['prompts']))} of {manifest['eligible_count']} non-development prompts "
+            r"drawn at random (seed~17); full images above 1:1 crops of one window. "
             r"UltraImage runs its two-stage defaults."
         ),
     },
@@ -317,6 +320,10 @@ def build(tag):
                                                      t_crop(tiles[method]["crop"])]
             rows.append((g_row(cells), G_ROW))
     caption = spec.get("caption")
+    if callable(caption):
+        if manifest["eligible_count"] != len(manifest["eligible_ids"]):
+            raise ValueError(f"{tag}: eligible_count disagrees with eligible_ids in the frozen manifest")
+        caption = caption(manifest)
     if tag == "krea_complete":  # the appendix text states the regeneration; the count must still match
         repair = json.loads(Path(spec["provenance_receipts"][1]).read_text())
         if repair["replacement_pairs"] != 7:
