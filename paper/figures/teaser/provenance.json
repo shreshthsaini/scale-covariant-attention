@@ -1,23 +1,69 @@
 {
   "layout": "Pictures only (REFERENCE_STYLE.md house rule 1): one size tag per mosaic image, method names once, one frame colour; numbers moved to the caption and Table 1.",
-  "selection": "Curated by visual inspection; no metric ranking. Mosaic: SCA outputs. Strip: chosen from the 191 evaluation prompts at 4096x4096 where all six methods have a complete seed-0 output, for a visible layout difference.",
-  "strip_selection": {
-    "procedure": "Six-method contact sheets of all 191 prompts (256 px thumbnails) were screened for layout failures (duplication, stripes, broken structure) in the baselines with a coherent SCA output; shortlisted prompts were then viewed at 512 px per method and SCA at full size. Prompts where SCA itself duplicated subjects or broke structure were rejected.",
-    "shortlist": [
-      "1269964769307095670",
-      "6978695891801939003",
-      "minus3112502764021036396",
-      "5467301199144503406",
-      "minus836402013429605880"
-    ],
-    "chosen": "1269964769307095670",
-    "reason": "Full attention is a flat band; DyPE and SEGA lose the peaks and the hills under speckle; AReA keeps the peaks but its lower half dissolves into a streaked haze; UltraImage and SCA keep peaks above rolling hills. The alternatives either showed small repeated structures in SCA (waterfall bridge) or weaker AReA failures.",
-    "crop": "Shared native window on the main peak, where snow and rock detail differ most between methods (x, y, side in pixels)."
+  "selection": "Curated. Mosaic: SCA outputs chosen by visual inspection; the portrait was re-chosen on 2026-10-20 from a shortlist ranked by SCA's per-image ImageReward and MUSIQ_c percentiles (eval/a4k195_main) and viewed at native pixels. Strip: chosen from the 195 evaluation prompts at 4096x4096 where all six methods have a complete seed-0 output, with SCA clean and high-scoring and every baseline near its own per-image median.",
+  "audit_20261020": {
+    "kept": {
+      "pano": "minus2742856837225126754: clean whole and at native pixels (castle, bridge crowd, inset facades, island church)",
+      "cathedral": "minus8737279395568207187: clean (rose window, chandeliers, pews); ImageReward is low for every method on this prompt"
+    },
+    "replaced": {
+      "portrait": {
+        "old": "3657338173664010496",
+        "new": "5849277588805396896",
+        "why": "old: a second, miniature pipe sits on the headband and a stray stem sticks out of the far mouth corner (duplicated object)",
+        "new_values": "SCA ImageReward 1.91 (p92 of SCA's 195), MUSIQ_c 68.7 (p73), HPSv2.1 p90; one man, plausible hands; the headstock carries extra tuners (a generic FLUX object error, not a duplication)"
+      },
+      "strip": {
+        "old": "1269964769307095670",
+        "new": "minus8343371271909676658",
+        "why": "old: chosen for a layout difference; AReA ImageReward p1 and HPSv2.1 p0 of its own 195, SEGA p2, DyPE p8, so the baselines were shown on an unusually bad prompt"
+      }
+    },
+    "portrait_rejected": {
+      "minus7393293802729135153": "third hand under the veil",
+      "minus3108444262580777290": "two extra small men on the cliff",
+      "7109958488611222679": "clean; used in Figure zoom4k instead"
+    }
   },
-  "strip_prompt_id": "a4k_eval_4096_1269964769307095670",
+  "strip_selection": {
+    "procedure": "Per-image CSVs of the 195-prompt evaluation (eval/a4k195_main base and extra) ranked the prompts not shown elsewhere in the paper and not used in development by SCA's ImageReward + MUSIQ_c + HPSv2.1 percentiles, keeping prompts where each of DyPE, SEGA, AReA and UltraImage has ImageReward and HPSv2.1 at or above its own 25th percentile. Shortlisted prompts were viewed as six-method contact sheets, then SCA whole and at native pixels; prompts where SCA repeated or added subjects were rejected.",
+    "shortlist": [
+      "minus8343371271909676658",
+      "minus3268147817845827695",
+      "4820545723762191815",
+      "3826098298648979216",
+      "minus2670470656524755471",
+      "minus3413373481783671760",
+      "minus7713773572301072741",
+      "minus6127054465263660958"
+    ],
+    "rejected": {
+      "4820545723762191815": "SCA: five moons and two extra small bears",
+      "3826098298648979216": "SCA: three waterfalls for one",
+      "minus2670470656524755471": "SCA: spray speckle around the umbrellas, extra small figures",
+      "minus7713773572301072741": "SCA: a second small tree",
+      "minus6127054465263660958": "SCA: three people for two",
+      "minus3268147817845827695": "clean; its small background pedestrians are other people, not copies of the walker; the sheep prompt was preferred for subject variety and this one is used in Figure zoom4k",
+      "minus3413373481783671760": "clean, but SCA's own scores are near its median (ImageReward p42)"
+    },
+    "chosen": "minus8343371271909676658",
+    "values": "percentiles within each method's own 195 images, ImageReward/MUSIQ_c/HPSv2.1: SCA 57/79/89 (ImageReward 1.52, MUSIQ_c 70.9); DyPE 37/54/53; SEGA 47/90/33; AReA 36/49/51; UltraImage 41/53/69; full attention's ImageReward sits at its usual floor (-2.28)",
+    "reason": "Sheep in snow before a stone church. Full attention is a flat field; DyPE and SEGA cover the scene in a fine lattice; AReA, UltraImage and SCA keep the church and the flock. SCA's image is clean at native pixels (stonework, windows, the flock); a distant town church is a separate building, not a copy of the main one.",
+    "crop": "Shared native window placed by hand on SCA's church tower (x, y, side in pixels); AReA and UltraImage also show church walls and windows there, so the crops compare stone, glass and snow detail like for like."
+  },
+  "previous_strip": {
+    "prompt_id": "1269964769307095670",
+    "crop_xys": [
+      1664,
+      1408,
+      768
+    ],
+    "dropped_because": "baselines far below their own medians"
+  },
+  "strip_prompt_id": "a4k_eval_4096_minus8343371271909676658",
   "strip_crop_xys": [
-    1664,
-    1408,
+    1650,
+    1300,
     768
   ],
   "timing_definitions": {
@@ -326,17 +372,17 @@
     },
     {
       "role": "mosaic portrait",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_3657338173664010496_d4df7d19bb_seed0.png",
-      "png_sha256": "d880432271388f828b958fbe302937411baec2afb0848948ac3a908e8004120c",
-      "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_5849277588805396896_95004efa9d_seed0.png",
+      "png_sha256": "0ae991b0aafb3ae1c7302cd6ecc2d7399562d70b4a3abaab10dfd3e60fe2d1f4",
+      "prompt": "A smiling man with a gray beard and a hat plays an acoustic guitar, dressed in a stylish blazer over a dark shirt against a muted background.",
       "config": {
         "schema_version": 1,
         "method": "sca_nb",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_3657338173664010496",
-        "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+        "prompt_id": "a4k_eval_4096_5849277588805396896",
+        "prompt": "A smiling man with a gray beard and a hat plays an acoustic guitar, dressed in a stylish blazer over a dark shirt against a muted background.",
         "seed": 0,
-        "derived_seed": 2256563941301075758,
+        "derived_seed": 3843212899848522637,
         "steps": 28,
         "guidance": 4.5,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -386,13 +432,13 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "use_beta_sigmas",
-            "use_exponential_sigmas",
-            "invert_sigmas",
             "shift_terminal",
-            "time_shift_type",
+            "use_exponential_sigmas",
+            "use_beta_sigmas",
+            "stochastic_sampling",
             "use_karras_sigmas",
-            "stochastic_sampling"
+            "invert_sigmas",
+            "time_shift_type"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
@@ -407,17 +453,17 @@
     },
     {
       "role": "strip full",
-      "source": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_1269964769307095670_0ff6dedbe4_seed0.png",
-      "png_sha256": "3201224e2a42f6d5b4679862cbd47f16aa33ea01ba8d620fa1059e5423d33f73",
-      "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
+      "source": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.png",
+      "png_sha256": "0a104c973f08212db2c7bd34e96a232f79f4606d33d25f276779c474006dd24e",
+      "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
       "config": {
         "schema_version": 1,
         "method": "full",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_1269964769307095670",
-        "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
+        "prompt_id": "a4k_eval_4096_minus8343371271909676658",
+        "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
         "seed": 0,
-        "derived_seed": 8130889848028690000,
+        "derived_seed": 2871010701233903344,
         "steps": 28,
         "guidance": 4.5,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -449,21 +495,21 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "use_beta_sigmas",
-            "use_karras_sigmas",
-            "invert_sigmas",
-            "shift_terminal",
-            "stochastic_sampling",
             "time_shift_type",
-            "use_exponential_sigmas"
+            "use_karras_sigmas",
+            "use_beta_sigmas",
+            "use_exponential_sigmas",
+            "invert_sigmas",
+            "stochastic_sampling",
+            "shift_terminal"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
         }
       },
       "crop_xys": [
-        1664,
-        1408,
+        1650,
+        1300,
         768
       ],
       "full": "strip_full_full.jpg",
@@ -471,17 +517,17 @@
     },
     {
       "role": "strip dype",
-      "source": "/scratch/09032/saini_2/sca/out/main/dype/4096x4096/a4k_eval_4096_1269964769307095670_0ff6dedbe4_seed0.png",
-      "png_sha256": "2e71d18d99c9ca52923fd0e2bb43c2d6e4a4e2e7b3917ce591d502c51149f3f6",
-      "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
+      "source": "/scratch/09032/saini_2/sca/out/main/dype/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.png",
+      "png_sha256": "5bc149d196fd6a5ffdc713ea3a8351103fa671c5c1ca85768968228b6b225f54",
+      "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
       "config": {
         "schema_version": 1,
         "method": "dype",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_1269964769307095670",
-        "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
+        "prompt_id": "a4k_eval_4096_minus8343371271909676658",
+        "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
         "seed": 0,
-        "derived_seed": 8130889848028690000,
+        "derived_seed": 2871010701233903344,
         "steps": 28,
         "guidance": 4.5,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -682,21 +728,21 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
+            "use_karras_sigmas",
+            "shift_terminal",
             "stochastic_sampling",
             "time_shift_type",
-            "use_karras_sigmas",
-            "use_beta_sigmas",
             "invert_sigmas",
-            "shift_terminal",
-            "use_exponential_sigmas"
+            "use_exponential_sigmas",
+            "use_beta_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
         }
       },
       "crop_xys": [
-        1664,
-        1408,
+        1650,
+        1300,
         768
       ],
       "full": "strip_dype_full.jpg",
@@ -704,17 +750,17 @@
     },
     {
       "role": "strip sega_official",
-      "source": "/scratch/09032/saini_2/sca/out/main/sega_official/4096x4096/a4k_eval_4096_1269964769307095670_0ff6dedbe4_seed0.png",
-      "png_sha256": "654581c7268015a82d4a87da7c9748775910e0352bb07148f63b3d05d3e72721",
-      "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
+      "source": "/scratch/09032/saini_2/sca/out/main/sega_official/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.png",
+      "png_sha256": "220448b6aae7e16510d6efc42762eb5b1e8359f73320468b46fb7fd875f1f876",
+      "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
       "config": {
         "schema_version": 1,
         "method": "sega_official",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_1269964769307095670",
-        "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
+        "prompt_id": "a4k_eval_4096_minus8343371271909676658",
+        "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
         "seed": 0,
-        "derived_seed": 8130889848028690000,
+        "derived_seed": 2871010701233903344,
         "steps": 28,
         "guidance": 4.5,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -915,21 +961,21 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "shift_terminal",
-            "stochastic_sampling",
-            "time_shift_type",
-            "use_exponential_sigmas",
-            "use_karras_sigmas",
             "invert_sigmas",
-            "use_beta_sigmas"
+            "use_beta_sigmas",
+            "use_exponential_sigmas",
+            "shift_terminal",
+            "use_karras_sigmas",
+            "stochastic_sampling",
+            "time_shift_type"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
         }
       },
       "crop_xys": [
-        1664,
-        1408,
+        1650,
+        1300,
         768
       ],
       "full": "strip_sega_official_full.jpg",
@@ -937,17 +983,17 @@
     },
     {
       "role": "strip area",
-      "source": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_1269964769307095670_0ff6dedbe4_seed0.png",
-      "png_sha256": "5ca6350bacec7cfbf4e2a5d9c6be329838f3dda24e0703866e147fcd18ec4613",
-      "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
+      "source": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.png",
+      "png_sha256": "39384e79f5de07310555ab477474aefabe0806094d010534908ee4f8352c6e70",
+      "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
       "config": {
         "schema_version": 1,
         "method": "area",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_1269964769307095670",
-        "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
+        "prompt_id": "a4k_eval_4096_minus8343371271909676658",
+        "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
         "seed": 0,
-        "derived_seed": 8130889848028690000,
+        "derived_seed": 2871010701233903344,
         "steps": 28,
         "guidance": 4.5,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -1029,21 +1075,21 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "use_karras_sigmas",
-            "invert_sigmas",
-            "time_shift_type",
-            "shift_terminal",
-            "stochastic_sampling",
             "use_beta_sigmas",
-            "use_exponential_sigmas"
+            "stochastic_sampling",
+            "use_karras_sigmas",
+            "use_exponential_sigmas",
+            "invert_sigmas",
+            "shift_terminal",
+            "time_shift_type"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
         }
       },
       "crop_xys": [
-        1664,
-        1408,
+        1650,
+        1300,
         768
       ],
       "full": "strip_area_full.jpg",
@@ -1051,17 +1097,17 @@
     },
     {
       "role": "strip ultraimage",
-      "source": "/scratch/09032/saini_2/sca/out/main/ultraimage/4096x4096/a4k_eval_4096_1269964769307095670_0ff6dedbe4_seed0.png",
-      "png_sha256": "10d8a0ed3c4edd7d199dc9029767997366ca0433e52165fcb669ade1c241178c",
-      "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
+      "source": "/scratch/09032/saini_2/sca/out/main/ultraimage/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.png",
+      "png_sha256": "24d025cab9f142f59aea35509f9689c2071325e6fb9aa85d14d99bc4ab872741",
+      "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
       "config": {
         "schema_version": 1,
         "method": "ultraimage",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_1269964769307095670",
-        "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
+        "prompt_id": "a4k_eval_4096_minus8343371271909676658",
+        "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
         "seed": 0,
-        "derived_seed": 8130889848028690000,
+        "derived_seed": 2871010701233903344,
         "steps": 60,
         "guidance": 7,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -1272,8 +1318,8 @@
         "cpu_offload": false
       },
       "crop_xys": [
-        1664,
-        1408,
+        1650,
+        1300,
         768
       ],
       "full": "strip_ultraimage_full.jpg",
@@ -1281,17 +1327,17 @@
     },
     {
       "role": "strip sca_nb",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1269964769307095670_0ff6dedbe4_seed0.png",
-      "png_sha256": "ed64324c5ba452b5b3e915971335274fdc6aa55dc6fcd5ee0344bf2db36802c0",
-      "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
+      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.png",
+      "png_sha256": "df2b88e33dfcbb20d3f481c44dd2dd14eeb7dabe49905a16c94c02f19a5179e1",
+      "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
       "config": {
         "schema_version": 1,
         "method": "sca_nb",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_1269964769307095670",
-        "prompt": "Dramatic mountain landscape under dark, cloud-covered skies, with snow-capped peaks and patches of sunlight illuminating grassy fields and rolling hills.",
+        "prompt_id": "a4k_eval_4096_minus8343371271909676658",
+        "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
         "seed": 0,
-        "derived_seed": 8130889848028690000,
+        "derived_seed": 2871010701233903344,
         "steps": 28,
         "guidance": 4.5,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -1341,12 +1387,12 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "use_exponential_sigmas",
-            "use_beta_sigmas",
+            "invert_sigmas",
             "use_karras_sigmas",
             "shift_terminal",
+            "use_beta_sigmas",
+            "use_exponential_sigmas",
             "time_shift_type",
-            "invert_sigmas",
             "stochastic_sampling"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
@@ -1354,8 +1400,8 @@
         }
       },
       "crop_xys": [
-        1664,
-        1408,
+        1650,
+        1300,
         768
       ],
       "full": "strip_sca_nb_full.jpg",
@@ -1365,20 +1411,20 @@
   "asset_sha256": {
     "pano.jpg": "ecc44b77ef5362f4dfe43f53e79bab514a7d722e6f4c44a6fb444d908f32b7d5",
     "pano_zoom.jpg": "108703f5618367b03495cdbba9d8d91ca0f6199041f282d6c9ab962670737917",
-    "portrait.jpg": "8fd46b32f2047c1fd4a139885c808e16235ab84be1fb0eb6e84da0825eb794d9",
+    "portrait.jpg": "d682180032969bca750213710b49988a29c028054c73508c90182be39f9062e8",
     "square.jpg": "cb2f6d6da5b75058ae1950fb1ab68def6aea3a7fa66846ea72abad8afb588770",
     "square_zoom.jpg": "376a882c275e612586c306d89bd946ca5008c2b75d232a753afc059d8e6e5f09",
-    "strip_area_crop.jpg": "dd0908b6d2e9b173bd62250fc82163e6120d52c6f2020ca30e456bd200840f94",
-    "strip_area_full.jpg": "1c86fbf470649d23f394a47e23f389e3f5ef02a23a8c9673fddd82c0ddaa519e",
-    "strip_dype_crop.jpg": "d4c766937013b8f6a13e0f736832097f9317ea83d7e9f718d8fc7ae58f253405",
-    "strip_dype_full.jpg": "55d10892b9640cc74b41bdf41f2f2e8aaa03b132de6b17aec4d7330d475f494a",
-    "strip_full_crop.jpg": "08ee6be2ff00411b085c1daa382c6cb5845f9ec6e50f43b9ad8daf867498b351",
-    "strip_full_full.jpg": "02769e53c78dc8dc268ec259dc5d0626b8d21da532267a80d5f0fb37abf76767",
-    "strip_sca_nb_crop.jpg": "f882aeed0d84b0351aae2a2181ed903a2bf65a82b1789b11e12b249a6686e8a1",
-    "strip_sca_nb_full.jpg": "bcd34565c328c9c7d4475f05ca39c0dc75e2a447920d25d7e63ed53a07dc923a",
-    "strip_sega_official_crop.jpg": "75c0712d469937928614964bd137f482424e88d0fc7d8f8aaf69520fffea4336",
-    "strip_sega_official_full.jpg": "ec6c206eaba5a94c462414fd10fa68a58fc5c2c52d9c3712307214d506d8978b",
-    "strip_ultraimage_crop.jpg": "3156d1e9ff814e2809464bb25d0a0d1b853fa375b2d70b78090d112ccc9aabd8",
-    "strip_ultraimage_full.jpg": "f09726b42adc21c4fbfc6b70a45f47e3afbba5d126ad8fd4ea085af16df7f299"
+    "strip_area_crop.jpg": "ca050dbb4233c19a6221c5e60f3f2384bcccdd95270334ebac0d45f38d5c7cc7",
+    "strip_area_full.jpg": "c5bc47369db1b54cdd49dfedbe2d4947fa825c766b1fbb87f4fb4ac7391ede0f",
+    "strip_dype_crop.jpg": "35e739ef9621360d17a93fc2751e540e470945f925b5a936b7724c002f6a766f",
+    "strip_dype_full.jpg": "136af1368a3aeaa16396bce61fdcb8ada44f6ffee8ef379914fa160655617181",
+    "strip_full_crop.jpg": "877a5476479874d47033ee2039216e368ac1bdf7b1b77f205d614ec711317803",
+    "strip_full_full.jpg": "86f50c3fe85ca78ba6b27195d2abd38ad93a72f4280f06f36c2e09762da0ee3b",
+    "strip_sca_nb_crop.jpg": "bcb9ee525c18f752a362334cdc729dd5141e1a37435abebf50ed5c86002439dc",
+    "strip_sca_nb_full.jpg": "d656b2a94768ebb0a364b5043ec0748b196df2a4042d396bac2037f08d63e3df",
+    "strip_sega_official_crop.jpg": "f126db79a33343e7f18ca97db85649b435e500e28691f3fade322c54d1f2078c",
+    "strip_sega_official_full.jpg": "196eee6459b41cf0f1b6f9e61119162ba81af3c5276c261adf628aca95a4797e",
+    "strip_ultraimage_crop.jpg": "4e90e2bc9f2f7631d36f19a7bc46f609ddd49b7b9f2c1166857a87008f48c9ac",
+    "strip_ultraimage_full.jpg": "ebcf01440b4a2f5f28be7c4498c5c491de792f15d831f7086bc505e226cd2990"
   }
 }

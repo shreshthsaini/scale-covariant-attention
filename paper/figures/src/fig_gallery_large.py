@@ -45,25 +45,26 @@ SPECS = {
     "gallery_4096": dict(
         k=10, parts=[("gallery_4096", 5), ("gallery_4096_p2", 5)], retired=["gallery_4096_p3"],
         captions=[
-            r"\textbf{On uncurated prompts at $4096^2$, SCA keeps the fine detail that AReA blurs or tiles.} "
-            r"The first five of 32 prompts drawn at random (seed~0); after each image, a 1:1 crop of its "
-            r"outlined window.",
+            r"\textbf{Uncurated, $4096^2$: SCA keeps texture that AReA blurs or grids, but adds extra subjects "
+            r"in rows one and four.} Prompts one to five of 32 drawn at random (seed~0); after each image, a 1:1 "
+            r"crop of its outlined window.",
             r"\textbf{Uncurated samples at $4096^2$, continued.} Prompts six to ten of the same draw; "
-            r"protocol as in Figure~\ref{fig:gallery_4096}.",
+            r"protocol as in Figure~\ref{fig:gallery_4096}. SCA adds extra spires, hikers, and astronauts in "
+            r"rows one, four, and five.",
         ]),
     "gallery_4096x2048": dict(k=2, captions=[
-        r"\textbf{At $4096\times2048$ both methods keep the layout; SCA resolves finer texture.} The first "
-        r"two of six prompts drawn at random; AReA above, SCA below, each followed by a 1:1 crop of the "
-        r"outlined window."]),
+        r"\textbf{At $4096\times2048$ both methods keep the layout; SCA avoids AReA's weave pattern but is "
+        r"smoother.} The first two of six prompts drawn at random; AReA above, SCA below, each followed by a "
+        r"1:1 crop of the outlined window."]),
     "gallery_6144x2048": dict(k=2, captions=[
-        r"\textbf{At $6144\times2048$ both methods keep the layout; SCA resolves finer texture.} The first "
-        r"two of six prompts drawn at random; AReA above, SCA below, each followed by a 1:1 crop of the "
-        r"outlined window."]),
+        r"\textbf{At $6144\times2048$ SCA resolves finer texture than AReA but adds extra climbers and "
+        r"trees.} The first two of six prompts drawn at random; AReA above, SCA below, each followed by a 1:1 "
+        r"crop of the outlined window."]),
     "gallery_flux2": dict(
         k=4, captions=[
-            r"\textbf{FLUX.2-dev at $4096^2$: SCA can still distort face geometry and fine texture (first "
-            r"row).} Four of 50 paired prompts drawn at random (seed~17); after each image, a 1:1 crop of "
-            r"its outlined window."]),
+            r"\textbf{FLUX.2-dev at $4096^2$: full attention blurs and repeats; SCA is sharp but duplicates "
+            r"subjects in three rows and distorts the portrait.} Four of 50 paired prompts drawn at random "
+            r"(seed~17); 1:1 crops follow each image."]),
 }
 
 

@@ -1,6 +1,6 @@
 """Page-1 hero (fig:teaser): pictures only, in the reference style (REFERENCE_STYLE.md).
 
-Top: a mosaic of three curated SCA outputs from the 191 evaluation prompts (seed 0, 28 steps,
+Top: a mosaic of three curated SCA outputs from the 195 evaluation prompts (seed 0, 28 steps,
 guidance 4.5) in one row: a 2048x6144 panorama and two 4096^2 squares, one size tag each. The
 panorama and the cathedral carry one native-pixel inset each, framed in the one zoom colour
 together with its source window.
@@ -10,7 +10,8 @@ last, the full image above the same native-pixel (1:1) crop. No prompt, timing, 
 footnote text: the caption carries the claim and Table 1 the numbers.
 
 Timing and metrics are still re-derived (FLUX.1-dev, 4096^2, one GH200) and stored in the
-provenance; the caption quotes one ratio, AReA over SCA in clean batch-1 medians:
+provenance; the caption quotes one ratio, AReA over SCA in clean batch-1 medians (these
+timing and metric checks still read the 191-prompt campaign summaries in results/):
   clean    = batch-1 median of three prompts after warm-up on an idle GPU
              (results/latency_curve_summary.csv): full attention, AReA, SCA.
   campaign = mean over the 191-prompt evaluation campaign on shared nodes
@@ -19,7 +20,18 @@ A mismatch with those CSVs or the source sidecars stops the build.
 
 Everything is generated: JPEG assets (deterministic PIL encoding), a TikZ source with
 vector boxes and labels, its PDF (tectonic), the snippet, and provenance with source
-hashes and crop boxes. No metric chose any image.
+hashes and crop boxes.
+
+Selection audit (2026-10-20): every SCA image was viewed whole and at native pixels. The
+panorama and the cathedral are clean and stay. The previous portrait (3657338173664010496)
+had a second, miniature pipe on the headband and a stray stem at the far mouth corner, so it
+was replaced. The previous strip prompt (1269964769307095670) was chosen for a visible layout
+difference and its baselines sat far below their own per-image medians (AReA ImageReward at its
+1st percentile, SEGA 2nd, DyPE 8th), which flatters SCA; it was replaced by a prompt on which
+every baseline scores near its median. Candidates were shortlisted on the per-image CSVs of the
+195-prompt evaluation (eval/a4k195_main), SCA's ImageReward and MUSIQ_c percentiles high, then
+viewed at full resolution; prompts shown elsewhere in the paper and the development prompts were
+excluded. provenance.json records the shortlist, the rejections and the values used.
 
 Run on compute from paper/figures/src:
   /work/09032/saini_2/vista/library/uv-envs/sca/bin/python fig_hero.py
@@ -58,25 +70,28 @@ FRAME = 0.6 / 72   # line width of the one frame colour (scaZoom), inches
 # Mosaic: three curated SCA outputs in one row of equal height (panorama 3h, squares h). A zoom
 # window is (x, y, side) in native pixels; its native-pixel inset sits inside the image at the
 # bottom-right corner, `inset` inches wide. Panorama: the town houses with flower boxes, inset on
-# the lake. Cathedral: the rose window, inset on the pews. Portrait: no inset, since any corner
-# large enough would cover the subject or the headscarf.
+# the lake. Cathedral: the rose window, inset on the pews. Portrait (a bearded man with a hat and
+# an acoustic guitar): no inset, since any corner large enough would cover the guitar or the
+# subject.
 MOSAIC = [
     (dict(method="sca_nb", res="2048x6144", pid="minus2742856837225126754",
           zoom=dict(box=(4064, 832, 384), inset=0.50)), "pano"),
     (dict(method="sca_nb", res="4096x4096", pid="minus8737279395568207187",
           zoom=dict(box=(1792, 1536, 448), inset=0.44)), "square"),
-    (dict(method="sca_nb", res="4096x4096", pid="3657338173664010496"), "portrait"),
+    (dict(method="sca_nb", res="4096x4096", pid="5849277588805396896"), "portrait"),
 ]
 SPEEDUP_SHOWN = "2.85"  # AReA over SCA, clean batch-1 medians at 4096^2; quoted in the caption
 
 # Six-method strip: one curated prompt; the crop window is shared by all methods.
-# Chosen from the 191 evaluation prompts after viewing all six methods side by side (contact
-# sheets, then candidates at full size) for a visible layout difference: full attention is a
-# flat band, DyPE and SEGA lose the peaks and the hills under speckle, AReA's lower half
-# dissolves into a streaked haze, and SCA and UltraImage keep peaks above rolling hills. The
-# window sits on the main peak, where the methods differ most in snow and rock detail.
-STRIP_PID = "1269964769307095670"
-STRIP_BOX = (1664, 1408, 768)                 # x, y, side in native pixels
+# Chosen from the 195 evaluation prompts so that SCA's output is clean at native pixels and has
+# high ImageReward and MUSIQ_c, while every baseline scores near its own per-image median
+# (ImageReward and HPSv2.1 percentiles 33 to 69), so no baseline is shown on an unusually bad
+# prompt. Sheep in snow before a stone church: full attention is a flat field, DyPE and SEGA
+# cover the scene in a fine lattice, and AReA, UltraImage and SCA keep the church and the flock.
+# The window is placed by hand on SCA's church tower, at a spot where AReA and UltraImage also
+# show church walls and windows, so the crops compare like with like (stone, glass, snow).
+STRIP_PID = "minus8343371271909676658"
+STRIP_BOX = (1650, 1300, 768)                 # x, y, side in native pixels
 STRIP = [("full", "Full attention"), ("dype", "DyPE"), ("sega_official", "SEGA"),
          ("area", "AReA"), ("ultraimage", "UltraImage"), ("sca_nb", "SCA (ours)")]
 
@@ -325,25 +340,71 @@ def main() -> None:
     (ASSETS / "provenance.json").write_text(json.dumps(dict(
         layout="Pictures only (REFERENCE_STYLE.md house rule 1): one size tag per mosaic image, "
                "method names once, one frame colour; numbers moved to the caption and Table 1.",
-        selection="Curated by visual inspection; no metric ranking. Mosaic: SCA outputs. "
-                  "Strip: chosen from the 191 evaluation prompts at 4096x4096 where all six "
-                  "methods have a complete seed-0 output, for a visible layout difference.",
+        selection="Curated. Mosaic: SCA outputs chosen by visual inspection; the portrait was "
+                  "re-chosen on 2026-10-20 from a shortlist ranked by SCA's per-image ImageReward "
+                  "and MUSIQ_c percentiles (eval/a4k195_main) and viewed at native pixels. Strip: "
+                  "chosen from the 195 evaluation prompts at 4096x4096 where all six methods have a "
+                  "complete seed-0 output, with SCA clean and high-scoring and every baseline near "
+                  "its own per-image median.",
+        audit_20261020=dict(
+            kept=dict(pano="minus2742856837225126754: clean whole and at native pixels (castle, "
+                           "bridge crowd, inset facades, island church)",
+                      cathedral="minus8737279395568207187: clean (rose window, chandeliers, pews); "
+                                "ImageReward is low for every method on this prompt"),
+            replaced=dict(
+                portrait=dict(old="3657338173664010496", new="5849277588805396896",
+                              why="old: a second, miniature pipe sits on the headband and a stray "
+                                  "stem sticks out of the far mouth corner (duplicated object)",
+                              new_values="SCA ImageReward 1.91 (p92 of SCA's 195), MUSIQ_c 68.7 "
+                                         "(p73), HPSv2.1 p90; one man, plausible hands; the "
+                                         "headstock carries extra tuners (a generic FLUX object "
+                                         "error, not a duplication)"),
+                strip=dict(old="1269964769307095670", new=STRIP_PID,
+                           why="old: chosen for a layout difference; AReA ImageReward p1 and "
+                               "HPSv2.1 p0 of its own 195, SEGA p2, DyPE p8, so the baselines "
+                               "were shown on an unusually bad prompt")),
+            portrait_rejected={"minus7393293802729135153": "third hand under the veil",
+                               "minus3108444262580777290": "two extra small men on the cliff",
+                               "7109958488611222679": "clean; used in Figure zoom4k instead"}),
         strip_selection=dict(
-            procedure="Six-method contact sheets of all 191 prompts (256 px thumbnails) were "
-                      "screened for layout failures (duplication, stripes, broken structure) in "
-                      "the baselines with a coherent SCA output; shortlisted prompts were then "
-                      "viewed at 512 px per method and SCA at full size. Prompts where SCA itself "
-                      "duplicated subjects or broke structure were rejected.",
-            shortlist=["1269964769307095670", "6978695891801939003", "minus3112502764021036396",
-                       "5467301199144503406", "minus836402013429605880"],
+            procedure="Per-image CSVs of the 195-prompt evaluation (eval/a4k195_main base and "
+                      "extra) ranked the prompts not shown elsewhere in the paper and not used in "
+                      "development by SCA's ImageReward + MUSIQ_c + HPSv2.1 percentiles, keeping "
+                      "prompts where each of DyPE, SEGA, AReA and UltraImage has ImageReward and "
+                      "HPSv2.1 at or above its own 25th percentile. Shortlisted prompts were "
+                      "viewed as six-method contact sheets, then SCA whole and at native pixels; "
+                      "prompts where SCA repeated or added subjects were rejected.",
+            shortlist=["minus8343371271909676658", "minus3268147817845827695",
+                       "4820545723762191815", "3826098298648979216", "minus2670470656524755471",
+                       "minus3413373481783671760", "minus7713773572301072741",
+                       "minus6127054465263660958"],
+            rejected={"4820545723762191815": "SCA: five moons and two extra small bears",
+                      "3826098298648979216": "SCA: three waterfalls for one",
+                      "minus2670470656524755471": "SCA: spray speckle around the umbrellas, "
+                                                  "extra small figures",
+                      "minus7713773572301072741": "SCA: a second small tree",
+                      "minus6127054465263660958": "SCA: three people for two",
+                      "minus3268147817845827695": "its prompt asks for a lone figure and SCA adds "
+                                                  "about three small pedestrians; the sheep prompt "
+                                                  "was preferred (it was briefly in Figure zoom4k "
+                                                  "and was replaced there for the same reason)",
+                      "minus3413373481783671760": "clean, but SCA's own scores are near its "
+                                                  "median (ImageReward p42)"},
             chosen=STRIP_PID,
-            reason="Full attention is a flat band; DyPE and SEGA lose the peaks and the hills "
-                   "under speckle; AReA keeps the peaks but its lower half dissolves into a "
-                   "streaked haze; UltraImage and SCA keep peaks above rolling hills. The "
-                   "alternatives either showed small repeated structures in SCA (waterfall "
-                   "bridge) or weaker AReA failures.",
-            crop="Shared native window on the main peak, where snow and rock detail differ "
-                 "most between methods (x, y, side in pixels)."),
+            values=("percentiles within each method's own 195 images, ImageReward/MUSIQ_c/"
+                    "HPSv2.1: SCA 57/79/89 (ImageReward 1.52, MUSIQ_c 70.9); DyPE 37/54/53; "
+                    "SEGA 47/90/33; AReA 36/49/51; UltraImage 41/53/69; full attention's "
+                    "ImageReward sits at its usual floor (-2.28)"),
+            reason="Sheep in snow before a stone church. Full attention is a flat field; DyPE "
+                   "and SEGA cover the scene in a fine lattice; AReA, UltraImage and SCA keep "
+                   "the church and the flock. SCA's image is clean at native pixels (stonework, "
+                   "windows, the flock); a distant town church is a separate building, not a "
+                   "copy of the main one.",
+            crop="Shared native window placed by hand on SCA's church tower (x, y, side in "
+                 "pixels); AReA and UltraImage also show church walls and windows there, so the "
+                 "crops compare stone, glass and snow detail like for like."),
+        previous_strip=dict(prompt_id="1269964769307095670", crop_xys=[1664, 1408, 768],
+                            dropped_because="baselines far below their own medians"),
         strip_prompt_id="a4k_eval_4096_" + STRIP_PID, strip_crop_xys=list(STRIP_BOX),
         timing_definitions=dict(
             clean="batch-1 median of three prompts after warm-up on an idle GPU "

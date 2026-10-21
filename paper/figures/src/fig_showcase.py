@@ -5,7 +5,9 @@ native-pixel insets, a row of four 4096^2 images with one inset each, and a row
 of two 2048x4096 images (sizes are height x width, as in the paper). Every image
 is an SCA (sca_nb) output for an evaluation prompt at seed 0 (FLUX.1-dev, 28
 steps, guidance 4.5; asserted from the sidecars). Images were chosen by visual
-inspection for variety and clean results; no metric ranked them. Prompts shown
+inspection for variety and clean results; no metric ranked them, except that the
+still-life replacement of 2026-10-20 came from a shortlist with ImageReward and MUSIQ_c in
+the top half of the 195 prompts, then a full 1:1 audit by eye. Prompts shown
 elsewhere in the paper (page-1 hero, main qualitative figure, ablation and
 failure figures) and the development prompts are excluded.
 
@@ -56,9 +58,12 @@ METHOD = "sca_nb"
 # joined by leader lines; None draws none. Positions were chosen by eye: each inset
 # covers the least informative region of its image that is large enough, and leader
 # lines and badges stay off the main subject.
-PANO = dict(res="2048x6144", pid="7543519915112968451", what="village street",
-            zooms=[dict(box=(3040, 1170, 320), at="top", side="above"),           # couple: on the sky
-                   dict(box=(5400, 190, 384), at="bottom-right", side="below")])  # shutter: on the ground floor
+# 2026-10-20: the village street 7543519915112968451 was replaced. Its restaurant signs were gibberish at
+# 1:1 and its right third (including the shutter inset) was smeared.
+PANO = dict(res="2048x6144", pid="4230887929316158402", what="Great Wall",
+            zooms=[dict(box=(1530, 1000, 384), at="top", side="above"),           # lit watchtowers: inset on the sky
+                   dict(box=(3330, 1600, 320), at="bottom-right", side="right",   # snowy parapet: inset on the
+                        margin=(0.0, 0.0))])                                      # dark slope, docked
 SQUARES = [
     # Earring: inset on the sweater and the wall. A leader from the ear to that corner
     # would cross the face and the necklace, so this inset has none; the shared yellow
@@ -69,9 +74,11 @@ SQUARES = [
     # top-left corner holds the second peak and its lit tower.
     dict(pid="minus6845347395255545991", what="illustration", badge="bottom-right",
          zoom=dict(box=(1850, 420, 384), at="top-right", side="right")),
-    # Pear skin: inset on the plain wall, docked in the corner so it clears the rear bowl.
-    dict(pid="minus947425340308551929", what="still life",
-         zoom=dict(box=(2960, 1990, 384), at="top-right", side="above", margin=(0.0, 0.0))),
+    # Vase rim and daisies: inset docked in the corner on the empty tablecloth, clear of the vase. The badge moves to the bottom
+    # left because the top-left corner holds the tip of the left branch. (Replaced the pear still life
+    # minus947425340308551929 on 2026-10-20: SCA drew a see-through third bottle and a faded second bowl.)
+    dict(pid="minus8919475713516982506", what="still life", badge="bottom-left",
+         zoom=dict(box=(1880, 1900, 384), at="bottom-right", side="right", margin=(0.0, 0.0))),
     # Face: inset on the flat ice wall right of the crevice.
     dict(pid="997293625843621481", what="ice climber",
          zoom=dict(box=(1900, 1250, 384), at="top-right", side="right")),
@@ -81,13 +88,16 @@ WIDES = [dict(res="2048x4096", pid="7414267858891695058", what="interior"),
 
 # Prompts shown elsewhere in the paper; the showcase must not repeat them.
 SHOWN_ELSEWHERE = {
-    "minus2742856837225126754", "minus8737279395568207187", "3657338173664010496",   # page-1 hero
+    "minus2742856837225126754", "minus8737279395568207187", "3657338173664010496",   # Figure 1 (teaser)
+    "1269964769307095670", "5849277588805396896", "minus8343371271909676658",          # Figure 1 (revised)
+    "minus5023570400257826529", "minus2679953061215100202",                            # progressive
     "minus1057810871814672649", "8142852677968042257", "2100482621711410240",        # qual_main
     "minus2729538226706404616", "minus6394968997939197542", "1052899493017962912",
-    "1139740195494332405", "1516768667427572324", "4525259556400020626",             # ablation grid
+    "minus2857555394095239941", "1516768667427572324", "4525259556400020626",        # ablation grid
     "7009273464006889449",
     "7396058529551312081", "1316997283360365550", "minus8648158440845565467",         # failures
     "minus702025498990232048",
+    "7109958488611222679", "2232973817337527860", "minus548913239957610051",         # Figure 6 (zoom4k)
 }
 
 
@@ -159,9 +169,11 @@ def main() -> None:
         tex.append(r"\draw[leader] (%.4f,%.4f) -- (%.4f,%.4f);" % (a[0], -a[1], b[0], -b[1]))
 
     def badge(x, y, w, h, img, at="top-left"):
-        """Size badge, height x width, top left; bottom right where the top left holds content."""
+        """Size badge, height x width, top left; bottom right or left where the top left holds content."""
         if at == "top-left":
             anchor, bx, by = "north west", x + M, y + M
+        elif at == "bottom-left":
+            anchor, bx, by = "south west", x + M, y + h - M
         else:
             assert at == "bottom-right", at
             anchor, bx, by = "south east", x + w - M, y + h - M
@@ -295,8 +307,9 @@ def main() -> None:
         r"\end{figure*}", ""]))
     (ASSETS / "provenance.json").write_text(json.dumps(dict(
         selection="Curated by visual inspection of SCA (sca_nb) seed-0 outputs for variety and clean "
-                  "results; no metric ranking. Prompts shown in other paper figures and the four "
-                  "development prompts are excluded.",
+                  "results; no metric ranking, except the 2026-10-20 still-life replacement, shortlisted "
+                  "with ImageReward and MUSIQ_c in the top half of 195 and confirmed by a 1:1 audit. "
+                  "Prompts shown in other paper figures and the four development prompts are excluded.",
         width_in=W, height_in=round(total_h, 4), dpi_full_images=DPI, pdf=str(OUT_PDF.relative_to(REPO)),
         records=records, asset_sha256={p.name: sha(p) for p in sorted(ASSETS.glob("*.jpg"))}),
         indent=2) + "\n")

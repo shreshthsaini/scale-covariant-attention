@@ -5,7 +5,7 @@ Private repository; paper under review. Start here if you are a fresh agent pick
 
 ## Read first, in this order
 
-1. `HANDOVER.md`: authoritative state. Sections 13 to 16 are the latest (gold-standard rubric scores, the
+1. `HANDOVER.md`: authoritative state. Sections 13 to 17 are the latest (gold-standard rubric scores, the
    191 to 195 prompt extension, the standard evaluation protocol, open items).
 2. `.agent/STATE.md` and `.agent/notes/latest_delivery.md` (current PDF and zip hashes, build directory).
 3. `.agent/notes/eval_protocol_survey.md`: what every related paper benchmarks on, with sources, and the

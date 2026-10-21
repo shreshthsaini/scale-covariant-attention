@@ -11,7 +11,7 @@ All 195 Aesthetic-4K prompts at 4096^2, generation seed 0, read through data195.
       summary means over the same prompts; this check replaces the 191-prompt reproduction of the archived
       intervals from per-image scores, which the 195-prompt runs do not archive under results/.
 Writes figures/baseline_deltas.pdf/.svg, figures/baseline_deltas_provenance.json (sources, checks and the
-plotted statistics, which no longer go to results/) and figures/snippets/baseline_deltas.tex, whose
+plotted statistics, also written to results/baseline_quality_deltas.csv) and figures/snippets/baseline_deltas.tex, whose
 prompt count, draw count and claims are read from the same data; the script stops if a claim fails.
 
 Run with the sca uv environment on a compute node. No generation or scoring is performed.
@@ -206,7 +206,12 @@ def main():
     if args.preview:
         fig.savefig(args.preview, dpi=150, facecolor="white")
     snippet = write_snippet(args.out.with_name(args.out.name + "_snippet.tex") if trial else SNIPPET)
-    provenance["statistics"] = records  # formerly results/baseline_quality_deltas.csv
+    provenance["statistics"] = records
+    if not trial:  # the plotted statistics as a results CSV (195 prompts), same columns as before
+        import csv
+        with open(ROOT / "results/baseline_quality_deltas.csv", "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(records[0].keys()))
+            w.writeheader(); w.writerows(records)
     provenance["outputs"] = dict(pdf=f"{args.out}.pdf", svg=f"{args.out}.svg", snippet=str(snippet))
     if not trial:
         provenance["outputs"] = {k: str(Path(v).resolve().relative_to(ROOT)) for k, v in provenance["outputs"].items()}

@@ -3,17 +3,32 @@
 Three prompts at 4096^2, seed 0, one row each: SCA's full image with the crop window outlined in red,
 then that window at native resolution (1:1) from full attention, AReA, HRDiT and SCA (ours, last).
 Above each crop is the image's MUSIQ_c (MUSIQ averaged over four fixed random 1024^2 crops per image,
-Appendix app:metrics), read from the per-image CSVs behind Table tab:main; the best value in each row
+Appendix app:metrics), read from the 195-prompt per-image CSVs behind Table tab:main (eval/a4k195_main;
+HRDiT from eval/a4k195_panel), and checked to be identical, for the same PNG, in every older per-image CSV
+that scored it (hrdit191_base, final4k_*, and their archived copies); the best value in each row
 is bold. House style: method names once, SCA (ours) last in the bold accent, 1 to 2 pt white gutters,
 no image borders except the red window boxes, sans labels of 6 to 8 pt at printed size.
 
 Selection (recorded in figures/zoom4k_provenance.json):
-* Prompts are curated: the first three, in order, of the four prompts of the previous fig:qual_main,
-  which were picked by hand for variety from the 191 evaluation prompts. The fourth, the ivy archway
-  m1057810871814672649, is left out for space. A first draft dropped the portrait instead because its
-  crops differed least; its values, read afterwards, made it the one prompt of the four where SCA does
-  not have the best MUSIQ_c, so that criterion favoured SCA and was replaced by the order rule, which
-  does not look at the images or the values.
+* Prompts are curated (audits of 2026-10-20). The previous three, the first three prompts of the older
+  fig:qual_main, were viewed whole and at native pixels. Two SCA images had artifacts: the blue-skinned
+  character (2100482621711410240) has a smaller copy of itself at a candle-lit desk in the background and
+  floating hands, and the woman in clouds (m2729538226706404616) has a second ear with an earring at the
+  back of her head. The night street (m6394968997939197542) is clean, but AReA sits far below its own
+  per-image median there (HPSv2.1 p7, ImageReward p21, MUSIQ_c p2), so the row did not meet the rule
+  below either. All three were replaced. The medieval square (m3268147817845827695) that took the middle
+  row was replaced in turn: its prompt asks for a lone figure, and SCA adds about three small
+  pedestrians, one of them inside the automatic window.
+* Rule: among the 195 evaluation prompts that are not displayed in any other figure and not used in
+  development, shortlist by SCA's ImageReward and MUSIQ_c percentiles (eval/a4k195_main), keeping
+  prompts where AReA and HRDiT each have ImageReward and HPSv2.1 at or above their own 25th percentile
+  (FAIR_LO, asserted for every row; full attention is not constrained); then view SCA whole and at native
+  pixels and reject any image with extra or repeated subjects, objects the prompt does not ask for,
+  broken anatomy, seams, lattice or speckle; prefer varied subjects. The middle row was meant to show
+  architecture or a street, but every such candidate failed the viewing or the rule (REJECTED,
+  METRIC_STAGE), so it shows an interior still life: pink lilies in a vase by a paneled door
+  (2232973817337527860). Ranking on SCA's metrics favours SCA in the printed values, so the caption says
+  the prompts are curated and Table tab:main carries the means.
 * Crop windows are automatic, never placed by hand: fig_qual_main.auto_box, the CROP_W x CROP_H window
   with the most edge energy averaged over the four methods shown, at least 256 px from every border.
 
@@ -44,21 +59,69 @@ TECTONIC = os.path.expanduser("~/.local/bin/tectonic")
 
 EVAL = Path("/scratch/09032/saini_2/sca/eval")         # per-image CSVs behind Table tab:main
 ARCHIVE = REPO / "results" / "evidence" / "eval"         # byte-identical copies archived in the repo
-PROMPTS = ["2100482621711410240", "m6394968997939197542", "m2729538226706404616"]  # fig_qual_main order
-DROPPED = "m1057810871814672649"
+PROMPTS = ["7109958488611222679", "2232973817337527860", "m548913239957610051"]  # portrait, lilies, waterfall
+REPLACED = {  # previous prompts of this figure and why each was replaced (audits of 2026-10-20)
+    "2100482621711410240": "SCA: a smaller copy of the character at a desk in the background; floating hands",
+    "m6394968997939197542": "SCA clean; AReA far below its own median (HPSv2.1 p7, ImageReward p21)",
+    "m2729538226706404616": "SCA: a second ear with an earring at the back of the head",
+    "m3268147817845827695": ("SCA: the prompt asks for a lone figure; SCA adds about three small pedestrians, "
+                             "one of them inside the automatic window")}
+FAIR_LO = 25  # AReA and HRDiT: ImageReward and HPSv2.1 percentiles at or above this on every shown prompt
+REJECTED = {  # candidates viewed whole and at native pixels and rejected, with the reason (SCA's image)
+    # first audit (shortlist for all three rows)
+    "m7393293802729135153": "a third hand under the veil",
+    "m3108444262580777290": "two extra small men on the cliff",
+    "m3118670343091498341": "five canines for three wolves",
+    "4820545723762191815": "five moons and extra bears",
+    "3943607367684487957": "repeated baseballs",
+    "m7264311869050248176": "extra owls",
+    # second audit (middle row; architecture or street preferred)
+    "7543519915112968451": ("flower alley: two pedestrians beyond the couple the prompt asks for; garbled "
+                            "restaurant signs, one inside the automatic window"),
+    "175243114551627459": ("snowy church: a second, faded spire behind the right-hand tree; also repeats the "
+                           "sheep-and-church subject of Figure 1"),
+    "m9039328566106297566": ("neon street: SCA's MUSIQ_c only at its median, and the automatic window falls on "
+                             "a neon sign of invented characters"),
+    "m7824758602266642611": "character at a desk: two smaller bespectacled copies of the character behind him",
+    "m5606822722792416000": "woman at a balcony door: an extra arm at the right door edge and one on the left door",
+    "7265494513082458083": "woman at a stone window: two extra women, one behind the door and one behind her",
+    "m5795767365495583614": "polar bear: four or five moons, extra bears and tiny people",
+    "m5332089088153794307": ("pitcher: a grey hook like a second handle beside the flowers; two citrus slices "
+                             "and several petals beyond the three lemons and one petal asked for"),
+    "m836402013429605880": ("sheep and stone church: about five houses for the two asked for; the window falls "
+                            "on bare branches; repeats the subject of Figure 1"),
+    "8612805720316271716": "woman on a balcony: a smaller copy of her, in the same gown, on a ledge at top left",
+    "m7459007800202269666": "couple with parasols: each figure has a third hand",
+    "m4460699761507361961": "five children: eight or more children; garbled text on a shirt",
+    "m5691444384207183173": "window with shutters: parallel echo outlines around the shutters, lintel and box"}
+METRIC_STAGE = {  # architecture or street prompts dropped before viewing
+    "m1057810871814672649": "ivy-covered stone archway: a baseline below FAIR_LO",
+    "m210790534622161044": "dining room: a baseline below FAIR_LO",
+    "6978695891801939003": "town with a temple: a baseline below FAIR_LO",
+    "m3112502764021036396": "arched stone bridge: a baseline below FAIR_LO",
+    "m2014927182109364975": "Paris panorama: a baseline below FAIR_LO",
+    "6066373865342273390": "white church with a golden dome: SCA's MUSIQ_c and HPSv2.1 low",
+    "5826245701465116957": "wooden cabin: SCA's MUSIQ_c low (AReA's printed value would be higher)"}
 SEED, RES = "0", "4096x4096"
 METRIC = "musiq_crop1024"                                # MUSIQ_c in the paper
 # key, header, per-image CSV holding this method's value, method name in that CSV
-METHODS = [("full", "Full attention", EVAL / "final4k_full_base" / "per_image.csv", "full"),
-           ("area", "AReA", EVAL / "hrdit191_base" / "per_image.csv", "area"),
-           ("hrdit", "HRDiT", EVAL / "hrdit191_base" / "per_image.csv", "hrdit_dev_author"),
-           ("sca", r"\textbf{SCA (ours)}", EVAL / "hrdit191_base" / "per_image.csv", "sca_nb")]
+MAIN195 = EVAL / "a4k195_main" / "base" / "per_image.csv"    # 195-prompt protocol of Table tab:main
+PANEL195 = EVAL / "a4k195_panel" / "base" / "per_image.csv"  # same protocol, HRDiT and the panel
+EXTRA = {MAIN195: EVAL / "a4k195_main" / "extra" / "extra_per_image.csv",    # ImageReward (ir), HPSv2.1
+         PANEL195: EVAL / "a4k195_panel" / "extra" / "extra_per_image.csv"}
+N_PROMPTS = 195
+METHODS = [("full", "Full attention", MAIN195, "full"),
+           ("area", "AReA", MAIN195, "area"),
+           ("hrdit", "HRDiT", PANEL195, "hrdit_dev_author"),
+           ("sca", r"\textbf{SCA (ours)}", MAIN195, "sca_nb")]
 CROSS = {  # other per-image CSVs that score the same PNG; the value must agree exactly
-    "full": [ARCHIVE / "final4k_full_base" / "per_image.csv"],
-    "area": [EVAL / "final4k_nb_base" / "per_image.csv", ARCHIVE / "final4k_nb_base" / "per_image.csv",
-             ARCHIVE / "final4k_full_base" / "per_image.csv"],
-    "sca": [EVAL / "final4k_nb_base" / "per_image.csv", ARCHIVE / "final4k_nb_base" / "per_image.csv"]}
-TABLE = {"full": 33.2, "area": 50.4, "hrdit": 53.5, "sca": 61.2}  # Table tab:main, MUSIQ_c column
+    "full": [EVAL / "final4k_full_base" / "per_image.csv", ARCHIVE / "final4k_full_base" / "per_image.csv"],
+    "area": [EVAL / "hrdit191_base" / "per_image.csv", EVAL / "final4k_nb_base" / "per_image.csv",
+             ARCHIVE / "final4k_nb_base" / "per_image.csv", ARCHIVE / "final4k_full_base" / "per_image.csv"],
+    "hrdit": [EVAL / "hrdit191_base" / "per_image.csv"],
+    "sca": [PANEL195, EVAL / "hrdit191_base" / "per_image.csv", EVAL / "final4k_nb_base" / "per_image.csv",
+            ARCHIVE / "final4k_nb_base" / "per_image.csv"]}
+TABLE = {"full": 33.1, "area": 50.4, "hrdit": 53.5, "sca": 61.2}  # Table tab:main (195 prompts), MUSIQ_c column
 
 W = 397.5                    # text width (TeX pt); the layout unit is the TeX point
 CROP_W, CROP_H = 320, 240    # native window (px), shown 1:1 at about 280 pixels per printed inch
@@ -96,8 +159,24 @@ def lookup(path: Path, method: str, pid: str) -> dict:
 
 def table_mean(path: Path, method: str) -> float:
     vals = [float(r[METRIC]) for r in rows(path) if r["method"] == method and r["seed"] == SEED and r["res"] == RES]
-    assert len(vals) == 191, (path, method, len(vals))
+    assert len(vals) == N_PROMPTS, (path, method, len(vals))
     return sum(vals) / len(vals)
+
+
+def percentiles(pid: str) -> dict:
+    """Per method: ImageReward, MUSIQ_c and HPSv2.1 of this prompt's image as a percentile of that method's own
+    195 seed-0 images (floor of 100 times the share at or below it)."""
+    out = {}
+    for key, _, path, name in METHODS:
+        base = lookup(path, name, pid)
+        assert lookup(EXTRA[path], name, pid)["path"] == base["path"], (pid, key)  # same PNG in both CSVs
+        out[key] = {}
+        for col, src in (("ir", EXTRA[path]), (METRIC, path), ("hpsv21", EXTRA[path])):
+            vals = [float(r[col]) for r in rows(src) if r["method"] == name and r["seed"] == SEED and r["res"] == RES]
+            assert len(vals) == N_PROMPTS, (src, name, col, len(vals))
+            x = float(lookup(src, name, pid)[col])
+            out[key][col] = 100 * sum(v <= x for v in vals) // len(vals)
+    return out
 
 
 def source(path: Path, method: str, pid: str) -> tuple[dict, Path, dict]:
@@ -148,7 +227,12 @@ def main() -> None:
     for key, _, path, name in METHODS:
         mean = table_mean(path, name)
         assert round(mean, 1) == TABLE[key], (key, mean, TABLE[key])
-        table_check[key] = dict(file=str(path), method=name, n=191, mean=round(mean, 4), table=TABLE[key])
+        table_check[key] = dict(file=str(path), method=name, n=N_PROMPTS, mean=round(mean, 4), table=TABLE[key])
+    pct = {pid: percentiles(pid) for pid in PROMPTS}
+    for pid, p in pct.items():  # the selection rule holds for every shown prompt
+        for key in ("area", "hrdit"):
+            assert p[key]["ir"] >= FAIR_LO and p[key]["hpsv21"] >= FAIR_LO, (pid, key, p[key])
+    assert not set(PROMPTS) & (set(REJECTED) | set(METRIC_STAGE) | set(REPLACED))
 
     for r, pid in enumerate(PROMPTS):
         top = HEAD + r * (BAND + h) + BAND
@@ -226,20 +310,31 @@ def main() -> None:
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         shutil.copy(Path(tmp) / "zoom4k.pdf", out_pdf)
 
-    dropped = {key: float(lookup(path, name, DROPPED)[METRIC]) for key, _, path, name in METHODS}
+    replaced = {pid: dict(why=why, values={key: float(lookup(path, name, pid)[METRIC]) for key, _, path, name in METHODS},
+                          percentiles=percentiles(pid))
+                for pid, why in REPLACED.items()}
     prov = dict(
         figure="zoom4k (replaces fig:qual_main)", script="paper/figures/src/fig_zoom4k.py",
         pdf=str(out_pdf), pdf_sha256=sha(out_pdf), pdf_bytes=out_pdf.stat().st_size,
-        selection=("Curated. The first three, in order, of the four prompts of the previous fig:qual_main "
-                   "(fig_qual_main.PROMPTS), which were picked by hand for variety from the 191 evaluation "
-                   "prompts (fig_qual.py MAIN, kept by the 2026-10-18 redesign). The fourth, the ivy archway "
-                   "%s, is left out for space. History: a first draft dropped the portrait "
-                   "m2729538226706404616 instead, because its crops differed least between methods, a choice "
-                   "made before any per-image value was read. Its values, read afterwards, made it the one "
-                   "prompt of the four where SCA does not have the best MUSIQ_c (HRDiT does), so that visual "
-                   "criterion favoured SCA. It was replaced by the order rule, which looks at neither the images "
-                   "nor the values. No metric ranked the prompts. All six fig_qual.py MAIN prompts are excluded "
-                   "from the uncurated galleries." % DROPPED),
+        selection=("Curated (audits of 2026-10-20). The first three prompts of the older fig:qual_main were viewed "
+                   "whole and at native pixels and all three were replaced; the medieval square that then took the "
+                   "middle row was replaced in turn (see 'replaced'). Eligible: the 195 evaluation prompts minus the "
+                   "four development prompts, the prompts of Figure 1 and every prompt displayed in another figure "
+                   "(galleries as displayed, showcase, ablation, failures, progressive). Rule: shortlist by SCA's "
+                   "ImageReward and MUSIQ_c percentiles within its own 195 images (eval/a4k195_main), keeping "
+                   "prompts where AReA and HRDiT each have ImageReward and HPSv2.1 at or above their own %dth "
+                   "percentile (asserted for every row; full attention is not constrained); view SCA whole and at "
+                   "native pixels and reject extra or repeated subjects, objects the prompt does not ask for, broken "
+                   "anatomy, seams, lattice or speckle; prefer varied subjects. The middle row was meant to show "
+                   "architecture or a street; every such candidate failed the viewing or the rule (see "
+                   "percentiles.rejected and percentiles.metric_stage), so it shows an interior still life, "
+                   "2232973817337527860 (pink lilies in a vase by a paneled door). Its native pixels are clean; "
+                   "minor background quirks: a flat beige door with a brass knob and a wall plate beside the "
+                   "paneled door, and a squared back piece on the round table top; no subject is repeated. Clean "
+                   "at overview but not used, being a second landscape: 3638740675706761149. The rule constrains "
+                   "ImageReward and HPSv2.1 only; the baselines' MUSIQ_c percentiles are recorded in "
+                   "percentiles.shown. Ranking on SCA's metrics favours SCA in the printed values. None of the "
+                   "shown prompts is displayed in another figure." % FAIR_LO),
         crop_rule=("Automatic, not hand-placed: fig_qual_main.auto_box over full, area, hrdit and sca, i.e. the "
                    "%dx%d (width x height) window with the largest mean PIL FIND_EDGES response of the 8x "
                    "box-downsampled greyscale images, at least 256 px from every border. The same window is "
@@ -250,12 +345,20 @@ def main() -> None:
                 "a per-image score, not a score of the displayed window. Printed to one decimal; the best "
                 "printed value per row is bold." % METRIC),
         sources=dict(full_attention="out/main/full", area="out/main/area",
-                     hrdit="out/baseline_expansion_20261017_{v1,rest145}/hrdit_dev_author via out/hrdit191eval",
+                     hrdit="out/baseline_expansion_20261017_{v1,rest145}/hrdit_dev_author (paths as listed in "
+                           "eval/a4k195_panel)",
                      sca="out/main/sca_nb"),
         metric_files={str(p): sha(p) for p in sorted({r["metric_file"] for r in records}
                                                      | {c for r in records for c in r["same_value_in"]})},
         table_check=table_check, examples=examples, values=records,
-        dropped=dict(prompt_id=DROPPED, values_read_after_selection=dropped),
+        replaced=replaced,
+        percentiles=dict(
+            definition=("per method, the image's ImageReward (ir), MUSIQ_c (%s) and HPSv2.1 (hpsv21) as a percentile "
+                        "of that method's own %d seed-0 images: floor of 100 times the share at or below it" % (METRIC, N_PROMPTS)),
+            files={str(p): sha(p) for p in sorted(set(EXTRA.values()) | {MAIN195, PANEL195})},
+            shown=pct,
+            rejected={pid: dict(why=why, percentiles=percentiles(pid)) for pid, why in REJECTED.items()},
+            metric_stage={pid: dict(why=why, percentiles=percentiles(pid)) for pid, why in METRIC_STAGE.items()}),
         layout_pt=dict(width=W, height=round(total, 3), row_height=round(h, 3), full_image=round(h, 3),
                        crop_width=round(cw, 3), gutters=dict(full_to_crops=G_OUT, between_crops=G_IN),
                        header_band=HEAD, value_band=BAND, box=dict(colour="#" + RED, width_pt=BOX_LW),
@@ -271,6 +374,8 @@ def main() -> None:
         print(e["prompt_id"], e["crop_xywh"])
     for r in records:
         print(r["prompt_id"], r["method"], r["printed"], "best" if r["best"] else "")
+    for pid, p in pct.items():
+        print(pid, " ".join("%s %d/%d/%d" % (k, v["ir"], v[METRIC], v["hpsv21"]) for k, v in p.items()))
 
 
 if __name__ == "__main__":

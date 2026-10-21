@@ -2,18 +2,20 @@
   "figure": "zoom4k (replaces fig:qual_main)",
   "script": "paper/figures/src/fig_zoom4k.py",
   "pdf": "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/paper/figures/zoom4k.pdf",
-  "pdf_sha256": "582aa4b6d31cef594e0b5fc42f95bfdfa67833e1f91728d4670ba99a5cda3822",
-  "pdf_bytes": 859322,
-  "selection": "Curated. The first three, in order, of the four prompts of the previous fig:qual_main (fig_qual_main.PROMPTS), which were picked by hand for variety from the 191 evaluation prompts (fig_qual.py MAIN, kept by the 2026-10-18 redesign). The fourth, the ivy archway m1057810871814672649, is left out for space. History: a first draft dropped the portrait m2729538226706404616 instead, because its crops differed least between methods, a choice made before any per-image value was read. Its values, read afterwards, made it the one prompt of the four where SCA does not have the best MUSIQ_c (HRDiT does), so that visual criterion favoured SCA. It was replaced by the order rule, which looks at neither the images nor the values. No metric ranked the prompts. All six fig_qual.py MAIN prompts are excluded from the uncurated galleries.",
+  "pdf_sha256": "8fbc5616e6c5f329a86f6110b9bc88f9f6cb9811b6bc3488bc4c3849eec8b65f",
+  "pdf_bytes": 731854,
+  "selection": "Curated (audits of 2026-10-20). The first three prompts of the older fig:qual_main were viewed whole and at native pixels and all three were replaced; the medieval square that then took the middle row was replaced in turn (see 'replaced'). Eligible: the 195 evaluation prompts minus the four development prompts, the prompts of Figure 1 and every prompt displayed in another figure (galleries as displayed, showcase, ablation, failures, progressive). Rule: shortlist by SCA's ImageReward and MUSIQ_c percentiles within its own 195 images (eval/a4k195_main), keeping prompts where AReA and HRDiT each have ImageReward and HPSv2.1 at or above their own 25th percentile (asserted for every row; full attention is not constrained); view SCA whole and at native pixels and reject extra or repeated subjects, objects the prompt does not ask for, broken anatomy, seams, lattice or speckle; prefer varied subjects. The middle row was meant to show architecture or a street; every such candidate failed the viewing or the rule (see percentiles.rejected and percentiles.metric_stage), so it shows an interior still life, 2232973817337527860 (pink lilies in a vase by a paneled door). Its native pixels are clean; minor background quirks: a flat beige door with a brass knob and a wall plate beside the paneled door, and a squared back piece on the round table top; no subject is repeated. Clean at overview but not used, being a second landscape: 3638740675706761149. The rule constrains ImageReward and HPSv2.1 only; the baselines' MUSIQ_c percentiles are recorded in percentiles.shown. Ranking on SCA's metrics favours SCA in the printed values. None of the shown prompts is displayed in another figure.",
   "crop_rule": "Automatic, not hand-placed: fig_qual_main.auto_box over full, area, hrdit and sca, i.e. the 320x240 (width x height) window with the largest mean PIL FIND_EDGES response of the 8x box-downsampled greyscale images, at least 256 px from every border. The same window is cropped from every method; layouts differ between methods, so the crops differ in content.",
   "metric": "MUSIQ_c (CSV column musiq_crop1024): pyiqa MUSIQ averaged over four fixed random 1024^2 crops per image, crop positions set by the prompt id and shared across methods (Appendix app:metrics). It is a per-image score, not a score of the displayed window. Printed to one decimal; the best printed value per row is bold.",
   "sources": {
     "full_attention": "out/main/full",
     "area": "out/main/area",
-    "hrdit": "out/baseline_expansion_20261017_{v1,rest145}/hrdit_dev_author via out/hrdit191eval",
+    "hrdit": "out/baseline_expansion_20261017_{v1,rest145}/hrdit_dev_author (paths as listed in eval/a4k195_panel)",
     "sca": "out/main/sca_nb"
   },
   "metric_files": {
+    "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv": "37946ab57be748a3587c6ef0ca683adc462ee75000288842e86ee4c89208d84b",
+    "/scratch/09032/saini_2/sca/eval/a4k195_panel/base/per_image.csv": "4332cbb3b5f7fbb3dcc5914cee752cd71e92e4f83bc9e510e98d3923ec8d154a",
     "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv": "b0c81aee38feaa4acf2f571db02c9bc19fa8573c6286e777ee14222775a13c3a",
     "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv": "f6e9d86479e73d9c24444af7f08b9ca4fff35780c39ecc26bc66d682197ba8e4",
     "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv": "fe0073e26d00893f67468acf1d14174e72589bfa7a13865d4339a1c351a426b5",
@@ -22,387 +24,1253 @@
   },
   "table_check": {
     "full": {
-      "file": "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv",
+      "file": "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv",
       "method": "full",
-      "n": 191,
-      "mean": 33.2463,
-      "table": 33.2
+      "n": 195,
+      "mean": 33.1152,
+      "table": 33.1
     },
     "area": {
-      "file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "file": "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv",
       "method": "area",
-      "n": 191,
-      "mean": 50.3698,
+      "n": 195,
+      "mean": 50.4248,
       "table": 50.4
     },
     "hrdit": {
-      "file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "file": "/scratch/09032/saini_2/sca/eval/a4k195_panel/base/per_image.csv",
       "method": "hrdit_dev_author",
-      "n": 191,
-      "mean": 53.5416,
+      "n": 195,
+      "mean": 53.5439,
       "table": 53.5
     },
     "sca": {
-      "file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "file": "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv",
       "method": "sca_nb",
-      "n": 191,
-      "mean": 61.2323,
+      "n": 195,
+      "mean": 61.2428,
       "table": 61.2
     }
   },
   "examples": [
     {
-      "prompt_id": "2100482621711410240",
-      "prompt": "A blue-skinned character with pointed ears and glasses sits at a wooden desk cluttered with maps and navigational tools, including a compass and an astrolabe, illuminated by the glow of a candle. The character wears a formal white shirt and a brown vest, exuding an air of intelligence and focus.",
-      "derived_seed": 3016361728513854417,
+      "prompt_id": "7109958488611222679",
+      "prompt": "Blonde model with tousled hair wearing a form-fitting olive green dress, looking intently at the camera with a soft expression.",
+      "derived_seed": 8021251388353940390,
       "crop_xywh": [
-        976,
-        3344,
+        2488,
+        1696,
         320,
         240
       ],
-      "full_image": "2100482621711410240_sca_full.jpg",
+      "full_image": "7109958488611222679_sca_full.jpg",
       "full_image_px": 683
     },
     {
-      "prompt_id": "m6394968997939197542",
-      "prompt": "Dimly lit street scene featuring yellow taxis and cars reflecting on wet pavement, illuminated by neon signs and streetlights in a bustling urban environment.",
-      "derived_seed": 1650479750587155736,
+      "prompt_id": "2232973817337527860",
+      "prompt": "A bouquet of pink lilies is arranged in a clear vase filled with water, placed on a white side table next to a partially opened curtain and a closed door with vertical paneling, illuminated by soft light.",
+      "derived_seed": 8148206441761510706,
       "crop_xywh": [
-        1472,
-        1912,
+        1952,
+        1584,
         320,
         240
       ],
-      "full_image": "m6394968997939197542_sca_full.jpg",
+      "full_image": "2232973817337527860_sca_full.jpg",
       "full_image_px": 683
     },
     {
-      "prompt_id": "m2729538226706404616",
-      "prompt": "A woman\u2019s profile emerges among swirling clouds, with a deep gaze and delicate earrings, set against a gradient of blues and hints of gold.",
-      "derived_seed": 5722109350587978787,
+      "prompt_id": "m548913239957610051",
+      "prompt": "A cascading waterfall flows over rocky cliffs into a tranquil river, framed by a steep, conical mountain under a colorful sky at sunset.",
+      "derived_seed": 5514841524660879384,
       "crop_xywh": [
-        1520,
-        416,
+        776,
+        1456,
         320,
         240
       ],
-      "full_image": "m2729538226706404616_sca_full.jpg",
+      "full_image": "m548913239957610051_sca_full.jpg",
       "full_image_px": 683
     }
   ],
   "values": [
     {
-      "prompt_id": "2100482621711410240",
-      "csv_prompt_id": "a4k_eval_4096_2100482621711410240",
+      "prompt_id": "7109958488611222679",
+      "csv_prompt_id": "a4k_eval_4096_7109958488611222679",
       "seed": 0,
       "method": "full",
       "csv_method": "full",
-      "metric_file": "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv",
       "column": "musiq_crop1024",
-      "value": 23.58754801750183,
-      "printed": "23.6",
+      "value": 37.00635814666748,
+      "printed": "37.0",
       "best": false,
       "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
       ],
-      "image": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_2100482621711410240_19484eec9d_seed0.png",
-      "image_sha256": "dc54d7e1f8978805aa904889e2627bcb360f1bffcaedba5235d9a29127dcb04b",
-      "derived_seed": 3016361728513854417,
-      "crop": "2100482621711410240_full_crop.jpg",
+      "image": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_7109958488611222679_ef2595ace4_seed0.png",
+      "image_sha256": "41c09a4743746c880179516e598f2f69ae773de333a7ce901168a04b90e83940",
+      "derived_seed": 8021251388353940390,
+      "crop": "7109958488611222679_full_crop.jpg",
       "crop_xywh": [
-        976,
-        3344,
+        2488,
+        1696,
         320,
         240
       ]
     },
     {
-      "prompt_id": "2100482621711410240",
-      "csv_prompt_id": "a4k_eval_4096_2100482621711410240",
+      "prompt_id": "7109958488611222679",
+      "csv_prompt_id": "a4k_eval_4096_7109958488611222679",
       "seed": 0,
       "method": "area",
       "csv_method": "area",
-      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv",
       "column": "musiq_crop1024",
-      "value": 50.43320083618164,
-      "printed": "50.4",
+      "value": 55.687849044799805,
+      "printed": "55.7",
       "best": false,
       "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
         "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
       ],
-      "image": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_2100482621711410240_19484eec9d_seed0.png",
-      "image_sha256": "838bfa140e6f85bc84d9cb8bd4a4df96ed3681f05177f417e4bc5d1f83b5b0c6",
-      "derived_seed": 3016361728513854417,
-      "crop": "2100482621711410240_area_crop.jpg",
+      "image": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_7109958488611222679_ef2595ace4_seed0.png",
+      "image_sha256": "e190c1f4bf319129e0a03ed4fd1d5c45dc9640d1cee74053bba678e26973d055",
+      "derived_seed": 8021251388353940390,
+      "crop": "7109958488611222679_area_crop.jpg",
       "crop_xywh": [
-        976,
-        3344,
+        2488,
+        1696,
         320,
         240
       ]
     },
     {
-      "prompt_id": "2100482621711410240",
-      "csv_prompt_id": "a4k_eval_4096_2100482621711410240",
+      "prompt_id": "7109958488611222679",
+      "csv_prompt_id": "a4k_eval_4096_7109958488611222679",
       "seed": 0,
       "method": "hrdit",
       "csv_method": "hrdit_dev_author",
-      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/a4k195_panel/base/per_image.csv",
       "column": "musiq_crop1024",
-      "value": 56.396084785461426,
-      "printed": "56.4",
+      "value": 55.25435733795166,
+      "printed": "55.3",
       "best": false,
-      "same_value_in": [],
-      "image": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_2100482621711410240_19484eec9d_seed0.png",
-      "image_sha256": "8c321df4de48adc9ede02239648082b4b35c14ce788ca556d40abd0170eeb2ae",
-      "derived_seed": 3016361728513854417,
-      "crop": "2100482621711410240_hrdit_crop.jpg",
+      "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv"
+      ],
+      "image": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_7109958488611222679_ef2595ace4_seed0.png",
+      "image_sha256": "8358defe70616c791a42e04cd470422141229078d0f074d745da83597566b92b",
+      "derived_seed": 8021251388353940390,
+      "crop": "7109958488611222679_hrdit_crop.jpg",
       "crop_xywh": [
-        976,
-        3344,
+        2488,
+        1696,
         320,
         240
       ]
     },
     {
-      "prompt_id": "2100482621711410240",
-      "csv_prompt_id": "a4k_eval_4096_2100482621711410240",
+      "prompt_id": "7109958488611222679",
+      "csv_prompt_id": "a4k_eval_4096_7109958488611222679",
       "seed": 0,
       "method": "sca",
       "csv_method": "sca_nb",
-      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv",
       "column": "musiq_crop1024",
-      "value": 61.2490177154541,
-      "printed": "61.2",
+      "value": 59.36696147918701,
+      "printed": "59.4",
       "best": true,
       "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/a4k195_panel/base/per_image.csv",
+        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
         "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv"
       ],
-      "image": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_2100482621711410240_19484eec9d_seed0.png",
-      "image_sha256": "f3ec9645879a5b910d740a3149c2af3791cb4b70e944e6883d7b64b65c318b3a",
-      "derived_seed": 3016361728513854417,
-      "crop": "2100482621711410240_sca_crop.jpg",
+      "image": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_7109958488611222679_ef2595ace4_seed0.png",
+      "image_sha256": "e09e6908fabd96c9e9ad192834ee0d0be3ca5a95ee7708506e056614cd14abc8",
+      "derived_seed": 8021251388353940390,
+      "crop": "7109958488611222679_sca_crop.jpg",
       "crop_xywh": [
-        976,
-        3344,
+        2488,
+        1696,
         320,
         240
       ]
     },
     {
-      "prompt_id": "m6394968997939197542",
-      "csv_prompt_id": "a4k_eval_4096_minus6394968997939197542",
+      "prompt_id": "2232973817337527860",
+      "csv_prompt_id": "a4k_eval_4096_2232973817337527860",
       "seed": 0,
       "method": "full",
       "csv_method": "full",
-      "metric_file": "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv",
       "column": "musiq_crop1024",
-      "value": 23.036842823028564,
-      "printed": "23.0",
+      "value": 37.315486907958984,
+      "printed": "37.3",
       "best": false,
       "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
       ],
-      "image": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_minus6394968997939197542_cc7fc38e4a_seed0.png",
-      "image_sha256": "bfa6dd057350481171fc0e3a97942c9e2fdf14b1d84dcf0a18dd198982f8cd18",
-      "derived_seed": 1650479750587155736,
-      "crop": "m6394968997939197542_full_crop.jpg",
+      "image": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_2232973817337527860_11e00393bb_seed0.png",
+      "image_sha256": "76db5ea7f134941310bb7931cdd52f07c5008bc4244009171bb74a6f80e17b69",
+      "derived_seed": 8148206441761510706,
+      "crop": "2232973817337527860_full_crop.jpg",
       "crop_xywh": [
-        1472,
-        1912,
+        1952,
+        1584,
         320,
         240
       ]
     },
     {
-      "prompt_id": "m6394968997939197542",
-      "csv_prompt_id": "a4k_eval_4096_minus6394968997939197542",
+      "prompt_id": "2232973817337527860",
+      "csv_prompt_id": "a4k_eval_4096_2232973817337527860",
       "seed": 0,
       "method": "area",
       "csv_method": "area",
-      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv",
       "column": "musiq_crop1024",
-      "value": 27.45732593536377,
-      "printed": "27.5",
+      "value": 46.44810390472412,
+      "printed": "46.4",
       "best": false,
       "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
         "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
       ],
-      "image": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_minus6394968997939197542_cc7fc38e4a_seed0.png",
-      "image_sha256": "2ba7e36da7172c6982c2438b530b8e3111d7dfc1dc4c69d67978534aff605ab4",
-      "derived_seed": 1650479750587155736,
-      "crop": "m6394968997939197542_area_crop.jpg",
+      "image": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_2232973817337527860_11e00393bb_seed0.png",
+      "image_sha256": "04618e91c48dade808f20e936dc53622e5fe9090739b9dba327a0b6e82be6575",
+      "derived_seed": 8148206441761510706,
+      "crop": "2232973817337527860_area_crop.jpg",
       "crop_xywh": [
-        1472,
-        1912,
+        1952,
+        1584,
         320,
         240
       ]
     },
     {
-      "prompt_id": "m6394968997939197542",
-      "csv_prompt_id": "a4k_eval_4096_minus6394968997939197542",
+      "prompt_id": "2232973817337527860",
+      "csv_prompt_id": "a4k_eval_4096_2232973817337527860",
       "seed": 0,
       "method": "hrdit",
       "csv_method": "hrdit_dev_author",
-      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/a4k195_panel/base/per_image.csv",
       "column": "musiq_crop1024",
-      "value": 28.73052167892456,
-      "printed": "28.7",
+      "value": 43.45520496368408,
+      "printed": "43.5",
       "best": false,
-      "same_value_in": [],
-      "image": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_minus6394968997939197542_cc7fc38e4a_seed0.png",
-      "image_sha256": "ecee4a905e19eb0baae3c1870658910b49727383d0ed4f805921d3ed73907d96",
-      "derived_seed": 1650479750587155736,
-      "crop": "m6394968997939197542_hrdit_crop.jpg",
+      "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv"
+      ],
+      "image": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_2232973817337527860_11e00393bb_seed0.png",
+      "image_sha256": "235c50aee594a378e82583758d10e4ebf139063a545d733f3a37410890c30b60",
+      "derived_seed": 8148206441761510706,
+      "crop": "2232973817337527860_hrdit_crop.jpg",
       "crop_xywh": [
-        1472,
-        1912,
+        1952,
+        1584,
         320,
         240
       ]
     },
     {
-      "prompt_id": "m6394968997939197542",
-      "csv_prompt_id": "a4k_eval_4096_minus6394968997939197542",
+      "prompt_id": "2232973817337527860",
+      "csv_prompt_id": "a4k_eval_4096_2232973817337527860",
       "seed": 0,
       "method": "sca",
       "csv_method": "sca_nb",
-      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv",
       "column": "musiq_crop1024",
-      "value": 36.615169525146484,
-      "printed": "36.6",
+      "value": 56.66856002807617,
+      "printed": "56.7",
       "best": true,
       "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/a4k195_panel/base/per_image.csv",
+        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
         "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv"
       ],
-      "image": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus6394968997939197542_cc7fc38e4a_seed0.png",
-      "image_sha256": "a5482089d5607bedcd4787609c318d570ab71d49ed72e10969d050a279508580",
-      "derived_seed": 1650479750587155736,
-      "crop": "m6394968997939197542_sca_crop.jpg",
+      "image": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_2232973817337527860_11e00393bb_seed0.png",
+      "image_sha256": "9523b7e58dc3006d3954a42bd091b788d6ec7f94aa14c391b8b372d79c912702",
+      "derived_seed": 8148206441761510706,
+      "crop": "2232973817337527860_sca_crop.jpg",
       "crop_xywh": [
-        1472,
-        1912,
+        1952,
+        1584,
         320,
         240
       ]
     },
     {
-      "prompt_id": "m2729538226706404616",
-      "csv_prompt_id": "a4k_eval_4096_minus2729538226706404616",
+      "prompt_id": "m548913239957610051",
+      "csv_prompt_id": "a4k_eval_4096_minus548913239957610051",
       "seed": 0,
       "method": "full",
       "csv_method": "full",
-      "metric_file": "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv",
       "column": "musiq_crop1024",
-      "value": 26.52114486694336,
-      "printed": "26.5",
+      "value": 31.755733489990234,
+      "printed": "31.8",
       "best": false,
       "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
       ],
-      "image": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png",
-      "image_sha256": "6c50ea494b71d240562740df08adfca1010018f072ba3087f59739bb77db8b2b",
-      "derived_seed": 5722109350587978787,
-      "crop": "m2729538226706404616_full_crop.jpg",
+      "image": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_minus548913239957610051_43a9efd90a_seed0.png",
+      "image_sha256": "74b5184df772b4d35163d50b0ec733fce5a0f14f9718995856d0b7083831c590",
+      "derived_seed": 5514841524660879384,
+      "crop": "m548913239957610051_full_crop.jpg",
       "crop_xywh": [
-        1520,
-        416,
+        776,
+        1456,
         320,
         240
       ]
     },
     {
-      "prompt_id": "m2729538226706404616",
-      "csv_prompt_id": "a4k_eval_4096_minus2729538226706404616",
+      "prompt_id": "m548913239957610051",
+      "csv_prompt_id": "a4k_eval_4096_minus548913239957610051",
       "seed": 0,
       "method": "area",
       "csv_method": "area",
-      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv",
       "column": "musiq_crop1024",
-      "value": 47.5830774307251,
-      "printed": "47.6",
+      "value": 45.167304039001465,
+      "printed": "45.2",
       "best": false,
       "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
         "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
       ],
-      "image": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png",
-      "image_sha256": "f10c94f6d167fd9ff04049e1e36a9df4ecd8f44bfbc48dc81ee3bb09196a3ad5",
-      "derived_seed": 5722109350587978787,
-      "crop": "m2729538226706404616_area_crop.jpg",
+      "image": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_minus548913239957610051_43a9efd90a_seed0.png",
+      "image_sha256": "cce83d011f02795108204128f7b443ae9b3cfb1846bd4c7fcbb88bf80407d9b2",
+      "derived_seed": 5514841524660879384,
+      "crop": "m548913239957610051_area_crop.jpg",
       "crop_xywh": [
-        1520,
-        416,
+        776,
+        1456,
         320,
         240
       ]
     },
     {
-      "prompt_id": "m2729538226706404616",
-      "csv_prompt_id": "a4k_eval_4096_minus2729538226706404616",
+      "prompt_id": "m548913239957610051",
+      "csv_prompt_id": "a4k_eval_4096_minus548913239957610051",
       "seed": 0,
       "method": "hrdit",
       "csv_method": "hrdit_dev_author",
-      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/a4k195_panel/base/per_image.csv",
       "column": "musiq_crop1024",
-      "value": 58.71836185455322,
-      "printed": "58.7",
-      "best": true,
-      "same_value_in": [],
-      "image": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_v1/hrdit_dev_author/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png",
-      "image_sha256": "b9dd4a29c200f88827d557ae10d927fc5314b855083ce6ef26cfb29a17ec63ea",
-      "derived_seed": 5722109350587978787,
-      "crop": "m2729538226706404616_hrdit_crop.jpg",
+      "value": 48.554941177368164,
+      "printed": "48.6",
+      "best": false,
+      "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv"
+      ],
+      "image": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_minus548913239957610051_43a9efd90a_seed0.png",
+      "image_sha256": "d7aa9ebbf65db4356a516cecd2f7a0297315cb46ded3fb740af2c6733ef771eb",
+      "derived_seed": 5514841524660879384,
+      "crop": "m548913239957610051_hrdit_crop.jpg",
       "crop_xywh": [
-        1520,
-        416,
+        776,
+        1456,
         320,
         240
       ]
     },
     {
-      "prompt_id": "m2729538226706404616",
-      "csv_prompt_id": "a4k_eval_4096_minus2729538226706404616",
+      "prompt_id": "m548913239957610051",
+      "csv_prompt_id": "a4k_eval_4096_minus548913239957610051",
       "seed": 0,
       "method": "sca",
       "csv_method": "sca_nb",
-      "metric_file": "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv",
       "column": "musiq_crop1024",
-      "value": 49.8045768737793,
-      "printed": "49.8",
-      "best": false,
+      "value": 65.94751071929932,
+      "printed": "65.9",
+      "best": true,
       "same_value_in": [
+        "/scratch/09032/saini_2/sca/eval/a4k195_panel/base/per_image.csv",
+        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
         "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv"
       ],
-      "image": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png",
-      "image_sha256": "5297804f8854f14c86e5b29d2825380a19ac6651b70bf65bf1c0e7dbed99eefe",
-      "derived_seed": 5722109350587978787,
-      "crop": "m2729538226706404616_sca_crop.jpg",
+      "image": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus548913239957610051_43a9efd90a_seed0.png",
+      "image_sha256": "dd657cb6f58c13eb24241e6c91ee4f0e4cd1d9417531c94b5346b267691bb920",
+      "derived_seed": 5514841524660879384,
+      "crop": "m548913239957610051_sca_crop.jpg",
       "crop_xywh": [
-        1520,
-        416,
+        776,
+        1456,
         320,
         240
       ]
     }
   ],
-  "dropped": {
-    "prompt_id": "m1057810871814672649",
-    "values_read_after_selection": {
-      "full": 26.79091739654541,
-      "area": 57.07276916503906,
-      "hrdit": 60.0186710357666,
-      "sca": 68.6629467010498
+  "replaced": {
+    "2100482621711410240": {
+      "why": "SCA: a smaller copy of the character at a desk in the background; floating hands",
+      "values": {
+        "full": 23.58754801750183,
+        "area": 50.43320083618164,
+        "hrdit": 56.396084785461426,
+        "sca": 61.2490177154541
+      },
+      "percentiles": {
+        "full": {
+          "ir": 87,
+          "musiq_crop1024": 12,
+          "hpsv21": 87
+        },
+        "area": {
+          "ir": 24,
+          "musiq_crop1024": 48,
+          "hpsv21": 52
+        },
+        "hrdit": {
+          "ir": 55,
+          "musiq_crop1024": 61,
+          "hpsv21": 85
+        },
+        "sca": {
+          "ir": 73,
+          "musiq_crop1024": 47,
+          "hpsv21": 56
+        }
+      }
+    },
+    "m6394968997939197542": {
+      "why": "SCA clean; AReA far below its own median (HPSv2.1 p7, ImageReward p21)",
+      "values": {
+        "full": 23.036842823028564,
+        "area": 27.45732593536377,
+        "hrdit": 28.73052167892456,
+        "sca": 36.615169525146484
+      },
+      "percentiles": {
+        "full": {
+          "ir": 36,
+          "musiq_crop1024": 9,
+          "hpsv21": 12
+        },
+        "area": {
+          "ir": 21,
+          "musiq_crop1024": 2,
+          "hpsv21": 7
+        },
+        "hrdit": {
+          "ir": 28,
+          "musiq_crop1024": 2,
+          "hpsv21": 34
+        },
+        "sca": {
+          "ir": 44,
+          "musiq_crop1024": 2,
+          "hpsv21": 35
+        }
+      }
+    },
+    "m2729538226706404616": {
+      "why": "SCA: a second ear with an earring at the back of the head",
+      "values": {
+        "full": 26.52114486694336,
+        "area": 47.5830774307251,
+        "hrdit": 58.71836185455322,
+        "sca": 49.8045768737793
+      },
+      "percentiles": {
+        "full": {
+          "ir": 34,
+          "musiq_crop1024": 23,
+          "hpsv21": 32
+        },
+        "area": {
+          "ir": 19,
+          "musiq_crop1024": 42,
+          "hpsv21": 81
+        },
+        "hrdit": {
+          "ir": 38,
+          "musiq_crop1024": 67,
+          "hpsv21": 90
+        },
+        "sca": {
+          "ir": 55,
+          "musiq_crop1024": 13,
+          "hpsv21": 93
+        }
+      }
+    },
+    "m3268147817845827695": {
+      "why": "SCA: the prompt asks for a lone figure; SCA adds about three small pedestrians, one of them inside the automatic window",
+      "values": {
+        "full": 38.607028007507324,
+        "area": 55.2904748916626,
+        "hrdit": 55.137887954711914,
+        "sca": 73.15295219421387
+      },
+      "percentiles": {
+        "full": {
+          "ir": 16,
+          "musiq_crop1024": 75,
+          "hpsv21": 18
+        },
+        "area": {
+          "ir": 80,
+          "musiq_crop1024": 63,
+          "hpsv21": 58
+        },
+        "hrdit": {
+          "ir": 60,
+          "musiq_crop1024": 53,
+          "hpsv21": 59
+        },
+        "sca": {
+          "ir": 60,
+          "musiq_crop1024": 86,
+          "hpsv21": 50
+        }
+      }
+    }
+  },
+  "percentiles": {
+    "definition": "per method, the image's ImageReward (ir), MUSIQ_c (musiq_crop1024) and HPSv2.1 (hpsv21) as a percentile of that method's own 195 seed-0 images: floor of 100 times the share at or below it",
+    "files": {
+      "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv": "37946ab57be748a3587c6ef0ca683adc462ee75000288842e86ee4c89208d84b",
+      "/scratch/09032/saini_2/sca/eval/a4k195_main/extra/extra_per_image.csv": "983557589cab4b11babaee12c37b83572f01f4a9a1dcc33f69e8790def7a25d7",
+      "/scratch/09032/saini_2/sca/eval/a4k195_panel/base/per_image.csv": "4332cbb3b5f7fbb3dcc5914cee752cd71e92e4f83bc9e510e98d3923ec8d154a",
+      "/scratch/09032/saini_2/sca/eval/a4k195_panel/extra/extra_per_image.csv": "5cca627e52e0cdac512f67fe0426390175eff9edeb17a5a49d5ca077d89cb02e"
+    },
+    "shown": {
+      "7109958488611222679": {
+        "full": {
+          "ir": 90,
+          "musiq_crop1024": 69,
+          "hpsv21": 81
+        },
+        "area": {
+          "ir": 90,
+          "musiq_crop1024": 64,
+          "hpsv21": 63
+        },
+        "hrdit": {
+          "ir": 76,
+          "musiq_crop1024": 53,
+          "hpsv21": 60
+        },
+        "sca": {
+          "ir": 86,
+          "musiq_crop1024": 41,
+          "hpsv21": 55
+        }
+      },
+      "2232973817337527860": {
+        "full": {
+          "ir": 89,
+          "musiq_crop1024": 71,
+          "hpsv21": 22
+        },
+        "area": {
+          "ir": 83,
+          "musiq_crop1024": 38,
+          "hpsv21": 95
+        },
+        "hrdit": {
+          "ir": 88,
+          "musiq_crop1024": 15,
+          "hpsv21": 25
+        },
+        "sca": {
+          "ir": 87,
+          "musiq_crop1024": 31,
+          "hpsv21": 86
+        }
+      },
+      "m548913239957610051": {
+        "full": {
+          "ir": 60,
+          "musiq_crop1024": 48,
+          "hpsv21": 62
+        },
+        "area": {
+          "ir": 71,
+          "musiq_crop1024": 34,
+          "hpsv21": 38
+        },
+        "hrdit": {
+          "ir": 67,
+          "musiq_crop1024": 26,
+          "hpsv21": 32
+        },
+        "sca": {
+          "ir": 64,
+          "musiq_crop1024": 62,
+          "hpsv21": 33
+        }
+      }
+    },
+    "rejected": {
+      "m7393293802729135153": {
+        "why": "a third hand under the veil",
+        "percentiles": {
+          "full": {
+            "ir": 77,
+            "musiq_crop1024": 80,
+            "hpsv21": 46
+          },
+          "area": {
+            "ir": 97,
+            "musiq_crop1024": 83,
+            "hpsv21": 86
+          },
+          "hrdit": {
+            "ir": 61,
+            "musiq_crop1024": 87,
+            "hpsv21": 72
+          },
+          "sca": {
+            "ir": 92,
+            "musiq_crop1024": 91,
+            "hpsv21": 90
+          }
+        }
+      },
+      "m3108444262580777290": {
+        "why": "two extra small men on the cliff",
+        "percentiles": {
+          "full": {
+            "ir": 70,
+            "musiq_crop1024": 39,
+            "hpsv21": 64
+          },
+          "area": {
+            "ir": 96,
+            "musiq_crop1024": 75,
+            "hpsv21": 97
+          },
+          "hrdit": {
+            "ir": 97,
+            "musiq_crop1024": 81,
+            "hpsv21": 96
+          },
+          "sca": {
+            "ir": 96,
+            "musiq_crop1024": 64,
+            "hpsv21": 95
+          }
+        }
+      },
+      "m3118670343091498341": {
+        "why": "five canines for three wolves",
+        "percentiles": {
+          "full": {
+            "ir": 77,
+            "musiq_crop1024": 21,
+            "hpsv21": 30
+          },
+          "area": {
+            "ir": 54,
+            "musiq_crop1024": 66,
+            "hpsv21": 80
+          },
+          "hrdit": {
+            "ir": 41,
+            "musiq_crop1024": 84,
+            "hpsv21": 88
+          },
+          "sca": {
+            "ir": 81,
+            "musiq_crop1024": 75,
+            "hpsv21": 96
+          }
+        }
+      },
+      "4820545723762191815": {
+        "why": "five moons and extra bears",
+        "percentiles": {
+          "full": {
+            "ir": 18,
+            "musiq_crop1024": 31,
+            "hpsv21": 86
+          },
+          "area": {
+            "ir": 76,
+            "musiq_crop1024": 91,
+            "hpsv21": 58
+          },
+          "hrdit": {
+            "ir": 88,
+            "musiq_crop1024": 68,
+            "hpsv21": 64
+          },
+          "sca": {
+            "ir": 68,
+            "musiq_crop1024": 77,
+            "hpsv21": 71
+          }
+        }
+      },
+      "3943607367684487957": {
+        "why": "repeated baseballs",
+        "percentiles": {
+          "full": {
+            "ir": 63,
+            "musiq_crop1024": 59,
+            "hpsv21": 37
+          },
+          "area": {
+            "ir": 63,
+            "musiq_crop1024": 82,
+            "hpsv21": 69
+          },
+          "hrdit": {
+            "ir": 85,
+            "musiq_crop1024": 88,
+            "hpsv21": 69
+          },
+          "sca": {
+            "ir": 96,
+            "musiq_crop1024": 59,
+            "hpsv21": 67
+          }
+        }
+      },
+      "m7264311869050248176": {
+        "why": "extra owls",
+        "percentiles": {
+          "full": {
+            "ir": 57,
+            "musiq_crop1024": 29,
+            "hpsv21": 23
+          },
+          "area": {
+            "ir": 86,
+            "musiq_crop1024": 92,
+            "hpsv21": 100
+          },
+          "hrdit": {
+            "ir": 84,
+            "musiq_crop1024": 62,
+            "hpsv21": 95
+          },
+          "sca": {
+            "ir": 84,
+            "musiq_crop1024": 51,
+            "hpsv21": 100
+          }
+        }
+      },
+      "7543519915112968451": {
+        "why": "flower alley: two pedestrians beyond the couple the prompt asks for; garbled restaurant signs, one inside the automatic window",
+        "percentiles": {
+          "full": {
+            "ir": 73,
+            "musiq_crop1024": 87,
+            "hpsv21": 0
+          },
+          "area": {
+            "ir": 87,
+            "musiq_crop1024": 96,
+            "hpsv21": 57
+          },
+          "hrdit": {
+            "ir": 46,
+            "musiq_crop1024": 63,
+            "hpsv21": 49
+          },
+          "sca": {
+            "ir": 64,
+            "musiq_crop1024": 96,
+            "hpsv21": 82
+          }
+        }
+      },
+      "175243114551627459": {
+        "why": "snowy church: a second, faded spire behind the right-hand tree; also repeats the sheep-and-church subject of Figure 1",
+        "percentiles": {
+          "full": {
+            "ir": 65,
+            "musiq_crop1024": 98,
+            "hpsv21": 2
+          },
+          "area": {
+            "ir": 56,
+            "musiq_crop1024": 28,
+            "hpsv21": 43
+          },
+          "hrdit": {
+            "ir": 80,
+            "musiq_crop1024": 97,
+            "hpsv21": 84
+          },
+          "sca": {
+            "ir": 75,
+            "musiq_crop1024": 98,
+            "hpsv21": 92
+          }
+        }
+      },
+      "m9039328566106297566": {
+        "why": "neon street: SCA's MUSIQ_c only at its median, and the automatic window falls on a neon sign of invented characters",
+        "percentiles": {
+          "full": {
+            "ir": 49,
+            "musiq_crop1024": 22,
+            "hpsv21": 19
+          },
+          "area": {
+            "ir": 93,
+            "musiq_crop1024": 48,
+            "hpsv21": 74
+          },
+          "hrdit": {
+            "ir": 53,
+            "musiq_crop1024": 83,
+            "hpsv21": 60
+          },
+          "sca": {
+            "ir": 91,
+            "musiq_crop1024": 47,
+            "hpsv21": 68
+          }
+        }
+      },
+      "m7824758602266642611": {
+        "why": "character at a desk: two smaller bespectacled copies of the character behind him",
+        "percentiles": {
+          "full": {
+            "ir": 45,
+            "musiq_crop1024": 44,
+            "hpsv21": 4
+          },
+          "area": {
+            "ir": 61,
+            "musiq_crop1024": 51,
+            "hpsv21": 64
+          },
+          "hrdit": {
+            "ir": 71,
+            "musiq_crop1024": 27,
+            "hpsv21": 71
+          },
+          "sca": {
+            "ir": 87,
+            "musiq_crop1024": 86,
+            "hpsv21": 88
+          }
+        }
+      },
+      "m5606822722792416000": {
+        "why": "woman at a balcony door: an extra arm at the right door edge and one on the left door",
+        "percentiles": {
+          "full": {
+            "ir": 74,
+            "musiq_crop1024": 16,
+            "hpsv21": 50
+          },
+          "area": {
+            "ir": 90,
+            "musiq_crop1024": 94,
+            "hpsv21": 89
+          },
+          "hrdit": {
+            "ir": 96,
+            "musiq_crop1024": 67,
+            "hpsv21": 87
+          },
+          "sca": {
+            "ir": 90,
+            "musiq_crop1024": 83,
+            "hpsv21": 91
+          }
+        }
+      },
+      "7265494513082458083": {
+        "why": "woman at a stone window: two extra women, one behind the door and one behind her",
+        "percentiles": {
+          "full": {
+            "ir": 84,
+            "musiq_crop1024": 70,
+            "hpsv21": 93
+          },
+          "area": {
+            "ir": 95,
+            "musiq_crop1024": 91,
+            "hpsv21": 89
+          },
+          "hrdit": {
+            "ir": 97,
+            "musiq_crop1024": 55,
+            "hpsv21": 89
+          },
+          "sca": {
+            "ir": 83,
+            "musiq_crop1024": 76,
+            "hpsv21": 56
+          }
+        }
+      },
+      "m5795767365495583614": {
+        "why": "polar bear: four or five moons, extra bears and tiny people",
+        "percentiles": {
+          "full": {
+            "ir": 79,
+            "musiq_crop1024": 86,
+            "hpsv21": 53
+          },
+          "area": {
+            "ir": 75,
+            "musiq_crop1024": 72,
+            "hpsv21": 67
+          },
+          "hrdit": {
+            "ir": 83,
+            "musiq_crop1024": 49,
+            "hpsv21": 52
+          },
+          "sca": {
+            "ir": 65,
+            "musiq_crop1024": 54,
+            "hpsv21": 81
+          }
+        }
+      },
+      "m5332089088153794307": {
+        "why": "pitcher: a grey hook like a second handle beside the flowers; two citrus slices and several petals beyond the three lemons and one petal asked for",
+        "percentiles": {
+          "full": {
+            "ir": 64,
+            "musiq_crop1024": 46,
+            "hpsv21": 43
+          },
+          "area": {
+            "ir": 100,
+            "musiq_crop1024": 27,
+            "hpsv21": 68
+          },
+          "hrdit": {
+            "ir": 99,
+            "musiq_crop1024": 18,
+            "hpsv21": 71
+          },
+          "sca": {
+            "ir": 99,
+            "musiq_crop1024": 58,
+            "hpsv21": 54
+          }
+        }
+      },
+      "m836402013429605880": {
+        "why": "sheep and stone church: about five houses for the two asked for; the window falls on bare branches; repeats the subject of Figure 1",
+        "percentiles": {
+          "full": {
+            "ir": 5,
+            "musiq_crop1024": 94,
+            "hpsv21": 13
+          },
+          "area": {
+            "ir": 57,
+            "musiq_crop1024": 69,
+            "hpsv21": 36
+          },
+          "hrdit": {
+            "ir": 53,
+            "musiq_crop1024": 47,
+            "hpsv21": 40
+          },
+          "sca": {
+            "ir": 53,
+            "musiq_crop1024": 57,
+            "hpsv21": 71
+          }
+        }
+      },
+      "8612805720316271716": {
+        "why": "woman on a balcony: a smaller copy of her, in the same gown, on a ledge at top left",
+        "percentiles": {
+          "full": {
+            "ir": 38,
+            "musiq_crop1024": 41,
+            "hpsv21": 1
+          },
+          "area": {
+            "ir": 50,
+            "musiq_crop1024": 68,
+            "hpsv21": 97
+          },
+          "hrdit": {
+            "ir": 43,
+            "musiq_crop1024": 70,
+            "hpsv21": 91
+          },
+          "sca": {
+            "ir": 90,
+            "musiq_crop1024": 55,
+            "hpsv21": 99
+          }
+        }
+      },
+      "m7459007800202269666": {
+        "why": "couple with parasols: each figure has a third hand",
+        "percentiles": {
+          "full": {
+            "ir": 55,
+            "musiq_crop1024": 84,
+            "hpsv21": 13
+          },
+          "area": {
+            "ir": 85,
+            "musiq_crop1024": 52,
+            "hpsv21": 96
+          },
+          "hrdit": {
+            "ir": 78,
+            "musiq_crop1024": 18,
+            "hpsv21": 92
+          },
+          "sca": {
+            "ir": 78,
+            "musiq_crop1024": 40,
+            "hpsv21": 93
+          }
+        }
+      },
+      "m4460699761507361961": {
+        "why": "five children: eight or more children; garbled text on a shirt",
+        "percentiles": {
+          "full": {
+            "ir": 28,
+            "musiq_crop1024": 77,
+            "hpsv21": 72
+          },
+          "area": {
+            "ir": 60,
+            "musiq_crop1024": 84,
+            "hpsv21": 45
+          },
+          "hrdit": {
+            "ir": 32,
+            "musiq_crop1024": 88,
+            "hpsv21": 31
+          },
+          "sca": {
+            "ir": 49,
+            "musiq_crop1024": 93,
+            "hpsv21": 30
+          }
+        }
+      },
+      "m5691444384207183173": {
+        "why": "window with shutters: parallel echo outlines around the shutters, lintel and box",
+        "percentiles": {
+          "full": {
+            "ir": 74,
+            "musiq_crop1024": 1,
+            "hpsv21": 21
+          },
+          "area": {
+            "ir": 30,
+            "musiq_crop1024": 6,
+            "hpsv21": 32
+          },
+          "hrdit": {
+            "ir": 51,
+            "musiq_crop1024": 79,
+            "hpsv21": 74
+          },
+          "sca": {
+            "ir": 47,
+            "musiq_crop1024": 66,
+            "hpsv21": 51
+          }
+        }
+      }
+    },
+    "metric_stage": {
+      "m1057810871814672649": {
+        "why": "ivy-covered stone archway: a baseline below FAIR_LO",
+        "percentiles": {
+          "full": {
+            "ir": 62,
+            "musiq_crop1024": 24,
+            "hpsv21": 40
+          },
+          "area": {
+            "ir": 3,
+            "musiq_crop1024": 71,
+            "hpsv21": 19
+          },
+          "hrdit": {
+            "ir": 23,
+            "musiq_crop1024": 72,
+            "hpsv21": 67
+          },
+          "sca": {
+            "ir": 48,
+            "musiq_crop1024": 73,
+            "hpsv21": 66
+          }
+        }
+      },
+      "m210790534622161044": {
+        "why": "dining room: a baseline below FAIR_LO",
+        "percentiles": {
+          "full": {
+            "ir": 64,
+            "musiq_crop1024": 36,
+            "hpsv21": 5
+          },
+          "area": {
+            "ir": 32,
+            "musiq_crop1024": 73,
+            "hpsv21": 63
+          },
+          "hrdit": {
+            "ir": 20,
+            "musiq_crop1024": 58,
+            "hpsv21": 16
+          },
+          "sca": {
+            "ir": 42,
+            "musiq_crop1024": 90,
+            "hpsv21": 41
+          }
+        }
+      },
+      "6978695891801939003": {
+        "why": "town with a temple: a baseline below FAIR_LO",
+        "percentiles": {
+          "full": {
+            "ir": 82,
+            "musiq_crop1024": 96,
+            "hpsv21": 43
+          },
+          "area": {
+            "ir": 20,
+            "musiq_crop1024": 86,
+            "hpsv21": 9
+          },
+          "hrdit": {
+            "ir": 8,
+            "musiq_crop1024": 98,
+            "hpsv21": 73
+          },
+          "sca": {
+            "ir": 32,
+            "musiq_crop1024": 97,
+            "hpsv21": 29
+          }
+        }
+      },
+      "m3112502764021036396": {
+        "why": "arched stone bridge: a baseline below FAIR_LO",
+        "percentiles": {
+          "full": {
+            "ir": 73,
+            "musiq_crop1024": 66,
+            "hpsv21": 7
+          },
+          "area": {
+            "ir": 26,
+            "musiq_crop1024": 83,
+            "hpsv21": 15
+          },
+          "hrdit": {
+            "ir": 15,
+            "musiq_crop1024": 74,
+            "hpsv21": 33
+          },
+          "sca": {
+            "ir": 33,
+            "musiq_crop1024": 85,
+            "hpsv21": 48
+          }
+        }
+      },
+      "m2014927182109364975": {
+        "why": "Paris panorama: a baseline below FAIR_LO",
+        "percentiles": {
+          "full": {
+            "ir": 55,
+            "musiq_crop1024": 95,
+            "hpsv21": 22
+          },
+          "area": {
+            "ir": 5,
+            "musiq_crop1024": 95,
+            "hpsv21": 34
+          },
+          "hrdit": {
+            "ir": 3,
+            "musiq_crop1024": 55,
+            "hpsv21": 16
+          },
+          "sca": {
+            "ir": 7,
+            "musiq_crop1024": 81,
+            "hpsv21": 19
+          }
+        }
+      },
+      "6066373865342273390": {
+        "why": "white church with a golden dome: SCA's MUSIQ_c and HPSv2.1 low",
+        "percentiles": {
+          "full": {
+            "ir": 92,
+            "musiq_crop1024": 80,
+            "hpsv21": 94
+          },
+          "area": {
+            "ir": 75,
+            "musiq_crop1024": 21,
+            "hpsv21": 53
+          },
+          "hrdit": {
+            "ir": 81,
+            "musiq_crop1024": 10,
+            "hpsv21": 50
+          },
+          "sca": {
+            "ir": 66,
+            "musiq_crop1024": 23,
+            "hpsv21": 12
+          }
+        }
+      },
+      "5826245701465116957": {
+        "why": "wooden cabin: SCA's MUSIQ_c low (AReA's printed value would be higher)",
+        "percentiles": {
+          "full": {
+            "ir": 21,
+            "musiq_crop1024": 61,
+            "hpsv21": 12
+          },
+          "area": {
+            "ir": 34,
+            "musiq_crop1024": 71,
+            "hpsv21": 42
+          },
+          "hrdit": {
+            "ir": 87,
+            "musiq_crop1024": 25,
+            "hpsv21": 68
+          },
+          "sca": {
+            "ir": 88,
+            "musiq_crop1024": 15,
+            "hpsv21": 83
+          }
+        }
+      }
     }
   },
   "layout_pt": {
@@ -428,20 +1296,20 @@
     "crop": "native pixels (1:1), quality 95, 4:4:4"
   },
   "asset_sha256": {
-    "2100482621711410240_area_crop.jpg": "cefae3a3cb4639835648c8c1b2c438d4e02bd5331cbf3ce74101dbdee76df159",
-    "2100482621711410240_full_crop.jpg": "3626b84debe012304e626977727c3332fa6fce7d1896d4ef69f5dc02d012b3c9",
-    "2100482621711410240_hrdit_crop.jpg": "544305a24539b0fd7b06056d0edef1d05722ece18034330f1b87980d623bfb0e",
-    "2100482621711410240_sca_crop.jpg": "cd51db8de5ba78d8458d733569a88c25ef6fd6c93a278501ae1144a0c89e9e49",
-    "2100482621711410240_sca_full.jpg": "f30406a3c7e8fe16e53990ba865b6de0c1bc1d9808d84d26922eec9c603de82c",
-    "m2729538226706404616_area_crop.jpg": "ef4b4df0dc5a1cc48e5c67fb60f2f13ffe25304ec5ead11876ff84b5f0a86e9c",
-    "m2729538226706404616_full_crop.jpg": "aaae732c969f3da3737c30a718f75b6ffd3e97e949bd0e81b6a7aa6a0e49d3b0",
-    "m2729538226706404616_hrdit_crop.jpg": "a2c5062b64bd54eb4a51e7e935a90e1ec856080ad64674a9ce45719300c5ac7c",
-    "m2729538226706404616_sca_crop.jpg": "63b4c0aa43b077e7629beeb9be0707afa02c5af4bedce9524659354f00af805f",
-    "m2729538226706404616_sca_full.jpg": "38e15a2f6624d8115f35d74d2cbe35d63842c9697b2d0d2c4385056eb673d45f",
-    "m6394968997939197542_area_crop.jpg": "70ab97f3bf6ec8ce5be5cf9c4489bfd07df5788600c7adc39a6b26e2e0fcf4fc",
-    "m6394968997939197542_full_crop.jpg": "20737e946dde28799805182c4a789b6f99dc32647c87b4f5fd9e093ab237e36a",
-    "m6394968997939197542_hrdit_crop.jpg": "e9e8b2f6520f334dbbc8e072b2d702d144509b32f7428bab06a7e39537930ce9",
-    "m6394968997939197542_sca_crop.jpg": "f0901e4932dc6743b9823deed456cb98ff02186fe4df1ac81ed0c13745863dc8",
-    "m6394968997939197542_sca_full.jpg": "b5e505f5229d875f3273452baaeba61ed9f4d446f46b97e7a15499c476b412c6"
+    "2232973817337527860_area_crop.jpg": "82d7c37c5b45ac631a40736b6fec565a2bcaf41052b576566c712adbbeb25854",
+    "2232973817337527860_full_crop.jpg": "09aaf93ed3bd8e841401fe4cea013dbba218da28a6cb3011a992ee12d6c45413",
+    "2232973817337527860_hrdit_crop.jpg": "62fae482be675dd695fc7587652fcf5e81aba1df678349696441dd397e9e34d8",
+    "2232973817337527860_sca_crop.jpg": "99e71068af06e7fdfe9f984c53eaa2196daffe072bb19e1e9a75e3a628064b01",
+    "2232973817337527860_sca_full.jpg": "5d9b288fa7091626f8c34e3975bcc3a91b96f9cc62cdf0f4d89289fd42beefa5",
+    "7109958488611222679_area_crop.jpg": "47bb4cc7443813402b50f3fdfd282f5b9827241b47260b493cb306154be23bd6",
+    "7109958488611222679_full_crop.jpg": "4950ff927b1ea3112a56e93533697a7aa53d77b74f01b8ac4631b7d849756929",
+    "7109958488611222679_hrdit_crop.jpg": "0339605f622b41e7020993f19d931afb8c2a3b9a5e7c249c3cb5637a0bd16734",
+    "7109958488611222679_sca_crop.jpg": "17032f5810f0efaad2a1c080c36a5fd389880332dd35cde014360a848a437d20",
+    "7109958488611222679_sca_full.jpg": "cfc6945cc5dd21e4c170189d409b4b2f3264ef829a8f239f51252b414797b4bd",
+    "m548913239957610051_area_crop.jpg": "4f96f075d18672a084640685fb548612e15ff7b65e4c54f0b0b1ea9ed425a77e",
+    "m548913239957610051_full_crop.jpg": "1ab81c5930db0473dcc8d1a3c2e38ae36c797212c368d665df70020334dc047d",
+    "m548913239957610051_hrdit_crop.jpg": "7759aafa7e27eac74a1c5da17113d8d9f1ec7a72560824aef18afb21b0c1be3c",
+    "m548913239957610051_sca_crop.jpg": "6cdc76c325667fa47c768ad7378daeb348cc108dbe902a94c102387ed2a4158a",
+    "m548913239957610051_sca_full.jpg": "6a03e1d1ee8eb486b1500045490b515b4892b97b1cf6e0a2b5b69a1e06664995"
   }
 }

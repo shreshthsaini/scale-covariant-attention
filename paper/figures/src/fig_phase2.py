@@ -34,19 +34,19 @@ SPECS = {
         # The frozen draw (2026-10-17) was over the main set without the four development prompts. The paper now
         # evaluates all 195 prompts, so the caption names that pool; both counts come from the frozen manifest.
         "caption": lambda manifest: (
-            r"\textbf{DyPE and SEGA leave speckle at $4096^2$; UltraImage and SCA keep clean detail.} "
+            r"\textbf{At $4096^2$ DyPE and SEGA leave speckle, UltraImage softens the planet, and SCA is sharp "
+            r"but adds extra people in two prompts.} "
             rf"{count_word(len(manifest['prompts']))} of {manifest['eligible_count']} non-development prompts "
-            r"drawn at random (seed~17); full images above 1:1 crops of one window. "
-            r"UltraImage runs its two-stage defaults."
+            r"drawn at random (seed~17); full images above 1:1 crops of one window."
         ),
     },
     "flux2": {
         "res": "4096x4096", "n": 4,
         "methods": ["flux2_full", "flux2_sca"],
         "caption": (
-            r"\textbf{FLUX.2-dev at $4096^2$: SCA can still distort face geometry and fine texture "
-            r"(last row).} Four of 50 paired prompts drawn at random (seed~17); after each image, "
-            r"a 1:1 crop of its outlined window."
+            r"\textbf{FLUX.2-dev at $4096^2$: full attention blurs and repeats; SCA is sharp but duplicates "
+            r"subjects in three rows and distorts the portrait.} Four of 50 paired prompts drawn at random "
+            r"(seed~17); 1:1 crops follow each image."
         ),
     },
     "6144": {"res": "6144x6144", "n": 4, "methods": ["area", "sca"]},
@@ -54,18 +54,18 @@ SPECS = {
     "8192_complete": {
         "res": "8192x8192", "n": 4, "methods": ["area", "sca"], "expected": 12,
         "caption": (
-            r"\textbf{At $8192^2$ grid and stripe artifacts remain in both methods.} "
+            r"\textbf{At $8192^2$ both fail: AReA blurs and speckles, and SCA breaks into blocks and stripes.} "
             r"Four of 12 paired prompts drawn at random; after each image, a 1:1 crop of its outlined "
-            r"window. Exploratory; not evidence of general 8K quality."
+            r"window. Exploratory."
         ),
     },
     "6144_complete": {
         "res": "6144x6144", "n": 4, "methods": ["area", "sca"],
         "expected": 100, "prompt_manifest": EVAL100,
         "caption": (
-            r"\textbf{At $6144^2$ AReA's crops dissolve into speckle or streaks; SCA keeps recognisable "
-            r"detail.} Four of 100 prompts, drawn at random; after each image, a 1:1 crop of its window; "
-            r"not evidence of general quality."
+            r"\textbf{At $6144^2$ AReA's crops dissolve into speckle or streaks; SCA keeps the layouts but "
+            r"shows stripes, block speckle, or extra figures.} Four of 100 prompts drawn at random; after each "
+            r"image, a 1:1 crop of its window."
         ),
     },
     "krea_complete": {
@@ -75,9 +75,9 @@ SPECS = {
         "provenance_receipts": [REPO / "results/evidence/krea_baseline_provenance" / name
                                 for name in ("receipt.json", "repair_preparation.json", "algorithm_review.json")],
         "caption": (
-            r"\textbf{On FLUX.1-Krea-dev at $4096^2$ the four methods are visually close.} "
-            r"Two of 100 four-method prompts drawn at random; full images above 1:1 crops of one window. "
-            r"SCA uses a Krea-calibrated table."
+            r"\textbf{On FLUX.1-Krea-dev at $4096^2$ the crops look alike, but DyPE ghosts the face and SCA "
+            r"melts the lone figure.} Two of 100 four-method prompts drawn at random; full images above 1:1 "
+            r"crops of one window."
         ),
     },
 }

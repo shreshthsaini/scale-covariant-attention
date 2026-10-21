@@ -17,8 +17,9 @@ Protocol facts behind the table (details in `.agent/notes/eval_protocol_survey.m
   1000 prompts (Table 2).
 - AReA's paper says only "FLUX.1". Its released code defaults to FLUX.1-Krea-dev with 28 steps and guidance 4.5.
   SEGA, from the same group, states FLUX.1-Krea-dev (App. C).
-  - Rerunning AReA's released code on Krea-dev reproduces its published CLIP, PickScore, aesthetic score, and MUSIQ
-    within 0.1. On FLUX.1-dev it does not: ImageReward drops from 1.33 to 0.92.
+  - Rerunning AReA's released code on Krea-dev (all 195 prompts, results/krea195) reproduces its published ImageReward,
+    aesthetic score, and PickScore within 0.1 and CLIP, HPS, and MUSIQ within 0.3. On FLUX.1-dev it does not:
+    ImageReward drops from 1.32 to 0.92.
   - The Krea-dev block is therefore the protocol-matched comparison. Our FLUX.1-dev block is the paper's own paired
     protocol.
 - FID uses Inception features at 299^2 against all 195 reference rows. Those rows hold 168 distinct images, 27 of them
@@ -27,10 +28,14 @@ Protocol facts behind the table (details in `.agent/notes/eval_protocol_survey.m
   115 for AReA where AReA reports 58.2.
 - Latency is not compared across papers: AReA used an H100, we use a GH200.
 
-Current coverage and what refreshes it
-- Krea-dev rows cover 100 of 195 prompts (rows 4-103, results/e9_krea) until `taskq/hold_krea195` (38 generation
-  tasks) and `hold_eval/z966_eval_krea195.sh` run.
-- FLUX.1-dev rows use the 191-prompt summaries until `hold_eval/z960` and `z961` (195 prompts) finish.
-- HRGen-1K rows use 200 prompts until `hold_hrgen1k_krea` and `z967`, or `hold_hrgen1k_dev` and `z968`, finish.
-- Rows with fewer than the full prompt count carry a dagger in the LaTeX table and are not ranked. After each
-  evaluation lands, rerun `build.py`.
+Current coverage (2026-10-20)
+- Krea-dev: SCA and AReA on all 195 prompts (results/krea195); DyPE and SEGA on the 100 prompts of rows 4-103
+  (results/e9_krea), marked with a dagger and not ranked.
+- FLUX.1-dev: all 195 prompts (results/a4k195_main, a4k195_panel).
+- HRGen-1K: SCA on FLUX.1-Krea-dev on all 1000 prompts (results/hrgen1k_krea); SCA and AReA on FLUX.1-dev on all 1000
+  (results/hrgen1k_dev; 200 prompts from results/e4_hrgen until it lands).
+- Outputs: `paper/figures/snippets/published_compare.tex` (Table 2: AReA's single-pass Aesthetic-4K rows, our Krea and
+  FLUX.1-dev rows, and an HRGen-1K block with AReA's published row and our Krea row) and
+  `paper/figures/snippets/published_hrgen.tex` (appendix: every row of AReA's HRGen-1K Table 2 and our three runs).
+  AReA's multi-stage rows (its Table 6) stay in published.csv and compare.csv only.
+- Rows with fewer than the full prompt count carry a dagger and are not ranked. Rerun `build.py` after any evaluation.

@@ -472,3 +472,36 @@ AReA's published numbers are FLUX.1-Krea-dev (Table 2, results/published_compare
 IR +0.31 [0.23,0.38], FID -7.7 [-13.1,-2.6]. Open: Table 3 rows duplicating Table 1; J.1 band-guard rows still 191;
 results/baseline_quality_deltas.csv stale. Workers: idle-only guest workers on all 28 held gh nodes (slurm/guest_worker_shared.sh);
 slurm/occupy_all.sh (co-tenant) is ready but needs the user to launch it. SCA13 job 1083327 still pending.
+
+## 17. 2026-10-20 23:00 CT: final pass (sample curation, Krea-195 and HRGen-1K numbers, render review)
+Build /scratch/09032/saini_2/sca/paper_builds/delivery_9un4nd1w (49 pp., main 1-10, 0 overfull, 0 undefined, fresh-unzip build passes); latest_delivery.md has hashes.
+Sample curation (.agent/notes/figure_curation_20261020.md; four opus auditors viewed every SCA image at full resolution):
+- Curated figures now show clean SCA samples on fair prompts (every baseline IR and HPS >= p25 of its own 195):
+  Figure 1 portrait -> 5849277588805396896 (old had a second pipe) and strip -> m8343371271909676658 (old strip had
+  AReA at p1); Figure 6 all three rows -> 7109958488611222679, 2232973817337527860, m548913239957610051 (old rows had a
+  duplicated character, a second ear, and an unfair AReA); R.1 panorama -> Great Wall 4230887929316158402 and still
+  life -> minus8919475713516982506; R.7 owl -> warrior m2857555394095239941. Captions say curated and that curation
+  favours SCA. Figure 2 keeps the Moai development prompt; its caption now says a small second Moai remains.
+- Random galleries keep their seeded draws (all verified against the frozen manifests); captions now state what the
+  samples show, including SCA's extra subjects. Visual audit CSV: results/visual_audit_20261020 (5 of 11 uncurated
+  FLUX.1-dev 4096^2 SCA images add people or repeat objects), quoted in Appendix S and Limitations.
+Numbers (every value from results/*.csv via scripts):
+- Krea-195 (results/krea195, SCA and AReA on all 195; DyPE/SEGA stay at 100): SCA wins 6 of 10 per-image metrics, IR
+  -0.052 [-0.105, +0.000] (2000 draws; significant with K.1's 1000 draws), patch FID +8.1 [5.5, 12.8], FID +1.4
+  [-3.0, 7.0], 3.3x faster. AReA rerun reproduces published IR, aesthetic, PickScore within 0.1, rest within 0.28.
+- HRGen-1K FLUX.1-dev, 1000 prompts (results/hrgen1k_dev): SCA beats AReA on all ten per-image metrics, IR +0.818
+  [0.768, 0.870]. SCA on Krea (results/hrgen1k_krea) exceeds every published AReA HRGen-1K score (not a rerun).
+- Table 2: HRGen-1K block added, AReA's multi-stage rows dropped (still in published.csv); new appendix Table H.1
+  (snippets/published_hrgen.tex). Table 3: the four rows duplicating Table 1 dropped. Table 5, K.1, K.3, macros
+  (\nhrgen 1000, \nkrea 195), abstract, 4.4, Limitations, Appendix H updated. results/baseline_quality_deltas.csv
+  now written by fig_baseline_deltas.py (195). J.1/J.2 band guard keep the 191 caption (no 195 band-guard eval).
+Scripts: results/published_compare/build.py, paper/figures/src/{apply_krea_hrgen.py, gen_late_tables.py
+(krea_6144_table only; do not run its main()), fig_hero.py, fig_zoom4k.py, fig_showcase.py, fig_qual.py,
+fig_gallery_large.py, fig_phase2.py}.
+Spool: every evaluation is done (pending 0, running 0); slurm/release_evals.sh (PID 2849732 on i615-123) still loops.
+Next: create taskq/STOP when no more GPU work is planned (Section 15), then the guest workers and the release loop exit.
+Render review (opus reviewer, all 49 pages): fixed the split citation that broke page-10 links, unreferenced Figure
+D.2 and Table J.7, Figure S.1 above its heading, "Fig-ure" hyphenation, Table 2 caption wording. Left open: page 27
+holds Table J.2 alone (61 percent); public code URL with anonymous authors (swap \codeurl at submission); Appendix C
+lists 48 calibration prompts while the text uses 32 at 1024^2 and 16 at 1280^2 (check which 16); Figure 8 and D.2
+print 2.85x and 2.99x where Table D.2 gives 2.84 and 2.98 (rounding source differs); R.7 column names vs Table 4.
