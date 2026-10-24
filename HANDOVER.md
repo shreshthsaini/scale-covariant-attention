@@ -505,3 +505,9 @@ D.2 and Table J.7, Figure S.1 above its heading, "Fig-ure" hyphenation, Table 2 
 holds Table J.2 alone (61 percent); public code URL with anonymous authors (swap \codeurl at submission); Appendix C
 lists 48 calibration prompts while the text uses 32 at 1024^2 and 16 at 1280^2 (check which 16); Figure 8 and D.2
 print 2.85x and 2.99x where Table D.2 gives 2.84 and 2.98 (rounding source differs); R.7 column names vs Table 4.
+
+## 18. 2026-10-24: SU freeze (relayed by session vista-6a as a user directive)
+Do not submit, resubmit or release any Slurm job for SCA (no sbatch, scontrol release, spool watchers or fleet
+auto-resubmit) until the user lifts the freeze; the allocation is near 2,800 SU and other users need the balance.
+SCA holds no jobs and runs no workers (taskq/STOP set 2026-10-20). CPU-only and paper work may continue. The one
+optional GPU item (band-guard rows of J.1/J.2 at 195 prompts, about 4 GPU-h) waits for the freeze to lift.
