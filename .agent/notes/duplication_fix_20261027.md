@@ -143,3 +143,11 @@ Decision: implement two more options before the pilot: AReA's bridge (top eviden
   (precision 19/21, recall 19/21). People and animals only (--kinds person,animal): audit 6/7, 18/20;
   reviewed 7/7, 20/20. thr 0.3-0.4 give identical results.
 - So the table reports two rates: people/animals (primary, near-perfect on the labels) and any subject.
+
+### Interim rates (2026-10-28 00:43, people/animals, thr 0.35, 95 prompts scored so far of about 120 eligible)
+sca_nb 57%, sca_s42 57%, sca_s56 55%, sca_g7 49%, sigma 27%, sca_band (band guard) 20%, dype 17%, sega 12%,
+hrdit 11%, sca_prog 8%, full 7%, ultraimage 5% (area 7.5% on any-subject earlier). Key evidence: progressive SCA
+(1024^2 stage sets the layout, SCA at 2K/4K entering at sigma .81/.61 with the same pi table) duplicates as
+rarely as AReA, so the SCA operator itself is fine once the layout exists; the copies form at 4096^2 between
+the gate and about sigma .6, when 64-token windows (1/4 of the side) dominate an unformed layout. More steps do
+not help (s42, s56); the band guard (global low band) cuts it by two thirds.

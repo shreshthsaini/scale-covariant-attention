@@ -29,12 +29,30 @@ VARIANTS = {  # in priority order: the worker takes the alphabetically first tas
     "dup_ramp70": ["--pi-ramp", "0.7"],
     "dup_lse1": ["--lse-tau", "1.0"],
     "dup_bridge_ramp70": ["--bridge-cells", "8", "--bridge-k", "16", "--pi-ramp", "0.7"],
+    "dup_bridge32": ["--bridge-cells", "8", "--bridge-k", "32"],
+    "dup_bridge_lse1": ["--bridge-cells", "8", "--bridge-k", "16", "--lse-tau", "1.0"],
     "dup_head50": ["--pi-ramp", "0.5", "--pi-ramp-mode", "head"],
+    "dup_ramp60": ["--pi-ramp", "0.6"],
+    "dup_frac_ramp60": ["--glob-pos", "frac", "--pi-ramp", "0.6"],
     "dup_bridge_mid": ["--bridge-cells", "8", "--bridge-k", "16", "--bridge-lo", "0.5"],
     "dup_txtmid": ["--text-local", "-2.77", "--text-local-lo", "0.5"],
     "dup_win128": ["--win-sched", "0.80:128,0.70:96"],
-    "dup_frac_ramp60": ["--glob-pos", "frac", "--pi-ramp", "0.6"],
+    "dup_frac_g80": ["--glob-pos", "frac", "--gate-sigma", "0.80"],
 }
+
+
+GEN_PREFIX = ""                 # set by --prefix: generation task names (the worker takes the first in sort order)
+EVAL_HOLD = f"{S}/taskq/hold_dup_eval"   # evaluations wait here; slurm/release_dup_evals.sh releases them
+
+
+def guard(name, pat):
+    """Evaluation guard: never sleeps. While a generation task of its group is pending or running, the evaluation
+    parks a copy of itself in EVAL_HOLD and exits 3 (as the a4k195 z96x tasks did); release_dup_evals.sh moves it
+    back to pending once the group has drained."""
+    return (f"# RELEASE_AFTER: ^({pat})[.]sh\nNAME={name}; HOLD={EVAL_HOLD}\n"
+            f"if ls $Q/pending $Q/running 2>/dev/null | grep -q -E '^({pat})[.]sh'; then mkdir -p $HOLD; "
+            f"cp \"$0\" $HOLD/.$NAME.tmp.$$ && mv -f $HOLD/.$NAME.tmp.$$ $HOLD/$NAME; "
+            f"echo \"parked $NAME: generation still pending or running\"; exit 3; fi\n")
 
 
 def gen_cmd(label, flags, prompts, out, start=None, end=None):
@@ -65,7 +83,7 @@ def pilot(code, hold, dry, variants):
     names = []
     for k, label in enumerate(variants):
         out = f"{S}/out/dup/{label}/4096x4096"
-        name = f"d1{k:02d}_{label}.sh"
+        name = f"{GEN_PREFIX}d1{k:02d}_{label}.sh"
         names.append(name)
         write(Path(hold) / name, "#!/bin/bash\n# duplication pilot: " + label + " " + " ".join(VARIANTS[label]) + "\n" + ENV
               + f"cd {code}\n" + gen_cmd(label, VARIANTS[label], prompts, out) + "\n", dry)
@@ -75,11 +93,11 @@ def pilot(code, hold, dry, variants):
 # duplication pilot evaluation: detector on all 15 prompts, extra and base metrics on the 11 non-development prompts
 {ENV}set -uo pipefail
 Q={S}/taskq; E={S}/eval/dup_pilot; mkdir -p $E
-while ls $Q/pending $Q/running 2>/dev/null | grep -q -E '^({pat})[.]sh'; do sleep 60; done
-ls $Q/failed 2>/dev/null | grep -E '^({pat})[.]sh' | sed 's/^/WARNING failed generation task: /'
+""" + guard(f"{GEN_PREFIX}d199_eval_dup_pilot.sh", pat) + f"""ls $Q/failed 2>/dev/null | grep -E '^({pat})[.]sh' | sed 's/^/WARNING failed generation task: /'
 cd {code}
 {PY} scripts/dup_detect.py --subjects results/dup_audit_20261027/subjects_a4k195.json --device cuda --threads 8 --sides 800,1333 --out $E/det --dirs {dirs}
 {PY} scripts/dup_rate.py --dets {S}/eval/dup_detect_20261027 $E/det --subjects results/dup_audit_20261027/subjects_a4k195.json --ids {S}/pilot15_dup.jsonl --thr 0.35 --per-image $E/dup_per_image.csv --out $E/dup_rates.csv | tee $E/dup_rates.txt
+{PY} scripts/dup_rate.py --dets {S}/eval/dup_detect_20261027 $E/det --subjects results/dup_audit_20261027/subjects_a4k195.json --ids {S}/pilot15_dup.jsonl --thr 0.35 --kinds person,animal --per-image $E/dup_per_image_people.csv --out $E/dup_rates_people.csv | tee $E/dup_rates_people.txt
 {PY} -I {P}/scripts/link_common.py --root {S}/out/evalroot/dup_pilot --res 4096x4096 --seed 0 --prompts {S}/pilot15_dup.jsonl --min-count 1 {dirs}
 {PYM} {P}/scripts/eval_extra.py --root {S}/out/evalroot/dup_pilot --prompts {S}/pilot15_dup.jsonl --out $E/extra --metrics ir,aesthetic,hpsv2,hpsv21,clipiqa,arniqa --reference-method sca_nb --device cuda --batch-size 16 --threads 8
 {PY} {CR}/scripts/eval.py --root {S}/out/evalroot/dup_pilot --prompts {S}/pilot15_dup.jsonl --reference-method sca_nb --res 4096x4096 --out $E/base --metrics clip,pickscore,musiq --device cuda
@@ -92,7 +110,7 @@ for d in sorted(glob.glob("{S}/out/dup/*/4096x4096")) + ["{S}/out/main/sca_nb/40
 PYEOF
 date -u +%FT%TZ > $E/DONE
 """
-    write(Path(hold) / "d199_eval_dup_pilot.sh", ev, dry)
+    write(Path(EVAL_HOLD) / f"{GEN_PREFIX}d199_eval_dup_pilot.sh", ev, dry)
 
 
 def abl46(code, hold, dry, label, flags):
@@ -100,7 +118,7 @@ def abl46(code, hold, dry, label, flags):
     out = f"{S}/out/dup46/{label}/4096x4096"
     names = []
     for a in range(0, 50, 5):
-        name = f"d2{a:02d}_{label}.sh"
+        name = f"{GEN_PREFIX}d2{a:02d}_{label}.sh"
         names.append(name)
         write(Path(hold) / name, f"#!/bin/bash\n# duplication fix, 46-prompt ablation subset: {label} {' '.join(flags)}\n" + ENV
               + f"cd {code}\n" + gen_cmd(label, flags, prompts, out, a, a + 5) + "\n", dry)
@@ -111,8 +129,7 @@ def abl46(code, hold, dry, label, flags):
 # duplication fix: {label} vs sca_nb on the 46 ablation prompts (E7 protocol) plus detector and paired bootstrap
 {ENV}set -uo pipefail
 Q={S}/taskq; E={E}; mkdir -p $E/paired
-while ls $Q/pending $Q/running 2>/dev/null | grep -q -E '^({pat})[.]sh'; do sleep 60; done
-ls $Q/failed 2>/dev/null | grep -E '^({pat})[.]sh' | sed 's/^/WARNING failed generation task: /'
+""" + guard(f"z97_eval_dup46_{label}.sh", pat) + f"""ls $Q/failed 2>/dev/null | grep -E '^({pat})[.]sh' | sed 's/^/WARNING failed generation task: /'
 cd {code}
 {PY} scripts/dup_detect.py --subjects results/dup_audit_20261027/subjects_a4k195.json --device cuda --threads 8 --sides 800,1333 --out $E/det --dirs {label}={out}
 {PY} scripts/dup_rate.py --dets {S}/eval/dup_detect_20261027 $E/det --subjects results/dup_audit_20261027/subjects_a4k195.json --ids {prompts} --exclude-ids {S}/dev4.jsonl --thr 0.35 --methods sca_nb,{label} --per-image $E/dup_per_image.csv --out $E/dup_rates.csv | tee $E/dup_rates.txt
@@ -122,7 +139,7 @@ cd {code}
 {PY} -I {P}/scripts/paired_bootstrap.py --method {label} --reference sca_nb --draws 2000 --out $E/paired/{label}_vs_sca_nb.csv $E/extra/extra_per_image.csv $E/base/per_image.csv
 date -u +%FT%TZ > $E/DONE
 """
-    write(Path(hold) / f"d299_eval_dup46_{label}.sh", ev, dry)
+    write(Path(EVAL_HOLD) / f"z97_eval_dup46_{label}.sh", ev, dry)
 
 
 # ----------------------------------------------------------------------------- 195-prompt headline rerun
@@ -179,7 +196,7 @@ def rerun_eval(row, label, names, code):
     refs = prompts == A4K
     base_metrics = "clip,pickscore,musiq,fid,kid,patch_fid,patch_kid" if refs else "clip,pickscore,musiq"
     extra_metrics = "ir,aesthetic,hpsv2,hpsv21,clipiqa,arniqa,is"
-    name = f"d99{list(ROWS).index(row)}_eval_{ev}_{label}.sh"  # after every generation task (d90..d98)
+    name = f"z98{list(ROWS).index(row)}_eval_{ev}_{label}.sh"  # sorts after every generation task
     E, R = f"{S}/eval/{ev}_{label}", f"{P}/results/{ev}_{label}"
     pat = "|".join(x[:-3] for x in names)
     ref_arg = f"--references {REFS} " if refs else ""
@@ -194,9 +211,8 @@ def rerun_eval(row, label, names, code):
 # Duplication-fix rerun, row {row} ({ev}): {tag} vs {old[0]}{' and AReA' if area else ''}; clone of taskq/done/a000_z960_eval_a4k195_main.sh
 # (same metric commands, corrected patch FID for Aesthetic-4K rows, paired bootstrap 2000 draws) plus the duplicate detector.
 {ENV}set -uo pipefail
-Q={S}/taskq; NAME={name}; E={E}; R={R}
-while ls $Q/pending $Q/running 2>/dev/null | grep -q -E '^({pat})[.]sh'; do sleep 60; done
-if ls $Q/failed 2>/dev/null | grep -q -E '^({pat})[.]sh'; then echo "generation task failed; not evaluating"; exit 3; fi
+Q={S}/taskq; E={E}; R={R}
+{guard(name, pat)}if ls $Q/failed 2>/dev/null | grep -q -E '^({pat})[.]sh'; then echo "generation task failed; not evaluating"; exit 3; fi
 if [ -e $E/DONE ]; then echo "already complete: $E"; exit 0; fi
 [ -e $E ] && mv $E $E.partial_$(date +%Y%m%dT%H%M%S)
 mkdir -p $E/paired $R
@@ -243,13 +259,13 @@ def rerun195(code, hold, dry, label, flags, rows):
         names = []
         for a in range(0, n, chunk):
             b = min(n, a + chunk)
-            name = f"d9{list(ROWS).index(row)}_{row}_{label}_{a:04d}_{b:04d}.sh"
+            name = f"{GEN_PREFIX}d9{list(ROWS).index(row)}_{row}_{label}_{a:04d}_{b:04d}.sh"
             names.append(name)
             write(Path(hold) / name, f"#!/bin/bash\n# duplication-fix rerun {row}: {label} {' '.join(flags)}\n" + ENV
                   + f"cd {code}\n" + rerun_gen_cmd(row, label, flags, a, b) + "\n", dry)
         total += len(names)
         ename, etext = rerun_eval(row, label, names, code)
-        write(Path(hold) / ename, etext, dry)
+        write(Path(EVAL_HOLD) / ename, etext, dry)
     print(f"{total} generation tasks")
 
 
@@ -263,8 +279,12 @@ def main():
     p.add_argument("--label", help="abl46: variant label")
     p.add_argument("--flags", default="", help="abl46: sample.py flags for the variant (quoted)")
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--prefix", default="", help="generation task name prefix, e.g. a_ to run first")
     a = p.parse_args()
     Path(a.hold).mkdir(parents=True, exist_ok=True)
+    Path(EVAL_HOLD).mkdir(parents=True, exist_ok=True)
+    global GEN_PREFIX
+    GEN_PREFIX = a.prefix
     if a.stage == "pilot":
         pilot(a.code, a.hold, a.dry_run, a.variants.split(","))
     elif a.stage == "abl46":
