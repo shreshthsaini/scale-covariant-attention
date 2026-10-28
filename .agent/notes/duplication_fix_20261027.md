@@ -194,3 +194,17 @@ significant, results/e7_sca_g85_deltas.csv) and the guard costs HPSv2.1 -1.17 et
 keep the global context without the hard switch.
 Other sizes (eval/dup_detect_20261027_sizes, 656 images): people/animals SCA vs AReA 43.2% vs 17.9% at 2048x4096,
 53.7% vs 6.3% at 2048x6144; any subject 46.3% vs 22.4% and 55.8% vs 15.0% (all paired p < 1e-4).
+
+## 2026-10-28 07:45: still no GPU (SCA14 pending 6.5 h, no start estimate)
+- Enqueued 46-prompt paired runs (abl50 incl. dev4, chunks of 5) for four candidates behind the pilot, prefix b_:
+  taskq/pending/b_d2XX_{dup_bridge,dup_bridge_ramp70,dup_ramp70,dup_lse1}.sh (40 tasks, out/dup46/<label>), evals
+  z97_eval_dup46_<label>.sh parked in taskq/hold_dup_eval (detector + E7 metric protocol + paired bootstrap vs
+  sca_nb, eval/dup46_<label>). About 4.5 GPU-h + 4 evals.
+- Staged (NOT enqueued) the 195-prompt headline reruns for the two leading candidates: taskq/hold_dup/stage_x_<label>
+  for dupfix_bridge and dupfix_bridge_ramp70 (each 473 generation tasks x_d90..x_d98 over rows m4k, m24, m26, s1,
+  s2, pg, kr, hd, hk, plus 9 evals z980..z988 in stage_x_<label>/evals). Release for the winner L:
+    mv taskq/hold_dup/stage_x_L/x_*.sh taskq/pending/ && mv taskq/hold_dup/stage_x_L/evals/z98*.sh taskq/hold_dup_eval/
+  and make sure slurm/release_dup_evals.sh is running. Estimate about 100 GPU-h (65 h generation incl. 41 h
+  HRGen-1K, 24 h load/compile at about 3 min per task, 11 h evaluation).
+- Pilot summary when eval/dup_pilot/DONE exists: python scripts/dup_pilot_summary.py /scratch/09032/saini_2/sca/eval/dup_pilot
+  (and eval/dup46_<label> with OUT_ROOT out/dup46).

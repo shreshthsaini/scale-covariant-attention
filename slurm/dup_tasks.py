@@ -49,7 +49,7 @@ def guard(name, pat):
     """Evaluation guard: never sleeps. While a generation task of its group is pending or running, the evaluation
     parks a copy of itself in EVAL_HOLD and exits 3 (as the a4k195 z96x tasks did); release_dup_evals.sh moves it
     back to pending once the group has drained."""
-    return (f"# RELEASE_AFTER: ^({pat})[.]sh\nNAME={name}; HOLD={EVAL_HOLD}\n"
+    return (f"# RELEASE_AFTER: ^({pat})[.]sh\nNAME={name}; HOLD={S}/taskq/hold_dup_eval\n"
             f"if ls $Q/pending $Q/running 2>/dev/null | grep -q -E '^({pat})[.]sh'; then mkdir -p $HOLD; "
             f"cp \"$0\" $HOLD/.$NAME.tmp.$$ && mv -f $HOLD/.$NAME.tmp.$$ $HOLD/$NAME; "
             f"echo \"parked $NAME: generation still pending or running\"; exit 3; fi\n")
@@ -270,6 +270,7 @@ def rerun195(code, hold, dry, label, flags, rows):
 
 
 def main():
+    global GEN_PREFIX, EVAL_HOLD
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--code", required=True, help="frozen code copy, e.g. /scratch/09032/saini_2/sca/code/<commit>")
     p.add_argument("--hold", default=f"{S}/taskq/hold_dup")
@@ -280,11 +281,14 @@ def main():
     p.add_argument("--flags", default="", help="abl46: sample.py flags for the variant (quoted)")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--prefix", default="", help="generation task name prefix, e.g. a_ to run first")
+    p.add_argument("--eval-hold", help="write evaluation tasks here instead of taskq/hold_dup_eval (staging)")
     a = p.parse_args()
     Path(a.hold).mkdir(parents=True, exist_ok=True)
     Path(EVAL_HOLD).mkdir(parents=True, exist_ok=True)
-    global GEN_PREFIX
     GEN_PREFIX = a.prefix
+    if a.eval_hold:
+        EVAL_HOLD = a.eval_hold
+        Path(EVAL_HOLD).mkdir(parents=True, exist_ok=True)
     if a.stage == "pilot":
         pilot(a.code, a.hold, a.dry_run, a.variants.split(","))
     elif a.stage == "abl46":
