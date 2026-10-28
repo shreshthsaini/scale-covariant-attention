@@ -171,8 +171,11 @@
       var t = $(".top", sl), b = $(".base", sl), left = 2;
       sl.classList.add("loading");
       function done() { if (--left === 0) sl.classList.remove("loading"); }
-      t.onload = t.onerror = done; b.onload = b.onerror = done;
-      t.src = topSrc; b.src = baseSrc; t.alt = "SCA: " + alt; b.alt = NAMES[state.base] + ": " + alt;
+      function setSrc(im, src) {
+        if (im.getAttribute("src") === src && im.complete) { done(); return; }
+        im.onload = im.onerror = done; im.src = src;
+      }
+      setSrc(t, topSrc); setSrc(b, baseSrc); t.alt = "SCA: " + alt; b.alt = NAMES[state.base] + ": " + alt;
       $(".tag.r", sl).textContent = NAMES[state.base];
     }
     function render() {
@@ -225,7 +228,8 @@
         vid.muted = true; vid.appendChild(el("source", { src: v.mp4, type: "video/mp4" }));
         media.appendChild(vid); if (io) io.observe(vid);
       }
-      var label = el("p", { class: "prompt" }, [el("span", { class: "chip " + (ex.label === "random" ? "" : "curated"), text: ex.label === "random" ? "random draw" : "curated" }), ex.prompt]);
+      var lab = ex.label || it.label;
+      var label = el("p", { class: "prompt" }, [el("span", { class: "chip " + (lab === "random" ? "" : "curated"), text: lab === "random" ? "random draw" : "curated" }), ex.prompt || it.prompt || ""]);
       body.appendChild(label);
       if (kinds.length > 1) {
         var seg = el("div", { class: "seg", role: "group", "aria-label": "Video" });

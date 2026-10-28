@@ -86,6 +86,11 @@
       <div class="paper-fig"><img src="assets/img/method/method.webp" width="2400" height="765" loading="lazy" alt="Method diagram. Left: at 4096 squared, a query attends to a local window and to block-centre global keys; per-head weights pi of sigma mix the two, after a global-only opening. Right: calibration at 1024 squared fits pi per head and noise level against full attention."></div>
       <figcaption><b>Sampling and calibration.</b> (a) At 4096&sup2;, each head mixes a native-size local window (amber) and block-centre global keys (blue) with its own weight &pi;<sub>h</sub>(&sigma;); steps above &sigma;<sub>g</sub> use the global view alone. (b) At 1024&sup2; the weights are fitted per head and noise level against full attention, with both views shrunk to emulate a larger image. Figure from the paper.</figcaption>
     </figure>
+    <details class="more">
+      <summary>Each component up close</summary>
+      <div class="paper-fig"><img src="assets/img/method/method_zoom.webp" width="2400" height="1615" loading="lazy" alt="Detailed diagram of the global operator, the local operator with its tiles and windows, the per-head mix, and the calibration at 1024 squared."></div>
+      <p class="caption">The appendix version of the diagram: block-centre subsampling, tiles and their windows, the per-head mix and the emulated operators used for calibration, drawn on the real table of all 57 blocks.</p>
+    </details>
     <div class="steps">
       <div class="card step">
         <h3><span class="n">1</span>Two views per head</h3>
@@ -114,7 +119,7 @@
         <track kind="captions" src="assets/video/method/sca_method.vtt" srclang="en" label="English">
       </video>
     </div>
-    <p class="caption" id="method-video-cap"><b>How SCA works, in about 75 seconds.</b> Silent, with captions drawn in the video (subtitle files: <a href="assets/video/method/sca_method.srt">SRT</a>, <a href="assets/video/method/sca_method.vtt">WebVTT</a>). The weight table in the video is the real calibrated table.</p>
+    <p class="caption" id="method-video-cap"><b>How SCA works, in 78 seconds.</b> Silent, with captions drawn in the video (subtitle files: <a href="assets/video/method/sca_method.srt">SRT</a>, <a href="assets/video/method/sca_method.vtt">WebVTT</a>). The images, the per-head weight table and the speed figures in the video are real; the token grids are schematic.</p>
     <p class="placeholder" id="method-video-missing" hidden><span><strong>Method video file missing</strong>Render it with web/build/render_method_video.py.</span></p>
   </div>
 </section>
@@ -123,7 +128,7 @@
   <div class="wrap">
     <div class="prose">
       <h2 id="h-compare">Side by side at 4096&sup2;</h2>
-      <p>Every method gets the same prompt and the same seed. Drag the divider on either image; both move together. The square on the right is the 512&nbsp;&times;&nbsp;512 window marked by the white box, at native resolution. Eight prompts come from the paper's curated figures; three are random draws and are marked.</p>
+      <p>Every method gets the same prompt and the same seed. Drag the divider on either image; both move together. The second image is the 512&nbsp;&times;&nbsp;512 window inside the white box, at native resolution. Eight prompts come from the paper's curated figures; three are random draws and are marked.</p>
     </div>
     <div class="cmp-controls">
       <span class="label" id="cmp-base-label">Compare SCA with</span>
