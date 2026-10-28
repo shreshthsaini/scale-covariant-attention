@@ -1,0 +1,87 @@
+# Late-duplication fix, running log (started 2026-10-27, method owner, Opus subagent)
+
+Directive: SCA adds small extra people, animals or objects in the last 20 of 28 steps (5 of 11 uncurated
+FLUX.1-dev 4096^2 images, results/visual_audit_20261020); AReA and the other baselines do not. Remove it
+without losing the speed and metric wins. Constraints: SU freeze (no sbatch, no scontrol release); GPU only
+on held, idle GPUs through the spool with guest_worker_shared.sh; Python via the sca uv env only.
+
+## Environment at start (2026-10-27 23:00 CDT)
+- Operator host i618-062 (gg CPU node, job 1103029, 144 cores, load ~1). Held GPU nodes: none running
+  (one gh job 1103038 pending). So Stage 3 GPU runs wait for an idle held GPU.
+- Detector candidates in the offline HF cache: IDEA-Research/grounding-dino-tiny, openai CLIP ViT-L/14,
+  laion CLIP ViT-H-14, google siglip-so400m, Qwen2/2.5-VL (2B, 3B, 7B), Qwen3-VL-4B, Phi-3.5-vision.
+  No OWL-ViT/OWLv2. transformers 5.19 in the sca env has GroundingDinoForObjectDetection.
+
+## Stage 1 (understand)
+### Own evidence (CPU, no GPU)
+- Schedule (28 steps, max shift, exp(mu)=3.16): sigma_k for k=8..27 = .888 .870 .850 .830 .808 .785 .760 .732
+  .703 .671 .637 .599 .558 .513 .463 .407 .345 .275 .196 .105. Mid noise [0.5, 0.89] = steps 8-21 (14 steps).
+- The calibrated table is almost flat in sigma (calib/k1_1024.npz, scale 4): mean pi .691 at sigma .896,
+  .720 at .687, .735 at .536, .770 at .105; median .73-.83; 38-57% of heads above 0.8, 6-8% below 0.3.
+  So at step 8 (sigma .888, signal fraction 11%) the local branch jumps from weight 0 to about 0.7 in one
+  step and stays there. AReA at the same step uses 180-token windows plus (0.5 w)^2 global bridge tokens and
+  shrinks to 64 only at step 27 (.agent/notes/area_code.md); its last four opening steps already use
+  pooling factor 2 (128x128 global keys), SCA keeps factor 4.
+- Mechanism: a 64x64 local window with native positions and all 512 text keys is exactly the model's
+  native 1024^2 canvas, and the trained prior says a native canvas contains the prompt's subject. With
+  pi ~0.7 from sigma .89 on, every window is pushed to draw the subject while medium-scale structure
+  (objects of 6-25 tokens = 100-400 px) is still forming; the global branch (weight ~0.3, one key per 4x4
+  block) is the only path that tells a window the subject already exists elsewhere. Predicted size of a
+  copy scales with the window (paper: a 16-token window gives smaller, more numerous copies).
+
+## Stage 2 (measure)
+
+## Stage 3 (fix)
+### Detector (scripts/dup_detect.py, scripts/dup_rate.py)
+- Grounding DINO tiny (offline snapshot path, transformers 5.19, CPU, nice 19, 2 shards x 12 threads on the
+  operator host gg i618-062; about 5 s per image per shard). One forward per scale (longest side 800 and 1333)
+  with all subject queries of the prompt joined ("person . bear ."); per-query box score = max token
+  probability over the query's tokens; raw boxes >= 0.2 stored in /scratch/09032/saini_2/sca/eval/dup_detect_20261027.
+- dup_rate.py: boxes >= thr from both scales, NMS IoU 0.5, containment merge (>= 0.9 inside and >= 0.3 of the
+  area), boxes over 90% of the image dropped; flag = any subject count > implied count.
+- Subjects: results/dup_audit_20261027/subjects_a4k195.json, written blind to images by an Opus subagent from
+  the prompt text (person query for every human, implied counts, null for crowds; reflections doubled).
+  147 of 195 prompts have a numeric count, 97 solo, 31 have no countable subject.
+- Validation labels: results/dup_audit_20261027/validation_labels.csv: the 11 audited images (5 pos) plus 23
+  SCA images judged by the figure-curation auditors (13 pos, 10 neg); 4 negatives have no countable subject.
+- First look (19 scored, thr 0.35): 16/19 agree. Inspected all 3 disagreements at full resolution:
+  * 997293625843621481 ice climber (curation label clean, "small hook at top edge"): the detector is right,
+    three small extra climbers walk along the top edge (crop viewed); label was an audit miss.
+  * 1516768667427572324 artist's corner (audit label no): a second, smaller framed portrait of the same man
+    with glasses sits lower left (one of the "empty" frames); the detector's person 2/1 is a real copy; its
+    suitcase 2/1 is a false positive on a tin box.
+  * 3614061571823823193 Moai (label yes, small second Moai on the far shore): missed (statue 1/1).
+
+### Candidate fixes (ranked by expected effect per cost; implemented flags marked [impl])
+Cost model at 4096^2 on a GH200: 70.6 s per image; attention 18.7 ms per layer, about half of it the local
+branch, so a local window of side w costs about (512 + w^2)/(512 + 4096) of the published local branch.
+1. [impl] Soft opening phase, `--pi-ramp SIGMA_R` (ramp_sigma): pi(sigma) * r^gamma with
+   r = clip((0.89 - sigma)/(0.89 - SIGMA_R), 0, 1). Gives the AReA-like gradual hand-over from the
+   whole-image canvas to native windows over steps 8-19 instead of one step. Cost 0 s (local branch already
+   computed). Risk: more global weight at mid noise softens texture (global-only mosaic).
+2. [impl] Per-head opening, `--pi-ramp-mode head`: head h opens at sigma_r + (0.89 - sigma_r) * pi_h, so
+   heads that prefer the global branch (small pi) stay global longer and local heads open at the gate.
+   Cost 0 s.
+3. [impl] Fractional global positions, `--glob-pos frac`: global-branch ids p/s instead of floor(p/s), so the
+   16 queries of a block no longer share one position (the cause of the 4x4 mosaic when the opening phase is
+   long; paper Section 2.3). Enables a longer or softer opening phase (e.g. gate 0.80) at 0 s. Offsets stay
+   below n0 (Prop. 1 holds with real-valued ids).
+4. [impl] Wider mid-noise windows, `--win-sched 0.80:128,0.70:96`: AReA-like shrink 128 -> 96 -> 64 over
+   steps 8-14. Local cost x3.6 for 4 steps and x2.1 for 3 steps: about +5 to +6 s (8%). Offsets exceed the
+   trained range while wide (as in AReA).
+5. [impl] Text-key bias in the local branch, `--text-local -2.77 [--text-local-lo 0.5]`: a native window
+   gets the full prompt drive of a native image (512 text keys against 4096 image keys), so every window is
+   pushed to draw the subject; full attention at 4096^2 dilutes text mass by up to 16x. Bias log(1/16)
+   restores that dilution in the local branch only (global branch and text queries unchanged). Cost about
+   0 s (score_mod). Risk: weaker prompt detail late, hence the mid-noise-only variant.
+6. Global block-centre phase dithering across layers and steps (every token is a key somewhere); cost 0 s,
+   expected effect small (does not change who decides the subject count).
+7. LSE (joint-softmax) mixing: weight O_loc and O_glob per query by their softmax masses
+   (sigmoid(lse_loc - lse_glob - log c)), as full attention does (Lemma split), instead of one pi per head.
+   Lets a query in an empty window follow far subject tokens. Needs return_lse from both branches;
+   about 30 lines, cost about +2%.
+8. Latent low-band anchoring to the opening-phase x0 estimate (HRDiT structure guidance / FreeScale / ResDiT
+   style) in steps 8-14: fixes layout above the cutoff, but copies of 100-400 px are mid-frequency, so
+   expected effect on small copies is limited; cost about 0 s; needs a step callback.
+9. Per-head shrinking windows w_h(sigma) with pi recalibrated at each emulated ratio: closest to AReA but
+   needs per-head block masks and new calibration passes (GPU); deferred.

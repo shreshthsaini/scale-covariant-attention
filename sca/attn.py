@@ -61,10 +61,10 @@ def rope(x, cs):
     return apply_rotary_emb(x, cs, sequence_dim=1)
 
 
-def sdpa(q, k, v):
+def sdpa(q, k, v, attn_mask=None):
     """Attention on [B, S, h, D] tensors, same call pattern as the diffusers native backend."""
     return F.scaled_dot_product_attention(q.permute(0, 2, 1, 3), k.permute(0, 2, 1, 3),
-                                          v.permute(0, 2, 1, 3)).permute(0, 2, 1, 3)
+                                          v.permute(0, 2, 1, 3), attn_mask=attn_mask).permute(0, 2, 1, 3)
 
 
 def pool_tokens(x, grid, f, pool):
@@ -115,13 +115,14 @@ def auto_chunk(n_keys, h, D, itemsize, budget=2 << 30):
     return max(1, int(budget // (2 * n_keys * h * D * itemsize)))
 
 
-def local_branch(qr, kr, v, L, grid, tile, window, chunk=None):
+def local_branch(qr, kr, v, L, grid, tile, window, chunk=None, text_bias=0.0):
     """Blocked neighborhood attention for image queries at full resolution.
 
     qr, kr are RoPE-applied with original (full-resolution) coordinates, [B, S, h, D]
     (qr may also hold the image queries alone, [B, H*W, h, D]).
     Each th x tw query tile attends to all text keys plus a Wh x Ww key window centred on
-    the tile and clamped inside the grid. Returns [B, H*W, h, D].
+    the tile and clamped inside the grid. text_bias is added to the logits of the text keys.
+    Returns [B, H*W, h, D].
     """
     (H, W), (th, tw) = grid, tile
     B, _, h, D = qr.shape
@@ -132,11 +133,15 @@ def local_branch(qr, kr, v, L, grid, tile, window, chunk=None):
     chunk = chunk or auto_chunk(idx.shape[1], h, D, kr.element_size())
     qt = qr.view(B, Th, th, Tw, tw, h, D).permute(0, 1, 3, 2, 4, 5, 6).reshape(B, T, tq, h, D)
     out = qt.new_empty(B, T, tq, h, D)
+    bias = None
+    if text_bias:
+        bias = torch.zeros(1, idx.shape[1], dtype=qr.dtype, device=qr.device)  # [1, M], broadcast over queries
+        bias[:, :L] = float(text_bias)
     for c0 in range(0, T, chunk):
         ii = idx[c0:c0 + chunk]
         c = ii.shape[0]
         kk, vv = kr[:, ii].flatten(0, 1), v[:, ii].flatten(0, 1)  # [B*c, M, h, D]
-        out[:, c0:c0 + c] = sdpa(qt[:, c0:c0 + c].flatten(0, 1), kk, vv).view(B, c, tq, h, D)
+        out[:, c0:c0 + c] = sdpa(qt[:, c0:c0 + c].flatten(0, 1), kk, vv, bias).view(B, c, tq, h, D)
     return out.view(B, Th, Tw, th, tw, h, D).permute(0, 1, 3, 2, 4, 5, 6).reshape(B, H * W, h, D)
 
 
@@ -253,7 +258,18 @@ def flex_layout(L, grid, tile, window, device, q_tile=None, k_tile=None, kernel_
     return FlexLayout(q_gather, q_inv, k_gather, bm, ko)
 
 
-def local_branch_flex(qi, kr, v, L, layout, permuted=False):
+def text_score_mod(L, text_bias):
+    """score_mod adding text_bias to the logits of the first L (text) keys; None when text_bias is 0."""
+    if not text_bias:
+        return None
+    tb = float(text_bias)
+
+    def score_mod(score, b, h, q, kv):
+        return torch.where(kv < L, score + tb, score)
+    return score_mod
+
+
+def local_branch_flex(qi, kr, v, L, layout, permuted=False, text_bias=0.0):
     """Flex version of local_branch. qi: RoPE'd image queries [B, N, h, D]; kr, v: [B, L+N, h, D].
 
     Returns [B, N, h, D], or with permuted=True the raw flex output [B, h, Nq, D] in query-slot
@@ -263,6 +279,9 @@ def local_branch_flex(qi, kr, v, L, layout, permuted=False):
     kp = torch.cat([kr[:, :L], kr[:, L:].index_select(1, layout.k_gather)], 1)
     vp = torch.cat([v[:, :L], v[:, L:].index_select(1, layout.k_gather)], 1)
     kw = {"kernel_options": layout.kernel_options} if layout.kernel_options else {}
+    sm = text_score_mod(L, text_bias)
+    if sm is not None:
+        kw["score_mod"] = sm
     o = flex_fn(qi.device)(qp.transpose(1, 2), kp.transpose(1, 2), vp.transpose(1, 2),
                            block_mask=layout.block_mask, **kw)
     return o if permuted else o.transpose(1, 2).index_select(1, layout.q_inv)
@@ -318,7 +337,7 @@ def mix_fn(device):
     return _FLEX["mix"]
 
 
-def sca_flex_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout):
+def sca_flex_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, text_bias=0.0):
     """Whole SCA attention (both branches and the pi mix) with the flex local branch.
 
     Same arithmetic as SCAProcessor.branches + mix_branches with local_impl="flex"; written as
@@ -330,7 +349,7 @@ def sca_flex_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout)
     qi = rope(q[:, L:], (cos[L:], sin[L:]))
     q_txt = rope(q[:, :L], (cos[:L], sin[:L]))
     o_glob = global_branch(q, k, v, L, grid, f, pool, (cos[:L], sin[:L]), rope_q, rope_k, q_txt, kr[:, :L])
-    o_loc = local_branch_flex(qi, kr, v, L, layout, permuted=True)
+    o_loc = local_branch_flex(qi, kr, v, L, layout, permuted=True, text_bias=text_bias)
     return mix_branches(o_glob, o_loc, pi, L, layout.q_inv)
 
 
@@ -403,6 +422,14 @@ class SCAContext:
     gate_sigma: float = 0.0             # sigma above which pi = 0 (global only, local branch skipped)
     band: int = 0                       # >1: low band (avgpool band, bilinear up) of each image output from O_glob; <0: adaptive, c=-band
     fused: bool = True                  # flex only: compile RoPE, pooling, both branches and the mix together
+    # late-duplication options (.agent/notes/duplication_fix_20261027.md); defaults = published method
+    ramp_sigma: float = 0.0             # >0: soft opening, pi handed over from 0 at gate_sigma to the table at ramp_sigma
+    ramp_mode: str = "linear"           # linear: pi * r(sigma)^gamma; head: head h opens at ramp + (gate - ramp) * pi_h
+    ramp_gamma: float = 1.0             # exponent of the linear ramp r = clip((gate - sigma) / (gate - ramp), 0, 1)
+    glob_pos: str = "floor"             # floor: coarse ids floor(p / f) (published); frac: p / f (distinct per query)
+    win_sched: tuple = ()               # ((sigma_k, window_k), ...): local window window_k while sigma > sigma_k
+    text_local: float = 0.0             # logit bias on text keys in the local branch (0 = off, e.g. -2.77 = log 1/16)
+    text_local_lo: float = 0.0          # text_local applies only while sigma > text_local_lo
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -426,6 +453,13 @@ class SCAContext:
         self._flex_cache = {}
         if self.local_impl not in ("flex", "gather"):
             raise ValueError(f"local_impl must be flex or gather, got {self.local_impl}")
+        if self.ramp_mode not in ("linear", "head"):
+            raise ValueError(f"ramp_mode must be linear or head, got {self.ramp_mode}")
+        if self.ramp_sigma > 0 and not 0 < self.ramp_sigma < self.gate_sigma:
+            raise ValueError("ramp_sigma needs 0 < ramp_sigma < gate_sigma")
+        if self.glob_pos not in ("floor", "frac"):
+            raise ValueError(f"glob_pos must be floor or frac, got {self.glob_pos}")
+        self.win_sched = tuple(sorted(((float(a), int(b)) for a, b in self.win_sched), reverse=True))
 
     def flex_layout(self, L, tile, win, device):
         """BlockMask and permutations, cached per (text length, grid, tile, window, device)."""
@@ -454,18 +488,41 @@ class SCAContext:
             p = np.atleast_2d(np.asarray(self.pi(self.sigma), dtype=np.float64))  # [layers|1, heads|1]
             if p.shape[0] not in (1, self.n_layers) or p.shape[1] not in (1, heads):
                 raise ValueError(f"pi table shape {p.shape} does not match {self.n_layers} layers x {heads} heads")
+            p = self.ramp(p)
             self._pi_now = torch.as_tensor(p, dtype=torch.float32, device=device)
             self.pi_trace.append({"step": self.step, "sigma": self.sigma, "pi_mean": float(p.mean())})
         p = self._pi_now
         return p[layer if p.shape[0] > 1 else 0].expand(heads)
 
+    def ramp(self, p):
+        """Soft opening phase: hand pi over from 0 (global only) at gate_sigma to the table at ramp_sigma."""
+        if self.ramp_sigma <= 0 or self.gate_sigma <= 0 or self.sigma is None:
+            return p
+        s, g, r = float(self.sigma), float(self.gate_sigma), float(self.ramp_sigma)
+        if self.ramp_mode == "head":  # heads that prefer the global branch (small pi) open later
+            return np.where(s < r + (g - r) * p, p, 0.0)
+        return p * float(np.clip((g - s) / (g - r), 0.0, 1.0)) ** self.ramp_gamma
+
+    def window_now(self):
+        """Local window side at the current sigma (win_sched, else window or n0)."""
+        for s, w in self.win_sched:
+            if self.sigma is not None and float(self.sigma) > s:
+                return w
+        return self.window or self.n0
+
+    def text_bias_now(self):
+        if self.text_local and (self.sigma is None or float(self.sigma) > self.text_local_lo):
+            return float(self.text_local)
+        return 0.0
+
     def coarse_rope(self, f, device):
-        """(rope_q, rope_k): image queries at floor(id / f), pooled keys at block indices."""
-        key = (f, str(device))
+        """(rope_q, rope_k): image queries at floor(id / f) (glob_pos frac: id / f), pooled keys at block centres."""
+        key = (f, self.glob_pos, str(device))
         if key not in self._rope_cache:
             ids = self._img_ids.to(device).float()
             div = torch.tensor([1.0, f[0], f[1]], device=device)
-            q_ids = torch.cat([ids[:, :1], torch.floor((ids[:, 1:] - ids[:, 1:].amin(0)) / div[1:])], 1)
+            rel = (ids[:, 1:] - ids[:, 1:].amin(0)) / div[1:]
+            q_ids = torch.cat([ids[:, :1], rel if self.glob_pos == "frac" else torch.floor(rel)], 1)
             H, W = self.grid
             k_ids = q_ids.view(H, W, 3)[f[0] // 2::f[0], f[1] // 2::f[1]].reshape(-1, 3)
             self._rope_cache[key] = (self.pos_embed(q_ids), self.pos_embed(k_ids))
@@ -476,6 +533,7 @@ class SCAContext:
         H, W = self.grid
         Wn = self.window or self.n0
         if scale is None:
+            Wn = self.window_now()
             f = pool_factors(self.grid, self.n0, self.log)
             win = (min(Wn, H), min(Wn, W))
             tile = (fit_divisor(H, self.tile, self.log), fit_divisor(W, self.tile, self.log))
@@ -529,7 +587,7 @@ class SCAProcessor:
         cos, sin = image_rotary_emb
         return L, (cos[:L], sin[:L])
 
-    def branches(self, q, k, v, image_rotary_emb, f, tile, win, qr=None, kr=None, permuted=False):
+    def branches(self, q, k, v, image_rotary_emb, f, tile, win, qr=None, kr=None, permuted=False, text_bias=0.0):
         """(L, o_loc, o_glob, inv). Text q/k RoPE is shared by both branches. With permuted=True
         and the flex path, o_loc is the raw flex output and inv the un-permutation (else None)."""
         ctx = self.ctx
@@ -545,9 +603,9 @@ class SCAProcessor:
         o_glob = global_branch(q, k, v, L, ctx.grid, f, ctx.pool, rope_txt, rq, rk, q_txt, kr[:, :L])
         if ctx.local_impl == "flex":
             layout = ctx.flex_layout(L, tile, win, q.device)
-            o_loc = local_branch_flex(qi, kr, v, L, layout, permuted)
+            o_loc = local_branch_flex(qi, kr, v, L, layout, permuted, text_bias)
             return L, o_loc, o_glob, (layout.q_inv if permuted else None)
-        return L, local_branch(qi, kr, v, L, ctx.grid, tile, win, ctx.chunk), o_glob, None
+        return L, local_branch(qi, kr, v, L, ctx.grid, tile, win, ctx.chunk, text_bias), o_glob, None
 
     def sca(self, q, k, v, image_rotary_emb):
         ctx = self.ctx
@@ -567,8 +625,9 @@ class SCAProcessor:
             sg = float(ctx.sigma) if ctx.sigma is not None else 0.0
             band = int(round(-band * sg / max(1e-3, 1 - sg)))
             band = min(band, min(ctx.grid))
+        tb = ctx.text_bias_now()
         if band > 1:
-            L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True)
+            L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True, text_bias=tb)
             if inv is not None:
                 o_loc = o_loc.transpose(1, 2).index_select(1, inv)
             return band_mix_fn(q.device)(o_glob, o_loc, pi, L, ctx.grid, band)
@@ -576,9 +635,9 @@ class SCAProcessor:
             L, _ = self._split(q, image_rotary_emb)
             rq, rk = ctx.coarse_rope(f, q.device)
             layout = ctx.flex_layout(L, tile, win, q.device)
-            return sca_flex_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f,
-                                         ctx.pool, layout)
-        L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True)
+            args = (q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, layout)
+            return sca_flex_fn(q.device)(*args, tb) if tb else sca_flex_fn(q.device)(*args)
+        L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True, text_bias=tb)
         return mix_fn(q.device)(o_glob, o_loc, pi, L, inv)
 
     def calibrate(self, q, k, v, image_rotary_emb):
