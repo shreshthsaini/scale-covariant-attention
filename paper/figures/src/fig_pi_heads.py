@@ -128,6 +128,7 @@ def data():
 
 def plot(d):
     sf.use_style()
+    sf.script_floor(sf.FS_TICK)  # sigma_g tick labels are 7 pt: every script prints at 6 pt or more
     plt.rcParams["svg.hashsalt"] = "sca-pi-heads"
     pi, pop, sig, cls = d["pi"], d["pop"], d["sig"], d["cls"]
     x = sig[pop]
@@ -167,7 +168,9 @@ def plot(d):
         bb = ax.get_position()
         fig.text(bb.x0, bb.y1 + 0.05 / H, "abc"[k], fontsize=sf.FS_PANEL, fontweight="bold", va="baseline")
         fig.text(bb.x0 + 0.11 / W, bb.y1 + 0.05 / H, name, fontsize=sf.FS_TICK, color=sf.INK, va="baseline")
-    axes[0].set_ylabel(r"local weight $\pi_h$")
+    # labelpad 1.5 (not 2.5): the 6.9 pt subscript deepens the label's descent, which matplotlib pins to
+    # the tick labels; this keeps the label where it was, inside the left edge.
+    axes[0].set_ylabel(r"local weight $\pi_h$", labelpad=1.5)
     axes[1].set_xlabel(r"noise level $\sigma$")
 
     # (d) split halves: 2D histogram over every populated cell, neutral grey, log counts
@@ -185,7 +188,7 @@ def plot(d):
     for side in ("top", "right"):
         dax.spines[side].set_visible(False)
     dax.set_xlabel(r"$\pi_h$, even half")
-    dax.set_ylabel(r"$\pi_h$, odd half")
+    dax.set_ylabel(r"$\pi_h$, odd half", labelpad=1.5)
     dax.text(0.04, 0.96, f"r = {d['r']:.3f}", transform=dax.transAxes, ha="left", va="top",
              fontsize=sf.FS_TICK, color=sf.INK)
     bb = dax.get_position()

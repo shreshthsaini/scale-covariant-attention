@@ -257,7 +257,7 @@ def main() -> None:
             zooms.append(dict(file=crop.name, box_xys=[bx, by, bs], inset_in=q,
                               inset_xy_in=[round(i0[0] - x, 4), round(i0[1], 4)],
                               magnification=round((q / bs) / s, 2)))
-        text(x + M, M, r"%d\,$\times$\,%d" % (img.height, img.width), "badge", "north west")
+        text(x + M, M, r"%d\,\texttimes\,%d" % (img.height, img.width), "badge", "north west")
         records.append(dict(role="mosaic " + stem, source=str(png), png_sha256=sha(png),
                             prompt=meta["config"]["prompt"], config=meta["config"],
                             preview=full.name, preview_px=list(Image.open(full).size),
@@ -306,7 +306,7 @@ def main() -> None:
   halo/.style={draw=black,draw opacity=0.35,line width=1.15pt},
   frame/.style={draw=scaZoom,line width=0.6pt},
   badge/.style={fill=black,fill opacity=0.55,text opacity=1,text=white,rounded corners=1pt,
-                inner xsep=1.6pt,inner ysep=1.0pt,font=\sffamily\fontsize{6}{7}\selectfont},
+                inner xsep=1.6pt,inner ysep=1.0pt,font=\sffamily\fontsize{6.1}{7}\selectfont},
   head/.style={inner sep=0pt,font=\sffamily\fontsize{7.5}{9}\selectfont,text=scaInk},
   headours/.style={inner sep=0pt,font=\sffamily\bfseries\fontsize{7.5}{9}\selectfont,text=scaAccent},
   ]

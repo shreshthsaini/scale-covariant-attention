@@ -81,6 +81,7 @@ FS_TICK = 7.0   # tick labels
 FS_PANEL = 8.0  # panel letters
 FS_SMALL = 6.5  # the smallest text (small grey per-size ratios)
 FS_VALUE = 6.5  # values printed at bar ends
+MIN_PT = 6.0    # nothing prints smaller, sub- and superscripts included (gold-standard rubric)
 GRIDLINE = "#E3E6EA"  # value-axis gridlines (plot standard of 2026-10-19)
 GRIDLINE_LW = 0.45
 
@@ -127,6 +128,23 @@ def use_style() -> None:
         "pdf.compression": 9,
     })
     os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
+
+
+def script_floor(base_pt: float, floor_pt: float = MIN_PT) -> float:
+    """Print mathtext sub- and superscripts of `base_pt` text at `floor_pt` or more.
+
+    matplotlib sets every script at a fixed 0.7 of its parent (matplotlib._mathtext.SHRINK_FACTOR),
+    so the subscript of a 7 pt tick label prints at 4.9 pt and that of an 8 pt label at 5.6 pt.
+    LaTeX raises the ratio at small sizes (8 pt text takes 6 pt scripts); this does the same for a
+    whole figure. Pass the smallest size that carries a script, after use_style() and before the
+    first draw; the parse cache is cleared because mathtext caches its layouts. Returns the factor.
+    """
+    from matplotlib import _mathtext, mathtext
+
+    factor = max(0.7, round(floor_pt / base_pt + 0.006, 3))
+    _mathtext.SHRINK_FACTOR = factor
+    mathtext.MathTextParser._parse_cached.cache_clear()
+    return factor
 
 
 def panel_label(fig, ax, letter: str, dx: float = -0.0, dy: float = 0.0, x_fig: float | None = None):

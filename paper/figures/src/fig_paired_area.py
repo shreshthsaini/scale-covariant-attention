@@ -41,6 +41,7 @@ import data195  # noqa: E402,F401  (results/a4k195_* loader)
 ROOT = HERE.parents[2]
 RESULTS = ROOT / "results"
 MAIN = ROOT / "paper/main.tex"
+HEADLINE = ROOT / "paper/figures/snippets/main_tables/headline.tex"  # gen_main_tables.py: prose numbers
 OUT = ROOT / "paper/figures/paired_area"
 RUN = "a4k195_main"  # results/<RUN>: all 195 prompts at 4096^2
 
@@ -61,6 +62,12 @@ GROUP_GAP = 0.55  # extra row units between groups
 
 def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def expand_headline(tex: str) -> str:
+    """main.tex with the headline.tex macros (\\hlWinsAreaWord{} and so on) replaced by the literals they print."""
+    macros = dict(re.findall(r"\\newcommand\{\\(hl[A-Za-z]+)\}\{([^{}]*)\}", HEADLINE.read_text()))
+    return re.sub(r"\\(hl[A-Za-z]+)(?:\{\})?", lambda m: macros.get(m.group(1), m.group(0)), tex)
 
 
 def table_logic(read: set) -> dict:
@@ -130,17 +137,19 @@ def statistics():
     words = {9: "Nine", 10: "Ten", 11: "Eleven", 12: "Twelve", 13: "Thirteen", 14: "Fourteen", 15: "All 15"}
     by = {r["metric"]: r for r in records}
     ir, fid = by["ir"], by["fid"]
-    sentence = re.search(words[len(sig)] + r" of 15 metrics improve significantly[^\n]*?unresolved", tex)
+    prose = expand_headline(tex)  # the main-text sentence and the caption print their numbers through macros
+    sentence = re.search(words[len(sig)] + r" of 15 metrics improve significantly[^\n]*?unresolved", prose)
     assert sentence, f"main-text sentence with {words[len(sig)]} of 15 not found"
     for quote in (f'{ir["delta"]:+.2f}$ $[{ir["ci_low"]:.2f},{ir["ci_high"]:.2f}]',
                   f'{fid["delta"]:+.1f}$ $[{fid["ci_low"]:.1f},{fid["ci_high"]:.1f}]'):
         assert quote in sentence.group(0), f"main-text sentence lacks {quote}"
-    figcap = re.search(r"\\textbf\{" + words[len(sig)] + r" of 15 metrics improve\.\}", tex)
+    figcap = re.search(r"\\textbf\{" + words[len(sig)] + r" of 15 metrics improve\.\}", prose)
     assert figcap, "figure caption count disagrees"
 
     sources = {str((RESULTS / n).relative_to(ROOT)): sha(RESULTS / n) for n in sorted(read)}
     sources["paper/figures/src/gen_tables.py"] = sha(HERE / "gen_tables.py")
     sources["paper/main.tex"] = sha(MAIN)
+    sources["paper/figures/snippets/main_tables/headline.tex"] = sha(HEADLINE)
     provenance = dict(
         figure="paper/figures/paired_area.pdf", script="paper/figures/src/fig_paired_area.py",
         printed_size_in=[W, H], printed_size_texpt=[round(W * 72.27, 1), round(H * 72.27, 1)],
@@ -164,6 +173,7 @@ def statistics():
 
 def plot(records):
     sf.use_style()
+    sf.script_floor(sf.FS_TICK)  # MUSIQ_c, FID_p, KID_p: 7 pt tick labels, subscripts at 6 pt or more
     plt.rcParams["svg.hashsalt"] = "sca-paired-area"
     fig = plt.figure(figsize=(W, H))
     left, right, bottom, top = 0.80, 0.07, 0.40, 0.05

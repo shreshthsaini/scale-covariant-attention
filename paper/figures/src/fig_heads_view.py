@@ -273,6 +273,7 @@ def letter(fig, x_in, y_in, ch, title):
 
 def plot(d: dict, img_a: np.ndarray, img_b: np.ndarray) -> tuple:
     sf.use_style()
+    sf.script_floor(sf.FS)  # the h of pi_h in the 8 pt axis label prints at 6 pt, not 5.6
     top = H - 0.17                       # top edge of every panel
     ya = 0.02
     sa = top - ya                        # (a) square side

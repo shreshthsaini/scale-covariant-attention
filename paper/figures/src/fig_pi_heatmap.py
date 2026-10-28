@@ -40,6 +40,7 @@ def pi_colorbar(fig, cax, image):
 
 def main():
     sf.use_style()
+    sf.script_floor(sf.FS)  # the h of pi_h in the 8 pt colourbar label prints at 6 pt, not 5.6
     plt.rcParams["svg.hashsalt"] = "sca"
     z, report = load()
     check(z, report)

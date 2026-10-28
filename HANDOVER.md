@@ -551,8 +551,8 @@ Gold-standard rubric (0/1/2 per item, Section 14 format), re-scored 2026-10-28:
 - Method: diagram 2; equations with "where" lines 1; boxed algorithms 1.
 - Experiments: setup run-ins 1; main table 2 (time columns, arrows, Key result); finding paragraphs 2 (every finding
   of Sections 3 and 4 is led by a bold claim sentence, in 4.3 after a one-line setup, and quotes numbers; each quoted
-  delta carries its 95% paired interval, which neither gold paper reports); ablation tables 2; plots 1 (palette, direct labels, every
-  figure span >= 6.0 pt); qualitative grid 1.
+  delta carries its 95% paired interval, which neither gold paper reports); ablation tables 2; plots 1 (palette,
+  direct labels, every figure span >= 6.0 pt); qualitative grid 1.
 - Discussion: limitations 2; reproducibility statement 1.
 - Appendix: 1 (Table J.1 has no HRDiT or SigMa rows).
 - Layout: floats, three wrapfigures, <= 60% float 1; captions 1; colours 1; no em dash/section sign/sub-6 pt figure

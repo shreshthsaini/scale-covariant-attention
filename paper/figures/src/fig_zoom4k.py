@@ -276,7 +276,7 @@ def main() -> None:
                 same_value_in=cross, image=str(png), image_sha256=sha(png),
                 derived_seed=meta["config"]["derived_seed"], crop=cp.name, crop_xywh=[bx, by, bw, bh]))
         if r == 0:  # the metric is named once, left of the first row of values
-            text("lab", "base east", h, top - 2.2, r"MUSIQ\raisebox{-0.3ex}{\fontsize{6}{6}\selectfont c}\,$\uparrow$")
+            text("lab", "base east", h, top - 2.2, r"MUSIQ\raisebox{-0.3ex}{\fontsize{6.1}{6}\selectfont c}\,$\uparrow$")
         examples.append(dict(prompt_id=pid, prompt=prompts.pop(), derived_seed=seeds.pop(), crop_xywh=[bx, by, bw, bh],
                              full_image=thumb.name, full_image_px=px))
 
