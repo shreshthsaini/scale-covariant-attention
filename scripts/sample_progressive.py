@@ -20,6 +20,7 @@ import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from sca import dedup  # noqa: E402
 from sca.runtime import (atomic_json, code_revision, file_sha256, fingerprint, image_seed, image_stem,  # noqa: E402
                          implementation_hash, read_prompts, resolution, runtime_environment)
 
@@ -296,6 +297,7 @@ def parser():
     p.add_argument("--gate-sigma", default="0.89",
                    help="Global-only above this sigma; one value, or one per higher-resolution stage")
     p.add_argument("--n0", type=int, default=64)
+    dedup.add_args(p)
     p.add_argument("--tile", type=int, default=8)
     p.add_argument("--window", type=int)
     p.add_argument("--pool", choices=("center", "mean"), default="center")
@@ -345,11 +347,11 @@ def build_contexts(args, plan, vae_scale_factor=8):
             pi = PiTable.load(args.pi_table, "head", None, None, target)
         contexts.append(SCAContext(mode="sca", known_grid=grid, n0=args.n0, tile=args.tile, window=args.window,
                                    pool=args.pool, chunk=args.chunk, local_impl=args.local_impl, pi=pi,
-                                   gate_sigma=gates[s - 1]))
+                                   gate_sigma=gates[s - 1], **dedup.context_kwargs(args)))
         info.append({"res": f"{h}x{w}", "n0": args.n0, "tile": args.tile, "window": args.window or args.n0,
                      "pool": args.pool, "chunk": args.chunk, "gate_sigma": gates[s - 1], "band": 0, "route": 0.0,
                      "pool_factors": list(pool_factors(grid, args.n0)), "pi_variant": pi.variant,
-                     "pi_const": args.pi_const, "pi_scale": getattr(pi, "scale", None)})
+                     "pi_const": args.pi_const, "pi_scale": getattr(pi, "scale", None), **dedup.info(args)})
     table = file_sha256(args.pi_table) if args.pi_const is None else None
     return contexts, {"stages": info, "pi_table_sha256": table, "native_attention": args.native_attention}
 

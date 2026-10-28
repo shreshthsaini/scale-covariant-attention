@@ -83,7 +83,7 @@ def flags(rows, subjects, args):
         img_area = r["size"][0] * r["size"][1]
         detail, flag, eligible = [], False, False
         for s in subj["subjects"]:
-            if s.get("implied") is None:
+            if s.get("implied") is None or (args.kinds and s.get("kind") not in args.kinds):
                 continue
             eligible = True
             n = len(count_boxes(r["dets"], s["query"], args.thr, sides, args.nms, args.contain,
@@ -129,6 +129,8 @@ def main(argv=None):
     p.add_argument("--methods", help="comma-separated method order (default: all, sorted)")
     p.add_argument("--ref", default="sca_nb")
     p.add_argument("--labels", type=Path, help="CSV method,prompt_id,dup for validation")
+    p.add_argument("--label-col", default="dup", help="label column (dup = audit, dup_reviewed = after review)")
+    p.add_argument("--kinds", type=lambda t: set(t.split(",")), help="only these subject kinds (e.g. person,animal)")
     p.add_argument("--per-image", type=Path, help="write per-image flags CSV")
     p.add_argument("--out", type=Path, help="write per-method rates CSV")
     p.add_argument("--boot", type=int, default=10000)
@@ -150,7 +152,7 @@ def main(argv=None):
             for (m, pid), (f, det) in sorted(fl.items()):
                 w.writerow([m, pid, f, det])
     if args.labels:
-        lab = [(r["method"], r["prompt_id"], int(r["dup"])) for r in csv.DictReader(open(args.labels))]
+        lab = [(r["method"], r["prompt_id"], int(r[args.label_col])) for r in csv.DictReader(open(args.labels))]
         tp = fp = tn = fn = miss = 0
         wrong = []
         for m, pid, y in lab:

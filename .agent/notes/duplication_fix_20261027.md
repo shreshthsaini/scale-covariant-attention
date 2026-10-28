@@ -116,3 +116,30 @@ branch, so a local window of side w costs about (512 + w^2)/(512 + 4096) of the 
 
 Decision: implement two more options before the pilot: AReA's bridge (top evidence) and the per-query LSE mix
 (in-range alternative to the bridge), both in a separate compiled forward so the published path is untouched.
+
+## Stage 3 (fix): state 2026-10-27 23:55
+- Code: commits a8dd72c and 792259c pushed (origin main). Options (all default off; published sidecar block
+  unchanged, test_sample_info_unchanged_by_default): --pi-ramp/--pi-ramp-mode/--pi-ramp-gamma,
+  --glob-pos frac, --win-sched, --text-local/--text-local-lo, --bridge-cells/--bridge-k/--bridge-lo,
+  --lse-tau. Bridge and LSE run in sca_dedup_forward (separate compile); others reuse the published fused
+  forward. tests/test_dedup.py 14 tests; full suite 154 passed.
+- Frozen code: /scratch/09032/saini_2/sca/code/792259c (git archive of sca scripts slurm tests results/dup_audit).
+- Pilot prompts: /scratch/09032/saini_2/sca/pilot15_dup.jsonl (dev4 + 11 audited).
+- Pilot tasks HELD (not pending): /scratch/09032/saini_2/sca/taskq/hold_dup/d100..d109 (base, bridge, ramp70,
+  lse1, bridge_ramp70, head50, bridge_mid, txtmid, win128, frac_ramp60) + d199_eval_dup_pilot.sh, generated
+  by slurm/dup_tasks.py --code .../792259c. Outputs out/dup/<label>/4096x4096; eval eval/dup_pilot.
+- GPUs: none held (gh job 1103038 pending). Release recipe when a held gh node is running and idle:
+  rm taskq/STOP; mv taskq/hold_dup/d1*.sh taskq/pending/; start guest workers with the exact command from
+  the brief; recreate taskq/STOP when done. Watcher: background squeue loop (120 s).
+- Detection of existing images running (2 CPU shards, bg task), output eval/dup_detect_20261027.
+
+### Detector validation (all 30 eligible labeled SCA images scored; thr 0.35 fixed a priori, = GDINO default)
+- Inspected every disagreement at full resolution. Detector right, audit missed it: ice climber (3 small
+  climbers), artist's corner (second portrait of the man), rolling hills (3 trees for "a solitary tree").
+  Detector false positives: brimmed hat read as a second umbrella (minus5673083787255800687), a twin-channel
+  waterfall (minus548913239957610051, natural). Misses: steeple drawn as fused spires (one box), the small far
+  Moai. Reviewed labels in validation_labels.csv column dup_reviewed (only the 3 inspected flips).
+- Agreement, any subject: audit labels 7/11 on the audited 11, 23/30 overall; reviewed 9/11, 26/30
+  (precision 19/21, recall 19/21). People and animals only (--kinds person,animal): audit 6/7, 18/20;
+  reviewed 7/7, 20/20. thr 0.3-0.4 give identical results.
+- So the table reports two rates: people/animals (primary, near-perfect on the labels) and any subject.
