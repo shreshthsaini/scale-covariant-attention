@@ -125,11 +125,140 @@ date -u +%FT%TZ > $E/DONE
     write(Path(hold) / f"d299_eval_dup46_{label}.sh", ev, dry)
 
 
+# ----------------------------------------------------------------------------- 195-prompt headline rerun
+A4K = "/scratch/09032/saini_2/constancy_rope/prompts/aesthetic4k_eval.jsonl"
+REFS = "/scratch/09032/saini_2/constancy_rope/prompts/aesthetic4k_refs.jsonl"
+HRGEN = f"{S}/hrgen1k.jsonl"
+ROWS = {  # key: (prompts, n, chunk, res, seed, model, old SCA (label, dir), AReA dir or None, eval name)
+    "m4k": (A4K, 195, 5, "4096x4096", 0, "dev", ("sca_nb", f"{S}/out/main/sca_nb/4096x4096"), f"{S}/out/main/area/4096x4096", "a4k195_main"),
+    "m24": (A4K, 195, 5, "2048x4096", 0, "dev", ("sca_nb", f"{S}/out/main/sca_nb/2048x4096"), f"{S}/out/main/area/2048x4096", "a4k195_2048x4096"),
+    "m26": (A4K, 195, 5, "2048x6144", 0, "dev", ("sca_nb", f"{S}/out/main/sca_nb/2048x6144"), f"{S}/out/main/area/2048x6144", "a4k195_2048x6144"),
+    "s1": (A4K, 195, 5, "4096x4096", 1, "dev", ("sca_nb", f"{S}/out/seed1/sca_nb/4096x4096"), f"{S}/out/seed1/area/4096x4096", "a4k195_seed1"),
+    "s2": (A4K, 195, 5, "4096x4096", 2, "dev", ("sca_nb", f"{S}/out/seed2/sca_nb/4096x4096"), f"{S}/out/seed2/area/4096x4096", "a4k195_seed2"),
+    "pg": (A4K, 195, 5, "4096x4096", 0, "prog", ("sca_prog", f"{S}/out/prog/sca_prog/4096x4096"), None, "prog195"),
+    "kr": (A4K, 195, 5, "4096x4096", 0, "krea", ("sca_krea", f"{S}/out/krea/sca_krea/4096x4096"), f"{S}/out/krea/area/4096x4096", "krea195"),
+    "hd": (HRGEN, 1000, 10, "4096x4096", 0, "dev", ("sca_nb", f"{S}/out/hrgen/sca_nb/4096x4096"), f"{S}/out/hrgen/area/4096x4096", "hrgen1k_dev"),
+    "hk": (HRGEN, 1000, 10, "4096x4096", 0, "krea", ("sca_krea", f"{S}/out/hrgen_krea/sca_krea/4096x4096"), None, "hrgen1k_krea"),
+}
+
+
+def rerun_gen_cmd(row, label, flags, a, b):
+    prompts, n, chunk, res, seed, model, old, area, ev = ROWS[row]
+    if model == "prog":
+        return (f"{PY} scripts/sample_progressive.py --prompts {prompts} --seed {seed} --out {rerun_dir(row, label)} "
+                f"--pi-table {S}/calib/k1_1024.npz --gate-sigma 0.89 --label {label}_prog --start {a} --end {b} " + " ".join(flags))
+    args = ["--method", "sca", "--seed", str(seed), "--guidance", "4.5", "--res", res, "--gate-sigma", "0.89",
+            "--out", rerun_dir(row, label), "--prompts", prompts, "--start", str(a), "--end", str(b)]
+    if model == "krea":
+        args += ["--model", "krea", "--pi-table", f"{S}/calib/krea_1024.npz", "--label", f"{label}_krea"]
+    else:
+        args += ["--pi-table", f"{S}/calib/k1_1024.npz", "--label", label]
+    return f"{PY} scripts/sample.py " + " ".join(args + list(flags))
+
+
+def rerun_dir(row, label):
+    prompts, n, chunk, res, seed, model, old, area, ev = ROWS[row]
+    tag = {"dev": label, "krea": f"{label}_krea", "prog": f"{label}_prog"}[model]
+    camp = {"m4k": "dupfix", "m24": "dupfix", "m26": "dupfix", "s1": "dupfix_seed1", "s2": "dupfix_seed2",
+            "pg": "dupfix_prog", "kr": "dupfix_krea", "hd": "dupfix_hrgen", "hk": "dupfix_hrgen_krea"}[row]
+    return f"{S}/out/{camp}/{tag}/{res}"
+
+
+def rerun_eval(row, label, names, code):
+    prompts, n, chunk, res, seed, model, old, area, ev = ROWS[row]
+    tag = {"dev": label, "krea": f"{label}_krea", "prog": f"{label}_prog"}[model]
+    spec = [f"{tag}|{seed}|{rerun_dir(row, label)}", f"{old[0]}|{seed}|{old[1]}"]
+    pairs = [f"{tag}:{old[0]}"]
+    if area:
+        spec.append(f"area|{seed}|{area}")
+        pairs += [f"{tag}:area", f"{old[0]}:area"]
+    if row == "pg":
+        hr = ",".join(f"{S}/out/{d}/hrdit_dev_author/4096x4096" for d in ("baseline_expansion_20261017_rest145", "baseline_expansion_20261017_v1", "baseline_expansion_20261017_dev4"))
+        spec.append(f"hrdit_dev_author|0|{hr}")
+        pairs += [f"{tag}:hrdit_dev_author"]
+    refs = prompts == A4K
+    base_metrics = "clip,pickscore,musiq,fid,kid,patch_fid,patch_kid" if refs else "clip,pickscore,musiq"
+    extra_metrics = "ir,aesthetic,hpsv2,hpsv21,clipiqa,arniqa,is"
+    name = f"d99{list(ROWS).index(row)}_eval_{ev}_{label}.sh"  # after every generation task (d90..d98)
+    E, R = f"{S}/eval/{ev}_{label}", f"{P}/results/{ev}_{label}"
+    pat = "|".join(x[:-3] for x in names)
+    ref_arg = f"--references {REFS} " if refs else ""
+    corrected = (f"""mkdir -p $E/corrected_fidp/features && cp -p $E/base/features/*.npz $E/corrected_fidp/features/ && cp -p $E/base/evaluation_cache.json $E/corrected_fidp/ || {{ echo "feature copy failed"; exit 7; }}
+(cd {P} && WANDB_MODE=disabled run {PY} repro/evaluate_corrected.py --root $E/root --prompts {prompts} --references {REFS} --reference-method {tag} --reference-clusters images --res {res} --out $E/corrected_fidp --metrics fid,kid,patch_fid,patch_kid --device cuda --bootstrap 0 --threads 8 --no-wandb)
+""" if refs else "")
+    det = "" if prompts != A4K else f"""run {PY} scripts/dup_detect.py --subjects results/dup_audit_20261027/subjects_a4k195.json --device cuda --threads 8 --sides 800,1333 --out $E/det --dirs {tag}={rerun_dir(row, label)}
+{PY} scripts/dup_rate.py --dets {S}/eval/dup_detect_20261027 $E/det --subjects results/dup_audit_20261027/subjects_a4k195.json --thr 0.35 --kinds person,animal --methods {tag} --out $E/dup_rates_people.csv | tee -a $E/run.log
+{PY} scripts/dup_rate.py --dets {S}/eval/dup_detect_20261027 $E/det --subjects results/dup_audit_20261027/subjects_a4k195.json --thr 0.35 --methods {tag} --out $E/dup_rates_any.csv | tee -a $E/run.log
+"""
+    text = f"""#!/bin/bash
+# Duplication-fix rerun, row {row} ({ev}): {tag} vs {old[0]}{' and AReA' if area else ''}; clone of taskq/done/a000_z960_eval_a4k195_main.sh
+# (same metric commands, corrected patch FID for Aesthetic-4K rows, paired bootstrap 2000 draws) plus the duplicate detector.
+{ENV}set -uo pipefail
+Q={S}/taskq; NAME={name}; E={E}; R={R}
+while ls $Q/pending $Q/running 2>/dev/null | grep -q -E '^({pat})[.]sh'; do sleep 60; done
+if ls $Q/failed 2>/dev/null | grep -q -E '^({pat})[.]sh'; then echo "generation task failed; not evaluating"; exit 3; fi
+if [ -e $E/DONE ]; then echo "already complete: $E"; exit 0; fi
+[ -e $E ] && mv $E $E.partial_$(date +%Y%m%dT%H%M%S)
+mkdir -p $E/paired $R
+run(){{ "$@" 2>&1 | tee -a $E/run.log; local rc=${{PIPESTATUS[0]}}; if [ $rc -ne 0 ]; then echo "step failed rc=$rc: $*"; exit $rc; fi; }}
+{PY} -I - "{prompts}" "{';'.join(spec)}" "{res}" "$E/root" <<'PYEOF'
+import glob, json, os, sys
+prompts, spec, res, link = sys.argv[1:5]
+ids = [json.loads(l)["id"] for l in open(prompts) if l.strip()]
+bad = 0
+for item in spec.split(";"):
+    method, seed, dirs = item.split("|")
+    n = 0
+    for i in ids:
+        pngs = [p for d in dirs.split(",") for p in glob.glob(f"{{d}}/{{glob.escape(i)}}_*seed{{seed}}.png")]
+        if len(pngs) != 1 or not json.load(open(pngs[0][:-4] + ".json")).get("complete"):
+            bad += 1
+            continue
+        d = os.path.join(link, method, res); os.makedirs(d, exist_ok=True)
+        for src in (pngs[0], pngs[0][:-4] + ".json"):
+            os.symlink(src, os.path.join(d, os.path.basename(src)))
+        n += 1
+    print("GATE", method, n, "of", len(ids), flush=True)
+sys.exit(1 if bad else 0)
+PYEOF
+[ $? -eq 0 ] || {{ echo "GATE failed"; exit 6; }}
+cd {code}
+{det}run {PYM} {P}/scripts/eval_extra.py --root $E/root --prompts {prompts} --out $E/extra --metrics {extra_metrics} --reference-method {tag} --device cuda --batch-size 16 --threads 8
+run {PY} {CR}/scripts/eval.py --root $E/root --prompts {prompts} {ref_arg}--reference-method {tag} --res {res} --out $E/base --metrics {base_metrics} --device cuda
+{corrected}for pair in {' '.join(pairs)}; do a=${{pair%%:*}}; b=${{pair#*:}}
+  run {PY} -I {P}/scripts/paired_bootstrap.py --method $a --reference $b --draws 2000 --out $E/paired/${{a}}_vs_${{b}}.csv $E/extra/extra_per_image.csv $E/base/per_image.csv
+done
+cp $E/base/summary.csv $R/base_summary.csv && cp $E/extra/extra_summary.csv $R/extra_summary.csv && cp $E/paired/*.csv $R/ && cp $E/dup_rates_*.csv $R/ 2>/dev/null
+[ -d $E/corrected_fidp ] && mkdir -p $R/corrected_fidp && cp $E/corrected_fidp/summary.csv $E/corrected_fidp/paired_deltas.csv $R/corrected_fidp/
+(cd $R && sha256sum $(find . -name '*.csv' | sort) > SHA256SUMS)
+date -u +%FT%TZ > $E/DONE; echo "DONE {ev}_{label}: $E -> $R"
+"""
+    return name, text
+
+
+def rerun195(code, hold, dry, label, flags, rows):
+    total = 0
+    for row in rows:
+        prompts, n, chunk, res, seed, model, old, area, ev = ROWS[row]
+        names = []
+        for a in range(0, n, chunk):
+            b = min(n, a + chunk)
+            name = f"d9{list(ROWS).index(row)}_{row}_{label}_{a:04d}_{b:04d}.sh"
+            names.append(name)
+            write(Path(hold) / name, f"#!/bin/bash\n# duplication-fix rerun {row}: {label} {' '.join(flags)}\n" + ENV
+                  + f"cd {code}\n" + rerun_gen_cmd(row, label, flags, a, b) + "\n", dry)
+        total += len(names)
+        ename, etext = rerun_eval(row, label, names, code)
+        write(Path(hold) / ename, etext, dry)
+    print(f"{total} generation tasks")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--code", required=True, help="frozen code copy, e.g. /scratch/09032/saini_2/sca/code/<commit>")
     p.add_argument("--hold", default=f"{S}/taskq/hold_dup")
-    p.add_argument("--stage", choices=("pilot", "abl46"), default="pilot")
+    p.add_argument("--stage", choices=("pilot", "abl46", "rerun195"), default="pilot")
+    p.add_argument("--rows", default="m4k,m24,m26,s1,s2,pg,kr,hd,hk", help="rerun195 rows")
     p.add_argument("--variants", default=",".join(VARIANTS))
     p.add_argument("--label", help="abl46: variant label")
     p.add_argument("--flags", default="", help="abl46: sample.py flags for the variant (quoted)")
@@ -138,8 +267,10 @@ def main():
     Path(a.hold).mkdir(parents=True, exist_ok=True)
     if a.stage == "pilot":
         pilot(a.code, a.hold, a.dry_run, a.variants.split(","))
-    else:
+    elif a.stage == "abl46":
         abl46(a.code, a.hold, a.dry_run, a.label, a.flags.split())
+    else:
+        rerun195(a.code, a.hold, a.dry_run, a.label, a.flags.split(), a.rows.split(","))
 
 
 if __name__ == "__main__":
