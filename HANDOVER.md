@@ -572,3 +572,16 @@ Open:
 Fleet SCA14 (slurm/fleet_SCA14.sbatch): 8 gh nodes, 10 h, IDLE_MAX 5400, about 80 SU. Drains taskq/pending: the 16
 w_trace tasks (webpage trajectory videos, ~3 GPU-h), then the duplication-fix pilots and reruns the method agent enqueues
 (.agent/notes/duplication_fix_20261027.md). taskq/STOP was moved to STOP.until_20261027; recreate STOP when done.
+
+## Late-duplication audit and fix (method owner, 2026-10-28 07:50; full log .agent/notes/duplication_fix_20261027.md)
+Detector: scripts/dup_detect.py (Grounding DINO tiny, offline) + scripts/dup_rate.py; subjects and validation labels in
+results/dup_audit_20261027 (build.sh rebuilds every table). Validation on 30 labeled SCA images: people/animals 20/20
+after review (18/20 vs the original audit), any subject 26/30. Rates, 195 prompts at 4096^2, people/animals: SCA 57%
+[47,66] (seeds 50, 56), band guard 20, progressive SCA 8, AReA 4 [2,10], full 7, UltraImage 5, HRDiT 11, SEGA 12,
+DyPE 17, SigMa 27; 46-prompt set: gate .93 77, .89 58, .85 27, global only 4. Cause: pi jumps from 0 to ~0.7 at
+sigma .89 while the layout of small subjects is still forming. Options in sca/attn.py + sca/dedup.py (default off,
+published sidecars unchanged, 14 tests): pi ramp, per-head opening, fractional global ids, window schedule, local
+text bias, AReA-style bridge tokens, per-query LSE mixing. Queue: pilot a_d100..a_d113 (14 variants, 15 prompts) and
+46-prompt runs b_d2XX (bridge, bridge_ramp70, ramp70, lse1) in taskq/pending; evaluations park in
+taskq/hold_dup_eval and slurm/release_dup_evals.sh (PID 1256926 on i618-062) releases them. 195-prompt reruns staged in
+taskq/hold_dup/stage_x_{dupfix_bridge,dupfix_bridge_ramp70} (release recipe in the log; about 100 GPU-h).
