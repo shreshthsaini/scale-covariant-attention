@@ -151,3 +151,44 @@ hrdit 11%, sca_prog 8%, full 7%, ultraimage 5% (area 7.5% on any-subject earlier
 rarely as AReA, so the SCA operator itself is fine once the layout exists; the copies form at 4096^2 between
 the gate and about sigma .6, when 64-token windows (1/4 of the side) dominate an unformed layout. More steps do
 not help (s42, s56); the band guard (global low band) cuts it by two thirds.
+
+## 2026-10-28 01:15: SU freeze lifted (lead relay); pilot enqueued
+- Lead: fleet SCA14 (8 GH200 nodes, 10 h, job 1105980) submitted, taskq/STOP removed, 16 w_trace tasks pending.
+- Pilot: 14 generation tasks taskq/pending/a_d100..a_d113 (base, bridge, ramp70, lse1, bridge_ramp70, bridge32,
+  bridge_lse1, head50, ramp60, frac_ramp60, bridge_mid, txtmid, win128, frac_g80), code freeze
+  /scratch/09032/saini_2/sca/code/bd42387 (commit bd42387), outputs out/dup/<label>/4096x4096.
+- Evaluations never sleep: they park in taskq/hold_dup_eval and slurm/release_dup_evals.sh (PID 1256926 on
+  i618-062, log logs/release_dup_evals.log, 120 s loop, exits when hold is empty or STOP) moves each to pending
+  when its RELEASE_AFTER group has drained. Pilot eval: a_d199_eval_dup_pilot.sh -> eval/dup_pilot
+  (dup_rates.txt, dup_rates_people.txt, extra/, base/, timing printout in its task log).
+- Old held copies moved to taskq/hold_dup/superseded_20261028 (not deleted).
+- Next: when pilot numbers land, pick the winner, then dup_tasks.py --stage abl46 --prefix b_ (46-prompt paired
+  run) and --stage rerun195 --prefix x_ (473 generation tasks, evals z980-z988 in hold_dup_eval), restart the
+  release loop if it exited.
+
+### Stage 2 final tables (2026-10-28 01:45; results/dup_audit_20261027/rates_*.csv, build.sh rebuilds them)
+Detection finished: 3476 images in 8560 s (2 CPU shards x 12 threads). thr 0.35, Wilson 95% intervals, paired
+McNemar vs sca_nb. People/animals rate over the 95 prompts that imply a person or animal count; any-subject rate
+over the 147 prompts with any numeric count.
+| method (4096^2, 195-prompt set) | people/animals | any subject |
+|---|---|---|
+| SCA (sca_nb) seed 0 / 1 / 2 | 56.8% [46.8,66.3] / 49.5 / 55.8 | 55.8% [47.7,63.6] / 52.4 / 57.1 |
+| SCA 42 / 56 steps, guidance 7 | 56.8 / 54.7 / 49.5 | 58.5 / 57.8 / 50.3 |
+| SCA + band guard | 20.0 [13.2,29.1] | 24.5 |
+| progressive SCA | 8.4 [4.3,15.7] | 15.0 |
+| AReA seed 0 / 1 / 2 | 4.2 [1.6,10.3] / 3.2 / 6.3 | 7.5 [4.2,12.9] / 13.6 / 13.6 |
+| full attention | 7.4 | 6.8 |
+| UltraImage | 5.3 | 15.0 |
+| HRDiT | 10.5 | 14.3 |
+| SEGA | 11.6 | 17.0 |
+| DyPE | 16.8 | 25.2 |
+| SigMa | 27.4 | 28.6 |
+46-prompt ablation set (26 / 34 eligible): sca_nb 57.7 / 61.8; gate .93: 76.9 / 73.5; gate .85: 26.9 / 26.5
+(p .008 / .002); no gate (v0) 100 / 100; local only 96 / 85; global only 3.8 / 14.7; shared pi 69 / 62; per-layer
+77 / 71; mean pooling 96 / 91; band guard 11.5 / 23.5; with the guard: local only 27, shared 19, per-layer 11.5,
+mean 42, routing .3/.5 19.
+Reading: duplication falls monotonically with the global weight at mid noise (gate .93 > .89 > .85 > global only),
+the per-head table beats shared or per-layer weights, and a global low band (guard) removes most of it. But gate
+.85 costs aesthetic -0.19, ARNIQA -0.04, CLIP-IQA -0.03, HPSv2.1 -0.009, MUSIQ -1.9, MUSIQ_c -2.0 (all
+significant, results/e7_sca_g85_deltas.csv) and the guard costs HPSv2.1 -1.17 etc.; the pilot variants try to
+keep the global context without the hard switch.
