@@ -233,3 +233,21 @@ x_d90..x_d98, 473 tasks, label dupfix_bridge_ramp70, evals z980-z988 in hold_dup
 queued: bridge, bridge_ramp70, ramp70, and bridge_head50 (added; tests whether per-head opening keeps
 CLIP-IQA/ARNIQA at equal duplication). If bridge_head50 wins at 46 prompts, swap the reruns: move x_*bridge_ramp70*
 back to taskq/hold_dup/stage_x_dup_bridge_ramp70 and stage dupfix_bridge_head50 with dup_tasks.py --stage rerun195.
+
+## 2026-10-28 18:55: visual check changes the winner
+- Viewed the astronaut prompt (minus1071233499893339092): base draws about 7 astronauts; bridge_ramp70 draws one,
+  but its spires carry a vertical lattice; ramp70 alone shows 4x4-block streaks at the spire edge (the global
+  branch's shared query positions during the ramp), which is what CLIP-IQA/ARNIQA penalised; bridge alone is clean
+  but keeps 2 tiny astronauts; head50 is clean with at most one tiny figure.
+- So the linear ramp is rejected for the reruns. Reruns now ENQUEUED for dupfix_bridge_head50 (bridge 8x8x16 +
+  per-head opening, ramp 0.5): taskq/pending x_d90..x_d98 (473), evals z980-z988 (label dupfix_bridge_head50) in
+  hold_dup_eval. bridge_ramp70 reruns moved back to taskq/hold_dup/stage_x_dup_bridge_ramp70 (none had started).
+- bridge_head50 has no 15-prompt pilot; its 46-prompt paired run (b_d2XX_dup_bridge_head50, eval
+  eval/dup46_dup_bridge_head50) runs before the reruns and is the check: duplication at AReA's level, no significant
+  IR/HPSv2.1/PickScore/patch-FID loss, CLIP-IQA/ARNIQA within SCA's margin over AReA (+0.053/+0.039). If it fails,
+  withdraw: mv taskq/pending/x_*dupfix_bridge_head50* and hold_dup_eval/z98*dupfix_bridge_head50* to
+  taskq/hold_dup/stage_x_dup_bridge_head50/ (evals/ for z98*), then stage the next candidate with
+  slurm/dup_tasks.py --stage rerun195 --prefix x_.
+- Release loop PID 1256926 (i618-062) must stay up until the z98x evals are released; restart with
+  nohup bash slurm/release_dup_evals.sh >> /scratch/09032/saini_2/sca/logs/release_dup_evals.log 2>&1 &.
+  Do not recreate taskq/STOP while the fleet should drain the queue (it also stops the release loop).

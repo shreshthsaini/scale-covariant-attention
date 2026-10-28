@@ -585,3 +585,6 @@ text bias, AReA-style bridge tokens, per-query LSE mixing. Queue: pilot a_d100..
 46-prompt runs b_d2XX (bridge, bridge_ramp70, ramp70, lse1) in taskq/pending; evaluations park in
 taskq/hold_dup_eval and slurm/release_dup_evals.sh (PID 1256926 on i618-062) releases them. 195-prompt reruns staged in
 taskq/hold_dup/stage_x_{dupfix_bridge,dupfix_bridge_ramp70} (release recipe in the log; about 100 GPU-h).
+Update 18:55: pilot done (results/dup_audit_20261027/pilot_20261028): bridge+ramp70 1/9 people and 2/14 any at +4% time,
+but the linear ramp leaves block/lattice artifacts (CLIP-IQA -0.08, ARNIQA -0.06); the reruns are ENQUEUED for
+dupfix_bridge_head50 (x_ tasks, evals z980-z988), gated in practice by its 46-prompt paired run (b_ tasks) that runs first.
