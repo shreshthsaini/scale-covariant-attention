@@ -7,7 +7,9 @@ scratch under `/scratch/09032/saini_2/sca/web_assets/`.
 
 ## Layout
 
-- `index.html`: the page. Numbers sit in elements with `data-num="<key>"` and are filled from the CSVs.
+- `index.html`: the page. Numbers sit in elements with `data-num="<key>"` and are filled from the CSVs. The Paper
+  button links to `../paper/main.pdf`, the committed delivery PDF; when hosting `web/` on its own, copy the PDF
+  next to the page and change that link.
 - `assets/css/site.css`, `assets/js/site.js`: styles (one accent, light and dark) and the vanilla JS for the
   teaser magnifier, the before/after sliders, the charts and the data-driven galleries.
 - `assets/js/images.js`, `numbers.js`, `traces.js`, `ideogram_manifest.js`: generated data files (do not edit).
@@ -35,10 +37,14 @@ marked; run with `nice -n 19` on shared nodes and keep ffmpeg at `-threads 4`.
    `build/numbers.json` (value, display string, source CSV and row filter for every key) and
    `assets/js/numbers.js`, then rewrites every `data-num` element in the page. It prints each value next to the
    value the paper quotes and flags mismatches. Never type a number into the page by hand.
-4. **Method video**: `$PY web/build/render_method_video.py` (matplotlib frames piped to the vendored ffmpeg at
-   `/work/09032/saini_2/vista/library/ffmpeg-7.1-shared`) writes `assets/video/method/sca_method.mp4`, the SRT and
-   WebVTT subtitles and the poster. It uses the real calibrated table `/scratch/09032/saini_2/sca/calib/k1_1024.npz`
-   and real generated images, and reads its end-card numbers from `build/numbers.json`.
+4. **Method video**: `nice -n 19 $PY web/build/render_method_video.py` (matplotlib frames piped to the vendored ffmpeg
+   at `/work/09032/saini_2/vista/library/ffmpeg-7.1-shared`, `-threads 4`) writes `assets/video/method/sca_method.mp4`
+   (77.5 s, 1920 x 1080, 30 fps, H.264, silent, captions drawn in the frame), `sca_method.srt`, `sca_method.vtt` and
+   the poster. Six scenes: the two failures of full attention and early windows at 4096^2, the two views of a head,
+   calibration by emulation with the real scale-4 table filling in, the opening phase, the per-step weights at
+   4096^2 ending on a real image with a 1:1 crop, and an end card whose speed figures come from
+   `build/numbers.json`. The table and images are real; token grids are schematic. Image cache and check frames:
+   `/scratch/09032/saini_2/sca/web_assets/method_video/`.
 5. **Per-sample trajectory videos** (GPU): see below.
 6. **Ideogram images**: `$PY web/build/build_ideogram.py` (see the next section).
 7. **Check**: `PLAYWRIGHT_BROWSERS_PATH=/scratch/09032/saini_2/tmp/ms-playwright
@@ -48,14 +54,29 @@ marked; run with `nice -n 19` on shared nodes and keep ffmpeg at `-threads 4`.
 
 ## Per-sample trajectory videos (needs a GPU)
 
-`scripts/sample_trace.py` re-runs a prompt at 4096^2 with the campaign seed and code path and saves, at every one
-of the 28 steps, the decoded estimate of the clean image (tiled VAE decode, 1024^2 preview), a 1:1 crop at the
-comparison window and the per-head weights in use. `web/build/make_trace_tasks.py` writes 16 spool tasks
-(8 prompts, SCA and AReA) named `w_trace_*`. Because `taskq/STOP` was set under the SU freeze, they wait in
-`/scratch/09032/saini_2/sca/taskq/hold_web/`; release them into `taskq/pending/` only when GPU work is allowed
-again. When the traces exist, `$PY web/build/render_trace_videos.py` renders `assets/video/trace/<id>_sca.mp4` and
-`<id>_vs_area.mp4` with posters and rewrites `assets/js/traces.js`; the page then swaps its placeholders for the
-videos without other changes.
+Status: not rendered. The page shows a labelled placeholder card per prompt until the videos exist.
+
+- `scripts/sample_trace.py` re-runs one prompt at 4096^2 with the campaign's derived seed, settings and code path
+  (SCA as `sca_nb`, or AReA through its released code) and saves, at each of the 28 steps, the decoded estimate of
+  the clean image (x0 from the transformer output, tiled VAE decode, 1024^2 WebP preview), a native 512 x 512 crop
+  at the comparison window from `build/compare_selection.json`, and `trace.json` with sigma, timestep, phase and the
+  57 x 24 weights the attention processor actually used. It also records whether the final image matches the
+  campaign PNG (hash, pixel identity, PSNR). `--dry-run` checks prompts, seeds, boxes and paths without the model.
+  Outputs: `/scratch/09032/saini_2/sca/web_assets/trace/<method>/<prompt_id>/`.
+- `web/build/make_trace_tasks.py` writes the 16 spool tasks `w_trace_01..08` (SCA) and `w_trace_09..16` (AReA) for the
+  8 prompts, plus a README, into `/scratch/09032/saini_2/sca/taskq/hold_web/`; `--freeze` rebuilds the frozen code
+  copy `/scratch/09032/saini_2/sca/code/web_trace_75baaa8` (git archive of commit 75baaa8 plus `sample_trace.py`;
+  its `sca/attn.py` and `calib.py` are byte-identical to the campaign's code tag `2d11740`).
+- The tasks wait in `hold_web/` because `taskq/STOP` was set under the SU freeze. Estimated cost: about 10 GPU-minutes
+  per SCA task and 13 per AReA task, about 184 GPU-minutes in total, mostly the 28 tiled 4096^2 VAE decodes. Release
+  them only when GPU work is allowed again:
+  `mv /scratch/09032/saini_2/sca/taskq/hold_web/w_trace_*.sh /scratch/09032/saini_2/sca/taskq/pending/`
+  (the spool workers also need `taskq/STOP` removed by whoever owns the freeze).
+- When the traces exist: `nice -n 19 $PY web/build/render_trace_videos.py` renders `assets/video/trace/<id>_sca.mp4`
+  (decoded preview, phase, sigma timeline, the 57 x 24 weight strip and the 1:1 crop, about 15 s) and
+  `<id>_vs_area.mp4` (SCA and AReA side by side), each under 3 MB with a WebP poster, and rewrites
+  `assets/js/traces.js`. The page then swaps its placeholders for the videos with no other change. The renderer
+  refuses to write synthetic test traces into `web/`.
 
 ## Against a commercial model: adding the Ideogram 4.0 images
 

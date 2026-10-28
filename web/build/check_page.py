@@ -10,6 +10,7 @@ Writes desktop and phone screenshots (light and dark) to --out and prints a pass
 import argparse
 import functools
 import http.server
+import json
 import os
 import re
 import sys
@@ -24,10 +25,15 @@ def local_refs():
     """Every src/href/poster in index.html and every asset path in the generated data files must exist."""
     html = open(os.path.join(WEB, "index.html")).read()
     refs = set(re.findall(r'(?:src|href|poster|data-native)="([^"#:]+)"', html))
-    for js in ("images.js", "traces.js", "ideogram_manifest.js"):
+    for js in ("images.js", "ideogram_manifest.js"):
         p = os.path.join(WEB, "assets", "js", js)
         if os.path.exists(p):
             refs |= set(re.findall(r'"(assets/[^"]+\.(?:webp|mp4|png|jpg|vtt|srt))"', open(p).read()))
+    tr = os.path.join(WEB, "assets", "js", "traces.js")
+    if os.path.exists(tr):                           # only rendered trace videos must exist; expected ones are placeholders
+        t = open(tr).read()
+        for v in json.loads(t[t.index("{"):t.rindex("}") + 1]).get("available", []):
+            refs |= {v["mp4"], v["poster"]}
     missing = []
     for r in sorted(refs):
         if r.startswith("assets/ideogram/"):
