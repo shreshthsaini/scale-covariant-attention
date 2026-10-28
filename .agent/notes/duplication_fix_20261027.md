@@ -192,3 +192,5 @@ the per-head table beats shared or per-layer weights, and a global low band (gua
 .85 costs aesthetic -0.19, ARNIQA -0.04, CLIP-IQA -0.03, HPSv2.1 -0.009, MUSIQ -1.9, MUSIQ_c -2.0 (all
 significant, results/e7_sca_g85_deltas.csv) and the guard costs HPSv2.1 -1.17 etc.; the pilot variants try to
 keep the global context without the hard switch.
+Other sizes (eval/dup_detect_20261027_sizes, 656 images): people/animals SCA vs AReA 43.2% vs 17.9% at 2048x4096,
+53.7% vs 6.3% at 2048x6144; any subject 46.3% vs 22.4% and 55.8% vs 15.0% (all paired p < 1e-4).

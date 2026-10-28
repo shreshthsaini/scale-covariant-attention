@@ -19,3 +19,13 @@ for kind in any people; do
   done
 done
 sha256sum $(ls *.csv *.txt *.json | sort) > SHA256SUMS
+# other sizes (detector run 2026-10-28 into eval/dup_detect_20261027_sizes)
+D2=$S/eval/dup_detect_20261027_sizes
+for kind in any people; do
+  K=""; [ $kind = people ] && K="--kinds person,animal"
+  for sz in 2048x4096 2048x6144; do
+    $PY $P/scripts/dup_rate.py --dets $D2 --subjects $SUB --thr 0.35 $K --methods sca_nb_$sz,area_$sz --ref sca_nb_$sz \
+      --out rates_${sz}_$kind.csv > rates_${sz}_$kind.txt
+  done
+done
+sha256sum $(ls *.csv *.txt *.json | sort) > SHA256SUMS
