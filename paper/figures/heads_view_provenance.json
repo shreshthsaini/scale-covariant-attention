@@ -1,0 +1,174 @@
+{
+  "figure": "paper/figures/heads_view.pdf",
+  "script": "paper/figures/src/fig_heads_view.py",
+  "printed_size_in": [
+    5.5,
+    1.72
+  ],
+  "printed_size_texpt": [
+    397.5,
+    124.3
+  ],
+  "calibration": "FLUX.1-dev at 1024^2 (64x64 tokens), 57 blocks x 24 heads x 14 sigma bins, 32 prompts; results/evidence/calib/k1_1024.npz",
+  "share_definition": "share within r tokens = mass_mean[r] / (1 - mass_mean[0]): full-attention softmax mass within Chebyshev radius r of the query over the mass on image keys",
+  "slice": {
+    "bin": 8,
+    "sigma_centre": 0.618161,
+    "pi_scale": 2
+  },
+  "panel_a": {
+    "image": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.png",
+    "png_sha256": "df2b88e33dfcbb20d3f481c44dd2dd14eeb7dabe49905a16c94c02f19a5179e1",
+    "prompt_id": "a4k_eval_4096_minus8343371271909676658",
+    "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
+    "method": "sca_nb",
+    "res": "4096x4096",
+    "seed": 0,
+    "steps": 28,
+    "guidance": 4.5,
+    "sca": {
+      "n0": 64,
+      "tile": 8,
+      "window": 64,
+      "pool": "center",
+      "chunk": null,
+      "gate_sigma": 0.89,
+      "band": 0,
+      "route": 0.0,
+      "pool_factors": [
+        4,
+        4
+      ],
+      "pi_variant": "head",
+      "pi_const": null,
+      "sigma_star": null,
+      "pi_scale": 4,
+      "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+    },
+    "used_in": "Figure 1 bottom strip, SCA (ours) column (fig_hero.py STRIP_PID)",
+    "shown_as": "downscaled to 768 px (LANCZOS), colour saturation x0.6, white veil 0.12",
+    "query_tile_rc": [
+      12,
+      14
+    ],
+    "query_tile_px_xywh": [
+      1792,
+      1536,
+      128,
+      128
+    ],
+    "local_window_px_xywh": [
+      1344,
+      1088,
+      1024,
+      1024
+    ],
+    "pooled_key_index_per_axis": "j = 1, 5, ..., 61 of 0..63 (every 4th)",
+    "pooled_key_px_centres": [
+      104.0,
+      360.0,
+      616.0,
+      872.0,
+      1128.0,
+      1384.0,
+      1640.0,
+      1896.0,
+      2152.0,
+      2408.0,
+      2664.0,
+      2920.0,
+      3176.0,
+      3432.0,
+      3688.0,
+      3944.0
+    ],
+    "keys_drawn": 256,
+    "keys_total": 4096
+  },
+  "panel_b": {
+    "thumbnail": "same image, 256 px, greyscale, white veil 0.35; stands in for the 1024^2 native view of 64x64 tokens",
+    "query_token": [
+      32,
+      32
+    ],
+    "radii_tokens": [
+      2,
+      4,
+      8,
+      16
+    ],
+    "opacity": "alpha = 0.9 * min(1, density / 12.0), density = ring share / (ring tokens / 4096), nominal (2r+1)^2 squares; label = share within 16 tokens",
+    "note": "measured masses average over sampled queries, including queries whose squares the image border clips; the drawn rings use nominal areas"
+  },
+  "panel_c": "pi_h(sigma) of the three heads (scale-2 table) at the 13 populated bin centres, joined linearly; green = median of all 1368 heads, band = interquartile range; grey = sigma > 0.89 (global branch only at inference); dots mark the bin of panel (d)",
+  "panel_d": "all 1368 heads at bin 8: x = share within 16 tokens, y = pi_h (scale 2); Pearson r",
+  "selection": {
+    "rule": "heads with image mass >= 0.5 at the bin; mid-ranks of pi and share scaled to (0,1); nearest head to (q, q) in rank space",
+    "targets": {
+      "local": 0.9,
+      "mid": 0.2,
+      "global": 0.05
+    },
+    "eligible_heads": 1311,
+    "heads": {
+      "local": {
+        "block": 6,
+        "head": 9,
+        "pi_s2": 0.950828,
+        "pi_s4": 0.935218,
+        "share_r2": 0.820927,
+        "share_r4": 0.854335,
+        "share_r8": 0.880837,
+        "share_r16": 0.90121,
+        "text_mass": 0.003439,
+        "rank_pi_s2": 0.899695,
+        "rank_share_r16": 0.904272,
+        "rank_target": 0.9
+      },
+      "mid": {
+        "block": 24,
+        "head": 20,
+        "pi_s2": 0.510118,
+        "pi_s4": 0.667371,
+        "share_r2": 0.04898,
+        "share_r4": 0.098062,
+        "share_r8": 0.200367,
+        "share_r16": 0.379794,
+        "text_mass": 0.162659,
+        "rank_pi_s2": 0.200992,
+        "rank_share_r16": 0.185736,
+        "rank_target": 0.2
+      },
+      "global": {
+        "block": 11,
+        "head": 23,
+        "pi_s2": 0.163762,
+        "pi_s4": 0.434295,
+        "share_r2": 0.007268,
+        "share_r4": 0.021353,
+        "share_r8": 0.068796,
+        "share_r16": 0.223522,
+        "text_mass": 0.04969,
+        "rank_pi_s2": 0.049199,
+        "rank_share_r16": 0.049962,
+        "rank_target": 0.05
+      }
+    }
+  },
+  "pearson_r_drawn": 0.770683,
+  "csv_sha256": {
+    "pi_sigma.csv": "93c56e7c1da0ff97a8a3d976a394b1e804a332c239ecb43aee720c5c46326b60",
+    "pi_vs_mass.csv": "05a68dcdf1637e96e775e82ad098a5cc9807a11cbe771675f3321fe389928c77",
+    "rings.csv": "8a479daae1b97265fa51083b8758ac13361b0113f8e8b85cb3ac1433d3fb25e7",
+    "summary.csv": "d2c758133fc6f45a958ec7c5a79907eb4fea98af1bc1854f7cb269624da93e9d"
+  },
+  "sources": {
+    "results/evidence/calib/k1_1024.npz": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+    "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.png": "df2b88e33dfcbb20d3f481c44dd2dd14eeb7dabe49905a16c94c02f19a5179e1",
+    "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.json": "9c5742721f1ca763a699adb4445f0a424590c1ba73fff346b78acc59545b2e77"
+  },
+  "cache": {
+    "/scratch/09032/saini_2/sca/figcache/heads_view/a_church_768px.png": "368f5106c0c95ceaee0065af8d5eb8047b3c222b70ef4908be82decaa1ceae80",
+    "/scratch/09032/saini_2/sca/figcache/heads_view/b_church_256px.png": "0fd9406fd0d9ab77f5891b8665d6e952271a891fa60eee5a08c5c47b79c8e07c"
+  }
+}

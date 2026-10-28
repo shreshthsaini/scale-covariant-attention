@@ -1,6 +1,8 @@
-"""Krea-195 and HRGen-1K (1000 prompts) into main.tex: Table tab:generality rows, the HRGen-1K column of
-Table tab:phase2_general, and the prompt-count macros. Every value is read from results/ (paired_bootstrap.py,
-2000 prompt draws, seed 0) through data195.pairs and formatted by gen_tables.py; nothing is typed by hand.
+"""Krea-195 and HRGen-1K (1000 prompts) into main.tex: the HRGen-1K column of Table tab:phase2_general and the
+prompt-count macros. Every value is read from results/ (paired_bootstrap.py, 2000 prompt draws, seed 0) through
+data195.pairs and formatted by gen_tables.py; nothing is typed by hand. The HRGen-1K and Krea rows of Table
+tab:generality used to be patched here; gen_main_tables.py now writes them from the same two CSVs into
+figures/snippets/main_tables/tab_generality.tex, which main.tex inputs.
 
   results/hrgen1k_dev/sca_nb_vs_area.csv   SCA minus AReA, FLUX.1-dev, all 1000 HRGen-1K prompts
   results/krea195/sca_krea_vs_area.csv     SCA minus AReA, FLUX.1-Krea-dev, all 195 Aesthetic-4K prompts
@@ -11,7 +13,6 @@ Run: <sca env python> apply_krea_hrgen.py
 """
 import ast
 import csv
-import re
 import sys
 from pathlib import Path
 
@@ -39,16 +40,6 @@ def n_pairs(run, a, b):
     return int(ns_.pop())
 
 
-def sgn(x, d):
-    s = f"{x:+.{d}f}"
-    return "$" + s.replace("-", "{-}") + "$"
-
-
-def t5_row(label, macro, p):
-    return (f"{label} & {macro} & {sgn(p['ir'][0], 3)} & {sgn(100 * p['hpsv21'][0], 2)} & "
-            f"{sgn(p['musiq_crop1024'][0], 2)} \\\\")
-
-
 def main():
     tex = MAIN.read_text()
     have_hrgen = (ROOT / "results/hrgen1k_dev/sca_nb_vs_area.csv").exists()
@@ -56,11 +47,6 @@ def main():
     if have_hrgen:
         assert n_pairs("hrgen1k_dev", "sca_nb", "area") == 1000
         H = data195.pairs("hrgen1k_dev", "sca_nb", "area")
-        # Table tab:generality, HRGen-1K row
-        old = re.search(r"HRGen-1K & \\nhrgen & [^\n]*\\\\", tex).group(0)
-        new = t5_row("HRGen-1K", "\\nhrgen", H)
-        if old != new:
-            print("T5", old, "->", new); tex = tex.replace(old, new)
         # Table tab:phase2_general, HRGen-1K column (second cell)
         s = tex.index("\\label{tab:phase2_general}"); e = tex.index("\\end{tabular}", s)
         blk = tex[s:e]
@@ -77,10 +63,6 @@ def main():
     if have_krea:
         assert n_pairs("krea195", "sca_krea", "area") == 195
         K = data195.pairs("krea195", "sca_krea", "area")
-        old = re.search(r"Krea vs\.\\ AReA & \\nkrea & [^\n]*\\\\", tex).group(0)
-        new = t5_row("Krea vs.\\ AReA", "\\nkrea", K)
-        if old != new:
-            print("T5", old, "->", new); tex = tex.replace(old, new)
         tex = tex.replace("\\newcommand{\\nkrea}{100}", "\\newcommand{\\nkrea}{195}")
     MAIN.write_text(tex)
     # report the per-image wins for the text (2000 draws)

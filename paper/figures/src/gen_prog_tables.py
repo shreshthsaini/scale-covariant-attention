@@ -1,9 +1,11 @@
 """Progressive SCA numbers for the paper, generated from the archived CSVs (no hand-typed values).
 
 Writes figures/snippets/prog_deltas.tex (Table tab:prog_deltas: paired per-image intervals for progressive SCA,
-the 42-step control, HRDiT and 28-step SCA on all 195 Aesthetic-4K prompts) and checks that the two Table 2 rows
-typed in main.tex (42 steps, progressive) match results/a4k195_panel to the printed precision, including the
-significance marks against 28-step SCA. The snippet is written first; a failed check then exits non-zero.
+the 42-step control, HRDiT and 28-step SCA on all 195 Aesthetic-4K prompts) and checks that the two rows of Table
+tab:panel46 (42 steps, progressive) match results/a4k195_panel to the printed precision, including the significance
+marks against 28-step SCA. Those rows are written by gen_main_tables.py into
+figures/snippets/main_tables/tab_panel46.tex, which main.tex inputs; this script reads them there as an independent
+cross-check. The snippet is written first; a failed check then exits non-zero.
 
 Inputs, all read through data195.py: results/a4k195_panel/{base,extra}_summary.csv and corrected_fidp (values,
 seconds, and the FID / patch-FID deltas against sca_nb: data195.load), and the paired per-image files
@@ -116,15 +118,18 @@ def table2_rows(S, D, corrected_ci, prog_nb, s42_nb):
             row("sca_prog", prog_nb, "progressive", "30+17+10", f"{S[('sca_prog', 'seconds')]:.1f}")]
 
 
+PANEL46 = PAPER / "figures" / "snippets" / "main_tables" / "tab_panel46.tex"
+
+
 def check_main(rows):
-    """Compare the Table 2 rows typed in main.tex with the CSVs; returns the failures (empty when they match)."""
-    tex = (PAPER / "main.tex").read_text()
+    """Compare the tab:panel46 rows (snippet written by gen_main_tables.py) with the CSVs; returns the failures."""
+    tex = PANEL46.read_text()
     failures = []
     for label, steps, camp, cells in rows:
         line = next((l for l in tex.splitlines() if re.search(r"\\quad " + label + r" &", l)), None)
         want = [steps, "n/m", camp] + cells
         if line is None:
-            failures.append(f"Table 2 row '{label}' not found in main.tex; want {want}")
+            failures.append(f"Table 2 row '{label}' not found in {PANEL46.name}; want {want}")
             continue
         got = [c.strip() for c in line.split("\\\\")[0].split("&")]
         strip = lambda s: re.sub(r"\\textbf\{([^}]*)\}", r"\1", s)
@@ -181,9 +186,9 @@ def main():
         print("wrote", SNIPPET)
     failures = check_main(table2_rows(S, D, corrected_ci, data[1], data[2]))
     if failures:
-        sys.exit("main.tex check FAILED (snippet " + ("not written" if a.check_only else "written") + "):\n"
+        sys.exit("tab_panel46 check FAILED (snippet " + ("not written" if a.check_only else "written") + "):\n"
                  + "\n".join(failures))
-    print("main.tex check passed")
+    print("tab_panel46 check passed")
 
 
 if __name__ == "__main__":

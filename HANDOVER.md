@@ -511,3 +511,44 @@ Do not submit, resubmit or release any Slurm job for SCA (no sbatch, scontrol re
 auto-resubmit) until the user lifts the freeze; the allocation is near 2,800 SU and other users need the balance.
 SCA holds no jobs and runs no workers (taskq/STOP set 2026-10-20). CPU-only and paper work may continue. The one
 optional GPU item (band-guard rows of J.1/J.2 at 195 prompts, about 4 GPU-h) waits for the freeze to lift.
+
+## 19. 2026-10-27: AReA presentation pass
+Build /scratch/09032/saini_2/sca/paper_builds/delivery_3ip7uv4h (51 pp., main 1-10, Section 6 ends p. 10 y = 662 pt,
+reproducibility statement p. 11; 0 overfull, 0 undefined, fresh-unzip build passes); latest_delivery.md has hashes.
+Comparison with AReA (2610.17227): .agent/notes/area_vs_sca_presentation.md (22 items; SCA leads on 16, trails on 1).
+What changed:
+- Intro hook and gap sentence, Worked example (Section 2.2), Limitations led by late duplication (5 of 11), captions
+  cut to a bold lead plus at most two sentences, quality-time figure moved to Appendix L.
+- New Figure 4 (heads_view: key sets on a 4096^2 output, measured reach of three heads, their pi(sigma), pi against
+  near-field share over 1368 heads, r = 0.77 at scale 2, 16 tokens, sigma = 0.62; results/heads_view). The old
+  pi_heads figure is Figure B.2 (split-half r = 0.989). Sections 2.3 and 3 cite the new panels.
+- Tables 1 to 4 come from paper/figures/src/gen_main_tables.py (snippets/main_tables, headline.tex macros in the
+  prose); PDF text identical before and after the swap. Table 4 marks significantly worse cells (sigma_g = 0.85, HPS
+  and MUSIQ_c); Tables 1 and 2 carry direction arrows. apply_krea_hrgen.py no longer patches Table 4 rows;
+  gen_prog_tables.py checks the tab_panel46 snippet.
+- Related-work table (Table 5, check marks, O(N^2)/O(N) cost) and shorter related-work prose (27 citations kept).
+- Page fit: prose tightened throughout; published-numbers table moved from Section 4 to Appendix H (Table H.1);
+  Figure 6 wraps beside the Metrics paragraph; the qualitative grid is now Figure 5.
+- Two fresh Opus render reviews: fixed stale appendix openings (B, D, K, L), a wrong figure pointer, compute-appendix
+  campaign times (72/264/196 s from results/a4k195_main), the Table 2 caption, Table 5's offsets note (image keys).
+Gold-standard rubric (0/1/2 per item, Section 14 format):
+- Page 1: abstract 1 (176 words, 2.85x, URL); hero 1; footnotes 1.
+- Introduction: question and motivating wrapfigure 1; "We introduce", numbers, three "We" bullets 1; sentences 1
+  (median 20, max 35).
+- Method: diagram 2; equations with "where" lines 1; boxed algorithms 1.
+- Experiments: setup run-ins 1; main table 2 (time columns, arrows, Key result); finding paragraphs 1 (4.1 and 4.2
+  open with labels, not claims); ablation tables 2; plots 0 (mathtext subscripts at 4.9 to 5.6 pt in Figures 4, 6
+  and B.2); qualitative grid 1.
+- Discussion: limitations 2; reproducibility statement 1.
+- Appendix: 1 (Table J.1 has no HRDiT or SigMa rows).
+- Layout: floats, three wrapfigures, <= 60% float 1; captions 1; colours 1; no em dash/section sign/sub-6 pt text 0
+  (same subscripts).
+Score: 22 items, sum 24, mean 1.09; two 0 items, both the sub-6 pt subscripts. Below the ship bar until fixed.
+Open:
+- Raise figure subscripts to >= 6 pt (fig_heads_view.py y label; paired_area and pi_heads scripts), then rebuild.
+- Per-step figure needs x0 traces of SCA and AReA (scripts/sample_trace.py); none in
+  /scratch/09032/saini_2/sca/web_assets, and the SU freeze blocks GPU runs.
+- \codeurl is the public GitHub URL under the anonymous author block (swap at submission).
+- Table J.1 lacks HRDiT and SigMa rows; Table H.1 caption should say the FLUX.1-dev rows are unranked
+  (results/published_compare/build.py); R.4/R.5 captions give width x height; Table F.1 should name the 1280^2 prompt
+  ids (Appendix C); Table K.1 marks Krea ImageReward significant at 1000 draws while Table 4 (2000 draws) does not.
