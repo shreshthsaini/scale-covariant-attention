@@ -568,7 +568,7 @@ Open:
   (results/published_compare/build.py); R.4/R.5 captions give width x height; Table F.1 should name the 1280^2 prompt
   ids (Appendix C); Table K.1 marks Krea ImageReward significant at 1000 draws while Table 4 (2000 draws) does not.
 
-## 19. 2026-10-28: freeze lifted for SCA ("u can use the compute however u want"); SCA14 fleet submitted
+## 20. 2026-10-28: freeze lifted for SCA ("u can use the compute however u want"); SCA14 fleet submitted
 Fleet SCA14 (slurm/fleet_SCA14.sbatch): 8 gh nodes, 10 h, IDLE_MAX 5400, about 80 SU. Drains taskq/pending: the 16
 w_trace tasks (webpage trajectory videos, ~3 GPU-h), then the duplication-fix pilots and reruns the method agent enqueues
 (.agent/notes/duplication_fix_20261027.md). taskq/STOP was moved to STOP.until_20261027; recreate STOP when done.
