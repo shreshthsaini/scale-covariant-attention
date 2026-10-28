@@ -251,3 +251,31 @@ back to taskq/hold_dup/stage_x_dup_bridge_ramp70 and stage dupfix_bridge_head50 
 - Release loop PID 1256926 (i618-062) must stay up until the z98x evals are released; restart with
   nohup bash slurm/release_dup_evals.sh >> /scratch/09032/saini_2/sca/logs/release_dup_evals.log 2>&1 &.
   Do not recreate taskq/STOP while the fleet should drain the queue (it also stops the release loop).
+
+## Chosen operator, exact definition (candidate: dupfix_bridge_head50; flags --bridge-cells 8 --bridge-k 16
+## --pi-ramp 0.5 --pi-ramp-mode head; code sca/attn.py sca_dedup_forward, bridge_index, SCAContext.ramp)
+Notation as in paper Section 2. Grid H x W tokens (256 x 256 at 4096^2), text set T, sigma_g = 0.89, sigma_r = 0.5.
+1. Global operator: unchanged (Eq. glob): text keys plus one block-centre key per s x s block, coarse ids floor(p/s).
+2. Bridge set, recomputed in every block l and step: partition the grid into 8 x 8 cells (32 x 32 tokens at 4096^2);
+   score each image token j by sum_h ||k_{j,h} - kbar_h||^2, where k_{j,h} is the pre-RoPE (post-RMSNorm) key of head h
+   and kbar_h its mean over image tokens (AReA Eq. 17); in each cell keep the 16 highest-scoring tokens:
+   B_l(sigma), |B| = 1024, the same set for all heads of block l.
+3. Local operator: K^loc_i = {(k_j, v_j, 0)}_{j in T} U {(k_j, v_j, p_j)}_{j in B} U {(k_j, v_j, p_j)}_{p_j in Win(i)},
+   one softmax, RoPE at true positions for bridge keys (their offsets to the query reach H - 1, so Prop. 1 holds for
+   the window keys only; bridge keys are 1024 of 5,632 image-or-text keys per query, 18%). A token in both B and the
+   window appears twice (not deduplicated). Tile t = 8, window w = 64 as before.
+4. Per-head opening: for image queries of head h in block l at noise sigma,
+     O_i = O^glob_i                                   if sigma > sigma_g,
+     O_i = pi'_lh O^loc_i + (1 - pi'_lh) O^glob_i     otherwise, with
+     pi'_lh(sigma) = pi_lh(sigma) if sigma < sigma_r + (sigma_g - sigma_r) pi_lh(sigma), else 0.
+   So a head with table weight pi opens at sigma_open = 0.5 + 0.39 pi: pi 0.9 -> 0.85 (step 11), median 0.73 ->
+   0.79 (step 13), 0.5 -> 0.70 (step 16), 0.3 -> 0.62 (step 18); heads that prefer the global branch stay global
+   longest. Text queries take O^glob. pi table unchanged (calib/k1_1024.npz, scale-4 entry at 4096^2).
+5. Cost: bridge selection (one fused reduction and a per-cell top-k per block and step) plus 1,024 more local keys
+   (4,608 -> 5,632); pilot bridge alone 73.5 s vs 70.8 s (+4%); per-head opening costs nothing.
+Decision rule from the lead (scripts/dup_decide.py): people/animal rate <= 10% on the 46 prompts with a Wilson
+interval overlapping AReA's; no significant IR, HPSv2.1 or PickScore loss vs sca_nb; CLIP-IQA and ARNIQA stay ahead
+of AReA (paper's 195-prompt lead +0.053 / +0.039 plus the variant's paired delta; the same-prompt 46 lead is only
++0.029 / +0.022, printed as a sensitivity check); median time <= +10%.
+Ordering fix 18:40: the 46-prompt evaluations were renamed b_z97_eval_dup46_<label>.sh so that, once released, they sort
+before the w_ and x_ tasks (z97 would have sorted after all 473 x_ tasks).
