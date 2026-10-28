@@ -512,11 +512,12 @@ auto-resubmit) until the user lifts the freeze; the allocation is near 2,800 SU 
 SCA holds no jobs and runs no workers (taskq/STOP set 2026-10-20). CPU-only and paper work may continue. The one
 optional GPU item (band-guard rows of J.1/J.2 at 195 prompts, about 4 GPU-h) waits for the freeze to lift.
 
-## 19. 2026-10-27: AReA presentation pass
-Build /scratch/09032/saini_2/sca/paper_builds/delivery_3ip7uv4h (51 pp., main 1-10, Section 6 ends p. 10 y = 662 pt,
+## 19. 2026-10-27: AReA presentation pass (6 pt follow-up 2026-10-28)
+Build /scratch/09032/saini_2/sca/paper_builds/delivery_mzzf_m71 (51 pp., main 1-10, Section 6 ends p. 10 y = 673 pt,
 reproducibility statement p. 11; 0 overfull, 0 undefined, fresh-unzip build passes); latest_delivery.md has hashes.
+The AReA pass itself was build delivery_3ip7uv4h, commit 82d1c07.
 Comparison with AReA (2610.17227): .agent/notes/area_vs_sca_presentation.md (22 items; SCA leads on 16, trails on 1).
-What changed:
+What changed in the AReA pass:
 - Intro hook and gap sentence, Worked example (Section 2.2), Limitations led by late duplication (5 of 11), captions
   cut to a bold lead plus at most two sentences, quality-time figure moved to Appendix L.
 - New Figure 4 (heads_view: key sets on a 4096^2 output, measured reach of three heads, their pi(sigma), pi against
@@ -531,24 +532,43 @@ What changed:
   Figure 6 wraps beside the Metrics paragraph; the qualitative grid is now Figure 5.
 - Two fresh Opus render reviews: fixed stale appendix openings (B, D, K, L), a wrong figure pointer, compute-appendix
   campaign times (72/264/196 s from results/a4k195_main), the Table 2 caption, Table 5's offsets note (image keys).
-Gold-standard rubric (0/1/2 per item, Section 14 format):
-- Page 1: abstract 1 (176 words, 2.85x, URL); hero 1; footnotes 1.
+What changed on 2026-10-28 (6 pt follow-up):
+- No figure text under 6 pt: PyMuPDF spans of all 17 placed figure PDFs (all at scale 1.0) are at least 6.0 pt.
+  New scafig.script_floor(base_pt) raises matplotlib's mathtext script factor (fixed 0.7) so the scripts of base_pt
+  text print at 6.04 pt or more; called in fig_heads_view (Figure 4), fig_paired_area (Figure 6), fig_pi_heads
+  (Figure B.2; y-label pad 1.5 pt keeps the label inside the edge) and fig_pi_heatmap (Figure B.5, also at 5.6 pt and
+  missed by the first review). Figure 1's size badges and Figure 5's MUSIQ_c subscript went from 6 TeX pt (5.98 pt)
+  to 6.1 TeX pt (fig_hero.py, fig_zoom4k.py). Data, sizes and layout unchanged; JPEG assets byte-identical.
+- fig_paired_area.py expands the headline.tex macros before its main-text check, which failed after the macro swap.
+- Sections 4.1 and 4.2: every finding paragraph opens with a bold claim sentence instead of a label. The AReA
+  paragraph adds Table 1's before and after values (ImageReward 0.92 to 1.23, FID 145.8 to 138.1), Coverage the
+  6144^2 ImageReward interval of Table K.1, and the progressive paragraph its campaign times (49.5 and 110.4 s).
+  No reported number changed.
+Gold-standard rubric (0/1/2 per item, Section 14 format), re-scored 2026-10-28:
+- Page 1: abstract 1 (175 words, 8 sentences, 2.85x, URL); hero 1; footnotes 1 (none).
 - Introduction: question and motivating wrapfigure 1; "We introduce", numbers, three "We" bullets 1; sentences 1
-  (median 20, max 35).
+  (median 20, max 35; text unchanged).
 - Method: diagram 2; equations with "where" lines 1; boxed algorithms 1.
-- Experiments: setup run-ins 1; main table 2 (time columns, arrows, Key result); finding paragraphs 1 (4.1 and 4.2
-  open with labels, not claims); ablation tables 2; plots 0 (mathtext subscripts at 4.9 to 5.6 pt in Figures 4, 6
-  and B.2); qualitative grid 1.
+- Experiments: setup run-ins 1; main table 2 (time columns, arrows, Key result); finding paragraphs 2 (every finding
+  of Sections 3 and 4 is led by a bold claim sentence, in 4.3 after a one-line setup, and quotes numbers; each quoted
+  delta carries its 95% paired interval, which neither gold paper reports); ablation tables 2; plots 1 (palette, direct labels, every
+  figure span >= 6.0 pt); qualitative grid 1.
 - Discussion: limitations 2; reproducibility statement 1.
 - Appendix: 1 (Table J.1 has no HRDiT or SigMa rows).
-- Layout: floats, three wrapfigures, <= 60% float 1; captions 1; colours 1; no em dash/section sign/sub-6 pt text 0
-  (same subscripts).
-Score: 22 items, sum 24, mean 1.09; two 0 items, both the sub-6 pt subscripts. Below the ship bar until fixed.
+- Layout: floats, three wrapfigures, <= 60% float 1; captions 1; colours 1; no em dash/section sign/sub-6 pt figure
+  text 1 (PDF text has no em dash, section sign or "??"; 5 pt second-level math scripts remain only outside figures:
+  body equations, algorithm comments such as 1024^2, appendix table marks).
+Score: 22 items, sum 27, mean 1.23; no 0 item. Meets the ship bar (no 0, mean >= 1.2) by one point, so any item that
+drops to a lower score puts the paper back under it.
 Open:
-- Raise figure subscripts to >= 6 pt (fig_heads_view.py y label; paired_area and pi_heads scripts), then rebuild.
 - Per-step figure needs x0 traces of SCA and AReA (scripts/sample_trace.py); none in
   /scratch/09032/saini_2/sca/web_assets, and the SU freeze blocks GPU runs.
 - \codeurl is the public GitHub URL under the anonymous author block (swap at submission).
 - Table J.1 lacks HRDiT and SigMa rows; Table H.1 caption should say the FLUX.1-dev rows are unranked
   (results/published_compare/build.py); R.4/R.5 captions give width x height; Table F.1 should name the 1280^2 prompt
   ids (Appendix C); Table K.1 marks Krea ImageReward significant at 1000 draws while Table 4 (2000 draws) does not.
+
+## 19. 2026-10-28: freeze lifted for SCA ("u can use the compute however u want"); SCA14 fleet submitted
+Fleet SCA14 (slurm/fleet_SCA14.sbatch): 8 gh nodes, 10 h, IDLE_MAX 5400, about 80 SU. Drains taskq/pending: the 16
+w_trace tasks (webpage trajectory videos, ~3 GPU-h), then the duplication-fix pilots and reruns the method agent enqueues
+(.agent/notes/duplication_fix_20261027.md). taskq/STOP was moved to STOP.until_20261027; recreate STOP when done.
