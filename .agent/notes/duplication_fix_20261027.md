@@ -208,3 +208,28 @@ Other sizes (eval/dup_detect_20261027_sizes, 656 images): people/animals SCA vs 
   HRGen-1K, 24 h load/compile at about 3 min per task, 11 h evaluation).
 - Pilot summary when eval/dup_pilot/DONE exists: python scripts/dup_pilot_summary.py /scratch/09032/saini_2/sca/eval/dup_pilot
   (and eval/dup46_<label> with OUT_ROOT out/dup46).
+
+## 2026-10-28 18:35: pilot numbers (eval/dup_pilot; results/dup_audit_20261027/pilot_20261028)
+15 prompts (4 dev + 11 audited), seed 0, 4096^2, code bd42387, run on the guest GPU of job 1103038 (c622-021).
+Duplicates people/animals (of 9) and any subject (of 14); metric deltas vs sca_nb on the 11 non-dev prompts
+(* = 95% bootstrap interval excludes 0); median s/image vs dup_base 70.8 s.
+- dup_base 6/9, 9/14, 70.8 s: reproduces the published images (all deltas ~1e-7).
+- dup_bridge_ramp70 1/9, 2/14, +4%: IR +0.10, HPSv2.1 -0.005, PickScore -0.13, aesthetic +0.02 (n.s.);
+  CLIP-IQA -0.079*, ARNIQA -0.057*. Reference rows on the same prompts: AReA 0/9, 1/14; full 0/9, 0/14;
+  progressive SCA 1/9, 2/14; HRDiT 1/9, 1/14.
+- dup_head50 2/9, 4/14, +0%: IR +0.16, PickScore +0.18 (n.s.), CLIP-IQA -0.029*.
+- dup_bridge32 2/9, 6/14, +7%; dup_bridge 3/9, 7/14, +4% (PickScore +0.19*); dup_bridge_mid 3/9, 7/14, +3%.
+- dup_ramp70 3/9, 3/14 (CLIP-IQA -0.066*, ARNIQA -0.051*); dup_ramp60 4/9, 4/14 (CLIP-IQA -0.107*, ARNIQA -0.086*).
+- dup_frac_ramp60 3/9, 4/14 (MUSIQ -2.85*); dup_frac_g80 4/9, 6/14, -3%.
+- dup_txtmid 3/9, 8/14 but IR -0.33*, HPSv2.1 -0.010*, PickScore -0.30*: rejected.
+- dup_win128 3/9, 6/14, +14%: too slow. dup_lse1 6/9, 10/14 and worse PickScore: rejected (46-prompt run withdrawn
+  to taskq/hold_dup/withdrawn_lse1_20261028). dup_bridge_lse1 4/9, 7/14.
+Reading: the bridge (AReA's mechanism) and the gradual hand-off act on different copies (bridge: people;
+ramp: objects too) and combine to AReA's level at +4% time; the ramp's extra global weight costs the no-reference
+sharpness metrics, which on 195 prompts SCA leads AReA by only +0.053 CLIP-IQA and +0.039 ARNIQA.
+Decision: winner dup_bridge_ramp70 (meets the stated criteria on the pilot: duplication at AReA's level, no
+significant IR/HPSv2.1/PickScore loss, +4% time; FID pending). Its 195-prompt reruns are ENQUEUED (taskq/pending
+x_d90..x_d98, 473 tasks, label dupfix_bridge_ramp70, evals z980-z988 in hold_dup_eval). 46-prompt paired runs
+queued: bridge, bridge_ramp70, ramp70, and bridge_head50 (added; tests whether per-head opening keeps
+CLIP-IQA/ARNIQA at equal duplication). If bridge_head50 wins at 46 prompts, swap the reruns: move x_*bridge_ramp70*
+back to taskq/hold_dup/stage_x_dup_bridge_ramp70 and stage dupfix_bridge_head50 with dup_tasks.py --stage rerun195.
