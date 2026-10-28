@@ -62,6 +62,10 @@ def parser():
                    help="Wider local windows at high noise, e.g. 0.8:128,0.7:96 (default: off)")
     p.add_argument("--text-local", type=float, default=0.0, help="Logit bias on text keys in the local branch (0 = off)")
     p.add_argument("--text-local-lo", type=float, default=0.0, help="--text-local applies while sigma > this")
+    p.add_argument("--bridge-cells", type=int, default=0, help="AReA bridge: cells per axis (0 = off)")
+    p.add_argument("--bridge-k", type=int, default=16, help="Bridge tokens per cell")
+    p.add_argument("--bridge-lo", type=float, default=0.0, help="Bridge active while sigma > this")
+    p.add_argument("--lse-tau", type=float, default=0.0, help="Per-query LSE mixing strength (0 = per-head pi)")
     p.add_argument("--chunk", type=int, help="Query tiles per local-branch chunk, gather only (default: 2 GiB budget)")
     p.add_argument("--local-impl", choices=("flex", "gather"), default="flex",
                    help="Local branch implementation (same keys; flex uses a FlexAttention block mask)")
@@ -89,7 +93,9 @@ def build_context(args, grid):
                      chunk=args.chunk, local_impl=args.local_impl, pi=pi,
                      gate_sigma=args.gate_sigma, band=args.band, route=args.route, ramp_sigma=args.pi_ramp,
                      ramp_mode=args.pi_ramp_mode, ramp_gamma=args.pi_ramp_gamma, glob_pos=args.glob_pos,
-                     win_sched=args.win_sched, text_local=args.text_local, text_local_lo=args.text_local_lo)
+                     win_sched=args.win_sched, text_local=args.text_local, text_local_lo=args.text_local_lo,
+                     bridge_cells=args.bridge_cells, bridge_k=args.bridge_k, bridge_lo=args.bridge_lo,
+                     lse_tau=args.lse_tau)
     info = {"n0": args.n0, "tile": args.tile, "window": args.window or args.n0, "pool": args.pool,
             "chunk": args.chunk, "gate_sigma": args.gate_sigma, "band": args.band, "route": args.route, "pool_factors": list(pool_factors(grid, args.n0)), "pi_variant": pi.variant,
             "pi_const": args.pi_const, "sigma_star": pi.sigma_star, "pi_scale": getattr(pi, "scale", None),
@@ -103,6 +109,10 @@ def build_context(args, grid):
         info["win_sched"] = [list(x) for x in args.win_sched]
     if args.text_local:
         info.update(text_local=args.text_local, text_local_lo=args.text_local_lo)
+    if args.bridge_cells:
+        info.update(bridge_cells=args.bridge_cells, bridge_k=args.bridge_k, bridge_lo=args.bridge_lo)
+    if args.lse_tau:
+        info["lse_tau"] = args.lse_tau
     return ctx, info
 
 

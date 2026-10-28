@@ -23,15 +23,17 @@ BASE = ["--method", "sca", "--seed", "0", "--guidance", "4.5", "--pi-table", f"{
         "--gate-sigma", "0.89", "--res", "4096x4096"]
 
 # label -> extra sample.py flags (the published method is "base"; gate flags replace --gate-sigma 0.89)
-VARIANTS = {
+VARIANTS = {  # in priority order: the worker takes the alphabetically first task
     "dup_base": [],
-    "dup_ramp60": ["--pi-ramp", "0.6"],
+    "dup_bridge": ["--bridge-cells", "8", "--bridge-k", "16"],
+    "dup_ramp70": ["--pi-ramp", "0.7"],
+    "dup_lse1": ["--lse-tau", "1.0"],
+    "dup_bridge_ramp70": ["--bridge-cells", "8", "--bridge-k", "16", "--pi-ramp", "0.7"],
     "dup_head50": ["--pi-ramp", "0.5", "--pi-ramp-mode", "head"],
-    "dup_frac_ramp60": ["--glob-pos", "frac", "--pi-ramp", "0.6"],
-    "dup_frac_g80": ["--glob-pos", "frac", "--gate-sigma", "0.80"],
-    "dup_win128": ["--win-sched", "0.80:128,0.70:96"],
+    "dup_bridge_mid": ["--bridge-cells", "8", "--bridge-k", "16", "--bridge-lo", "0.5"],
     "dup_txtmid": ["--text-local", "-2.77", "--text-local-lo", "0.5"],
-    "dup_txtall": ["--text-local", "-2.77"],
+    "dup_win128": ["--win-sched", "0.80:128,0.70:96"],
+    "dup_frac_ramp60": ["--glob-pos", "frac", "--pi-ramp", "0.6"],
 }
 
 

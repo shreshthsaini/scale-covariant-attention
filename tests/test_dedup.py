@@ -167,3 +167,126 @@ def test_sample_info_unchanged_by_default(sample):
         base + ["--pi-ramp", "0.6", "--glob-pos", "frac", "--win-sched", "0.7:96,0.8:128", "--text-local", "-2"]), (256, 256))
     assert info2["pi_ramp"] == 0.6 and info2["glob_pos"] == "frac" and info2["win_sched"] == [[0.8, 128], [0.7, 96]]
     assert info2["text_local"] == -2.0 and c.ramp_sigma == 0.6 and c.win_sched == ((0.8, 128), (0.7, 96))
+
+
+def _qkv(H, W, L, h=2, D=16, seed=0):
+    g = torch.Generator().manual_seed(seed)
+    return [torch.randn(1, L + H * W, h, D, generator=g, dtype=torch.float64) for _ in range(3)]
+
+
+def _setup(H, W, L, f, glob_pos="floor"):
+    m = model().double()
+    ids = inputs(H, W)["img_ids"].double()
+    rot = m.pos_embed(torch.cat([torch.zeros(L, 3, dtype=torch.float64), ids]))
+    c = SCAContext(mode="sca", glob_pos=glob_pos)
+    c.pos_embed = m.pos_embed
+    c.set_inputs(ids)
+    rq, rk = c.coarse_rope(f, "cpu")
+    return m, ids, rot, rq, rk
+
+
+def test_dedup_forward_reduces_to_published():
+    from sca.attn import sca_dedup_forward, sca_flex_forward
+    H, W, L, f, tile, win = 8, 8, 6, (2, 2), (2, 2), (4, 4)
+    q, k, v = _qkv(H, W, L)
+    _, _, rot, rq, rk = _setup(H, W, L, f)
+    pi = torch.tensor([0.3, 0.8], dtype=torch.float64).view(1, 1, -1, 1)
+    lay = flex_layout(L, (H, W), tile, win, "cpu", (2, 2), (2, 2))
+    ref = sca_flex_forward(q, k, v, rot, rq, rk, pi, L, (H, W), f, "center", lay)
+    out = sca_dedup_forward(q, k, v, rot, rq, rk, pi, L, (H, W), f, "center", lay)
+    assert torch.equal(out, ref)
+
+
+def test_bridge_index_bruteforce():
+    from sca.attn import bridge_index
+    g = torch.Generator().manual_seed(4)
+    H, W = 8, 12
+    k = torch.randn(1, H * W, 2, 4, generator=g, dtype=torch.float64)
+    idx = bridge_index(k, (H, W), (2, 3), 3)[0].tolist()
+    score = ((k - k.mean(1, keepdim=True)) ** 2).sum((2, 3))[0]
+    ref = []
+    for a in range(2):
+        for b in range(3):
+            cell = [r * W + c for r in range(a * 4, a * 4 + 4) for c in range(b * 4, b * 4 + 4)]
+            ref += sorted(cell, key=lambda i: -float(score[i]))[:3]
+    assert sorted(idx) == sorted(ref) and len(set(idx)) == 18
+
+
+def test_bridge_local_matches_bruteforce():
+    """pi = 1 (local only): text + bridge tokens at true positions + window, one softmax."""
+    from sca.attn import bridge_index, sca_dedup_forward
+    H, W, L, f, tile, win = 8, 8, 4, (2, 2), (2, 2), (4, 4)
+    q, k, v = _qkv(H, W, L, seed=2)
+    _, _, rot, rq, rk = _setup(H, W, L, f)
+    cells, per = (2, 2), 2
+    idx = bridge_index(k[:, L:], (H, W), cells, per)[0]
+    lay = flex_layout(L + len(idx), (H, W), tile, win, "cpu", (2, 2), (2, 2))
+    pi = torch.ones(1, 1, 2, 1, dtype=torch.float64)
+    out = sca_dedup_forward(q, k, v, rot, rq, rk, pi, L, (H, W), f, "center", lay, 0.0, cells, per)
+    qr, kr = rope(q, rot), rope(k, rot)
+    keys = torch.cat([kr[:, :L], kr[:, L + idx], kr[:, L:]], 1)
+    vals = torch.cat([v[:, :L], v[:, L + idx], v[:, L:]], 1)
+    P = L + len(idx)
+    mask = torch.zeros(H * W, P + H * W, dtype=torch.bool)
+    mask[:, :P] = True
+    for r in range(H):
+        for c in range(W):
+            r0 = min(max((r // 2) * 2 + 1 - 2, 0), H - 4)
+            c0 = min(max((c // 2) * 2 + 1 - 2, 0), W - 4)
+            for a in range(r0, r0 + 4):
+                for b in range(c0, c0 + 4):
+                    mask[r * W + c, P + a * W + b] = True
+    ref = torch.nn.functional.scaled_dot_product_attention(qr[:, L:].transpose(1, 2), keys.transpose(1, 2),
+                                                           vals.transpose(1, 2), attn_mask=mask).transpose(1, 2)
+    assert (out[:, L:] - ref).abs().max() < 1e-6  # the mix runs in fp32 (mix_branches)
+
+
+def test_lse_mix_matches_manual():
+    from sca.attn import global_branch, local_branch, sca_dedup_forward
+    H, W, L, f, tile, win = 8, 8, 4, (2, 2), (2, 2), (4, 4)
+    q, k, v = _qkv(H, W, L, seed=5)
+    _, _, rot, rq, rk = _setup(H, W, L, f)
+    pi = torch.tensor([0.3, 0.8], dtype=torch.float64).view(1, 1, -1, 1)
+    lay = flex_layout(L, (H, W), tile, win, "cpu", (2, 2), (2, 2))
+    tau = 0.7
+    out = sca_dedup_forward(q, k, v, rot, rq, rk, pi, L, (H, W), f, "center", lay, 0.0, None, 0, tau)
+    # manual: both branches and their log-sum-exp by brute force
+    txt = (rot[0][:L], rot[1][:L])
+    qr, kr = rope(q, rot), rope(k, rot)
+    o_glob = global_branch(q, k, v, L, (H, W), f, "center", txt, rq, rk, qr[:, :L], kr[:, :L])
+    o_loc = local_branch(qr, kr, v, L, (H, W), tile, win)
+    d = q.shape[-1] ** -0.5
+    cen = [(a * 2 + 1) * W + b * 2 + 1 for a in range(H // 2) for b in range(W // 2)]
+    kg = torch.cat([kr[:, :L], rope(k[:, L:][:, cen], rk)], 1)
+    qg = rope(q[:, L:], rq)
+    lse_g = torch.einsum("bnhd,bmhd->bhnm", qg, kg).mul(d).logsumexp(-1)                   # [B, h, N]
+    idxw = __import__("sca.attn", fromlist=["window_index"]).window_index(L, (H, W), tile, win, "cpu")
+    lse_l = torch.empty(1, 2, H * W, dtype=torch.float64)
+    qt = qr[:, L:]
+    for t in range(idxw.shape[0]):
+        rows = [(t // (W // 2)) * 2 + i for i in range(2)]
+        cols = [(t % (W // 2)) * 2 + j for j in range(2)]
+        for rr in rows:
+            for cc in cols:
+                n = rr * W + cc
+                lse_l[0, :, n] = torch.einsum("hd,mhd->hm", qt[0, n], kr[0, idxw[t]]).mul(d).logsumexp(-1)
+    dd = lse_l - lse_g
+    dd = (dd - dd.mean(-1, keepdim=True)).transpose(1, 2)[..., None]
+    w = torch.sigmoid(torch.log(pi) - torch.log1p(-pi) + tau * dd)
+    ref = w * o_loc + (1 - w) * o_glob[:, L:]
+    assert (out[:, L:] - ref).abs().max() < 1e-6  # fp32 mix
+    assert (out[:, :L] - o_glob[:, :L]).abs().max() < 1e-9
+
+
+def test_processor_bridge_and_lse_run_and_gate():
+    m, H, W = model(), 8, 8
+    mk = lambda **kw: SCAContext(mode="sca", n0=4, tile=2, window=4, local_impl="flex", pi=PiTable("const", value=0.7), **kw)
+    base = attn_outputs(m, mk(), H, W)
+    off = attn_outputs(m, mk(bridge_cells=2, bridge_k=2, bridge_lo=0.6), H, W)   # sigma .5 < .6: bridge off
+    on = attn_outputs(m, mk(bridge_cells=2, bridge_k=2), H, W)
+    lse = attn_outputs(m, mk(lse_tau=1.0), H, W)
+    assert torch.allclose(flat(off), flat(base), atol=1e-5)
+    assert not torch.allclose(flat(on), flat(base), atol=1e-4)
+    assert not torch.allclose(flat(lse), flat(base), atol=1e-4) and torch.isfinite(flat(lse)).all()
+    with pytest.raises(ValueError):
+        SCAContext(mode="sca", bridge_cells=8, local_impl="gather")

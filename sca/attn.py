@@ -269,21 +269,28 @@ def text_score_mod(L, text_bias):
     return score_mod
 
 
-def local_branch_flex(qi, kr, v, L, layout, permuted=False, text_bias=0.0):
+def local_branch_flex(qi, kr, v, L, layout, permuted=False, text_bias=0.0, text_len=None, return_lse=False):
     """Flex version of local_branch. qi: RoPE'd image queries [B, N, h, D]; kr, v: [B, L+N, h, D].
 
     Returns [B, N, h, D], or with permuted=True the raw flex output [B, h, Nq, D] in query-slot
-    order (un-permute with .transpose(1, 2).index_select(1, layout.q_inv)).
+    order (un-permute with .transpose(1, 2).index_select(1, layout.q_inv)). The first L keys are
+    visible to every query (text, plus bridge tokens when text_len < L); text_bias applies to the
+    first text_len (default L) keys. return_lse=True also returns the log-sum-exp [B, h, Nq].
     """
     qp = qi.index_select(1, layout.q_gather)
     kp = torch.cat([kr[:, :L], kr[:, L:].index_select(1, layout.k_gather)], 1)
     vp = torch.cat([v[:, :L], v[:, L:].index_select(1, layout.k_gather)], 1)
     kw = {"kernel_options": layout.kernel_options} if layout.kernel_options else {}
-    sm = text_score_mod(L, text_bias)
+    sm = text_score_mod(L if text_len is None else text_len, text_bias)
     if sm is not None:
         kw["score_mod"] = sm
+    if return_lse:
+        kw["return_lse"] = True
     o = flex_fn(qi.device)(qp.transpose(1, 2), kp.transpose(1, 2), vp.transpose(1, 2),
                            block_mask=layout.block_mask, **kw)
+    if return_lse:
+        o, lse = o
+        return (o if permuted else o.transpose(1, 2).index_select(1, layout.q_inv)), lse
     return o if permuted else o.transpose(1, 2).index_select(1, layout.q_inv)
 
 
@@ -366,6 +373,92 @@ def sca_flex_fn(device):
     return _FLEX["sca"]
 
 
+# ----------------------------------------------------------------------------- late-duplication forward
+#
+# Options that change the published computation (.agent/notes/duplication_fix_20261027.md) live in a separate
+# function so that sca_flex_forward, the published path, stays byte-for-byte the same.
+
+def bridge_index(k_img, grid, cells, per_cell):
+    """[B, cells_h * cells_w * per_cell] image-token indices: in every cell of a cells_h x cells_w grid, the
+    per_cell tokens whose unrotated keys (summed over heads) lie farthest from the mean key (AReA Eq. 17)."""
+    B, N, h, D = k_img.shape
+    (H, W), (ch, cw) = grid, cells
+    kf = k_img.float()
+    score = (kf - kf.mean(1, keepdim=True)).pow(2).sum((2, 3))                      # [B, N]
+    sh, sw = H // ch, W // cw
+    s = score.view(B, ch, sh, cw, sw).permute(0, 1, 3, 2, 4).reshape(B, ch * cw, sh * sw)
+    top = s.topk(per_cell, dim=-1).indices                                          # [B, C, k]
+    cell = torch.arange(ch * cw, device=k_img.device)
+    r = ((cell // cw) * sh)[None, :, None] + top // sw
+    c = ((cell % cw) * sw)[None, :, None] + top % sw
+    return (r * W + c).reshape(B, -1)
+
+
+def global_branch_lse(q, k, v, L, grid, f, pool, rope_q, rope_k, q_txt, k_txt):
+    """global_branch through flex_attention, also returning the log-sum-exp [B, h, S]."""
+    kp = pool_tokens(k[:, L:], grid, f, pool)
+    vp = pool_tokens(v[:, L:], grid, f, pool)
+    qr = torch.cat([q_txt, rope(q[:, L:], rope_q)], 1)
+    kr = torch.cat([k_txt, rope(kp, rope_k)], 1)
+    vv = torch.cat([v[:, :L], vp], 1)
+    o, lse = flex_fn(q.device)(qr.transpose(1, 2), kr.transpose(1, 2), vv.transpose(1, 2), return_lse=True)
+    return o.transpose(1, 2), lse
+
+
+def mix_lse(o_glob, lse_glob, o_loc, lse_loc, pi, L, tau, inv):
+    """Per-query mix: logit(w) = logit(pi_h) + tau * (d - mean_i d), d = lse_loc - lse_glob per image query.
+
+    The head's mean log-odds stays at its calibrated pi; queries whose window holds less softmax mass than the
+    global branch (relative to the head's average) lean global, as in one shared softmax. o_loc / lse_loc are
+    the permuted flex outputs [B, h, Nq, D] / [B, h, Nq]."""
+    o_loc = o_loc.transpose(1, 2).index_select(1, inv)                              # [B, N, h, D]
+    d = lse_loc.index_select(2, inv).float() - lse_glob[:, :, L:].float()           # [B, h, N]
+    d = (d - d.mean(-1, keepdim=True)).transpose(1, 2)[..., None]                    # [B, N, h, 1]
+    p = pi.float().clamp(1e-4, 1 - 1e-4)
+    w = torch.sigmoid(torch.log(p) - torch.log1p(-p) + tau * d)
+    img = (w * o_loc.float() + (1 - w) * o_glob[:, L:].float()).to(o_glob.dtype)
+    return torch.cat([o_glob[:, :L], img], 1)
+
+
+def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, text_bias=0.0,
+                      cells=None, per_cell=0, tau=0.0):
+    """SCA with the late-duplication options: AReA-style bridge tokens (cells, per_cell) prepended to the
+    local keys at their true positions, per-query LSE mixing (tau > 0), and the local text bias. layout
+    must be built for the prefix length L + R, R = cells_h * cells_w * per_cell."""
+    cos, sin = rot
+    kr = rope(k, rot)
+    qi = rope(q[:, L:], (cos[L:], sin[L:]))
+    q_txt = rope(q[:, :L], (cos[:L], sin[:L]))
+    if tau:
+        o_glob, lse_glob = global_branch_lse(q, k, v, L, grid, f, pool, rope_q, rope_k, q_txt, kr[:, :L])
+    else:
+        o_glob = global_branch(q, k, v, L, grid, f, pool, (cos[:L], sin[:L]), rope_q, rope_k, q_txt, kr[:, :L])
+    kl, vl, Lp = kr, v, L
+    if per_cell:
+        idx = bridge_index(k[:, L:], grid, cells, per_cell)                          # [B, R]
+        g = idx[:, :, None, None].expand(-1, -1, k.shape[2], k.shape[3])
+        kl = torch.cat([kr[:, :L], torch.gather(kr[:, L:], 1, g), kr[:, L:]], 1)
+        vl = torch.cat([v[:, :L], torch.gather(v[:, L:], 1, g), v[:, L:]], 1)
+        Lp = L + idx.shape[1]
+    if tau:
+        o_loc, lse_loc = local_branch_flex(qi, kl, vl, Lp, layout, True, text_bias, L, return_lse=True)
+        return mix_lse(o_glob, lse_glob, o_loc, lse_loc, pi, L, tau, layout.q_inv)
+    o_loc = local_branch_flex(qi, kl, vl, Lp, layout, True, text_bias, L)
+    return mix_branches(o_glob, o_loc, pi, L, layout.q_inv)
+
+
+def sca_dedup_fn(device):
+    """sca_dedup_forward compiled once for CUDA."""
+    if torch.device(device).type != "cuda":
+        return sca_dedup_forward
+    if "dedup" not in _FLEX:
+        _envfix()
+        _raise_recompile_limit()
+        flex_fn(device)
+        _FLEX["dedup"] = torch.compile(sca_dedup_forward, dynamic=False)
+    return _FLEX["dedup"]
+
+
 # ----------------------------------------------------------------------------- pi tables
 
 class PiTable:
@@ -430,6 +523,10 @@ class SCAContext:
     win_sched: tuple = ()               # ((sigma_k, window_k), ...): local window window_k while sigma > sigma_k
     text_local: float = 0.0             # logit bias on text keys in the local branch (0 = off, e.g. -2.77 = log 1/16)
     text_local_lo: float = 0.0          # text_local applies only while sigma > text_local_lo
+    bridge_cells: int = 0               # >0: AReA bridge, per_cell tokens from each cell of a bridge_cells^2 grid
+    bridge_k: int = 16                  # bridge tokens per cell (1024 tokens at 8 x 8 cells)
+    bridge_lo: float = 0.0              # bridge active only while sigma > bridge_lo
+    lse_tau: float = 0.0                # >0: per-query mix, logit w = logit pi + tau * (lse_loc - lse_glob - mean)
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -453,6 +550,8 @@ class SCAContext:
         self._flex_cache = {}
         if self.local_impl not in ("flex", "gather"):
             raise ValueError(f"local_impl must be flex or gather, got {self.local_impl}")
+        if (self.bridge_cells or self.lse_tau) and (self.local_impl != "flex" or self.band):
+            raise ValueError("bridge and lse mixing need local_impl flex and band 0")
         if self.ramp_mode not in ("linear", "head"):
             raise ValueError(f"ramp_mode must be linear or head, got {self.ramp_mode}")
         if self.ramp_sigma > 0 and not 0 < self.ramp_sigma < self.gate_sigma:
@@ -626,6 +725,17 @@ class SCAProcessor:
             band = int(round(-band * sg / max(1e-3, 1 - sg)))
             band = min(band, min(ctx.grid))
         tb = ctx.text_bias_now()
+        if ctx.bridge_cells or ctx.lse_tau:
+            L, _ = self._split(q, image_rotary_emb)
+            rq, rk = ctx.coarse_rope(f, q.device)
+            on = ctx.bridge_cells and (ctx.sigma is None or float(ctx.sigma) > ctx.bridge_lo)
+            H, W = ctx.grid
+            cells = (fit_divisor(H, ctx.bridge_cells, ctx.log, "bridge cells"),
+                     fit_divisor(W, ctx.bridge_cells, ctx.log, "bridge cells")) if on else None
+            per = min(ctx.bridge_k, (H // cells[0]) * (W // cells[1])) if on else 0
+            layout = ctx.flex_layout(L + (cells[0] * cells[1] * per if on else 0), tile, win, q.device)
+            return sca_dedup_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
+                                          layout, tb, cells, per, float(ctx.lse_tau))
         if band > 1:
             L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True, text_bias=tb)
             if inv is not None:

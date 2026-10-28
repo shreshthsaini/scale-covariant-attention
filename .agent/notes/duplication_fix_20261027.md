@@ -85,3 +85,34 @@ branch, so a local window of side w costs about (512 + w^2)/(512 + 4096) of the 
    expected effect on small copies is limited; cost about 0 s; needs a step callback.
 9. Per-head shrinking windows w_h(sigma) with pi recalibrated at each emulated ratio: closest to AReA but
    needs per-head block masks and new calibration passes (GPU); deferred.
+
+### Literature agent report (2026-10-27 23:40; AReA PDF read in full, code 9e38ec2 checked)
+- AReA 4096^2: Phase I pooling f = 4,4,4,4,2,2,2,2 (steps 1-8); Phase II windows 180 ... 64 (code counts text;
+  paper lists 181 ...); 2 windows per axis steps 9-15, 3 at 16-22, 4 at 23-28; nothing per head; one layout
+  per step for all 57 blocks. Jitter cannot move at steps 9-15 (two pinned windows) or step 28.
+- Global-KV bridge (App. E): R = (0.5 w)^2 real tokens outside the window, ranked by ||k_i - kbar||^2 of
+  unrotated keys summed over heads, 8x8 cell quotas, keys at TRUE RoPE positions, one shared softmax with the
+  window ("each query sets its own balance"), about 25% of a window's keys; cost cap removes it at step 9.
+- AReA Table 3 ablations (H100; full 151 s, IR 1.32, FID 148.5): no bridge 133 s, FID 161.3, CLIP -0.60 and
+  "duplicated and repeated subjects" (Fig. 13), the ONLY piece tied to duplication (+18 s); fixed w=64 with
+  bridge: fragmentation, not duplicates (IR 1.26); flat f=4: subjects fuse (IR 1.27); flat f=2: scattered and
+  repeated subjects; no Halo: seams; no DWT: slower only.
+- Others: FreeScale fuses global and local bands every step (says local attention "can bring unexpected small
+  object repetition"); ResDiT global-only steps 1-10, fusion 11-20, local only 21-35 (averaging "led to
+  repeated generation artifacts"); HRDiT keeps every 32nd block visible to all heads; TIDE adds +ln(token
+  ratio) = +2.77 to text logits for dilution (SCA has native key counts, so its formula gives 0; my
+  text_local is the opposite sign, motivated by AccDiffusion: same prompt per patch repeats objects).
+  RoPE fixes (DyPE, SEGA, UltraImage) do not apply: SCA stays in range, and AReA without bridge duplicates.
+- Calibration file: native full attention puts 41-53% of its mass outside the emulated window (37-29%
+  beyond radius 16), but the scale-4 pi gives the global branch only 0.23-0.31.
+- Verdicts: (a) abrupt hand-off supported, likely main cause (SCA local-dominant after 29% of steps; AReA,
+  ResDiT, FreeScale keep wide or global terms to 57-100%); (b) the subsample itself is fine (AReA's best
+  layout), but s=4 throughout matches AReA's flat-f=4 failure, and the 4x4 shared query positions cannot
+  place small objects; (c) supported (each 64-token neighbourhood is a native canvas); added (d) a fixed
+  per-head mix instead of a per-query shared softmax; (e) same prompt in every window (not specific to SCA).
+- Ported ranking: 1 bridge inside the local softmax (1024 tokens = 16 per 8x8 cell, true positions, about
+  +2.4 s); 2 gradual hand-off (pi ramp, free; or window 96 -> 64); 3 spectral fusion steps 9-16; 4 per-query
+  LSE merge with per-head offset matched to pi (< 0.5 s); 5 pooling f=2 at the end of the opening phase.
+
+Decision: implement two more options before the pilot: AReA's bridge (top evidence) and the per-query LSE mix
+(in-range alternative to the bridge), both in a separate compiled forward so the published path is untouched.
