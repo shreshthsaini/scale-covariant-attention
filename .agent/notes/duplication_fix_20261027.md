@@ -337,3 +337,15 @@ that is close to neutral on quality; nothing so far reaches AReA's 4% without a 
   list using existing flags (code f17451c): c_d2XX_dup_bridge_win128 (bridge 16/cell + 2 n0 windows while sigma >
   0.80, the "bridge with a shorter 2x phase") and c_d2XX_dup_bridge32 (bridge 32/cell). Evals c_z97_eval_dup46_* in
   hold_dup_eval, release loop restarted: PID 3210493 on c622-021 (log logs/release_dup_evals.log). x_ still held.
+
+## 2026-10-29 06:00: lead decision, round two on 46 prompts directly
+Reading (lead): every fix that keeps heads global longer softens detail; only enriching the global branch (bridge)
+is neutral. Anchor the subject by something other than delaying the local branch. Order, each about 1 GPU-h:
+(A) latent low-band anchor: x0 prediction of the last global-only step is the layout anchor L; later steps replace
+the block-scale low band of x0_hat by L's with weight 1 at the gate decaying to 0 at sigma 0.3 (linear, cosine;
+refresh-every-4 variant with an extra global-only forward); (B) bridge 64/cell until sigma 0.6 then 16; (C) A +
+bridge 16; (D) A + the better of bridge_win128 / bridge32 (both running now as c_ tasks). Strict rule unchanged.
+If A alone passes: third component, "the opening phase decides the layout; the low band of that decision is held
+while detail is filled in". Implementation (A, B, self-releasing evaluations) delegated to an Opus subagent; tasks
+prefix d_, evals d_z97_*. The c_ evals still use the release loop PID 3210493 on c622-021 (control job with 31 h
+left, outlives the fleets); new d_ evals release themselves from the last generation task's marker.
