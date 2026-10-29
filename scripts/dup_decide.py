@@ -97,3 +97,40 @@ for label in sys.argv[1:]:
           f"[{ci[0]:.1%},{ci[1]:.1%}] (sca_nb {kb}/{nb}, AReA {ka}/{na} [{cia[0]:.1%},{cia[1]:.1%}]) r1={r1} | any "
           f"{kany}/{nany} | {'; '.join(fmt(m) for m in ('ir', 'hpsv21', 'pickscore', 'clipiqa', 'arniqa') if m in deltas)} "
           f"r2={r2} | lead over AReA after (195-prompt lead) {keep}, (46-prompt lead) {keep46} r3={r3} | time {t} vs {base_t} r4={r4} | patch_fid {pf}")
+
+
+def stratified(label, metrics=("clipiqa", "arniqa", "ir", "musiq")):
+    """Paired variant - sca_nb deltas split by the detector's any-subject flags on the 46 prompts: prompts the variant
+    fixed (sca_nb duplicated, variant clean), prompts clean in both, and the rest. Tests whether a no-reference loss
+    comes from removing the (sharp) duplicates themselves."""
+    E = S / f"eval/dup46_{label}"
+    rows = D.load([S / "eval/dup_detect_20261027", E / "det"])
+    a = SimpleNamespace(sides="800,1333", thr=0.35, nms=0.5, contain=0.9, contain_area=0.3, max_frac=0.9, kinds=None)
+    fl = D.flags(rows, subj, a)
+    per = {}
+    for f in (E / "extra/extra_per_image.csv", E / "base/per_image.csv"):
+        if f.exists():
+            for r in csv.DictReader(open(f)):
+                for m in metrics:
+                    if r.get(m) not in (None, ""):
+                        per[(r["method"], r["prompt_id"], m)] = float(r[m])
+    groups = {"fixed": [], "clean_both": [], "other": []}
+    for i in ids46:
+        if ("sca_nb", i) not in fl or (label, i) not in fl:
+            continue
+        b, v = fl[("sca_nb", i)][0], fl[(label, i)][0]
+        groups["fixed" if (b and not v) else "clean_both" if (not b and not v) else "other"].append(i)
+    out = []
+    for g, ids_g in groups.items():
+        parts = []
+        for m in metrics:
+            d = [per[(label, i, m)] - per[("sca_nb", i, m)] for i in ids_g if (label, i, m) in per and ("sca_nb", i, m) in per]
+            parts.append(f"{m} {sum(d) / len(d):+.4f}" if d else f"{m} n/a")
+        out.append(f"{g} (n={len(ids_g)}): " + ", ".join(parts))
+    print(f"  {label} stratified by detector flags: " + " | ".join(out))
+
+
+if __name__ == "__main__":
+    for label in sys.argv[1:]:
+        if (S / f"eval/dup46_{label}/DONE").exists():
+            stratified(label)

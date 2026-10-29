@@ -310,3 +310,11 @@ before the w_ and x_ tasks (z97 would have sorted after all 473 x_ tasks).
   i618-062; all generation (b_ 40, c_ 10, a3_, a4_, w_ 16) had finished, six evaluations were stuck in hold_dup_eval.
   Moved all six to pending for fleet SCA15 (4 gh-dev nodes): a4_d199 (apparent-scale pilot -> eval/dup_pilot3),
   b_z97 x4, c_z97 (head40). Operator host is now c622-021 (cntrl-cmd gh). No release loop is needed for these.
+- 06:10 apparent-scale pilot (eval/dup_pilot3): ss40 3/9 people, 6/14 any, +1% time, IR +0.136*, HPSv2 +0.0027*,
+  ARNIQA +0.012*, PickScore +0.27, CLIP-IQA -0.021*; ss50 3/9, 7/14, +1%, IR +0.144*, HPSv2 +0.0033*, CLIP-IQA
+  -0.018*. Better preference scores than any variant so far, but duplication only halves: the stride-2 half-image
+  canvas at mid noise is itself a native canvas covering a quarter of the image, so it can redraw the subject one
+  level up. Per-head opening (head40: global until each head's own sigma) removes more (1/9, 2/14).
+- Added to scripts/dup_decide.py: deltas stratified by detector flags (prompts the variant fixed, clean in both,
+  other) to test whether CLIP-IQA/ARNIQA losses come from removing the sharp duplicates themselves (the paper already
+  notes v0 scores higher on both).
