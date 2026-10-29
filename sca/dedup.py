@@ -2,6 +2,8 @@
 
 Shared by scripts/sample.py and scripts/sample_progressive.py. Every option defaults to off; info() returns only
 the options that are set, so the sidecar block (and the config fingerprint) of the published method is unchanged.
+The attention options go to SCAContext (context_kwargs); the latent anchor (--anchor-*, sca/anchor.py) works at the
+sampler level and is built by anchor() in scripts/sample.py only.
 """
 
 
@@ -29,11 +31,24 @@ def add_args(p):
     p.add_argument("--bridge-cells", type=int, default=0, help="AReA bridge: cells per axis (0 = off)")
     p.add_argument("--bridge-k", type=int, default=16, help="Bridge tokens per cell")
     p.add_argument("--bridge-lo", type=float, default=0.0, help="Bridge active while sigma > this")
+    p.add_argument("--bridge-k-hi", type=int, default=0, metavar="K_HI", help="Bridge tokens per cell while sigma > "
+                   "--bridge-k-hi-lo, --bridge-k below (0 = off: --bridge-k at every sigma)")
+    p.add_argument("--bridge-k-hi-lo", type=float, default=0.0, metavar="SIGMA", help="--bridge-k-hi applies while "
+                   "sigma > SIGMA")
     p.add_argument("--lse-tau", type=float, default=0.0, help="Per-query LSE mixing strength (0 = per-head pi)")
     p.add_argument("--scale-sched", action="store_true", help="Per-head apparent scale: each head attends n0 x n0 keys "
                    "on the stride-(s / a) lattice around its tile, a growing from 1 (global branch) to s (native window)")
     p.add_argument("--scale-lo", type=float, default=0.5, metavar="SIGMA", help="--scale-sched: head h reaches its "
                    "native window at SIGMA + (gate - SIGMA) * pi_h")
+    p.add_argument("--anchor-lo", type=float, default=0.0, metavar="SIGMA", help="Latent low-band anchor "
+                   "(sca/anchor.py): while sigma > SIGMA the low band of x0_hat follows the x0_hat of the last "
+                   "global-only step (0 = off)")
+    p.add_argument("--anchor-shape", choices=("linear", "cosine"), default="linear",
+                   help="Anchor weight from 1 at --gate-sigma to 0 at --anchor-lo")
+    p.add_argument("--anchor-pool", type=int, default=0, metavar="P",
+                   help="Anchor low band: P x P token average, bilinear up (0 = the global block size)")
+    p.add_argument("--anchor-refresh", type=int, default=0, metavar="K", help="Recompute the anchor every K steps "
+                   "after the gate from one extra global-only forward (0 = fixed anchor)")
     return p
 
 
@@ -41,7 +56,16 @@ def context_kwargs(args):
     return dict(ramp_sigma=args.pi_ramp, ramp_mode=args.pi_ramp_mode, ramp_gamma=args.pi_ramp_gamma,
                 glob_pos=args.glob_pos, win_sched=args.win_sched, text_local=args.text_local,
                 text_local_lo=args.text_local_lo, bridge_cells=args.bridge_cells, bridge_k=args.bridge_k,
-                bridge_lo=args.bridge_lo, lse_tau=args.lse_tau, scale_sched=args.scale_sched, scale_lo=args.scale_lo)
+                bridge_lo=args.bridge_lo, bridge_k_hi=args.bridge_k_hi, bridge_k_hi_lo=args.bridge_k_hi_lo,
+                lse_tau=args.lse_tau, scale_sched=args.scale_sched, scale_lo=args.scale_lo)
+
+
+def anchor(args, ctx):
+    """sca.anchor.LatentAnchor for --anchor-lo > 0 (validated against ctx, so before the model loads), else None."""
+    if not args.anchor_lo:
+        return None
+    from sca.anchor import LatentAnchor
+    return LatentAnchor(ctx, args.anchor_lo, args.anchor_shape, args.anchor_pool, args.anchor_refresh)
 
 
 def info(args):
@@ -56,8 +80,13 @@ def info(args):
         out.update(text_local=args.text_local, text_local_lo=args.text_local_lo)
     if args.bridge_cells:
         out.update(bridge_cells=args.bridge_cells, bridge_k=args.bridge_k, bridge_lo=args.bridge_lo)
+    if args.bridge_k_hi:
+        out.update(bridge_k_hi=args.bridge_k_hi, bridge_k_hi_lo=args.bridge_k_hi_lo)
     if args.lse_tau:
         out["lse_tau"] = args.lse_tau
     if args.scale_sched:
         out.update(scale_sched=True, scale_lo=args.scale_lo)
+    if args.anchor_lo:
+        out.update(anchor_lo=args.anchor_lo, anchor_shape=args.anchor_shape, anchor_pool=args.anchor_pool,
+                   anchor_refresh=args.anchor_refresh)
     return out

@@ -4,7 +4,9 @@
 pilot: one generation task per variant on the 15 pilot prompts (4 development + the 11 audited uncurated 4096^2
 prompts), seed 0, plus one evaluation task (detector, then the extra and base metric sets on the 11 non-development
 prompts, timing summary). abl46: one variant on abl50 (46 ablation prompts + 4 development prompts) in chunks
-of 5, plus the E7-style evaluation with paired bootstraps against sca_nb. Never overwrites an existing task.
+of 5, plus the E7-style evaluation with paired bootstraps against sca_nb; every generation task leaves a marker in
+eval/dup46_<label>/gen_done and the last one moves the evaluation from taskq/hold_dup_eval to taskq/pending, so no
+release loop is needed. Never overwrites an existing task.
 """
 
 import argparse
@@ -48,14 +50,27 @@ GEN_PREFIX = ""                 # set by --prefix: generation task names (the wo
 EVAL_HOLD = f"{S}/taskq/hold_dup_eval"   # evaluations wait here; slurm/release_dup_evals.sh releases them
 
 
-def guard(name, pat):
+def guard(name, pat, done=None):
     """Evaluation guard: never sleeps. While a generation task of its group is pending or running, the evaluation
     parks a copy of itself in EVAL_HOLD and exits 3 (as the a4k195 z96x tasks did); release_dup_evals.sh moves it
-    back to pending once the group has drained."""
+    back to pending once the group has drained. done = (marker dir, n) for self-released evaluations: once all n
+    generation markers exist the guard does not park, because the last generation task releases the evaluation
+    while it is itself still in running/."""
+    skip = f"[ \"$(ls {done[0]} 2>/dev/null | grep -c -E '^({pat})[.]sh$')\" -lt {done[1]} ] && " if done else ""
     return (f"# RELEASE_AFTER: ^({pat})[.]sh\nNAME={name}; HOLD={S}/taskq/hold_dup_eval\n"
-            f"if ls $Q/pending $Q/running 2>/dev/null | grep -q -E '^({pat})[.]sh'; then mkdir -p $HOLD; "
+            f"if {skip}ls $Q/pending $Q/running 2>/dev/null | grep -q -E '^({pat})[.]sh'; then mkdir -p $HOLD; "
             f"cp \"$0\" $HOLD/.$NAME.tmp.$$ && mv -f $HOLD/.$NAME.tmp.$$ $HOLD/$NAME; "
             f"echo \"parked $NAME: generation still pending or running\"; exit 3; fi\n")
+
+
+def self_release(markers, name, pat, n, ename):
+    """Generation-task tail (after its sample.py succeeded): leave a marker, and once all n markers of the group
+    exist move the evaluation ename from taskq/hold_dup_eval to taskq/pending. A failed mv is harmless: the
+    evaluation was already released or is not parked."""
+    return (f"G={markers}; mkdir -p $G && touch $G/{name} || echo \"WARNING could not write $G/{name}\"\n"
+            f"if [ \"$(ls $G 2>/dev/null | grep -c -E '^({pat})[.]sh$')\" -eq {n} ]; then\n"
+            f"  mv {S}/taskq/hold_dup_eval/{ename} {S}/taskq/pending/ 2>/dev/null && echo \"released {ename}\"\n"
+            "fi\nexit 0\n")
 
 
 def gen_cmd(label, flags, prompts, out, start=None, end=None):
@@ -119,20 +134,22 @@ date -u +%FT%TZ > $E/DONE
 def abl46(code, hold, dry, label, flags):
     prompts = f"{S}/abl50.jsonl"
     out = f"{S}/out/dup46/{label}/4096x4096"
-    names = []
-    for a in range(0, 50, 5):
-        name = f"{GEN_PREFIX}d2{a:02d}_{label}.sh"
-        names.append(name)
-        write(Path(hold) / name, f"#!/bin/bash\n# duplication fix, 46-prompt ablation subset: {label} {' '.join(flags)}\n" + ENV
-              + f"cd {code}\n" + gen_cmd(label, flags, prompts, out, a, a + 5) + "\n", dry)
-    pat = "|".join(n[:-3] for n in names)
     E = f"{S}/eval/dup46_{label}"
+    ename = f"{GEN_PREFIX}z97_eval_dup46_{label}.sh"  # sorts right after this prefix's generation tasks
+    starts = range(0, 50, 5)
+    names = [f"{GEN_PREFIX}d2{a:02d}_{label}.sh" for a in starts]
+    pat = "|".join(n[:-3] for n in names)
+    for a, name in zip(starts, names):
+        write(Path(hold) / name, f"#!/bin/bash\n# duplication fix, 46-prompt ablation subset: {label} {' '.join(flags)}\n" + ENV
+              + f"cd {code}\n" + gen_cmd(label, flags, prompts, out, a, a + 5) + " || exit $?\n"
+              + self_release(f"{E}/gen_done", name, pat, len(names), ename), dry)
     dirs = f"sca_nb={S}/out/main/sca_nb/4096x4096 {label}={out}"
     ev = f"""#!/bin/bash
 # duplication fix: {label} vs sca_nb on the 46 ablation prompts (E7 protocol) plus detector and paired bootstrap
+# Released by the last of its generation tasks (markers in $E/gen_done); the guard still parks it if released early.
 {ENV}set -uo pipefail
 Q={S}/taskq; E={E}; mkdir -p $E/paired
-""" + guard(f"z97_eval_dup46_{label}.sh", pat) + f"""ls $Q/failed 2>/dev/null | grep -E '^({pat})[.]sh' | sed 's/^/WARNING failed generation task: /'
+""" + guard(ename, pat, (f"{E}/gen_done", len(names))) + f"""ls $Q/failed 2>/dev/null | grep -E '^({pat})[.]sh' | sed 's/^/WARNING failed generation task: /'
 cd {code}
 {PY} scripts/dup_detect.py --subjects results/dup_audit_20261027/subjects_a4k195.json --device cuda --threads 8 --sides 800,1333 --out $E/det --dirs {label}={out}
 {PY} scripts/dup_rate.py --dets {S}/eval/dup_detect_20261027 $E/det --subjects results/dup_audit_20261027/subjects_a4k195.json --ids {prompts} --exclude-ids {S}/dev4.jsonl --thr 0.35 --methods sca_nb,{label} --per-image $E/dup_per_image.csv --out $E/dup_rates.csv | tee $E/dup_rates.txt
@@ -142,7 +159,7 @@ cd {code}
 {PY} -I {P}/scripts/paired_bootstrap.py --method {label} --reference sca_nb --draws 2000 --out $E/paired/{label}_vs_sca_nb.csv $E/extra/extra_per_image.csv $E/base/per_image.csv
 date -u +%FT%TZ > $E/DONE
 """
-    write(Path(EVAL_HOLD) / f"z97_eval_dup46_{label}.sh", ev, dry)
+    write(Path(EVAL_HOLD) / ename, ev, dry)
 
 
 # ----------------------------------------------------------------------------- 195-prompt headline rerun

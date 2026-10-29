@@ -727,6 +727,8 @@ class SCAContext:
     bridge_cells: int = 0               # >0: AReA bridge, per_cell tokens from each cell of a bridge_cells^2 grid
     bridge_k: int = 16                  # bridge tokens per cell (1024 tokens at 8 x 8 cells)
     bridge_lo: float = 0.0              # bridge active only while sigma > bridge_lo
+    bridge_k_hi: int = 0                # >0: bridge_k_hi tokens per cell while sigma > bridge_k_hi_lo, bridge_k below
+    bridge_k_hi_lo: float = 0.0         # (two prefix lengths, so two cached flex layouts)
     lse_tau: float = 0.0                # >0: per-query mix, logit w = logit pi + tau * (lse_loc - lse_glob - mean)
     scale_sched: bool = False           # per-head apparent scale: n0 x n0 keys on the stride-(s / a) lattice, a = 1 .. max(s)
     scale_lo: float = 0.5               # head h reaches a = max(s) at sigma_end = scale_lo + (gate - scale_lo) * pi_h
@@ -743,6 +745,7 @@ class SCAContext:
     known_grid: tuple | None = None     # exact (H, W) token grid from the sampler; FLUX builds img_ids in bf16, which rounds positions above 256
     sigma: float = 1.0
     step: int = 0
+    force_global: bool = False          # global-only (opening-phase) path at any sigma: latent-anchor refresh forward
     scheduler: object | None = None
     n_layers: int = 0
     pos_embed: object | None = None
@@ -757,6 +760,8 @@ class SCAContext:
             raise ValueError(f"local_impl must be flex or gather, got {self.local_impl}")
         if (self.bridge_cells or self.lse_tau) and (self.local_impl != "flex" or self.band):
             raise ValueError("bridge and lse mixing need local_impl flex and band 0")
+        if self.bridge_k_hi < 0 or (self.bridge_k_hi and not self.bridge_cells):
+            raise ValueError("bridge_k_hi needs bridge_cells > 0 and a positive token count")
         if self.ramp_mode not in ("linear", "head"):
             raise ValueError(f"ramp_mode must be linear or head, got {self.ramp_mode}")
         if self.ramp_sigma > 0 and not 0 < self.ramp_sigma < self.gate_sigma:
@@ -826,6 +831,12 @@ class SCAContext:
         if self.text_local and (self.sigma is None or float(self.sigma) > self.text_local_lo):
             return float(self.text_local)
         return 0.0
+
+    def bridge_k_now(self):
+        """Bridge tokens per cell at the current sigma: bridge_k_hi while sigma > bridge_k_hi_lo (if set), else bridge_k."""
+        if self.bridge_k_hi and (self.sigma is None or float(self.sigma) > self.bridge_k_hi_lo):
+            return self.bridge_k_hi
+        return self.bridge_k
 
     def coarse_rope(self, f, device):
         """(rope_q, rope_k): image queries at floor(id / f) (glob_pos frac: id / f), pooled keys at block centres."""
@@ -982,7 +993,7 @@ class SCAProcessor:
     def sca(self, q, k, v, image_rotary_emb):
         ctx = self.ctx
         f, tile, win = ctx.geometry()
-        if ctx.gate_sigma > 0 and ctx.sigma is not None and float(ctx.sigma) > ctx.gate_sigma:
+        if ctx.force_global or (ctx.gate_sigma > 0 and ctx.sigma is not None and float(ctx.sigma) > ctx.gate_sigma):
             L, rope_txt = self._split(q, image_rotary_emb)
             cos, sin = image_rotary_emb
             rq, rk = ctx.coarse_rope(f, q.device)
@@ -1007,7 +1018,7 @@ class SCAProcessor:
             H, W = ctx.grid
             cells = (fit_divisor(H, ctx.bridge_cells, ctx.log, "bridge cells"),
                      fit_divisor(W, ctx.bridge_cells, ctx.log, "bridge cells")) if on else None
-            per = min(ctx.bridge_k, (H // cells[0]) * (W // cells[1])) if on else 0
+            per = min(ctx.bridge_k_now(), (H // cells[0]) * (W // cells[1])) if on else 0
             layout = ctx.flex_layout(L + (cells[0] * cells[1] * per if on else 0), tile, win, q.device)
             return sca_dedup_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
                                           layout, tb, cells, per, float(ctx.lse_tau))

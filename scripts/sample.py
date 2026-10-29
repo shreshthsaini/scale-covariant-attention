@@ -94,8 +94,10 @@ def main(argv=None):
     h, w = args.res
     grid = (h // 16, w // 16)
     ctx, info = build_context(args, grid)
+    anchor = dedup.anchor(args, ctx)  # latent low-band anchor (--anchor-lo > 0), else None
     pipe = load_pipeline(args.device, args.model)
     uninstall = install(pipe.transformer, ctx)
+    remove_anchor = anchor.install(pipe.transformer) if anchor is not None else None
     ctx.scheduler = pipe.scheduler
     if h * w >= 2048 * 4096:
         pipe.vae.enable_tiling()
@@ -124,6 +126,8 @@ def main(argv=None):
                     print(f"skip {row['id']} {label} {config['res']}", flush=True)
                     continue
             ctx.pi_trace.clear()
+            if anchor is not None:
+                anchor.reset()
             generator = torch.Generator(device="cpu").manual_seed(image_seed(row["id"], args.seed))
             cuda = args.device.startswith("cuda")
             if cuda:
@@ -147,9 +151,12 @@ def main(argv=None):
                                "peak_memory_bytes": torch.cuda.max_memory_allocated() if cuda else None,
                                "sigmas": [float(s) for s in pipe.scheduler.sigmas[:-1]],
                                "pi_trace": list(ctx.pi_trace), "sca_log": sorted(set(ctx.log)),
-                               "local_impl": args.local_impl})  # not fingerprinted: both give the same keys
+                               "local_impl": args.local_impl,  # not fingerprinted: both give the same keys
+                               **({"anchor_trace": anchor.trace()} if anchor is not None else {})})
             print(f"saved {row['id']} {label} {config['res']} seconds={seconds:.3f}", flush=True)
     finally:
+        if remove_anchor is not None:
+            remove_anchor()
         uninstall()
 
 

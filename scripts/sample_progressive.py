@@ -433,6 +433,8 @@ def main(argv=None):
     if args.pi_const is None and (args.pi_table is None or not args.pi_table.is_file()):
         raise SystemExit("--pi-table must name an existing npz unless --pi-const is given")
     gate_values(args, len(plan.stages) - 1)
+    if args.anchor_lo:
+        raise SystemExit("--anchor-lo (latent anchor) is implemented in scripts/sample.py only")
     import diffusers
     import torch
     pipe = load(args)
