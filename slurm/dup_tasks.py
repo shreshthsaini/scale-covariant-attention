@@ -38,6 +38,7 @@ VARIANTS = {  # in priority order: the worker takes the alphabetically first tas
     "dup_txtmid": ["--text-local", "-2.77", "--text-local-lo", "0.5"],
     "dup_win128": ["--win-sched", "0.80:128,0.70:96"],
     "dup_frac_g80": ["--glob-pos", "frac", "--gate-sigma", "0.80"],
+    "dup_head40": ["--pi-ramp", "0.4", "--pi-ramp-mode", "head"],
 }
 
 
@@ -78,7 +79,7 @@ def write(path, text, dry):
         path.chmod(0o755)
 
 
-def pilot(code, hold, dry, variants):
+def pilot(code, hold, dry, variants, ename="dup_pilot"):
     prompts = f"{S}/pilot15_dup.jsonl"
     names = []
     for k, label in enumerate(variants):
@@ -92,15 +93,15 @@ def pilot(code, hold, dry, variants):
     ev = f"""#!/bin/bash
 # duplication pilot evaluation: detector on all 15 prompts, extra and base metrics on the 11 non-development prompts
 {ENV}set -uo pipefail
-Q={S}/taskq; E={S}/eval/dup_pilot; mkdir -p $E
-""" + guard(f"{GEN_PREFIX}d199_eval_dup_pilot.sh", pat) + f"""ls $Q/failed 2>/dev/null | grep -E '^({pat})[.]sh' | sed 's/^/WARNING failed generation task: /'
+Q={S}/taskq; E={S}/eval/{ename}; mkdir -p $E
+""" + guard(f"{GEN_PREFIX}d199_eval_{ename}.sh", pat) + f"""ls $Q/failed 2>/dev/null | grep -E '^({pat})[.]sh' | sed 's/^/WARNING failed generation task: /'
 cd {code}
 {PY} scripts/dup_detect.py --subjects results/dup_audit_20261027/subjects_a4k195.json --device cuda --threads 8 --sides 800,1333 --out $E/det --dirs {dirs}
 {PY} scripts/dup_rate.py --dets {S}/eval/dup_detect_20261027 $E/det --subjects results/dup_audit_20261027/subjects_a4k195.json --ids {S}/pilot15_dup.jsonl --thr 0.35 --per-image $E/dup_per_image.csv --out $E/dup_rates.csv | tee $E/dup_rates.txt
 {PY} scripts/dup_rate.py --dets {S}/eval/dup_detect_20261027 $E/det --subjects results/dup_audit_20261027/subjects_a4k195.json --ids {S}/pilot15_dup.jsonl --thr 0.35 --kinds person,animal --per-image $E/dup_per_image_people.csv --out $E/dup_rates_people.csv | tee $E/dup_rates_people.txt
-{PY} -I {P}/scripts/link_common.py --root {S}/out/evalroot/dup_pilot --res 4096x4096 --seed 0 --prompts {S}/pilot15_dup.jsonl --min-count 1 {dirs}
-{PYM} {P}/scripts/eval_extra.py --root {S}/out/evalroot/dup_pilot --prompts {S}/pilot15_dup.jsonl --out $E/extra --metrics ir,aesthetic,hpsv2,hpsv21,clipiqa,arniqa --reference-method sca_nb --device cuda --batch-size 16 --threads 8
-{PY} {CR}/scripts/eval.py --root {S}/out/evalroot/dup_pilot --prompts {S}/pilot15_dup.jsonl --reference-method sca_nb --res 4096x4096 --out $E/base --metrics clip,pickscore,musiq --device cuda
+{PY} -I {P}/scripts/link_common.py --root {S}/out/evalroot/{ename} --res 4096x4096 --seed 0 --prompts {S}/pilot15_dup.jsonl --min-count 1 {dirs}
+{PYM} {P}/scripts/eval_extra.py --root {S}/out/evalroot/{ename} --prompts {S}/pilot15_dup.jsonl --out $E/extra --metrics ir,aesthetic,hpsv2,hpsv21,clipiqa,arniqa --reference-method sca_nb --device cuda --batch-size 16 --threads 8
+{PY} {CR}/scripts/eval.py --root {S}/out/evalroot/{ename} --prompts {S}/pilot15_dup.jsonl --reference-method sca_nb --res 4096x4096 --out $E/base --metrics clip,pickscore,musiq --device cuda
 {PY} - <<'PYEOF'
 import glob, json, statistics
 for d in sorted(glob.glob("{S}/out/dup/*/4096x4096")) + ["{S}/out/main/sca_nb/4096x4096"]:
@@ -110,7 +111,7 @@ for d in sorted(glob.glob("{S}/out/dup/*/4096x4096")) + ["{S}/out/main/sca_nb/40
 PYEOF
 date -u +%FT%TZ > $E/DONE
 """
-    write(Path(EVAL_HOLD) / f"{GEN_PREFIX}d199_eval_dup_pilot.sh", ev, dry)
+    write(Path(EVAL_HOLD) / f"{GEN_PREFIX}d199_eval_{ename}.sh", ev, dry)
 
 
 def abl46(code, hold, dry, label, flags):
@@ -281,6 +282,7 @@ def main():
     p.add_argument("--flags", default="", help="abl46: sample.py flags for the variant (quoted)")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--prefix", default="", help="generation task name prefix, e.g. a_ to run first")
+    p.add_argument("--eval-name", default="dup_pilot", help="pilot: evaluation directory name under eval/")
     p.add_argument("--eval-hold", help="write evaluation tasks here instead of taskq/hold_dup_eval (staging)")
     a = p.parse_args()
     Path(a.hold).mkdir(parents=True, exist_ok=True)
@@ -290,7 +292,7 @@ def main():
         EVAL_HOLD = a.eval_hold
         Path(EVAL_HOLD).mkdir(parents=True, exist_ok=True)
     if a.stage == "pilot":
-        pilot(a.code, a.hold, a.dry_run, a.variants.split(","))
+        pilot(a.code, a.hold, a.dry_run, a.variants.split(","), a.eval_name)
     elif a.stage == "abl46":
         abl46(a.code, a.hold, a.dry_run, a.label, a.flags.split())
     else:

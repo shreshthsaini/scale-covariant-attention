@@ -279,3 +279,21 @@ of AReA (paper's 195-prompt lead +0.053 / +0.039 plus the variant's paired delta
 +0.029 / +0.022, printed as a sensitivity check); median time <= +10%.
 Ordering fix 18:40: the 46-prompt evaluations were renamed b_z97_eval_dup46_<label>.sh so that, once released, they sort
 before the w_ and x_ tasks (z97 would have sorted after all 473 x_ tasks).
+
+## 2026-10-28 19:00: user directive (binding, via lead) and round two
+- Directive: the fixed method must reach AReA's duplication level AND meet or exceed every current SCA number (no
+  significant paired loss on any metric vs published SCA); CLIP-IQA/ARNIQA losses are not acceptable; prefer one
+  simple mechanism over stacked patches. Strict rule applied with scripts/dup_decide.py (STRICT line: every per-image
+  metric in the paired bootstrap plus patch FID/KID, duplication <= 10% overlapping AReA's interval, time <= +10%).
+- Done: all 473 x_ rerun tasks withdrawn before any started (taskq/hold_dup/stage_x_dup_bridge_head50, evals in
+  evals/); nothing reruns until a variant passes strictly. 46-prompt evals renamed b_z97_* (sort before w_/x_).
+- Round two, candidate 2 (free): per-head opening, slower ramp sigma_r = 0.4: pilot enqueued as a3_d100_dup_head40.sh,
+  eval a3_d199_eval_dup_pilot2.sh -> eval/dup_pilot2.
+- Round two, candidate 1 (user's): per-head apparent scale. Each head attends a native n0 x n0 canvas taken from the
+  stride-(s/a) lattice around its query tile (coarse ids floor(p/d), so offsets stay below n0 and the cost never
+  exceeds the published local branch); its apparent scale a grows 1 -> 2 -> 4 (whole image -> half image at stride 2
+  -> native window) on a per-head timetable sigma_end_h = sigma_lo + (0.89 - sigma_lo) pi_lh; mix weight from the
+  table at scale a (a = 1 is the global branch itself, a = 4 the published operator). Global-only phase, published
+  SCA and per-head opening are special cases; the wide early windows cost nothing extra because the key count is
+  fixed, so no 2 n0 bound is needed. Implementation delegated to an Opus subagent (tests, freeze, pilot a4_ dup_ss50
+  and dup_ss40, eval/dup_pilot3).

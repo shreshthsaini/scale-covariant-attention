@@ -71,6 +71,27 @@ for label in sys.argv[1:]:
     t = med_seconds(S / f"out/dup46/{label}/4096x4096", set(ids))
     r4 = t is not None and base_t and t / base_t <= 1.10
     pf = deltas.get("patch_fid", {}).get("delta", "n/a")
+    # strict rule (user directive 2026-10-28): no significant paired loss on ANY metric vs published SCA
+    lower_better = {"patch_fid", "patch_kid", "fid", "kid"}
+    allm = dict(deltas)
+    bp = E / "base/paired_deltas.csv"
+    if bp.exists():
+        for r in csv.DictReader(open(bp)):
+            if r.get("method") == label and r.get("reference_method", "sca_nb") == "sca_nb" and r["metric"] in lower_better:
+                allm[r["metric"]] = {"delta": r["value"], "ci_low": r["ci_low"], "ci_high": r["ci_high"]}
+    strict_loss = []
+    for m, r in allm.items():
+        try:
+            lo, hi = float(r["ci_low"]), float(r["ci_high"])
+        except (TypeError, ValueError, KeyError):
+            continue
+        if (m in lower_better and lo > 0) or (m not in lower_better and hi < 0):
+            strict_loss.append(f"{m} {float(r['delta']):+.4g} [{lo:+.4g},{hi:+.4g}]")
+    strict = r1 and r4 and not strict_loss
+    print(f"{label}: STRICT {'PASS' if strict else 'FAIL'} (metrics checked {len(allm)}; significant losses: "
+          f"{strict_loss or 'none'}); all deltas: " + "; ".join(
+              f"{m} {float(r['delta']):+.4g} [{float(r['ci_low']):+.4g},{float(r['ci_high']):+.4g}]" for m, r in sorted(allm.items())
+              if r.get("ci_low") not in (None, "") and r.get("ci_high") not in (None, "")))
     fmt = lambda m: f"{m} {float(deltas[m]['delta']):+.3f} [{float(deltas[m]['ci_low']):+.3f},{float(deltas[m]['ci_high']):+.3f}]"
     print(f"{label}: {'PASS' if (r1 and r2 and r3 and r4) else 'FAIL'} | people {kp}/{np_} = {kp / np_:.1%} "
           f"[{ci[0]:.1%},{ci[1]:.1%}] (sca_nb {kb}/{nb}, AReA {ka}/{na} [{cia[0]:.1%},{cia[1]:.1%}]) r1={r1} | any "
