@@ -306,3 +306,7 @@ before the w_ and x_ tasks (z97 would have sorted after all 473 x_ tasks).
   HPSv2.1 +0.002, CLIP +1.02, ARNIQA +0.007, MUSIQ_c +0.12 (n.s.), MUSIQ -2.8 (n.s.), CLIP-IQA -0.031 (significant
   on 11 prompts). Queued its 46-prompt paired run: c_d2XX_dup_head40 (10 tasks, code f17451c), eval
   c_z97_eval_dup46_dup_head40.sh -> eval/dup46_dup_head40 (sorts after the b_ work, before w_).
+- 2026-10-29 05:35: the gg control job ended ~21:45, killing the release loop (PID 1256926) and my watchers on
+  i618-062; all generation (b_ 40, c_ 10, a3_, a4_, w_ 16) had finished, six evaluations were stuck in hold_dup_eval.
+  Moved all six to pending for fleet SCA15 (4 gh-dev nodes): a4_d199 (apparent-scale pilot -> eval/dup_pilot3),
+  b_z97 x4, c_z97 (head40). Operator host is now c622-021 (cntrl-cmd gh). No release loop is needed for these.
