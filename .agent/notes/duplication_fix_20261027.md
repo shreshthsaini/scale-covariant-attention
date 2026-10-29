@@ -318,3 +318,18 @@ before the w_ and x_ tasks (z97 would have sorted after all 473 x_ tasks).
 - Added to scripts/dup_decide.py: deltas stratified by detector flags (prompts the variant fixed, clean in both,
   other) to test whether CLIP-IQA/ARNIQA losses come from removing the sharp duplicates themselves (the paper already
   notes v0 scores higher on both).
+
+## 2026-10-29 05:55: 46-prompt decision (strict rule): NO VARIANT PASSES; x_ reruns stay held
+People/animals duplicated (of 26 eligible; sca_nb 15/26 = 58%, AReA 1/26 = 4%), time, significant paired losses vs
+published SCA (95% bootstrap; results/dup_audit_20261027/dup46_20261029/decision.txt has every delta):
+- bridge 5/26 (19%), +4%: only MUSIQ_c -1.26 [-1.84,-0.74]; everything else n.s. (nearly metric-neutral).
+- head40 5/26 (19%), +0%: aesthetic -0.067, CLIP-IQA -0.020, HPSv2 -0.0029, HPSv2.1 -0.0067, MUSIQ -1.5.
+- bridge_head50 4/26 (15%), +4%: aesthetic -0.072, CLIP-IQA -0.022, HPSv2 -0.0019, HPSv2.1 -0.0039, MUSIQ_c -1.05.
+- bridge_ramp70 3/26 (12%), +4%: losses on 10 of 12 metrics (CLIP-IQA -0.068, ARNIQA -0.070, PickScore -0.22, ...).
+- ramp70 5/26 (19%), +0%: losses on 9 metrics. The linear ramp is out.
+Stratified CLIP-IQA deltas: bridge -0.012 on prompts it fixed, +0.006 on prompts clean in both (its small loss comes
+from removing the duplicates themselves); head40 -0.017 fixed, -0.008 clean (partly genuine softening).
+Round two pilots (15 prompts): apparent scale ss40 3/9, 6/14, +1%, IR +0.136*, HPSv2 +0.0027*, ARNIQA +0.012*,
+CLIP-IQA -0.021*; ss50 3/9, 7/14, IR +0.144*, CLIP-IQA -0.018*; head40 1/9, 2/14, CLIP-IQA -0.031*.
+Reading: the 15-prompt pilot overstated every effect (head40 1/9 there, 19% here). The bridge is the only mechanism
+that is close to neutral on quality; nothing so far reaches AReA's 4% without a quality cost.
