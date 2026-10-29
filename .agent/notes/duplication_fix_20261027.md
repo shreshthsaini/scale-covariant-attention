@@ -349,3 +349,11 @@ If A alone passes: third component, "the opening phase decides the layout; the l
 while detail is filled in". Implementation (A, B, self-releasing evaluations) delegated to an Opus subagent; tasks
 prefix d_, evals d_z97_*. The c_ evals still use the release loop PID 3210493 on c622-021 (control job with 31 h
 left, outlives the fleets); new d_ evals release themselves from the last generation task's marker.
+- 06:20 round two implemented (subagent): commit 60fb75f, freeze code/60fb75f, 192 tests (15 new in
+  tests/test_anchor.py). Anchor: L = x_t - sigma v at the last global-only step (step 7 of 28); for sigma in (0.3,
+  0.89] (steps 8-24) v' = v - (w/sigma) LP(L - x0_hat), LP = 4x4-token average over all 64 packed channels then
+  bilinear upsample, w = u (linear) or sin^2(pi u/2) (cosine), u = clip((sigma - 0.3)/0.59, 0, 1); refresh K=4 adds
+  global-only forwards at steps 11, 15, 19, 23 (about +12-14% time, likely over the limit). Bridge k64mid: 4096
+  bridge tokens at steps 8-18, then 1024. Enqueued 50 tasks d_d2XX_{dup_anchor_lin, dup_anchor_cos,
+  dup_anchor_lin_r4, dup_bridge_k64mid, dup_anchor_lin_bridge}; evals d_z97_* release themselves when the 10th
+  generation marker appears (eval/dup46_<label>/gen_done). x_ still held.
