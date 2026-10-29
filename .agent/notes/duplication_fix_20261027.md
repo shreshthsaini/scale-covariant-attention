@@ -333,3 +333,7 @@ Round two pilots (15 prompts): apparent scale ss40 3/9, 6/14, +1%, IR +0.136*, H
 CLIP-IQA -0.021*; ss50 3/9, 7/14, IR +0.144*, CLIP-IQA -0.018*; head40 1/9, 2/14, CLIP-IQA -0.031*.
 Reading: the 15-prompt pilot overstated every effect (head40 1/9 there, 19% here). The bridge is the only mechanism
 that is close to neutral on quality; nothing so far reaches AReA's 4% without a quality cost.
+- 06:05 to keep SCA15 busy (pending was empty, w_trace done), queued two 46-prompt runs from the lead's candidate
+  list using existing flags (code f17451c): c_d2XX_dup_bridge_win128 (bridge 16/cell + 2 n0 windows while sigma >
+  0.80, the "bridge with a shorter 2x phase") and c_d2XX_dup_bridge32 (bridge 32/cell). Evals c_z97_eval_dup46_* in
+  hold_dup_eval, release loop restarted: PID 3210493 on c622-021 (log logs/release_dup_evals.log). x_ still held.
