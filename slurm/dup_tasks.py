@@ -39,6 +39,8 @@ VARIANTS = {  # in priority order: the worker takes the alphabetically first tas
     "dup_win128": ["--win-sched", "0.80:128,0.70:96"],
     "dup_frac_g80": ["--glob-pos", "frac", "--gate-sigma", "0.80"],
     "dup_head40": ["--pi-ramp", "0.4", "--pi-ramp-mode", "head"],
+    "dup_ss50": ["--scale-sched", "--scale-lo", "0.5"],
+    "dup_ss40": ["--scale-sched", "--scale-lo", "0.4"],
 }
 
 

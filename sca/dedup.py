@@ -30,6 +30,10 @@ def add_args(p):
     p.add_argument("--bridge-k", type=int, default=16, help="Bridge tokens per cell")
     p.add_argument("--bridge-lo", type=float, default=0.0, help="Bridge active while sigma > this")
     p.add_argument("--lse-tau", type=float, default=0.0, help="Per-query LSE mixing strength (0 = per-head pi)")
+    p.add_argument("--scale-sched", action="store_true", help="Per-head apparent scale: each head attends n0 x n0 keys "
+                   "on the stride-(s / a) lattice around its tile, a growing from 1 (global branch) to s (native window)")
+    p.add_argument("--scale-lo", type=float, default=0.5, metavar="SIGMA", help="--scale-sched: head h reaches its "
+                   "native window at SIGMA + (gate - SIGMA) * pi_h")
     return p
 
 
@@ -37,7 +41,7 @@ def context_kwargs(args):
     return dict(ramp_sigma=args.pi_ramp, ramp_mode=args.pi_ramp_mode, ramp_gamma=args.pi_ramp_gamma,
                 glob_pos=args.glob_pos, win_sched=args.win_sched, text_local=args.text_local,
                 text_local_lo=args.text_local_lo, bridge_cells=args.bridge_cells, bridge_k=args.bridge_k,
-                bridge_lo=args.bridge_lo, lse_tau=args.lse_tau)
+                bridge_lo=args.bridge_lo, lse_tau=args.lse_tau, scale_sched=args.scale_sched, scale_lo=args.scale_lo)
 
 
 def info(args):
@@ -54,4 +58,6 @@ def info(args):
         out.update(bridge_cells=args.bridge_cells, bridge_k=args.bridge_k, bridge_lo=args.bridge_lo)
     if args.lse_tau:
         out["lse_tau"] = args.lse_tau
+    if args.scale_sched:
+        out.update(scale_sched=True, scale_lo=args.scale_lo)
     return out

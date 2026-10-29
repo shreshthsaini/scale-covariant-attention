@@ -459,6 +459,207 @@ def sca_dedup_fn(device):
     return _FLEX["dedup"]
 
 
+# ----------------------------------------------------------------------------- per-head apparent scale
+#
+# SCAContext.scale_sched (.agent/notes/duplication_fix_20261027.md, round two). Head h of block l attends a native
+# n0 x n0 canvas of keys taken from the stride-(s / a) lattice around its query tile, queries and keys at coarse ids
+# floor(p / d) as in the global branch, so every head attends T + n0^2 keys with offsets below n0 at every step. Its
+# apparent scale a grows from 1 (the global branch itself) to max(s) (the published local branch) on the head's own
+# timetable. Separate functions, so the published path stays byte-for-byte the same.
+
+def scale_ladder(s_max):
+    """Apparent scales: 1, 2, 4, ... below s_max, then s_max."""
+    out, a = [], 1
+    while a < s_max:
+        out.append(a)
+        a *= 2
+    return out + [int(s_max)]
+
+
+def apparent_scale(sigma, pi, gate, lo, s_max):
+    """Apparent scale per head: 2 ** round(u * log2 s_max) capped at s_max (round half up), with
+    u = clip((gate - sigma) / (gate - sigma_end), 0, 1) and sigma_end = lo + (gate - lo) * pi, pi the published table
+    entry (target scale). sigma >= gate gives 1 everywhere; pi = 1 gives s_max anywhere below the gate."""
+    pi = np.asarray(pi, dtype=np.float64)
+    u = np.clip((gate - float(sigma)) / np.maximum((gate - lo) * (1 - pi), 1e-12), 0.0, 1.0)
+    e = np.floor(u * math.log2(s_max) + 0.5).astype(np.int64)
+    return np.minimum(2 ** e, int(s_max))
+
+
+def strided_window_index(L, grid, tile, stride, window, device):
+    """window_index() on the stride-(dh, dw) key lattice: indices [T, L + Wh*Ww] into [text | lattice] keys, the
+    lattice holding (H / dh) x (W / dw) keys row-major. Each tile's window is centred on its coarse centre
+    (tile centre // stride) and clamped inside the lattice. Equals window_index() at stride (1, 1)."""
+    (H, W), (th, tw), (dh, dw), (Wh, Ww) = grid, tile, stride, window
+    Hc, Wc = H // dh, W // dw
+    rs = ((torch.arange(H // th, device=device) * th + th // 2) // dh - Wh // 2).clamp(0, Hc - Wh)
+    cs = ((torch.arange(W // tw, device=device) * tw + tw // 2) // dw - Ww // 2).clamp(0, Wc - Ww)
+    rows = rs[:, None, None, None] + torch.arange(Wh, device=device)[None, None, :, None]
+    cols = cs[None, :, None, None] + torch.arange(Ww, device=device)[None, None, None, :]
+    win = (rows * Wc + cols).reshape(-1, Wh * Ww) + L
+    txt = torch.arange(L, device=device).expand(win.shape[0], L)
+    return torch.cat([txt, win], 1)
+
+
+def local_branch_strided(qc, kc, vc, L, grid, tile, stride, window, chunk=None, text_bias=0.0):
+    """local_branch() with keys on the stride lattice (gather reference of the flex path).
+
+    qc: image queries RoPE'd at coarse ids floor(p / stride) [B, H*W, h, D]; kc, vc: [text | lattice] keys (RoPE'd)
+    and values [B, L + (H/dh)*(W/dw), h, D] from lattice_qkv(). Returns [B, H*W, h, D]."""
+    (H, W), (th, tw) = grid, tile
+    B, _, h, D = qc.shape
+    Th, Tw = H // th, W // tw
+    T, tq = Th * Tw, th * tw
+    idx = strided_window_index(L, grid, tile, stride, window, qc.device)
+    chunk = chunk or auto_chunk(idx.shape[1], h, D, kc.element_size())
+    qt = qc.view(B, Th, th, Tw, tw, h, D).permute(0, 1, 3, 2, 4, 5, 6).reshape(B, T, tq, h, D)
+    out = qt.new_empty(B, T, tq, h, D)
+    bias = None
+    if text_bias:
+        bias = torch.zeros(1, idx.shape[1], dtype=qc.dtype, device=qc.device)
+        bias[:, :L] = float(text_bias)
+    for c0 in range(0, T, chunk):
+        ii = idx[c0:c0 + chunk]
+        c = ii.shape[0]
+        kk, vv = kc[:, ii].flatten(0, 1), vc[:, ii].flatten(0, 1)
+        out[:, c0:c0 + c] = sdpa(qt[:, c0:c0 + c].flatten(0, 1), kk, vv, bias).view(B, c, tq, h, D)
+    return out.view(B, Th, Tw, th, tw, h, D).permute(0, 1, 3, 2, 4, 5, 6).reshape(B, H * W, h, D)
+
+
+def lattice_qkv(q, k, v, L, grid, stride, rope_q, rope_k, k_txt):
+    """Inputs of the strided local branch: image queries at coarse ids (rope_q), [text | lattice] keys with the
+    lattice taken at block centres as pool_tokens 'center' does (rope_k at their coarse ids), and the matching
+    values. q, k, v pre-RoPE [B, S, h, D]; k_txt the RoPE'd text keys."""
+    qc = rope(q[:, L:], rope_q)
+    kc = torch.cat([k_txt, rope(pool_tokens(k[:, L:], grid, stride, "center"), rope_k)], 1)
+    vc = torch.cat([v[:, :L], pool_tokens(v[:, L:], grid, stride, "center")], 1)
+    return qc, kc, vc
+
+
+def strided_flex_layout(L, grid, tile, stride, window, device, q_tile=None, k_tile=None, kernel_options=None):
+    """flex_layout() for keys on the stride-(dh, dw) lattice: image queries on the full H x W grid in tile-major order,
+    lattice keys on the (H / dh) x (W / dw) grid in tile-major order, and a mask_mod stating strided_window_index()
+    membership. Equals flex_layout() at stride (1, 1)."""
+    from torch.nn.attention.flex_attention import create_block_mask
+    _envfix()
+    _raise_recompile_limit()
+    (H, W), (th, tw), (dh, dw), (Wh, Ww) = grid, tile, stride, window
+    Hc, Wc = H // dh, W // dw
+    q_tile, k_tile = q_tile or FLEX_Q_TILE, k_tile or FLEX_K_TILE
+    r_start = ((torch.arange(H, device=device) // th * th + th // 2) // dh - Wh // 2).clamp(0, Hc - Wh)
+    c_start = ((torch.arange(W, device=device) // tw * tw + tw // 2) // dw - Ww // 2).clamp(0, Wc - Ww)
+    # shift key tiles so that the unclamped window of the first query tile starts on a key-tile boundary
+    k_off = ((Wh // 2 - (th // 2) // dh) % k_tile[0], (Ww // 2 - (tw // 2) // dw) % k_tile[1])
+    qo = tile_order(grid, q_tile, device=device)
+    ko = tile_order((Hc, Wc), k_tile, k_off, device=device)
+    q_gather, k_gather = qo.clamp(min=0), ko.clamp(min=0)
+    q_inv = torch.empty(H * W, dtype=torch.long, device=device)
+    valid = qo >= 0
+    q_inv[qo[valid]] = torch.arange(qo.numel(), device=device)[valid]
+    i32 = torch.int32
+    qr0 = r_start[q_gather // W].to(i32)
+    qc0 = c_start[q_gather % W].to(i32)
+    far = -(1 << 30)
+    krow = torch.where(ko >= 0, k_gather // Wc, far).to(i32)
+    kcol = torch.where(ko >= 0, k_gather % Wc, far).to(i32)
+
+    def mask_mod(b, h, q, kv):
+        j = (kv - L).clamp(min=0)
+        r, c, r0, c0 = krow[j], kcol[j], qr0[q], qc0[q]
+        return (kv < L) | ((r >= r0) & (r < r0 + Wh) & (c >= c0) & (c < c0 + Ww))
+
+    nq, nk = qo.numel(), L + ko.numel()
+    bs = (q_tile[0] * q_tile[1], k_tile[0] * k_tile[1])
+    from torch._dynamo import config as dynamo_config
+    with dynamo_config.patch(automatic_dynamic_shapes=False):  # as in flex_layout()
+        bm = create_block_mask(mask_mod, None, None, nq, nk, device=device, BLOCK_SIZE=bs,
+                               _compile=torch.device(device).type == "cuda")
+    ko = kernel_options if kernel_options is not None else FLEX_KERNEL
+    if ko is None and torch.device(device).type == "cuda":  # kernel tiles must divide the sparse blocks
+        ko = {"BLOCK_M": math.gcd(bs[0], 128), "BLOCK_N": math.gcd(bs[1], 64), "USE_TMA": True}
+    return FlexLayout(q_gather, q_inv, k_gather, bm, ko)
+
+
+@dataclass
+class HeadLayout:
+    """FlexLayout whose BlockMask tables are expanded to every head. set_heads() rewrites the block counts in place:
+    heads outside the group visit no key block (the kernel writes zeros for them, which the caller discards), so one
+    compiled graph serves every grouping (no new mask_mod, no new shapes)."""
+    layout: FlexLayout
+    kv_num: torch.Tensor                # [B, 1, Q blocks] partial-block counts of the head-independent mask
+    full_num: torch.Tensor | None       # [B, 1, Q blocks] full-block counts
+
+    def set_heads(self, member):
+        m = member.reshape(1, -1, 1).to(self.kv_num.dtype)
+        bm = self.layout.block_mask
+        bm.kv_num_blocks.copy_(self.kv_num * m)
+        if self.full_num is not None:
+            bm.full_kv_num_blocks.copy_(self.full_num * m)
+
+
+def head_layout(layout, heads):
+    """HeadLayout of a head-independent FlexLayout (tables made contiguous per head, as the flex kernel indexes them)."""
+    from torch.nn.attention.flex_attention import BlockMask
+    bm = layout.block_mask
+
+    def exp(t):
+        return None if t is None else t.expand(t.shape[0], heads, *t.shape[2:]).contiguous()
+    hb = BlockMask.from_kv_blocks(exp(bm.kv_num_blocks), exp(bm.kv_indices), exp(bm.full_kv_num_blocks),
+                                  exp(bm.full_kv_indices), BLOCK_SIZE=bm.BLOCK_SIZE, mask_mod=bm.mask_mod,
+                                  seq_lengths=bm.seq_lengths)
+    full = None if bm.full_kv_num_blocks is None else bm.full_kv_num_blocks.clone()
+    return HeadLayout(FlexLayout(layout.q_gather, layout.q_inv, layout.k_gather, hb, layout.kernel_options),
+                      bm.kv_num_blocks.clone(), full)
+
+
+def sca_scale_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, groups, text_bias=0.0):
+    """SCA with per-head apparent scales (flex). groups: ((stride, rope_q_d, rope_k_d, layout, member), ...), one per
+    apparent scale a > 1, layout a HeadLayout.layout whose block counts set_heads(member) has set; member [1, 1, h, 1]
+    bool. Image queries of the heads in member take pi O_loc(stride) + (1 - pi) O_glob (pi [1, 1, h, 1], the weight
+    at each head's apparent scale); heads in no group (a = 1) and all text queries take O_glob."""
+    cos, sin = rot
+    rot_txt = (cos[:L], sin[:L])
+    k_txt = rope(k[:, :L], rot_txt)
+    o_glob = global_branch(q, k, v, L, grid, f, pool, rot_txt, rope_q, rope_k, rope(q[:, :L], rot_txt), k_txt)
+    og = o_glob[:, L:]
+    img = og
+    for stride, rqd, rkd, layout, member in groups:
+        qc, kc, vc = lattice_qkv(q, k, v, L, grid, stride, rqd, rkd, k_txt)
+        o_loc = local_branch_flex(qc, kc, vc, L, layout, text_bias=text_bias)
+        img = torch.where(member, (pi * o_loc.float() + (1 - pi) * og.float()).to(og.dtype), img)
+    return torch.cat([o_glob[:, :L], img], 1)
+
+
+def sca_scale_fn(device):
+    """sca_scale_forward compiled once for CUDA: groupings change only tensor values (block counts, member, pi)."""
+    if torch.device(device).type != "cuda":
+        return sca_scale_forward
+    if "scale" not in _FLEX:
+        _envfix()
+        _raise_recompile_limit()
+        flex_fn(device)
+        _FLEX["scale"] = torch.compile(sca_scale_forward, dynamic=False)
+    return _FLEX["scale"]
+
+
+def sca_scale_gather(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, tile, groups, chunk=None, text_bias=0.0):
+    """Gather reference of sca_scale_forward. groups: ((stride, window, rope_q_d, rope_k_d, heads), ...), heads a
+    LongTensor of the heads at that apparent scale; each group runs local_branch_strided on its heads only
+    (index_select on the head dimension), mixes with their pi and scatters back."""
+    cos, sin = rot
+    rot_txt = (cos[:L], sin[:L])
+    k_txt = rope(k[:, :L], rot_txt)
+    o_glob = global_branch(q, k, v, L, grid, f, pool, rot_txt, rope_q, rope_k, rope(q[:, :L], rot_txt), k_txt)
+    img = o_glob[:, L:].clone()
+    for stride, window, rqd, rkd, heads in groups:
+        q_, k_, v_, kt_ = (t.index_select(2, heads) for t in (q, k, v, k_txt))
+        qc, kc, vc = lattice_qkv(q_, k_, v_, L, grid, stride, rqd, rkd, kt_)
+        o_loc = local_branch_strided(qc, kc, vc, L, grid, tile, stride, window, chunk, text_bias)
+        p, og = pi.index_select(2, heads), o_glob[:, L:].index_select(2, heads)
+        img.index_copy_(2, heads, (p * o_loc.float() + (1 - p) * og.float()).to(og.dtype))
+    return torch.cat([o_glob[:, :L], img], 1)
+
+
 # ----------------------------------------------------------------------------- pi tables
 
 class PiTable:
@@ -483,7 +684,7 @@ class PiTable:
             table = z[p + {"head": "pi_head", "layer": "pi_layer", "uniform": "pi_uniform"}[variant]]
             table = table[:, None] if variant == "layer" else table.reshape((1,) * (3 - table.ndim) + table.shape)
             obj = cls(variant, table, z["sigma_centers"])
-        obj.scale = scale
+        obj.scale, obj.path = scale, path
         return obj
 
     def __call__(self, sigma):
@@ -527,6 +728,9 @@ class SCAContext:
     bridge_k: int = 16                  # bridge tokens per cell (1024 tokens at 8 x 8 cells)
     bridge_lo: float = 0.0              # bridge active only while sigma > bridge_lo
     lse_tau: float = 0.0                # >0: per-query mix, logit w = logit pi + tau * (lse_loc - lse_glob - mean)
+    scale_sched: bool = False           # per-head apparent scale: n0 x n0 keys on the stride-(s / a) lattice, a = 1 .. max(s)
+    scale_lo: float = 0.5               # head h reaches a = max(s) at sigma_end = scale_lo + (gate - scale_lo) * pi_h
+    scale_pi: dict = field(default_factory=dict)  # {a: PiTable} weight at apparent scale a (default: from pi's file)
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -548,6 +752,7 @@ class SCAContext:
     def __post_init__(self):
         self._rope_cache, self._pi_now, self._img_ids = {}, None, None
         self._flex_cache = {}
+        self._scale_now, self._scale_tables = None, {}
         if self.local_impl not in ("flex", "gather"):
             raise ValueError(f"local_impl must be flex or gather, got {self.local_impl}")
         if (self.bridge_cells or self.lse_tau) and (self.local_impl != "flex" or self.band):
@@ -558,6 +763,13 @@ class SCAContext:
             raise ValueError("ramp_sigma needs 0 < ramp_sigma < gate_sigma")
         if self.glob_pos not in ("floor", "frac"):
             raise ValueError(f"glob_pos must be floor or frac, got {self.glob_pos}")
+        if self.scale_sched:
+            if self.band or self.bridge_cells or self.lse_tau or self.ramp_sigma or self.route:
+                raise ValueError("scale_sched does not combine with band, bridge, lse mixing, pi ramp or routing")
+            if self.pool != "center":
+                raise ValueError("scale_sched takes its lattice keys at block centres (pool center)")
+            if not 0 <= self.scale_lo < self.gate_sigma:
+                raise ValueError("scale_sched needs 0 <= scale_lo < gate_sigma")
         self.win_sched = tuple(sorted(((float(a), int(b)) for a, b in self.win_sched), reverse=True))
 
     def flex_layout(self, L, tile, win, device):
@@ -581,6 +793,7 @@ class SCAContext:
         if sigma is not None:
             self.sigma = float(sigma)
         self._pi_now = None
+        self._scale_now = None
 
     def pi_now(self, layer, heads, device):
         if self._pi_now is None:
@@ -643,6 +856,66 @@ class SCAContext:
             t = self.calib_tile or max(1, round(self.tile * win[0] / Wn))
             tile = (fit_divisor(H, t, self.log), fit_divisor(W, t, self.log))
         return f, tile, win
+
+
+    # -- per-head apparent scale (scale_sched)
+    def scale_tables(self, s_max):
+        """{a: PiTable} mix weight at apparent scale a > 1: scale_pi[a], else the calibrated scale nearest to a (log
+        scale) in the file pi was loaded from, else pi itself."""
+        if s_max not in self._scale_tables:
+            out = {}
+            for a in scale_ladder(s_max)[1:]:
+                if a in self.scale_pi:
+                    out[a] = self.scale_pi[a]
+                elif getattr(self.pi, "path", None) is not None:
+                    out[a] = PiTable.load(self.pi.path, self.pi.variant, None, self.pi.sigma_star, a)
+                    self.log.append(f"scale_sched: apparent scale {a} mixes with the calibrated scale-{out[a].scale} pi")
+                else:
+                    out[a] = self.pi
+                    self.log.append(f"scale_sched: apparent scale {a} mixes with the {self.pi.variant} pi")
+            self._scale_tables[s_max] = out
+        return self._scale_tables[s_max]
+
+    def scale_now(self, layer, heads, device):
+        """(a, a_t, w_t) of this layer at the current sigma: apparent scale per head (numpy and device tensor) and the
+        mix weight at that scale (device float32, 0 at a = 1). Computed for every layer once per step, so the device
+        copies cost one transfer per step."""
+        if self._scale_now is None:
+            n = max(self.n_layers, 1)
+
+            def table(t):
+                p = np.atleast_2d(np.asarray(t(self.sigma), dtype=np.float64))
+                if p.shape[0] not in (1, n) or p.shape[1] not in (1, heads):
+                    raise ValueError(f"pi table shape {p.shape} does not match {n} layers x {heads} heads")
+                return np.broadcast_to(p, (n, heads))
+            s_max = max(pool_factors(self.grid, self.n0, self.log))
+            a = apparent_scale(self.sigma, table(self.pi), self.gate_sigma, self.scale_lo, s_max)
+            w = np.zeros((n, heads))
+            for s, t in self.scale_tables(s_max).items():
+                w = np.where(a == s, table(t), w)
+            self._scale_now = (a, torch.as_tensor(a, device=device), torch.as_tensor(w, dtype=torch.float32, device=device))
+            self.pi_trace.append({"step": self.step, "sigma": self.sigma, "pi_mean": float(w.mean()),
+                                  "scale_frac": {str(s): float((a == s).mean()) for s in scale_ladder(s_max)}})
+        a, a_t, w_t = self._scale_now
+        i = layer if a.shape[0] > 1 else 0
+        return a[i], a_t[i], w_t[i]
+
+    def scale_geometry(self, a):
+        """(stride, window) of apparent scale a: stride max(1, s // a) per axis (a divisor of the axis), window
+        min(Wn, lattice side) on the (H / dh) x (W / dw) lattice."""
+        H, W = self.grid
+        f = pool_factors(self.grid, self.n0, self.log)
+        d = tuple(fit_divisor(n, max(1, s // a), self.log, "scale stride") for n, s in zip(self.grid, f))
+        Wn = self.window_now()
+        return d, (min(Wn, H // d[0]), min(Wn, W // d[1]))
+
+    def scale_layout(self, L, tile, stride, win, heads, a, device):
+        """HeadLayout for apparent scale a, cached per (text length, grid, tile, stride, window, heads, a, device);
+        a is part of the key so that two groups never share block counts."""
+        key = ("scale", L, self.grid, tuple(tile), tuple(stride), tuple(win), heads, a, str(device))
+        if key not in self._flex_cache:
+            self._flex_cache[key] = head_layout(strided_flex_layout(L, self.grid, tile, stride, win, device), heads)
+        return self._flex_cache[key]
 
 
 class SCAProcessor:
@@ -716,6 +989,8 @@ class SCAProcessor:
             kr_txt = rope(k[:, :L], rope_txt)
             return global_branch(q, k, v, L, ctx.grid, f, ctx.pool, rope_txt, rq, rk,
                                  rope(q[:, :L], rope_txt), kr_txt)
+        if ctx.scale_sched:
+            return self.scale_sched(q, k, v, image_rotary_emb, f, tile)
         pi = ctx.pi_now(self.layer, q.shape[2], q.device).view(1, 1, -1, 1)
         if ctx.route > 0:
             pi = (pi >= ctx.route).to(pi.dtype)
@@ -749,6 +1024,36 @@ class SCAProcessor:
             return sca_flex_fn(q.device)(*args, tb) if tb else sca_flex_fn(q.device)(*args)
         L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True, text_bias=tb)
         return mix_fn(q.device)(o_glob, o_loc, pi, L, inv)
+
+    def scale_sched(self, q, k, v, image_rotary_emb, f, tile):
+        """Per-head apparent scale (SCAContext.scale_sched), below the gate: heads at a = 1 take O_glob, each group of
+        heads at a > 1 mixes its strided local branch with the weight at its scale."""
+        ctx = self.ctx
+        heads = q.shape[2]
+        L, rope_txt = self._split(q, image_rotary_emb)
+        cos, sin = image_rotary_emb
+        rq, rk = ctx.coarse_rope(f, q.device)
+        a, a_t, w_t = ctx.scale_now(self.layer, heads, q.device)
+        if (a <= 1).all():  # every head at apparent scale 1: its local view is the global branch
+            return global_branch(q, k, v, L, ctx.grid, f, ctx.pool, rope_txt, rq, rk, rope(q[:, :L], rope_txt),
+                                 rope(k[:, :L], rope_txt))
+        tb, pi, groups = ctx.text_bias_now(), w_t.view(1, 1, -1, 1), []
+        for s in scale_ladder(max(f))[1:]:
+            d, win = ctx.scale_geometry(s)
+            rqd, rkd = ((cos[L:], sin[L:]),) * 2 if d == (1, 1) else ctx.coarse_rope(d, q.device)
+            if ctx.local_impl == "gather":
+                if (a == s).any():
+                    groups.append((d, win, rqd, rkd, torch.as_tensor(np.flatnonzero(a == s), device=q.device)))
+                continue
+            hl = ctx.scale_layout(L, tile, d, win, heads, s, q.device)  # every scale, so one graph serves all steps
+            member = a_t == s
+            hl.set_heads(member)
+            groups.append((d, rqd, rkd, hl.layout, member.view(1, 1, -1, 1)))
+        if ctx.local_impl == "gather":
+            return sca_scale_gather(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, tile,
+                                    tuple(groups), ctx.chunk, tb)
+        args = (q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, tuple(groups))
+        return sca_scale_fn(q.device)(*args, tb) if tb else sca_scale_fn(q.device)(*args)
 
     def calibrate(self, q, k, v, image_rotary_emb):
         ctx = self.ctx
@@ -825,6 +1130,44 @@ def attention_flops(height, width, n0=64, tile=8, window=None, text=512, heads=2
             "est_total_seconds_full": t(full + linear), "est_total_seconds_sca": sca_s + t(linear),
             "est_speedup_total": t(full + linear) / (sca_s + t(linear)),
             "assumptions": f"{tflops} TFLOP/s effective bf16, gather at {gather_tbs} TB/s, {layers} layers, {steps} steps"}
+
+
+def scale_sched_cost(height, width, n0=64, tile=8, text=512, heads=24, head_dim=128, q_tile=None, k_tile=None):
+    """Local-branch cost of every apparent scale of the scale schedule (SCAContext.scale_sched) at one resolution.
+
+    keys: keys per image query per head (text + window); flops: QK^T + PV FLOPs of the local branch per layer over
+    all heads; blocks: flex key blocks visited per query block (strided_flex_layout geometry, mean over query blocks,
+    text blocks included; exact when the grid is a multiple of the query tile). Ratios are to the published local
+    branch (stride 1). Apparent scale 1 runs no local branch (its output is O_glob)."""
+    H, W = height // 16, width // 16
+    s = pool_factors((H, W), n0)
+    tl = (fit_divisor(H, tile), fit_divisor(W, tile))
+    qt, kt = q_tile or FLEX_Q_TILE, k_tile or FLEX_K_TILE
+
+    def axis_blocks(n, t, d, w, qb, kb):
+        x = np.arange(-(-n // qb) * qb)
+        x = np.where(x < n, x, 0)                                       # padding query slots read token 0
+        start = np.clip(((x // t) * t + t // 2) // d - w // 2, 0, n // d - w).reshape(-1, qb)
+        off = (w // 2 - (t // 2) // d) % kb
+        return (start.max(1) + w - 1 + off) // kb - (start.min(1) + off) // kb + 1
+
+    def cost(d, win):
+        keys = text + win[0] * win[1]
+        per_axis = [axis_blocks(n, t, dd, w, qb, kb) for n, t, dd, w, qb, kb in zip((H, W), tl, d, win, qt, kt)]
+        blocks = float(np.outer(*per_axis).mean()) + -(-text // (kt[0] * kt[1]))
+        return keys, 4 * heads * head_dim * H * W * keys, blocks
+
+    pub = cost((1, 1), (min(n0, H), min(n0, W)))
+    rows = []
+    for a in scale_ladder(max(s)):
+        d = tuple(fit_divisor(n, max(1, f // a)) for n, f in zip((H, W), s))
+        win = (min(n0, H // d[0]), min(n0, W // d[1]))
+        keys, flops, blocks = cost(d, win) if a > 1 else (0, 0, 0.0)
+        rows.append({"a": a, "stride": list(d), "lattice": [H // d[0], W // d[1]], "window": list(win),
+                     "keys": keys, "flops": flops, "blocks": blocks, "keys_ratio": keys / pub[0],
+                     "flops_ratio": flops / pub[1], "blocks_ratio": blocks / pub[2]})
+    return {"res": f"{height}x{width}", "grid": [H, W], "pool": list(s), "published_keys": pub[0],
+            "published_flops": pub[1], "published_blocks": pub[2], "scales": rows}
 
 
 if __name__ == "__main__":
