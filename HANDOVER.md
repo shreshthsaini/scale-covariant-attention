@@ -588,3 +588,7 @@ taskq/hold_dup/stage_x_{dupfix_bridge,dupfix_bridge_ramp70} (release recipe in t
 Update 18:55: pilot done (results/dup_audit_20261027/pilot_20261028): bridge+ramp70 1/9 people and 2/14 any at +4% time,
 but the linear ramp leaves block/lattice artifacts (CLIP-IQA -0.08, ARNIQA -0.06); the reruns are ENQUEUED for
 dupfix_bridge_head50 (x_ tasks, evals z980-z988), gated in practice by its 46-prompt paired run (b_ tasks) that runs first.
+Addendum 2026-10-28 21:20: SCA14 (1105980, 8x10h) has not started after 18 h (gh fully allocated, deep queue). Submitted
+backfill shapes: SCA15 1107850 (gh-dev 4x2h, IDLE_MAX 900), SCA16 1107851 (gh 2x6h), SCA17 1107852 (gh 4x8h). All drain
+the same spool; cancel the still-pending ones once enough are running. Pilots so far ran on the one guest GPU (cntrl-cmd
+1103038). Queue: 14 b_ (46-prompt check), 16 w_trace, 473 x_ reruns.
