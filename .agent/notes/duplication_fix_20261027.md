@@ -297,3 +297,8 @@ before the w_ and x_ tasks (z97 would have sorted after all 473 x_ tasks).
   SCA and per-head opening are special cases; the wide early windows cost nothing extra because the key count is
   fixed, so no 2 n0 bound is needed. Implementation delegated to an Opus subagent (tests, freeze, pilot a4_ dup_ss50
   and dup_ss40, eval/dup_pilot3).
+- 19:40 apparent-scale operator landed (subagent): commit f17451c, freeze code/f17451c, 177 tests pass (23 new in
+  tests/test_scale_sched.py). Flex path: one call per stride over all heads, heads outside the group masked off by
+  zeroing their block counts (one compiled graph); stride-2 windows do 1.055x block work, step total peaks ~1.02x
+  published (steps 13-19); a = 1 heads do no local work. About 13% of head-layers (pi near 1) still jump from a = 1
+  to 4 in one step near the gate. Pilot enqueued: a4_d100_dup_ss50, a4_d101_dup_ss40 (eval a4_d199 -> eval/dup_pilot3).
