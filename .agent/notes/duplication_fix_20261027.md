@@ -365,3 +365,9 @@ left, outlives the fleets); new d_ evals release themselves from the last genera
 - Enqueued (D) and two cheaper versions, prefix e_ (after d_), code 60fb75f, self-releasing evals:
   dup_anchor_lin_bridge_win128 (anchor + bridge + 128 windows sigma > 0.80), dup_bridge_win96 (96 windows sigma >
   0.80, ~2.25x local for 5 steps), dup_bridge_win128s (128 windows only while sigma > 0.85, 3 steps).
+- 07:05 lead: time limit relaxed to +20%; each significant loss is split into prompts the variant fixed vs prompts
+  clean in both; a loss on clean-in-both prompts is real softening (not acceptable). scripts/dup_decide.py now prints
+  per-stratum paired means with 95% bootstrap intervals and flags real softening (clean_both interval below 0).
+  bridge_win128: fixed prompts (n=16) all n.s. except MUSIQ_c -2.2; clean in both (n=13) IR -0.097 [-0.17,-0.03],
+  HPSv2 -0.0038, HPSv2.1 -0.0049, CLIP -0.61, ARNIQA -0.025, MUSIQ_c -2.1 all significant: real softening on images
+  that had no duplicates, so it fails the lead's rule despite reaching AReA's duplication rate.

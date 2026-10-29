@@ -69,7 +69,7 @@ for label in sys.argv[1:]:
     keep46 = {m: round(lead[m] + float(deltas[m]["delta"]), 4) for m in ("clipiqa", "arniqa") if m in deltas}
     r3 = all(v > 0 for v in keep.values()) and len(keep) == 2
     t = med_seconds(S / f"out/dup46/{label}/4096x4096", set(ids))
-    r4 = t is not None and base_t and t / base_t <= 1.10
+    r4 = t is not None and base_t and t / base_t <= 1.20  # lead 2026-10-29: +20%
     pf = deltas.get("patch_fid", {}).get("delta", "n/a")
     # strict rule (user directive 2026-10-28): no significant paired loss on ANY metric vs published SCA
     lower_better = {"patch_fid", "patch_kid", "fid", "kid"}
@@ -99,7 +99,17 @@ for label in sys.argv[1:]:
           f"r2={r2} | lead over AReA after (195-prompt lead) {keep}, (46-prompt lead) {keep46} r3={r3} | time {t} vs {base_t} r4={r4} | patch_fid {pf}")
 
 
-def stratified(label, metrics=("clipiqa", "arniqa", "ir", "musiq")):
+def boot_ci(d, draws=4000, seed=0):
+    import random
+    rng = random.Random(seed)
+    if len(d) < 2:
+        return float("nan"), float("nan")
+    m = sorted(sum(d[rng.randrange(len(d))] for _ in d) / len(d) for _ in range(draws))
+    return m[int(0.025 * draws)], m[int(0.975 * draws) - 1]
+
+
+def stratified(label, metrics=("ir", "aesthetic", "hpsv2", "hpsv21", "pickscore", "clip", "clipiqa", "arniqa", "musiq",
+                               "musiq_crop1024")):
     """Paired variant - sca_nb deltas split by the detector's any-subject flags on the 46 prompts: prompts the variant
     fixed (sca_nb duplicated, variant clean), prompts clean in both, and the rest. Tests whether a no-reference loss
     comes from removing the (sharp) duplicates themselves."""
@@ -120,14 +130,22 @@ def stratified(label, metrics=("clipiqa", "arniqa", "ir", "musiq")):
             continue
         b, v = fl[("sca_nb", i)][0], fl[(label, i)][0]
         groups["fixed" if (b and not v) else "clean_both" if (not b and not v) else "other"].append(i)
-    out = []
-    for g, ids_g in groups.items():
+    print(f"  {label} stratified by detector flags (mean paired delta [95% bootstrap]); real softening = clean_both "
+          f"interval below 0:")
+    soft = []
+    for m in metrics:
         parts = []
-        for m in metrics:
-            d = [per[(label, i, m)] - per[("sca_nb", i, m)] for i in ids_g if (label, i, m) in per and ("sca_nb", i, m) in per]
-            parts.append(f"{m} {sum(d) / len(d):+.4f}" if d else f"{m} n/a")
-        out.append(f"{g} (n={len(ids_g)}): " + ", ".join(parts))
-    print(f"  {label} stratified by detector flags: " + " | ".join(out))
+        for g in ("fixed", "clean_both"):
+            d = [per[(label, i, m)] - per[("sca_nb", i, m)] for i in groups[g] if (label, i, m) in per and ("sca_nb", i, m) in per]
+            if not d:
+                parts.append(f"{g} n/a")
+                continue
+            lo, hi = boot_ci(d)
+            parts.append(f"{g} (n={len(d)}) {sum(d) / len(d):+.4g} [{lo:+.4g},{hi:+.4g}]")
+            if g == "clean_both" and hi < 0:
+                soft.append(m)
+        print(f"    {m}: " + " | ".join(parts))
+    print(f"  {label}: real softening on clean-in-both prompts: {soft or 'none'}")
 
 
 if __name__ == "__main__":
