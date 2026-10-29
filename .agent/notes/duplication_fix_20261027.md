@@ -302,3 +302,7 @@ before the w_ and x_ tasks (z97 would have sorted after all 473 x_ tasks).
   zeroing their block counts (one compiled graph); stride-2 windows do 1.055x block work, step total peaks ~1.02x
   published (steps 13-19); a = 1 heads do no local work. About 13% of head-layers (pi near 1) still jump from a = 1
   to 4 in one step near the gate. Pilot enqueued: a4_d100_dup_ss50, a4_d101_dup_ss40 (eval a4_d199 -> eval/dup_pilot3).
+- 22:00 head40 pilot (eval/dup_pilot2): 1/9 people, 2/14 any (AReA level), +0% time; IR +0.14, PickScore +0.18,
+  HPSv2.1 +0.002, CLIP +1.02, ARNIQA +0.007, MUSIQ_c +0.12 (n.s.), MUSIQ -2.8 (n.s.), CLIP-IQA -0.031 (significant
+  on 11 prompts). Queued its 46-prompt paired run: c_d2XX_dup_head40 (10 tasks, code f17451c), eval
+  c_z97_eval_dup46_dup_head40.sh -> eval/dup46_dup_head40 (sorts after the b_ work, before w_).
