@@ -357,3 +357,11 @@ left, outlives the fleets); new d_ evals release themselves from the last genera
   bridge tokens at steps 8-18, then 1024. Enqueued 50 tasks d_d2XX_{dup_anchor_lin, dup_anchor_cos,
   dup_anchor_lin_r4, dup_bridge_k64mid, dup_anchor_lin_bridge}; evals d_z97_* release themselves when the 10th
   generation marker appears (eval/dup46_<label>/gen_done). x_ still held.
+- 06:45 c_ results (46 prompts, strict): bridge_win128 (bridge 16/cell + dense 128 windows while sigma > 0.80, i.e.
+  steps 8-12) 1/26 people = 3.8% = AReA's 1/26; time 82.96 s (+17%, fails <= +10%); significant losses ARNIQA -0.0115,
+  HPSv2.1 -0.0025, MUSIQ_c -2.49; all else n.s. bridge32: 5/26 (19%), +7%, only MUSIQ_c -1.48. So AReA's recipe
+  (wide windows at the first post-gate steps plus a global bridge in the same softmax) removes duplication; the
+  dense early windows cost the time.
+- Enqueued (D) and two cheaper versions, prefix e_ (after d_), code 60fb75f, self-releasing evals:
+  dup_anchor_lin_bridge_win128 (anchor + bridge + 128 windows sigma > 0.80), dup_bridge_win96 (96 windows sigma >
+  0.80, ~2.25x local for 5 steps), dup_bridge_win128s (128 windows only while sigma > 0.85, 3 steps).
