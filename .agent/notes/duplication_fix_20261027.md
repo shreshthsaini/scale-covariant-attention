@@ -403,3 +403,17 @@ mean at sigma 0.9 (low contrast), which costs preference scores. x_ reruns stay 
   widen on steps 8-12), F70 ~78 s (43% widen), G ~74-75 s. Evals g_z97_* release themselves.
 - (H) bridge_mid (bridge 16 only while sigma > 0.5): 5/26 (19%), +3%, only MUSIQ_c -1.25 (also on clean prompts):
   identical to the plain bridge, so both its duplication benefit and its MUSIQ_c cost come from the mid-noise steps.
+
+## 2026-10-29 20:40: round three on 46 prompts: NO VARIANT PASSES (decision_round3.txt)
+- (E) bridge + 128 windows sigma > 0.80 with matched scale-2 weights: 3/26 (11.5%), 80.9 s (+14%); overall losses
+  only ARNIQA -0.0088, MUSIQ_c -2.05 (bridge_win128 with scale-4 weights had 6); clean-in-both softening IR, HPSv2,
+  ARNIQA. Matched weights remove most of the softening (lead's hypothesis confirmed in part); duplication 3 vs 1/26.
+- (F50) wide windows only for heads with pi < 0.5 + bridge: 5/26 (19%), 75.1 s (+6%); overall only MUSIQ_c -1.36;
+  NO real softening on clean prompts. (F70) 4/26 (15%), 77.1 s (+9%); MUSIQ_c -1.8; clean softening HPSv2, ARNIQA,
+  MUSIQ, MUSIQ_c.
+- (G) stride-2 dilated + bridge: 6/26 (23%), 73.9 s (+5%); losses CLIP-IQA -0.039, MUSIQ -2.8, MUSIQ_c -2.4, ARNIQA,
+  HPSv2; clean softening on 6 metrics. Dilated windows are out.
+- (H) bridge mid-noise only: 5/26, +3%, MUSIQ_c -1.25 (on clean prompts too).
+Frontier so far: the variants at or below 2/26 (bridge_win128 1/26, anchor+bridge 2/26) soften clean prompts; the
+variants without clean-prompt softening (F50, plain bridge) stay at 5/26 (19%); MUSIQ_c -1.3 is the bridge's
+constant cost. x_ reruns stay held.
