@@ -371,3 +371,18 @@ left, outlives the fleets); new d_ evals release themselves from the last genera
   bridge_win128: fixed prompts (n=16) all n.s. except MUSIQ_c -2.2; clean in both (n=13) IR -0.097 [-0.17,-0.03],
   HPSv2 -0.0038, HPSv2.1 -0.0049, CLIP -0.61, ARNIQA -0.025, MUSIQ_c -2.1 all significant: real softening on images
   that had no duplicates, so it fails the lead's rule despite reaching AReA's duplication rate.
+
+## 2026-10-29 19:35: round two on 46 prompts (strict, +20% time, stratified softening): NO VARIANT PASSES
+(results/dup_audit_20261027/dup46_20261029/decision_round2.txt; people/animals of 26; sca_nb 15, AReA 1)
+- anchor_lin 10/26 (38%), +0%; anchor_cos 9/26 (35%), +1%; anchor_lin_r4 10/26, +12%: the anchor alone barely
+  helps and costs HPSv2 -0.005, HPSv2.1 -0.007, PickScore -0.17, MUSIQ -1.9 (anchor_lin), softening clean prompts.
+- anchor_lin_bridge (C) 2/26 (7.7%, interval overlaps AReA), +4%: first <= 10% variant within time, but losses
+  ARNIQA -0.019, CLIP-IQA -0.022, HPSv2 -0.006, HPSv2.1 -0.0076, MUSIQ_c -2.75, PickScore -0.23; clean-in-both
+  prompts: HPSv2 -0.0062, HPSv2.1 -0.0052, ARNIQA -0.034, MUSIQ_c -3.0 (real softening).
+- anchor_lin_bridge_win128 (D) 3/26, +14%: softening on 7 metrics. bridge_k64mid 4/26, +12%: IR, HPSv2, ARNIQA.
+  bridge_win96 4/26, +8%: IR, HPSv2, ARNIQA. bridge_win128s 3/26, +10%: IR, ARNIQA. bridge_win128 1/26, +17%:
+  IR, HPSv2, HPSv2.1, CLIP, ARNIQA, MUSIQ_c on clean prompts.
+- Plain bridge (round one) 5/26: only MUSIQ_c softens on clean prompts.
+Reading: every change that alters the whole trajectory (anchor, wide windows, larger bridge) also softens images
+that never had duplicates; only the plain bridge is close to neutral. The anchor's held low band is the posterior
+mean at sigma 0.9 (low contrast), which costs preference scores. x_ reruns stay held.
