@@ -386,3 +386,13 @@ left, outlives the fleets); new d_ evals release themselves from the last genera
 Reading: every change that alters the whole trajectory (anchor, wide windows, larger bridge) also softens images
 that never had duplicates; only the plain bridge is close to neutral. The anchor's held low band is the posterior
 mean at sigma 0.9 (low contrast), which costs preference scores. x_ reruns stay held.
+
+## 2026-10-29 19:50: round three (lead)
+- Checked: SCAContext.pi_now always reads the target-scale (scale-4) table, so the 128-window steps of win_sched
+  variants used scale-4 weights (lead's hypothesis: mis-weighting of a ratio-2 view causes the clean-prompt softening).
+- Enqueued (H) dup_bridge_mid (bridge 16 only while sigma > 0.5), prefix f_, code 60fb75f, self-releasing eval.
+- (E) bridge + 128 windows sigma > 0.80 with matched scale-2 weights (--win-pi-match), (F) per-head wide windows for
+  heads with scale-4 pi < 0.5 / 0.7 (matched weight) + bridge, (G) stride-2 dilated windows (a = 2) sigma > 0.80 +
+  bridge: implementation sent to the apparent-scale subagent (resumed with its context), tasks prefix g_.
+- Paper story if E or F wins (lead): "each head's window at high noise is set by its calibrated appetite for
+  context, and every window size reads its weight from the table at the matching emulated ratio".
