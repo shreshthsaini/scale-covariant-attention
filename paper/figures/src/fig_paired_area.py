@@ -135,7 +135,24 @@ def table_rows(tex: str) -> list:
         path = ROOT / "paper" / (name if name.endswith(".tex") else name + ".tex")
         if path.exists():
             block += "\n" + path.read_text()
-    return [ln.strip() for ln in block.splitlines()]
+    return [unpend(ln.strip()) for ln in block.splitlines()]
+
+
+def unpend(line: str) -> str:
+    """The line with every \\pend{...} wrapper (grey pending value, gen_app_tables.py) replaced by its content."""
+    out, i = [], 0
+    while True:
+        j = line.find(r"\pend{", i)
+        if j < 0:
+            return "".join(out) + line[i:]
+        out.append(line[i:j])
+        k, depth = j + len(r"\pend{"), 1
+        start = k
+        while depth:
+            depth += {"{": 1, "}": -1}.get(line[k], 0)
+            k += 1
+        out.append(line[start:k - 1])
+        i = k
 
 
 def load_run(landed: bool):

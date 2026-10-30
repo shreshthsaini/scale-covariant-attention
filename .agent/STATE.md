@@ -5,23 +5,22 @@ Rewrite paper/ around sca_v2 (opening + shrinking windows 128/112/96/80 + matche
 softmax, code sca/attn.py sca_dedup_forward); swap every table to sca_v2 numbers as groups land; deliver build + notes.
 
 ## Status and next action
-- 22:30 main text rewritten in main.tex (abstract to reproducibility; old text in scratchpad main_before_rewrite.tex):
-  Sections 2.3 schedule (eq:sched), 2.4 root cause (sec:rootcause), 4.2 late duplication (sec:dup), new appendix
-  app:dupfix, Argument moved to App. A, hparams rows, Prop 1/2 proofs, failure paragraph, band-guard link, bib entry.
-  Status macros (\pend, \pendImg*, \hlDup*, \hlWorked*) are \providecommand'ed after headline.tex in main.tex.
-- Quick build (scratchpad/quick_build.sh): compiles, 0 overfull, main text ends p. 11 (needs ~1 page cut after
-  agents deliver), undefined tab:dupfix until agent B writes snippets/dupfix_variants.tex.
-- Agents running (opus): A1 main tables+headline macros (gen_main_tables.py), A2 appendix tables + Fig 6/7 + swap_all.sh,
-  B dup figure (figures/dup.pdf) + dupfix_variants + dup_examples_rule snippets, C method.pdf, method_zoom.pdf,
-  alg drafts (figures/src/alg_drafts), cost_v2.txt. Waiter: scratchpad/wait_groups.sh (seen_groups.txt), bg task.
-- NEXT: integrate agent outputs (algorithms from C, captions from B/C, A2's \input replacements), page-fit to 10,
-  render review 1, commit+push "structure"; then per-group swaps (swap_all.sh) + prose claims check.
+- 23:50 structure committed and pushed (5351655): main text rewritten, agents A1 A2 B C delivered (all reports
+  summarized in .agent/notes/paper_v2_rewrite_20261029.md). Main text still ends p. 11 (~0.55 page over).
+- Waiter bg task (scratchpad/wait_groups.sh, seen file seen_groups.txt) exits when a group lands; re-arm after each.
+- I1 done (Oct 29 late): A2 app tables wired, \pend robust + neutral marks, swap_all order fixed (collect_latency first;
+  fig_paired_area unwraps \pend), tab:flops has an SCA row, published-only captions say 'without the schedule',
+  Sections 1-6 end p10 (y~698), render review 1 done; 55 pages; dup_i_160/bridge32/ext75 rows in Table 3 + tab:dupfix.
+- Open: Tables K.1/K.2 alone on pages; Figure L.1/M.2 snippet captions need 'without the schedule' in their generators;
+  grey values in abstract/intro have no caption note; Table K.1 title claim rests on grey values;
+  results/.../decision_round5.txt untracked (not committed). NEXT: per landing, swap agent.
 ## Map
 | note | read it when |
 |---|---|
 | .agent/notes/duplication_fix_20261027.md (end) | exact sca_v2 definition, 46-prompt evidence |
 | .agent/notes/state_20261020_final_pass.md | previous STATE (Oct 20 final pass) |
 | .agent/notes/latest_delivery.md | last delivery hashes |
+| .agent/notes/paper_v2_rewrite_20261029.md | macro system, pending hand edits, claims to re-check, page budget |
 | results/dup_audit_20261027/rates_*_people.txt | duplication rates (46 and 195 prompts) |
 
 ## Decisions

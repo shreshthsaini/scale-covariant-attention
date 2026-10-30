@@ -5,8 +5,8 @@
 #   paper/figures/src/swap_all.sh            (from any directory)
 #   SCA_V2_PENDING=1 paper/figures/src/swap_all.sh   renders everything as pending (published values)
 #
-# Order: gen_main_tables.py (main-text tables and headline macros), collect_latency_v2.py (if present),
-# gen_app_tables.py (appendix tables), fig_paired_area.py, fig_latency.py, fig_baseline_deltas.py (with
+# Order: collect_latency_v2.py (if present; it writes the latency inputs the table generators read),
+# gen_main_tables.py (main-text tables and headline macros), gen_app_tables.py (appendix tables), fig_paired_area.py, fig_latency.py, fig_baseline_deltas.py (with
 # --no-results-csv, so nothing is written into results/), fig_dup.py (if present).
 # A missing script is skipped; a failing one is reported and the remaining steps still run; exit status 1 if any
 # step failed. SCA_V2_MOCK is always unset here, so mock test numbers can never reach paper/.
@@ -45,8 +45,8 @@ step() {  # step <script> [args...]
 echo "== run status (landed or pending)"
 "${PY[@]}" "$SRC/v2swap.py" || failed+=("v2swap.py")
 
-step "$SRC/gen_main_tables.py"
 step "$(locate collect_latency_v2.py)"
+step "$SRC/gen_main_tables.py"
 step "$SRC/gen_app_tables.py"
 step "$SRC/fig_paired_area.py"
 step "$SRC/fig_latency.py"
