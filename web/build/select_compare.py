@@ -8,6 +8,11 @@ averaged over the three methods' images and searched on a 64 px grid inside the 
 of each axis, where the subject usually sits.
 
 Writes web/build/compare_selection.json. Run with the sca env python (PIL, numpy).
+
+--add-final keeps the prompts and crop windows of the existing file and adds, per prompt, the final operator's
+image of the same prompt and seed (paths["sca_v2"], out/dupfix/sca_v2, found and checked by
+paper/figures/src/imgsel.final_png) with its SHA-256. The windows stay the ones chosen on the previous operator's
+image, so they were fixed before the final operator's images existed.
 """
 import json
 import os
@@ -64,7 +69,22 @@ def best_box(paths):
     return [int(x * 8), int(y * 8), CROP], float(best / (k * k))
 
 
+def add_final():
+    path = os.path.join(HERE, "compare_selection.json")
+    sel = json.load(open(path))
+    for it in sel["items"]:
+        png, digest = imgsel.final_png(RES, it["sid"])
+        it["paths"]["sca_v2"], it["sca_v2_sha256"] = png, digest
+        print(it["sid"], png)
+    sel["final_operator"] = ("paths.sca_v2: the final operator (sca_v2) at the same prompt and seed, out/dupfix/sca_v2; "
+                             "crop windows unchanged (chosen on the previous operator's image, label sca)")
+    with open(path, "w") as fh:
+        json.dump(sel, fh, indent=1)
+
+
 def main():
+    if "--add-final" in sys.argv[1:]:
+        return add_final()
     idx = {m: imgsel.index(m, RES) for m in METHODS}
     common = sorted(set.intersection(*(set(v) for v in idx.values())))
     dev = imgsel.dev4_ids()

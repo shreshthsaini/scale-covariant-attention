@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 """Every number the SCA project page prints, computed from the archived results.
 
-Inputs are files under results/ only: the evaluation CSVs, the calibration JSONs (plus the calibration
+SCA is the final operator (sca_v2: the window schedule after the opening and 1,024 bridge tokens) wherever its run
+exists; rows that exist only for the operator without the schedule (sca_nb: 6144^2, FLUX.2-dev, HRGen-1K until
+its final run lands) keep sca_nb and the page labels them. Two inputs live outside results/, as in the paper's own
+generator (paper/figures/src/scav2_runs.py): the eval.py paired deltas of the sca_v2 runs (1000 prompt draws,
+/scratch/09032/saini_2/sca/eval/<run>/{base/paired_deltas,extra/extra_paired_deltas}.csv; the evaluation tasks do
+not copy them) and the sca_v2 generation sidecars (out/dupfix/sca_v2/4096x4096) for its configuration constants.
+
+Inputs are otherwise files under results/ only: the evaluation CSVs, the calibration JSONs (plus the calibration
 table's .npz, read for its block x head shape and its cell fractions), the visual-audit CSV, the compute
 summary, and the generation sidecars (results/evidence/generation_sidecars.jsonl.gz) for configuration
 constants. No number on the page is typed by hand.
@@ -72,10 +79,24 @@ DIST = {"fid", "kid", "patch_fid", "patch_kid"}
 UNITS = {1: "", 100: ", x100", 1000: ", x1000"}
 
 # Table tab:main: (method key, CSV method, run); metrics with the table's decimals
+# SCA (ours) is the final operator, sca_v2 (window schedule after the opening and 1,024 bridge tokens)
+MAIN_V2 = "a4k195_main_sca_v2"
 TABLE1 = [("full", "full", "a4k195_main"), ("dype", "dype", "a4k195_main"),
           ("sega", "sega_official", "a4k195_main"), ("area", "area", "a4k195_main"),
-          ("sca", "sca_nb", "a4k195_main"), ("ultraimage", "ultraimage", "a4k195_main"),
+          ("sca", "sca_v2", MAIN_V2), ("ultraimage", "ultraimage", "a4k195_main"),
           ("hrdit", "hrdit_dev_author", "a4k195_panel")]
+# the final operator's 195-prompt runs; their eval.py paired deltas (1000 prompt draws) are not copied to results/
+# by the evaluation tasks, so they are read from the run's evaluation directory on scratch, exactly as
+# paper/figures/src/scav2_runs.py does
+V2_RUNS = ["a4k195_main_sca_v2", "a4k195_2048x4096_sca_v2", "a4k195_2048x6144_sca_v2", "krea195_sca_v2",
+           "prog195_sca_v2"]
+EVAL = Path("/scratch/09032/saini_2/sca/eval")
+V2_SIDECARS = Path("/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096")  # generation sidecars of sca_v2
+LAT_V2_SAMPLES = RES / "latency_curve_v2" / "samples.csv"   # second clean sweep: sca_v2 and re-timed sca_nb
+LAT_V2_SUMMARY = RES / "latency_curve_v2" / "summary.csv"
+DUPDIR = RES / "dup_audit_20261027"
+# Table tab:main method -> label in the duplication tables
+DUP_LABEL = {"sega_official": "sega", "hrdit_dev_author": "hrdit"}
 TABLE1_METRICS = [("ir", 2), ("hps21", 2), ("pick", 2), ("clip", 2), ("musiqc", 1), ("fid", 1), ("fidp", 1)]
 
 LAT_CURVE = RES / "latency_curve.csv"            # audited clean batch-1 sweep, full precision, no warm-up rows
@@ -186,6 +207,61 @@ PAPER_QUOTES = {
     "config.blocks": "57", "config.heads_per_block": "24", "config.sigma_bins": "14",
     "compute.gh200_hours": "123.3",
 }
+# 2026-10-30: the paper now reports the final operator (sca_v2); quotes from paper/main.tex and its generated
+# snippets (figures/snippets/main_tables, app_tables) of delivery delivery_32xjiemn. Older quotes of the operator
+# without the schedule are dropped where the paper no longer prints them.
+for _k in [k for k in PAPER_QUOTES if k.startswith(("general.hrgen.", "general.seed", "general.krea", "general.prog.",
+                                                     "latency.growth"))]:
+    _v = PAPER_QUOTES.pop(_k)
+    if _k.startswith("general.hrgen."):
+        PAPER_QUOTES["general.hrgen_prev." + _k.split(".", 2)[2]] = _v   # published operator, grey in the paper
+PAPER_QUOTES.update({
+    **{f"main.sca.{k}": v for k, v in zip(("time_clean", "time_camp", "ir", "hps21", "pick", "clip", "musiqc", "fid",
+                                           "fidp"), ("77.1", "78.4", "1.25", "29.73", "23.12", "29.14", "60.1", "140.2",
+                                                     "98.4"))},
+    **{f"main.{m}.dup": v for m, v in (("full", "7"), ("dype", "17"), ("sega", "12"), ("area", "4"), ("sca", "26"),
+                                       ("ultraimage", "5"), ("hrdit", "11"))},
+    "paired.n_better": "12", "paired.n_unresolved": "3", "paired.n_total": "15", "paired.n_worse": "0",
+    "paired.ir.headline": "+0.33 [0.25, 0.41]", "paired.ir.delta2": "+0.33", "paired.ir.ci2": "[0.25, 0.41]",
+    "paired.fid.headline": "-5.6 [-10.6, -0.4]", "paired.fid.delta1": "-5.6", "paired.fid.ci1": "[-10.6, -0.4]",
+    **{f"paired.{k}.ci": v for k, v in {
+        "ir": "+0.327 [+0.247, +0.405]", "aesthetic": "+0.15 [+0.10, +0.20]", "clip": "+1.45 [+1.13, +1.82]",
+        "pick": "+0.76 [+0.64, +0.88]", "hps2": "+1.15 [+0.96, +1.34]", "hps21": "+2.56 [+2.20, +2.97]",
+        "musiq": "+5.6 [+3.7, +7.4]", "musiqc": "+9.7 [+8.2, +11.1]", "clipiqa": "+4.6 [+3.1, +6.1]",
+        "arniqa": "+3.4 [+2.5, +4.4]", "is": "-0.22 [-0.65, +0.39]", "fid": "-5.6 [-10.6, -0.4]",
+        "kid": "-1.35 [-3.17, +0.49]", "fidp": "-4.4 [-7.9, +0.4]", "kidp": "-2.53 [-4.57, -0.60]"}.items()},
+    **{f"paired.{k}.sca": v for k, v in {
+        "ir": "1.248", "aesthetic": "6.42", "clip": "29.14", "pick": "23.12", "hps2": "29.77", "hps21": "29.73",
+        "musiq": "45.0", "musiqc": "60.1", "clipiqa": "72.3", "arniqa": "70.7", "is": "6.44", "fid": "140.2",
+        "kid": "5.82", "fidp": "98.4", "kidp": "8.87"}.items()},
+    "speed.sca_s": "77.1", "speed.ratio": "2.63×", "speed.hrdit_ratio": "1.4×", "speed.overhead": "8%",
+    "latency.sca.2048": "19.8", "latency.sca.3072": "44.3", "latency.sca.4096": "77.1", "latency.sca.6144": "174.7",
+    "latency.sca.8192": "309.7", "latency.exp.sca": "0.99", "latency.reduction_area.6144": "63.8%",
+    "latency.reduction_area.8192": "67.5%", "latency.speedup_area.8192": "3.07×", "latency.at8192.vs_area": "3.07×",
+    "latency.at6144.vs_full": "4.4×", "latency.sca_nb.4096": "71.1",
+    "sizes.2048x6144.n_better": "7", "sizes.2048x6144.n_worse": "2",
+    "sizes.2048x6144.worse_metrics": "aesthetic score, patch FID", "sizes.2048x6144.time_sca": "60.5",
+    "sizes.2048x4096.n_better": "3", "sizes.2048x4096.n_worse": "3",
+    "sizes.2048x4096.worse_metrics": "aesthetic score, CLIP score, CLIP-IQA", "sizes.2048x4096.time_sca": "41.1",
+    "general.seed1.ir_delta": "+0.306", "general.seed1.hps21": "+2.49", "general.seed1.musiqc": "+10.27",
+    "general.seed2.ir_delta": "+0.264", "general.seed2.hps21": "+2.53", "general.seed2.musiqc": "+10.94",
+    "general.krea.n": "195", "general.krea.ir_delta": "+0.020", "general.krea.hps21": "+0.91",
+    "general.krea.musiqc": "+2.69", "general.krea.n_better": "7", "general.krea.ir_1000": "+0.020 [-0.021, 0.060]",
+    "general.krea.fidp": "+3.4 [1.6, 7.1]", "general.krea.fid": "+1.0 [-3.6, 6.0]",
+    "general.krea_table.n_better": "8", "general.krea_table.n_worse": "1", "general.krea_table.worse_metrics": "patch FID",
+    "general.prog.time_prog": "50.7", "general.prog.time_hrdit": "110.4", "general.prog.n_worse": "1",
+    "general.prog.worse_metrics": "CLIP-IQA", "general.prog.better_metrics": "HPSv2, MUSIQ, ARNIQA",
+    "dup.sca_v2.pct": "26%", "dup.sca_v2.k": "25", "dup.sca_v2.n": "95", "dup.sca_nb.pct": "57%", "dup.area.pct": "4%",
+    "dup.sigma.pct": "27%", "dup.sca_v2.lo": "18.5", "dup.sca_v2.hi": "36.0", "dup.sca_v2.seed_range": "26 to 28%",
+    "dup.sca_nb.seed_range": "49 to 57%", "dup.sca_v2_2048x4096.pct": "24%", "dup.sca_v2_2048x6144.pct": "33%",
+    "dup.sca_nb_2048x4096.pct": "43%", "dup.sca_nb_2048x6144.pct": "54%", "dup.area_2048x4096.pct": "18%",
+    "dup.area_2048x6144.pct": "6%", "dup.sca_v2_prog.pct": "6%", "dup.sca_prog.pct": "8%",
+    "dup.a46_sca_g93.k": "20", "dup.a46_sca_nb.k": "15", "dup.a46_sca_g85.k": "7", "dup.a46_abl_globalonly.k": "1",
+    "dup.a46_dup_i_shrink.k": "4", "dup.a46_sca_nb.n": "26", "dup.a46_dup_i_shrink.pct": "15%",
+    "config.bridge_tokens": "1,024", "config.win_sched": "128, 112, 96, 80", "config.wide_steps": "4",
+    "config.native_steps": "16", "config.bridge_cells": "8", "config.bridge_k": "16",
+})
+PAPER_QUOTES.pop("latency.at6144.vs_area")  # the rewritten paper no longer prints the 6144^2 AReA ratio
 # key -> reason, for quotes that legitimately differ from the display (rounding source etc.)
 EXPLAINED: dict[str, str] = {}
 # numbers the paper prints that no results file holds; reported, never emitted
@@ -264,8 +340,16 @@ class Run:
                 self.S[(r["method"], r["metric"])] = dict(value=float(r["value"]), n=_int(r.get("n_prompts")),
                                                           res=r.get("res"), src=p)
         refs = set()
-        for name in ("base_paired_deltas.csv", "extra_paired_deltas.csv"):
+        self.delta_paths = []
+        for name, sub in (("base_paired_deltas.csv", "base/paired_deltas.csv"),
+                          ("extra_paired_deltas.csv", "extra/extra_paired_deltas.csv")):
             p = self.dir / name
+            if not p.exists() and run in V2_RUNS:
+                p = EVAL / run / sub
+                if not p.exists():
+                    raise FileNotFoundError(f"{run}: eval.py paired deltas missing ({p})")
+            if p.exists():
+                self.delta_paths.append(p)
             for r in rows(p) if p.exists() else []:
                 assert r["delta_definition"] == "method_minus_reference", (p, r)
                 refs.add(r["reference_method"])
@@ -304,6 +388,10 @@ class Run:
         if not with_ci:
             for key in [k for k in self.D if k[1] in ("patch_fid", "patch_kid")]:
                 self.D[key] = dict(self.D[key], lo=None, hi=None)
+
+    def delta_files(self) -> list:
+        extra = [self.corrected / "paired_deltas.csv"] if self.corrected is not None else []
+        return self.delta_paths + extra
 
     def delta(self, method: str, metric: str, against: str) -> dict:
         """method minus `against` from this run's deltas; negates exactly when the stored delta is the reverse."""
@@ -378,6 +466,64 @@ def load_latency() -> dict:
     return cells
 
 
+def load_latency_v2() -> dict:
+    """(res, method) -> dict(vals, src) from the second clean sweep (sca_v2 and the re-timed sca_nb), warm-ups
+    dropped; every median must equal results/latency_curve_v2/summary.csv."""
+    cells = defaultdict(list)
+    for r in rows(LAT_V2_SAMPLES):
+        if r["warmup_verified"].strip().lower() != "true":
+            raise ValueError(f"{LAT_V2_SAMPLES}: unverified warm-up ordering")
+        if r["prompt_id"].startswith(WARMUP):
+            continue
+        cells[(r["res"], r["method"])].append(float(r["seconds"]))
+    out = {k: dict(vals=v, src=LAT_V2_SAMPLES) for k, v in cells.items()}
+    for r in rows(LAT_V2_SUMMARY):
+        k = (r["res"], r["method"])
+        if abs(statistics.median(out[k]["vals"]) - float(r["median_seconds"])) > 1e-9 or int(r["n"]) != len(out[k]["vals"]):
+            raise ValueError(f"latency median {k} disagrees with {LAT_V2_SUMMARY.name}")
+    return out
+
+
+def load_v2_sidecars() -> list:
+    """(config, sigmas) of every complete sca_v2 4096x4096 generation sidecar (195 images)."""
+    out = []
+    for path in sorted(V2_SIDECARS.glob("*.json")):
+        sc = json.loads(path.read_text())
+        if sc.get("complete") and sc["config"].get("method") == "sca_v2":
+            out.append((sc["config"], sc.get("sigmas")))
+    if len(out) != 195:
+        raise ValueError(f"{V2_SIDECARS}: {len(out)} complete sca_v2 sidecars, expected 195")
+    return out
+
+
+def load_dup() -> dict:
+    """label -> duplication rate of prompts naming a person or animal (results/dup_audit_20261027 tables and the
+    sca_v2 runs' dup_rates_people.csv); a46_<method> rows are the 46-prompt subset."""
+    out = {}
+
+    def add(path, rename=None, prefix=""):
+        for r in rows(path):
+            label = prefix + (rename or {}).get(r["method"], r["method"])
+            d = dict(method=r["method"], n=int(r["n"]), dup=int(r["dup"]), rate=float(r["rate"]),
+                     lo=float(r["lo95"]), hi=float(r["hi95"]), src=path)
+            d["pct"] = int(round(100.0 * d["dup"] / d["n"]))
+            if label in out and (out[label]["dup"], out[label]["n"]) != (d["dup"], d["n"]):
+                raise ValueError(f"duplication rate {label} differs between {out[label]['src']} and {path}")
+            out.setdefault(label, d)
+
+    add(DUPDIR / "rates_a4k195_people.csv")
+    for sz in ("2048x4096", "2048x6144"):
+        add(DUPDIR / f"rates_{sz}_people.csv")
+    add(DUPDIR / "rates_46_all_people.csv", prefix="a46_")
+    add(DUPDIR / "rates_abl46_people.csv", prefix="a46_")
+    for run, label in (("a4k195_main_sca_v2", "sca_v2"), ("a4k195_seed1_sca_v2", "sca_v2_seed1"),
+                       ("a4k195_seed2_sca_v2", "sca_v2_seed2"), ("a4k195_2048x4096_sca_v2", "sca_v2_2048x4096"),
+                       ("a4k195_2048x6144_sca_v2", "sca_v2_2048x6144"), ("prog195_sca_v2", "sca_v2_prog"),
+                       ("krea195_sca_v2", "sca_v2_krea")):
+        add(RES / run / "dup_rates_people.csv", rename={"sca_v2": label, "sca_v2_prog": label, "sca_v2_krea": label})
+    return out
+
+
 def load_sidecars() -> dict:
     """(method, res) -> list of (config, sigmas) from the archived generation sidecars."""
     out = defaultdict(list)
@@ -399,27 +545,33 @@ def unique(values, what: str):
 # ---------------------------------------------------------------------------------------------------------
 def build() -> None:
     runs = {name: Run(name) for name in ("a4k195_main", "a4k195_panel", "e2_6144", "a4k195_2048x4096",
-                                         "a4k195_2048x6144", "krea195")}
+                                         "a4k195_2048x6144", "krea195") + tuple(V2_RUNS)}
     lat = load_latency()
+    lat2 = load_latency_v2()
     sidecars = load_sidecars()
-    main = runs["a4k195_main"]
+    v2cars = load_v2_sidecars()
+    main, main2 = runs["a4k195_main"], runs[MAIN_V2]
     sc_src = SIDECARS
 
-    # 1. Table tab:main ----------------------------------------------------------------------------------
-    ns = {e["n"] for (m, _), e in main.S.items()}
+    # 1. Table tab:main (SCA = the final operator, sca_v2, from results/a4k195_main_sca_v2) ----------------
+    ns = {e["n"] for (m, _), e in main.S.items()} | {e["n"] for (m, _), e in main2.S.items()}
     put("main.n_prompts", unique(ns, "a4k195_main n_prompts"), str(unique(ns, "n")),
-        main.dir / "base_summary.csv", "n_prompts of every row of results/a4k195_main summaries (4096x4096)")
-    steps_src = {"full": "full", "dype": "dype", "sega": "sega_official", "area": "area", "sca": "sca_nb"}
+        [main.dir / "base_summary.csv", main2.dir / "base_summary.csv"],
+        "n_prompts of every row of results/a4k195_main and results/a4k195_main_sca_v2 summaries (4096x4096)")
+    steps_src = {"full": "full", "dype": "dype", "sega": "sega_official", "area": "area"}
     for key, method in steps_src.items():
         s = unique((c["steps"] for c, _ in sidecars[(method, "4096x4096")]), f"{method} steps")
         put(f"main.{key}.steps", s, str(s), sc_src,
             f"config.steps of every method={method}, res=4096x4096 generation sidecar")
+    s = unique((c["steps"] for c, _ in v2cars), "sca_v2 steps")
+    put("main.sca.steps", s, str(s), V2_SIDECARS, f"config.steps of all {len(v2cars)} sca_v2 4096x4096 sidecars")
     ui = [c["ultraimage"]["call"] for c, _ in sidecars[("ultraimage", "4096x4096")]]
     s1 = unique((c["num_inference_steps1"] for c in ui), "ultraimage stage 1 steps")
     s2 = unique((c["num_inference_steps2"] for c in ui), "ultraimage stage 2 steps")
     put("main.ultraimage.steps", f"{s1}+{s2}", f"{s1}+{s2}", sc_src,
         "config.ultraimage.call.num_inference_steps1 + num_inference_steps2 of every method=ultraimage, "
         "res=4096x4096 sidecar")
+    dup = load_dup()
     for key, method, run_name in TABLE1:
         run = runs[run_name]
         for mk, dec in TABLE1_METRICS:
@@ -434,7 +586,7 @@ def build() -> None:
         put(f"main.{key}.time_camp", e["value"], num(e["value"], 1), e["src"],
             f"value of method={method}, metric=seconds (campaign mean per image on shared nodes), "
             f"res=4096x4096; 1 decimal")
-        cell = lat.get(("4096x4096", method))
+        cell = (lat2 if method == "sca_v2" else lat).get(("4096x4096", method))
         if cell:
             med = statistics.median(cell["vals"])
             put(f"main.{key}.time_clean", med, num(med, 1), cell["src"],
@@ -443,18 +595,22 @@ def build() -> None:
         else:
             put(f"main.{key}.time_clean", "n/m", "n/m", [LAT_CURVE, LAT_BATCH1],
                 f"no clean batch-1 row for method={method} at 4096x4096 in either latency CSV: not measured")
+        d = dup[DUP_LABEL.get(method, method)]
+        put(f"main.{key}.dup", d["pct"], str(d["pct"]), d["src"],
+            f"Dup.: 100 * dup / n of method={DUP_LABEL.get(method, method)} (people or animals, {d['n']} prompts), "
+            "rounded to an integer as Table tab:main prints it")
 
-    # 2. SCA minus AReA at 4096^2, the 15 metrics of Figure paired_area -----------------------------------
+    # 2. SCA minus AReA at 4096^2, the 15 metrics of Table app_4k (final operator) ---------------------------
     verdicts = {}
     for mk in FIFTEEN:
         metric, label, scale, dec, lower = METRICS[mk]
-        d = main.delta("sca_nb", metric, "area")
+        d = main2.delta("sca_v2", metric, "area")
         assert d["n"] == 195 and d["lo"] is not None, (mk, d)
-        a, s = main.S[("area", metric)], main.S[("sca_nb", metric)]
+        a, s = main2.S[("area", metric)], main2.S[("sca_v2", metric)]
         v, lo, hi = (x * scale for x in (d["v"], d["lo"], d["hi"]))
         src = d["src"]
-        how = (f"{metric}: SCA (sca_nb) minus AReA, exact negation of the area minus sca_nb row "
-               f"(reference_method=sca_nb, 1000 prompt draws{', corrected crop bank with reference-cluster resampling' if metric in DIST else ''}){UNITS[scale]}")
+        how = (f"{metric}: SCA (sca_v2) minus AReA, exact negation of the area minus sca_v2 row "
+               f"(reference_method=sca_v2, 1000 prompt draws{', corrected crop bank with reference-cluster resampling' if metric in DIST else ''}){UNITS[scale]}")
         put(f"paired.{mk}.delta", v, sgn(v, dec), src, f"{how}; point; {dp(dec)}")
         put(f"paired.{mk}.lo", lo, num(lo, dec), src, f"{how}; 2.5th percentile; {dp(dec)}")
         put(f"paired.{mk}.hi", hi, num(hi, dec), src, f"{how}; 97.5th percentile; {dp(dec)}")
@@ -472,7 +628,7 @@ def build() -> None:
         put(f"paired.{mk}.sig", "yes" if sig else "no", "yes" if sig else "no", src,
             f"{how}; yes when the 95% interval excludes zero")
         put(f"paired.{mk}.verdict", verdicts[mk], verdicts[mk], src, f"{how}; better / worse / unresolved for SCA")
-        for side, e, m in (("area", a, "area"), ("sca", s, "sca_nb")):
+        for side, e, m in (("area", a, "area"), ("sca", s, "sca_v2")):
             x = e["value"] * scale
             put(f"paired.{mk}.{side}", x, num(x, dec), e["src"],
                 f"value of method={m}, metric={metric}, res=4096x4096{UNITS[scale]}; {dp(dec)} (Table app_4k)")
@@ -480,63 +636,71 @@ def build() -> None:
     for mk, dec, txt in (("ir", 2, "ImageReward"), ("fid", 1, "FID (corrected bank, prompt and reference-cluster "
                                                                "bootstrap)")):
         metric, _, scale, _, _ = METRICS[mk]
-        d = main.delta("sca_nb", metric, "area")
+        d = main2.delta("sca_v2", metric, "area")
         v, lo, hi = (x * scale for x in (d["v"], d["lo"], d["hi"]))
         how = f"{txt} SCA minus AReA at 4096x4096 with its 95% paired interval; {dp(dec)} as Section 4.1 prints it"
         put(f"paired.{mk}.headline", ci_text(v, lo, hi, dec), ci_text(v, lo, hi, dec), d["src"], how)
         put(f"paired.{mk}.delta{dec}", v, sgn(v, dec), d["src"], f"{how}; point")
         bounds = f"[{num(lo, dec)}, {num(hi, dec)}]"
         put(f"paired.{mk}.ci{dec}", bounds, bounds, d["src"], f"{how}; [lo, hi]")
-    tally("paired", verdicts, [main.dir / "base_paired_deltas.csv", main.dir / "extra_paired_deltas.csv",
-                               main.dir / "corrected_fidp_ci" / "paired_deltas.csv"],
-          "SCA minus AReA at 4096x4096 over the 15 metrics of Table app_4k")
+    tally("paired", verdicts, main2.delta_files(),
+          "SCA (sca_v2) minus AReA at 4096x4096 over the 15 metrics of Table app_4k")
 
-    # 3. headline speed (clean batch-1 medians at 4096^2) --------------------------------------------------
+    # 3. headline speed (clean batch-1 medians at 4096^2; SCA from the second sweep) ---------------------------
     med = {(r, m): statistics.median(c["vals"]) for (r, m), c in lat.items()}
     srcs = {(r, m): c["src"] for (r, m), c in lat.items()}
+    for (r, m), c in lat2.items():   # sca_v2 and the re-timed sca_nb of results/latency_curve_v2
+        med[(r, m + "@v2")], srcs[(r, m + "@v2")] = statistics.median(c["vals"]), c["src"]
     k4 = "4096x4096"
-    for key, m in (("sca_s", "sca_nb"), ("area_s", "area"), ("full_s", "full"), ("hrdit_s", "hrdit_dev_author")):
+    SCA = "sca_v2@v2"
+    for key, m in (("sca_s", SCA), ("sca_nb_s", "sca_nb@v2"), ("area_s", "area"), ("full_s", "full"),
+                   ("hrdit_s", "hrdit_dev_author")):
         put(f"speed.{key}", med[(k4, m)], num(med[(k4, m)], 1), srcs[(k4, m)],
-            f"median clean batch-1 seconds, res=4096x4096, method={m}; 1 decimal")
-    r = med[(k4, "area")] / med[(k4, "sca_nb")]
-    put("speed.ratio", r, times(r, 2), [srcs[(k4, "area")], srcs[(k4, "sca_nb")]],
-        "AReA median / SCA median clean seconds at 4096x4096; 2 decimals")
-    r = med[(k4, "full")] / med[(k4, "sca_nb")]
-    put("speed.ratio_full", r, times(r, 1), srcs[(k4, "full")],
-        "full-attention median / SCA median clean seconds at 4096x4096; 1 decimal")
-    camp = {m: main.S[(m, "seconds")]["value"] for m in ("sca_nb", "ultraimage")}
-    camp["hrdit_dev_author"] = runs["a4k195_panel"].S[("hrdit_dev_author", "seconds")]["value"]
+            f"median clean batch-1 seconds, res=4096x4096, method={m.replace('@v2', ' (second sweep)')}; 1 decimal")
+    r = med[(k4, "area")] / med[(k4, SCA)]
+    put("speed.ratio", r, times(r, 2), [srcs[(k4, "area")], srcs[(k4, SCA)]],
+        "AReA median (first sweep) / SCA (sca_v2, second sweep) median clean seconds at 4096x4096; 2 decimals")
+    r = med[(k4, "full")] / med[(k4, SCA)]
+    put("speed.ratio_full", r, times(r, 1), [srcs[(k4, "full")], srcs[(k4, SCA)]],
+        "full-attention median / SCA (sca_v2) median clean seconds at 4096x4096; 1 decimal")
+    o = 100.0 * (med[(k4, SCA)] / med[(k4, "sca_nb@v2")] - 1.0)
+    put("speed.overhead", o, f"{o:.0f}%", srcs[(k4, SCA)],
+        "100 * (sca_v2 / sca_nb - 1), medians of the second sweep at 4096x4096 (timed back to back); 0 decimals")
+    camp = {"sca_v2": main2.S[("sca_v2", "seconds")]["value"], "ultraimage": main.S[("ultraimage", "seconds")]["value"],
+            "hrdit_dev_author": runs["a4k195_panel"].S[("hrdit_dev_author", "seconds")]["value"]}
     for key, m, src in (("hrdit_ratio", "hrdit_dev_author", runs["a4k195_panel"].dir / "base_summary.csv"),
                         ("ultraimage_ratio", "ultraimage", main.dir / "base_summary.csv")):
-        r = camp[m] / camp["sca_nb"]
-        put(f"speed.{key}", r, times(r, 1), [src, main.dir / "base_summary.csv"],
-            f"campaign mean seconds of method={m} / sca_nb at 4096x4096 (Table tab:main camp. column); 1 decimal")
+        r = camp[m] / camp["sca_v2"]
+        put(f"speed.{key}", r, times(r, 1), [src, main2.dir / "base_summary.csv"],
+            f"campaign mean seconds of method={m} / sca_v2 at 4096x4096 (Table tab:main camp. column); 1 decimal")
 
-    # 4. latency sweep ---------------------------------------------------------------------------------------
-    grid = unique((tuple(c["grid"]) for c, _ in sidecars[("sca_nb", "4096x4096")]), "sca_nb 4096 grid")
+    # 4. latency sweep (SCA = sca_v2 of the second sweep; AReA and full attention from the first) ----------------
+    grid = unique((tuple(c["grid"]) for c, _ in v2cars), "sca_v2 4096 grid")
     patch = unique((4096 // grid[0], 4096 // grid[1]), "pixels per token")  # 16: VAE factor 8, 2x2 packing
+    lat_methods = [("sca", SCA), ("sca_nb", "sca_nb@v2"), ("area", "area"), ("full", "full")]
     for side in SIDES:
         res = f"{side}x{side}"
         tok = (side // patch) ** 2
-        put(f"latency.tokens.{side}", tok, f"{tok:,}", [LAT_CURVE, sc_src],
-            f"N = (W/p)(H/p) image tokens for res={res}, p = 4096 / config.grid of the sca_nb 4096x4096 "
+        put(f"latency.tokens.{side}", tok, f"{tok:,}", [LAT_V2_SAMPLES, V2_SIDECARS],
+            f"N = (W/p)(H/p) image tokens for res={res}, p = 4096 / config.grid of the sca_v2 4096x4096 "
             f"sidecars = {patch} pixels per token")
-        for key, m in LAT_METHODS:
+        for key, m in lat_methods:
             if (res, m) in med:
+                n_rows = len((lat2 if m.endswith("@v2") else lat)[(res, m.replace("@v2", ""))]["vals"])
                 put(f"latency.{key}.{side}", med[(res, m)], num(med[(res, m)], 1), srcs[(res, m)],
-                    f"median of the {len(lat[(res, m)]['vals'])} timed rows res={res}, method={m} "
+                    f"median of the {n_rows} timed rows res={res}, method={m.replace('@v2', ' (second sweep)')} "
                     f"(warm-up rows dropped); 1 decimal")
             else:
-                put(f"latency.{key}.{side}", "not run", "not run", [LAT_CURVE, LAT_BATCH1],
-                    f"no row res={res}, method={m} in either latency CSV")
+                put(f"latency.{key}.{side}", "not run", "not run", [LAT_CURVE, LAT_BATCH1, LAT_V2_SAMPLES],
+                    f"no row res={res}, method={m} in the latency CSVs")
         if (res, "area") in med:
-            r = med[(res, "area")] / med[(res, "sca_nb")]
-            put(f"latency.speedup_area.{side}", r, times(r, 2), [srcs[(res, "area")], srcs[(res, "sca_nb")]],
-                f"AReA median / SCA median at {res}; 2 decimals (Figure latency grey ratios)")
-            red = 100.0 * (1.0 - med[(res, "sca_nb")] / med[(res, "area")])
-            put(f"latency.reduction_area.{side}", red, num(red, 1) + "%", [srcs[(res, "area")], srcs[(res, "sca_nb")]],
+            r = med[(res, "area")] / med[(res, SCA)]
+            put(f"latency.speedup_area.{side}", r, times(r, 2), [srcs[(res, "area")], srcs[(res, SCA)]],
+                f"AReA median / SCA (sca_v2) median at {res}; 2 decimals")
+            red = 100.0 * (1.0 - med[(res, SCA)] / med[(res, "area")])
+            put(f"latency.reduction_area.{side}", red, num(red, 1) + "%", [srcs[(res, "area")], srcs[(res, SCA)]],
                 f"100 * (1 - SCA median / AReA median) at {res}; 1 decimal")
-    for key, m in LAT_METHODS:
+    for key, m in lat_methods:
         rs = [f"{s}x{s}" for s in SIDES if (f"{s}x{s}", m) in med]
         x = np.log([(int(r.split("x")[0]) // patch) * (int(r.split("x")[1]) // patch) for r in rs])
         y = np.log([med[(r, m)] for r in rs])
@@ -547,40 +711,41 @@ def build() -> None:
     for side, other, key, dec in ((6144, "full", "at6144.vs_full", 1), (6144, "area", "at6144.vs_area", 1),
                                   (8192, "area", "at8192.vs_area", 2)):
         res = f"{side}x{side}"
-        r = med[(res, other)] / med[(res, "sca_nb")]
-        put(f"latency.{key}", r, times(r, dec), [srcs[(res, other)], srcs[(res, "sca_nb")]],
-            f"{other} median / SCA median clean seconds at {res}; {dp(dec)} as Section 4.3 prints it")
-    g = med[("8192x8192", "sca_nb")] / med[("2048x2048", "sca_nb")]
-    put("latency.growth.sca", g, times(g, 1), srcs[("8192x8192", "sca_nb")],
-        "SCA median at 8192x8192 / SCA median at 2048x2048; 1 decimal")
+        r = med[(res, other)] / med[(res, SCA)]
+        put(f"latency.{key}", r, times(r, dec), [srcs[(res, other)], srcs[(res, SCA)]],
+            f"{other} median / SCA (sca_v2) median clean seconds at {res}; {dp(dec)} as Section 4.3 prints it")
+    g = med[("8192x8192", SCA)] / med[("2048x2048", SCA)]
+    put("latency.growth.sca", g, times(g, 1), srcs[("8192x8192", SCA)],
+        "SCA (sca_v2) median at 8192x8192 / its median at 2048x2048; 1 decimal")
     px = (8192 * 8192) / (2048 * 2048)
     put("latency.growth.pixels", px, times(px, 0), LAT_CURVE, "pixel ratio of the 8192x8192 and 2048x2048 cells")
 
-    # 5. other sizes, SCA vs AReA --------------------------------------------------------------------------
-    for size, run_name in (("6144", "e2_6144"), ("2048x6144", "a4k195_2048x6144"),
-                           ("2048x4096", "a4k195_2048x4096")):
+    # 5. other sizes, SCA vs AReA (sca_v2 where its run exists; 6144^2 has only the operator without the schedule)
+    for size, run_name, m_sca in (("6144", "e2_6144", "sca_nb"), ("2048x6144", "a4k195_2048x6144_sca_v2", "sca_v2"),
+                                  ("2048x4096", "a4k195_2048x4096_sca_v2", "sca_v2")):
         run = runs[run_name]
-        assert run.ref == "area", run_name
         v_ = {}
         files = set()
         for mk in FIFTEEN:
             metric, _, _, _, lower = METRICS[mk]
-            d = run.delta("sca_nb", metric, "area")
+            d = run.delta(m_sca, metric, "area")
             files.update(d["src"])
             v_[mk] = verdict(d["v"], d["lo"], d["hi"], lower)
-        n = unique((run.delta("sca_nb", METRICS[mk][0], "area")["n"] for mk in FIFTEEN), f"{run_name} n")
+        n = unique((run.delta(m_sca, METRICS[mk][0], "area")["n"] for mk in FIFTEEN), f"{run_name} n")
         src = sorted(files, key=str)
-        put(f"sizes.{size}.n", n, str(n), src, f"n_prompts of the sca_nb minus area rows in results/{run_name}")
-        tally(f"sizes.{size}", v_, src, f"SCA minus AReA at {size} over the 15 metrics ("
+        put(f"sizes.{size}.n", n, str(n), src, f"n_prompts of the {m_sca} minus area rows in results/{run_name}")
+        put(f"sizes.{size}.operator", m_sca, "final operator" if m_sca == "sca_v2" else "without the schedule", src,
+            f"SCA label of results/{run_name}: sca_v2 = final operator, sca_nb = SCA without the schedule")
+        tally(f"sizes.{size}", v_, src, f"SCA ({m_sca}) minus AReA at {size} over the 15 metrics ("
               + ("eval.py intervals, 1000 prompt draws" if run.corrected is None else
                  "eval.py intervals; FID/KID and patch versions from corrected_fidp_ci") + ")")
-        for key, m in (("time_sca", "sca_nb"), ("time_area", "area")):
+        for key, m in (("time_sca", m_sca), ("time_area", "area")):
             e = run.S[(m, "seconds")]
             put(f"sizes.{size}.{key}", e["value"], num(e["value"], 1), e["src"],
                 f"campaign mean seconds per image, method={m}, results/{run_name}; 1 decimal")
-        r = run.S[("area", "seconds")]["value"] / run.S[("sca_nb", "seconds")]["value"]
+        r = run.S[("area", "seconds")]["value"] / run.S[(m_sca, "seconds")]["value"]
         put(f"sizes.{size}.speedup", r, times(r, 1), run.dir / "base_summary.csv",
-            "AReA / SCA campaign mean seconds; 1 decimal")
+            f"AReA / SCA ({m_sca}) campaign mean seconds; 1 decimal")
 
     # 6. generality ------------------------------------------------------------------------------------------
     def per_image_block(prefix, P, n_expected, decs=(("ir_delta", "ir", 3), ("hps21", "hps21", 2),
@@ -600,9 +765,17 @@ def build() -> None:
             put(f"{prefix}.{key}", v, sgn(v, dec), src, f"metric={metric} delta{UNITS[scale]}; {dp(dec)} "
                                                           f"(Table tab:generality)")
 
-    per_image_block("general.hrgen", pair_file(RES / "hrgen1k_dev" / "sca_nb_vs_area.csv", "sca_nb", "area"), 1000)
+    hr2 = RES / "hrgen1k_dev_sca_v2" / "sca_v2_vs_area.csv"
+    if hr2.exists():
+        per_image_block("general.hrgen", pair_file(hr2, "sca_v2", "area"), 1000)
+        put("general.hrgen.status", "landed", "final operator", hr2, "results/hrgen1k_dev_sca_v2 exists")
+    else:
+        put("general.hrgen.status", "pending", "pending", [RES / "hrgen1k_dev_sca_v2"],
+            "results/hrgen1k_dev_sca_v2/sca_v2_vs_area.csv absent: the final operator's HRGen-1K run has not landed")
+    per_image_block("general.hrgen_prev", pair_file(RES / "hrgen1k_dev" / "sca_nb_vs_area.csv", "sca_nb", "area"),
+                    1000)
     for seed in (1, 2):
-        P = pair_file(RES / f"a4k195_seed{seed}" / "sca_nb_vs_area.csv", "sca_nb", "area")
+        P = pair_file(RES / f"a4k195_seed{seed}_sca_v2" / "sca_v2_vs_area.csv", "sca_v2", "area")
         assert {p["seed"] for p in P.values()} == {str(seed)}
         per_image_block(f"general.seed{seed}", P, 195)
     f2 = pair_file(RES / "e8_flux2_sca_vs_full.csv", "flux2_sca", "flux2_full")
@@ -622,54 +795,53 @@ def build() -> None:
     put("general.flux2.speedup", 1 / fr, times(1 / fr, 1), RES / "flux2_4k_base_summary.csv",
         "full-attention / SCA mean seconds per image; 1 decimal")
 
-    krea = runs["krea195"]
-    per_image_block("general.krea", pair_file(RES / "krea195" / "sca_krea_vs_area.csv", "sca_krea", "area"), 195)
-    d = krea.delta("sca_krea", "ir", "area")
+    krea = runs["krea195_sca_v2"]
+    KM = "sca_v2_krea"
+    per_image_block("general.krea", pair_file(krea.dir / "sca_v2_krea_vs_area.csv", KM, "area"), 195)
+    d = krea.delta(KM, "ir", "area")
     put("general.krea.ir_1000", ci_text(d["v"], d["lo"], d["hi"], 3), ci_text(d["v"], d["lo"], d["hi"], 3), d["src"],
-        "metric=ir, sca_krea minus area, eval.py 1000 prompt draws (Table krea_6144); 3 decimals")
+        f"metric=ir, {KM} minus area, eval.py 1000 prompt draws (Table krea_6144); 3 decimals")
     for key, metric in (("fidp", "patch_fid"), ("fid", "fid")):
-        d = krea.delta("sca_krea", metric, "area")
+        d = krea.delta(KM, metric, "area")
         put(f"general.krea.{key}", ci_text(d["v"], d["lo"], d["hi"], 1), ci_text(d["v"], d["lo"], d["hi"], 1),
-            d["src"], f"metric={metric}, sca_krea minus area, corrected bank, prompt and reference-cluster "
+            d["src"], f"metric={metric}, {KM} minus area, corrected bank, prompt and reference-cluster "
                       f"bootstrap (1000 draws); 1 decimal")
     kv = {}
     for mk in FIFTEEN:
-        d = krea.delta("sca_krea", METRICS[mk][0], "area")
+        d = krea.delta(KM, METRICS[mk][0], "area")
         assert d["n"] == 195, (mk, d)
         kv[mk] = verdict(d["v"], d["lo"], d["hi"], METRICS[mk][4])
-    tally("general.krea_table", kv, [krea.dir / "base_paired_deltas.csv", krea.dir / "extra_paired_deltas.csv",
-                                     krea.dir / "corrected_fidp_ci" / "paired_deltas.csv"],
-          "SCA minus AReA on FLUX.1-Krea-dev, 195 prompts, the 15 metrics as Table krea_6144 marks them (eval.py "
-          "1000 prompt draws; FID/KID and patch versions from corrected_fidp_ci)")
-    for key, m in (("time_sca", "sca_krea"), ("time_area", "area")):
+    tally("general.krea_table", kv, krea.delta_files(),
+          f"SCA ({KM}) minus AReA on FLUX.1-Krea-dev, 195 prompts, the 15 metrics as Table krea_6144 marks them "
+          "(eval.py 1000 prompt draws; FID/KID and patch versions from corrected_fidp_ci)")
+    for key, m in (("time_sca", KM), ("time_area", "area")):
         e = krea.S[(m, "seconds")]
         put(f"general.krea.{key}", e["value"], num(e["value"], 1), e["src"],
-            f"campaign mean seconds, method={m}, results/krea195; 1 decimal")
-    r = krea.S[("area", "seconds")]["value"] / krea.S[("sca_krea", "seconds")]["value"]
+            f"campaign mean seconds, method={m}, results/krea195_sca_v2; 1 decimal")
+    r = krea.S[("area", "seconds")]["value"] / krea.S[(KM, "seconds")]["value"]
     put("general.krea.speedup", r, times(r, 1), krea.dir / "base_summary.csv",
         "AReA / SCA campaign mean seconds, FLUX.1-Krea-dev, 195 prompts; 1 decimal")
 
-    panel = runs["a4k195_panel"]
-    P = pair_file(panel.dir / "sca_prog_vs_hrdit_dev_author.csv", "sca_prog", "hrdit_dev_author")
-    src = panel.dir / "sca_prog_vs_hrdit_dev_author.csv"
+    panel, prog2 = runs["a4k195_panel"], runs["prog195_sca_v2"]
+    src = prog2.dir / "sca_v2_prog_vs_hrdit_dev_author.csv"
+    P = pair_file(src, "sca_v2_prog", "hrdit_dev_author")
     assert {P[METRICS[k][0]]["n"] for k in PER_IMAGE} == {195}
-    put("general.prog.n", 195, "195", src, "n_prompts of the sca_prog minus hrdit_dev_author rows")
+    put("general.prog.n", 195, "195", src, "n_prompts of the sca_v2_prog minus hrdit_dev_author rows")
     tally("general.prog", {k: verdict(P[METRICS[k][0]]["v"], P[METRICS[k][0]]["lo"], P[METRICS[k][0]]["hi"],
                                       METRICS[k][4]) for k in PER_IMAGE}, src,
-          "progressive SCA minus HRDiT, ten per-image metrics, 2000 prompt draws")
+          "progressive SCA (sca_v2_prog) minus HRDiT, ten per-image metrics, 2000 prompt draws")
     for key in ("ir", "hps21", "pick"):
         metric, _, scale, _, _ = METRICS[key]
         p_ = P[metric]
         t = ci_text(p_["v"] * scale, p_["lo"] * scale, p_["hi"] * scale, 2)
-        put(f"general.prog.{key}", t, t, src, f"metric={metric} delta [ci_low, ci_high]{UNITS[scale]}; 2 decimals "
-                                              f"as Section 4.2 prints it")
-    for key, m in (("time_prog", "sca_prog"), ("time_hrdit", "hrdit_dev_author")):
-        e = panel.S[(m, "seconds")]
+        put(f"general.prog.{key}", t, t, src, f"metric={metric} delta [ci_low, ci_high]{UNITS[scale]}; 2 decimals")
+    for key, run_, m in (("time_prog", prog2, "sca_v2_prog"), ("time_hrdit", panel, "hrdit_dev_author")):
+        e = run_.S[(m, "seconds")]
         put(f"general.prog.{key}", e["value"], num(e["value"], 1), e["src"],
-            f"campaign mean seconds, method={m}, results/a4k195_panel; 1 decimal")
-    fr = panel.S[("sca_prog", "seconds")]["value"] / panel.S[("hrdit_dev_author", "seconds")]["value"]
-    put("general.prog.time_frac", fr, num(fr, 2), panel.dir / "base_summary.csv",
-        "progressive SCA / HRDiT campaign mean seconds; 2 decimals")
+            f"campaign mean seconds, method={m}, results/{run_.name}; 1 decimal")
+    fr = prog2.S[("sca_v2_prog", "seconds")]["value"] / panel.S[("hrdit_dev_author", "seconds")]["value"]
+    put("general.prog.time_frac", fr, num(fr, 2), [prog2.dir / "base_summary.csv", panel.dir / "base_summary.csv"],
+        "progressive SCA (sca_v2_prog) / HRDiT campaign mean seconds; 2 decimals")
 
     # 7. calibration -----------------------------------------------------------------------------------------
     j = json.loads((CALIB / "k1_1024.json").read_text())
@@ -737,32 +909,75 @@ def build() -> None:
         put(f"calib.pi.{key}", 100 * frac, num(100 * frac, 1) + "%", npz_path,
             f"percent of s2_pi_head cells {rule} over populated sigma bins; 1 decimal")
 
-    # 8. failures in the uncurated galleries -----------------------------------------------------------------
+    # 8. duplication (results/dup_audit_20261027 and the sca_v2 runs' dup_rates_people.csv) -----------------------
+    for label, d in dup.items():
+        k = f"dup.{label}"
+        how = f"method={d['method']}: {d['dup']} of {d['n']} prompts naming a person or animal with a duplicated one"
+        put(f"{k}.pct", d["pct"], f"{d['pct']}%", d["src"], how + "; 100 * dup / n rounded to an integer")
+        put(f"{k}.k", d["dup"], str(d["dup"]), d["src"], how)
+        put(f"{k}.n", d["n"], str(d["n"]), d["src"], how)
+        put(f"{k}.rate", 100 * d["rate"], num(100 * d["rate"], 1), d["src"], how + "; percent, 1 decimal")
+        put(f"{k}.lo", 100 * d["lo"], num(100 * d["lo"], 1), d["src"], how + "; Wilson 95% lower end, percent")
+        put(f"{k}.hi", 100 * d["hi"], num(100 * d["hi"], 1), d["src"], how + "; Wilson 95% upper end, percent")
+    seeds = [dup[x]["pct"] for x in ("sca_v2", "sca_v2_seed1", "sca_v2_seed2")]
+    t = f"{min(seeds)} to {max(seeds)}%"
+    put("dup.sca_v2.seed_range", t, t, [dup[x]["src"] for x in ("sca_v2", "sca_v2_seed1", "sca_v2_seed2")],
+        "min to max of the sca_v2 rate over seed labels 0, 1, 2 (integer percent)")
+    seeds = [dup[x]["pct"] for x in ("sca_nb", "sca_nb_seed1", "sca_nb_seed2")]
+    t = f"{min(seeds)} to {max(seeds)}%"
+    put("dup.sca_nb.seed_range", t, t, dup["sca_nb"]["src"],
+        "min to max of the sca_nb rate over seed labels 0, 1, 2 (integer percent)")
+
+    # failures in the previous operator's uncurated galleries (visual audit, 2026-10-20) ---------------------------
     va = RES / "visual_audit_20261020" / "random_galleries_sca.csv"
     sel = [r for r in rows(va) if r["model"] == "FLUX.1-dev" and r["size"] == "4096x4096"]
     flag = lambda x: x.strip() != "" and x.strip().lower() != "no"  # noqa: E731
-    dup = [r for r in sel if flag(r["extra_people_or_animals"]) or flag(r["repeated_or_extra_objects"])]
-    put("failures.dup_n", len(dup), str(len(dup)), va,
+    dups = [r for r in sel if flag(r["extra_people_or_animals"]) or flag(r["repeated_or_extra_objects"])]
+    put("failures.dup_n", len(dups), str(len(dups)), va,
         "rows model=FLUX.1-dev, size=4096x4096 with extra_people_or_animals or repeated_or_extra_objects set "
-        "(non-empty and not 'no')")
+        "(non-empty and not 'no'); the operator without the schedule")
     put("failures.dup_total", len(sel), str(len(sel)), va, "rows model=FLUX.1-dev, size=4096x4096")
 
-    # configuration constants from the sca_nb 4096^2 generation sidecars --------------------------------------
-    recs = sidecars[("sca_nb", "4096x4096")]
+    # configuration constants from the sca_v2 4096^2 generation sidecars (out/dupfix/sca_v2) ----------------------
     for key, get, dec in (("steps", lambda c, s: c["steps"], None), ("guidance", lambda c, s: c["guidance"], 1),
                           ("gate_sigma", lambda c, s: c["sca"]["gate_sigma"], 2),
                           ("window", lambda c, s: c["sca"]["window"], None),
                           ("tile", lambda c, s: c["sca"]["tile"], None),
-                          ("pi_scale", lambda c, s: c["sca"]["pi_scale"], None)):
-        v = unique((get(c, s) for c, s in recs), f"sca_nb {key}")
-        put(f"config.{key}", v, str(v) if dec is None else num(v, dec), sc_src,
-            f"config{'.sca' if key in ('gate_sigma', 'window', 'tile', 'pi_scale') else ''}.{key} of all "
-            f"{len(recs)} method=sca_nb, res=4096x4096 sidecars (identical)")
-    v = unique((sum(1 for x in s[: c["steps"]] if x > c["sca"]["gate_sigma"]) for c, s in recs if s),
+                          ("pi_scale", lambda c, s: c["sca"]["pi_scale"], None),
+                          ("bridge_cells", lambda c, s: c["sca"]["bridge_cells"], None),
+                          ("bridge_k", lambda c, s: c["sca"]["bridge_k"], None)):
+        v = unique((get(c, s) for c, s in v2cars), f"sca_v2 {key}")
+        put(f"config.{key}", v, str(v) if dec is None else num(v, dec), V2_SIDECARS,
+            f"config{'' if key in ('steps', 'guidance') else '.sca'}.{key} of all {len(v2cars)} method=sca_v2, "
+            f"res=4096x4096 sidecars (identical)")
+    b = unique((c["sca"]["bridge_cells"] ** 2 * c["sca"]["bridge_k"] for c, _ in v2cars), "bridge tokens")
+    put("config.bridge_tokens", b, f"{b:,}", V2_SIDECARS, "bridge_cells^2 * bridge_k of the sca_v2 sidecars")
+    sched = unique((tuple(tuple(x) for x in c["sca"]["win_sched"]) for c, _ in v2cars), "win_sched")
+    txt = ", ".join(str(w) for _, w in sched)
+    put("config.win_sched", txt, txt, V2_SIDECARS, "window sides of config.sca.win_sched, in step order")
+    put("config.win_sched_n", len(sched), str(len(sched)), V2_SIDECARS, "number of win_sched entries")
+    put("config.win_first", sched[0][1], str(sched[0][1]), V2_SIDECARS, "first (widest) win_sched window side")
+    put("config.win_last", sched[-1][1], str(sched[-1][1]), V2_SIDECARS, "last win_sched window side")
+    side = max(grid)
+    rat = [f"{side / w:.2f}".rstrip("0").rstrip(".") for _, w in sched]
+    txt = ", ".join(rat[:-1]) + " and " + rat[-1]
+    put("config.win_ratios", txt, txt, V2_SIDECARS,
+        f"image-to-window ratios max(grid) / w = {side} / w of the win_sched windows at 4096x4096; 2 decimals, "
+        "trailing zeros dropped")
+    nat = f"{side / unique((c['sca']['window'] for c, _ in v2cars), 'w'):.0f}"
+    put("config.native_ratio", int(nat), nat, V2_SIDECARS, f"{side} / native window side")
+    v = unique((sum(1 for x in s[: c["steps"]] if x > c["sca"]["gate_sigma"]) for c, s in v2cars if s),
                "opening steps")
-    put("config.opening_steps", v, str(v), sc_src,
+    put("config.opening_steps", v, str(v), V2_SIDECARS,
         "number of the sidecar's step sigmas above config.sca.gate_sigma (global-only opening phase), identical "
-        "in every sca_nb 4096x4096 sidecar")
+        "in every sca_v2 4096x4096 sidecar")
+    lo = min(x for x, _ in sched)
+    v = unique((sum(1 for x in s[: c["steps"]] if x <= lo) for c, s in v2cars if s), "native steps")
+    put("config.native_steps", v, str(v), V2_SIDECARS,
+        f"number of step sigmas at or below the last win_sched bound ({lo}): native {unique((c['sca']['window'] for c, _ in v2cars), 'w')}-token windows")
+    wide = unique((sum(1 for x in s[: c["steps"]] if lo < x <= c["sca"]["gate_sigma"]) for c, s in v2cars if s),
+                  "wide steps")
+    put("config.wide_steps", wide, str(wide), V2_SIDECARS, "number of step sigmas in (last win_sched bound, gate]")
     shifts = [c.get("scheduler", {}).get("max_shift") for c, _ in sidecars[("full", "4096x4096")]]
     v = unique(shifts, "max_shift")
     put("config.shift", v, num(v, 2), sc_src,

@@ -978,7 +978,7 @@ window.SCA_IMAGES = {
    "file": "assets/img/method/method.webp",
    "size": [
     2400,
-    765
+    739
    ],
    "source": "paper/figures/method.pdf"
   },

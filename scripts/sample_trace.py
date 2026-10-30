@@ -3,8 +3,10 @@
 
 Re-runs Aesthetic-4K prompt ids at 4096x4096, seed label 0, with the campaign's derived seed, settings
 and code path. Method sca builds the sca_nb sampler exactly as scripts/sample.py does (per-head table
-k1_1024.npz, scale 4 at 4096^2, gate sigma 0.89); method area builds AReA through scripts/run_area.py
-(official code on FLUX.1-dev). At each of the 28 steps it saves, under <out-root>/<method>/<short id>/,
+k1_1024.npz, scale 4 at 4096^2, gate sigma 0.89); method sca_v2 builds the final operator the same way with
+the out/dupfix/sca_v2 flags (windows 128, 112, 96, 80 on the four steps after the gate, weights read at the
+matching ratio, 1,024 bridge tokens; each step records its window side); method area builds AReA through
+scripts/run_area.py (official code on FLUX.1-dev). At each of the 28 steps it saves, under <out-root>/<method>/<short id>/,
 
   steps/x0_NN.webp   decoded x0 prediction (the pipeline's tiled VAE decode), downscaled to 1024 px, WebP q90
   steps/crop_NN.png  native-pixel 512 x 512 crop of the same decoded image at the prompt's box
@@ -54,7 +56,15 @@ CAMPAIGN = {
                      "--pi-table", str(PI_TABLE), "--gate-sigma", str(GATE_SIGMA), "--label", "sca_nb"]},
     "area": {"dir": SCRATCH / "out/main/area" / RES, "label": "area",
              "argv": ["--res", RES, "--seed", str(SEED), "--guidance", str(GUIDANCE)]},
+    # the final operator: the x_d90_m4k_sca_v2_* tasks (code 7bd64c0), published SCA plus the window schedule
+    # after the gate and 1,024 bridge tokens in the local softmax
+    "sca_v2": {"dir": SCRATCH / "out/dupfix/sca_v2" / RES, "label": "sca_v2",
+               "argv": ["--method", "sca", "--res", RES, "--seed", str(SEED), "--guidance", str(GUIDANCE),
+                        "--pi-table", str(PI_TABLE), "--gate-sigma", str(GATE_SIGMA), "--label", "sca_v2",
+                        "--bridge-cells", "8", "--bridge-k", "16", "--win-sched", "0.88:128,0.86:112,0.84:96,0.82:80",
+                        "--win-pi-match", "--win-pi-interp"]},
 }
+SCA_METHODS = ("sca", "sca_v2")                         # built by scripts/sample.py; the rest through run_area.py
 IGNORED = ("implementation_sha256", "code_revision")   # differ by construction: frozen tree with this file
 VERSIONS = ("diffusers", "torch")                       # reported, not fatal
 STEP_FILES = ("steps/x0_{:02d}.webp", "steps/crop_{:02d}.png")
@@ -131,7 +141,7 @@ def sampler_args(method, args, run):
     """The campaign CLI parsed by the campaign script's own parser."""
     argv = CAMPAIGN[method]["argv"] + ["--prompts", str(args.prompts), "--out", str(run["out"]),
                                        "--device", args.device]
-    if method == "sca":
+    if method in SCA_METHODS:
         import sample
         return sample.parser().parse_args(argv)
     import run_area
@@ -145,7 +155,7 @@ def campaign_scheduler(method, h, w):
     from sca.runtime import set_mu, snapshot
     sched = FlowMatchEulerDiscreteScheduler.from_pretrained(str(snapshot("black-forest-labs/FLUX.1-dev")),
                                                             subfolder="scheduler", local_files_only=True)
-    if method == "sca":
+    if method in SCA_METHODS:
         set_mu(SimpleNamespace(scheduler=sched), h, w, "max_shift")     # sample.py
         return sched
     # AReA FluxBackbone.attach replaces the scheduler with this copy (area/backbones/flux.py)
@@ -205,9 +215,11 @@ def plan_sca(a, run, h, w):
     for i in range(a.steps):
         sigma = sigmas[i]                                   # install() pre-hook: float(scheduler.sigmas[step])
         gated = ctx.gate_sigma > 0 and sigma > ctx.gate_sigma   # SCAProcessor.sca
-        pi = None if gated else np.atleast_2d(np.asarray(ctx.pi(sigma), dtype=np.float64))   # SCAContext.pi_now
+        ctx.grid, ctx.sigma = grid, sigma                       # SCAContext.set_inputs, before pi_table_now()
+        table = ctx.pi_table_now()                              # matched-ratio table on win_sched steps
+        pi = None if gated else np.atleast_2d(np.asarray(table(sigma), dtype=np.float64))   # SCAContext.pi_now
         steps.append({"index": i, "sigma": sigma, "timestep": timesteps[i], "phase": "global" if gated else "mixed",
-                      "pi": pi})
+                      "window": None if gated else int(ctx.window_now()), "pi": pi})
     record = run["campaign_record"]
     trace = {e["step"]: e for e in record.get("pi_trace", [])}
     mixed = [s for s in steps if s["pi"] is not None]
@@ -267,7 +279,7 @@ def dry_run(args, runs):
     plans, failed = [], False
     for run in runs:
         a = sampler_args(run["method"], args, run)
-        steps, checks, cfg = (plan_sca if run["method"] == "sca" else plan_area)(a, run, h, w)
+        steps, checks, cfg = (plan_sca if run["method"] in SCA_METHODS else plan_area)(a, run, h, w)
         ok = cfg["match"] and checks["sigmas_max_abs_diff"] == 0.0 and (
             checks.get("pi_mean_vs_campaign_pi_trace_max_abs_diff", 0.0) == 0.0
             and checks.get("campaign_pi_trace_steps", True) and checks.get("schedule_matches_sidecar", True))
@@ -361,7 +373,9 @@ class Tracer:
         if self.ctx is not None:
             p = self.ctx._pi_now           # None when the gate kept every processor on the global branch
             info.update(sca_step=int(self.ctx.step), sca_sigma=float(self.ctx.sigma),
-                        pi=None if p is None else p.detach().to(torch.float32).cpu().numpy())
+                        pi=None if p is None else p.detach().to(torch.float32).cpu().numpy(),
+                        window=int(self.ctx.window_now()), bridge=[self.ctx.bridge_now()[1]],
+                        table=self.ctx.pi_table_now())   # the table pi_now read at this step (matched ratio)
         if self.area_state is not None:
             st = self.area_state
             info.update(area_phase=st.phase, area_size=None if st.phase is None else int(st.size),
@@ -388,12 +402,15 @@ class Tracer:
             rec["phase_rule_agrees"] = rec["phase"] == rule
             rec["sca_sigma"] = info["sca_sigma"]
             if pi is not None:
-                table = np.atleast_2d(np.asarray(self.ctx.pi(info["sca_sigma"]), dtype=np.float64))
+                table = np.atleast_2d(np.asarray(info["table"](info["sca_sigma"]), dtype=np.float64))
                 rec["pi"] = np.round(pi.astype(np.float64), 6).tolist()
                 rec["pi_mean"] = float(pi.astype(np.float64).mean())
                 rec["pi_vs_table_max_abs_diff"] = float(np.abs(pi - table).max())
             else:
                 rec["pi"] = None
+            if pi is not None:
+                rec["window"] = info["window"]                   # local window side (tokens) at this step
+                rec["bridge_per_cell"] = info["bridge"][0]       # 0 when the bridge is off
         if self.area_state is not None:
             rec.update(phase=info["area_phase"], area_size=info["area_size"], area_step=info["area_step"])
         if i == self.n - 1:
@@ -505,7 +522,7 @@ def trace_sca(args, runs):
     import sample
     from sca.attn import install
     from sca.runtime import implementation_hash, load_pipeline, runtime_environment, set_mu
-    a = sampler_args("sca", args, runs[0])
+    a = sampler_args(runs[0]["method"], args, runs[0])
     runtime_environment()
     h, w = a.res
     grid = (h // 16, w // 16)
@@ -531,6 +548,8 @@ def trace_sca(args, runs):
             image, seconds = generate(pipe, run, h, w, a, tracer, 512)
             campaign_trace = run["campaign_record"].get("pi_trace", [])
             extra = {"gate_sigma": ctx.gate_sigma,
+                     "win_sched": [list(x) for x in ctx.win_sched], "win_pi_match": ctx.win_pi_match,
+                     "win_pi_interp": ctx.win_pi_interp, "bridge_cells": ctx.bridge_cells, "bridge_k": ctx.bridge_k,
                      "phase_rule": "global while sigma > gate_sigma (SCAProcessor.sca: global branch only, pi unused), "
                                    "else mixed: pi * O_loc + (1 - pi) * O_glob per head",
                      "pi_info": {"source": PI_SOURCE_RUN, "shape": [ctx.n_layers, 24], "table": str(a.pi_table),
@@ -581,7 +600,7 @@ def main(argv=None):
         if r not in todo:
             print(f"skip {r['method']} {r['sid']}: complete trace in {r['out']}", flush=True)
     if todo:
-        (trace_sca if args.method == "sca" else trace_area)(args, todo)
+        (trace_sca if args.method in SCA_METHODS else trace_area)(args, todo)
     return 0
 
 
