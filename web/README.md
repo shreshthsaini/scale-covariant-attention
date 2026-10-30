@@ -84,8 +84,8 @@ marked; run with `nice -n 19` on shared nodes and keep ffmpeg at `-threads 4`.
 
 ## Per-sample trajectory videos (needs a GPU)
 
-Status (2026-10-30): the 16 videos on the page come from the previous operator (traces of 2026-10-29, `w_trace_*`)
-and the page labels them "previous operator". The final operator's eight traces are queued as
+Status (2026-10-30): 16 of the 16 videos on the page show the final operator (traces of the
+`zw2_trace_*` tasks); any other video is the previous operator's and the page labels it "previous operator". The final operator's eight traces are queued as
 `taskq/pending/zw2_trace_01..08_sca_v2_<sid>.sh` (prefix `zw2_` because the workers take tasks in plain sorted
 order: `w2_` would run before the `x_` reruns, `zw2_` runs after them and after the `z98x` evaluations). They run
 `scripts/sample_trace.py --method sca_v2` in the frozen copy `/scratch/09032/saini_2/sca/code/web_trace2_7bd64c0`

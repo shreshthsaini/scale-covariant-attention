@@ -8,7 +8,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/m8343371271909676658_sca.webp",
    "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
    "label": "curated",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "m8343371271909676658",
@@ -17,7 +17,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/m8343371271909676658_vs_area.webp",
    "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
    "label": "curated",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "5849277588805396896",
@@ -26,7 +26,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/5849277588805396896_sca.webp",
    "prompt": "A smiling man with a gray beard and a hat plays an acoustic guitar, dressed in a stylish blazer over a dark shirt against a muted background.",
    "label": "curated",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "5849277588805396896",
@@ -35,7 +35,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/5849277588805396896_vs_area.webp",
    "prompt": "A smiling man with a gray beard and a hat plays an acoustic guitar, dressed in a stylish blazer over a dark shirt against a muted background.",
    "label": "curated",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "2232973817337527860",
@@ -44,7 +44,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/2232973817337527860_sca.webp",
    "prompt": "A bouquet of pink lilies is arranged in a clear vase filled with water, placed on a white side table next to a partially opened curtain and a closed door with vertical paneling, illuminated by soft light.",
    "label": "curated",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "2232973817337527860",
@@ -53,7 +53,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/2232973817337527860_vs_area.webp",
    "prompt": "A bouquet of pink lilies is arranged in a clear vase filled with water, placed on a white side table next to a partially opened curtain and a closed door with vertical paneling, illuminated by soft light.",
    "label": "curated",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "m548913239957610051",
@@ -62,7 +62,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/m548913239957610051_sca.webp",
    "prompt": "A cascading waterfall flows over rocky cliffs into a tranquil river, framed by a steep, conical mountain under a colorful sky at sunset.",
    "label": "curated",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "m548913239957610051",
@@ -71,7 +71,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/m548913239957610051_vs_area.webp",
    "prompt": "A cascading waterfall flows over rocky cliffs into a tranquil river, framed by a steep, conical mountain under a colorful sky at sunset.",
    "label": "curated",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "m8737279395568207187",
@@ -80,7 +80,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/m8737279395568207187_sca.webp",
    "prompt": "A grand interior with soaring arches, intricate stonework, and vibrant stained glass windows, illuminated by ornate chandeliers and soft light, creating an atmosphere of reverence and awe.",
    "label": "curated",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "m8737279395568207187",
@@ -89,7 +89,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/m8737279395568207187_vs_area.webp",
    "prompt": "A grand interior with soaring arches, intricate stonework, and vibrant stained glass windows, illuminated by ornate chandeliers and soft light, creating an atmosphere of reverence and awe.",
    "label": "curated",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "997293625843621481",
@@ -98,7 +98,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/997293625843621481_sca.webp",
    "prompt": "A climber, wearing a helmet and blue clothing, ascends through a narrow, icy crevice, using an ice axe for support amidst glacial blue ice formations.",
    "label": "curated",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "997293625843621481",
@@ -107,7 +107,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/997293625843621481_vs_area.webp",
    "prompt": "A climber, wearing a helmet and blue clothing, ascends through a narrow, icy crevice, using an ice axe for support amidst glacial blue ice formations.",
    "label": "curated",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "1516768667427572324",
@@ -116,7 +116,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/1516768667427572324_sca.webp",
    "prompt": "A cluttered artist's corner features an ornate gold frame, a painting of a man with glasses, several empty picture frames, a vintage suitcase, and various brushes in a tin can, all set against a textured gray wall and draped with patterned fabric.",
    "label": "random",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "1516768667427572324",
@@ -125,7 +125,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/1516768667427572324_vs_area.webp",
    "prompt": "A cluttered artist's corner features an ornate gold frame, a painting of a man with glasses, several empty picture frames, a vintage suitcase, and various brushes in a tin can, all set against a textured gray wall and draped with patterned fabric.",
    "label": "random",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "3943607367684487957",
@@ -134,7 +134,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/3943607367684487957_sca.webp",
    "prompt": "A boy in a cap sits relaxed on a bed of hay, engrossed in a book, with a baseball and bat resting beside him.",
    "label": "random",
-   "operator": "previous"
+   "operator": "final"
   },
   {
    "sid": "3943607367684487957",
@@ -143,7 +143,7 @@ window.SCA_TRACES = {
    "poster": "assets/video/trace/3943607367684487957_vs_area.webp",
    "prompt": "A boy in a cap sits relaxed on a bed of hay, engrossed in a book, with a baseball and bat resting beside him.",
    "label": "random",
-   "operator": "previous"
+   "operator": "final"
   }
  ],
  "expected": [
