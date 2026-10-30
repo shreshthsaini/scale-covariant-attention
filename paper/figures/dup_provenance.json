@@ -9,8 +9,8 @@
     397.5,
     143.1
   ],
-  "caption_draft": "\\textbf{A gradual handover cuts late duplication.} (a)~A later gate cuts it but costs quality; ours keeps $\\sigma_g=0.89$; (b)~all methods, 95 people and animal prompts at $4096^2$. (c)~Uncurated, same seed: the ice climber, then the next two detector-flagged prompts by id; one astronaut copy remains.",
-  "caption_words": 47,
+  "caption_draft": "\\textbf{A gradual handover cuts late duplication.} (a)~A later gate cuts it but costs quality; ours keeps $\\sigma_g=0.89$; (b)~all methods, 95 people and animal prompts at $4096^2$ (ours 26\\%). (c)~Uncurated, same seed: the ice climber, then the next two detector-flagged prompts by id; one astronaut copy remains.",
+  "caption_words": 49,
   "visual_check": {
     "a4k_eval_4096_minus1071233499893339092": "one astronaut copy remains"
   },
@@ -208,15 +208,6 @@
         "name": "HRDiT"
       },
       {
-        "method": "sca_prog",
-        "n": 95,
-        "dup": 8,
-        "rate": 0.0842,
-        "lo95": 0.0433,
-        "hi95": 0.1575,
-        "name": "Progressive SCA"
-      },
-      {
         "method": "full",
         "n": 95,
         "dup": 7,
@@ -224,6 +215,15 @@
         "lo95": 0.0361,
         "hi95": 0.1444,
         "name": "Full attention"
+      },
+      {
+        "method": "sca_v2_prog",
+        "n": 95,
+        "dup": 6,
+        "rate": 0.0632,
+        "lo95": 0.0293,
+        "hi95": 0.131,
+        "name": "Progressive SCA"
       },
       {
         "method": "ultraimage",
@@ -245,12 +245,17 @@
       },
       {
         "method": "sca_v2",
+        "n": 95,
+        "dup": 25,
+        "rate": 0.2632,
+        "lo95": 0.1851,
+        "hi95": 0.3597,
         "name": "SCA (ours)",
-        "pending": true
+        "pending": false
       }
     ],
-    "sca_v2_source": null,
-    "sca_v2_status": "pending: drawn as an empty outline, no number",
+    "sca_v2_source": "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/a4k195_main_sca_v2/dup_rates_people.csv",
+    "sca_v2_status": "loaded",
     "interval": "Wilson 95% (scripts/dup_rate.py wilson), whiskers; value at the whisker end"
   },
   "panel_c": {
@@ -276,9 +281,10 @@
             "counts": "person:5/1"
           },
           "ours": {
-            "dup": null,
-            "counts": null,
-            "source": "not yet scored (z980 detector step pending)"
+            "dup": 0,
+            "counts": "person:1/1",
+            "source": "/scratch/09032/saini_2/sca/eval/a4k195_main_sca_v2/det",
+            "scored_png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_997293625843621481_a9f7355211_seed0.png"
           },
           "intended_boxes": [
             [
@@ -455,9 +461,10 @@
             "counts": "person:7/1;astronaut:3/1"
           },
           "ours": {
-            "dup": null,
-            "counts": null,
-            "source": "not yet scored (z980 detector step pending)"
+            "dup": 1,
+            "counts": "person:2/1;astronaut:1/1",
+            "source": "/scratch/09032/saini_2/sca/eval/a4k195_main_sca_v2/det",
+            "scored_png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus1071233499893339092_fbd1fdeeac_seed0.png"
           },
           "intended_boxes": [
             [
@@ -636,8 +643,8 @@
           "ours": {
             "dup": 0,
             "counts": "bear:1/1",
-            "source": "/scratch/09032/saini_2/sca/eval/dup46_dup_i_shrink/det",
-            "scored_png": "/scratch/09032/saini_2/sca/out/dup46/dup_i_shrink/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.png"
+            "source": "/scratch/09032/saini_2/sca/eval/a4k195_main_sca_v2/det",
+            "scored_png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.png"
           },
           "intended_boxes": [
             [
@@ -779,12 +786,14 @@
     "rows_top_in": 1.815
   },
   "sources": {
+    "results/a4k195_main_sca_v2/dup_rates_people.csv": "e817cc4ec86d124ddf7fc990ec403d7c063225f2b8c4aeceab5f3219e33f0b2a",
     "results/dup_audit_20261027/per_image_a4k195_people.csv": "d6eaf22954896392a19b1ffc9dae04260fe9bd8be5841f7d3227b318b85753c1",
     "results/dup_audit_20261027/rates_46_all_people.csv": "bf5af8962faec5890772739c8536e9f7d7c8907618a9a1c13fe0647087d8b634",
     "results/dup_audit_20261027/rates_a4k195_people.csv": "ed1fc752a0cc560fb8eb52ff8f5e76583d37ef757159f452db5cf2c5cfa6d147",
     "results/dup_audit_20261027/rates_abl46_people.csv": "c1327abe95c6153752e8c3244e1b2839cfefe4137f676ad72eb9960133ce2523",
     "results/dup_audit_20261027/subjects_a4k195.json": "77ff5faddbeb6d2ba1f84fb1976140c1aa74210ad841b0611cc5b3978c79915f",
     "results/e7_sca_g85_deltas.csv": "9d4cce79183d209f7ef66002fec1de6070f550a05bd6108bde4dd94f4b5e13c6",
+    "results/prog195_sca_v2/dup_rates_people.csv": "cb49c844a8a862b06f2b2a2a5bf24f0b083f3b8e048b3571fd9c60977f1a5868",
     "scripts/dup_rate.py": "e145921a4a4b70ecc21f1c4a6cb9d23c44bb6ccbdb070047e16327a20708ed95"
   },
   "regenerate": "PATH=$HOME/.local/bin:$PATH UV_CACHE_DIR=/work/09032/saini_2/vista/library/uv-cache uv run --no-project --python /work/09032/saini_2/vista/library/uv-envs/sca/bin/python python paper/figures/src/fig_dup.py"

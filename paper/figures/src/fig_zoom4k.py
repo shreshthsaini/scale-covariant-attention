@@ -4,9 +4,14 @@ Three prompts at 4096^2, seed 0, one row each: SCA's full image with the crop wi
 then that window at native resolution (1:1) from full attention, AReA, HRDiT and SCA (ours, last).
 Above each crop is the image's MUSIQ_c (MUSIQ averaged over four fixed random 1024^2 crops per image,
 Appendix app:metrics), read from the 195-prompt per-image CSVs behind Table tab:main (eval/a4k195_main;
-HRDiT from eval/a4k195_panel), and checked to be identical, for the same PNG, in every older per-image CSV
-that scored it (hrdit191_base, final4k_*, and their archived copies); the best value in each row
-is bold. House style: method names once, SCA (ours) last in the bold accent, 1 to 2 pt white gutters,
+HRDiT from eval/a4k195_panel; SCA from eval/a4k195_main_sca_v2), and checked to be identical, for the same
+PNG, in every older per-image CSV that scored it (hrdit191_base, final4k_*, and their archived copies; no
+other CSV scores the final operator's images); the best value in each row is bold.
+
+SCA is the final operator (sca_v2, out/dupfix/sca_v2): the same prompts and seed as the published operator
+(sca_nb) on which the prompts were selected and audited (below); imgsel.final_twin checks that each image is
+the published image's twin (same prompt, prompt id and derived seed) and carries the sca_v2 flags. The final
+images were viewed whole and at native pixels on 2026-10-30 (FINAL_VIEW, recorded in the provenance). House style: method names once, SCA (ours) last in the bold accent, 1 to 2 pt white gutters,
 no image borders except the red window boxes, sans labels of 6 to 8 pt at printed size.
 
 Selection (recorded in figures/zoom4k_provenance.json):
@@ -49,6 +54,7 @@ from pathlib import Path
 
 from PIL import Image
 
+import imgsel
 from fig_qual_main import auto_box  # the crop rule of the previous fig:qual_main, unchanged
 
 Image.MAX_IMAGE_PIXELS = None
@@ -109,19 +115,31 @@ MAIN195 = EVAL / "a4k195_main" / "base" / "per_image.csv"    # 195-prompt protoc
 PANEL195 = EVAL / "a4k195_panel" / "base" / "per_image.csv"  # same protocol, HRDiT and the panel
 EXTRA = {MAIN195: EVAL / "a4k195_main" / "extra" / "extra_per_image.csv",    # ImageReward (ir), HPSv2.1
          PANEL195: EVAL / "a4k195_panel" / "extra" / "extra_per_image.csv"}
+MAIN195_V2 = EVAL / "a4k195_main_sca_v2" / "base" / "per_image.csv"  # the final operator (sca_v2), same protocol
+EXTRA[MAIN195_V2] = EVAL / "a4k195_main_sca_v2" / "extra" / "extra_per_image.csv"
 N_PROMPTS = 195
 METHODS = [("full", "Full attention", MAIN195, "full"),
            ("area", "AReA", MAIN195, "area"),
            ("hrdit", "HRDiT", PANEL195, "hrdit_dev_author"),
-           ("sca", r"\textbf{SCA (ours)}", MAIN195, "sca_nb")]
+           ("sca", r"\textbf{SCA (ours)}", MAIN195_V2, "sca_v2")]
+# The audits of 2026-10-20 (REPLACED, REJECTED, METRIC_STAGE and the selection rule) viewed and ranked the published
+# operator's images; their records keep its values.
+AUDIT_METHODS = METHODS[:3] + [("sca", "SCA (published operator)", MAIN195, "sca_nb")]
+FINAL_VIEW = {  # the final operator's images of the shown prompts, viewed whole and at native pixels (2026-10-30)
+    "7109958488611222679": "clean; nearly identical to the published image (double shoulder straps instead of an O-ring)",
+    "2232973817337527860": ("new defect: a streaked, ribbed band runs along the back-left edge of the table top where "
+                            "it meets the wall (about x 1100 to 1900, y 3500 to 3600), replacing the published "
+                            "image's squared back piece; the curtain gains a ribbed texture; the lilies, vase and "
+                            "door are clean"),
+    "m548913239957610051": ("clean; the two misty background peaks of the published image are gone; a few faint "
+                            "light spots in the sky")}
 CROSS = {  # other per-image CSVs that score the same PNG; the value must agree exactly
     "full": [EVAL / "final4k_full_base" / "per_image.csv", ARCHIVE / "final4k_full_base" / "per_image.csv"],
     "area": [EVAL / "hrdit191_base" / "per_image.csv", EVAL / "final4k_nb_base" / "per_image.csv",
              ARCHIVE / "final4k_nb_base" / "per_image.csv", ARCHIVE / "final4k_full_base" / "per_image.csv"],
     "hrdit": [EVAL / "hrdit191_base" / "per_image.csv"],
-    "sca": [PANEL195, EVAL / "hrdit191_base" / "per_image.csv", EVAL / "final4k_nb_base" / "per_image.csv",
-            ARCHIVE / "final4k_nb_base" / "per_image.csv"]}
-TABLE = {"full": 33.1, "area": 50.4, "hrdit": 53.5, "sca": 61.2}  # Table tab:main (195 prompts), MUSIQ_c column
+    "sca": []}  # no other per-image CSV scores the final operator's PNGs
+TABLE = {"full": 33.1, "area": 50.4, "hrdit": 53.5, "sca": 60.1}  # Table tab:main (195 prompts), MUSIQ_c column
 
 W = 397.5                    # text width (TeX pt); the layout unit is the TeX point
 CROP_W, CROP_H = 320, 240    # native window (px), shown 1:1 at about 280 pixels per printed inch
@@ -163,11 +181,11 @@ def table_mean(path: Path, method: str) -> float:
     return sum(vals) / len(vals)
 
 
-def percentiles(pid: str) -> dict:
+def percentiles(pid: str, methods=METHODS) -> dict:
     """Per method: ImageReward, MUSIQ_c and HPSv2.1 of this prompt's image as a percentile of that method's own
     195 seed-0 images (floor of 100 times the share at or below it)."""
     out = {}
-    for key, _, path, name in METHODS:
+    for key, _, path, name in methods:
         base = lookup(path, name, pid)
         assert lookup(EXTRA[path], name, pid)["path"] == base["path"], (pid, key)  # same PNG in both CSVs
         out[key] = {}
@@ -237,6 +255,8 @@ def main() -> None:
     for r, pid in enumerate(PROMPTS):
         top = HEAD + r * (BAND + h) + BAND
         got = {key: source(path, name, pid) for key, _, path, name in METHODS}
+        twin, twin_sha = imgsel.final_png(RES, pid)
+        assert Path(got["sca"][1]) == Path(twin) and sha(got["sca"][1]) == twin_sha, (pid, got["sca"][1], twin)
         prompts = {m["config"]["prompt"] for _, _, m in got.values()}
         seeds = {m["config"]["derived_seed"] for _, _, m in got.values()}
         assert len(prompts) == 1 and len(seeds) == 1, (pid, prompts, seeds)  # same prompt and noise seed
@@ -310,9 +330,15 @@ def main() -> None:
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         shutil.copy(Path(tmp) / "zoom4k.pdf", out_pdf)
 
-    replaced = {pid: dict(why=why, values={key: float(lookup(path, name, pid)[METRIC]) for key, _, path, name in METHODS},
-                          percentiles=percentiles(pid))
+    replaced = {pid: dict(why=why, values={key: float(lookup(path, name, pid)[METRIC])
+                                           for key, _, path, name in AUDIT_METHODS},
+                          percentiles=percentiles(pid, AUDIT_METHODS))
                 for pid, why in REPLACED.items()}
+    published = {pid: dict(value=float(lookup(MAIN195, "sca_nb", pid)[METRIC]),
+                           printed=f"{float(lookup(MAIN195, 'sca_nb', pid)[METRIC]):.1f}",
+                           image=lookup(MAIN195, "sca_nb", pid)["path"],
+                           percentiles=percentiles(pid, AUDIT_METHODS)["sca"])
+                 for pid in PROMPTS}
     prov = dict(
         figure="zoom4k (replaces fig:qual_main)", script="paper/figures/src/fig_zoom4k.py",
         pdf=str(out_pdf), pdf_sha256=sha(out_pdf), pdf_bytes=out_pdf.stat().st_size,
@@ -334,7 +360,17 @@ def main() -> None:
                    "at overview but not used, being a second landscape: 3638740675706761149. The rule constrains "
                    "ImageReward and HPSv2.1 only; the baselines' MUSIQ_c percentiles are recorded in "
                    "percentiles.shown. Ranking on SCA's metrics favours SCA in the printed values. None of the "
-                   "shown prompts is displayed in another figure." % FAIR_LO),
+                   "shown prompts is displayed in another figure. All of this ranked and viewed the published "
+                   "operator's images (sca_nb). On 2026-10-30 the SCA column switched to the final operator "
+                   "(sca_v2), the same prompts and seed; its images were viewed whole and at native pixels "
+                   "(final_operator.viewed) and its printed values come from eval/a4k195_main_sca_v2. The "
+                   "prompts were not re-ranked on the final operator's metrics (its percentiles are in "
+                   "percentiles.shown)." % FAIR_LO),
+        final_operator=dict(
+            method="sca_v2", images="out/dupfix/sca_v2/4096x4096 (imgsel.final_twin of the published image)",
+            metric_file=str(MAIN195_V2), viewed=FINAL_VIEW,
+            published_operator=dict(metric_file=str(MAIN195), method="sca_nb", values=published,
+                                    note="the values this figure printed for SCA before the switch")),
         crop_rule=("Automatic, not hand-placed: fig_qual_main.auto_box over full, area, hrdit and sca, i.e. the "
                    "%dx%d (width x height) window with the largest mean PIL FIND_EDGES response of the 8x "
                    "box-downsampled greyscale images, at least 256 px from every border. The same window is "
@@ -347,7 +383,7 @@ def main() -> None:
         sources=dict(full_attention="out/main/full", area="out/main/area",
                      hrdit="out/baseline_expansion_20261017_{v1,rest145}/hrdit_dev_author (paths as listed in "
                            "eval/a4k195_panel)",
-                     sca="out/main/sca_nb"),
+                     sca="out/dupfix/sca_v2 (final operator; the selection audits used out/main/sca_nb)"),
         metric_files={str(p): sha(p) for p in sorted({r["metric_file"] for r in records}
                                                      | {c for r in records for c in r["same_value_in"]})},
         table_check=table_check, examples=examples, values=records,
@@ -355,10 +391,13 @@ def main() -> None:
         percentiles=dict(
             definition=("per method, the image's ImageReward (ir), MUSIQ_c (%s) and HPSv2.1 (hpsv21) as a percentile "
                         "of that method's own %d seed-0 images: floor of 100 times the share at or below it" % (METRIC, N_PROMPTS)),
-            files={str(p): sha(p) for p in sorted(set(EXTRA.values()) | {MAIN195, PANEL195})},
+            files={str(p): sha(p) for p in sorted(set(EXTRA.values()) | {MAIN195, PANEL195, MAIN195_V2})},
             shown=pct,
-            rejected={pid: dict(why=why, percentiles=percentiles(pid)) for pid, why in REJECTED.items()},
-            metric_stage={pid: dict(why=why, percentiles=percentiles(pid)) for pid, why in METRIC_STAGE.items()}),
+            note=("shown: SCA is the final operator (sca_v2); rejected and metric_stage: SCA is the published "
+                  "operator (sca_nb), whose images the audits viewed"),
+            rejected={pid: dict(why=why, percentiles=percentiles(pid, AUDIT_METHODS)) for pid, why in REJECTED.items()},
+            metric_stage={pid: dict(why=why, percentiles=percentiles(pid, AUDIT_METHODS))
+                          for pid, why in METRIC_STAGE.items()}),
         layout_pt=dict(width=W, height=round(total, 3), row_height=round(h, 3), full_image=round(h, 3),
                        crop_width=round(cw, 3), gutters=dict(full_to_crops=G_OUT, between_crops=G_IN),
                        header_band=HEAD, value_band=BAND, box=dict(colour="#" + RED, width_pt=BOX_LW),

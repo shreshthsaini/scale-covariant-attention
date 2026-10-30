@@ -52,3 +52,41 @@ abstract/intro speed and wins macros; Limitations Krea sentence.
 ## Page budget
 Main text must end on p. 10 (Reproducibility statement starts p. 11). After moving Table 5 (tab:related) to
 App. app:related and trimming, the conclusion still ended on p. 11 at y = 444 (about 0.55 page over) at 23:40.
+
+## Swap procedure (one agent per landing batch; main.tex single writer = that agent)
+1. `bash paper/figures/src/swap_all.sh` (runs collect_latency_v2.py, gen_main_tables.py, gen_app_tables.py,
+   fig_paired_area.py, fig_latency.py, fig_dup.py) and `gen_dupfix_table.py`; read the landed/pending status lines.
+2. If a4k195_main_sca_v2 landed: corrected FID/KID bootstrap. The z980 eval has no reference-cluster bootstrap.
+   Inspect /scratch/09032/saini_2/sca/taskq/hold_cpu_finalize/a4k195_main_bootstrap.sh (published run); if it is
+   CPU only, run an sca_v2 clone directly (nice, background, outputs under eval/a4k195_main_sca_v2/ and the CSVs the
+   generators read; NOT through the spool), then rerun step 1. Otherwise state in the Table 1/J captions which FID
+   intervals resample references.
+3. Hand edits in main.tex preamble (see "Status macros" above): rewrite \hlDupAbstract \hlDupIntro \hlDupResults
+   \hlDupLimit with the 195-prompt numbers (\hlDupV of \hlDupN prompts vs \hlDupPub without the schedule, \hlDupArea
+   AReA), keeping the 46-prompt numbers only where the text is about the ablation set; set \pendFigPaired /
+   \pendFigLatency empty once their PDFs read sca_v2; latency macros once latency_curve_v2 lands.
+4. Images: regenerate figures that show SCA images with the sca_v2 outputs of the same prompt ids and seeds:
+   zoom4k (fig_zoom4k.py; MUSIQ_c from the sca_v2 per-image CSV), teaser (fig_hero.py; its 2048x6144 image needs
+   a4k195_2048x6144_sca_v2), random galleries of sizes that have sca_v2 runs (fig_gallery_large.py; keep the frozen
+   random draws), Figure 4 thumbnail if fig_heads_view.py reads an image path, the progressive figure after
+   prog195_sca_v2. Then set \pendImgTeaser / \pendImgQual empty. Captions that say "curated" stay curated; if the
+   curated prompt now shows a defect in sca_v2, say so in the caption rather than swapping prompts silently.
+5. Claims check (list above) against the new tables; fix prose and Key results; keep every claim tied to a number.
+6. quick_build.sh, then build_delivery.py (0 overfull, 0 undefined, Section 6 ends p. 10), git add -A paper .agent,
+   plain one-line commit, no trailers, git push -q origin main.
+
+## Swap S1 (2026-10-30, 01:37 to ~03:00 CDT): m4k, m24, m26, s1, s2, pg folded in
+- Landed and folded: a4k195_main/2048x4096/2048x6144/seed1/seed2_sca_v2, prog195_sca_v2. Still grey: krea195,
+  hrgen1k_dev, hrgen1k_krea, latency_curve_v2 (clean time, speed ratio, latency figure/table, \hlLatExp*).
+- Bootstrap clones (CPU, nice, not the spool): /scratch/09032/saini_2/sca/eval/<run>/cpu_bootstrap_sca_v2.sh for
+  main, 2048x4096, 2048x6144 -> results/<run>/corrected_fidp_ci/ + SHA256SUMS. Effect at 4096^2: wins vs AReA
+  11 -> 12 of 15 (patch KID becomes significant), FID -5.6 [-10.6, -0.4], unresolved: IS, KID, patch FID.
+  2048x6144: 7 of 15 wins, losses aesthetic + patch FID; 2048x4096: 3 wins, 3 losses (aesthetic, CLIP, CLIP-IQA).
+- Duplication (people/animals, 95 prompts): sca_v2 26% (25/95, Wilson [18.5, 36.0]); seeds 1/2: 28%/26%;
+  2048x4096 24%, 2048x6144 33%; progressive sca_v2 6% (published 8%). 46-prompt tuning subset gave 15% (4/26).
+  Prose now says "halves" everywhere (abstract, bullet 2, 4.2 lead, limitations, conclusion, app. dupfix/failures).
+- Progressive sca_v2 vs HRDiT: only CLIP-IQA significantly worse (-0.9 [-1.8, -0.1] x100); HPSv2, MUSIQ, ARNIQA better.
+  app_tab_phase2.py prog_deltas caption lead is now data-driven; gen_main_tables.py progressive check accepts losses
+  named in main.tex ("Only CLIP-IQA ...").
+- Generator edits: v2swap/scav2_runs NOTE shortened; fig_dup.py takes Progressive SCA from results/prog195_sca_v2.
+- Page budget: Section 6 ends p. 10 at y=731 (text bottom 732): zero slack. Any added main-text line spills.

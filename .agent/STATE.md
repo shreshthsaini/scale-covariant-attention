@@ -5,15 +5,13 @@ Rewrite paper/ around sca_v2 (opening + shrinking windows 128/112/96/80 + matche
 softmax, code sca/attn.py sca_dedup_forward); swap every table to sca_v2 numbers as groups land; deliver build + notes.
 
 ## Status and next action
-- 23:50 structure committed and pushed (5351655): main text rewritten, agents A1 A2 B C delivered (all reports
-  summarized in .agent/notes/paper_v2_rewrite_20261029.md). Main text still ends p. 11 (~0.55 page over).
-- Waiter bg task (scratchpad/wait_groups.sh, seen file seen_groups.txt) exits when a group lands; re-arm after each.
-- I1 done (Oct 29 late): A2 app tables wired, \pend robust + neutral marks, swap_all order fixed (collect_latency first;
-  fig_paired_area unwraps \pend), tab:flops has an SCA row, published-only captions say 'without the schedule',
-  Sections 1-6 end p10 (y~698), render review 1 done; 55 pages; dup_i_160/bridge32/ext75 rows in Table 3 + tab:dupfix.
-- Open: Tables K.1/K.2 alone on pages; Figure L.1/M.2 snippet captions need 'without the schedule' in their generators;
-  grey values in abstract/intro have no caption note; Table K.1 title claim rests on grey values;
-  results/.../decision_round5.txt untracked (not committed). NEXT: per landing, swap agent.
+- Structure stage DONE: commit eccbd70 pushed (delivery_lxyo4jjv, 55 pp, Section 6 ends p. 10).
+- 01:36 m4k + m24 + m26 landed. Full-set duplication for sca_v2: 25/95 = 26% [18.5, 36.0] (published 57%, AReA 4%);
+  46-prompt tuning subset said 15%. vs AReA at 4096^2: 11 of 15 wins, none lost, IR +0.33 [0.25, 0.41],
+  FID -5.6 [-9.9, -0.8] (no reference bootstrap yet). 2048x6144: seven of 15 wins. Speed ratio waits for latency.
+- Swap agent S1 running (m4k, m24, m26, plus s1/s2/pg if they land): swap procedure in the notes file, commit+push.
+- NEXT: re-arm waiter for s1 s2 pg kr hd hk latency; spawn S2 for the remaining batch; final render review 2 +
+  delivery + latest_delivery.md + HANDOVER Section 20 + report (12 h mark about 09:20 CDT Oct 30).
 ## Map
 | note | read it when |
 |---|---|

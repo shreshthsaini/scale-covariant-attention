@@ -9,14 +9,18 @@ Bottom: one curated evaluation prompt at 4096^2 for six methods, names once with
 last, the full image above the same native-pixel (1:1) crop. No prompt, timing, metric or
 footnote text: the caption carries the claim and Table 1 the numbers.
 
-Timing and metrics are still re-derived (FLUX.1-dev, 4096^2, one GH200) and stored in the
-provenance; the caption quotes one ratio, AReA over SCA in clean batch-1 medians (these
-timing and metric checks still read the 191-prompt campaign summaries in results/):
-  clean    = batch-1 median of three prompts after warm-up on an idle GPU
-             (results/latency_curve_summary.csv): full attention, AReA, SCA.
-  campaign = mean over the 191-prompt evaluation campaign on shared nodes
-             (results/e1_*_base_summary.csv, metric "seconds"): DyPE, SEGA, UltraImage.
-A mismatch with those CSVs or the source sidecars stops the build.
+SCA is the final operator (sca_v2, out/dupfix/sca_v2) for the same prompts and seed as the published
+operator (sca_nb) on which every curated choice below was made; imgsel.final_twin checks each image
+against its published twin (same prompt, prompt id and derived seed) and the sca_v2 flags. The final
+images were viewed whole and at native pixels on 2026-10-30 (FINAL_VIEW, in the provenance).
+
+Timing and metrics are re-derived from the sources of Table 1 (FLUX.1-dev, 4096^2, 195 prompts) and
+stored in the provenance only; neither the figure nor its snippet caption prints a time or a score.
+Every time is the campaign mean of Table 1 (camp. column: mean over the 195-prompt evaluation on
+shared nodes, results/<run>/base_summary.csv, metric "seconds"), because the final operator's clean
+batch-1 latency is pending; ImageReward and HPSv2.1 come from results/<run>/extra_summary.csv. The
+runs are a4k195_main for the baselines and a4k195_main_sca_v2 for SCA. A mismatch with those CSVs or
+the source sidecars stops the build.
 
 Everything is generated: JPEG assets (deterministic PIL encoding), a TikZ source with
 vector boxes and labels, its PDF (tectonic), the snippet, and provenance with source
@@ -74,13 +78,24 @@ FRAME = 0.6 / 72   # line width of the one frame colour (scaZoom), inches
 # an acoustic guitar): no inset, since any corner large enough would cover the guitar or the
 # subject.
 MOSAIC = [
-    (dict(method="sca_nb", res="2048x6144", pid="minus2742856837225126754",
+    (dict(method="sca_v2", res="2048x6144", pid="minus2742856837225126754",
           zoom=dict(box=(4064, 832, 384), inset=0.50)), "pano"),
-    (dict(method="sca_nb", res="4096x4096", pid="minus8737279395568207187",
+    (dict(method="sca_v2", res="4096x4096", pid="minus8737279395568207187",
           zoom=dict(box=(1792, 1536, 448), inset=0.44)), "square"),
-    (dict(method="sca_nb", res="4096x4096", pid="5849277588805396896"), "portrait"),
+    (dict(method="sca_v2", res="4096x4096", pid="5849277588805396896"), "portrait"),
 ]
-SPEEDUP_SHOWN = "2.85"  # AReA over SCA, clean batch-1 medians at 4096^2; quoted in the caption
+OURS = "sca_v2"  # the final operator; every curated choice here was made on the published operator (sca_nb)
+FINAL_VIEW = {  # the final operator's images, viewed whole and at native pixels (2026-10-30)
+    "pano": ("same layout; the bridge has one large arch and fewer small ones, the island church is smaller; no "
+             "repeated subject. New defect in the inset window (4064, 832, 384): two facades carry signs of "
+             "garbled pseudo-lettering, and the flower boxes of the published image are gone. A text-free window "
+             "on the same row of houses, with flower boxes: (3420, 800, 384); the window was left unchanged"),
+    "square": ("same layout; the rose window is inside the zoom window; a few small seated people and a wall "
+               "sign at the end of the side aisles (the published image also has a few seated people)"),
+    "portrait": "same man, hat and guitar; the headstock still carries extra tuners, as in the published image",
+    "strip": ("one church and the flock, as in the published image; the faint distant spires of the published "
+              "image are gone; the strip window still lies on the church tower"),
+}
 
 # Six-method strip: one curated prompt; the crop window is shared by all methods.
 # Chosen from the 195 evaluation prompts so that SCA's output is clean at native pixels and has
@@ -93,26 +108,19 @@ SPEEDUP_SHOWN = "2.85"  # AReA over SCA, clean batch-1 medians at 4096^2; quoted
 STRIP_PID = "minus8343371271909676658"
 STRIP_BOX = (1650, 1300, 768)                 # x, y, side in native pixels
 STRIP = [("full", "Full attention"), ("dype", "DyPE"), ("sega_official", "SEGA"),
-         ("area", "AReA"), ("ultraimage", "UltraImage"), ("sca_nb", "SCA (ours)")]
+         ("area", "AReA"), ("ultraimage", "UltraImage"), (OURS, "SCA (ours)")]
 
-# Numbers kept in the provenance (no longer printed in the figure); check_numbers()
-# re-derives each from the result CSVs and the sidecars.
-SECONDS = {"full": (186.5, "clean"), "dype": (196.1, "campaign"),
-           "sega_official": (190.5, "campaign"), "area": (202.4, "clean"),
-           "ultraimage": (308.5, "campaign"), "sca_nb": (71.1, "clean")}
+# Numbers kept in the provenance (not printed in the figure or its caption); check_numbers()
+# re-derives each from the sources of Table 1 and the sidecars. Seconds: the camp. column of
+# Table 1 for every method (the final operator's clean latency is pending).
+N_TABLE1 = 195
+RUNS = {"full": "a4k195_main", "dype": "a4k195_main", "sega_official": "a4k195_main", "area": "a4k195_main",
+        "ultraimage": "a4k195_main", OURS: "a4k195_main_sca_v2"}
+SECONDS = {"full": 196.2, "dype": 195.9, "sega_official": 190.4, "area": 264.4, "ultraimage": 308.5, OURS: 78.4}
 STEPS = {"full": "28", "dype": "28", "sega_official": "28", "area": "28",
-         "ultraimage": "30+30", "sca_nb": "28"}
-METRICS = {"full": (-2.18, 7.61), "dype": (-0.11, 20.52), "sega_official": (0.55, 24.37),
-           "area": (0.92, 27.20), "ultraimage": (1.28, 30.80), "sca_nb": (1.23, 29.71)}
-METRIC_FILES = {"full": "final4k_full_extra_summary.csv",
-                "dype": "e1_baselines_extra_summary.csv",
-                "sega_official": "e1_baselines_extra_summary.csv",
-                "area": "e1_baselines_extra_summary.csv",
-                "ultraimage": "e1_ultraimage_extra_summary.csv",
-                "sca_nb": "e1_baselines_extra_summary.csv"}
-CAMPAIGN_FILES = {"dype": "e1_baselines_base_summary.csv",
-                  "sega_official": "e1_baselines_base_summary.csv",
-                  "ultraimage": "e1_ultraimage_base_summary.csv"}
+         "ultraimage": "30+30", OURS: "28"}
+METRICS = {"full": (-2.18, 7.60), "dype": (-0.10, 20.55), "sega_official": (0.56, 24.34),
+           "area": (0.92, 27.16), "ultraimage": (1.28, 30.77), OURS: (1.25, 29.73)}
 
 
 def sha(path: Path) -> str:
@@ -120,6 +128,9 @@ def sha(path: Path) -> str:
 
 
 def source(method: str, res: str, pid: str) -> tuple[Path, dict]:
+    if method == OURS:  # the published image's twin, checked by imgsel.final_twin
+        png = Path(imgsel.final_png(res, pid)[0])
+        return png, json.loads(png.with_suffix(".json").read_text())
     root = Path(imgsel.OUT) / "main" / method / res
     hits = sorted(root.glob(f"a4k_eval_4096_{pid}_*_seed0.png"))
     if len(hits) != 1:
@@ -151,31 +162,25 @@ def rows(name: str) -> list[dict]:
 
 
 def check_numbers(metas: dict[str, dict]) -> dict:
-    """Re-derive every printed number from the result CSVs and the sidecars."""
+    """Re-derive every recorded number from the sources of Table 1 and the sidecars."""
     rec = {}
-    lat = {r["method"]: r for r in rows("latency_curve_summary.csv")}
-    for m, (secs, kind) in SECONDS.items():
-        if kind == "clean":
-            raw = float(lat[m]["median_seconds"])
-            n, src = int(lat[m]["n"]), "latency_curve_summary.csv (median_seconds)"
-        else:
-            hit = [r for r in rows(CAMPAIGN_FILES[m]) if r["method"] == m and r["metric"] == "seconds"]
-            assert len(hit) == 1, (m, hit)
-            raw, n = float(hit[0]["value"]), int(hit[0]["n_prompts"])
-            src = CAMPAIGN_FILES[m] + " (metric seconds, value)"
-            assert n == 191, (m, n)
-        assert round(raw, 1) == secs, (m, raw, secs)
-        rec.setdefault(m, {})["seconds"] = dict(shown=secs, kind=kind, raw=raw, n=n,
-                                                source="results/" + src)
+    for m, secs in SECONDS.items():
+        name = f"{RUNS[m]}/base_summary.csv"
+        hit = [r for r in rows(name) if r["method"] == m and r["metric"] == "seconds"]
+        assert len(hit) == 1, (m, hit)
+        raw, n = float(hit[0]["value"]), int(hit[0]["n_prompts"])
+        assert n == N_TABLE1 and round(raw, 1) == secs, (m, raw, n, secs)
+        rec.setdefault(m, {})["seconds"] = dict(shown=secs, kind="campaign", raw=raw, n=n,
+                                                source=f"results/{name} (metric seconds, value)")
     for m, (ir, hps) in METRICS.items():
-        got = {}
-        for r in rows(METRIC_FILES[m]):
+        name, got = f"{RUNS[m]}/extra_summary.csv", {}
+        for r in rows(name):
             if r["method"] == m and r["metric"] in ("ir", "hpsv21"):
-                assert int(r["n_prompts"]) == 191, (m, r)
+                assert int(r["n_prompts"]) == N_TABLE1, (m, r)
                 got[r["metric"]] = float(r["value"])
         assert round(got["ir"], 2) == ir and round(100 * got["hpsv21"], 2) == hps, (m, got)
-        rec[m]["metrics"] = dict(imagereward=got["ir"], hpsv21=got["hpsv21"], n_prompts=191,
-                                 source="results/" + METRIC_FILES[m])
+        rec[m]["metrics"] = dict(imagereward=got["ir"], hpsv21=got["hpsv21"], n_prompts=N_TABLE1,
+                                 source=f"results/{name}")
     for m, steps in STEPS.items():
         c = metas[m]["config"]
         if m == "ultraimage":
@@ -281,15 +286,18 @@ def main() -> None:
         sx = col / 4096
         box(x0 + bx * sx, y0 + by * sx, x0 + (bx + bs) * sx, y0 + (by + bs) * sx)
         box(x0, y0 + col + G, x0 + col, y0 + 2 * col + G, halo=False)
-        text(x0 + col / 2, y_name, label, "headours" if method == "sca_nb" else "head")
+        text(x0 + col / 2, y_name, label, "headours" if method == OURS else "head")
         records.append(dict(role="strip " + method, source=str(png), png_sha256=sha(png),
                             prompt=meta["config"]["prompt"], config=meta["config"],
                             crop_xys=list(STRIP_BOX), full=fullp.name, crop=cropp.name))
     numbers = check_numbers(metas)
-    prompt = metas["sca_nb"]["config"]["prompt"]
+    prompt = metas[OURS]["config"]["prompt"]
     assert all(metas[m]["config"]["prompt"] == prompt for m in metas)
-    speedup = numbers["area"]["seconds"]["raw"] / numbers["sca_nb"]["seconds"]["raw"]
-    assert "%.2f" % speedup == SPEEDUP_SHOWN, speedup
+    seeds = {metas[m]["config"]["derived_seed"] for m in metas}
+    assert len(seeds) == 1, seeds  # same prompt and initial noise in every column
+    for stale in sorted(ASSETS.glob("strip_*.jpg")):  # strip tiles of a method no longer shown
+        if stale not in written:
+            stale.unlink()
 
     doc = r"""%% Generated by fig_hero.py; edit the script, not this file.
 \documentclass[border=0pt]{standalone}
@@ -324,7 +332,7 @@ def main() -> None:
 
     caption = (
         r"\textbf{\sca{} keeps layout and fine detail at $4096^2$ and $2048\times6144$ without "
-        r"training, $%s\times$ faster than AReA.} " % SPEEDUP_SHOWN
+        r"training.} "
         + r"Top: curated \sca{} outputs with native-pixel insets. Bottom: one curated prompt at "
         r"$4096^2$, each full image above the same 1:1 crop; UltraImage uses its own two-stage "
         r"recipe.")
@@ -340,6 +348,12 @@ def main() -> None:
     (ASSETS / "provenance.json").write_text(json.dumps(dict(
         layout="Pictures only (REFERENCE_STYLE.md house rule 1): one size tag per mosaic image, "
                "method names once, one frame colour; numbers moved to the caption and Table 1.",
+        final_operator=dict(
+            method=OURS, images="out/dupfix/sca_v2 (imgsel.final_twin of each published image)",
+            switched="2026-10-30: every SCA image (mosaic and strip) now shows the final operator, same "
+                     "prompts and seed; the crops and zoom windows are unchanged; every curated choice and "
+                     "audit below was made on the published operator (sca_nb)",
+            viewed=FINAL_VIEW),
         selection="Curated. Mosaic: SCA outputs chosen by visual inspection; the portrait was "
                   "re-chosen on 2026-10-20 from a shortlist ranked by SCA's per-image ImageReward "
                   "and MUSIQ_c percentiles (eval/a4k195_main) and viewed at native pixels. Strip: "
@@ -391,8 +405,8 @@ def main() -> None:
                       "minus3413373481783671760": "clean, but SCA's own scores are near its "
                                                   "median (ImageReward p42)"},
             chosen=STRIP_PID,
-            values=("percentiles within each method's own 195 images, ImageReward/MUSIQ_c/"
-                    "HPSv2.1: SCA 57/79/89 (ImageReward 1.52, MUSIQ_c 70.9); DyPE 37/54/53; "
+            values=("at selection (published operator, sca_nb), percentiles within each method's own "
+                    "195 images, ImageReward/MUSIQ_c/HPSv2.1: SCA 57/79/89 (ImageReward 1.52, MUSIQ_c 70.9); DyPE 37/54/53; "
                     "SEGA 47/90/33; AReA 36/49/51; UltraImage 41/53/69; full attention's "
                     "ImageReward sits at its usual floor (-2.28)"),
             reason="Sheep in snow before a stone church. Full attention is a flat field; DyPE "
@@ -407,14 +421,13 @@ def main() -> None:
                             dropped_because="baselines far below their own medians"),
         strip_prompt_id="a4k_eval_4096_" + STRIP_PID, strip_crop_xys=list(STRIP_BOX),
         timing_definitions=dict(
-            clean="batch-1 median of three prompts after warm-up on an idle GPU "
-                  "(results/latency_curve_summary.csv, 4096x4096)",
-            campaign="mean over the 191-prompt evaluation campaign on shared nodes "
-                     "(results/e1_*_base_summary.csv, metric seconds)"),
-        metrics_definition="ImageReward and HPSv2.1 (x100), means over the 191 evaluation "
-                           "prompts at 4096x4096",
-        numbers=numbers, caption_speedup=dict(shown=SPEEDUP_SHOWN, raw=speedup,
-                                              definition="AReA / SCA clean batch-1 medians, 4096x4096"),
+            campaign="mean over the 195-prompt evaluation on shared nodes, the camp. column of Table 1 "
+                     "(results/<run>/base_summary.csv, metric seconds)",
+            clean="not recorded: the final operator's clean batch-1 latency is pending, so no clean time "
+                  "or speedup appears in the figure, its caption or this record"),
+        metrics_definition="ImageReward and HPSv2.1 (x100), means over the 195 evaluation "
+                           "prompts at 4096x4096, as in Table 1",
+        numbers=numbers,
         width_in=W, height_in=round(total_h, 4),
         pdf=str(OUT_PDF.relative_to(REPO)), records=records,
         asset_sha256={p.name: sha(p) for p in sorted(set(written))}),

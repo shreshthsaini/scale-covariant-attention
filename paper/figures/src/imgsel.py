@@ -39,6 +39,18 @@ ROOTS = {  # label -> directory pattern; {res} is HxW
 
 NAME = re.compile(r"^(?P<pid>.+)_(?P<hash>[0-9a-f]{10})_seed(?P<seed>\d+)\.png$")
 
+# The final operator (sca_v2): published SCA (label "sca", directory main/sca_nb) plus the window schedule after the
+# opening (windows of 128, 112, 96 and 80 tokens on the four steps after the gate, then 64) and 1,024 bridge tokens in
+# the local softmax. Its FLUX.1-dev images exist at three sizes only, under the published file names. Figures that
+# show SCA as ours at these sizes read them through final_twin(); the published images stay where they are.
+PUBLISHED_ROOT = OUT + "/main/sca_nb/{res}"
+FINAL_ROOT = OUT + "/dupfix/sca_v2/{res}"
+FINAL_RES = ("4096x4096", "2048x4096", "2048x6144")
+FINAL_FLAGS = {"gate_sigma": 0.89, "window": 64, "pi_variant": "head",
+               "win_sched": [[0.88, 128], [0.86, 112], [0.84, 96], [0.82, 80]],
+               "bridge_cells": 8, "bridge_k": 16, "win_pi_match": True, "win_pi_interp": True}
+ROOTS["sca_v2"] = FINAL_ROOT
+
 
 def root(label, res):
     pat = ROOTS.get(label, label)  # an absolute pattern may be passed directly
@@ -105,6 +117,41 @@ def save_jpeg(img, path, quality=88, max_side=1600):
     # optimize + fixed subsampling keeps the bytes deterministic for identical input
     img.save(path, "JPEG", quality=quality, optimize=True, subsampling=0 if quality >= 90 else 2)
     return path
+
+
+def final_twin(png):
+    """The final operator's image of one published SCA image: main/sca_nb/<res>/<name> -> dupfix/sca_v2/<res>/<name>.
+
+    Checked before it is returned: a complete sidecar whose png_sha256 matches the file, method sca_v2 with the
+    FINAL_FLAGS, and the same prompt id, prompt, resolution, seed, derived seed, steps, guidance and model as the
+    published image (same prompt, same initial noise). Returns (path, sha256 of the PNG)."""
+    png = os.path.abspath(png)
+    res = os.path.basename(os.path.dirname(png))
+    if res not in FINAL_RES or os.path.dirname(png) != PUBLISHED_ROOT.format(res=res):
+        raise ValueError(f"not a published SCA image at a size the final operator has: {png}")
+    twin = os.path.join(FINAL_ROOT.format(res=res), os.path.basename(png))
+    with open(png[:-4] + ".json") as fh:
+        pub = json.load(fh)["config"]
+    with open(twin[:-4] + ".json") as fh:
+        meta = json.load(fh)
+    digest = sha256(twin)
+    if meta.get("complete") is not True or meta.get("png_sha256") != digest:
+        raise ValueError(f"incomplete or hash-mismatched final-operator image: {twin}")
+    cfg = meta["config"]
+    flags = {k: cfg.get("sca", {}).get(k) for k in FINAL_FLAGS}
+    if cfg.get("method") != "sca_v2" or flags != FINAL_FLAGS:
+        raise ValueError(f"{twin}: not the final operator (method {cfg.get('method')}, flags {flags})")
+    same = ("prompt_id", "prompt", "res", "seed", "derived_seed", "steps", "guidance", "model")
+    diff = {k: (pub.get(k), cfg.get(k)) for k in same if pub.get(k) != cfg.get(k)}
+    if diff:
+        raise ValueError(f"{twin} differs from the published image in {diff}")
+    return twin, digest
+
+
+def final_png(res, sid, seed=0):
+    """(path, sha256) of the final operator's image for a prompt (short id, file-name id or full id), via its
+    published twin."""
+    return final_twin(find("sca", res, short_id(sid), seed))
 
 
 def sha256(path):

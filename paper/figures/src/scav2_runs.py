@@ -51,7 +51,7 @@ TASKQ = S / "taskq"
 DUP = RESULTS / "dup_audit_20261027"
 LAT_PUB = RESULTS / "latency_curve_summary.csv"
 LAT_V2 = RESULTS / "latency_curve_v2" / "summary.csv"
-NOTE = " Grey: published values without the schedule; the final operator's run is pending."
+NOTE = " Grey: published values without the schedule; their final-operator run is pending."
 LATENCY = "latency_curve_v2"
 PEOPLE = {"person", "animal"}
 

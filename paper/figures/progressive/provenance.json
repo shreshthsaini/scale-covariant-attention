@@ -21,7 +21,7 @@
       "minus2679953061215100202": "A dancer in mid-pose creates a dynamic splash of water, set against a black background, illuminated to highlight their silhouette."
     }
   },
-  "crop_rule": "Automatic, not hand-placed: fig_qual_main.auto_box over hrdit_dev_author, sca_prog, sca_nb with a 512x512 window, i.e. the window with the largest sum of the mean PIL FIND_EDGES response of the 8x box-downsampled greyscale images, at least 256 px from every border; the same window is cropped from every method of the row at native pixels.",
+  "crop_rule": "Automatic, not hand-placed: fig_qual_main.auto_box over hrdit_dev_author, sca_v2_prog, sca_v2 with a 512x512 window, i.e. the window with the largest sum of the mean PIL FIND_EDGES response of the 8x box-downsampled greyscale images, at least 256 px from every border; the same window is cropped from every method of the row at native pixels.",
   "crop_windows_xywh": {
     "minus5023570400257826529": [
       2312,
@@ -30,44 +30,62 @@
       512
     ],
     "minus2679953061215100202": [
-      1320,
-      3240,
+      1304,
+      3304,
       512,
       512
     ]
   },
   "headers": {
-    "source": "results/a4k195_panel/base_summary.csv",
-    "sha256": "9fdd4106ec7431d215a28719cc86b018907d27e7d327878b119d137935da253b",
-    "cross_check": "results/a4k195_main/base_summary.csv",
-    "cross_check_sha256": "0268a67b95817ccf1a6b6ddf54ec6db15ee6fce492c4a96c840aab2d3e53bf0d",
-    "loader": "paper/figures/src/data195.py",
+    "sources": {
+      "results/a4k195_main_sca_v2/base_summary.csv": "8ae110ddccf29ba3d58fef349e688dbac674b1c65ae724b2c68faf26b0163886",
+      "results/a4k195_panel/base_summary.csv": "9fdd4106ec7431d215a28719cc86b018907d27e7d327878b119d137935da253b",
+      "results/prog195_sca_v2/base_summary.csv": "e9ad71919b4a17db5dbe0055bbbdc488cacfa266cc6263efeb207942b6b36b2b"
+    },
+    "cross_check": {
+      "hrdit_dev_author": "results/prog195_sca_v2/base_summary.csv"
+    },
     "statistic": "campaign mean seconds per image on shared GH200 nodes over all 195 prompts (Table tab:panel46), one decimal; not drawn in the figure",
     "methods": {
       "hrdit_dev_author": {
         "mean_seconds": 110.35063385585605,
         "n": 195,
         "run": "a4k195_panel",
-        "label": "110.4"
+        "label": "110.4",
+        "source": "results/a4k195_panel/base_summary.csv"
       },
-      "sca_prog": {
-        "mean_seconds": 49.50329232471816,
+      "sca_v2_prog": {
+        "mean_seconds": 50.71143813850925,
         "n": 195,
-        "run": "a4k195_panel",
-        "label": "49.5"
+        "run": "prog195_sca_v2",
+        "label": "50.7",
+        "source": "results/prog195_sca_v2/base_summary.csv"
       },
-      "sca_nb": {
-        "mean_seconds": 71.51821940491119,
+      "sca_v2": {
+        "mean_seconds": 78.39099422302485,
         "n": 195,
-        "run": "a4k195_panel",
-        "label": "71.5"
+        "run": "a4k195_main_sca_v2",
+        "label": "78.4",
+        "source": "results/a4k195_main_sca_v2/base_summary.csv"
       }
     }
   },
   "protocols": {
     "hrdit_dev_author": "HRDiT (FLUX.1-dev), stages 1024^2, 2048^2, 4096^2 with 30, 17, 10 steps",
-    "sca_prog": "progressive SCA: HRDiT's stage schedule with SCA attention, 57 steps in all",
-    "sca_nb": "single-pass SCA, 28 steps at 4096^2, guidance 4.5"
+    "sca_v2_prog": "progressive SCA, final operator: HRDiT's stage schedule with SCA attention and the window schedule in the 2048^2 and 4096^2 stages, 57 steps in all",
+    "sca_v2": "single-pass SCA, final operator, 28 steps at 4096^2, guidance 4.5"
+  },
+  "final_operator": {
+    "switched": "2026-10-30: both SCA columns show the final operator for the same drawn prompts and seed",
+    "replaced": {
+      "sca_v2_prog": "sca_prog",
+      "sca_v2": "sca_nb"
+    },
+    "images": {
+      "sca_v2_prog": "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/root/sca_v2_prog/4096x4096",
+      "sca_v2": "out/dupfix/sca_v2/4096x4096 (imgsel.final_twin)"
+    },
+    "hrdit_images": "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/root/hrdit_dev_author/4096x4096"
   },
   "layout_in": {
     "width": 5.5,
@@ -97,7 +115,7 @@
         512,
         512
       ],
-      "sample_link": "/scratch/09032/saini_2/sca/eval/prog46_v1/samples/hrdit_dev_author/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
+      "sample_link": "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/root/hrdit_dev_author/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
       "source": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_v1/hrdit_dev_author/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
       "png_sha256": "bda1c93434c0bf304ccec5a3b14c78573bd4dd07afe02e0ef0d65c12c3b15dd7",
       "sidecar": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_v1/hrdit_dev_author/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.json",
@@ -155,20 +173,20 @@
     },
     {
       "prompt_id": "minus5023570400257826529",
-      "method": "sca_prog",
+      "method": "sca_v2_prog",
       "crop_xywh": [
         2312,
         1584,
         512,
         512
       ],
-      "sample_link": "/scratch/09032/saini_2/sca/eval/prog46_v1/samples/sca_prog/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
-      "source": "/scratch/09032/saini_2/sca/out/prog/sca_prog/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
-      "png_sha256": "3189c38191477be10d511806d0ef921d8d6b4a4c10edc2cbae01597e87f0e893",
-      "sidecar": "/scratch/09032/saini_2/sca/out/prog/sca_prog/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.json",
+      "sample_link": "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/root/sca_v2_prog/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
+      "png_sha256": "b43788819cc30e9af8895aa5da682019da8628023f36b5d324435629a49dd4dd",
+      "sidecar": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.json",
       "config": {
         "schema_version": 1,
-        "method": "sca_prog",
+        "method": "sca_v2_prog",
         "res": "4096x4096",
         "prompt_id": "a4k_eval_4096_minus5023570400257826529",
         "prompt": "A large planet with prominent rings occupies the foreground against a backdrop of deep red space, while two smaller celestial bodies are silhouetted nearby, one near the planet's rings and another near a distant sun.",
@@ -229,7 +247,7 @@
         "global_torch_seed": "derived_seed (blur sigma RNG, as in the HRDiT runner)",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "8421758ea483384d0d80fdaf129cb9ae5344fe456548f862ff9cd91acda0f9a3",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "sca": {
           "stages": [
             {
@@ -248,7 +266,30 @@
               ],
               "pi_variant": "head",
               "pi_const": null,
-              "pi_scale": 2
+              "pi_scale": 2,
+              "win_sched": [
+                [
+                  0.88,
+                  128
+                ],
+                [
+                  0.86,
+                  112
+                ],
+                [
+                  0.84,
+                  96
+                ],
+                [
+                  0.82,
+                  80
+                ]
+              ],
+              "bridge_cells": 8,
+              "bridge_k": 16,
+              "bridge_lo": 0.0,
+              "win_pi_match": true,
+              "win_pi_interp": true
             },
             {
               "res": "4096x4096",
@@ -266,7 +307,30 @@
               ],
               "pi_variant": "head",
               "pi_const": null,
-              "pi_scale": 4
+              "pi_scale": 4,
+              "win_sched": [
+                [
+                  0.88,
+                  128
+                ],
+                [
+                  0.86,
+                  112
+                ],
+                [
+                  0.84,
+                  96
+                ],
+                [
+                  0.82,
+                  80
+                ]
+              ],
+              "bridge_cells": 8,
+              "bridge_k": 16,
+              "bridge_lo": 0.0,
+              "win_pi_match": true,
+              "win_pi_interp": true
             }
           ],
           "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
@@ -289,38 +353,38 @@
           "stochastic_sampling": false,
           "_use_default_values": [
             "shift_terminal",
-            "use_karras_sigmas",
+            "invert_sigmas",
             "use_beta_sigmas",
             "stochastic_sampling",
-            "time_shift_type",
             "use_exponential_sigmas",
-            "invert_sigmas"
+            "time_shift_type",
+            "use_karras_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
         }
       },
-      "image_seconds": 47.40248652501032,
-      "full": "cmp_minus5023570400257826529_sca_prog.jpg",
+      "image_seconds": 49.39937071688473,
+      "full": "cmp_minus5023570400257826529_sca_v2_prog.jpg",
       "full_px": 540,
-      "crop": "cmp_minus5023570400257826529_sca_prog_crop.jpg"
+      "crop": "cmp_minus5023570400257826529_sca_v2_prog_crop.jpg"
     },
     {
       "prompt_id": "minus5023570400257826529",
-      "method": "sca_nb",
+      "method": "sca_v2",
       "crop_xywh": [
         2312,
         1584,
         512,
         512
       ],
-      "sample_link": "/scratch/09032/saini_2/sca/eval/prog46_v1/samples/sca_nb/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
-      "png_sha256": "c53cd5db56c940ed8ef4e261f341cff4c734b393e0b0105eacfe5b9db9ddc89b",
-      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.json",
+      "sample_link": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
+      "png_sha256": "cef0930baf03cd89f3919d33eada025465a86f9aa32ba34271dd2da0739841f4",
+      "sidecar": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.json",
       "config": {
         "schema_version": 1,
-        "method": "sca_nb",
+        "method": "sca_v2",
         "res": "4096x4096",
         "prompt_id": "a4k_eval_4096_minus5023570400257826529",
         "prompt": "A large planet with prominent rings occupies the foreground against a backdrop of deep red space, while two smaller celestial bodies are silhouetted nearby, one near the planet's rings and another near a distant sun.",
@@ -334,7 +398,7 @@
         "attention": "sca:sca",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "grid": [
           256,
           256
@@ -357,7 +421,30 @@
           "pi_const": null,
           "sigma_star": null,
           "pi_scale": 4,
-          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+          "win_sched": [
+            [
+              0.88,
+              128
+            ],
+            [
+              0.86,
+              112
+            ],
+            [
+              0.84,
+              96
+            ],
+            [
+              0.82,
+              80
+            ]
+          ],
+          "bridge_cells": 8,
+          "bridge_k": 16,
+          "bridge_lo": 0.0,
+          "win_pi_match": true,
+          "win_pi_interp": true
         },
         "scheduler": {
           "num_train_timesteps": 1000,
@@ -375,33 +462,33 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "use_beta_sigmas",
             "shift_terminal",
-            "use_karras_sigmas",
-            "use_exponential_sigmas",
             "stochastic_sampling",
             "time_shift_type",
+            "use_exponential_sigmas",
+            "use_beta_sigmas",
+            "use_karras_sigmas",
             "invert_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
         }
       },
-      "image_seconds": 70.86507967952639,
-      "full": "cmp_minus5023570400257826529_sca_nb.jpg",
+      "image_seconds": 81.3152318042703,
+      "full": "cmp_minus5023570400257826529_sca_v2.jpg",
       "full_px": 540,
-      "crop": "cmp_minus5023570400257826529_sca_nb_crop.jpg"
+      "crop": "cmp_minus5023570400257826529_sca_v2_crop.jpg"
     },
     {
       "prompt_id": "minus2679953061215100202",
       "method": "hrdit_dev_author",
       "crop_xywh": [
-        1320,
-        3240,
+        1304,
+        3304,
         512,
         512
       ],
-      "sample_link": "/scratch/09032/saini_2/sca/eval/prog46_v1/samples/hrdit_dev_author/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
+      "sample_link": "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/root/hrdit_dev_author/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
       "source": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_v1/hrdit_dev_author/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
       "png_sha256": "3ffe3a2cbbd2f9cd4a370c7ccc11e41bf36f00add4f95add78614fbb05e8e5eb",
       "sidecar": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_v1/hrdit_dev_author/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.json",
@@ -459,20 +546,20 @@
     },
     {
       "prompt_id": "minus2679953061215100202",
-      "method": "sca_prog",
+      "method": "sca_v2_prog",
       "crop_xywh": [
-        1320,
-        3240,
+        1304,
+        3304,
         512,
         512
       ],
-      "sample_link": "/scratch/09032/saini_2/sca/eval/prog46_v1/samples/sca_prog/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
-      "source": "/scratch/09032/saini_2/sca/out/prog/sca_prog/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
-      "png_sha256": "a33fb8379561f3d8958378b347fe3bba2d789a0b22cb0440dcade1d837c45f28",
-      "sidecar": "/scratch/09032/saini_2/sca/out/prog/sca_prog/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.json",
+      "sample_link": "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/root/sca_v2_prog/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
+      "png_sha256": "0c67acf857000baf2a39c83cc5dbf9a4b382e882310ae4533bf0dd72facd701e",
+      "sidecar": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.json",
       "config": {
         "schema_version": 1,
-        "method": "sca_prog",
+        "method": "sca_v2_prog",
         "res": "4096x4096",
         "prompt_id": "a4k_eval_4096_minus2679953061215100202",
         "prompt": "A dancer in mid-pose creates a dynamic splash of water, set against a black background, illuminated to highlight their silhouette.",
@@ -533,7 +620,7 @@
         "global_torch_seed": "derived_seed (blur sigma RNG, as in the HRDiT runner)",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "8421758ea483384d0d80fdaf129cb9ae5344fe456548f862ff9cd91acda0f9a3",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "sca": {
           "stages": [
             {
@@ -552,7 +639,30 @@
               ],
               "pi_variant": "head",
               "pi_const": null,
-              "pi_scale": 2
+              "pi_scale": 2,
+              "win_sched": [
+                [
+                  0.88,
+                  128
+                ],
+                [
+                  0.86,
+                  112
+                ],
+                [
+                  0.84,
+                  96
+                ],
+                [
+                  0.82,
+                  80
+                ]
+              ],
+              "bridge_cells": 8,
+              "bridge_k": 16,
+              "bridge_lo": 0.0,
+              "win_pi_match": true,
+              "win_pi_interp": true
             },
             {
               "res": "4096x4096",
@@ -570,7 +680,30 @@
               ],
               "pi_variant": "head",
               "pi_const": null,
-              "pi_scale": 4
+              "pi_scale": 4,
+              "win_sched": [
+                [
+                  0.88,
+                  128
+                ],
+                [
+                  0.86,
+                  112
+                ],
+                [
+                  0.84,
+                  96
+                ],
+                [
+                  0.82,
+                  80
+                ]
+              ],
+              "bridge_cells": 8,
+              "bridge_k": 16,
+              "bridge_lo": 0.0,
+              "win_pi_match": true,
+              "win_pi_interp": true
             }
           ],
           "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
@@ -592,39 +725,39 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "stochastic_sampling",
-            "invert_sigmas",
-            "shift_terminal",
-            "use_exponential_sigmas",
             "time_shift_type",
+            "shift_terminal",
             "use_karras_sigmas",
-            "use_beta_sigmas"
+            "use_beta_sigmas",
+            "invert_sigmas",
+            "stochastic_sampling",
+            "use_exponential_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
         }
       },
-      "image_seconds": 52.706973225809634,
-      "full": "cmp_minus2679953061215100202_sca_prog.jpg",
+      "image_seconds": 58.46650242945179,
+      "full": "cmp_minus2679953061215100202_sca_v2_prog.jpg",
       "full_px": 540,
-      "crop": "cmp_minus2679953061215100202_sca_prog_crop.jpg"
+      "crop": "cmp_minus2679953061215100202_sca_v2_prog_crop.jpg"
     },
     {
       "prompt_id": "minus2679953061215100202",
-      "method": "sca_nb",
+      "method": "sca_v2",
       "crop_xywh": [
-        1320,
-        3240,
+        1304,
+        3304,
         512,
         512
       ],
-      "sample_link": "/scratch/09032/saini_2/sca/eval/prog46_v1/samples/sca_nb/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
-      "png_sha256": "cf39c0be487c1b32f13c737ec657f572118a0642e98822cf3db00b2310b78f25",
-      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.json",
+      "sample_link": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
+      "png_sha256": "f01877c73fe83e22cdc568cb861146e2973424bb74b169c30dcaf7acdb6f9729",
+      "sidecar": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.json",
       "config": {
         "schema_version": 1,
-        "method": "sca_nb",
+        "method": "sca_v2",
         "res": "4096x4096",
         "prompt_id": "a4k_eval_4096_minus2679953061215100202",
         "prompt": "A dancer in mid-pose creates a dynamic splash of water, set against a black background, illuminated to highlight their silhouette.",
@@ -638,7 +771,7 @@
         "attention": "sca:sca",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "grid": [
           256,
           256
@@ -661,7 +794,30 @@
           "pi_const": null,
           "sigma_star": null,
           "pi_scale": 4,
-          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+          "win_sched": [
+            [
+              0.88,
+              128
+            ],
+            [
+              0.86,
+              112
+            ],
+            [
+              0.84,
+              96
+            ],
+            [
+              0.82,
+              80
+            ]
+          ],
+          "bridge_cells": 8,
+          "bridge_k": 16,
+          "bridge_lo": 0.0,
+          "win_pi_match": true,
+          "win_pi_interp": true
         },
         "scheduler": {
           "num_train_timesteps": 1000,
@@ -679,37 +835,37 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "use_karras_sigmas",
-            "use_exponential_sigmas",
             "shift_terminal",
+            "use_beta_sigmas",
+            "use_exponential_sigmas",
             "time_shift_type",
             "invert_sigmas",
-            "use_beta_sigmas",
+            "use_karras_sigmas",
             "stochastic_sampling"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
         }
       },
-      "image_seconds": 76.69494299218059,
-      "full": "cmp_minus2679953061215100202_sca_nb.jpg",
+      "image_seconds": 83.66243493184447,
+      "full": "cmp_minus2679953061215100202_sca_v2.jpg",
       "full_px": 540,
-      "crop": "cmp_minus2679953061215100202_sca_nb_crop.jpg"
+      "crop": "cmp_minus2679953061215100202_sca_v2_crop.jpg"
     }
   ],
   "height_in": 1.9687,
   "asset_sha256": {
     "cmp_minus2679953061215100202_hrdit_dev_author.jpg": "a51a216e6f69fff91827ce70abd8ad58244d8b7dc63a67476a497512587f1d42",
-    "cmp_minus2679953061215100202_hrdit_dev_author_crop.jpg": "ecba27eb0538d86a6d6bcb5bc8c76a4ffa7010c2c17c1a0d22be0edb03e64bdb",
-    "cmp_minus2679953061215100202_sca_nb.jpg": "76d9b4c1af074645b040a94c510976e29a00b89187d26dc6d1d576c954f03c83",
-    "cmp_minus2679953061215100202_sca_nb_crop.jpg": "03c1d7899881ed7cb9e3706dd9c6f7b434caf1a277c5081ef65a92f4db92121e",
-    "cmp_minus2679953061215100202_sca_prog.jpg": "428440978d7b2d051bf2492d88cd30af80c206e21fd93d5d66baf287d0df193c",
-    "cmp_minus2679953061215100202_sca_prog_crop.jpg": "5ec47ae86f9df82701dfffaa96a4a2776eca1905e2636a421efa7208ac526423",
+    "cmp_minus2679953061215100202_hrdit_dev_author_crop.jpg": "42a76a995cecbc1f8ee1ee7411c4438e29e39719948b1a735fdeaca1a10c21d5",
+    "cmp_minus2679953061215100202_sca_v2.jpg": "a3f8fb2f2fdffe784de61775f9c8e97fa5aec191e3092acb51e9e9c910d92ad2",
+    "cmp_minus2679953061215100202_sca_v2_crop.jpg": "ef445aecad30afe1598bcfd7fecd66aa095110181374ec4d326f09bd5aac97dd",
+    "cmp_minus2679953061215100202_sca_v2_prog.jpg": "1d02a1551fcff966302e726462fc988c6c4a5c7da341a377de75d7dd38b1d2d8",
+    "cmp_minus2679953061215100202_sca_v2_prog_crop.jpg": "f3664528f7866c23f1c56efd874af97eb1e9706cde79f58cbde35f018aef014a",
     "cmp_minus5023570400257826529_hrdit_dev_author.jpg": "d71258c8329e9bc8d0d83f183fd6000f8113d4068d0606804268c1fe33ac2bee",
     "cmp_minus5023570400257826529_hrdit_dev_author_crop.jpg": "536a5d59fbdb57947ab6e0271533c74c6d6acc302c48f0637f36f024c239b32f",
-    "cmp_minus5023570400257826529_sca_nb.jpg": "025368c572bac9812890141a5d60e33d2973768f08cda0adfc852a39a46d293a",
-    "cmp_minus5023570400257826529_sca_nb_crop.jpg": "6f3a186eb8e21869dfdce35df0222928d0d8c49fbf4f536bd368d5034bda65ad",
-    "cmp_minus5023570400257826529_sca_prog.jpg": "7546b206fb2c6c783e797e0a12d72b24aca8de9b89348a0fca6c14d025373d8e",
-    "cmp_minus5023570400257826529_sca_prog_crop.jpg": "40c3a836ab2da4718b806e00a9eec081c27a4960f6799afe03ff44739aa3714d"
+    "cmp_minus5023570400257826529_sca_v2.jpg": "14c1b5524bb77a326aa1a48bbbf3b14d3d2675803c02502c7b0c537edd768a26",
+    "cmp_minus5023570400257826529_sca_v2_crop.jpg": "f60730350447e64aa0ac32396fa307c603836d0c18d1e30bdbc2b30958e410fc",
+    "cmp_minus5023570400257826529_sca_v2_prog.jpg": "0bc42d4d7edcb5811e414dbaa5d0c23acaa7724a3f189789db99fdc29b7bdf60",
+    "cmp_minus5023570400257826529_sca_v2_prog_crop.jpg": "db9b282fc464efc3c4a3bc47e2d2e0aa203e010e8cfcb82479861462e5fc59d3"
   }
 }

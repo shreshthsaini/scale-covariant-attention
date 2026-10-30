@@ -1,9 +1,11 @@
 """Heads view: the two key sets SCA reads at 4096^2, and the reach each head showed in calibration.
 
-(a) A curated SCA output at 4096^2 (the Figure 1 strip prompt, minus8343371271909676658, seed 0;
-    its run read this very pi table). One query tile of 8x8 tokens (128 px, dark outline), its
-    local key window of 64x64 tokens (1024 px, amber; centred on the tile and clamped to the image
-    as in sca/attn.py window_index) and the global branch's pooled keys (blue): centre pooling
+(a) A curated SCA output at 4096^2: the final operator's image (sca_v2, out/dupfix/sca_v2) of the
+    Figure 1 strip prompt, minus8343371271909676658, seed 0; its run read this very pi table, and
+    imgsel.final_twin checks it against the published image of the same prompt and seed. One query
+    tile of 8x8 tokens (128 px, dark outline), its local key window of 64x64 tokens (1024 px, amber;
+    the window from the fifth step after the gate on; the four steps before use 128, 112, 96 and 80
+    tokens; centred on the tile and clamped to the image as in sca/attn.py window_index) and the global branch's pooled keys (blue): centre pooling
     keeps token 4j+2 of every 4x4-token block, pixel centre 64j + 40. Every KEY_STEP-th pooled key
     per axis is drawn (j = KEY_OFFSET, KEY_OFFSET + KEY_STEP, ...).
 (b) Measured reach of three heads at sigma bin BIN: the same image stands in for the 1024^2 native
@@ -24,17 +26,22 @@ Data (CPU only): results/evidence/calib/k1_1024.npz, FLUX.1-dev calibration at 1
 mass on text keys (index 0) and within Chebyshev radius 2, 4, 8, 16 tokens of the query (1..4),
 averaged over sampled queries, prompts and steps (sca/calib.py CalibStats.add_mass). The share
 within r tokens is mass_mean[r] / (1 - mass_mean[0]). The script writes results/heads_view/*.csv
-from the archive, then draws every number and curve from those CSVs alone.
+from the archive, then draws every number and curve from those CSVs alone. With --no-results-csv it
+writes them to a temporary directory instead, requires them to be byte-identical to results/heads_view,
+and draws from results/heads_view (nothing is written into results/).
 
-Regenerate: <sca env python> paper/figures/src/fig_heads_view.py
+Regenerate: <sca env python> paper/figures/src/fig_heads_view.py [--no-results-csv]
 """
 from __future__ import annotations
 
 import csv
 import hashlib
+import argparse
+import filecmp
 import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 os.environ.setdefault("SOURCE_DATE_EPOCH", "0")  # byte-identical PDF on rerun
@@ -58,7 +65,7 @@ RES = ROOT / "results/heads_view"
 OUT = ROOT / "paper/figures/heads_view"
 CACHE = Path("/scratch/09032/saini_2/sca/figcache/heads_view")  # regenerable thumbnails
 PID = "minus8343371271909676658"
-METHOD, RESOLUTION = "sca_nb", "4096x4096"
+METHOD, RESOLUTION = "sca_v2", "4096x4096"  # the final operator (imgsel.final_twin of main/sca_nb)
 
 # calibration slice
 SCALE = 2                 # the pi table drawn in (c) and (d)
@@ -227,12 +234,9 @@ def load() -> dict:
 
 # ----------------------------------------------------------------------------- source image
 def source() -> tuple[Path, dict]:
-    root = Path(imgsel.OUT) / "main" / METHOD / RESOLUTION
-    hits = sorted(root.glob(f"a4k_eval_4096_{PID}_*_seed0.png"))
-    if len(hits) != 1:
-        raise FileNotFoundError(f"{root}: {hits}")
-    png = hits[0]
+    png = Path(imgsel.final_png(RESOLUTION, PID)[0])  # checked: twin of the published image, sca_v2 flags
     meta = json.loads(png.with_suffix(".json").read_text())
+    assert meta["config"]["method"] == METHOD, meta["config"]["method"]
     if meta.get("complete") is not True or meta.get("png_sha256") != sha(png):
         raise ValueError(f"incomplete or hash-mismatched source {png}")
     c = meta["config"]["sca"]
@@ -386,7 +390,23 @@ def plot(d: dict, img_a: np.ndarray, img_b: np.ndarray) -> tuple:
 
 
 def main():
-    sel = compute()
+    global RES
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--no-results-csv", action="store_true",
+                    help="write the CSVs to a temporary directory, require them to equal results/heads_view, "
+                         "and draw from results/heads_view")
+    args = ap.parse_args()
+    if args.no_results_csv:
+        kept = RES
+        with tempfile.TemporaryDirectory() as tmp:
+            RES = Path(tmp)
+            sel = compute()
+            names = ["pi_sigma.csv", "pi_vs_mass.csv", "rings.csv", "summary.csv", "SHA256SUMS"]
+            same = [filecmp.cmp(RES / k, kept / k, shallow=False) for k in names]
+            RES = kept
+        assert all(same), f"results/heads_view differs from a fresh computation: {dict(zip(names, same))}"
+    else:
+        sel = compute()
     d = load()
     png, meta = source()
     img = Image.open(png).convert("RGB")
@@ -409,6 +429,9 @@ def main():
                      prompt=cfg["prompt"], method=cfg["method"], res=cfg["res"], seed=cfg["seed"],
                      steps=cfg["steps"], guidance=cfg["guidance"], sca=cfg["sca"],
                      used_in="Figure 1 bottom strip, SCA (ours) column (fig_hero.py STRIP_PID)",
+                     operator=("final operator (sca_v2): the drawn 64-token window applies from the fifth step "
+                               "after the gate; the four steps before use windows of 128, 112, 96 and 80 tokens"),
+                     win_sched=cfg["sca"].get("win_sched"),
                      shown_as=f"downscaled to 768 px (LANCZOS), colour saturation x{SAT_A}, white veil {VEIL_A}",
                      **geometry),
         panel_b=dict(thumbnail="same image, 256 px, greyscale, white veil "

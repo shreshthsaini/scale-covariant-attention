@@ -63,7 +63,7 @@ RUNS = {
 }
 LATENCY = "latency_curve_v2"  # pseudo-run name for the latency curve
 
-NOTE = " Grey: published values without the schedule; the final operator's run is pending."
+NOTE = " Grey: published values without the schedule; their final-operator run is pending."
 # Fallback for the shared grey wrapper, placed at the top of every generated snippet. \providecommand inside the
 # float is local and loses to any preamble definition, so the main tables' \pend wins if one exists. It greys the
 # whole cell, including \up / \dn marks (kept bold / italic), which would otherwise keep their colours.

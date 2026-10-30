@@ -5,6 +5,14 @@ Run with the existing sca uv environment on a compute node:
 
 The first run freezes selection from complete paired outputs. Later runs use that
 manifest and verify source hashes. No metric or visual inspection enters selection.
+
+Final operator (2026-10-30): for specs with "final_sca" the SCA column shows the final
+operator (sca_v2, out/dupfix/sca_v2) instead of the published operator (sca_nb).
+final_sca() keeps the frozen draw, points each prompt's SCA source at the final operator's
+image of the same prompt and seed (imgsel.final_twin), and recomputes the crop window by
+the frozen rule over every method (after checking that the rule reproduces the frozen
+window from the published images); the published source and window stay under
+"published_sca".
 """
 
 import argparse
@@ -31,13 +39,14 @@ SPECS = {
     "baselines": {
         "res": "4096x4096", "n": 3,
         "methods": ["area", "dype", "sega_official", "ultraimage", "sca"],
+        "final_sca": True,  # SCA column: the final operator (sca_v2), see final_sca()
         # The frozen draw (2026-10-17) was over the main set without the four development prompts. The paper now
         # evaluates all 195 prompts, so the caption names that pool; both counts come from the frozen manifest.
         "caption": lambda manifest: (
             r"\textbf{At $4096^2$ DyPE and SEGA leave speckle, UltraImage softens the planet, and SCA is sharp "
             r"but adds extra people in two prompts.} "
             rf"{count_word(len(manifest['prompts']))} of {manifest['eligible_count']} non-development prompts "
-            r"drawn at random (seed~17); full images above 1:1 crops of one window."
+            r"drawn at random (seed~17); SCA with the window schedule; full images above 1:1 crops of one window."
         ),
     },
     "flux2": {
@@ -208,6 +217,34 @@ def validate_krea_overlay(repair, indexes, targets):
             raise ValueError(f"Krea inherited sidecar changed: {sidecar}")
 
 
+def final_sca(tag, manifest):
+    """Switch a frozen record's SCA column to the final operator (sca_v2); the draw is unchanged."""
+    methods, size = manifest["methods"], 512 * int(manifest["resolution"].split("x")[0]) // 4096
+    for entry in manifest["prompts"]:
+        src = entry["sources"]["sca"]
+        pub = entry.setdefault("published_sca", dict(
+            {k: src[k] for k in ("png", "sha256", "sidecar", "sidecar_sha256") if k in src},
+            crop_xy_size=list(entry["crop_xy_size"])))
+        if sha256(pub["png"]) != pub["sha256"] or ("sidecar" in pub and sha256(pub["sidecar"]) != pub["sidecar_sha256"]):
+            raise ValueError(f"Changed source image: {pub['png']}")
+        png, digest = imgsel.final_twin(pub["png"])
+        sidecar = Path(png).with_suffix(".json")
+        entry["sources"]["sca"] = {"png": png, "sha256": digest, "config": json.loads(sidecar.read_text())["config"],
+                                   "sidecar": str(sidecar), "sidecar_sha256": sha256(sidecar)}
+        others = {m: imgsel.load(entry["sources"][m]["png"]) for m in methods if m != "sca"}
+        published = [others[m] if m != "sca" else imgsel.load(pub["png"]) for m in methods]
+        if list(auto_box(published, size)) != pub["crop_xy_size"]:
+            raise ValueError(f"{tag} {entry['short_id']}: the crop rule does not reproduce the frozen window")
+        final = [others[m] if m != "sca" else imgsel.load(png) for m in methods]
+        entry["crop_xy_size"] = list(auto_box(final, size))
+    manifest["final_operator"] = dict(
+        method="sca_v2", images="out/dupfix/sca_v2 (imgsel.final_twin of each published image: same prompt, prompt "
+                                "id, derived seed and file name)",
+        switched="2026-10-30, by fig_phase2.final_sca: the frozen draw is unchanged; every SCA source is the final "
+                 "operator's image; every crop window is recomputed by crop_rule over every method; the published "
+                 "source and window are kept per prompt under published_sca")
+
+
 def select_prompts(eligible, count):
     eligible = sorted(eligible)
     return sorted(random.Random(17).sample(eligible, min(count, len(eligible))))
@@ -238,6 +275,9 @@ def build(tag):
         for receipt in manifest.get("provenance_receipts", []):
             if sha256(receipt["path"]) != receipt["sha256"]:
                 raise ValueError(f"Changed provenance receipt: {receipt['path']}")
+        if spec.get("final_sca"):
+            final_sca(tag, manifest)
+            manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
     else:
         indexes, eligible, prompt_source = pool
         selected = select_prompts(eligible, spec["n"])

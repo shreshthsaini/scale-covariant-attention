@@ -1,5 +1,34 @@
 {
-  "selection": "Curated by visual inspection of SCA (sca_nb) seed-0 outputs for variety and clean results; no metric ranking, except the 2026-10-20 still-life replacement, shortlisted with ImageReward and MUSIQ_c in the top half of 195 and confirmed by a 1:1 audit. Prompts shown in other paper figures and the four development prompts are excluded.",
+  "selection": "Curated by visual inspection of SCA (sca_nb) seed-0 outputs for variety and clean results; no metric ranking, except the 2026-10-20 still-life replacement, shortlisted with ImageReward and MUSIQ_c in the top half of 195 and confirmed by a 1:1 audit. Prompts shown in other paper figures and the four development prompts are excluded. Since 2026-10-30 every image is the final operator's (sca_v2) image of the same prompt and seed; the windows are unchanged except the panorama's first (see final_operator).",
+  "final_operator": {
+    "method": "sca_v2",
+    "images": "out/dupfix/sca_v2 (imgsel.final_twin of each published image)",
+    "viewed": {
+      "Great Wall": "the lit wall segment and watchtower on the left ridge of the published image are gone (bare ridge); the first window moved to the lit watchtowers on the main wall (PANO); otherwise clean",
+      "portrait": "clean; one pair of earrings, a different earring design",
+      "illustration": "clean of repeats: one waterfall and one lit spire (the published image has a second waterfall and a second lit tower); the spire's tower carries a boxy block; one small lit tower on a hill at left",
+      "still life": "clean",
+      "ice climber": "clean; the tiny figures at the top of the published image are gone",
+      "interior": "clean of repeats; a dress form on a stand with a small shelf at the back",
+      "river town": "clean; nearly identical to the published image"
+    },
+    "moved_window": {
+      "image": "Great Wall 4230887929316158402",
+      "old_box_xys": [
+        1530,
+        1000,
+        384
+      ],
+      "old_inset": "top, leaders above",
+      "new_box_xys": [
+        3440,
+        560,
+        384
+      ],
+      "new_inset": "top-right, leaders right",
+      "why": "the lit watchtower it framed does not exist in the final image"
+    }
+  },
   "width_in": 5.5,
   "height_in": 4.6333,
   "dpi_full_images": 600,
@@ -7,12 +36,12 @@
   "records": [
     {
       "role": "panorama: Great Wall",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/2048x6144/a4k_eval_4096_4230887929316158402_dbe34cb186_seed0.png",
-      "png_sha256": "ef3b841710e5dbb82a5bcc569be89e47101de65983eeabd854f57f2cbc77afbc",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/2048x6144/a4k_eval_4096_4230887929316158402_dbe34cb186_seed0.png",
+      "png_sha256": "115b63956c7cc8bcb96c2fabe05a77ad937a0ec7abec681e7612f1d8b07c70bf",
       "prompt": "A snowy ridge of the Great Wall of China stretches along a rugged mountain peak, illuminated by the golden light of dawn, above a sea of clouds.",
       "config": {
         "schema_version": 1,
-        "method": "sca_nb",
+        "method": "sca_v2",
         "res": "2048x6144",
         "prompt_id": "a4k_eval_4096_4230887929316158402",
         "prompt": "A snowy ridge of the Great Wall of China stretches along a rugged mountain peak, illuminated by the golden light of dawn, above a sea of clouds.",
@@ -26,7 +55,7 @@
         "attention": "sca:sca",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "grid": [
           128,
           384
@@ -49,7 +78,30 @@
           "pi_const": null,
           "sigma_star": null,
           "pi_scale": 4,
-          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+          "win_sched": [
+            [
+              0.88,
+              128
+            ],
+            [
+              0.86,
+              112
+            ],
+            [
+              0.84,
+              96
+            ],
+            [
+              0.82,
+              80
+            ]
+          ],
+          "bridge_cells": 8,
+          "bridge_k": 16,
+          "bridge_lo": 0.0,
+          "win_pi_match": true,
+          "win_pi_interp": true
         },
         "scheduler": {
           "num_train_timesteps": 1000,
@@ -67,12 +119,12 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "time_shift_type",
             "stochastic_sampling",
             "shift_terminal",
-            "use_exponential_sigmas",
             "use_beta_sigmas",
+            "time_shift_type",
             "invert_sigmas",
+            "use_exponential_sigmas",
             "use_karras_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
@@ -83,21 +135,21 @@
       "zooms": [
         {
           "box_xys": [
-            1530,
-            1000,
+            3440,
+            560,
             384
           ],
           "crop": "pano_zoom1.jpg",
           "crop_px": 384,
           "inset_in": 0.8,
           "magnification": 2.33,
-          "inset_at": "top",
+          "inset_at": "top-right",
           "inset_margin_in": [
             0.035,
             0.035
           ],
           "inset_xy_in": [
-            1.1415,
+            4.665,
             0.035
           ],
           "leaders": true
@@ -127,12 +179,12 @@
     },
     {
       "role": "square: portrait",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus1066207185399086750_d6e8faefc5_seed0.png",
-      "png_sha256": "5083f3961a233742d33368221db9e843a1b57a5c75627f563d145b0bc18bd0f2",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus1066207185399086750_d6e8faefc5_seed0.png",
+      "png_sha256": "5b4f00e6e8cbf4dd340824ac46a12eaa9b7a180a6a3abe26012ce72b02f86c78",
       "prompt": "A woman with styled hair wears elegant glasses and multiple pieces of silver jewelry, including dangling earrings and layered necklaces, against a textured gray background.",
       "config": {
         "schema_version": 1,
-        "method": "sca_nb",
+        "method": "sca_v2",
         "res": "4096x4096",
         "prompt_id": "a4k_eval_4096_minus1066207185399086750",
         "prompt": "A woman with styled hair wears elegant glasses and multiple pieces of silver jewelry, including dangling earrings and layered necklaces, against a textured gray background.",
@@ -146,7 +198,7 @@
         "attention": "sca:sca",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "grid": [
           256,
           256
@@ -169,7 +221,30 @@
           "pi_const": null,
           "sigma_star": null,
           "pi_scale": 4,
-          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+          "win_sched": [
+            [
+              0.88,
+              128
+            ],
+            [
+              0.86,
+              112
+            ],
+            [
+              0.84,
+              96
+            ],
+            [
+              0.82,
+              80
+            ]
+          ],
+          "bridge_cells": 8,
+          "bridge_k": 16,
+          "bridge_lo": 0.0,
+          "win_pi_match": true,
+          "win_pi_interp": true
         },
         "scheduler": {
           "num_train_timesteps": 1000,
@@ -187,13 +262,13 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "use_karras_sigmas",
-            "invert_sigmas",
-            "stochastic_sampling",
-            "use_exponential_sigmas",
             "use_beta_sigmas",
+            "stochastic_sampling",
             "shift_terminal",
-            "time_shift_type"
+            "use_exponential_sigmas",
+            "time_shift_type",
+            "invert_sigmas",
+            "use_karras_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
@@ -226,12 +301,12 @@
     },
     {
       "role": "square: illustration",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus6845347395255545991_8ad228c889_seed0.png",
-      "png_sha256": "8b58951040fcbf2af417a1dd85c18acba2dc09feceec56585892f160f577a666",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus6845347395255545991_8ad228c889_seed0.png",
+      "png_sha256": "ccea41a2f7152c7e006267daa077bef9f4667bad370816a260b51236cebf23d3",
       "prompt": "Majestic mountains bathed in pink and purple hues under a starry night sky, with a glowing tower overlooking a serene waterfall and tranquil blue pool, surrounded by dark trees and rocky terrain.",
       "config": {
         "schema_version": 1,
-        "method": "sca_nb",
+        "method": "sca_v2",
         "res": "4096x4096",
         "prompt_id": "a4k_eval_4096_minus6845347395255545991",
         "prompt": "Majestic mountains bathed in pink and purple hues under a starry night sky, with a glowing tower overlooking a serene waterfall and tranquil blue pool, surrounded by dark trees and rocky terrain.",
@@ -245,7 +320,7 @@
         "attention": "sca:sca",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "grid": [
           256,
           256
@@ -268,7 +343,30 @@
           "pi_const": null,
           "sigma_star": null,
           "pi_scale": 4,
-          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+          "win_sched": [
+            [
+              0.88,
+              128
+            ],
+            [
+              0.86,
+              112
+            ],
+            [
+              0.84,
+              96
+            ],
+            [
+              0.82,
+              80
+            ]
+          ],
+          "bridge_cells": 8,
+          "bridge_k": 16,
+          "bridge_lo": 0.0,
+          "win_pi_match": true,
+          "win_pi_interp": true
         },
         "scheduler": {
           "num_train_timesteps": 1000,
@@ -286,13 +384,13 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "use_karras_sigmas",
-            "invert_sigmas",
-            "stochastic_sampling",
-            "use_exponential_sigmas",
             "use_beta_sigmas",
+            "stochastic_sampling",
             "shift_terminal",
-            "time_shift_type"
+            "use_exponential_sigmas",
+            "time_shift_type",
+            "invert_sigmas",
+            "use_karras_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
@@ -325,12 +423,12 @@
     },
     {
       "role": "square: still life",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8919475713516982506_e26e3fd7b4_seed0.png",
-      "png_sha256": "cb0291544064eac791dd7296461a89ca8022b5b79d472a2261e6291d3c123939",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus8919475713516982506_e26e3fd7b4_seed0.png",
+      "png_sha256": "3acb03985c3227d0c4d7803dbc243c8799e576a130586967463abb6084adc212",
       "prompt": "A decorative vase with floral branches and white blossoms sits on a light cloth, accompanied by a shiny red apple.",
       "config": {
         "schema_version": 1,
-        "method": "sca_nb",
+        "method": "sca_v2",
         "res": "4096x4096",
         "prompt_id": "a4k_eval_4096_minus8919475713516982506",
         "prompt": "A decorative vase with floral branches and white blossoms sits on a light cloth, accompanied by a shiny red apple.",
@@ -344,7 +442,7 @@
         "attention": "sca:sca",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "grid": [
           256,
           256
@@ -367,7 +465,30 @@
           "pi_const": null,
           "sigma_star": null,
           "pi_scale": 4,
-          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+          "win_sched": [
+            [
+              0.88,
+              128
+            ],
+            [
+              0.86,
+              112
+            ],
+            [
+              0.84,
+              96
+            ],
+            [
+              0.82,
+              80
+            ]
+          ],
+          "bridge_cells": 8,
+          "bridge_k": 16,
+          "bridge_lo": 0.0,
+          "win_pi_match": true,
+          "win_pi_interp": true
         },
         "scheduler": {
           "num_train_timesteps": 1000,
@@ -385,13 +506,13 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "shift_terminal",
-            "use_karras_sigmas",
-            "use_beta_sigmas",
-            "stochastic_sampling",
-            "time_shift_type",
             "invert_sigmas",
-            "use_exponential_sigmas"
+            "use_beta_sigmas",
+            "time_shift_type",
+            "use_exponential_sigmas",
+            "shift_terminal",
+            "stochastic_sampling",
+            "use_karras_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
@@ -424,12 +545,12 @@
     },
     {
       "role": "square: ice climber",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_997293625843621481_a9f7355211_seed0.png",
-      "png_sha256": "7bc8214512592cc886af203f4251fcad1929b1108078d097e7f58d204b2407eb",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_997293625843621481_a9f7355211_seed0.png",
+      "png_sha256": "d33515c4067e5adc11632a89bf2fcdaf376480aa7761e8de771b50e18464dd9e",
       "prompt": "A climber, wearing a helmet and blue clothing, ascends through a narrow, icy crevice, using an ice axe for support amidst glacial blue ice formations.",
       "config": {
         "schema_version": 1,
-        "method": "sca_nb",
+        "method": "sca_v2",
         "res": "4096x4096",
         "prompt_id": "a4k_eval_4096_997293625843621481",
         "prompt": "A climber, wearing a helmet and blue clothing, ascends through a narrow, icy crevice, using an ice axe for support amidst glacial blue ice formations.",
@@ -443,7 +564,7 @@
         "attention": "sca:sca",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "grid": [
           256,
           256
@@ -466,7 +587,30 @@
           "pi_const": null,
           "sigma_star": null,
           "pi_scale": 4,
-          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+          "win_sched": [
+            [
+              0.88,
+              128
+            ],
+            [
+              0.86,
+              112
+            ],
+            [
+              0.84,
+              96
+            ],
+            [
+              0.82,
+              80
+            ]
+          ],
+          "bridge_cells": 8,
+          "bridge_k": 16,
+          "bridge_lo": 0.0,
+          "win_pi_match": true,
+          "win_pi_interp": true
         },
         "scheduler": {
           "num_train_timesteps": 1000,
@@ -484,13 +628,13 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "use_karras_sigmas",
-            "invert_sigmas",
-            "stochastic_sampling",
-            "use_exponential_sigmas",
             "use_beta_sigmas",
+            "stochastic_sampling",
             "shift_terminal",
-            "time_shift_type"
+            "use_exponential_sigmas",
+            "time_shift_type",
+            "invert_sigmas",
+            "use_karras_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
@@ -523,12 +667,12 @@
     },
     {
       "role": "wide: interior",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/2048x4096/a4k_eval_4096_7414267858891695058_31352fa25b_seed0.png",
-      "png_sha256": "355ac6f8649efeaa44b69611cb76da519f95db8b00d774c597b20cdd8a92dda5",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/2048x4096/a4k_eval_4096_7414267858891695058_31352fa25b_seed0.png",
+      "png_sha256": "82b10d90b564a5234366236170d7a8054d8b3575893d888a7340932156f8df85",
       "prompt": "A cluttered artist's workspace featuring an ornate picture frame, an easel, a mannequin, stacked books, and multiple smaller frames in a vintage suitcase, with brushes and paint supplies on a nearby tabletop under warm lighting. A patterned curtain drapes in the background.",
       "config": {
         "schema_version": 1,
-        "method": "sca_nb",
+        "method": "sca_v2",
         "res": "2048x4096",
         "prompt_id": "a4k_eval_4096_7414267858891695058",
         "prompt": "A cluttered artist's workspace featuring an ornate picture frame, an easel, a mannequin, stacked books, and multiple smaller frames in a vintage suitcase, with brushes and paint supplies on a nearby tabletop under warm lighting. A patterned curtain drapes in the background.",
@@ -542,7 +686,7 @@
         "attention": "sca:sca",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "grid": [
           128,
           256
@@ -565,7 +709,30 @@
           "pi_const": null,
           "sigma_star": null,
           "pi_scale": 4,
-          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+          "win_sched": [
+            [
+              0.88,
+              128
+            ],
+            [
+              0.86,
+              112
+            ],
+            [
+              0.84,
+              96
+            ],
+            [
+              0.82,
+              80
+            ]
+          ],
+          "bridge_cells": 8,
+          "bridge_k": 16,
+          "bridge_lo": 0.0,
+          "win_pi_match": true,
+          "win_pi_interp": true
         },
         "scheduler": {
           "num_train_timesteps": 1000,
@@ -583,13 +750,13 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "shift_terminal",
-            "stochastic_sampling",
-            "time_shift_type",
-            "use_exponential_sigmas",
             "use_karras_sigmas",
+            "use_beta_sigmas",
+            "time_shift_type",
             "invert_sigmas",
-            "use_beta_sigmas"
+            "use_exponential_sigmas",
+            "shift_terminal",
+            "stochastic_sampling"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
@@ -600,12 +767,12 @@
     },
     {
       "role": "wide: river town",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/2048x4096/a4k_eval_4096_minus5370774387421928008_13abd0e243_seed0.png",
-      "png_sha256": "a983ebf2a77be85797cec84194be239c4aaa179f7bd259093dcdf969e0eb0d11",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/2048x4096/a4k_eval_4096_minus5370774387421928008_13abd0e243_seed0.png",
+      "png_sha256": "5f338d2113a65a52d592539b2f84cde1e4003a736b753472db1d595d9509668a",
       "prompt": "A picturesque riverside scene featuring a medieval castle atop a hill, surrounded by vibrant autumn foliage, with colorful homes lining the waterfront and several boats docked along the river.",
       "config": {
         "schema_version": 1,
-        "method": "sca_nb",
+        "method": "sca_v2",
         "res": "2048x4096",
         "prompt_id": "a4k_eval_4096_minus5370774387421928008",
         "prompt": "A picturesque riverside scene featuring a medieval castle atop a hill, surrounded by vibrant autumn foliage, with colorful homes lining the waterfront and several boats docked along the river.",
@@ -619,7 +786,7 @@
         "attention": "sca:sca",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "grid": [
           128,
           256
@@ -642,7 +809,30 @@
           "pi_const": null,
           "sigma_star": null,
           "pi_scale": 4,
-          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+          "win_sched": [
+            [
+              0.88,
+              128
+            ],
+            [
+              0.86,
+              112
+            ],
+            [
+              0.84,
+              96
+            ],
+            [
+              0.82,
+              80
+            ]
+          ],
+          "bridge_cells": 8,
+          "bridge_k": 16,
+          "bridge_lo": 0.0,
+          "win_pi_match": true,
+          "win_pi_interp": true
         },
         "scheduler": {
           "num_train_timesteps": 1000,
@@ -660,13 +850,13 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "invert_sigmas",
-            "use_karras_sigmas",
-            "use_exponential_sigmas",
             "time_shift_type",
-            "shift_terminal",
+            "use_karras_sigmas",
             "use_beta_sigmas",
-            "stochastic_sampling"
+            "stochastic_sampling",
+            "invert_sigmas",
+            "use_exponential_sigmas",
+            "shift_terminal"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
@@ -677,18 +867,18 @@
     }
   ],
   "asset_sha256": {
-    "pano.jpg": "23508543a604be50699a108d6edb381fb5c385cc49b2278adcc4d849f73d25bc",
-    "pano_zoom1.jpg": "6bba9af4dc0cc7820d52e6480dc2ce14dca00bf000660feaf4d160d2fcb57140",
-    "pano_zoom2.jpg": "bae3a8135a72a0e86acc7395484876b5cd0f8e46e33da3d2ccae494acc1ca4e0",
-    "square1.jpg": "2db1b3b3640d929bae08779ef4737f55c1ca4f02e00abcb6f23b31fba1962dc6",
-    "square1_zoom.jpg": "be10af2c7bd152953683845aa357703f8082e4a20272913897b0b3840daa13a6",
-    "square2.jpg": "d28878e367c87b55a6f62f0d575e886c847ae5905d7415ad9a96b3b60cf169ef",
-    "square2_zoom.jpg": "8dc953269197cd076d3e19648b275624dd24c1ce4d2ffa1c63fa7372ac50389e",
-    "square3.jpg": "c9ddf45af249fdf659e00e085f976ded323af14a473f9ad47f8e227517d95fe8",
-    "square3_zoom.jpg": "0bc97f673a507e8d881e29224f1c55911f8f4a2af6c075694256c9deaaed0718",
-    "square4.jpg": "5d90807e79d0f869db7cee6c29013e315cefc1881362d9782db30d97c5b95b32",
-    "square4_zoom.jpg": "9f7c48e8935e58e72f8aded0a2a243761b6b0c742f1fbbc55bc55844ac7cc31b",
-    "wide1.jpg": "f0914303caf9080d00a2a06bee38afe2eb57e69b2969dfee0780f55496171af2",
-    "wide2.jpg": "db90cbb4c8d98dda61ea6b381c14fad0c8855c5939423f17eca6d32073ca0f38"
+    "pano.jpg": "7bb0345d275db6dcbe14b3a1cfb45ddf116f34cd1a6b6a8ac24d41464582a961",
+    "pano_zoom1.jpg": "edc81e28fafd7d875dfa2507bdaa34a236599dc0d8932c7587ec985c798b4f1e",
+    "pano_zoom2.jpg": "0e5100b6ee8fbb855086a6d993132c0cbddbc86d3e05a95755251152188e5e15",
+    "square1.jpg": "c18f4d9d08ed70c07d63e9403fcce6e6ed33108eda8815c76d24f92e197d0cb9",
+    "square1_zoom.jpg": "c9f0f3aa286b162fe424926db42a33af3fb492db5306b0e4dd9cebbc6986371c",
+    "square2.jpg": "2ca4999d4be8edff2eea36bdbd118ad1708e972cf346dc4c6ed5f809e08ff31d",
+    "square2_zoom.jpg": "526a2d1c650a737ca83a6dc93eaf9edec0e1aa71f6a7da42eafd9f87b69b082a",
+    "square3.jpg": "cb6458fe393cb5280a20564fe4f4ec2ef34e30cdb6b2dc2502d86b6029dffc5b",
+    "square3_zoom.jpg": "deedf1e26d335dd5db3287ad66c2a89abc40a49a4e577d4719ca936945a28298",
+    "square4.jpg": "0068dff337abc8a5393e582d4b3a1aa4daf9e77ed782c974d98842a9ac72a538",
+    "square4_zoom.jpg": "3dd14042ca82ec85b995b02caed3032bc95246644e908e98c9125b7beace1bb2",
+    "wide1.jpg": "447198e410c92dae4155e1dfc418eab0ae37f149011ee0cd02e24593897af700",
+    "wide2.jpg": "1c0b1c2ca3f362c334bd4703ae38a6f141012598da30e910676a814d11b194ae"
   }
 }

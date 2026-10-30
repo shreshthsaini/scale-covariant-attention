@@ -63,6 +63,8 @@ E7_G85 = ROOT / "results/e7_sca_g85_deltas.csv"  # gate 0.85 minus gate 0.89, 46
 DUP_RATE = ROOT / "scripts/dup_rate.py"          # the detector's own counting rule
 V2_RESULT = ROOT / "results/a4k195_main_sca_v2/dup_rates_people.csv"
 V2_EVAL = Path("/scratch/09032/saini_2/sca/eval/a4k195_main_sca_v2")
+# Progressive SCA with the final operator (sca_v2_prog); the published sca_prog bar is used until this file exists.
+PROG_V2_RESULT = ROOT / "results/prog195_sca_v2/dup_rates_people.csv"
 DETS = Path("/scratch/09032/saini_2/sca/eval/dup_detect_20261027")
 OUTROOT = Path("/scratch/09032/saini_2/sca/out")
 PUB_DIR = OUTROOT / "main/sca_nb/4096x4096"
@@ -184,6 +186,9 @@ def method_data(read: set) -> dict:
         if m == "sca_v2":
             continue
         r = dict(rates[m])
+        if m == "sca_prog" and PROG_V2_RESULT.exists():
+            r = dict(read_rates(PROG_V2_RESULT)["sca_v2_prog"])
+            read.add(PROG_V2_RESULT)
         assert r["n"] == 95, f"{m}: expected the 95 people/animal prompts"
         rows.append(dict(r, name=name))
     first, rest = rows[0], sorted(rows[1:], key=lambda r: (-r["rate"], r["name"]))

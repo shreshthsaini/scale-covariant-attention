@@ -3,8 +3,11 @@
 Layout at the 5.5 in text width: a full-width 2048x6144 panorama with two
 native-pixel insets, a row of four 4096^2 images with one inset each, and a row
 of two 2048x4096 images (sizes are height x width, as in the paper). Every image
-is an SCA (sca_nb) output for an evaluation prompt at seed 0 (FLUX.1-dev, 28
-steps, guidance 4.5; asserted from the sidecars). Images were chosen by visual
+is a final-operator SCA output (sca_v2, out/dupfix/sca_v2) for an evaluation prompt
+at seed 0 (FLUX.1-dev, 28 steps, guidance 4.5; asserted from the sidecars), the twin
+(same prompt, prompt id and derived seed; imgsel.final_twin) of the published
+operator's (sca_nb) image on which the prompts and windows were chosen. The final
+images were viewed whole and at native pixels on 2026-10-30 (FINAL_VIEW). Images were chosen by visual
 inspection for variety and clean results; no metric ranked them, except that the
 still-life replacement of 2026-10-20 came from a shortlist with ImageReward and MUSIQ_c in
 the top half of the 195 prompts, then a full 1:1 audit by eye. Prompts shown
@@ -49,7 +52,18 @@ LW = 0.6 / 72     # width of the one neutral frame line (windows and insets), in
 FRAME = "A6ADB4"  # the one neutral frame colour; leader lines use it too
 PANO_INSET = 0.80
 SQ_INSET = 0.44
-METHOD = "sca_nb"
+METHOD = "sca_v2"  # the final operator; the choices below were made on the published operator (sca_nb)
+FINAL_VIEW = {  # the final operator's images, viewed whole and at native pixels (2026-10-30)
+    "Great Wall": ("the lit wall segment and watchtower on the left ridge of the published image are gone (bare "
+                   "ridge); the first window moved to the lit watchtowers on the main wall (PANO); otherwise clean"),
+    "portrait": "clean; one pair of earrings, a different earring design",
+    "illustration": ("clean of repeats: one waterfall and one lit spire (the published image has a second "
+                     "waterfall and a second lit tower); the spire's tower carries a boxy block; one small lit "
+                     "tower on a hill at left"),
+    "still life": "clean",
+    "ice climber": "clean; the tiny figures at the top of the published image are gone",
+    "interior": "clean of repeats; a dress form on a stand with a small shelf at the back",
+    "river town": "clean; nearly identical to the published image"}
 
 # Zoom windows are (x, y, size) in source pixels. `at` places the inset inside its
 # image: a corner, or "top" (centred above the window). `margin` is the (horizontal,
@@ -60,8 +74,11 @@ METHOD = "sca_nb"
 # lines and badges stay off the main subject.
 # 2026-10-20: the village street 7543519915112968451 was replaced. Its restaurant signs were gibberish at
 # 1:1 and its right third (including the shutter inset) was smeared.
+# 2026-10-30: the final operator's image has no wall on the left ridge, where the first window (1530, 1000, 384),
+# inset "top", side "above", framed a lit watchtower; the window moved to the lit watchtowers on the main wall and
+# its inset to the top-right corner, on the sky and the sea of clouds.
 PANO = dict(res="2048x6144", pid="4230887929316158402", what="Great Wall",
-            zooms=[dict(box=(1530, 1000, 384), at="top", side="above"),           # lit watchtowers: inset on the sky
+            zooms=[dict(box=(3440, 560, 384), at="top-right", side="right"),      # lit watchtowers: inset on the sky
                    dict(box=(3330, 1600, 320), at="bottom-right", side="right",   # snowy parapet: inset on the
                         margin=(0.0, 0.0))])                                      # dark slope, docked
 SQUARES = [
@@ -110,11 +127,7 @@ def sha(path: Path) -> str:
 
 
 def source(res: str, pid: str) -> tuple[Path, dict]:
-    root = Path(imgsel.OUT) / "main" / METHOD / res
-    hits = sorted(root.glob(f"a4k_eval_4096_{pid}_*_seed0.png"))
-    if len(hits) != 1:
-        raise FileNotFoundError(f"{METHOD} {res} {pid}: {hits}")
-    png = hits[0]
+    png = Path(imgsel.final_png(res, pid)[0])  # checked: twin of the published image, sca_v2 flags
     meta = json.loads(png.with_suffix(".json").read_text())
     if meta.get("complete") is not True or meta.get("png_sha256") != sha(png):
         raise ValueError(f"incomplete or hash-mismatched source {png}")
@@ -309,7 +322,16 @@ def main() -> None:
         selection="Curated by visual inspection of SCA (sca_nb) seed-0 outputs for variety and clean "
                   "results; no metric ranking, except the 2026-10-20 still-life replacement, shortlisted "
                   "with ImageReward and MUSIQ_c in the top half of 195 and confirmed by a 1:1 audit. "
-                  "Prompts shown in other paper figures and the four development prompts are excluded.",
+                  "Prompts shown in other paper figures and the four development prompts are excluded. "
+                  "Since 2026-10-30 every image is the final operator's (sca_v2) image of the same prompt "
+                  "and seed; the windows are unchanged except the panorama's first (see final_operator).",
+        final_operator=dict(method=METHOD, images="out/dupfix/sca_v2 (imgsel.final_twin of each published image)",
+                            viewed=FINAL_VIEW,
+                            moved_window=dict(image="Great Wall 4230887929316158402", old_box_xys=[1530, 1000, 384],
+                                              old_inset="top, leaders above", new_box_xys=[3440, 560, 384],
+                                              new_inset="top-right, leaders right",
+                                              why="the lit watchtower it framed does not exist in the final "
+                                                  "image")),
         width_in=W, height_in=round(total_h, 4), dpi_full_images=DPI, pdf=str(OUT_PDF.relative_to(REPO)),
         records=records, asset_sha256={p.name: sha(p) for p in sorted(ASSETS.glob("*.jpg"))}),
         indent=2) + "\n")

@@ -1,5 +1,16 @@
 {
   "layout": "Pictures only (REFERENCE_STYLE.md house rule 1): one size tag per mosaic image, method names once, one frame colour; numbers moved to the caption and Table 1.",
+  "final_operator": {
+    "method": "sca_v2",
+    "images": "out/dupfix/sca_v2 (imgsel.final_twin of each published image)",
+    "switched": "2026-10-30: every SCA image (mosaic and strip) now shows the final operator, same prompts and seed; the crops and zoom windows are unchanged; every curated choice and audit below was made on the published operator (sca_nb)",
+    "viewed": {
+      "pano": "same layout; the bridge has one large arch and fewer small ones, the island church is smaller; no repeated subject. New defect in the inset window (4064, 832, 384): two facades carry signs of garbled pseudo-lettering, and the flower boxes of the published image are gone. A text-free window on the same row of houses, with flower boxes: (3420, 800, 384); the window was left unchanged",
+      "square": "same layout; the rose window is inside the zoom window; a few small seated people and a wall sign at the end of the side aisles (the published image also has a few seated people)",
+      "portrait": "same man, hat and guitar; the headstock still carries extra tuners, as in the published image",
+      "strip": "one church and the flock, as in the published image; the faint distant spires of the published image are gone; the strip window still lies on the church tower"
+    }
+  },
   "selection": "Curated. Mosaic: SCA outputs chosen by visual inspection; the portrait was re-chosen on 2026-10-20 from a shortlist ranked by SCA's per-image ImageReward and MUSIQ_c percentiles (eval/a4k195_main) and viewed at native pixels. Strip: chosen from the 195 evaluation prompts at 4096x4096 where all six methods have a complete seed-0 output, with SCA clean and high-scoring and every baseline near its own per-image median.",
   "audit_20261020": {
     "kept": {
@@ -47,7 +58,7 @@
       "minus3413373481783671760": "clean, but SCA's own scores are near its median (ImageReward p42)"
     },
     "chosen": "minus8343371271909676658",
-    "values": "percentiles within each method's own 195 images, ImageReward/MUSIQ_c/HPSv2.1: SCA 57/79/89 (ImageReward 1.52, MUSIQ_c 70.9); DyPE 37/54/53; SEGA 47/90/33; AReA 36/49/51; UltraImage 41/53/69; full attention's ImageReward sits at its usual floor (-2.28)",
+    "values": "at selection (published operator, sca_nb), percentiles within each method's own 195 images, ImageReward/MUSIQ_c/HPSv2.1: SCA 57/79/89 (ImageReward 1.52, MUSIQ_c 70.9); DyPE 37/54/53; SEGA 47/90/33; AReA 36/49/51; UltraImage 41/53/69; full attention's ImageReward sits at its usual floor (-2.28)",
     "reason": "Sheep in snow before a stone church. Full attention is a flat field; DyPE and SEGA cover the scene in a fine lattice; AReA, UltraImage and SCA keep the church and the flock. SCA's image is clean at native pixels (stonework, windows, the flock); a distant town church is a separate building, not a copy of the main one.",
     "crop": "Shared native window placed by hand on SCA's church tower (x, y, side in pixels); AReA and UltraImage also show church walls and windows there, so the crops compare stone, glass and snow detail like for like."
   },
@@ -67,72 +78,72 @@
     768
   ],
   "timing_definitions": {
-    "clean": "batch-1 median of three prompts after warm-up on an idle GPU (results/latency_curve_summary.csv, 4096x4096)",
-    "campaign": "mean over the 191-prompt evaluation campaign on shared nodes (results/e1_*_base_summary.csv, metric seconds)"
+    "campaign": "mean over the 195-prompt evaluation on shared nodes, the camp. column of Table 1 (results/<run>/base_summary.csv, metric seconds)",
+    "clean": "not recorded: the final operator's clean batch-1 latency is pending, so no clean time or speedup appears in the figure, its caption or this record"
   },
-  "metrics_definition": "ImageReward and HPSv2.1 (x100), means over the 191 evaluation prompts at 4096x4096",
+  "metrics_definition": "ImageReward and HPSv2.1 (x100), means over the 195 evaluation prompts at 4096x4096, as in Table 1",
   "numbers": {
     "full": {
       "seconds": {
-        "shown": 186.5,
-        "kind": "clean",
-        "raw": 186.5384593643248,
-        "n": 3,
-        "source": "results/latency_curve_summary.csv (median_seconds)"
+        "shown": 196.2,
+        "kind": "campaign",
+        "raw": 196.24043128783157,
+        "n": 195,
+        "source": "results/a4k195_main/base_summary.csv (metric seconds, value)"
       },
       "metrics": {
-        "imagereward": -2.178216232055145,
-        "hpsv21": 0.07612556431939854,
-        "n_prompts": 191,
-        "source": "results/final4k_full_extra_summary.csv"
+        "imagereward": -2.180336318260584,
+        "hpsv21": 0.07599651397277529,
+        "n_prompts": 195,
+        "source": "results/a4k195_main/extra_summary.csv"
       },
       "steps": "28"
     },
     "dype": {
       "seconds": {
-        "shown": 196.1,
+        "shown": 195.9,
         "kind": "campaign",
-        "raw": 196.1282665367983,
-        "n": 191,
-        "source": "results/e1_baselines_base_summary.csv (metric seconds, value)"
+        "raw": 195.94999647522286,
+        "n": 195,
+        "source": "results/a4k195_main/base_summary.csv (metric seconds, value)"
       },
       "metrics": {
-        "imagereward": -0.10500391990590002,
-        "hpsv21": 0.20523672111098368,
-        "n_prompts": 191,
-        "source": "results/e1_baselines_extra_summary.csv"
+        "imagereward": -0.0976345031737135,
+        "hpsv21": 0.20552732838461032,
+        "n_prompts": 195,
+        "source": "results/a4k195_main/extra_summary.csv"
       },
       "steps": "28"
     },
     "sega_official": {
       "seconds": {
-        "shown": 190.5,
+        "shown": 190.4,
         "kind": "campaign",
-        "raw": 190.47559306261323,
-        "n": 191,
-        "source": "results/e1_baselines_base_summary.csv (metric seconds, value)"
+        "raw": 190.41332373241596,
+        "n": 195,
+        "source": "results/a4k195_main/base_summary.csv (metric seconds, value)"
       },
       "metrics": {
-        "imagereward": 0.5515305485152177,
-        "hpsv21": 0.2436605254627023,
-        "n_prompts": 191,
-        "source": "results/e1_baselines_extra_summary.csv"
+        "imagereward": 0.5600735134636171,
+        "hpsv21": 0.24343140442401934,
+        "n_prompts": 195,
+        "source": "results/a4k195_main/extra_summary.csv"
       },
       "steps": "28"
     },
     "area": {
       "seconds": {
-        "shown": 202.4,
-        "kind": "clean",
-        "raw": 202.43776634894311,
-        "n": 3,
-        "source": "results/latency_curve_summary.csv (median_seconds)"
+        "shown": 264.4,
+        "kind": "campaign",
+        "raw": 264.3708875307861,
+        "n": 195,
+        "source": "results/a4k195_main/base_summary.csv (metric seconds, value)"
       },
       "metrics": {
-        "imagereward": 0.9168018175353643,
-        "hpsv21": 0.2720463681595488,
-        "n_prompts": 191,
-        "source": "results/e1_baselines_extra_summary.csv"
+        "imagereward": 0.920610734529626,
+        "hpsv21": 0.2716383085801051,
+        "n_prompts": 195,
+        "source": "results/a4k195_main/extra_summary.csv"
       },
       "steps": "28"
     },
@@ -140,39 +151,34 @@
       "seconds": {
         "shown": 308.5,
         "kind": "campaign",
-        "raw": 308.5062876789976,
-        "n": 191,
-        "source": "results/e1_ultraimage_base_summary.csv (metric seconds, value)"
+        "raw": 308.50014620154366,
+        "n": 195,
+        "source": "results/a4k195_main/base_summary.csv (metric seconds, value)"
       },
       "metrics": {
-        "imagereward": 1.275675597761548,
-        "hpsv21": 0.3080199420140052,
-        "n_prompts": 191,
-        "source": "results/e1_ultraimage_extra_summary.csv"
+        "imagereward": 1.283147727058102,
+        "hpsv21": 0.3076884052692315,
+        "n_prompts": 195,
+        "source": "results/a4k195_main/extra_summary.csv"
       },
       "steps": "30+30"
     },
-    "sca_nb": {
+    "sca_v2": {
       "seconds": {
-        "shown": 71.1,
-        "kind": "clean",
-        "raw": 71.06495948787779,
-        "n": 3,
-        "source": "results/latency_curve_summary.csv (median_seconds)"
+        "shown": 78.4,
+        "kind": "campaign",
+        "raw": 78.39099422302485,
+        "n": 195,
+        "source": "results/a4k195_main_sca_v2/base_summary.csv (metric seconds, value)"
       },
       "metrics": {
-        "imagereward": 1.2288348134216993,
-        "hpsv21": 0.29705545438833886,
-        "n_prompts": 191,
-        "source": "results/e1_baselines_extra_summary.csv"
+        "imagereward": 1.2478257667177763,
+        "hpsv21": 0.29728400584978937,
+        "n_prompts": 195,
+        "source": "results/a4k195_main_sca_v2/extra_summary.csv"
       },
       "steps": "28"
     }
-  },
-  "caption_speedup": {
-    "shown": "2.85",
-    "raw": 2.8486298705830517,
-    "definition": "AReA / SCA clean batch-1 medians, 4096x4096"
   },
   "width_in": 5.5,
   "height_in": 3.0861,
@@ -180,12 +186,12 @@
   "records": [
     {
       "role": "mosaic pano",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/2048x6144/a4k_eval_4096_minus2742856837225126754_577ab52908_seed0.png",
-      "png_sha256": "651a2c36acf43524792b127f6246f332f1d68e03a3733eb4147e4ea69384b095",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/2048x6144/a4k_eval_4096_minus2742856837225126754_577ab52908_seed0.png",
+      "png_sha256": "3e45470757593812101e5d690b0b2efe106c6005f16b58ff258f8a6e6aa63e0f",
       "prompt": "A vibrant village with colorful houses and a picturesque castle is set against a backdrop of mountains and a clear blue sky, with bustling crowds walking along a stone bridge and a serene lake reflecting the scenery.",
       "config": {
         "schema_version": 1,
-        "method": "sca_nb",
+        "method": "sca_v2",
         "res": "2048x6144",
         "prompt_id": "a4k_eval_4096_minus2742856837225126754",
         "prompt": "A vibrant village with colorful houses and a picturesque castle is set against a backdrop of mountains and a clear blue sky, with bustling crowds walking along a stone bridge and a serene lake reflecting the scenery.",
@@ -199,7 +205,7 @@
         "attention": "sca:sca",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "grid": [
           128,
           384
@@ -222,7 +228,30 @@
           "pi_const": null,
           "sigma_star": null,
           "pi_scale": 4,
-          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+          "win_sched": [
+            [
+              0.88,
+              128
+            ],
+            [
+              0.86,
+              112
+            ],
+            [
+              0.84,
+              96
+            ],
+            [
+              0.82,
+              80
+            ]
+          ],
+          "bridge_cells": 8,
+          "bridge_k": 16,
+          "bridge_lo": 0.0,
+          "win_pi_match": true,
+          "win_pi_interp": true
         },
         "scheduler": {
           "num_train_timesteps": 1000,
@@ -240,13 +269,13 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "use_karras_sigmas",
-            "use_exponential_sigmas",
-            "shift_terminal",
-            "time_shift_type",
             "invert_sigmas",
+            "use_exponential_sigmas",
+            "time_shift_type",
             "use_beta_sigmas",
-            "stochastic_sampling"
+            "stochastic_sampling",
+            "use_karras_sigmas",
+            "shift_terminal"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
@@ -276,12 +305,12 @@
     },
     {
       "role": "mosaic square",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8737279395568207187_52f0aa879e_seed0.png",
-      "png_sha256": "6e803d4ebeaff0ac91f7591c7025d35146a47314d15d46459b1a6b9e6c4db5cc",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus8737279395568207187_52f0aa879e_seed0.png",
+      "png_sha256": "6f00c488033618f020694f42719e290b2fc92c43fdedc828cfd6abefec641f7a",
       "prompt": "A grand interior with soaring arches, intricate stonework, and vibrant stained glass windows, illuminated by ornate chandeliers and soft light, creating an atmosphere of reverence and awe.",
       "config": {
         "schema_version": 1,
-        "method": "sca_nb",
+        "method": "sca_v2",
         "res": "4096x4096",
         "prompt_id": "a4k_eval_4096_minus8737279395568207187",
         "prompt": "A grand interior with soaring arches, intricate stonework, and vibrant stained glass windows, illuminated by ornate chandeliers and soft light, creating an atmosphere of reverence and awe.",
@@ -295,7 +324,7 @@
         "attention": "sca:sca",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "grid": [
           256,
           256
@@ -318,7 +347,30 @@
           "pi_const": null,
           "sigma_star": null,
           "pi_scale": 4,
-          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+          "win_sched": [
+            [
+              0.88,
+              128
+            ],
+            [
+              0.86,
+              112
+            ],
+            [
+              0.84,
+              96
+            ],
+            [
+              0.82,
+              80
+            ]
+          ],
+          "bridge_cells": 8,
+          "bridge_k": 16,
+          "bridge_lo": 0.0,
+          "win_pi_match": true,
+          "win_pi_interp": true
         },
         "scheduler": {
           "num_train_timesteps": 1000,
@@ -337,12 +389,12 @@
           "stochastic_sampling": false,
           "_use_default_values": [
             "use_karras_sigmas",
-            "invert_sigmas",
             "time_shift_type",
-            "use_beta_sigmas",
-            "use_exponential_sigmas",
+            "stochastic_sampling",
+            "invert_sigmas",
             "shift_terminal",
-            "stochastic_sampling"
+            "use_beta_sigmas",
+            "use_exponential_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
@@ -372,12 +424,12 @@
     },
     {
       "role": "mosaic portrait",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_5849277588805396896_95004efa9d_seed0.png",
-      "png_sha256": "0ae991b0aafb3ae1c7302cd6ecc2d7399562d70b4a3abaab10dfd3e60fe2d1f4",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_5849277588805396896_95004efa9d_seed0.png",
+      "png_sha256": "86778f04f24422df2dfe76b3082fdffee50fe6eb5351dcefa934d0dc7f1ff10c",
       "prompt": "A smiling man with a gray beard and a hat plays an acoustic guitar, dressed in a stylish blazer over a dark shirt against a muted background.",
       "config": {
         "schema_version": 1,
-        "method": "sca_nb",
+        "method": "sca_v2",
         "res": "4096x4096",
         "prompt_id": "a4k_eval_4096_5849277588805396896",
         "prompt": "A smiling man with a gray beard and a hat plays an acoustic guitar, dressed in a stylish blazer over a dark shirt against a muted background.",
@@ -391,7 +443,7 @@
         "attention": "sca:sca",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "grid": [
           256,
           256
@@ -414,7 +466,30 @@
           "pi_const": null,
           "sigma_star": null,
           "pi_scale": 4,
-          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+          "win_sched": [
+            [
+              0.88,
+              128
+            ],
+            [
+              0.86,
+              112
+            ],
+            [
+              0.84,
+              96
+            ],
+            [
+              0.82,
+              80
+            ]
+          ],
+          "bridge_cells": 8,
+          "bridge_k": 16,
+          "bridge_lo": 0.0,
+          "win_pi_match": true,
+          "win_pi_interp": true
         },
         "scheduler": {
           "num_train_timesteps": 1000,
@@ -432,13 +507,13 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "shift_terminal",
-            "use_exponential_sigmas",
-            "use_beta_sigmas",
-            "stochastic_sampling",
             "use_karras_sigmas",
+            "time_shift_type",
+            "use_beta_sigmas",
             "invert_sigmas",
-            "time_shift_type"
+            "stochastic_sampling",
+            "use_exponential_sigmas",
+            "shift_terminal"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
@@ -1326,13 +1401,13 @@
       "crop": "strip_ultraimage_crop.jpg"
     },
     {
-      "role": "strip sca_nb",
-      "source": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.png",
-      "png_sha256": "df2b88e33dfcbb20d3f481c44dd2dd14eeb7dabe49905a16c94c02f19a5179e1",
+      "role": "strip sca_v2",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.png",
+      "png_sha256": "14be206aadc1a4cb8c37289711ebf046a8e12850e01b7757ec6704f0b80dd7e5",
       "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
       "config": {
         "schema_version": 1,
-        "method": "sca_nb",
+        "method": "sca_v2",
         "res": "4096x4096",
         "prompt_id": "a4k_eval_4096_minus8343371271909676658",
         "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
@@ -1346,7 +1421,7 @@
         "attention": "sca:sca",
         "diffusers": "0.39.0",
         "torch": "2.11.0+cu128",
-        "implementation_sha256": "09e65e1d509f11a53086d93c1b7f7ab681c291d3455890f1354de0e59fadc84c",
+        "implementation_sha256": "a2a03c0c7027074ca52269153bf95cbfdf6625224b10e71dc9a51bc0759989df",
         "grid": [
           256,
           256
@@ -1369,7 +1444,30 @@
           "pi_const": null,
           "sigma_star": null,
           "pi_scale": 4,
-          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+          "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+          "win_sched": [
+            [
+              0.88,
+              128
+            ],
+            [
+              0.86,
+              112
+            ],
+            [
+              0.84,
+              96
+            ],
+            [
+              0.82,
+              80
+            ]
+          ],
+          "bridge_cells": 8,
+          "bridge_k": 16,
+          "bridge_lo": 0.0,
+          "win_pi_match": true,
+          "win_pi_interp": true
         },
         "scheduler": {
           "num_train_timesteps": 1000,
@@ -1389,11 +1487,11 @@
           "_use_default_values": [
             "invert_sigmas",
             "use_karras_sigmas",
-            "shift_terminal",
-            "use_beta_sigmas",
-            "use_exponential_sigmas",
             "time_shift_type",
-            "stochastic_sampling"
+            "shift_terminal",
+            "use_exponential_sigmas",
+            "stochastic_sampling",
+            "use_beta_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
@@ -1404,24 +1502,24 @@
         1300,
         768
       ],
-      "full": "strip_sca_nb_full.jpg",
-      "crop": "strip_sca_nb_crop.jpg"
+      "full": "strip_sca_v2_full.jpg",
+      "crop": "strip_sca_v2_crop.jpg"
     }
   ],
   "asset_sha256": {
-    "pano.jpg": "ecc44b77ef5362f4dfe43f53e79bab514a7d722e6f4c44a6fb444d908f32b7d5",
-    "pano_zoom.jpg": "108703f5618367b03495cdbba9d8d91ca0f6199041f282d6c9ab962670737917",
-    "portrait.jpg": "d682180032969bca750213710b49988a29c028054c73508c90182be39f9062e8",
-    "square.jpg": "cb2f6d6da5b75058ae1950fb1ab68def6aea3a7fa66846ea72abad8afb588770",
-    "square_zoom.jpg": "376a882c275e612586c306d89bd946ca5008c2b75d232a753afc059d8e6e5f09",
+    "pano.jpg": "6e732b42be369aa1b27c5039394401cb6d64a5651f55c69c13c2bcb7540901b5",
+    "pano_zoom.jpg": "942ec1991ff6ef52ca0683190a80695f3915cb12b0906622cd8f3ca7d0fb2adc",
+    "portrait.jpg": "0a3d6838c6963c9d1c37d12ec5c3aa220b1b31f5346bd7ec0ef1733b28148786",
+    "square.jpg": "a9e4649da7e2da1278824b857ebac69fb622d921486da413f9190a436388c6b3",
+    "square_zoom.jpg": "2dbd3d56d11ffb1c5233a8f631907e921cb9ff56e7309e4596d21110d6d83068",
     "strip_area_crop.jpg": "ca050dbb4233c19a6221c5e60f3f2384bcccdd95270334ebac0d45f38d5c7cc7",
     "strip_area_full.jpg": "c5bc47369db1b54cdd49dfedbe2d4947fa825c766b1fbb87f4fb4ac7391ede0f",
     "strip_dype_crop.jpg": "35e739ef9621360d17a93fc2751e540e470945f925b5a936b7724c002f6a766f",
     "strip_dype_full.jpg": "136af1368a3aeaa16396bce61fdcb8ada44f6ffee8ef379914fa160655617181",
     "strip_full_crop.jpg": "877a5476479874d47033ee2039216e368ac1bdf7b1b77f205d614ec711317803",
     "strip_full_full.jpg": "86f50c3fe85ca78ba6b27195d2abd38ad93a72f4280f06f36c2e09762da0ee3b",
-    "strip_sca_nb_crop.jpg": "bcb9ee525c18f752a362334cdc729dd5141e1a37435abebf50ed5c86002439dc",
-    "strip_sca_nb_full.jpg": "d656b2a94768ebb0a364b5043ec0748b196df2a4042d396bac2037f08d63e3df",
+    "strip_sca_v2_crop.jpg": "e5d4fb35f8448ec34761c5a879b7ee3cb7ee14d1bd02c6a7520b3a1242dd5ca8",
+    "strip_sca_v2_full.jpg": "4d063eb908acb63b055a76fb96f5320025687a7f1f4e5464ac187ff622f1c166",
     "strip_sega_official_crop.jpg": "f126db79a33343e7f18ca97db85649b435e500e28691f3fade322c54d1f2078c",
     "strip_sega_official_full.jpg": "196eee6459b41cf0f1b6f9e61119162ba81af3c5276c261adf628aca95a4797e",
     "strip_ultraimage_crop.jpg": "4e90e2bc9f2f7631d36f19a7bc46f609ddd49b7b9f2c1166857a87008f48c9ac",

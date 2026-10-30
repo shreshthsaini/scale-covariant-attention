@@ -16,6 +16,14 @@ printed size, JPEG quality 85); crops stay the frozen native 1:1 JPEGs. Each pro
 "display" record and updated "outputs" hashes for re-encoded tiles; nothing else in it changes.
 Tiles of prompts that are no longer shown stay on disk unchanged.
 
+Final operator (2026-10-30): in the galleries named in FINAL the SCA column shows the final operator
+(sca_v2, out/dupfix/sca_v2) instead of the published operator (sca_nb). to_final() keeps the frozen prompts
+and draw order, points every prompt's SCA source at the final operator's image of the same prompt and seed
+(imgsel.final_twin), recomputes each crop window by the frozen crop rule over the methods shown (checking
+first that the rule reproduces the frozen window from the published images), rewrites that prompt's crops
+and SCA full image, and keeps the published source and window under "published_sca". Reruns reproduce the
+same record.
+
 Run on a compute node with the sca env, from paper/figures/src:
     <sca python> fig_gallery_large.py                  # all four galleries
     <sca python> fig_gallery_large.py gallery_flux2    # one gallery
@@ -32,12 +40,13 @@ import re
 from PIL import Image
 
 import imgsel
-from fig_qual import (G_GROUP, G_PAIR, G_ROW, G_SECTION, GRID_DPI, JPEG_Q, NAMES, ROW_OURS, SNIP, Geo, g_row,
-                      method_head, rel, t_crop, t_full)
+from fig_qual import (G_GROUP, G_PAIR, G_ROW, G_SECTION, GRID_DPI, JPEG_Q, NAMES, ROW_OURS, SNIP, Geo, auto_box,
+                      g_row, method_head, rel, t_crop, t_full)
 
 SCRIPT = "paper/figures/src/fig_gallery_large.py"
 HEAD_NAMES = dict(NAMES, flux2_full="Full attention")
 ROW_LABEL = {"area": "AReA", "sca": ROW_OURS}
+FINAL = {"gallery_4096", "gallery_4096x2048", "gallery_6144x2048"}  # SCA column: the final operator (sca_v2)
 
 # Captions: a bold claim, then at most 35 words in all; the shared protocol (model, seed, steps, guidance,
 # crop placement, exclusions) is stated once in the appendix text, not repeated here.
@@ -45,21 +54,21 @@ SPECS = {
     "gallery_4096": dict(
         k=10, parts=[("gallery_4096", 5), ("gallery_4096_p2", 5)], retired=["gallery_4096_p3"],
         captions=[
-            r"\textbf{Uncurated, $4096^2$: SCA keeps texture that AReA blurs or grids, but adds extra subjects "
-            r"in rows one and four.} Prompts one to five of 32 drawn at random (seed~0); after each image, a 1:1 "
-            r"crop of its outlined window.",
+            r"\textbf{Uncurated, $4096^2$: SCA keeps texture that AReA blurs or grids, but adds a faint second "
+            r"dancer in row one.} Prompts one to five of 32 drawn at random (seed~0); SCA with the window "
+            r"schedule; after each image, a 1:1 crop of its outlined window.",
             r"\textbf{Uncurated samples at $4096^2$, continued.} Prompts six to ten of the same draw; "
-            r"protocol as in Figure~\ref{fig:gallery_4096}. SCA adds extra spires, hikers, and astronauts in "
-            r"rows one, four, and five.",
+            r"protocol as in Figure~\ref{fig:gallery_4096}. SCA turns the steeple into a cluster of spires and "
+            r"adds two extra hikers and a second astronaut in rows one, four, and five.",
         ]),
     "gallery_4096x2048": dict(k=2, captions=[
-        r"\textbf{At $4096\times2048$ both methods keep the layout; SCA avoids AReA's weave pattern but is "
-        r"smoother.} The first two of six prompts drawn at random; AReA above, SCA below, each followed by a "
-        r"1:1 crop of the outlined window."]),
+        r"\textbf{At $4096\times2048$ both methods keep the layout; SCA avoids AReA's faint weave pattern and "
+        r"keeps sharper rock texture.} The first two of six prompts drawn at random; AReA above, SCA (with the "
+        r"window schedule) below, each followed by a 1:1 crop of the outlined window."]),
     "gallery_6144x2048": dict(k=2, captions=[
-        r"\textbf{At $6144\times2048$ SCA resolves finer texture than AReA but adds extra climbers and "
-        r"trees.} The first two of six prompts drawn at random; AReA above, SCA below, each followed by a 1:1 "
-        r"crop of the outlined window."]),
+        r"\textbf{At $6144\times2048$ SCA resolves finer texture than AReA but adds two extra climbers.} The "
+        r"first two of six prompts drawn at random; AReA above, SCA (with the window schedule) below, each "
+        r"followed by a 1:1 crop of the outlined window."]),
     "gallery_flux2": dict(
         k=4, captions=[
             r"\textbf{FLUX.2-dev at $4096^2$: full attention blurs and repeats; SCA is sharp but duplicates "
@@ -107,6 +116,50 @@ def tiles(name, man, sids, px):
                 changed[rel(full)] = imgsel.sha256(full)
             t[sid, m] = full, crop
     return t, changed
+
+
+def to_final(name, man, px):
+    """Switch the record's SCA column to the final operator; returns the output hashes it rewrote.
+
+    For every prompt of the frozen draw (shown or not): the SCA source becomes imgsel.final_twin of the published
+    image; the window is recomputed by the frozen rule (auto_box over every method shown, same size), after checking
+    that the rule reproduces the frozen window from the published images; both methods' crops and the SCA full
+    image are rewritten (full images of shown prompts at px, the others at their current size)."""
+    if man["methods"] != ["area", "sca"]:
+        raise ValueError(f"{name}: to_final expects methods area and sca, not {man['methods']}")
+    shown = set(man.get("display", {}).get("shown", []))
+    out, changed = os.path.join(imgsel.FIGDIR, name), {}
+    for e in man["prompts"]:
+        pub = e.setdefault("published_sca", dict(png=e["sources"]["sca"]["png"], sha256=e["sources"]["sca"]["sha256"],
+                                                 crop_xy_size=list(e["crop_xy_size"])))
+        if imgsel.sha256(pub["png"]) != pub["sha256"] or \
+                imgsel.sha256(e["sources"]["area"]["png"]) != e["sources"]["area"]["sha256"]:
+            raise ValueError(f"Changed source image: {e['short_id']}")
+        png, digest = imgsel.final_twin(pub["png"])
+        e["sources"]["sca"] = {"png": png, "sha256": digest}
+        area = imgsel.load(e["sources"]["area"]["png"])
+        size = pub["crop_xy_size"][2]
+        if list(auto_box([area, imgsel.load(pub["png"])], size)) != pub["crop_xy_size"]:
+            raise ValueError(f"{name} {e['short_id']}: the crop rule does not reproduce the frozen window")
+        final = imgsel.load(png)
+        box = auto_box([area, final], size)
+        e["crop_xy_size"] = list(box)
+        for m, img in (("area", area), ("sca", final)):
+            crop = os.path.join(out, f"{e['short_id']}_{m}_crop.jpg")
+            imgsel.save_jpeg(imgsel.crop(img, box), crop, JPEG_Q, box[2])
+            changed[rel(crop)] = imgsel.sha256(crop)
+        full = os.path.join(out, f"{e['short_id']}_sca.jpg")
+        with Image.open(full) as im:
+            side = px if e["short_id"] in shown else max(im.size)
+        imgsel.save_jpeg(final, full, JPEG_Q, side)
+        changed[rel(full)] = imgsel.sha256(full)
+    man["final_operator"] = dict(
+        method="sca_v2", images="out/dupfix/sca_v2 (imgsel.final_twin of each published image: same prompt, prompt "
+                                "id, derived seed and file name)",
+        switched="2026-10-30, by fig_gallery_large.to_final: the frozen prompts and draw order are unchanged; every "
+                 "SCA source is the final operator's image; every crop window is recomputed by crop_rule over the "
+                 "methods shown; the published source and window are kept per prompt under published_sca")
+    return changed
 
 
 def square_rows(t, sids, methods, by, res):
@@ -161,6 +214,8 @@ def build(name):
     geo = Geo(asp + 1, G_PAIR, label=True) if stacked else Geo(2 * len(methods), len(methods) * G_PAIR + G_GROUP)
     px = geo.px(asp)
     shown = draw[:k]
+    if name in FINAL:  # before tiles(), whose checks then hold for the rewritten crops and full images
+        man["outputs"].update(to_final(name, man, px))
     t, changed = tiles(name, man, shown, px)
     by = {e["short_id"]: e for e in man["prompts"]}
     parts, start = spec.get("parts", [(name, k)]), 0

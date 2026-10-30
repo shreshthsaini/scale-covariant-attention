@@ -634,7 +634,14 @@ def headline(clean):
     third = sca_clean / clean["area"]
     check(abs(third - 1 / 3) <= 0.05, f"conclusion 'about a third of AReA's time': {third:.3f}")
     worse = [m for m in PER_IMAGE10 if pairs[m][2] < 0]
-    check(not worse, f"progressive SCA significantly worse than HRDiT on {worse}")
+    # main.tex may state the losses: the progressive paragraph must then name each one ("Only CLIP-IQA ...").
+    names = {"clipiqa": "CLIP-IQA", "arniqa": "ARNIQA", "musiq": "MUSIQ", "musiq_crop1024": "MUSIQ$_\\text{c}$",
+             "ir": "ImageReward", "aesthetic": "aesthetic", "clip": "CLIP", "pickscore": "PickScore",
+             "hpsv2": "HPSv2", "hpsv21": "HPSv2.1"}
+    tex = (Path(__file__).resolve().parents[2] / "main.tex").read_text()
+    para = tex.split(r"\paragraph{Progressive \sca{} matches HRDiT", 1)[-1].split(r"\paragraph", 1)[0]
+    check(all(f"Only {names[m]}" in para or f"only on {names[m]}" in para for m in worse),
+          f"progressive SCA significantly worse than HRDiT on {worse}, not named in main.tex's progressive paragraph")
     return out
 
 

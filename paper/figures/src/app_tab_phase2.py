@@ -484,8 +484,12 @@ def prog_deltas():
     flags = [not prog_landed, not single_landed, False, False]
     note = "pendAppProgDeltas"
     group = r" & & & \multicolumn{2}{c}{\emph{\sca{} " + WOS + r"}} \\" + "\n" + r"\cmidrule(l){4-5}"
-    caption = (r"\caption{\textbf{Against HRDiT, progressive \sca{} is not significantly worse on any per-image metric; "
-               rf"single-pass \sca{{}} without the schedule at 42 steps is.}} $4096^2$, {prog.N_PROMPTS} prompts, seed "
+    worse_now = [NAMES[k] for k, *_ in prog.METRICS if prog_landed and data[0][k][2] < 0]
+    lead = (rf"Against HRDiT, progressive \sca{{}} is significantly worse only on {join(worse_now)}."
+            if worse_now else r"Against HRDiT, progressive \sca{} is not significantly worse on any per-image metric; "
+            r"single-pass \sca{} without the schedule at 42 steps is.")
+    caption = (r"\caption{\textbf{" + lead + "}"
+               rf" $4096^2$, {prog.N_PROMPTS} prompts, seed "
                r"label 0. Per-image differences (first-named setting minus "
                rf"second) with 95\% paired intervals over {prog.DRAWS} prompt draws; \up{{blue}} / \dn{{orange}}: the "
                r"interval excludes zero in favour of / against the first-named setting. Progressive: HRDiT's schedule "
@@ -504,10 +508,9 @@ def prog_deltas():
     warnings = []
     if prog_landed:
         worse = [NAMES[k] for k, *_ in prog.METRICS if data[0][k][2] < 0]
-        if worse:
-            warnings.append("caption 'Against HRDiT, progressive \\sca{} is not significantly worse on any per-image "
-                            f"metric' fails: significantly worse on {join(worse)} (also main.tex, paragraph "
-                            "'Progressive \\sca{} matches HRDiT')")
+        if worse:  # the caption lead names them (worse_now); main.tex must say so too
+            warnings.append(f"note: progressive \\sca{{}} is significantly worse than HRDiT on {join(worse)}; the "
+                            "caption lead names them; check main.tex paragraph 'Progressive \\sca{} matches HRDiT'")
     if single_landed and data[1]["musiq_crop1024"][2] >= 0:
         warnings.append("main.tex paragraph 'Progressive \\sca{} matches HRDiT' says progressive has lower "
                         "MUSIQ$_\\text{c}$ than single-pass \\sca{}; the sca_v2 interval no longer excludes zero")
