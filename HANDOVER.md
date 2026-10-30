@@ -573,6 +573,27 @@ Fleet SCA14 (slurm/fleet_SCA14.sbatch): 8 gh nodes, 10 h, IDLE_MAX 5400, about 8
 w_trace tasks (webpage trajectory videos, ~3 GPU-h), then the duplication-fix pilots and reruns the method agent enqueues
 (.agent/notes/duplication_fix_20261027.md). taskq/STOP was moved to STOP.until_20261027; recreate STOP when done.
 
+### 20.1 2026-10-30 09:20 CDT: paper rewritten around the scheduled operator (paper owner)
+Build /scratch/09032/saini_2/sca/paper_builds/delivery_32xjiemn (53 pp., main text 1-10, 0 overfull, 0 undefined,
+fresh unzip passes); .agent/notes/latest_delivery.md has hashes; working notes .agent/notes/paper_v2_rewrite_20261029.md.
+- Story: measure each head's appetite for context once at 1024^2; at the target open with the global view, shrink the
+  window 128/112/96/80 to native 64 over four steps, read each head's weight at the matching image-to-window ratio
+  (Eq. sched, log-linear between the scale-2 and scale-4 tables), plus a 1,024-token bridge in the LOCAL softmax
+  (Eq. bridge; the lead's brief said global branch, the code says local). Published SCA is "SCA without the
+  schedule", an ablation row only. New Sections 2.3 (schedule), 2.4 (root cause with the gate sweep 20/15/7/1 of 26),
+  4.2 (late duplication), duplication figure (gate sweep, rates of all methods, uncurated before/after), Appendix
+  app:dupfix (detector, validation 20/20, every variant in Table tab:dupfix), Prop. 1 narrowed to window keys at n0.
+- Numbers (results/*_sca_v2): 4096^2 vs AReA 12 of 15 wins, none lost, ImageReward +0.33 [0.25, 0.41], 2.63x faster
+  (77.1 vs 202.4 s; 8% over SCA without the schedule, back to back), b = 0.99; duplication 26% (25/95) vs 57% without
+  the schedule and 4% for AReA (15% on the 46-prompt tuning subset, disclosed); Krea 8 of 15 wins, loses patch FID.
+- Scripted swap: paper/figures/src/swap_all.sh (gen_main_tables.py, gen_app_tables.py, collect_latency_v2.py,
+  fig_paired_area.py, fig_latency.py, fig_dup.py); gen_dupfix_table.py; CPU reference bootstraps in
+  eval/<run>/cpu_bootstrap_sca_v2.sh.
+- Pending at delivery: hrgen1k_dev_sca_v2 and hrgen1k_krea_sca_v2 (grey cells, caption notes). Rubric (review 2):
+  mean 1.23, no 0 item; SCA leads AReA on 19 of 22 presentation items (trails on per-step figure, project page).
+- Open: no per-step trajectory figure (needs sca_v2 x0 traces); Figure A.1 (fig:failure) caption 84 words; 6144^2,
+  8192^2, FLUX.2-dev, band guard and sensitivity results use the operator without the schedule (labelled).
+
 ## Late-duplication audit and fix (method owner, 2026-10-28 07:50; full log .agent/notes/duplication_fix_20261027.md)
 Detector: scripts/dup_detect.py (Grounding DINO tiny, offline) + scripts/dup_rate.py; subjects and validation labels in
 results/dup_audit_20261027 (build.sh rebuilds every table). Validation on 30 labeled SCA images: people/animals 20/20
