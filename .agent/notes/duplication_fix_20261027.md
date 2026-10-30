@@ -401,3 +401,5 @@ mean at sigma 0.9 (low contrast), which costs preference scores. x_ reruns stay 
   dup_f_headwin70 (--win-heads-below 0.5 / 0.7, matched weight, bridge 16), dup_g_dil2 (--scale-fixed 0.80:2 +
   bridge 16, bridge keys at coarse ids on stride-2 steps). Expected time: E ~83 s (+17%), F50 ~75-76 s (17% of heads
   widen on steps 8-12), F70 ~78 s (43% widen), G ~74-75 s. Evals g_z97_* release themselves.
+- (H) bridge_mid (bridge 16 only while sigma > 0.5): 5/26 (19%), +3%, only MUSIQ_c -1.25 (also on clean prompts):
+  identical to the plain bridge, so both its duplication benefit and its MUSIQ_c cost come from the mid-noise steps.
