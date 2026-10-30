@@ -13,6 +13,12 @@ steps/crop_NN.png, written by scripts/sample_trace.py) and writes to web/assets/
 
 then web/assets/js/traces.js: window.SCA_TRACES = {available: [...], expected: [...]}.
 
+SCA traces come from <trace-root>/<--sca-method>/<sid> (default sca_v2, the final operator; sca is the operator
+without the schedule). A final-operator trace records the local window side of each step; its pill then reads
+"window <w>" on the four shrinking-window steps and "native" after them. Each rendered video's operator is kept in
+<out-dir>/operators.json and copied into traces.js ("operator": "final" or "previous"; videos rendered before
+this file existed are the previous operator's).
+
 Timing: 0.45 s per step (short crossfade of the images) and a 2 s hold on the final frame, 30 fps. H.264
 yuv420p (BT.709) with the vendored ffmpeg, preset slow, CRF 23 raised in steps of 2 until the file is under
 3 MB, +faststart, no audio, always 4 encoder threads.
@@ -55,6 +61,8 @@ FONTS = {False: ["/usr/share/fonts/urw-base35/NimbusSans-Regular.otf",
          True: ["/usr/share/fonts/urw-base35/NimbusSans-Bold.otf",
                 "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf"]}
 KINDS = ("sca", "vs_area")
+NATIVE = 64                       # native window side (tokens); wider sides are the schedule's shrinking windows
+WIDE = "#D68C34"                  # shrinking-window steps (amber), between the opening's blue and the mix's green
 _FONT_CACHE = {}
 
 
@@ -203,10 +211,12 @@ class ScaLayout:
         text(d, (X0, 28), "SCA at 4096 × 4096", 36, bold=True)
         text(d, (X1, 28), f"step {i + 1} / {len(tr.steps)}", 36, bold=True, anchor="ra")
         mixed = st.get("phase") == "mixed"
+        win = st.get("window")
         w = pill(d, X0, 96, "global only", 26, WHITE if mixed else GLOBAL, MID if mixed else WHITE,
                  outline=RULE if mixed else None, h=52)
-        pill(d, X0 + w + 14, 96, "mixed", 26, SCA if mixed else WHITE, WHITE if mixed else MID,
-             outline=None if mixed else RULE, h=52)
+        lab = "mixed" if win is None else ("mixed, native window" if win == NATIVE else f"mixed, window {win}")
+        pill(d, X0 + w + 14, 96, lab, 26, (SCA if win in (None, NATIVE) else WIDE) if mixed else WHITE,
+             WHITE if mixed else MID, outline=None if mixed else RULE, h=52)
         text(d, (X1, 122), fmt_sigma(st["sigma"]), 32, anchor="rm")
         self.timeline(d, i)
         text(d, (X0, 318), "π for 57 blocks × 24 heads", 24, MID)
@@ -239,7 +249,9 @@ class ScaLayout:
         xs = [a + k * (b - a) / (n - 1) for k in range(n)]
         d.line((a, axis, b, axis), fill=RULE, width=2)
         for k, xk in enumerate(xs):
-            color = (GLOBAL if self.tr.steps[k].get("phase") == "global" else SCA) if k <= i else RULE
+            sk = self.tr.steps[k]
+            color = (GLOBAL if sk.get("phase") == "global" else (WIDE if sk.get("window") not in (None, NATIVE)
+                                                                 else SCA)) if k <= i else RULE
             if k == i:
                 d.rectangle((xk - 3, axis - 22, xk + 3, axis + 22), fill=color)
                 d.polygon([(xk - 9, axis - 36), (xk + 9, axis - 36), (xk, axis - 26)], fill=INK)
@@ -275,6 +287,10 @@ class VsLayout:
         if method == "sca":
             if st.get("phase") == "mixed":
                 mean = st.get("pi_mean")
+                win = st.get("window")
+                if win not in (None, NATIVE):
+                    return (f"window {win}", WIDE, WHITE, None,
+                            "" if mean is None else f"mean π {mean:.2f}")
                 return "mixed", SCA, WHITE, None, "" if mean is None else f"mean π {mean:.2f}"
             return "global only", GLOBAL, WHITE, None, "π unused"
         if st.get("phase") == "coarse":
@@ -388,8 +404,14 @@ def web_path(path, web_root):
         return str(path)
 
 
+def operators(out_dir):
+    path = Path(out_dir) / "operators.json"
+    return json.loads(path.read_text()) if path.exists() else {}
+
+
 def write_js(js, out_dir, web_root, selection):
     expected, available = [], []
+    ops = operators(out_dir)
     for sid in SIDS:
         item = selection[sid]
         vids = {k: {"mp4": web_path(out_dir / f"{sid}_{k}.mp4", web_root),
@@ -399,7 +421,8 @@ def write_js(js, out_dir, web_root, selection):
         for k in KINDS:
             if (out_dir / f"{sid}_{k}.mp4").exists() and (out_dir / f"{sid}_{k}.webp").exists():
                 available.append({"sid": sid, "kind": k, "mp4": vids[k]["mp4"], "poster": vids[k]["poster"],
-                                  "prompt": item["prompt"], "label": item.get("label")})
+                                  "prompt": item["prompt"], "label": item.get("label"),
+                                  "operator": ops.get(f"{sid}_{k}", "previous")})
     body = json.dumps({"available": available, "expected": expected}, indent=1, ensure_ascii=False)
     js.parent.mkdir(parents=True, exist_ok=True)
     tmp = js.with_name(f".{js.name}.partial")
@@ -430,11 +453,13 @@ def main(argv=None):
     p.add_argument("--max-bytes", type=int, default=MAX_BYTES)
     p.add_argument("--force", action="store_true", help="re-render videos that are newer than their traces")
     p.add_argument("--js-only", action="store_true", help="only rewrite traces.js from the videos present")
+    p.add_argument("--sca-method", default="sca_v2", choices=("sca_v2", "sca"),
+                   help="trace folder of SCA: sca_v2 (final operator) or sca (without the schedule)")
     args = p.parse_args(argv)
     selection = {it["sid"]: it for it in json.loads(args.selection.read_text())["items"]}
     if not args.js_only:
         for sid in args.sid:
-            dirs = {m: args.trace_root / m / sid for m in ("sca", "area")}
+            dirs = {"sca": args.trace_root / args.sca_method / sid, "area": args.trace_root / "area" / sid}
             ok = {m: complete(dirs[m]) for m in dirs}
             jobs = []
             if "sca" in args.kinds and ok["sca"]:
@@ -457,6 +482,9 @@ def main(argv=None):
                 layout = ScaLayout(tr["sca"]) if kind == "sca" else VsLayout(tr["sca"], tr["area"])
                 print(f"{sid}: rendering {out.name}", flush=True)
                 render(layout, len(tr["sca"].steps), out, args)
+                ops = operators(args.out_dir)
+                ops[f"{sid}_{kind}"] = "final" if args.sca_method == "sca_v2" else "previous"
+                (args.out_dir / "operators.json").write_text(json.dumps(ops, indent=1, sort_keys=True) + "\n")
     write_js(args.js, args.out_dir, args.web_root, selection)
     return 0
 

@@ -17,11 +17,15 @@ Scenes
     real sufficient statistics; then the real scale-4 pi table (57 blocks x 24 heads, the 13 populated
     noise bins; heads sorted within each block as in the paper) filling in bin by bin.
   4 The opening phase. The 28-step sigma schedule (sigma-linear axis) for windows-from-step-1 and for
-    SCA (first 8 steps global only), with the Moai pair; the small second Moai is framed, not hidden.
-  5 The mixed operator at 4096^2. A step counter 1..28 with the 57x24 pi map at each step's sigma
-    (linear interpolation of the scale-4 table, as sca/attn.py PiTable; checked against the sampler's
-    pi_trace in the image sidecar), the final SCA image with a 1:1 crop, then an end card with the speed
-    line from --numbers. No intermediate sampler states are shown.
+    SCA (8 steps global only, 4 shrinking-window steps, then native windows), with the Moai pair (the
+    right image is SCA without the schedule: the dev prompt has no final-operator image; the opening it
+    shows is the same); the small second Moai is framed, not hidden.
+  5 The schedule at 4096^2 (final operator, sca_v2). A step counter 1..28 with the 57x24 pi map at each
+    step's sigma: the scale-4 table on native steps and, on the four wide-window steps, the log-linear mix
+    of the scale-2 and scale-4 tables at ratio max(grid) / w (sca/attn.py table_interp), all checked
+    against the sampler's pi_trace in the final image's sidecar; the window side per step; the final SCA
+    image with a 1:1 crop, then an end card with the speed line from --numbers. No intermediate sampler
+    states are shown.
 
 Inputs (read only)
   /scratch/09032/saini_2/sca/out/{main/full,abl/abl_v0,main/sca_nb}/4096x4096/a4k_eval_4096_<id>_*_seed0.png
@@ -73,14 +77,14 @@ CALIB = Path("/scratch/09032/saini_2/sca/calib/k1_1024.npz")
 CALIB_COPY = REPO / "paper" / "figures" / "src" / "data" / "k1_1024_pi.npz"
 WORK = Path("/scratch/09032/saini_2/sca/web_assets/method_video")
 FFMPEG = Path("/work/09032/saini_2/vista/library/ffmpeg-7.1-shared")
-METHOD_DIRS = {"full": "main/full", "abl_v0": "abl/abl_v0", "sca": "main/sca_nb"}
+METHOD_DIRS = {"full": "main/full", "abl_v0": "abl/abl_v0", "sca": "main/sca_nb", "sca_v2": "dupfix/sca_v2"}
 SOURCES = {  # name -> (method, prompt id); every image is FLUX.1-dev, 4096^2, seed 0
     "stripes": ("full", "6648013380537069782"),      # full attention: vertical stripes
     "flat": ("full", "1638867997226496674"),         # full attention: flat field
     "moai_v0": ("abl_v0", "3614061571823823193"),    # per-head mix from step 1: five Moai
-    "moai_sca": ("sca", "3614061571823823193"),      # SCA: one large Moai, a small one far off
-    "sheep": ("sca", "minus8343371271909676658"),    # backdrop of the schematic (scenes 2 and 3)
-    "guitar": ("sca", "5849277588805396896"),        # final image; its sidecar gives the 28 sigmas
+    "moai_sca": ("sca", "3614061571823823193"),      # SCA without the schedule: one large Moai, a small one far off
+    "sheep": ("sca_v2", "minus8343371271909676658"),  # backdrop of the schematic (scenes 2 and 3), final operator
+    "guitar": ("sca_v2", "5849277588805396896"),     # final image (final operator); its sidecar gives sigmas, schedule
 }
 STRIPES_C = (1480, 2048)            # native centre of the 1:1 crop that ends the push-in
 GUITAR_CROP = (1540, 880, 600)      # native x0, y0, side of the 1:1 inset
@@ -95,6 +99,7 @@ INK, MID, RULE = sf.INK, sf.MID, sf.RULE
 GLOBAL, GLOBAL_LIGHT, LOCAL, LOCAL_LIGHT = sf.GLOBAL, sf.GLOBAL_LIGHT, sf.LOCAL, sf.LOCAL_LIGHT
 SCA, FULL, ZOOM = sf.SCA, sf.METHOD_COLOR["full"], sf.ZOOM
 GLOBAL_DARK, LOCAL_DARK = sf.pi_color(0.0), sf.pi_color(1.0)  # the ends of PI_CMAP, for text
+WIDE = sf.pi_color(0.72)            # shrinking-window steps of the schedule (between LOCAL_LIGHT and LOCAL)
 BAND, EMPTY = "#F3F4F6", "#ECEEF1"
 PI_LUT = (sf.PI_CMAP(np.linspace(0, 1, 256))[:, :3] * 255 + 0.5).astype(np.uint8)
 FONT_DIR = Path("/usr/share/fonts/urw-base35")
@@ -241,6 +246,7 @@ class Data:
         z = np.load(path)
         self.calib_path = path
         self.pi = z["s4_pi_head"].astype(np.float64)            # [57 blocks, 24 heads, 14 bins]
+        self.pi2 = z["s2_pi_head"].astype(np.float64)           # scale-2 table, for the wide-window steps
         self.centers = z["sigma_centers"].astype(np.float64)
         self.populated = z["populated"].astype(bool)
         if "stats" in z.files:
@@ -255,14 +261,36 @@ class Data:
         self.sigmas = np.array(meta["sigmas"], dtype=np.float64)
         self.gate = float(meta["config"]["sca"]["gate_sigma"])
         assert int(meta["config"]["sca"]["pi_scale"]) == 4 and len(self.sigmas) == 28
-        err = max(abs(float(interp_pi(self.pi, self.centers, tr["sigma"]).mean()) - tr["pi_mean"])
-                  for tr in meta["pi_trace"])
+        self.sched = [(float(a), int(b)) for a, b in sorted(meta["config"]["sca"].get("win_sched", []), reverse=True)]
+        self.native = int(meta["config"]["sca"]["window"])
+        self.side = max(meta["config"]["grid"])
+        self.bridge = int(meta["config"]["sca"].get("bridge_cells", 0)) ** 2 * int(meta["config"]["sca"].get("bridge_k", 0))
+        err = max(abs(float(self.pi_at(tr["sigma"]).mean()) - tr["pi_mean"]) for tr in meta["pi_trace"])
         self.n_open = int((self.sigmas > self.gate).sum())
+        self.windows = [None if sg > self.gate else self.window_at(sg) for sg in self.sigmas]
+        self.n_wide = sum(1 for w in self.windows if w is not None and w != self.native)
         print(f"calib {path}; sigma schedule from {side.name}; opening steps {self.n_open}; "
               f"pi_trace max |diff| {err:.2e}", flush=True)
         assert err < 1e-9 and self.n_open == 8
         self.example = self.pick_example()
         self.speed = read_speed(numbers)
+
+    def window_at(self, sigma):
+        """SCAContext.window_now: the win_sched side while sigma > its bound, else the native window."""
+        for bound, w in self.sched:
+            if sigma > bound:
+                return w
+        return self.native
+
+    def pi_at(self, sigma):
+        """SCAContext.pi_table_now: on a wide-window step the log-linear mix of the scale-2 and scale-4 tables
+        at ratio side / w (table_interp), else the scale-4 table; linear in sigma between bin centres."""
+        w = self.window_at(sigma)
+        p4 = interp_pi(self.pi, self.centers, sigma)
+        if w == self.native:
+            return p4
+        lam = min(max(math.log(self.side / w / 2) / math.log(2), 0.0), 1.0)
+        return (1 - lam) * interp_pi(self.pi2, self.centers, sigma) + lam * p4
 
     def fit(self, name, size, wash=0.0):
         a = np.asarray(self.img[name].resize((size, size), Image.LANCZOS)).astype(np.float32)
@@ -563,9 +591,9 @@ class SceneCalib(Scene):
     SQ, LX, RX, SY = 460, 100, 640, 240
     QR, QC = 15, 14  # the query of scene 2, in 32-cell schematic units
     cues = [(0.5, 3.5, "π is fitted once, at 1024²,", "where full attention still works."),
-            (3.7, 6.8, "Shrink both views by 4", "to mimic a 4× larger image."),
+            (3.7, 6.8, "Shrink both views by 4 (and by 2)", "to mimic a 4× (2×) larger image."),
             (7.0, 10.0, "Each head's π is the best fit", "to full attention, in closed form."),
-            (10.4, 15.0, "One π for each of 1368 heads", "at every noise level."),
+            (10.4, 15.0, "One π for each of 1368 heads,", "noise level and ratio."),
             (15.2, 19.8, "Heads differ: most lean local,", "a few lean global.")]
     PX0, PX1, PY0, PY1 = 1260, 1800, 430, 700  # fit plot area
     CELL, TX0, TY0, TGX, TGY = 6, 61, 250, 22, 58  # table cell, origin, gaps
@@ -693,8 +721,8 @@ class SceneOpen(Scene):
     X0, X1, R1, R2 = 560, 1760, 172, 228
     IMG, IY, IXL, IXR = 480, 410, 450, 990
     cues = [(0.5, 4.2, "Mixing windows in from step 1", "draws five Moai."),
-            (4.4, 8.2, "SCA runs the first 8 of 28 steps", "on the global view alone."),
-            (8.4, 11.9, "One large statue; a small second", "Moai remains far off.")]
+            (4.4, 8.2, "SCA runs 8 of 28 steps globally,", "then shrinks its windows over 4 steps."),
+            (8.4, 11.9, "The opening keeps one large statue;", "a small second Moai remains far off.")]
 
     def build(self):
         c, d = self.c, self.d
@@ -703,7 +731,8 @@ class SceneOpen(Scene):
         for row, ry in enumerate((self.R1, self.R2)):
             arts = []
             for k, x in enumerate(xs):
-                col = GLOBAL if (row == 1 and k < d.n_open) else LOCAL
+                col = GLOBAL if (row == 1 and k < d.n_open) else (
+                    WIDE if (row == 1 and k < d.n_open + d.n_wide) else LOCAL)
                 arts.append(c.rect(x - 3, ry - 18, 6, 36, fc=col, z=3))
             self.ticks.append(arts)
         self.rowlab = [c.text(self.X0 - 34, self.R1 + 10, "Windows from step 1", 28, ha="right"),
@@ -715,12 +744,14 @@ class SceneOpen(Scene):
                      c.text(self.X1, ya + 32, "0", 24, color=MID, ha="center")]
         xo = (xs[0] + xs[d.n_open - 1]) / 2
         self.lab_open = c.text(xo, ya + 66, "global only", 24, color=GLOBAL_DARK, ha="center")
-        self.lab_mix = c.text((xs[d.n_open] + xs[-1]) / 2, ya + 66, "per-head mix", 24, color=LOCAL_DARK,
-                              ha="center")
+        self.lab_mix = c.text((xs[d.n_open + d.n_wide] + xs[-1]) / 2, ya + 66, "per-head mix, native windows", 24,
+                              color=LOCAL_DARK, ha="center")
+        self.lab_wide = c.text((xs[d.n_open] + xs[d.n_open + d.n_wide - 1]) / 2, ya + 98, "shrinking windows", 22,
+                               color=LOCAL_DARK, ha="center")
         self.imL = [c.image(d.fit("moai_v0", self.IMG), self.IXL, self.IY),
                     c.text(self.IXL, self.IY - 18, "Windows from step 1", 28)]
         self.imR = [c.image(d.fit("moai_sca", self.IMG), self.IXR, self.IY),
-                    c.text(self.IXR, self.IY - 18, "SCA", 28, weight="bold")]
+                    c.text(self.IXR, self.IY - 18, "Global-only opening", 28, weight="bold")]
         s = self.IMG / 4096
         x, y, w, h = MOAI_SMALL
         self.small = c.rect(self.IXR + x * s, self.IY + y * s, w * s, h * s, ec=ZOOM, lw=3.5, z=5)
@@ -736,27 +767,44 @@ class SceneOpen(Scene):
         for k, r in enumerate(self.ticks[1]):
             r.set_alpha(ramp(t, 4.5 + 0.045 * k, 4.8 + 0.045 * k))
         self.lab_open.set_alpha(ramp(t, 4.8, 5.4))
+        self.lab_wide.set_alpha(ramp(t, 5.2, 5.8))
         set_alpha(self.imR, ramp(t, 5.4, 6.2))
         self.small.set_alpha(ramp(t, 8.6, 9.2))
 
 
 # ----------------------------------------------------------------------------- scene 5
 class SceneMixed(Scene):
-    title = "The mixed operator at 4096²"
-    dur = 14.0
+    title = "The schedule at 4096²"
+    dur = 16.0
     C, HX, HY = 20, 640, 196
-    T1, D_OPEN, D_MIX = 0.8, 0.36, 0.24
+    T1, D_OPEN, D_WIDE, D_MIX = 0.8, 0.36, 0.62, 0.22
+    FADE = 10.4
     TX0, TX1, TY = 640, 1780, 806
     IM, IMX, IMY, INX, INY = 720, 150, 170, 1080, 200
     cues = [(0.5, 3.6, "Steps 1 to 8 skip the local branch:", "every head is global."),
-            (3.8, 8.3, "Each later step reads every head's π", "from the table at its σ."),
-            (8.8, 13.4, "The final 4096² image,", "with a 1:1 crop of its detail.")]
+            (3.8, 6.4, "Then the windows shrink, 128 to 80 tokens;", "each head's π is read at that ratio."),
+            (6.6, 10.2, "The last 16 steps use native windows. Every", "window also sees 1,024 bridge tokens."),
+            (10.7, 15.4, "The final 4096² image,", "with a 1:1 crop of its detail.")]
+
+    def __init__(self, data):
+        super().__init__(data)
+        d = data
+        n_nat = len(d.sigmas) - d.n_open - d.n_wide
+        wide = [w for w in d.windows if w is not None and w != d.native]
+        self.cues = [(0.5, 3.6, f"Steps 1 to {d.n_open} skip the local branch:", "every head is global."),
+                     (3.8, 6.4, f"Then the windows shrink, {wide[0]} to {wide[-1]} tokens;",
+                      "each head's π is read at that ratio."),
+                     (6.6, 10.2, f"The last {n_nat} steps use native windows. Every",
+                      f"window also sees {d.bridge:,} bridge tokens."),
+                     (10.7, 15.4, "The final 4096² image,", "with a 1:1 crop of its detail.")]
 
     def build(self):
         c, d = self.c, self.d
         n = len(d.sigmas)
-        self.t_step = self.T1 + np.cumsum([0.0] + [self.D_OPEN if k < d.n_open else self.D_MIX for k in range(n)])
-        self.maps = [np.zeros((57, 24)) if k < d.n_open else interp_pi(d.pi, d.centers, d.sigmas[k]) for k in range(n)]
+        dur = [self.D_OPEN if k < d.n_open else (self.D_WIDE if k < d.n_open + d.n_wide else self.D_MIX)
+               for k in range(n)]
+        self.t_step = self.T1 + np.cumsum([0.0] + dur)
+        self.maps = [np.zeros((57, 24)) if k < d.n_open else d.pi_at(d.sigmas[k]) for k in range(n)]
         A = []
         self.heat = c.image(d.heat(self.maps[0], self.C), self.HX, self.HY, z=2)
         hw, hh = 57 * self.C, 24 * self.C
@@ -778,8 +826,8 @@ class SceneMixed(Scene):
               c.text(bx0, by + 52, "global", 24, color=GLOBAL_DARK),
               c.text(bx1, by + 52, "local", 24, color=LOCAL_DARK, ha="right")]
         xs = self.TX0 + (1 - d.sigmas) * (self.TX1 - self.TX0)
-        self.tl = [c.rect(x - 2.5, self.TY - 16, 5, 32, fc=GLOBAL if k < d.n_open else LOCAL, z=3)
-                   for k, x in enumerate(xs)]
+        self.tl = [c.rect(x - 2.5, self.TY - 16, 5, 32, fc=GLOBAL if k < d.n_open else (
+                       WIDE if k < d.n_open + d.n_wide else LOCAL), z=3) for k, x in enumerate(xs)]
         self.tl_x = xs
         self.head = Polygon([[0, 0], [0, 0], [0, 0]], closed=True, facecolor=INK, edgecolor="none", zorder=5)
         c.ax.add_patch(self.head)
@@ -810,18 +858,21 @@ class SceneMixed(Scene):
         self.num.set_text(str(k + 1))
         self.sig.set_text(f"σ {d.sigmas[k]:.3f}")
         mixed = k >= d.n_open
-        self.ph_mark.set_facecolor(LOCAL if mixed else GLOBAL)
-        self.ph_text.set_text("per-head mix" if mixed else "global only")
-        a = 1 - ramp(t, 8.5, 9.0)
+        self.ph_mark.set_facecolor((WIDE if d.windows[k] != d.native else LOCAL) if mixed else GLOBAL)
+        w = d.windows[k]
+        self.ph_text.set_text("global only" if not mixed else (
+            f"window {w}, ratio {d.side / w:.2f}".rstrip("0").rstrip(".") if w != d.native
+            else f"native {w}-token window"))
+        a = 1 - ramp(t, self.FADE, self.FADE + 0.5)
         set_alpha(self.partA, a)
         self.open_lab.set_alpha(a * (1 - ramp(t, self.t_step[d.n_open], self.t_step[d.n_open] + 0.3)))
         for j, r in enumerate(self.tl):
             r.set_alpha(a * (1.0 if j <= k else 0.22))
         x = self.tl_x[k]
         self.head.set_xy([[x - 9, self.TY - 34], [x + 9, self.TY - 34], [x, self.TY - 20]])
-        set_alpha(self.partB, ramp(t, 8.9, 9.7))
-        set_alpha(self.frameB, ramp(t, 9.6, 10.1))
-        set_alpha(self.inset, ramp(t, 10.0, 10.8))
+        set_alpha(self.partB, ramp(t, self.FADE + 0.4, self.FADE + 1.2))
+        set_alpha(self.frameB, ramp(t, self.FADE + 1.1, self.FADE + 1.6))
+        set_alpha(self.inset, ramp(t, self.FADE + 1.5, self.FADE + 2.3))
 
 
 class SceneEnd(Scene):

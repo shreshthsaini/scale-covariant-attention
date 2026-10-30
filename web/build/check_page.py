@@ -94,7 +94,7 @@ def main():
             if over > 0 or broken or errs:
                 problems.append(name)
             if a.sections and name in ("desktop", "phone"):
-                for sid in ["top", "method", "compare", "traces", "results", "scale", "commercial", "failures"]:
+                for sid in ["top", "method", "duplication", "compare", "traces", "results", "scale", "commercial", "failures"]:
                     loc = pg.locator("#" + sid).first
                     if loc.count():
                         loc.screenshot(path=os.path.join(a.out, f"{name}_sec_{sid}.png"))

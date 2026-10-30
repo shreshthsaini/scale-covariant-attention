@@ -206,7 +206,9 @@
     var expected = TR.expected || [];
     var nRendered = Object.keys(avail).length;
     var status = $("#trace-status");
-    if (status) status.textContent = nRendered ? (nRendered + " of " + expected.length + " prompts rendered.") :
+    var nPrev = (TR.available || []).filter(function (v) { return v.operator !== "final"; }).length;
+    if (status) status.textContent = nRendered ? (nRendered + " of " + expected.length + " prompts rendered." +
+      (nPrev ? " Videos marked \u201cprevious operator\u201d show SCA without the window schedule; the final operator's traces replace them once their GPU runs finish." : "")) :
       "None rendered yet: the 16 GPU runs these videos need are queued but have not run (see web/README.md).";
     var io = ("IntersectionObserver" in window) ? new IntersectionObserver(function (es) {
       es.forEach(function (en) { var v = en.target; if (en.isIntersecting) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } else v.pause(); });
@@ -229,7 +231,9 @@
         media.appendChild(vid); if (io) io.observe(vid);
       }
       var lab = ex.label || it.label;
-      var label = el("p", { class: "prompt" }, [el("span", { class: "chip " + (lab === "random" ? "" : "curated"), text: lab === "random" ? "random draw" : "curated" }), ex.prompt || it.prompt || ""]);
+      var prev = kinds.some(function (k) { return a[k].operator !== "final"; });
+      var label = el("p", { class: "prompt" }, [el("span", { class: "chip " + (lab === "random" ? "" : "curated"), text: lab === "random" ? "random draw" : "curated" }),
+        prev ? el("span", { class: "chip prev", text: "previous operator" }) : null, ex.prompt || it.prompt || ""]);
       body.appendChild(label);
       if (kinds.length > 1) {
         var seg = el("div", { class: "seg", role: "group", "aria-label": "Video" });
