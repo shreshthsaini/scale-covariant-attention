@@ -460,3 +460,10 @@ drawn from the whole image, the 16 keys per cell of an 8 x 8 grid that lie farth
 global bridge, so a query can see a subject drawn far outside its window. Together these cut duplication from 58%
 to 15% at 9% extra time, and SCA keeps all ten of its per-image wins over AReA."
 (Numbers to be replaced by the 195-prompt rerun values when z980 lands.)
+
+## 2026-10-29 22:30: round five on 46 prompts: no variant reaches the swap condition; sca_v2 (variant I) stays
+- i_ext75 (one more wide step, 128,120,112,96,80): 3/26 (11.5%), 77.8 s (+10%); losses ARNIQA -0.0088, MUSIQ_c -1.98;
+  clean softening IR, HPSv2, ARNIQA; vs AReA 9/10 wins (ARNIQA +0.014 n.s.).
+- i_bridge32: 4/26, 79.0 s (+12%); losses ARNIQA -0.0067, CLIP-IQA -0.012, MUSIQ_c -1.81; vs AReA 9/10 (CLIP-IQA n.s.).
+- i_160 (first wide step 160): 4/26, 77.9 s (+10%); losses ARNIQA -0.0096, MUSIQ_c -1.94; vs AReA 8/10.
+Swap condition (<= 2/26, every win over AReA intact, no real softening) not met by any; reruns continue with sca_v2.
