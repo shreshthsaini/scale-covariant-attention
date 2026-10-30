@@ -1,37 +1,308 @@
 {
- "_doc": "Picks for the teaser, the scale-coverage strip and the failure section. src+res+sid locate a PNG through paper/figures/src/imgsel.py (src: sca = out/main/sca_nb, area = out/main/area); 'path' is a glob used instead when the image is outside out/main. crops: [x, y, side] in native pixels; 'auto' = the 384 px window with the largest edge response in the central 60 percent; 'rel_from' reuses the relative centre of another entry's first crop. label: curated (chosen by eye, see .agent/notes/figure_curation_20261020.md) or random (seeded draw shown in the paper's random galleries).",
+ "_doc": "Picks for the teaser, the scale-coverage strip and the failure section. src+res+sid locate a PNG through paper/figures/src/imgsel.py (src: sca = out/main/sca_nb, area = out/main/area); 'path' is a glob used instead when the image is outside out/main. crops: [x, y, side] in native pixels; 'auto' = the 384 px window with the largest edge response in the central 60 percent; 'rel_from' reuses the relative centre of another entry's first crop. label: curated (chosen by eye, see .agent/notes/figure_curation_20261020.md) or random (seeded draw shown in the paper's random galleries). 2026-10-30: 'final': true takes the final operator's image of the same prompt and seed (imgsel.final_png; 'final': 'krea' with published_path uses imgsel.final_twin_krea); 'operator': 'previous' marks images that exist only for the operator without the schedule. The late-duplication examples are now chosen by build_images.py dup (failures_v2).",
  "teaser": [
-  {"id": "pano_castle", "src": "sca", "res": "2048x6144", "sid": "m2742856837225126754", "label": "curated", "native": true, "long_side": 2400},
-  {"id": "portrait", "src": "sca", "res": "4096x4096", "sid": "m1066207185399086750", "label": "curated", "long_side": 1100},
-  {"id": "mountains", "src": "sca", "res": "4096x4096", "sid": "m6845347395255545991", "label": "curated", "long_side": 1100},
-  {"id": "rivertown", "src": "sca", "res": "2048x4096", "sid": "m5370774387421928008", "label": "curated", "long_side": 1600}
+  {
+   "id": "pano_castle",
+   "src": "sca",
+   "res": "2048x6144",
+   "sid": "m2742856837225126754",
+   "label": "curated",
+   "native": true,
+   "long_side": 2400,
+   "final": true
+  },
+  {
+   "id": "portrait",
+   "src": "sca",
+   "res": "4096x4096",
+   "sid": "m1066207185399086750",
+   "label": "curated",
+   "long_side": 1100,
+   "final": true
+  },
+  {
+   "id": "mountains",
+   "src": "sca",
+   "res": "4096x4096",
+   "sid": "m6845347395255545991",
+   "label": "curated",
+   "long_side": 1100,
+   "final": true
+  },
+  {
+   "id": "rivertown",
+   "src": "sca",
+   "res": "2048x4096",
+   "sid": "m5370774387421928008",
+   "label": "curated",
+   "long_side": 1600,
+   "final": true
+  }
  ],
  "scale": [
-  {"id": "couple_2048", "group": "sizes", "res": "2048x2048", "path": "/scratch/09032/saini_2/sca/out/latency_curve/2048x2048/sca_nb/a4k_eval_4096_5968998903196670637_*_seed0.png", "label": "latency prompt", "crops": "auto"},
-  {"id": "couple_3072", "group": "sizes", "res": "3072x3072", "path": "/scratch/09032/saini_2/sca/out/latency_curve/3072x3072/sca_nb/a4k_eval_4096_5968998903196670637_*_seed0.png", "label": "latency prompt", "crops": "auto"},
-  {"id": "couple_4096", "group": "sizes", "res": "4096x4096", "path": "/scratch/09032/saini_2/sca/out/latency_curve/4096x4096/sca_nb/a4k_eval_4096_5968998903196670637_*_seed0.png", "label": "latency prompt", "crops": "auto"},
-  {"id": "couple_6144", "group": "sizes", "res": "6144x6144", "path": "/scratch/09032/saini_2/sca/out/latency_curve/6144x6144/sca_nb/a4k_eval_4096_5968998903196670637_*_seed0.png", "label": "latency prompt", "crops": "auto"},
-  {"id": "couple_8192", "group": "sizes", "res": "8192x8192", "path": "/scratch/09032/saini_2/sca/out/latency_curve/8192x8192/sca_nb/a4k_eval_4096_5968998903196670637_*_seed0.png", "label": "latency prompt", "crops": "auto"},
-  {"id": "wide_interior", "group": "shapes", "src": "sca", "res": "2048x4096", "sid": "7414267858891695058", "label": "curated", "model": "FLUX.1-dev", "crops": "auto"},
-  {"id": "pano_wall", "group": "shapes", "src": "sca", "res": "2048x6144", "sid": "4230887929316158402", "label": "curated", "model": "FLUX.1-dev", "crops": [[1530, 1000, 384]]},
-  {"id": "flux2_lake", "group": "shapes", "res": "4096x4096", "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/*8065862701789418887_*_seed0.png", "label": "curated", "model": "FLUX.2-dev", "crops": "auto"},
-  {"id": "krea_sheep", "group": "shapes", "res": "4096x4096", "path": "/scratch/09032/saini_2/sca/out/krea/sca_krea/4096x4096/*minus8343371271909676658_*_seed0.png", "label": "curated", "model": "FLUX.1-Krea-dev", "crops": "auto"}
+  {
+   "id": "couple_2048",
+   "group": "sizes",
+   "res": "2048x2048",
+   "path": "/scratch/09032/saini_2/sca/out/latency_curve_v2/2048x2048/sca_v2/a4k_eval_4096_5968998903196670637_*_seed0.png",
+   "label": "latency prompt",
+   "crops": "auto"
+  },
+  {
+   "id": "couple_3072",
+   "group": "sizes",
+   "res": "3072x3072",
+   "path": "/scratch/09032/saini_2/sca/out/latency_curve_v2/3072x3072/sca_v2/a4k_eval_4096_5968998903196670637_*_seed0.png",
+   "label": "latency prompt",
+   "crops": "auto"
+  },
+  {
+   "id": "couple_4096",
+   "group": "sizes",
+   "res": "4096x4096",
+   "path": "/scratch/09032/saini_2/sca/out/latency_curve_v2/4096x4096/sca_v2/a4k_eval_4096_5968998903196670637_*_seed0.png",
+   "label": "latency prompt",
+   "crops": "auto"
+  },
+  {
+   "id": "couple_6144",
+   "group": "sizes",
+   "res": "6144x6144",
+   "path": "/scratch/09032/saini_2/sca/out/latency_curve_v2/6144x6144/sca_v2/a4k_eval_4096_5968998903196670637_*_seed0.png",
+   "label": "latency prompt",
+   "crops": "auto"
+  },
+  {
+   "id": "couple_8192",
+   "group": "sizes",
+   "res": "8192x8192",
+   "path": "/scratch/09032/saini_2/sca/out/latency_curve_v2/8192x8192/sca_v2/a4k_eval_4096_5968998903196670637_*_seed0.png",
+   "label": "latency prompt",
+   "crops": "auto"
+  },
+  {
+   "id": "wide_interior",
+   "group": "shapes",
+   "src": "sca",
+   "res": "2048x4096",
+   "sid": "7414267858891695058",
+   "label": "curated",
+   "model": "FLUX.1-dev",
+   "crops": "auto",
+   "final": true
+  },
+  {
+   "id": "pano_wall",
+   "group": "shapes",
+   "src": "sca",
+   "res": "2048x6144",
+   "sid": "4230887929316158402",
+   "label": "curated",
+   "model": "FLUX.1-dev",
+   "crops": [
+    [
+     1530,
+     1000,
+     384
+    ]
+   ],
+   "final": true
+  },
+  {
+   "id": "flux2_lake",
+   "group": "shapes",
+   "res": "4096x4096",
+   "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/*8065862701789418887_*_seed0.png",
+   "label": "curated",
+   "model": "FLUX.2-dev",
+   "crops": "auto",
+   "operator": "previous"
+  },
+  {
+   "id": "krea_sheep",
+   "group": "shapes",
+   "res": "4096x4096",
+   "label": "curated",
+   "model": "FLUX.1-Krea-dev",
+   "crops": "auto",
+   "final": "krea",
+   "published_path": "/scratch/09032/saini_2/sca/out/krea/sca_krea/4096x4096/*minus8343371271909676658_*_seed0.png"
+  }
  ],
  "failures": [
-  {"id": "fail_hikers", "group": "late", "src": "sca", "res": "4096x4096", "sid": "m4844341235185759356", "label": "random", "note": "three extra hikers", "crops": [[424, 574, 512], [494, 3324, 512]]},
-  {"id": "fail_astronauts", "group": "late", "src": "sca", "res": "4096x4096", "sid": "m1071233499893339092", "label": "random", "note": "six extra small astronauts", "crops": [[1350, 3100, 768]]},
-  {"id": "fail_dancer", "group": "late", "src": "sca", "res": "4096x4096", "sid": "m2679953061215100202", "label": "random", "note": "a second, malformed airborne dancer", "crops": [[1900, 1650, 768]]},
-  {"id": "fail_steeple", "group": "late", "src": "sca", "res": "4096x4096", "sid": "m493587068337986360", "label": "random", "note": "the steeple drawn as about six fused spires", "crops": [[1664, 760, 768]]},
-  {"id": "gate_v0", "group": "gate", "src": "abl_v0", "res": "4096x4096", "sid": "3614061571823823193", "label": "development prompt", "note": "mix from step 1"},
-  {"id": "gate_w16", "group": "gate", "src": "dev_w16", "res": "4096x4096", "sid": "3614061571823823193", "label": "development prompt", "note": "16-token windows"},
-  {"id": "gate_sca", "group": "gate", "src": "sca", "res": "4096x4096", "sid": "3614061571823823193", "label": "development prompt", "note": "SCA"},
-  {"id": "local_sword_sca", "group": "local", "src": "sca", "res": "4096x4096", "sid": "7396058529551312081", "label": "curated failure", "note": "staircase sword", "crops": [[2304, 1408, 1024]], "long_side": 600},
-  {"id": "local_sword_area", "group": "local", "src": "area", "res": "4096x4096", "sid": "7396058529551312081", "label": "curated failure", "note": "AReA", "crops": [[2304, 1408, 1024]], "long_side": 600},
-  {"id": "local_block_sca", "group": "local", "src": "sca", "res": "4096x4096", "sid": "1316997283360365550", "label": "curated failure", "note": "blocky patch", "crops": [[2560, 1024, 768]], "long_side": 600},
-  {"id": "local_block_area", "group": "local", "src": "area", "res": "4096x4096", "sid": "1316997283360365550", "label": "curated failure", "note": "AReA", "crops": [[2560, 1024, 768]], "long_side": 600},
-  {"id": "local_foot_sca", "group": "local", "src": "sca", "res": "4096x4096", "sid": "m8648158440845565467", "label": "curated failure", "note": "extra foot", "crops": [[128, 1280, 1024]], "long_side": 600},
-  {"id": "local_foot_area", "group": "local", "src": "area", "res": "4096x4096", "sid": "m8648158440845565467", "label": "curated failure", "note": "AReA", "crops": [[128, 1280, 1024]], "long_side": 600},
-  {"id": "local_speckle_sca", "group": "local", "src": "sca", "res": "4096x4096", "sid": "m702025498990232048", "label": "curated failure", "note": "border speckle", "crops": [[0, 2560, 1024]], "long_side": 600},
-  {"id": "local_speckle_area", "group": "local", "src": "area", "res": "4096x4096", "sid": "m702025498990232048", "label": "curated failure", "note": "AReA", "crops": [[0, 2560, 1024]], "long_side": 600}
+  {
+   "id": "gate_v0",
+   "group": "gate",
+   "src": "abl_v0",
+   "res": "4096x4096",
+   "sid": "3614061571823823193",
+   "label": "development prompt",
+   "note": "mix from step 1",
+   "operator": "previous"
+  },
+  {
+   "id": "gate_w16",
+   "group": "gate",
+   "src": "dev_w16",
+   "res": "4096x4096",
+   "sid": "3614061571823823193",
+   "label": "development prompt",
+   "note": "16-token windows",
+   "operator": "previous"
+  },
+  {
+   "id": "gate_sca",
+   "group": "gate",
+   "src": "sca",
+   "res": "4096x4096",
+   "sid": "3614061571823823193",
+   "label": "development prompt",
+   "note": "SCA",
+   "operator": "previous"
+  },
+  {
+   "id": "local_sword_sca",
+   "group": "local",
+   "src": "sca",
+   "res": "4096x4096",
+   "sid": "7396058529551312081",
+   "label": "curated failure",
+   "note": "staircase sword",
+   "crops": [
+    [
+     2304,
+     1408,
+     1024
+    ]
+   ],
+   "long_side": 600,
+   "operator": "previous"
+  },
+  {
+   "id": "local_sword_area",
+   "group": "local",
+   "src": "area",
+   "res": "4096x4096",
+   "sid": "7396058529551312081",
+   "label": "curated failure",
+   "note": "AReA",
+   "crops": [
+    [
+     2304,
+     1408,
+     1024
+    ]
+   ],
+   "long_side": 600,
+   "operator": "previous"
+  },
+  {
+   "id": "local_block_sca",
+   "group": "local",
+   "src": "sca",
+   "res": "4096x4096",
+   "sid": "1316997283360365550",
+   "label": "curated failure",
+   "note": "blocky patch",
+   "crops": [
+    [
+     2560,
+     1024,
+     768
+    ]
+   ],
+   "long_side": 600,
+   "operator": "previous"
+  },
+  {
+   "id": "local_block_area",
+   "group": "local",
+   "src": "area",
+   "res": "4096x4096",
+   "sid": "1316997283360365550",
+   "label": "curated failure",
+   "note": "AReA",
+   "crops": [
+    [
+     2560,
+     1024,
+     768
+    ]
+   ],
+   "long_side": 600,
+   "operator": "previous"
+  },
+  {
+   "id": "local_foot_sca",
+   "group": "local",
+   "src": "sca",
+   "res": "4096x4096",
+   "sid": "m8648158440845565467",
+   "label": "curated failure",
+   "note": "extra foot",
+   "crops": [
+    [
+     128,
+     1280,
+     1024
+    ]
+   ],
+   "long_side": 600,
+   "operator": "previous"
+  },
+  {
+   "id": "local_foot_area",
+   "group": "local",
+   "src": "area",
+   "res": "4096x4096",
+   "sid": "m8648158440845565467",
+   "label": "curated failure",
+   "note": "AReA",
+   "crops": [
+    [
+     128,
+     1280,
+     1024
+    ]
+   ],
+   "long_side": 600,
+   "operator": "previous"
+  },
+  {
+   "id": "local_speckle_sca",
+   "group": "local",
+   "src": "sca",
+   "res": "4096x4096",
+   "sid": "m702025498990232048",
+   "label": "curated failure",
+   "note": "border speckle",
+   "crops": [
+    [
+     0,
+     2560,
+     1024
+    ]
+   ],
+   "long_side": 600,
+   "operator": "previous"
+  },
+  {
+   "id": "local_speckle_area",
+   "group": "local",
+   "src": "area",
+   "res": "4096x4096",
+   "sid": "m702025498990232048",
+   "label": "curated failure",
+   "note": "AReA",
+   "crops": [
+    [
+     0,
+     2560,
+     1024
+    ]
+   ],
+   "long_side": 600,
+   "operator": "previous"
+  }
  ]
 }

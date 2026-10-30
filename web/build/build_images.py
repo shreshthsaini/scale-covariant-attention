@@ -1,7 +1,12 @@
 """Build every WebP image the page uses from the original PNGs on scratch.
 
 Usage (sca env python, from the repo root):
-    nice -n 19 python web/build/build_images.py compare|teaser|scale|failures|method|all
+    nice -n 19 python web/build/build_images.py compare|teaser|scale|failures|method|dup|all
+
+SCA images are the final operator's (sca_v2: out/dupfix/sca_v2, out/dupfix_krea/sca_v2_krea and the second timing
+sweep out/latency_curve_v2) wherever that image exists for the same prompt and seed, checked by
+paper/figures/src/imgsel.final_png / final_twin_krea; every record carries "operator": "final" or "previous", and
+the page labels the previous operator's images.
 
 Inputs: generated PNGs under /scratch/09032/saini_2/sca/out (located with paper/figures/src/imgsel.py),
 web/build/compare_selection.json (select_compare.py), web/build/page_images.json (teaser, scale strip and
@@ -56,9 +61,12 @@ def compare():
     items = []
     for it in sel["items"]:
         x, y, s = it["box_xys"]
-        rec = dict(sid=it["sid"], label=it["label"], prompt=it["prompt"], box=[x, y, s], size=[4096, 4096], img={})
+        final = "sca_v2" in it["paths"]
+        rec = dict(sid=it["sid"], label=it["label"], prompt=it["prompt"], box=[x, y, s], size=[4096, 4096], img={},
+                   operator="final" if final else "previous")
         for m in sel["methods"]:
-            im = Image.open(it["paths"][m]).convert("RGB")
+            src = it["paths"]["sca_v2"] if (m == "sca" and final) else it["paths"][m]
+            im = Image.open(src).convert("RGB")
             full = save_webp(resized(im, FULL_PX), os.path.join(IMG, "compare", f"{it['sid']}_{m}.webp"), FULL_Q)
             crop = save_webp(im.crop((x, y, x + s, y + s)),
                              os.path.join(IMG, "compare", f"{it['sid']}_{m}_crop.webp"), CROP_Q)
@@ -79,6 +87,10 @@ _REL = {}   # entry id -> relative centre of its first crop
 
 
 def locate(entry):
+    if entry.get("final") and entry.get("model", "FLUX.1-dev") == "FLUX.1-dev":
+        return imgsel.final_png(entry["res"], entry["sid"])[0]
+    if entry.get("final") == "krea":
+        return imgsel.final_twin_krea(sorted(glob.glob(entry["published_path"]))[0])[0]
     if entry.get("path"):
         hits = sorted(glob.glob(entry["path"]))
         if not hits:
@@ -118,7 +130,9 @@ def one_image(entry, outdir, long_side):
     if crops:
         x, y, s = crops[0]
         _REL[entry["id"]] = ((x + s / 2) / W, (y + s / 2) / H)
-    rec = {k: v for k, v in entry.items() if k not in ("path", "crops")}
+    rec = {k: v for k, v in entry.items() if k not in ("path", "crops", "published_path")}
+    rec["operator"] = entry.get("operator") or ("final" if entry.get("final") or "/sca_v2" in path else "previous")
+    rec["source_png"] = path
     rec["crops"] = crops
     rec["size"] = [W, H]
     rec["prompt"] = entry.get("prompt") or imgsel.prompt(path)
@@ -164,6 +178,68 @@ def method():
         print("method", name, size)
 
 
+def dup():
+    """Uncurated before/after pairs (old operator vs sca_v2, same prompt and seed) and the final operator's
+    detector-flagged failures, both chosen by the rule of paper/figures/src/fig_dup.py: start at the ice-climber
+    prompt, walk the 95 people/animal prompt ids in string order and take the next prompts the detector flags
+    (for the old operator: N_PAIRS = 6, the paper's figure shows the first 3; for the final operator: the first 4)."""
+    import fig_dup as F
+    import csv as _csv
+    F.N_PAIRS = 6
+    pairs = F.pairs(set())
+    out = []
+    for k, pr in enumerate(pairs):
+        x0, y0, x1, y1 = pr["box"]
+        rec = dict(id=f"dup_pair_{k}", prompt_id=pr["prompt_id"], prompt=pr["prompt"], seed=pr["seed"], box=pr["box"],
+                   subject=pr["detector"]["subject"], implied=pr["detector"]["implied"],
+                   counts_old=pr["detector"]["published"]["counts"], counts_new=pr["detector"]["ours"]["counts"],
+                   flag_new=pr["detector"]["ours"]["dup"], label="uncurated")
+        for side, key in (("old", "published"), ("new", "ours")):
+            im = Image.open(pr[key]["png"]).convert("RGB")
+            rec[side] = save_webp(im.crop((x0, y0, x1, y1)), os.path.join(IMG, "dup", f"pair{k}_{side}.webp"), CROP_Q)
+            rec[side + "_png"] = pr[key]["png"]
+        out.append(rec)
+        print("dup pair", k, pr["prompt_id"], rec["counts_old"], "->", rec["counts_new"])
+    DATA["dup_pairs"] = out
+    # the final operator's own failures: first 4 flagged prompts from the ice climber on
+    dr = F.dup_rate_module()
+    dets = dr.load([str(F.V2_EVAL / "det")])
+    subjects = {x["id"]: x for x in json.loads(F.SUBJECTS.read_text())}
+    ids = sorted(r["prompt_id"] for r in _csv.DictReader(open(F.PERIMG)) if r["method"] == "sca_nb")
+    i0 = ids.index(F.START)
+    fails = []
+    for pid in ids[i0:] + ids[:i0]:
+        det = dets.get(("sca_v2", pid))
+        if det is None:
+            raise FileNotFoundError(f"no sca_v2 detection for {pid}")
+        flag, counts = F.verdict(dr, det, subjects[pid])
+        if not flag:
+            continue
+        ex = F.extra_boxes(dr, det, subjects[pid])
+        for side in (512, 768, 1024, 1536):
+            F.CROP_PX = side
+            try:
+                box, inside = F.crop_window(ex["extras"])
+                break
+            except TypeError:
+                continue
+        F.CROP_PX = 512
+        png = det["png"]
+        im = Image.open(png).convert("RGB")
+        n = len(fails)
+        rec = dict(id=f"fail_v2_{n}", group="late", prompt_id=pid, prompt=imgsel.prompt(png), size=list(im.size),
+                   crops=[[box[0], box[1], box[2] - box[0]]], counts=counts, subject=ex["query"], implied=ex["implied"],
+                   label="uncurated", operator="final", source_png=png,
+                   note=f"{ex['query']}: {ex['count']} found, {ex['implied']} asked for")
+        rec["full"] = save_webp(resized(im, 1100), os.path.join(IMG, "dup", f"fail_v2_{n}.webp"), FULL_Q)
+        rec["crop_files"] = [save_webp(im.crop(tuple(box)), os.path.join(IMG, "dup", f"fail_v2_{n}_crop0.webp"), CROP_Q)]
+        fails.append(rec)
+        print("dup fail", n, pid, counts, box)
+        if len(fails) == 4:
+            break
+    DATA["failures_v2"] = fails
+
+
 def write_js():
     path = os.path.join(WEB, "assets", "js", "images.js")
     old = {}
@@ -179,7 +255,7 @@ def write_js():
 if __name__ == "__main__":
     what = sys.argv[1] if len(sys.argv) > 1 else "all"
     jobs = dict(compare=compare, teaser=lambda: section("teaser", 1600), scale=lambda: section("scale", 1100),
-                failures=lambda: section("failures", 1100), method=method)
+                failures=lambda: section("failures", 1100), method=method, dup=dup)
     for name, fn in jobs.items():
         if what in (name, "all"):
             fn()

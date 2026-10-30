@@ -190,7 +190,7 @@
       meta.appendChild(el("p", { class: "prompt" }, [
         el("span", { class: "chip " + (it.label === "random" ? "" : "curated"), text: it.label === "random" ? "random draw" : "curated" }),
         el("q", { text: it.prompt })]));
-      meta.appendChild(el("p", { class: "small muted", text: "FLUX.1-dev, " + sizeLabel(it.size) + ", seed label 0 for every method. Crop: " + s + " × " + s + " pixels at (" + x + ", " + y + "), shown at native resolution." }));
+      meta.appendChild(el("p", { class: "small muted", text: "FLUX.1-dev, " + sizeLabel(it.size) + ", seed label 0 for every method. SCA: " + (it.operator === "final" ? "final operator (window schedule and bridge)" : "previous operator, without the schedule") + ". Crop: " + s + " × " + s + " pixels at (" + x + ", " + y + "), shown at native resolution; the window was fixed on the previous operator's image." }));
       /* warm the next prompt */
       var nx = items[(state.i + 1) % items.length];
       [nx.img.sca.full, nx.img[state.base].full].forEach(function (u) { var p = new Image(); p.src = u; });
@@ -259,20 +259,20 @@
       shapes.appendChild(el("figure", {}, [
         el("div", { class: "img" }, [img(d.full, (d.model || "FLUX.1-dev") + " with SCA at " + sizeLabel(d.size) + ": " + d.prompt), el("span", { class: "size-tag", text: sizeLabel(d.size) })]),
         el("div", { class: "crop" }, [img(d.crop_files[0], "1:1 crop")]),
-        el("figcaption", { class: "meta strip-meta", html: "<b>" + (d.model || "FLUX.1-dev") + "</b>, " + sizeLabel(d.size) })]));
+        el("figcaption", { class: "meta strip-meta", html: "<b>" + (d.model || "FLUX.1-dev") + "</b>, " + sizeLabel(d.size) + (d.operator === "previous" ? '<br><span class="prev-tag">previous operator</span>' : "") })]));
     });
   })();
 
   /* Failure cases */
   (function failures() {
     var data = IM.failures || []; var late = $("#fail-late"), gate = $("#fail-gate"), local = $("#fail-local"); if (!late) return;
-    data.filter(function (d) { return d.group === "late"; }).forEach(function (d) {
+    (IM.failures_v2 || []).forEach(function (d) {
       late.appendChild(el("figure", {}, [
-        el("div", { class: "img" }, [img(d.full, "SCA, random draw: " + d.prompt)]),
+        el("div", { class: "img" }, [img(d.full, "SCA, final operator, uncurated: " + d.prompt)]),
         el("div", { class: "crops" }, d.crop_files.map(function (c) { return img(c, "1:1 crop: " + d.note); })),
-        el("figcaption", { class: "meta", text: d.note.charAt(0).toUpperCase() + d.note.slice(1) + "." })]));
+        el("figcaption", { class: "meta", html: "<b>" + d.note.charAt(0).toUpperCase() + d.note.slice(1) + "</b> (detector). " + d.prompt.split(",")[0] + "." })]));
     });
-    var gl = { gate_v0: "Mix from step 1", gate_w16: "Mix from step 1, 16-token windows", gate_sca: "SCA: global-only opening" };
+    var gl = { gate_v0: "Mix from step 1", gate_w16: "Mix from step 1, 16-token windows", gate_sca: "Global-only opening, no schedule" };
     data.filter(function (d) { return d.group === "gate"; }).forEach(function (d) {
       gate.appendChild(el("figure", {}, [el("div", { class: "img" }, [img(d.full, gl[d.id] + ": " + d.prompt)]), el("figcaption", { class: "meta", text: gl[d.id] })]));
     });
@@ -314,6 +314,67 @@
     });
     svg.appendChild(s("text", { x: W - right, y: H - 1, "text-anchor": "end" }, "SCA better →"));
     host.appendChild(svg);
+  })();
+  (function schedBar() {
+    var host = $("#sched-bar"); if (!host) return;
+    var open = val("config.opening_steps"), nat = val("config.native_steps"), wins = String(num("config.win_sched") || "").split(",").map(function (x) { return parseInt(x, 10); }).filter(function (x) { return !isNaN(x); });
+    var w0 = val("config.window"); if (isNaN(open) || isNaN(nat) || !wins.length) return;
+    var cells = [];
+    for (var i = 0; i < open; i++) cells.push(["glob", ""]);
+    wins.forEach(function (w) { cells.push(["wide", String(w)]); });
+    for (var j = 0; j < nat; j++) cells.push(["nat", j === 0 ? String(w0) : ""]);
+    cells.forEach(function (c) { host.appendChild(el("span", { class: "c " + c[0], text: c[1] })); });
+    var leg = el("div", { class: "sched-legend" }, [
+      el("span", { class: "k glob", text: "global view only (" + open + " steps)" }),
+      el("span", { class: "k wide", text: "shrinking windows (" + wins.length + ")" }),
+      el("span", { class: "k nat", text: "native " + w0 + "-token windows (" + nat + ")" })]);
+    host.parentNode.insertBefore(leg, host.nextSibling);
+  })();
+  function hbarChart(hostSel, rows, opts) {
+    var host = $(hostSel); if (!host) return;
+    rows = rows.filter(function (r) { return !isNaN(r.v); });
+    if (!rows.length) { host.textContent = "Numbers not built yet."; return; }
+    var W = 520, rh = 24, top = 6, left = opts.left || 150, right = 64, H = top + rows.length * rh + 30;
+    var hi = opts.max || 100;
+    function X(v) { return left + v / hi * (W - left - right); }
+    var svg = s("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": opts.aria });
+    for (var t = 0; t <= hi; t += opts.step || 20) {
+      svg.appendChild(s("line", { x1: X(t), x2: X(t), y1: top - 2, y2: H - 26, stroke: t === 0 ? "var(--chart-base)" : "var(--chart-grid)", "stroke-width": 1 }));
+      svg.appendChild(s("text", { x: X(t), y: H - 12, "text-anchor": "middle" }, t + "%"));
+    }
+    rows.forEach(function (r, i) {
+      var y = top + i * rh + rh / 2, c = r.ours ? "var(--accent)" : (r.old ? "var(--warn)" : "var(--chart-light)");
+      svg.appendChild(s("text", { x: left - 8, y: y + 4, "text-anchor": "end", class: r.ours ? "acc" : "lbl" }, r.label));
+      svg.appendChild(s("rect", { x: X(0), y: y - 7, width: Math.max(1.5, X(r.v) - X(0)), height: 14, rx: 2, fill: c, opacity: r.ours || r.old ? 1 : .85 }));
+      if (!isNaN(r.lo) && !isNaN(r.hi)) svg.appendChild(s("line", { x1: X(r.lo), x2: X(r.hi), y1: y, y2: y, stroke: "var(--ink)", "stroke-width": 1.2, opacity: .55 }));
+      svg.appendChild(s("text", { x: X(isNaN(r.hi) ? r.v : Math.max(r.v, r.hi)) + 6, y: y + 4, class: r.ours ? "acc" : "" }, r.text));
+    });
+    host.appendChild(svg);
+  }
+  (function gateChart() {
+    var spec = [["a46_sca_g93", "Gate σ = 0.93", 0, 1], ["a46_sca_nb", "Gate σ = " + (num("config.gate_sigma") || "0.89") + " (old SCA)", 0, 1], ["a46_sca_g85", "Gate σ = 0.85", 0, 0], ["a46_abl_globalonly", "Global view only", 0, 0], ["a46_dup_i_shrink", "SCA, final operator", 1, 0]];
+    hbarChart("#chart-gate", spec.map(function (r) {
+      var k = val("dup." + r[0] + ".k"), n = val("dup." + r[0] + ".n");
+      return { label: r[1], v: 100 * k / n, lo: NaN, hi: NaN, ours: r[2] === 1, old: r[3] === 1, text: k + " of " + n };
+    }), { aria: "Prompts with a repeated person or animal on a 46-prompt subset, by gate", left: 160 });
+  })();
+  (function dupChart() {
+    var spec = [["sca_v2", "SCA (ours)", 1, 0], ["sca_nb", "SCA, no schedule", 0, 1], ["sigma", "SigMa", 0, 0], ["dype", "DyPE", 0, 0], ["sega", "SEGA", 0, 0], ["hrdit", "HRDiT", 0, 0], ["full", "Full attention", 0, 0], ["sca_v2_prog", "Progressive SCA", 0, 0], ["ultraimage", "UltraImage", 0, 0], ["area", "AReA", 0, 0]];
+    hbarChart("#chart-dup", spec.map(function (r) {
+      var v = val("dup." + r[0] + ".rate");
+      return { label: r[1], v: v, lo: val("dup." + r[0] + ".lo"), hi: val("dup." + r[0] + ".hi"), ours: r[2] === 1, old: r[3] === 1, text: Math.round(v) + "%" };
+    }), { aria: "Share of people or animal prompts with a repeated subject at 4096 squared, all methods, Wilson 95 percent intervals", left: 120 });
+  })();
+  (function dupPairs() {
+    var host = $("#dup-pairs"); if (!host) return;
+    var cap = function (c) { return String(c || "").split(";").map(function (t) { var a = t.split(":"), b = (a[1] || "").split("/"); return a[0] + " " + b[0] + " of " + b[1]; }).join(", "); };
+    (IM.dup_pairs || []).forEach(function (d) {
+      host.appendChild(el("figure", {}, [
+        el("div", { class: "two" }, [
+          el("div", { class: "pi" }, [img(d.old, "Old operator, 1:1 crop: " + d.prompt), el("span", { class: "tag", text: "old" })]),
+          el("div", { class: "pi" }, [img(d["new"], "Final operator, same prompt, seed and window: " + d.prompt), el("span", { class: "tag new", text: "final" })])]),
+        el("figcaption", { class: "meta", html: "<b>Detector:</b> " + cap(d.counts_old) + " &rarr; " + cap(d.counts_new) + ". <span class=\"q\">" + d.prompt.split(",")[0] + ".</span>" })]));
+    });
   })();
   (function latencyChart() {
     var host = $("#chart-latency"); if (!host) return;

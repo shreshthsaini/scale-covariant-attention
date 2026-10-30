@@ -63,7 +63,7 @@
         <div class="tile" style="flex:1 1 0"><img src="assets/img/teaser/mountains.webp" width="1100" height="1100" alt="Illustration of a glowing mountain and a waterfall at night, 4096 by 4096." loading="lazy"><span class="size-tag">4096 &times; 4096</span></div>
         <div class="tile" style="flex:2 1 0"><img src="assets/img/teaser/rivertown.webp" width="1600" height="800" alt="A river town under a castle in autumn, 2048 by 4096." loading="lazy"><span class="size-tag">2048 &times; 4096</span></div>
       </div>
-      <figcaption>FLUX.1-dev with SCA, one pass, no training. Curated samples; sizes are height &times; width.</figcaption>
+      <figcaption>FLUX.1-dev with SCA, one pass, no training. Curated samples, picked on the previous operator's images and shown with the final operator at the same prompt and seed; sizes are height &times; width.</figcaption>
     </figure>
 
     <p class="tldr">FLUX.1-dev is trained near one megapixel. <strong>SCA lets it sample at 4096&sup2; by giving every attention head its own mix of a local window and a coarse view of the whole image.</strong> The weights, one per head, noise level and image-to-window ratio, are fitted once at 1024&sup2;. At 4096&sup2; SCA takes <span data-num="speed.sca_s">77.1</span>&nbsp;s per image, <span data-num="speed.ratio">2.63×</span> less than AReA, and is significantly better than AReA on <span data-num="paired.n_better">12</span> of <span data-num="paired.n_total">15</span> metrics and worse on <span data-num="paired.n_worse">0</span>. It still repeats a person or animal in <span data-num="dup.sca_v2.pct">26%</span> of the prompts that name one, against <span data-num="dup.area.pct">4%</span> for AReA.</p>
@@ -320,7 +320,7 @@
 
 <footer>
   <div class="wrap prose">
-    <p>Curated images were picked after viewing every candidate at native resolution, keeping prompts on which every baseline scores near its own median; random draws are labelled. Every number on this page is read from the CSV files in <code>results/</code> by <code>web/build/build_numbers.py</code>. Images: FLUX.1-dev unless noted, seed label 0, 28 steps, guidance 4.5.</p>
+    <p>SCA images come from the final operator (window schedule and bridge) unless labelled "previous operator". Curated prompts were picked on the previous operator's images after viewing every candidate at native resolution, keeping prompts on which every baseline scores near its own median; random draws and uncurated examples are labelled. Every number on this page is read from the CSV files in <code>results/</code> by <code>web/build/build_numbers.py</code>. Images: FLUX.1-dev unless noted, seed label 0, 28 steps, guidance 4.5.</p>
   </div>
 </footer>
 
