@@ -5,7 +5,7 @@ Sources (read only):
   published SCA (sca_nb) included.
 * results/dup_audit_20261027/dup46_20261029/decision*.txt: scripts/dup_decide.py output, one file per round.
   Per run: "STRICT" line (significant losses against published SCA over 12 metrics: paired 95% interval
-  entirely on the losing side), main line (people k/n and median seconds per image over the 50 generated
+  entirely on the losing side), main line (people k/n and median seconds per image over the 46 generated
   images, "time X vs Y" with Y published SCA), and the stratified line (real softening = the interval on
   prompts the detector finds clean in both runs lies below zero). A later round overrides an earlier one.
 * results/dup_audit_20261027/dup46_20261029/vs_area_46.txt: published SCA against AReA on the 46 prompts.
@@ -185,7 +185,7 @@ def main():
          r"\centering\scriptsize",
          r"\caption{\textbf{Every schedule variant on the 46-prompt subset.} Each row is one run at $4096^2$, seed 0: "
          r"Dup.\ is the number of the 26 people and animal prompts with a duplicated subject (open-vocabulary detector), s/img "
-         r"is the median time per image over the 50 generated images, Worse lists the metrics (of 12) whose paired "
+         r"is the median time per image over the 46 generated images, Worse lists the metrics (of 12) whose paired "
          r"95\% interval against published \sca{} lies on the losing side, and Softens repeats that test for the ten "
          r"per-image metrics on prompts with no duplicated subject in either run. "
          + key + "}",
