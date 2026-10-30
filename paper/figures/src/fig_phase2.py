@@ -7,12 +7,13 @@ The first run freezes selection from complete paired outputs. Later runs use tha
 manifest and verify source hashes. No metric or visual inspection enters selection.
 
 Final operator (2026-10-30): for specs with "final_sca" the SCA column shows the final
-operator (sca_v2, out/dupfix/sca_v2) instead of the published operator (sca_nb).
-final_sca() keeps the frozen draw, points each prompt's SCA source at the final operator's
-image of the same prompt and seed (imgsel.final_twin), and recomputes the crop window by
-the frozen rule over every method (after checking that the rule reproduces the frozen
-window from the published images); the published source and window stay under
-"published_sca".
+operator (sca_v2, out/dupfix/sca_v2; on FLUX.1-Krea-dev sca_v2_krea, out/dupfix_krea/sca_v2_krea)
+instead of the published operator (sca_nb; sca_krea). final_sca() keeps the frozen draw,
+points each prompt's SCA source at the final operator's image of the same prompt and seed
+(imgsel.final_twin or imgsel.final_twin_krea), and recomputes the crop window by the frozen
+rule over every method (after checking that the rule reproduces the frozen window from the
+published images); the published source and window stay under "published_sca". Specs without
+"final_sca" show the published operator and head its column "SCA w/o schedule".
 """
 
 import argparse
@@ -25,8 +26,8 @@ from pathlib import Path
 from PIL import Image
 
 import imgsel
-from fig_qual import (G_GROUP, G_PAIR, G_ROW, G_SECTION, Geo, auto_box, count_word, g_row, grid_snippet,
-                      grid_tiles, method_head, rel, t_crop, t_full)
+from fig_qual import (G_GROUP, G_PAIR, G_ROW, G_SECTION, OURS_PUB, OURS_PUB_SHORT, Geo, auto_box, count_word, g_row,
+                      grid_snippet, grid_tiles, method_head, rel, t_crop, t_full)
 
 REPO = Path(__file__).resolve().parents[3]
 EVAL100 = REPO / "results/evidence/prompts/eval100.jsonl"
@@ -43,19 +44,19 @@ SPECS = {
         # The frozen draw (2026-10-17) was over the main set without the four development prompts. The paper now
         # evaluates all 195 prompts, so the caption names that pool; both counts come from the frozen manifest.
         "caption": lambda manifest: (
-            r"\textbf{At $4096^2$ DyPE and SEGA leave speckle, UltraImage softens the planet, and SCA is sharp "
-            r"but adds extra people in two prompts.} "
-            rf"{count_word(len(manifest['prompts']))} of {manifest['eligible_count']} non-development prompts "
-            r"drawn at random (seed~17); SCA with the window schedule; full images above 1:1 crops of one window."
+            r"\textbf{At $4096^2$ DyPE and SEGA leave speckle, UltraImage softens the planet, and SCA with the "
+            r"schedule is sharp but adds people in two prompts.} "
+            rf"{count_word(len(manifest['prompts']))} of {manifest['eligible_count']} prompts drawn at random; "
+            r"1:1 crops below."
         ),
     },
     "flux2": {
         "res": "4096x4096", "n": 4,
         "methods": ["flux2_full", "flux2_sca"],
-        "caption": (
-            r"\textbf{FLUX.2-dev at $4096^2$: full attention blurs and repeats; SCA is sharp but duplicates "
-            r"subjects in three rows and distorts the portrait.} Four of 50 paired prompts drawn at random "
-            r"(seed~17); 1:1 crops follow each image."
+        "caption": (  # laid out by fig_gallery_large.py (display record); kept equal to its caption
+            r"\textbf{FLUX.2-dev, $4096^2$: full attention blurs and repeats; SCA without the schedule is sharp "
+            r"but duplicates subjects in three rows and distorts the portrait.} Four of 50 prompts drawn at "
+            r"random; 1:1 crops follow each image."
         ),
     },
     "6144": {"res": "6144x6144", "n": 4, "methods": ["area", "sca"]},
@@ -63,18 +64,18 @@ SPECS = {
     "8192_complete": {
         "res": "8192x8192", "n": 4, "methods": ["area", "sca"], "expected": 12,
         "caption": (
-            r"\textbf{At $8192^2$ both fail: AReA blurs and speckles, and SCA breaks into blocks and stripes.} "
-            r"Four of 12 paired prompts drawn at random; after each image, a 1:1 crop of its outlined "
-            r"window. Exploratory."
+            r"\textbf{At $8192^2$ both fail: AReA blurs and speckles, and SCA without the schedule breaks into "
+            r"blocks and stripes.} Exploratory: four of 12 paired prompts drawn at random; 1:1 crops follow each "
+            r"image."
         ),
     },
     "6144_complete": {
         "res": "6144x6144", "n": 4, "methods": ["area", "sca"],
         "expected": 100, "prompt_manifest": EVAL100,
         "caption": (
-            r"\textbf{At $6144^2$ AReA's crops dissolve into speckle or streaks; SCA keeps the layouts but "
-            r"shows stripes, block speckle, or extra figures.} Four of 100 prompts drawn at random; after each "
-            r"image, a 1:1 crop of its window."
+            r"\textbf{At $6144^2$ AReA's crops dissolve into speckle or streaks; SCA without the schedule keeps "
+            r"layouts but shows stripes, block speckle, or extra figures.} Four of 100 prompts drawn at random; "
+            r"1:1 crops follow each image."
         ),
     },
     "krea_complete": {
@@ -83,10 +84,12 @@ SPECS = {
         "expected": 100, "prompt_manifest": EVAL100,
         "provenance_receipts": [REPO / "results/evidence/krea_baseline_provenance" / name
                                 for name in ("receipt.json", "repair_preparation.json", "algorithm_review.json")],
+        "final_sca": "krea_sca",  # SCA column: the final operator on Krea (sca_v2_krea), see final_sca()
         "caption": (
-            r"\textbf{On FLUX.1-Krea-dev at $4096^2$ the crops look alike, but DyPE ghosts the face and SCA "
-            r"melts the lone figure.} Two of 100 four-method prompts drawn at random; full images above 1:1 "
-            r"crops of one window."
+            # Audited 2026-10-30 at 1:1 (sca_v2_krea): the portrait is clean; the lone figure's legs melt into
+            # hanging strands and a second person stands on the left rocks. DyPE ghosts the face in both versions.
+            r"\textbf{On FLUX.1-Krea-dev at $4096^2$ DyPE ghosts the face; SCA melts the lone figure's legs and "
+            r"adds a second person.} Two of 100 prompts drawn at random; SCA with the schedule; 1:1 crops below."
         ),
     },
 }
@@ -217,29 +220,40 @@ def validate_krea_overlay(repair, indexes, targets):
             raise ValueError(f"Krea inherited sidecar changed: {sidecar}")
 
 
+# SCA column -> (final-operator twin of a published image, method label, image description for the record)
+FINAL_TWINS = {
+    "sca": (imgsel.final_twin, "sca_v2", "out/dupfix/sca_v2 (imgsel.final_twin of each published image: same "
+                                         "prompt, prompt id, derived seed and file name)"),
+    "krea_sca": (imgsel.final_twin_krea, "sca_v2_krea",
+                 "out/dupfix_krea/sca_v2_krea (imgsel.final_twin_krea of each published Krea image: same prompt, "
+                 "prompt id, derived seed, file name and Krea calibration table)"),
+}
+
+
 def final_sca(tag, manifest):
     """Switch a frozen record's SCA column to the final operator (sca_v2); the draw is unchanged."""
+    col = "sca" if SPECS[tag]["final_sca"] is True else SPECS[tag]["final_sca"]
+    twin, method, images = FINAL_TWINS[col]
     methods, size = manifest["methods"], 512 * int(manifest["resolution"].split("x")[0]) // 4096
     for entry in manifest["prompts"]:
-        src = entry["sources"]["sca"]
+        src = entry["sources"][col]
         pub = entry.setdefault("published_sca", dict(
             {k: src[k] for k in ("png", "sha256", "sidecar", "sidecar_sha256") if k in src},
             crop_xy_size=list(entry["crop_xy_size"])))
         if sha256(pub["png"]) != pub["sha256"] or ("sidecar" in pub and sha256(pub["sidecar"]) != pub["sidecar_sha256"]):
             raise ValueError(f"Changed source image: {pub['png']}")
-        png, digest = imgsel.final_twin(pub["png"])
+        png, digest = twin(pub["png"])
         sidecar = Path(png).with_suffix(".json")
-        entry["sources"]["sca"] = {"png": png, "sha256": digest, "config": json.loads(sidecar.read_text())["config"],
-                                   "sidecar": str(sidecar), "sidecar_sha256": sha256(sidecar)}
-        others = {m: imgsel.load(entry["sources"][m]["png"]) for m in methods if m != "sca"}
-        published = [others[m] if m != "sca" else imgsel.load(pub["png"]) for m in methods]
+        entry["sources"][col] = {"png": png, "sha256": digest, "config": json.loads(sidecar.read_text())["config"],
+                                 "sidecar": str(sidecar), "sidecar_sha256": sha256(sidecar)}
+        others = {m: imgsel.load(entry["sources"][m]["png"]) for m in methods if m != col}
+        published = [others[m] if m != col else imgsel.load(pub["png"]) for m in methods]
         if list(auto_box(published, size)) != pub["crop_xy_size"]:
             raise ValueError(f"{tag} {entry['short_id']}: the crop rule does not reproduce the frozen window")
-        final = [others[m] if m != "sca" else imgsel.load(png) for m in methods]
+        final = [others[m] if m != col else imgsel.load(png) for m in methods]
         entry["crop_xy_size"] = list(auto_box(final, size))
     manifest["final_operator"] = dict(
-        method="sca_v2", images="out/dupfix/sca_v2 (imgsel.final_twin of each published image: same prompt, prompt "
-                                "id, derived seed and file name)",
+        method=method, images=images,
         switched="2026-10-30, by fig_phase2.final_sca: the frozen draw is unchanged; every SCA source is the final "
                  "operator's image; every crop window is recomputed by crop_rule over every method; the published "
                  "source and window are kept per prompt under published_sca")
@@ -334,10 +348,11 @@ def build(tag):
         geo = Geo(len(methods), (len(methods) - 1) * G_GROUP)
     else:
         geo = Geo(2 * len(methods), len(methods) * G_PAIR + (len(methods) - 1) * G_GROUP)
+    ours = "SCA (ours)" if spec.get("final_sca") else (OURS_PUB_SHORT if vertical else OURS_PUB)
     head = []
     for k, method in enumerate(methods):
-        head += ([G_GROUP] if k else []) + [method_head(method, 1, 0, NAMES) if vertical
-                                            else method_head(method, 2, G_PAIR, NAMES)]
+        head += ([G_GROUP] if k else []) + [method_head(method, 1, 0, NAMES, ours=ours) if vertical
+                                            else method_head(method, 2, G_PAIR, NAMES, ours=ours)]
     rows = [(g_row(head), G_ROW)]
     written = {}
     for entry in manifest["prompts"]:

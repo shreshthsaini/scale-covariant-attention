@@ -40,8 +40,8 @@ import re
 from PIL import Image
 
 import imgsel
-from fig_qual import (G_GROUP, G_PAIR, G_ROW, G_SECTION, GRID_DPI, JPEG_Q, NAMES, ROW_OURS, SNIP, Geo, auto_box,
-                      g_row, method_head, rel, t_crop, t_full)
+from fig_qual import (G_GROUP, G_PAIR, G_ROW, G_SECTION, GRID_DPI, JPEG_Q, NAMES, OURS_PUB, ROW_OURS, SNIP, Geo,
+                      auto_box, g_row, method_head, rel, t_crop, t_full)
 
 SCRIPT = "paper/figures/src/fig_gallery_large.py"
 HEAD_NAMES = dict(NAMES, flux2_full="Full attention")
@@ -54,26 +54,24 @@ SPECS = {
     "gallery_4096": dict(
         k=10, parts=[("gallery_4096", 5), ("gallery_4096_p2", 5)], retired=["gallery_4096_p3"],
         captions=[
-            r"\textbf{Uncurated, $4096^2$: SCA keeps texture that AReA blurs or grids, but adds a faint second "
-            r"dancer in row one.} Prompts one to five of 32 drawn at random (seed~0); SCA with the window "
-            r"schedule; after each image, a 1:1 crop of its outlined window.",
-            r"\textbf{Uncurated samples at $4096^2$, continued.} Prompts six to ten of the same draw; "
-            r"protocol as in Figure~\ref{fig:gallery_4096}. SCA turns the steeple into a cluster of spires and "
-            r"adds two extra hikers and a second astronaut in rows one, four, and five.",
+            r"\textbf{At $4096^2$ SCA keeps texture that AReA blurs or grids, but adds a faint second dancer.} "
+            r"Prompts one to five of 32 drawn at random; SCA with the schedule; 1:1 crops follow.",
+            r"\textbf{At $4096^2$, continued: SCA turns the steeple into clustered spires and adds two extra "
+            r"hikers and a second astronaut.} Prompts six to ten of the random draw in "
+            r"Figure~\ref{fig:gallery_4096}; SCA with the schedule.",
         ]),
     "gallery_4096x2048": dict(k=2, captions=[
-        r"\textbf{At $4096\times2048$ both methods keep the layout; SCA avoids AReA's faint weave pattern and "
-        r"keeps sharper rock texture.} The first two of six prompts drawn at random; AReA above, SCA (with the "
-        r"window schedule) below, each followed by a 1:1 crop of the outlined window."]),
+        r"\textbf{At $2048\times4096$ both methods keep the layout; SCA avoids AReA's faint weave and keeps "
+        r"sharper rock texture.} First two of six prompts drawn at random; AReA above, SCA (with the schedule) "
+        r"below; 1:1 crops follow."]),
     "gallery_6144x2048": dict(k=2, captions=[
-        r"\textbf{At $6144\times2048$ SCA resolves finer texture than AReA but adds two extra climbers.} The "
-        r"first two of six prompts drawn at random; AReA above, SCA (with the window schedule) below, each "
-        r"followed by a 1:1 crop of the outlined window."]),
-    "gallery_flux2": dict(
+        r"\textbf{At $2048\times6144$ SCA resolves finer texture than AReA but adds two extra climbers.} First "
+        r"two of six prompts drawn at random; AReA above, SCA (with the schedule) below; 1:1 crops follow."]),
+    "gallery_flux2": dict(  # no sca_v2 run on FLUX.2-dev: the published operator, headed "SCA w/o schedule"
         k=4, captions=[
-            r"\textbf{FLUX.2-dev at $4096^2$: full attention blurs and repeats; SCA is sharp but duplicates "
-            r"subjects in three rows and distorts the portrait.} Four of 50 paired prompts drawn at random "
-            r"(seed~17); 1:1 crops follow each image."]),
+            r"\textbf{FLUX.2-dev, $4096^2$: full attention blurs and repeats; SCA without the schedule is sharp "
+            r"but duplicates subjects in three rows and distorts the portrait.} Four of 50 prompts drawn at "
+            r"random; 1:1 crops follow each image."]),
 }
 
 
@@ -162,10 +160,10 @@ def to_final(name, man, px):
     return changed
 
 
-def square_rows(t, sids, methods, by, res):
+def square_rows(t, sids, methods, by, res, ours):
     head = []
     for k, m in enumerate(methods):
-        head += ([G_GROUP] if k else []) + [method_head(m, 2, G_PAIR, HEAD_NAMES)]
+        head += ([G_GROUP] if k else []) + [method_head(m, 2, G_PAIR, HEAD_NAMES, ours=ours)]
     rows = [(g_row(head), G_ROW)]
     for sid in sids:
         box, cells = tuple(by[sid]["crop_xy_size"]), []
@@ -224,7 +222,8 @@ def build(name):
         sids = shown[start:start + count]
         start += count
         figures[f"fig:{part}"] = sids
-        rows = stacked_rows(t, sids, methods, by, res, asp) if stacked else square_rows(t, sids, methods, by, res)
+        rows = (stacked_rows(t, sids, methods, by, res, asp) if stacked
+                else square_rows(t, sids, methods, by, res, "SCA (ours)" if name in FINAL else OURS_PUB))
         span = f"prompts {start - count + 1} to {start} of " if len(parts) > 1 else ""
         comments = [f"Shows {span}the first {k} of the {n} prompts in the frozen draw order of "
                     f"{name}/provenance.json (see its display record), in draw order.",

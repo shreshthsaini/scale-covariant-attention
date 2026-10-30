@@ -50,6 +50,11 @@ FINAL_FLAGS = {"gate_sigma": 0.89, "window": 64, "pi_variant": "head",
                "win_sched": [[0.88, 128], [0.86, 112], [0.84, 96], [0.82, 80]],
                "bridge_cells": 8, "bridge_k": 16, "win_pi_match": True, "win_pi_interp": True}
 ROOTS["sca_v2"] = FINAL_ROOT
+# The final operator on FLUX.1-Krea-dev (duplication-fix run kr, label sca_v2_krea): the same flags and the Krea
+# calibration table of the published Krea run (out/krea/sca_krea), at 4096^2, under the published Krea file names.
+KREA_PUBLISHED_ROOT = OUT + "/krea/sca_krea/{res}"
+KREA_FINAL_ROOT = OUT + "/dupfix_krea/sca_v2_krea/{res}"
+KREA_FINAL_RES = ("4096x4096",)
 
 
 def root(label, res):
@@ -123,13 +128,24 @@ def final_twin(png):
     """The final operator's image of one published SCA image: main/sca_nb/<res>/<name> -> dupfix/sca_v2/<res>/<name>.
 
     Checked before it is returned: a complete sidecar whose png_sha256 matches the file, method sca_v2 with the
-    FINAL_FLAGS, and the same prompt id, prompt, resolution, seed, derived seed, steps, guidance and model as the
-    published image (same prompt, same initial noise). Returns (path, sha256 of the PNG)."""
+    FINAL_FLAGS, the published image's calibration table, and the same prompt id, prompt, resolution, seed, derived
+    seed, steps, guidance and model as the published image (same prompt, same initial noise). Returns (path, sha256
+    of the PNG)."""
+    return _twin(png, PUBLISHED_ROOT, FINAL_ROOT, FINAL_RES, "sca_v2")
+
+
+def final_twin_krea(png):
+    """final_twin on FLUX.1-Krea-dev: krea/sca_krea/<res>/<name> -> dupfix_krea/sca_v2_krea/<res>/<name>, with the
+    same checks (method sca_v2_krea)."""
+    return _twin(png, KREA_PUBLISHED_ROOT, KREA_FINAL_ROOT, KREA_FINAL_RES, "sca_v2_krea")
+
+
+def _twin(png, published_root, final_root, sizes, method):
     png = os.path.abspath(png)
     res = os.path.basename(os.path.dirname(png))
-    if res not in FINAL_RES or os.path.dirname(png) != PUBLISHED_ROOT.format(res=res):
+    if res not in sizes or os.path.dirname(png) != published_root.format(res=res):
         raise ValueError(f"not a published SCA image at a size the final operator has: {png}")
-    twin = os.path.join(FINAL_ROOT.format(res=res), os.path.basename(png))
+    twin = os.path.join(final_root.format(res=res), os.path.basename(png))
     with open(png[:-4] + ".json") as fh:
         pub = json.load(fh)["config"]
     with open(twin[:-4] + ".json") as fh:
@@ -139,10 +155,13 @@ def final_twin(png):
         raise ValueError(f"incomplete or hash-mismatched final-operator image: {twin}")
     cfg = meta["config"]
     flags = {k: cfg.get("sca", {}).get(k) for k in FINAL_FLAGS}
-    if cfg.get("method") != "sca_v2" or flags != FINAL_FLAGS:
+    if cfg.get("method") != method or flags != FINAL_FLAGS:
         raise ValueError(f"{twin}: not the final operator (method {cfg.get('method')}, flags {flags})")
     same = ("prompt_id", "prompt", "res", "seed", "derived_seed", "steps", "guidance", "model")
     diff = {k: (pub.get(k), cfg.get(k)) for k in same if pub.get(k) != cfg.get(k)}
+    table = (pub.get("sca", {}).get("pi_table_sha256"), cfg.get("sca", {}).get("pi_table_sha256"))
+    if table[0] != table[1]:
+        diff["pi_table_sha256"] = table
     if diff:
         raise ValueError(f"{twin} differs from the published image in {diff}")
     return twin, digest

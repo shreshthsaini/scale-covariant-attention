@@ -346,7 +346,7 @@ def main() -> None:
     caption = (
         r"\textbf{\sca{} keeps layout and fine detail across three aspect ratios without training.} "
         r"Curated \sca{} outputs at $4096^2$, $2048\times4096$ and $2048\times6144$, picked by eye for "
-        r"variety and clean results, so curation favours \sca{}; insets are 1:1 crops of the outlined windows.")
+        r"clean results, so curation favours \sca{}; insets are 1:1 crops.")
     comments = ["%% %s %s (%s): %s" % (r["role"], r["config"]["prompt_id"].split("_")[-1],
                                        r["config"]["res"], " ".join(r["prompt"].split())[:140])
                 for r in records]
