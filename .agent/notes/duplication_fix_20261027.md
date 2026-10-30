@@ -417,3 +417,15 @@ mean at sigma 0.9 (low contrast), which costs preference scores. x_ reruns stay 
 Frontier so far: the variants at or below 2/26 (bridge_win128 1/26, anchor+bridge 2/26) soften clean prompts; the
 variants without clean-prompt softening (F50, plain bridge) stay at 5/26 (19%); MUSIQ_c -1.3 is the bridge's
 constant cost. x_ reruns stay held.
+
+## 2026-10-29 21:15: round four (lead) on 46 prompts: NO VARIANT PASSES; fleet left to idle out
+- (I) smooth shrink 128,112,96,80 on steps 8-11 (--win-sched 0.88:128,0.86:112,0.84:96,0.82:80), weights interpolated
+  log-linearly between the scale-2 and scale-4 tables (--win-pi-interp, commit 7bd64c0), + bridge 16: 4/26 (15%),
+  77.1 s (+9%); losses ARNIQA -0.0074, MUSIQ_c -1.73; clean-prompt softening IR, ARNIQA.
+- (J) 128 windows only while sigma > 0.85 (3 steps), scale-2 weight, + bridge: 5/26 (19%), 77.8 s (+10%); losses
+  ARNIQA -0.0064, MUSIQ_c -1.8; clean-prompt softening IR, ARNIQA.
+- Against AReA on the same 46 prompts (results/dup_audit_20261027/dup46_20261029/vs_area_46.txt, per-image paired
+  bootstrap): published SCA wins all 10 per-image metrics significantly; bridge, F50 and I keep all 10; J keeps 9
+  (CLIP-IQA +0.020 n.s.); E keeps 8 (CLIP-IQA +0.021, ARNIQA +0.014 n.s.). IR vs AReA: SCA +0.29, bridge +0.35,
+  F50 +0.35, I +0.34, J +0.33, E +0.30. Set-level patch FID/KID vs AReA were not recomputed for the variants.
+- Fleet: pending queue empty after h_; taskq/STOP not recreated (workers time out). x_ reruns still held.
