@@ -1,0 +1,55 @@
+sca_v2 cost from the formulas (cost_v2.py); no timing.
+Schedule (FLUX.1 shift, mu = 1.15, 28 steps), 1-based step: sigma, phase, local window w
+  step  1 (scheduler index  0): sigma 1.0000  opening  w = -
+  step  2 (scheduler index  1): sigma 0.9884  opening  w = -
+  step  3 (scheduler index  2): sigma 0.9762  opening  w = -
+  step  4 (scheduler index  3): sigma 0.9634  opening  w = -
+  step  5 (scheduler index  4): sigma 0.9499  opening  w = -
+  step  6 (scheduler index  5): sigma 0.9356  opening  w = -
+  step  7 (scheduler index  6): sigma 0.9205  opening  w = -
+  step  8 (scheduler index  7): sigma 0.9045  opening  w = -
+  step  9 (scheduler index  8): sigma 0.8876  shrink   w = 128
+  step 10 (scheduler index  9): sigma 0.8696  shrink   w = 112
+  step 11 (scheduler index 10): sigma 0.8504  shrink   w = 96
+  step 12 (scheduler index 11): sigma 0.8300  shrink   w = 80
+  step 13 (scheduler index 12): sigma 0.8081  native   w = 64
+  step 14 (scheduler index 13): sigma 0.7847  native   w = 64
+  step 28 (scheduler index 27): sigma 0.1047  native   w = 64
+  phases: 8 opening, 4 shrink, 16 native
+
+4096^2: grid 256x256, N = 65536, T = 512, N0 = 4096 block centres, bridge R = 1024
+Keys per image query, local branch of sca_v2 (T + R + w^2), and the emulated ratio r = 256 / w:
+      w   window    K_loc       r      t
+    128    16384    17920   2.000  0.000
+    112    12544    14080   2.286  0.193
+     96     9216    10752   2.667  0.415
+     80     6400     7936   3.200  0.678
+     64     4096     5632   4.000  1.000
+  published local branch: T + n0^2 = 4608; global branch (both operators): T + N0 = 4608; full: N + T = 66048
+
+Query-key pairs per head and layer, one step:
+  full                          4.3623e+09
+  global only (opening)         3.0435e+08
+  published, after the gate     6.0634e+08  (ratio to full 7.19)
+  sca_v2, w = 128 (sigma 0.8876) 1.4788e+09  (ratio 2.95)
+  sca_v2, w = 112 (sigma 0.8696) 1.2271e+09  (ratio 3.56)
+  sca_v2, w =  96 (sigma 0.8504) 1.0090e+09  (ratio 4.32)
+  sca_v2, w =  80 (sigma 0.8300) 8.2444e+08  (ratio 5.29)
+  sca_v2, native w = 64         6.7345e+08  (ratio 6.48)
+
+Whole 28-step trajectory, pairs per head and layer (sum over steps):
+  operator                                    pairs   full/x
+  full attention                         1.2215e+11     1.00
+  published SCA, no gate                 1.6977e+10     7.19
+  published SCA (8 opening steps)        1.4562e+10     8.39
+  sca_v2 (8 opening, 4 shrink, 16 native)   1.7749e+10     6.88
+  sca_v2 / published = 1.219  (+21.9% pairs)
+  extra over published: shrink steps (wider windows + bridge) 2.1139e+09, native-step bridge keys 1.0737e+09
+  bridge selection (not a query-key pair): one squared distance per key element, N h d = 2.013e+08 elements per block and step, 0.0024% of that step's sca_v2 attention FLOPs at w = 64
+
+Table D.1 (tab:flops) rows, analytic attention FLOPs per image (4 d per pair, 24 heads, 57 blocks, 28 steps):
+  size        grid            full  SCA no gate    SCA gated       sca_v2  f/gat   f/v2
+  2048x4096   128x256     2.17e+16     5.97e+15     5.12e+15     6.24e+15    4.2    3.5
+  4096x4096   256x256     8.56e+16     1.19e+16     1.02e+16     1.24e+16    8.4    6.9
+  2048x6144   128x384     4.84e+16     8.93e+15     7.66e+15     9.34e+15    6.3    5.2
+  (full, SCA no gate and SCA gated reproduce the published Table D.1 to three digits)

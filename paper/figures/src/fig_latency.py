@@ -1,5 +1,17 @@
 """Seconds per image against resolution for full attention, AReA and SCA (batch 1, one GH200).
 
+Switch. Until the final operator's latency curve lands (v2swap.landed("latency_curve_v2"), that is,
+results/latency_curve_v2/summary.csv exists) the figures are the published ones, SCA = sca_nb. Once
+it lands, the "SCA (ours)" curve is that file's sca_v2 rows read through v2swap.latency() (median,
+minimum and maximum of the timed images), published SCA (sca_nb, now SCA without the schedule) is
+not plotted, and the speedups, exponents, headline ratio and caption snippet are recomputed from the
+plotted cells. Full attention and AReA keep the per-image cells described below, and each must equal
+results/latency_curve_summary.csv wherever that file holds it (it lacks full attention at 6144^2, so
+it cannot replace them). Every run first prints one status line, "fig_latency.py: pending
+(latency_curve_v2)" or "fig_latency.py: landed (latency_curve_v2)". With SCA_V2_MOCK=DIR
+(v2swap.py --make-mock) the outputs go to DIR/figures/ and the snippet to
+DIR/figures/snippets/latency.tex, never into paper/figures.
+
 Input, one of:
   --csv PATH [PATH ...]   columns res,method,seconds plus an image id (image or prompt_id); res
                like 4096x4096, one row per image (the median over rows of a (res, method) cell is
@@ -58,6 +70,7 @@ from matplotlib.ticker import FixedLocator, NullLocator
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import scafig as sf  # noqa: E402
+import v2swap  # noqa: E402  (the sca_v2 switch: landed runs and their loaders)
 from k1data import FIGDIR  # noqa: E402
 
 REPO = os.path.normpath(os.path.join(FIGDIR, "..", ".."))
@@ -68,7 +81,9 @@ WARMUP_PREFIX = "sca_latency_warmup"  # id of the excluded first image of every 
 CSV_4096 = os.path.join(REPO, "results", "latency_4096_batch1.csv")
 CAMPAIGN_CSV = os.path.join(REPO, "results", "baseline46", "base_summary.csv")
 CAMPAIGN_191_CSV = os.path.join(REPO, "results", "e1_ultraimage_base_summary.csv")
-SNIPPET = os.path.join(FIGDIR, "snippets", "latency.tex")
+OUTDIR = str(v2swap.MOCK / "figures") if v2swap.MOCK else FIGDIR  # a mock run never writes into paper/figures
+SNIPPET = os.path.join(OUTDIR, "snippets", "latency.tex")
+V2_METHOD = "sca_v2"  # the final operator's rows in results/latency_curve_v2/summary.csv
 
 METHODS = {  # canonical key -> (label, color, marker); drawn in this order (SCA on top)
     "full": ("Full attention", sf.METHOD_COLOR["full"], "^"),
@@ -155,6 +170,43 @@ def read_curves(paths):
         print(msg)
     rows = [(res, m, s) for (res, m), vals in cells.items() for s in vals]
     return rows, origin
+
+
+def src_name(path):
+    """Basename for the curve CSVs in results/, the repository-relative (or absolute) path otherwise."""
+    in_results = os.path.dirname(os.path.abspath(path)) == os.path.join(REPO, "results")
+    return os.path.basename(path) if in_results else rel(path)
+
+
+def switch_sca(med, ranges, origin):
+    """Landed: SCA's cells become the sca_v2 rows of v2swap.latency() and published SCA (sca_nb) is dropped.
+
+    Full attention and AReA keep their per-image cells; each must equal results/latency_curve_summary.csv
+    (median, minimum, maximum, n) wherever that file holds it. Edits the three dicts in place and returns the
+    sca_v2 source path."""
+    published = v2swap.latency(v2=False)
+    for key in [k for k in med if k[1] != "sca"]:
+        if key in published:
+            got = (med[key][0], min(ranges[key]), max(ranges[key]))
+            if max(abs(a - b) for a, b in zip(got, published[key][:3])) > 1e-6 or med[key][1] != published[key][3]:
+                raise ValueError(f"{key}: per-image cell {got} disagrees with "
+                                 f"{rel(v2swap.LATENCY_PUBLISHED)} {published[key]}")
+    for key in [k for k in med if k[1] == "sca"]:
+        del med[key], ranges[key]
+        origin.pop(key, None)
+    src = str(v2swap.LATENCY_V2)
+    for (res, m), (s, lo, hi, n) in v2swap.latency(v2=True).items():
+        if m != V2_METHOD:
+            continue
+        if n != 3:
+            raise ValueError(f"{res} {m}: {n} timed images in {rel(src)}; the captions report the median of three")
+        med[res, "sca"] = (s, n)
+        ranges[res, "sca"] = [lo, hi]
+        origin[res, "sca"] = src
+    if not any(k[1] == "sca" for k in med):
+        raise ValueError(f"no {V2_METHOD} rows in {rel(src)}")
+    print(f"landed: SCA (ours) = {V2_METHOD} rows of {rel(src)}; published SCA (sca_nb) not plotted")
+    return src
 
 
 def read_4096(path):
@@ -464,7 +516,7 @@ def hrdit_clean_seconds(path=BATCH1_CSV, res=CAMPAIGN_RES):
 def write_snippet(path, resolutions, med, speed, expo, sources):
     """Caption numbers come from the same CSVs as the plot. At most 50 words: a bold claim, then the
     measurement conditions in two sentences (HRDiT's clean time is quoted in the main text)."""
-    big = resolutions[-1]
+    big = max((r for r in resolutions if "area" in speed[r]), key=tokens)  # the largest size SCA and AReA share
     full_last = max((r for r in resolutions if (r, "full") in med), key=tokens, default=None)
     stops = f" full attention was not run at {tex_res(big)}." if full_last not in (None, big) else ""
     cap = (
@@ -474,6 +526,7 @@ def write_snippet(path, resolutions, med, speed, expo, sources):
         r"  Grey ratios: speedup over AReA per size; exponents fit seconds $\propto N^b$ ($N$ image tokens)."
     )
     curves = " and ".join(rel(p) for p in sources)
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     with open(path, "w") as fh:
         fh.write(f"% Generated by paper/figures/src/fig_latency.py from {curves}\n"
                  f"% (clean batch-1 sweep) and {rel(BATCH1_CSV)} (HRDiT's clean time); the\n"
@@ -493,9 +546,12 @@ def main():
     ap.add_argument("--csv", nargs="+", default=list(CURVE_CSVS),
                     help="curve CSVs; a (res, method) cell comes from the first file that has it")
     ap.add_argument("--source", choices=("auto", "curve", "4096"), default="auto")
-    default_out = os.path.join(FIGDIR, "latency")
+    default_out = os.path.join(OUTDIR, "latency")
     ap.add_argument("--out", default=default_out)
     args = ap.parse_args()
+    landed = v2swap.landed(v2swap.LATENCY)
+    print(f"fig_latency.py: {'landed' if landed else 'pending'} ({v2swap.LATENCY})"
+          + (f" [mock {v2swap.MOCK}]" if v2swap.MOCK else ""), flush=True)
     # The paper snippet is written only for the default output; trial runs put it beside --out.
     snippet = SNIPPET if os.path.abspath(args.out) == default_out else args.out + "_snippet.tex"
 
@@ -510,9 +566,15 @@ def main():
     ranges = {}
     for res, method, seconds in rows:
         ranges.setdefault((res, method), []).append(seconds)
+    v2_src = switch_sca(med, ranges, origin) if landed else None
+    if v2_src:
+        srcs.append(v2_src)
     resolutions = sorted({r for r, _ in med}, key=lambda r: np.prod(parse_res(r)))
     for (res, m), (s, n) in sorted(med.items(), key=lambda kv: (tokens(kv[0][0]), kv[0][1])):
-        print(f"  {res} {m}: median {s:.2f} s over {n} images ({os.path.basename(origin[res, m])})")
+        print(f"  {res} {m}: median {s:.2f} s over {n} images ({src_name(origin[res, m])})")
+    no_sca = [r for r in resolutions if (r, "sca") not in med]
+    if no_sca:
+        print(f"WARNING: no SCA cell at {', '.join(no_sca)}; the fastest-at-every-size check skips them")
 
     speed = {r: {b: med[r, b][0] / med[r, "sca"][0] for b in ("full", "area")
                  if (r, b) in med and (r, "sca") in med} for r in resolutions}
@@ -535,7 +597,8 @@ def main():
               f"[{v['ci_low']:.2f}, {v['ci_high']:.2f}] over {v['n_prompts']} prompts")
     print(f"campaign mean at {CAMPAIGN_RES}, ultraimage: {ultra191['mean']:.2f} s over "
           f"{ultra191['n_prompts']} prompts (provenance only)")
-    fastest = all(med[r, "sca"][0] == min(v for (rr, _), (v, _) in med.items() if rr == r) for r in resolutions)
+    fastest = all(med[r, "sca"][0] == min(v for (rr, _), (v, _) in med.items() if rr == r)
+                  for r in resolutions if (r, "sca") in med)
     fastest &= camp["sca_nb"]["mean"] == min(v["mean"] for v in camp.values())
     if not fastest:
         raise ValueError("caption lead no longer holds: SCA is not the fastest measured method at some size")
@@ -561,6 +624,12 @@ def main():
         "timing_scope": "pipeline including text encoding and decoding, not model load; three "
                         "timed images with no excluded warm-up",
         "use": "quoted in the caption; not plotted"}}
+    v2_prov = {} if v2_src is None else {"sca_v2_switch": {
+        "state": "landed" + (f" (mock tree {v2swap.MOCK})" if v2swap.MOCK else ""),
+        "source": v2_src, "sha256": sha256(v2_src), "method": V2_METHOD, "plotted_as": METHODS["sca"][0],
+        "not_plotted": "sca_nb (published SCA, now SCA without the schedule)",
+        "full_and_area": "per-image cells as in the published figure; each equals "
+                         "results/latency_curve_summary.csv wherever that file holds it"}}
     with open(args.out + "_provenance.json", "w") as handle:
         json.dump({"sources": [{"path": p, "sha256": sha256(p), "cells": sum(o == p for o in origin.values())}
                                for p in srcs],
@@ -575,12 +644,13 @@ def main():
                    "exponent_fit": "least squares of log median seconds on log N, N = (W/16)(H/16) tokens",
                    "exponents": {m: round(v, 6) for m, v in sorted(expo.items())},
                    "groups": [{"res": r, "method": m, "median_seconds": value, "n": n,
-                               "source": os.path.basename(origin[r, m])}
+                               "source": src_name(origin[r, m])}
                               for (r, m), (value, n) in sorted(med.items())],
                    "speedup_sca_over_area": {r: round(v["area"], 4) for r, v in speed.items() if "area" in v},
                    "full_attention": {"measured": full_res,
                                       "not_plotted": "8192x8192 not run by design (quadratic attention cost)"},
                    **hrdit_prov,
+                   **v2_prov,
                    "campaign_means": {
                        "source": CAMPAIGN_CSV, "sha256": sha256(CAMPAIGN_CSV), "res": CAMPAIGN_RES,
                        "statistic": "mean seconds per image over the campaign's prompts on shared nodes, "

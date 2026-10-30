@@ -1,0 +1,791 @@
+{
+  "figure": "paper/figures/dup.pdf",
+  "script": "paper/figures/src/fig_dup.py",
+  "printed_size_in": [
+    5.5,
+    1.98
+  ],
+  "printed_size_texpt": [
+    397.5,
+    143.1
+  ],
+  "caption_draft": "\\textbf{A gradual handover cuts late duplication.} (a)~A later gate cuts it but costs quality; ours keeps $\\sigma_g=0.89$; (b)~all methods, 95 people and animal prompts at $4096^2$. (c)~Uncurated, same seed: the ice climber, then the next two detector-flagged prompts by id; one astronaut copy remains.",
+  "caption_words": 47,
+  "visual_check": {
+    "a4k_eval_4096_minus1071233499893339092": "one astronaut copy remains"
+  },
+  "detector": "Grounding DINO boxes (scripts/dup_detect.py), counted by scripts/dup_rate.py at threshold 0.35; a prompt is duplicated when a person or animal subject with an implied count is detected more often than implied; validated 20/20 on labelled published-SCA images (results/dup_audit_20261027/validation_people_dup_reviewed.txt)",
+  "panel_a": {
+    "set": "46 prompts (abl50 minus dev4), 26 name a person or animal with a count; 4096x4096, seed 0",
+    "gate_sweep": [
+      {
+        "method": "sca_g93",
+        "n": 26,
+        "dup": 20,
+        "rate": 0.7692,
+        "lo95": 0.5795,
+        "hi95": 0.8897,
+        "tick": "0.93",
+        "gate_sigma": 0.93,
+        "steps": 28,
+        "opening_steps": 6,
+        "image_dir": "/scratch/09032/saini_2/sca/out/gate/sca_g93/4096x4096"
+      },
+      {
+        "method": "sca_nb",
+        "n": 26,
+        "dup": 15,
+        "rate": 0.5769,
+        "lo95": 0.3895,
+        "hi95": 0.7446,
+        "tick": "0.89",
+        "gate_sigma": 0.89,
+        "steps": 28,
+        "opening_steps": 8,
+        "image_dir": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096"
+      },
+      {
+        "method": "sca_g85",
+        "n": 26,
+        "dup": 7,
+        "rate": 0.2692,
+        "lo95": 0.137,
+        "hi95": 0.4608,
+        "tick": "0.85",
+        "gate_sigma": 0.85,
+        "steps": 28,
+        "opening_steps": 11,
+        "image_dir": "/scratch/09032/saini_2/sca/out/gate/sca_g85/4096x4096"
+      },
+      {
+        "method": "abl_globalonly",
+        "n": 26,
+        "dup": 1,
+        "rate": 0.0385,
+        "lo95": 0.0068,
+        "hi95": 0.1889,
+        "tick": "global only",
+        "gate_sigma": null,
+        "steps": 28,
+        "opening_steps": 28,
+        "image_dir": "/scratch/09032/saini_2/sca/out/abl/abl_globalonly/4096x4096"
+      }
+    ],
+    "sca_v2": {
+      "method": "dup_i_shrink",
+      "n": 26,
+      "dup": 4,
+      "rate": 0.1538,
+      "lo95": 0.0615,
+      "hi95": 0.3353,
+      "label": "dup_i_shrink (46-prompt run of sca_v2)"
+    },
+    "area": {
+      "method": "area",
+      "n": 26,
+      "dup": 1,
+      "rate": 0.0385,
+      "lo95": 0.0068,
+      "hi95": 0.1889
+    },
+    "annotation": {
+      "source": "results/e7_sca_g85_deltas.csv",
+      "n_metrics": 10,
+      "worse": [
+        "aesthetic",
+        "arniqa",
+        "clipiqa",
+        "hpsv2",
+        "hpsv21",
+        "musiq",
+        "musiq_crop1024"
+      ],
+      "n_worse": 7,
+      "rule": "paired 95% bootstrap interval (gate 0.85 minus gate 0.89) entirely below zero",
+      "deltas": {
+        "aesthetic": [
+          -0.186467,
+          -0.256069,
+          -0.116142
+        ],
+        "arniqa": [
+          -0.0401447,
+          -0.0592904,
+          -0.0234175
+        ],
+        "clip": [
+          -0.267632,
+          -0.817721,
+          0.258898
+        ],
+        "clipiqa": [
+          -0.0323204,
+          -0.0476216,
+          -0.0169736
+        ],
+        "hpsv2": [
+          -0.00478996,
+          -0.00691386,
+          -0.00278362
+        ],
+        "hpsv21": [
+          -0.00851035,
+          -0.0122058,
+          -0.00481939
+        ],
+        "ir": [
+          -0.0152185,
+          -0.0980093,
+          0.0643461
+        ],
+        "musiq": [
+          -1.88167,
+          -3.5079,
+          -0.204414
+        ],
+        "musiq_crop1024": [
+          -2.04338,
+          -2.9967,
+          -1.13247
+        ],
+        "pickscore": [
+          -0.122585,
+          -0.270063,
+          0.0249861
+        ]
+      },
+      "text": "7/10 metrics worse",
+      "at": "gate 0.85 row"
+    },
+    "drawn": "grey dots: published operator at each gate; green dot: sca_v2 at the published gate (arrow from published SCA); purple dashed line: AReA; no intervals drawn (Wilson 95% intervals listed here)"
+  },
+  "panel_b": {
+    "set": "195 Aesthetic-4K prompts at 4096x4096, seed 0; 95 people/animal prompts",
+    "rows": [
+      {
+        "method": "sca_nb",
+        "n": 95,
+        "dup": 54,
+        "rate": 0.5684,
+        "lo95": 0.4681,
+        "hi95": 0.6634,
+        "name": "SCA w/o schedule"
+      },
+      {
+        "method": "sigma",
+        "n": 95,
+        "dup": 26,
+        "rate": 0.2737,
+        "lo95": 0.1941,
+        "hi95": 0.3708,
+        "name": "SigMa"
+      },
+      {
+        "method": "dype",
+        "n": 95,
+        "dup": 16,
+        "rate": 0.1684,
+        "lo95": 0.1064,
+        "hi95": 0.2562,
+        "name": "DyPE"
+      },
+      {
+        "method": "sega",
+        "n": 95,
+        "dup": 11,
+        "rate": 0.1158,
+        "lo95": 0.0659,
+        "hi95": 0.1955,
+        "name": "SEGA"
+      },
+      {
+        "method": "hrdit",
+        "n": 95,
+        "dup": 10,
+        "rate": 0.1053,
+        "lo95": 0.0582,
+        "hi95": 0.183,
+        "name": "HRDiT"
+      },
+      {
+        "method": "sca_prog",
+        "n": 95,
+        "dup": 8,
+        "rate": 0.0842,
+        "lo95": 0.0433,
+        "hi95": 0.1575,
+        "name": "Progressive SCA"
+      },
+      {
+        "method": "full",
+        "n": 95,
+        "dup": 7,
+        "rate": 0.0737,
+        "lo95": 0.0361,
+        "hi95": 0.1444,
+        "name": "Full attention"
+      },
+      {
+        "method": "ultraimage",
+        "n": 95,
+        "dup": 5,
+        "rate": 0.0526,
+        "lo95": 0.0227,
+        "hi95": 0.1173,
+        "name": "UltraImage"
+      },
+      {
+        "method": "area",
+        "n": 95,
+        "dup": 4,
+        "rate": 0.0421,
+        "lo95": 0.0165,
+        "hi95": 0.1033,
+        "name": "AReA"
+      },
+      {
+        "method": "sca_v2",
+        "name": "SCA (ours)",
+        "pending": true
+      }
+    ],
+    "sca_v2_source": null,
+    "sca_v2_status": "pending: drawn as an empty outline, no number",
+    "interval": "Wilson 95% (scripts/dup_rate.py wilson), whiskers; value at the whisker end"
+  },
+  "panel_c": {
+    "rule": "Fixed before any sca_v2 image was opened: start at a4k_eval_4096_997293625843621481 (ice climber); walk the 95 people/animal prompt ids of results/dup_audit_20261027/per_image_a4k195_people.csv in Python string order, wrapping at the end, and take the next prompts with dup = 1 for sca_nb until there are 3 (count set by the panel layout). sca_v2 images are shown whatever they show; failures are kept.",
+    "box_rule": "Detector boxes kept by dup_rate.count_boxes (thr 0.35, sides 800 and 1333) for the subject with the largest excess count; the `implied` largest boxes are the intended subjects, the rest are extra copies; the box is the 512 px square holding the most extra copies (ties: higher summed score), centred on their union and clamped to the image. The same box is drawn on both images; both crops come from it.",
+    "prompts": [
+      "a4k_eval_4096_997293625843621481",
+      "a4k_eval_4096_minus1071233499893339092",
+      "a4k_eval_4096_minus2447481760626661988"
+    ],
+    "pairs": [
+      {
+        "prompt_id": "a4k_eval_4096_997293625843621481",
+        "prompt": "A climber, wearing a helmet and blue clothing, ascends through a narrow, icy crevice, using an ice axe for support amidst glacial blue ice formations.",
+        "seed": 0,
+        "derived_seed": 5637214635292760740,
+        "detector": {
+          "subject": "person",
+          "implied": 1,
+          "count_published": 5,
+          "published": {
+            "dup": 1,
+            "counts": "person:5/1"
+          },
+          "ours": {
+            "dup": null,
+            "counts": null,
+            "source": "not yet scored (z980 detector step pending)"
+          },
+          "intended_boxes": [
+            [
+              1595,
+              1266,
+              2480,
+              2905
+            ]
+          ],
+          "extra_boxes": [
+            {
+              "box": [
+                2747,
+                0,
+                2814,
+                128
+              ],
+              "score": 0.478
+            },
+            {
+              "box": [
+                2925,
+                862,
+                2970,
+                992
+              ],
+              "score": 0.3546
+            },
+            {
+              "box": [
+                2638,
+                54,
+                2679,
+                148
+              ],
+              "score": 0.5006
+            },
+            {
+              "box": [
+                2669,
+                0,
+                2721,
+                66
+              ],
+              "score": 0.4353
+            }
+          ]
+        },
+        "box": [
+          2470,
+          0,
+          2982,
+          512
+        ],
+        "extras_in_box": [
+          {
+            "box": [
+              2747,
+              0,
+              2814,
+              128
+            ],
+            "score": 0.478
+          },
+          {
+            "box": [
+              2638,
+              54,
+              2679,
+              148
+            ],
+            "score": 0.5006
+          },
+          {
+            "box": [
+              2669,
+              0,
+              2721,
+              66
+            ],
+            "score": 0.4353
+          }
+        ],
+        "published": {
+          "png": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_997293625843621481_a9f7355211_seed0.png",
+          "png_sha256": "7bc8214512592cc886af203f4251fcad1929b1108078d097e7f58d204b2407eb",
+          "method": "sca_nb",
+          "tiles": {
+            "full": {
+              "path": "paper/figures/dup/997293625843621481_sca_nb_full.jpg",
+              "sha256": "d36b94a4a301a351302ae4e315aa47dfb15785c7574fccfa5074b186501ff102",
+              "px": 156
+            },
+            "crop": {
+              "path": "paper/figures/dup/997293625843621481_sca_nb_crop.jpg",
+              "sha256": "ab973e94f6f9813f8e0d122f57400df655ed9e63a56ca8fc3d2d8bbeadc94503",
+              "px": 156
+            }
+          }
+        },
+        "ours": {
+          "png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_997293625843621481_a9f7355211_seed0.png",
+          "png_sha256": "d33515c4067e5adc11632a89bf2fcdaf376480aa7761e8de771b50e18464dd9e",
+          "method": "sca_v2",
+          "sca": {
+            "n0": 64,
+            "tile": 8,
+            "window": 64,
+            "pool": "center",
+            "chunk": null,
+            "gate_sigma": 0.89,
+            "band": 0,
+            "route": 0.0,
+            "pool_factors": [
+              4,
+              4
+            ],
+            "pi_variant": "head",
+            "pi_const": null,
+            "sigma_star": null,
+            "pi_scale": 4,
+            "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+            "win_sched": [
+              [
+                0.88,
+                128
+              ],
+              [
+                0.86,
+                112
+              ],
+              [
+                0.84,
+                96
+              ],
+              [
+                0.82,
+                80
+              ]
+            ],
+            "bridge_cells": 8,
+            "bridge_k": 16,
+            "bridge_lo": 0.0,
+            "win_pi_match": true,
+            "win_pi_interp": true
+          },
+          "seconds": 76.23249601013958,
+          "other_run": null,
+          "tiles": {
+            "full": {
+              "path": "paper/figures/dup/997293625843621481_sca_v2_full.jpg",
+              "sha256": "e0b279f5facdd091773200729b5f374e68fcee6e0317771b5b2fb7af0c85508e",
+              "px": 156
+            },
+            "crop": {
+              "path": "paper/figures/dup/997293625843621481_sca_v2_crop.jpg",
+              "sha256": "0eebb65a6b556dc139407116665dadcd15cea48ad8ac1a8949f264cbca50ca9f",
+              "px": 156
+            }
+          }
+        }
+      },
+      {
+        "prompt_id": "a4k_eval_4096_minus1071233499893339092",
+        "prompt": "A solitary astronaut in a white spacesuit sits on a rock, surrounded by tall, rocky formations under a blue sky with soft clouds. The landscape is barren and dusty, with some sparse vegetation scattered across the ground.",
+        "seed": 0,
+        "derived_seed": 3764505341424426628,
+        "detector": {
+          "subject": "person",
+          "implied": 1,
+          "count_published": 7,
+          "published": {
+            "dup": 1,
+            "counts": "person:7/1;astronaut:3/1"
+          },
+          "ours": {
+            "dup": null,
+            "counts": null,
+            "source": "not yet scored (z980 detector step pending)"
+          },
+          "intended_boxes": [
+            [
+              1887,
+              2216,
+              2407,
+              3057
+            ]
+          ],
+          "extra_boxes": [
+            {
+              "box": [
+                2019,
+                3341,
+                2211,
+                3552
+              ],
+              "score": 0.6945
+            },
+            {
+              "box": [
+                2746,
+                3127,
+                2867,
+                3434
+              ],
+              "score": 0.6727
+            },
+            {
+              "box": [
+                1292,
+                3395,
+                1469,
+                3603
+              ],
+              "score": 0.6779
+            },
+            {
+              "box": [
+                293,
+                3717,
+                444,
+                3913
+              ],
+              "score": 0.7077
+            },
+            {
+              "box": [
+                384,
+                2661,
+                465,
+                2792
+              ],
+              "score": 0.5412
+            },
+            {
+              "box": [
+                990,
+                637,
+                1096,
+                735
+              ],
+              "score": 0.3919
+            }
+          ]
+        },
+        "box": [
+          112,
+          3559,
+          624,
+          4071
+        ],
+        "extras_in_box": [
+          {
+            "box": [
+              293,
+              3717,
+              444,
+              3913
+            ],
+            "score": 0.7077
+          }
+        ],
+        "published": {
+          "png": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus1071233499893339092_fbd1fdeeac_seed0.png",
+          "png_sha256": "a74ca9c3068597d02ae88a37408fee97794a8e1990272db01015c82922b65593",
+          "method": "sca_nb",
+          "tiles": {
+            "full": {
+              "path": "paper/figures/dup/minus1071233499893339092_sca_nb_full.jpg",
+              "sha256": "e458f71b97f5b373c09eaaaaf933f55fbc331efb066670433df7f764173a867a",
+              "px": 156
+            },
+            "crop": {
+              "path": "paper/figures/dup/minus1071233499893339092_sca_nb_crop.jpg",
+              "sha256": "856c3d55e9c333645df8f3b974254d6394399f2d0be21497eeb594754f061731",
+              "px": 156
+            }
+          }
+        },
+        "ours": {
+          "png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus1071233499893339092_fbd1fdeeac_seed0.png",
+          "png_sha256": "35c9cc07ac519c522346a370e522eee05277c2fa3c2f9fffb0a4d7711cdeb3a1",
+          "method": "sca_v2",
+          "sca": {
+            "n0": 64,
+            "tile": 8,
+            "window": 64,
+            "pool": "center",
+            "chunk": null,
+            "gate_sigma": 0.89,
+            "band": 0,
+            "route": 0.0,
+            "pool_factors": [
+              4,
+              4
+            ],
+            "pi_variant": "head",
+            "pi_const": null,
+            "sigma_star": null,
+            "pi_scale": 4,
+            "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+            "win_sched": [
+              [
+                0.88,
+                128
+              ],
+              [
+                0.86,
+                112
+              ],
+              [
+                0.84,
+                96
+              ],
+              [
+                0.82,
+                80
+              ]
+            ],
+            "bridge_cells": 8,
+            "bridge_k": 16,
+            "bridge_lo": 0.0,
+            "win_pi_match": true,
+            "win_pi_interp": true
+          },
+          "seconds": 76.69436408765614,
+          "other_run": null,
+          "tiles": {
+            "full": {
+              "path": "paper/figures/dup/minus1071233499893339092_sca_v2_full.jpg",
+              "sha256": "cd167ecc3d8d83ff6c309c5eab4a1c8a76740d9899cdde7ae8986aff1a434b2c",
+              "px": 156
+            },
+            "crop": {
+              "path": "paper/figures/dup/minus1071233499893339092_sca_v2_crop.jpg",
+              "sha256": "47f4bb1a1e4534bc30c5b164dcd023b5d75505c226a4203f650b2770bd4b5193",
+              "px": 156
+            }
+          }
+        }
+      },
+      {
+        "prompt_id": "a4k_eval_4096_minus2447481760626661988",
+        "prompt": "A towering brown bear stands on its hind legs in a misty forest, surrounded by tall trees and moss-covered rocks, with sunlight filtering through the foliage.",
+        "seed": 0,
+        "derived_seed": 9221367192445667732,
+        "detector": {
+          "subject": "bear",
+          "implied": 1,
+          "count_published": 3,
+          "published": {
+            "dup": 1,
+            "counts": "bear:3/1"
+          },
+          "ours": {
+            "dup": 0,
+            "counts": "bear:1/1",
+            "source": "/scratch/09032/saini_2/sca/eval/dup46_dup_i_shrink/det",
+            "scored_png": "/scratch/09032/saini_2/sca/out/dup46/dup_i_shrink/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.png"
+          },
+          "intended_boxes": [
+            [
+              1260,
+              412,
+              2840,
+              3620
+            ]
+          ],
+          "extra_boxes": [
+            {
+              "box": [
+                905,
+                2868,
+                1050,
+                3214
+              ],
+              "score": 0.4495
+            },
+            {
+              "box": [
+                3146,
+                2985,
+                3284,
+                3169
+              ],
+              "score": 0.3507
+            }
+          ]
+        },
+        "box": [
+          722,
+          2785,
+          1234,
+          3297
+        ],
+        "extras_in_box": [
+          {
+            "box": [
+              905,
+              2868,
+              1050,
+              3214
+            ],
+            "score": 0.4495
+          }
+        ],
+        "published": {
+          "png": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.png",
+          "png_sha256": "64ad92a01192d93981150015782ed52f09bdc3d02c4c1e2d76580eead38117d1",
+          "method": "sca_nb",
+          "tiles": {
+            "full": {
+              "path": "paper/figures/dup/minus2447481760626661988_sca_nb_full.jpg",
+              "sha256": "803417b82f751b0e29753ebde340f0ca4ded7b9c9f1814e27c15acdd989a1f87",
+              "px": 156
+            },
+            "crop": {
+              "path": "paper/figures/dup/minus2447481760626661988_sca_nb_crop.jpg",
+              "sha256": "7d0cb48096caab4356186fdb5588e9c7d860a807d2028e99e2eed1e09f01b656",
+              "px": 156
+            }
+          }
+        },
+        "ours": {
+          "png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.png",
+          "png_sha256": "cad09e6c1c99646d406f43e60a77b105da9dde1c46aacbeb606228fa682c1bbd",
+          "method": "sca_v2",
+          "sca": {
+            "n0": 64,
+            "tile": 8,
+            "window": 64,
+            "pool": "center",
+            "chunk": null,
+            "gate_sigma": 0.89,
+            "band": 0,
+            "route": 0.0,
+            "pool_factors": [
+              4,
+              4
+            ],
+            "pi_variant": "head",
+            "pi_const": null,
+            "sigma_star": null,
+            "pi_scale": 4,
+            "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+            "win_sched": [
+              [
+                0.88,
+                128
+              ],
+              [
+                0.86,
+                112
+              ],
+              [
+                0.84,
+                96
+              ],
+              [
+                0.82,
+                80
+              ]
+            ],
+            "bridge_cells": 8,
+            "bridge_k": 16,
+            "bridge_lo": 0.0,
+            "win_pi_match": true,
+            "win_pi_interp": true
+          },
+          "seconds": 77.2878197003156,
+          "other_run": {
+            "path": "/scratch/09032/saini_2/sca/out/dup46/dup_i_shrink/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.png",
+            "identical_png": true
+          },
+          "tiles": {
+            "full": {
+              "path": "paper/figures/dup/minus2447481760626661988_sca_v2_full.jpg",
+              "sha256": "2b172dd1d63595259d59b0bb04272718bec758d196ba4727acd64e387575078d",
+              "px": 156
+            },
+            "crop": {
+              "path": "paper/figures/dup/minus2447481760626661988_sca_v2_crop.jpg",
+              "sha256": "4ef514ec39d5ee953a4fcdbcddb2f98adc9f0362e36f7dc11e272e452a9fe6d5",
+              "px": 156
+            }
+          }
+        }
+      }
+    ],
+    "tiles": "Lanczos to 300 dpi at the printed tile size, JPEG quality 92, 4:4:4; red boxes and crop frames 0.6 pt, drawn as vectors",
+    "tile_in": 0.5215,
+    "columns_in": [
+      3.3,
+      3.8435,
+      4.425,
+      4.9685
+    ],
+    "rows_top_in": 1.815
+  },
+  "sources": {
+    "results/dup_audit_20261027/per_image_a4k195_people.csv": "d6eaf22954896392a19b1ffc9dae04260fe9bd8be5841f7d3227b318b85753c1",
+    "results/dup_audit_20261027/rates_46_all_people.csv": "bf5af8962faec5890772739c8536e9f7d7c8907618a9a1c13fe0647087d8b634",
+    "results/dup_audit_20261027/rates_a4k195_people.csv": "ed1fc752a0cc560fb8eb52ff8f5e76583d37ef757159f452db5cf2c5cfa6d147",
+    "results/dup_audit_20261027/rates_abl46_people.csv": "c1327abe95c6153752e8c3244e1b2839cfefe4137f676ad72eb9960133ce2523",
+    "results/dup_audit_20261027/subjects_a4k195.json": "77ff5faddbeb6d2ba1f84fb1976140c1aa74210ad841b0611cc5b3978c79915f",
+    "results/e7_sca_g85_deltas.csv": "9d4cce79183d209f7ef66002fec1de6070f550a05bd6108bde4dd94f4b5e13c6",
+    "scripts/dup_rate.py": "e145921a4a4b70ecc21f1c4a6cb9d23c44bb6ccbdb070047e16327a20708ed95"
+  },
+  "regenerate": "PATH=$HOME/.local/bin:$PATH UV_CACHE_DIR=/work/09032/saini_2/vista/library/uv-cache uv run --no-project --python /work/09032/saini_2/vista/library/uv-envs/sca/bin/python python paper/figures/src/fig_dup.py"
+}

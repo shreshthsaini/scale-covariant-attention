@@ -1,5 +1,16 @@
 """Paired scalar quality differences of the shared-protocol baselines against SCA (fig:baseline_quality).
 
+Switch. While the final operator's 4096^2 run is pending (v2swap.landed("a4k195_main_sca_v2") is false) this
+draws the published figure from the files below. Once that run lands, each difference is sca_v2 of that run minus
+the baseline of results/a4k195_main, from v2swap.derived_pairs("a4k195_main_sca_v2", "sca_v2", "a4k195_main",
+baseline): scripts/paired_bootstrap.py on the two runs' per-image eval CSVs, DRAWS prompt draws, seed 0, cached
+under /scratch/09032/saini_2/sca/eval/app_tables_pairs/. The same checks run on it (rows of the pairs file, paired
+mean equal to the difference of the two runs' summary means, the caption claims); a failed claim still stops the
+script, because the caption snippet states it. Every run first prints one status line,
+"fig_baseline_deltas.py: pending (a4k195_main_sca_v2)" or "fig_baseline_deltas.py: landed (a4k195_main_sca_v2)".
+--no-results-csv skips writing results/baseline_quality_deltas.csv. With SCA_V2_MOCK=DIR (v2swap.py --make-mock)
+the outputs go to DIR/figures/ as a trial run (snippet beside the figure, no results CSV), never into paper/.
+
 All 195 Aesthetic-4K prompts at 4096^2, generation seed 0, read through data195.py from results/a4k195_main
 (paths relative to the repository root):
   results/a4k195_main/<baseline>_vs_sca_nb.csv
@@ -36,10 +47,13 @@ from matplotlib.ticker import MultipleLocator
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import data195  # noqa: E402  (results/a4k195_* loader)
 import scafig as sf  # noqa: E402
+import v2swap  # noqa: E402  (the sca_v2 switch: landed runs and their loaders)
 
 ROOT = Path(__file__).resolve().parents[3]
 SNIPPET = ROOT / "paper/figures/snippets/baseline_deltas.tex"
+FIGDIR = v2swap.MOCK / "figures" if v2swap.MOCK else ROOT / "paper/figures"  # a mock run never writes into paper/
 RUN, REF = "a4k195_main", "sca_nb"  # every baseline is paired with SCA (28 steps) inside one run
+V2_RUN, V2_REF = "a4k195_main_sca_v2", "sca_v2"  # the final operator's run on the same prompts, once it lands
 N_PROMPTS, RES, SEED = 195, "4096x4096", "0"
 DRAWS = 2000  # scripts/paired_bootstrap.py default (--draws), stated in data195.pairs; checked below
 METHODS = [("full", "Full attention"),
@@ -53,7 +67,7 @@ METRICS = [("ir", "ImageReward", 1), ("pickscore", "PickScore", 1),
            ("musiq_crop1024", "Crop MUSIQ", 1)]
 
 
-def paired_statistics():
+def paired_statistics(landed=False):
     if f"{DRAWS} draws" not in (data195.pairs.__doc__ or ""):
         raise ValueError(f"data195.pairs no longer documents {DRAWS} draws; update DRAWS and the caption")
     if data195.n_prompts(RUN) != {N_PROMPTS}:
@@ -63,16 +77,35 @@ def paired_statistics():
         raise ValueError(f"results/{RUN}: deltas are against {ref}, not {REF}")
     sources = {}
 
-    def track(name):
-        path = data195.RESULTS / RUN / name
-        sources[str(path.relative_to(ROOT))] = hashlib.sha256(path.read_bytes()).hexdigest()
+    def track(name=None, path=None):
+        path = data195.RESULTS / RUN / name if path is None else Path(path)
+        try:
+            key = str(path.relative_to(ROOT))
+        except ValueError:  # a mock tree outside the repository
+            key = str(path)
+        sources[key] = hashlib.sha256(path.read_bytes()).hexdigest()
         return path
 
     for name in ("base_summary.csv", "extra_summary.csv"):
         track(name)
+    if landed:
+        S2, _, ref2, _ = v2swap.load(V2_RUN)
+        if ref2 != V2_REF:
+            raise ValueError(f"{V2_RUN}: deltas are against {ref2}, not {V2_REF}")
+        if data195.n_prompts(V2_RUN, v2swap.V2_RESULTS) != {N_PROMPTS}:
+            raise ValueError(f"{V2_RUN}: prompt counts {sorted(data195.n_prompts(V2_RUN, v2swap.V2_RESULTS))}, "
+                             f"not {N_PROMPTS}")
+        for name in ("base_summary.csv", "extra_summary.csv"):
+            track(path=v2swap.V2_RESULTS / V2_RUN / name)
     records, worst = [], 0.0
     for method, label in METHODS:
-        path = track(f"{method}_vs_{REF}.csv")
+        if landed:  # sca_v2 of the new run minus the baseline of the published run, over the same prompts
+            paired = v2swap.derived_pairs(V2_RUN, V2_REF, RUN, method, draws=DRAWS)
+            path = track(path=v2swap.PAIR_CACHE / f"{V2_RUN}__{V2_REF}_vs_{RUN}__{method}.csv")  # its cache file
+            sca_mean = {m: S2[(V2_REF, m)] for m, _, _ in METRICS}
+        else:
+            path = track(f"{method}_vs_{REF}.csv")
+            sca_mean = {m: S[(REF, m)] for m, _, _ in METRICS}
         seen = set()
         for row in data195._rows(path):
             if (row["n_prompts"], row["res"], row["seed"]) != (str(N_PROMPTS), RES, SEED):
@@ -80,7 +113,8 @@ def paired_statistics():
             if row["metric"] in seen:
                 raise ValueError(f"repeated metric {row['metric']} in {path}")
             seen.add(row["metric"])
-        paired = data195.pairs(RUN, method, REF)  # baseline minus SCA
+        if not landed:
+            paired = data195.pairs(RUN, method, REF)  # baseline minus SCA
         for metric, _, scale in METRICS:
             if metric not in paired:
                 raise ValueError(f"no {metric} row in {path}")
@@ -88,14 +122,16 @@ def paired_statistics():
             if not all(np.isfinite([delta, lo, hi])) or not lo <= delta <= hi:
                 raise ValueError(f"malformed interval: {method}/{metric}")
             # Over the same prompts the mean paired difference is the difference of the summary means.
-            means = S[(method, metric)] - S[(REF, metric)]
+            means = (sca_mean[metric] - S[(method, metric)]) if landed else (S[(method, metric)] - S[(REF, metric)])
             if not np.isclose(delta, means, rtol=1e-5, atol=1e-6):
                 raise ValueError(f"paired mean {delta} and summary difference {means} disagree: {method}/{metric}")
             worst = max(worst, abs(delta - means) * scale)
+            if not landed:  # baseline minus SCA, reversed to SCA minus baseline
+                delta, lo, hi = -delta, -hi, -lo
             records.append(dict(baseline=method, baseline_label=label, metric=metric,
-                                scale=scale, n_pairs=N_PROMPTS, sca_mean=S[(REF, metric)] * scale,
-                                baseline_mean=S[(method, metric)] * scale, delta=-delta * scale,
-                                ci_low=-hi * scale, ci_high=-lo * scale,
+                                scale=scale, n_pairs=N_PROMPTS, sca_mean=sca_mean[metric] * scale,
+                                baseline_mean=S[(method, metric)] * scale, delta=delta * scale,
+                                ci_low=lo * scale, ci_high=hi * scale,
                                 protocol="two_stage_30_steps_per_stage" if method == "ultraimage"
                                          else "shared_28_steps_guidance4.5"))
     provenance = dict(sources=sources, loader="paper/figures/src/data195.py", run=f"results/{RUN}",
@@ -111,6 +147,18 @@ def paired_statistics():
                       caveats=["One generation seed; intervals measure prompt sampling uncertainty only.",
                                "UltraImage uses a two-stage recipe, not matched compute or latent trajectories.",
                                "DyPE and SEGA use FLUX.1-dev, not their preferred Krea checkpoint."])
+    if landed:
+        provenance.update(
+            loader="paper/figures/src/v2swap.py (load, derived_pairs) and data195.py",
+            run=f"results/{V2_RUN} (sca_v2) and results/{RUN} (baselines)",
+            difference="SCA final (sca_v2) minus named baseline",
+            canonical_intervals=(f"v2swap.derived_pairs: scripts/paired_bootstrap.py over the per-image eval CSVs of "
+                                 f"{V2_RUN} (sca_v2) and {RUN} (baseline), {DRAWS} draws, seed 0, cached in "
+                                 f"{v2swap.PAIR_CACHE}"),
+            consistency_check=dict(rule="paired mean difference equals sca_v2's summary mean (v2swap.load) minus the "
+                                        "baseline's (data195.load), rtol 1e-5, atol 1e-6",
+                                   max_abs_discrepancy_plotted_units=worst),
+            state=f"landed: {V2_RUN}" + (f" (mock tree {v2swap.MOCK})" if v2swap.MOCK else ""))
     return records, provenance
 
 
@@ -128,15 +176,17 @@ def claims(records):
                 ultraimage_unresolved=[r["metric"] for r in ultra if r["ci_low"] <= 0 <= r["ci_high"]])
 
 
-def write_snippet(path):
+def write_snippet(path, landed=False):
     cap = (r"\textbf{SCA beats every shared-protocol baseline on all four metrics; against UltraImage the result "
            r"is mixed.}" "\n"
            rf"  SCA minus baseline, mean over the same {N_PROMPTS} prompts at $4096^2$, whiskers 95\% "
            rf"prompt-bootstrap intervals ({DRAWS} draws, one seed); open markers: interval contains zero; "
            r"orange: significant loss." "\n"
            r"  $^\dagger$Own two-stage recipe, not an equal-cost comparison.")
-    path.write_text(f"% Generated by src/fig_baseline_deltas.py from results/{RUN} (paired per-image differences "
-                    "and summaries, through data195.py).\n"
+    origin = (f"results/{V2_RUN} and results/{RUN} (paired per-image differences through v2swap.derived_pairs, "
+              "and summaries)" if landed else
+              f"results/{RUN} (paired per-image differences and summaries, through data195.py)")
+    path.write_text(f"% Generated by src/fig_baseline_deltas.py from {origin}.\n"
                     "\\begin{figure}[!htbp]\n  \\centering\n  \\includegraphics{figures/baseline_deltas.pdf}\n"
                     "  \\caption{" + cap + "}\n  \\label{fig:baseline_quality}\n\\end{figure}\n")
     return path
@@ -193,11 +243,16 @@ def plot_deltas(records):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--out", type=Path, default=ROOT / "paper/figures/baseline_deltas")
+    parser.add_argument("--out", type=Path, default=FIGDIR / "baseline_deltas")
     parser.add_argument("--preview", type=Path)
+    parser.add_argument("--no-results-csv", action="store_true",
+                        help="do not write results/baseline_quality_deltas.csv")
     args = parser.parse_args()
+    landed = v2swap.landed(V2_RUN)
+    print(f"fig_baseline_deltas.py: {'landed' if landed else 'pending'} ({V2_RUN})"
+          + (f" [mock {v2swap.MOCK}]" if v2swap.MOCK else ""), flush=True)
     trial = args.out.resolve() != (ROOT / "paper/figures/baseline_deltas").resolve()
-    records, provenance = paired_statistics()
+    records, provenance = paired_statistics(landed)
     provenance["claims"] = claims(records)
     sf.use_style()
     plt.rcParams["svg.hashsalt"] = "sca-baseline-deltas"
@@ -205,9 +260,9 @@ def main():
     sf.save(fig, str(args.out))
     if args.preview:
         fig.savefig(args.preview, dpi=150, facecolor="white")
-    snippet = write_snippet(args.out.with_name(args.out.name + "_snippet.tex") if trial else SNIPPET)
+    snippet = write_snippet(args.out.with_name(args.out.name + "_snippet.tex") if trial else SNIPPET, landed)
     provenance["statistics"] = records
-    if not trial:  # the plotted statistics as a results CSV (195 prompts), same columns as before
+    if not trial and not args.no_results_csv:  # the plotted statistics as a results CSV, same columns as before
         import csv
         with open(ROOT / "results/baseline_quality_deltas.csv", "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=list(records[0].keys()))

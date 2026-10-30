@@ -1,11 +1,12 @@
 {
- "figure": "paper/figures/method_zoom.pdf",
+ "figure": "paper/figures/method_zoom.pdf (main.tex Figure D.1, fig:method_zoom)",
  "tikz": "paper/figures/src/method_zoom.tex",
- "generator": "helper script gen_method_zoom.py, kept outside the repo; this file records every step (data, key, head order, bins, colormap, upsampling, hashes)",
- "data": "paper/figures/src/data/k1_1024_pi.npz",
+ "generator": "paper/figures/src/fig_method_zoom.py (rasters, data.tex, this file; --pdf adds the PDF checks)",
+ "operator": "sca_v2 (code sca/attn.py, flags --bridge-cells 8 --bridge-k 16 --win-sched 0.88:128,0.86:112,0.84:96,0.82:80 --win-pi-match --win-pi-interp, gate 0.89)",
+ "data": "paper/figures/src/data/k1_1024_pi.npz (identical s2/s4 tables to calib/k1_1024.npz)",
  "data_sha256": "6bcab70c036a5f7e4115dfa7a8de7788d7068d6b90cdc8d6a7cda07e80a9e264",
  "key": "s4_pi_head",
- "table": "scale-4 per-head table used at inference: pi[block, head, bin], 57 x 24 x 14, blocks one-based 1..19 double-stream then 20..57 single-stream",
+ "table": "per-head tables pi[block, head, bin], 57 x 24 x 14, blocks one-based 1..19 double-stream then 20..57 single-stream; s4_pi_head at native steps of 4096^2, s2_pi_head and s4_pi_head mixed on window steps",
  "bins": {
   "count": 14,
   "width": "1/14 in sigma",
@@ -86,13 +87,25 @@
    0.1955,
    0.1047
   ],
-  "schedule_source": "paper/figures/method_provenance.json (FLUX.1 shifted schedule, mu = 1.15)"
+  "schedule_source": "FLUX.1 shifted schedule, mu = 1.15 (computed in fig_method_zoom.schedule)"
+ },
+ "window_schedule": {
+  "rule": "SCAContext.window_now: w = 128, 112, 96, 80 while sigma > 0.88, 0.86, 0.84, 0.82, else n0 = 64",
+  "steps_one_based": {
+   "9": 128,
+   "10": 112,
+   "11": 96,
+   "12": 80
+  },
+  "note": "SCAContext.step is the scheduler's zero-based step_index, so these are steps 8 to 11 in the code's numbering",
+  "ratio": "r = max(H, W) / w = 256 / w at 4096^2: 128 -> 2.0000, 112 -> 2.2857, 96 -> 2.6667, 80 -> 3.2000, 64 -> 4",
+  "interpolation": "SCAContext.table_interp: t = log(r / 2) / log(4 / 2), pi = (1 - t) pi_scale2 + t pi_scale4; nearest table outside [2, 4]; native steps (w = n0) read the published scale-4 table (pi_table_now returns self.pi)"
  },
  "panel_d": {
   "raster": "paper/figures/method_zoom/pi_strip.png",
   "raster_sha256": "cc190ee3da280767bf94fe79dd6c1b352f55ccf1a0d2d19b2199acd92a592631",
   "rows": "top to bottom: bin 13 (sigma near 1) to bin 0 (sigma near 0), equal height, so sigma is linear",
-  "columns": "57 blocks left to right, 24 heads per block; within a block heads are sorted by their mean applied pi over the 20 post-gate steps, descending (stable)",
+  "columns": "57 blocks left to right, 24 heads per block; within a block heads are sorted by the mean of the scale-4 table at the 20 post-gate step sigmas, descending (stable)",
   "head_order_one_based": [
    [
     14,
@@ -1582,34 +1595,217 @@
   "veil": "sigma > sigma_g = 0.89 (global only at inference)"
  },
  "panel_c": {
-  "example": "block 29, head 18 (one-based)",
-  "pi_by_bin": [
-   0.9782,
-   0.9782,
-   0.9167,
-   0.8437,
-   0.7895,
-   0.7503,
-   0.7152,
-   0.6664,
-   0.6075,
-   0.5643,
-   0.5052,
-   0.4102,
-   0.3436,
-   0.2967
-  ]
+  "example": "block 2, head 8 (one-based)",
+  "why": "its scale-2 and scale-4 weights differ visibly on the window steps (mean gap 0.388, rank 15 of 1368; median over heads 0.048), so the four window-step weights visibly move from the r = 2 to the r = 4 curve",
+  "pi_by_bin_r2": [
+   0.373,
+   0.373,
+   0.3261,
+   0.3019,
+   0.2862,
+   0.2888,
+   0.2838,
+   0.2898,
+   0.3034,
+   0.3282,
+   0.3659,
+   0.4301,
+   0.5133,
+   0.6395
+  ],
+  "pi_by_bin_r4": [
+   0.6776,
+   0.6776,
+   0.605,
+   0.574,
+   0.5644,
+   0.5755,
+   0.5842,
+   0.6145,
+   0.6555,
+   0.6999,
+   0.7507,
+   0.8215,
+   0.898,
+   0.966
+  ],
+  "applied_steps": [
+   {
+    "step": 9,
+    "sigma": 0.8876,
+    "w": 128,
+    "r": 2.0,
+    "t": 0.0,
+    "pi": 0.5032
+   },
+   {
+    "step": 10,
+    "sigma": 0.8696,
+    "w": 112,
+    "r": 2.2857,
+    "t": 0.1926,
+    "pi": 0.5552
+   },
+   {
+    "step": 11,
+    "sigma": 0.8504,
+    "w": 96,
+    "r": 2.6667,
+    "t": 0.415,
+    "pi": 0.618
+   },
+   {
+    "step": 12,
+    "sigma": 0.83,
+    "w": 80,
+    "r": 3.2,
+    "t": 0.6781,
+    "pi": 0.6961
+   },
+   {
+    "step": 13,
+    "sigma": 0.8081,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.8001
+   },
+   {
+    "step": 14,
+    "sigma": 0.7847,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.7766
+   },
+   {
+    "step": 15,
+    "sigma": 0.7595,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.7513
+   },
+   {
+    "step": 16,
+    "sigma": 0.7324,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.7319
+   },
+   {
+    "step": 17,
+    "sigma": 0.7031,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.7111
+   },
+   {
+    "step": 18,
+    "sigma": 0.6714,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.6897
+   },
+   {
+    "step": 19,
+    "sigma": 0.637,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.6675
+   },
+   {
+    "step": 20,
+    "sigma": 0.5994,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.6462
+   },
+   {
+    "step": 21,
+    "sigma": 0.5582,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.6258
+   },
+   {
+    "step": 22,
+    "sigma": 0.5128,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.6051
+   },
+   {
+    "step": 23,
+    "sigma": 0.4627,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.5842
+   },
+   {
+    "step": 24,
+    "sigma": 0.4071,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.5755
+   },
+   {
+    "step": 25,
+    "sigma": 0.3448,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.5644
+   },
+   {
+    "step": 26,
+    "sigma": 0.2748,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.574
+   },
+   {
+    "step": 27,
+    "sigma": 0.1955,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.605
+   },
+   {
+    "step": 28,
+    "sigma": 0.1047,
+    "w": 64,
+    "r": 4.0,
+    "t": null,
+    "pi": 0.6776
+   }
+  ],
+  "read_step_into_mix": 23,
+  "curves": "dashed: r = 2 table, solid: r = 4 table, both light; dots: the weight applied at the 20 post-gate steps (window steps between the curves, native steps on the r = 4 curve)"
  },
  "panel_b": {
   "raster": "paper/figures/method_zoom/block_mask.png",
-  "raster_sha256": "7129b5d2c76d0e91d9631d659f92bdc70252a92179736dc957917c31b9fb131e",
+  "raster_sha256": "67a2ad23462a1ad6cb4473ef8b2027296099870cf059f723de87be49ac8bae19",
   "toy": {
    "H": 24,
    "s": 4,
    "n0": 6,
    "t": 2,
    "w": 6,
-   "text_cols": 6
+   "w_max": 12,
+   "text_cols": 6,
+   "bridge_cells": 4
   },
   "window_start_per_tile_index": [
    0,
@@ -1625,8 +1821,100 @@
    18,
    18
   ],
+  "window_start_per_tile_index_w_max": [
+   0,
+   0,
+   0,
+   1,
+   3,
+   5,
+   7,
+   9,
+   11,
+   12,
+   12,
+   12
+  ],
+  "query_tiles_xy": [
+   [
+    3,
+    4
+   ],
+   [
+    11,
+    11
+   ]
+  ],
+  "bridge_dots_xy": [
+   [
+    3,
+    4
+   ],
+   [
+    8,
+    4
+   ],
+   [
+    16,
+    2
+   ],
+   [
+    19,
+    2
+   ],
+   [
+    2,
+    8
+   ],
+   [
+    9,
+    7
+   ],
+   [
+    14,
+    7
+   ],
+   [
+    19,
+    7
+   ],
+   [
+    3,
+    13
+   ],
+   [
+    9,
+    16
+   ],
+   [
+    16,
+    15
+   ],
+   [
+    21,
+    16
+   ],
+   [
+    1,
+    21
+   ],
+   [
+    8,
+    21
+   ],
+   [
+    16,
+    22
+   ],
+   [
+    19,
+    21
+   ]
+  ],
+  "bridge_layout": "schematic: one token per cell of a 4 x 4 grid of 6 x 6-token cells, drawn uniformly at random (numpy default_rng(0)) from each cell's inner 4 x 4 tokens, query-tile tokens and their one-token ring excluded, and tokens within one token of a drawn frame edge excluded where the cell has others; FLUX.1 at 4096^2 keeps the 16 tokens per cell of an 8 x 8 grid whose pre-RoPE keys, summed over heads, lie farthest from the mean key (bridge_index), recomputed per block and step, 1,024 tokens",
+  "dotted_frame": "the window of tile [3, 4] at the widest scheduled side w_max = 2 n0 = 12 (128 = 2 x 64 at 4096^2), start a = clip(t tau + t/2 - w_max/2, 0, H - w_max)",
   "rows": "query tiles (t x t), tile-major order",
-  "cols": "6 text columns, then key tiles in tile-major order",
+  "cols": "6 text columns (grey), 16 bridge columns (dark amber, one per bridge token, visible to every query as the flex prefix L + R), then key tiles in tile-major order (amber: inside the n0 window)",
   "full_blocks": 1296,
   "partial_blocks": 0
  },
@@ -1637,7 +1925,9 @@
    "n0": 6,
    "t": 2,
    "w": 6,
-   "text_cols": 6
+   "w_max": 12,
+   "text_cols": 6,
+   "bridge_cells": 4
   },
   "block_centres": [
    2,
@@ -1654,31 +1944,25 @@
   "pi_max_populated": 1.0,
   "share_cells_pi_eq_0": 0.0202991452991453,
   "share_cells_pi_eq_1": 0.06084120557804768,
-  "mean_pi_applied_post_gate": {
-   "all": 0.7253514256850213,
-   "double_stream_blocks_1_19": 0.6671530766929344,
-   "single_stream_blocks_20_57": 0.7544506001810649
+  "mean_pi_applied_post_gate_scale4": {
+   "all": 0.7253517439120987,
+   "double_stream_blocks_1_19": 0.6671536232696521,
+   "single_stream_blocks_20_57": 0.7544508042333219
   },
   "mean_pi_populated_bins": {
    "all": 0.7294143829669388,
    "double": 0.6690613078368849,
    "single": 0.7595909205319656
   },
-  "block_mean_applied_min": [
-   1,
-   0.20479479611846804
-  ],
-  "block_mean_applied_max": [
-   53,
-   0.9181177836122156
-  ],
-  "share_heads_mean_applied_gt_0p5": 0.881578947368421,
-  "applied_mean_first_and_last_post_gate_step": [
-   0.6927205533357509,
-   0.7695396034001202
-  ]
+  "example_choice": {
+   "rule": "mean over the four window steps of |pi_scale4 - pi_scale2| at the step sigma, per head",
+   "example_gap": 0.3883653552885542,
+   "example_rank_of_1368": 15,
+   "median_gap_over_heads": 0.047942908916873014,
+   "max_gap": 0.635558299481866
+  }
  },
- "pdf_sha256": "0280ce75add4f686aaac32c9ab893b565e8853fd9747045ec93f6f37d22ec57a",
+ "pdf_sha256": "38dc4785cfc88a012aa9e4c21563c1d713182fd8983e8c03d56797a872d73483",
  "size_pt": [
   396.0,
   266.46
@@ -1692,12 +1976,14 @@
   "CMEX8",
   "CMMI6",
   "CMMI8",
+  "CMMI9",
   "CMR6",
   "CMR8",
+  "CMR9",
   "CMSY6",
   "CMSY8",
   "NimbusSanL-Bold",
   "NimbusSanL-Regu"
  ],
- "label_words": "21 words of prose (titles 12, labels 9: block mask, clipped, text queries, global only, double-stream, single-stream) plus math"
+ "label_words": 124
 }

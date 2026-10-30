@@ -1,0 +1,29 @@
+% Draft of Algorithm 1 (alg:calib) for sca_v2: the left minipage of the algorithm figure after the worked
+% example in main.tex (replaces lines "\begin{minipage}[t]{0.48\linewidth} ... \end{minipage}\hfill" of
+% alg:calib). Calibration itself does not change for sca_v2 (same table calib/k1_1024.npz; SCAProcessor.calibrate
+% in sca/attn.py runs the bridge-free local branch); only the comments now say how sampling reads both scales.
+  \begin{minipage}[t]{0.48\linewidth}
+    \hrule height 0.6pt\vspace{2pt}
+    \captionof{algorithm}{\textbf{Calibration}, once per model}
+    \label{alg:calib}
+    \vspace{-4pt}
+\begin{lstlisting}[style=scacode, emph={calibrate,attn,global_branch,local_branch,clip,fill_empty_bins}]
+# Input: prompts; full-attention sampler at (*@$1024^2$@*)
+# Output: pi*[s_c, l, h, beta]; full in App. (*@\ref{app:code}@*)
+def calibrate(q, k, v, l, sigma):  # every block
+  O_full = attn(q, k, v)        # Eq. (*@\ref{eq:attn}@*), all keys
+  beta = min(int(14 * sigma), 13)    # noise bin
+  for s_c in (2, 4):            # r = n / w = s_c
+    f, w = s_c, n // s_c        # subsample, window
+    t_c = round(t * w / n0)     # tile t n/(s_c n0)
+    O_glob = global_branch(q, k, v, f)    # Eq. (*@\ref{eq:glob}@*)
+    O_loc = local_branch(q, k, v, w, t_c) # Eq. (*@\ref{eq:loc}@*)
+    dl, df = O_loc - O_glob, O_full - O_glob
+    A[s_c, l, :, beta] += sum(dl * dl)    # Eq. (*@\ref{eq:stats}@*)
+    B[s_c, l, :, beta] += sum(df * dl)  # over rows
+    E[s_c, l, :, beta] += sum(df * df)
+  return O_full                 # sampler unchanged
+pi = clip(B / A, 0, 1); pi[A == 0] = 1  # Prop. (*@\ref{prop:opt}@*)
+pi = fill_empty_bins(pi)  # read at r, Eq. (*@\ref{eq:sched}@*)
+\end{lstlisting}
+  \end{minipage}\hfill

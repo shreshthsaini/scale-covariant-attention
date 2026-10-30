@@ -1,0 +1,87 @@
+% Drafts of the appendix listings that change for sca_v2 (Appendix app:code). Algorithm alg:calib_full does not
+% change (calibration is the same; SCAProcessor.calibrate uses the bridge-free local branch), so only its
+% neighbour alg:sample_full and the progressive listing alg:prog are given. Each line was checked against
+% sca/attn.py (SCAProcessor.sca, global_branch, pool_tokens, coarse_rope, SCAContext.window_now / pi_table_now /
+% table_interp / bridge_now, bridge_index, sca_dedup_forward, flex_layout, local_branch_flex, mix_branches,
+% PiTable.__call__) and scripts/sample_progressive.py (contexts built with sca/dedup.py context_kwargs).
+% New equation labels: eq:sched (window schedule and ratio), eq:bridge (bridge set).
+
+% ---------------------------------------------------------------- replaces the alg:sample_full minipage
+\begin{minipage}[t]{0.48\linewidth}
+    \hrule height 0.6pt\vspace{2pt}
+    \captionof{algorithm}{\textbf{Sampling}, in full}
+    \label{alg:sample_full}
+    \vspace{-4pt}
+\begin{lstlisting}[style=scacode, emph={rope,sdpa,cat,clip,log2,interp,top_k,tile_major,block_mask,flex_attention,inverse}]
+# Input: q, k, v before RoPE (T text, then H x W
+#   image), block l, noise level sigma
+# Output: O for all T + HW queries; sca/attn.py
+# Per image: s_H, s_W = H // n0, W // n0; pi_s is
+#   the table entry nearest max(s_H, s_W) in log
+# Per step, all 57 x 24 heads, ends held:
+w = n0                        # Eq. (*@\ref{eq:sched}@*)
+for sig_k, w_k in ((.88, 128), (.86, 112),
+                   (.84, 96), (.82, 80)):
+  if sigma > sig_k: w = w_k; break
+if w == n0: pi = interp(sigma, centres, pi_s)
+else:                 # ratio r, log-linear
+  r = max(H, W) / w; u = clip(log2(r / 2), 0, 1)
+  pi = (1-u) * interp(sigma, centres, table[2]) \
+     + u * interp(sigma, centres, table[4])
+kb = k_img[s_H//2::s_H, s_W//2::s_W]  # (*@$\kappa(b)$@*)
+vb = v_img[s_H//2::s_H, s_W//2::s_W]
+cp = p // (s_H, s_W)          # (*@$c(p_i)$@*); text at 0
+Q = cat(rope(q_txt, 0), rope(q_img, cp))
+K = cat(rope(k_txt, 0), rope(kb, b))
+O_glob = sdpa(Q, K, cat(v_txt, vb))   # Eq. (*@\ref{eq:glob}@*)
+if sigma > sigma_g:                   # 0.89, Eq. (*@\ref{eq:mix}@*)
+  return O_glob               # opening phase
+# bridge (Eq. (*@\ref{eq:bridge}@*)), per block and step:
+d = ((k_img - k_img.mean(0))**2).sum(heads, ch)
+B = top_k(d, 16) per cell, 8 x 8 cells  # 1,024
+kr = rope(k_img, p)           # true positions
+kl = cat(rope(k_txt, 0), kr[B], kr)
+vl = cat(v_txt, v_img[B], v_img)  # no dedup
+P = T + len(B)                # prefix, seen by all
+w = (min(w, H), min(w, W))    # window sides
+a = clip(t*(p//t) + t//2 - w//2, 0, (H, W) - w)
+keep(i, j) = j < P or a_i <= p_j < a_i + w  # Eq. (*@\ref{eq:loc}@*)
+perm = tile_major(H, W)       # 8 x 16 query blocks
+mask = block_mask(keep, perm) # 8 x 8 key blocks
+O_loc = flex_attention(rope(q_img, p)[perm],
+    kl, vl, mask)[inverse(perm)]
+O_img = pi[l] * O_loc + (1 - pi[l]) * O_glob[T:]
+return cat(O_glob[:T], O_img) # fp32 mix, Eq. (*@\ref{eq:mix}@*)
+\end{lstlisting}
+\end{minipage}
+
+% ---------------------------------------------------------------- replaces the alg:prog minipage
+% Only the use_sca line changes (bridge on; the window schedule is passed but never fires, because every
+% stage re-enters below sigma = 0.82).
+\vspace{10pt}
+\noindent\begin{minipage}{\linewidth}
+    \hrule height 0.6pt\vspace{2pt}
+    \captionof{algorithm}{\textbf{Progressive \sca{}}, HRDiT's schedule with \sca{} attention (Section~\ref{sec:progressive})}
+    \label{alg:prog}
+    \vspace{-4pt}
+\begin{lstlisting}[style=scacode, emph={shift,linspace,noise,flux,decode,encode,bicubic,sharpen,lowpass,up,momentum,use_sca}]
+# Input: prompt, seed; FLUX.1-dev in bf16; SCA tables at scales 2 and 4
+# Output: (*@$4096^2$@*) image; scripts/sample_progressive.py
+sig = shift(linspace(1, 1/30, 30), mu=1.15)     # one 30-step schedule serves all stages, as in HRDiT
+x = noise((*@$1024^2$@*), seed)                         # stage 1: stock dense attention, native RoPE
+for i in range(30):                             # Euler; ref keeps each step's x0 estimate
+  v = flux(x, sig[i], g=3.5); ref[i] = x - sig[i] * v; x = x + (sig[i+1] - sig[i]) * v
+for res, k, g, s_c, a in ((2048, 13, 4.5, 2, 1.0), (4096, 20, 6.0, 4, 0.25)):
+  img = sharpen(bicubic(decode(x), res))        # 2 img - blur(img), blur width ~ U(0.1, 2.0)
+  x = sig[k] * noise + (1 - sig[k]) * encode(img)   # re-enter at sigma 0.81, then 0.61
+  use_sca(table[s_c], n0=64, t=8, sigma_g=0.89, bridge=(8, 16))  # replaces NTK RoPE, attention scale,
+                                                # pruning, alignment; w = n0, as sig[k] < 0.82 (Eq. (*@\ref{eq:sched}@*))
+  N = 30 - k                                    # 17, then 10 steps; sig[k] < sigma_g: no opening phase
+  for n, i in enumerate(range(k, 30)):
+    v = flux(x, sig[i], g); x0 = x - sig[i] * v; r, ref[i] = ref[i], x0    # SCA in every block
+    x0 = x0 + a * (N - n) / N * (lowpass(up(r)) - lowpass(x0))  # Butterworth, order 4, cut-off 0.2
+    u = momentum((x - x0) / sig[i], 0.5 * (N - n) / N)           # HRDiT's velocity momentum
+    x = x + (sig[i+1] - sig[i]) * u
+return decode(x)
+\end{lstlisting}
+\end{minipage}

@@ -1,0 +1,31 @@
+% Draft of Algorithm 2 (alg:sample) for sca_v2: the right minipage of the algorithm figure in main.tex
+% (replaces "\begin{minipage}[t]{0.48\linewidth} ... \end{minipage}" of alg:sample). Checked line by line
+% against sca/attn.py: SCAProcessor.sca, global_branch, SCAContext.window_now / pi_table_now / table_interp,
+% bridge_index, flex_layout (prefix T + R visible to every query), sca_dedup_forward, mix_branches.
+% Uses the new labels eq:sched (window schedule and ratio) and eq:bridge (bridge set).
+  \begin{minipage}[t]{0.48\linewidth}
+    \hrule height 0.6pt\vspace{2pt}
+    \captionof{algorithm}{\textbf{Sampling}, one \sca{} attention call}
+    \label{alg:sample}
+    \vspace{-4pt}
+\begin{lstlisting}[style=scacode, emph={rope,sdpa,cat,window,bridge,flex_layout,flex_attention,interp}]
+# Input: q, k, v (T text, then H x W image), l, (*@$\sigma$@*)
+# Output: O for all T + HW queries; App. (*@\ref{app:code}@*)
+fh, fw = H // n0, W // n0       # subsampling s
+kb = k_img[fh//2::fh, fw//2::fw]  # (*@$\kappa(b)$@*); vb alike
+Q = cat(rope(q_txt, 0), rope(q_img, c(p)))
+K = cat(rope(k_txt, 0), rope(kb, b))
+O_glob = sdpa(Q, K, cat(v_txt, vb))     # Eq. (*@\ref{eq:glob}@*)
+if sigma > sigma_g:                 # 0.89, Eq. (*@\ref{eq:mix}@*)
+  return O_glob       # opening phase: no local
+w = window(sigma)   # 128, 112, 96, 80, n0; Eq. (*@\ref{eq:sched}@*)
+B = bridge(k_img, cells=8, k=16)  # Eq. (*@\ref{eq:bridge}@*), 1,024
+Kl = cat(k_txt, k_img[B], k_img)  # Vl alike
+mask = flex_layout(T + len(B), t=8, w=min(w, H))
+O_loc = flex_attention(rope(q_img, p),  # Eq. (*@\ref{eq:loc}@*)
+    rope(Kl, p_Kl), Vl, block_mask=mask)  # App. (*@\ref{app:impl}@*)
+pi = interp(sigma, max(H,W)/w, table[l])  # ratio r
+O_img = pi*O_loc + (1-pi)*O_glob[T:]    # Eq. (*@\ref{eq:mix}@*)
+return cat(O_glob[:T], O_img)     # text: O_glob
+\end{lstlisting}
+  \end{minipage}
