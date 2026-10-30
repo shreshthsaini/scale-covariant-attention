@@ -429,3 +429,34 @@ constant cost. x_ reruns stay held.
   (CLIP-IQA +0.020 n.s.); E keeps 8 (CLIP-IQA +0.021, ARNIQA +0.014 n.s.). IR vs AReA: SCA +0.29, bridge +0.35,
   F50 +0.35, I +0.34, J +0.33, E +0.30. Set-level patch FID/KID vs AReA were not recomputed for the variants.
 - Fleet: pending queue empty after h_; taskq/STOP not recreated (workers time out). x_ reruns still held.
+
+## 2026-10-29 21:40: ADOPTED operator (lead): variant I, label sca_v2 (reruns enqueued, code 7bd64c0)
+Flags: --bridge-cells 8 --bridge-k 16 --win-sched 0.88:128,0.86:112,0.84:96,0.82:80 --win-pi-match --win-pi-interp
+(gate 0.89, table calib/k1_1024.npz). Exact definition, notation of paper Section 2:
+1. Opening phase unchanged: for sigma > sigma_g = 0.89 every query takes O^glob.
+2. Global operator unchanged (text keys plus one block-centre key per s x s block, coarse ids floor(p/s)).
+3. Local operator: text keys, plus a bridge set B of 1,024 image tokens (in every cell of an 8 x 8 partition of the
+   grid, the 16 tokens whose pre-RoPE keys, summed over heads, lie farthest from the mean key; recomputed per block
+   and step; true RoPE positions), plus a window of side w(sigma) centred on the query tile, all in one softmax.
+   w = 128, 112, 96, 80 tokens on the four steps after the gate (sigma in (0.88, 0.89], (0.86, 0.88], (0.84, 0.86],
+   (0.82, 0.84]; steps 8 to 11 of 28 at 4096^2), then n0 = 64 for the remaining 16 steps.
+4. Mix: O_i = pi O^loc_i + (1 - pi) O^glob_i for image queries, with pi read at the emulated ratio r = max(H, W)/w:
+   pi_lh(sigma; r) = (1 - t) pi^(2)_lh(sigma) + t pi^(4)_lh(sigma), t = log2(r/2) (r = 2, 2.29, 2.67, 3.2, 4 for
+   w = 128, 112, 96, 80, 64); the published operator is the special case w = n0, r = s. Text queries take O^glob.
+5. Cost at 4096^2: 77.1 s vs 70.8 s per image (+9%; still about 2.7x faster than AReA's 210 s).
+Evidence (46 prompts): people/animal duplication 58% -> 15% (4/26; AReA 4%, any-subject table in rates_46_all_any);
+all ten per-image wins over AReA kept (IR vs AReA +0.34 vs +0.29 for published SCA); significant losses vs published SCA
+only ARNIQA -0.0074 and MUSIQ_c -1.73.
+
+Paper-ready paragraph (method section):
+"Late duplication. With a hard switch from the opening phase to native windows, about half of our 4096^2 images
+contained small extra copies of the subject (58% of prompts that name a person or animal, against 4% for AReA,
+measured with an open-vocabulary detector). The copies form in the steps right after the switch, when each 64-token
+window is itself a native canvas and the layout of small objects is still open. We therefore hand over gradually:
+on the four steps after the gate each window covers 128, 112, 96 and then 80 tokens, and its weight is read from
+the calibration table at the matching emulated ratio (interpolated in log scale between the scale-2 and scale-4
+entries), so the same table governs every window size. Every window's softmax also holds a sample of 1,024 tokens
+drawn from the whole image, the 16 keys per cell of an 8 x 8 grid that lie farthest from the mean key, as in AReA's
+global bridge, so a query can see a subject drawn far outside its window. Together these cut duplication from 58%
+to 15% at 9% extra time, and SCA keeps all ten of its per-image wins over AReA."
+(Numbers to be replaced by the 195-prompt rerun values when z980 lands.)
