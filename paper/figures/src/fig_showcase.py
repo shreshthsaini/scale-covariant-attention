@@ -14,6 +14,11 @@ the top half of the 195 prompts, then a full 1:1 audit by eye. Prompts shown
 elsewhere in the paper (page-1 hero, main qualitative figure, ablation and
 failure figures) and the development prompts are excluded.
 
+Final-operator audit (2026-10-30, .agent/notes/figure_curation_20261030.md): an independent native audit of every
+tile found a second lit tower in the illustration and a second dress form in the interior, both visible at print
+size, so those two prompts were replaced by the rule in REPLACED_20261030 (a woman with an owl, and a dancer under
+water). The other five images have flaws only at 1:1 and stay.
+
 Everything is generated: JPEG assets (deterministic PIL encoding), a TikZ
 source with vector boxes, leader lines and badges, its PDF (tectonic), the
 snippet, and provenance with source hashes. Styles follow fig_hero.py.
@@ -57,13 +62,49 @@ FINAL_VIEW = {  # the final operator's images, viewed whole and at native pixels
     "Great Wall": ("the lit wall segment and watchtower on the left ridge of the published image are gone (bare "
                    "ridge); the first window moved to the lit watchtowers on the main wall (PANO); otherwise clean"),
     "portrait": "clean; one pair of earrings, a different earring design",
-    "illustration": ("clean of repeats: one waterfall and one lit spire (the published image has a second "
-                     "waterfall and a second lit tower); the spire's tower carries a boxy block; one small lit "
-                     "tower on a hill at left"),
     "still life": "clean",
     "ice climber": "clean; the tiny figures at the top of the published image are gone",
-    "interior": "clean of repeats; a dress form on a stand with a small shelf at the back",
+    "woman with owl": ("native audit 2026-10-30: one woman, one owl with two wings and two feet, one visible hand; "
+                       "flaws only at 1:1: six talons on the viewer-right owl foot (x 2390-2575, y 2395-2615), a "
+                       "red backlit rim on a curled finger; the window (2045, 1495, 384) frames the owl's face"),
+    "dancer underwater": ("clean (native audit 2026-10-30): one woman, two hands, two feet; the red and brown band at "
+                          "the top is the dress and hair reflected under the water surface, with no face or limbs"),
     "river town": "clean; nearly identical to the published image"}
+REPLACED_20261030 = dict(  # .agent/notes/figure_curation_20261030.md; percentiles: floor(100 x share <= value)
+    rule=("eligible prompts only (not shown in any figure, not development); SCA's ImageReward and MUSIQ_c at or above "
+          "its own median on the final operator's per-image CSVs (eval/a4k195_main_sca_v2, a4k195_2048x4096_sca_v2); "
+          "every baseline evaluated at that size (4096^2: AReA, HRDiT, DyPE, SEGA, UltraImage; 2048x4096: AReA) with "
+          "ImageReward and HPSv2.1 at or above its own 25th percentile; ranked by SCA's two percentiles; overview "
+          "pre-screen, then every native tile audited"),
+    illustration=dict(
+        old="minus6845347395255545991", new="minus7264311869050248176",
+        why=("a second lit tower, a pagoda with lit windows, on the left hill (x 1412-1499, y 2170-2310); the prompt "
+             "asks for one glowing tower; visible in the embedded image"),
+        percentiles=("ImageReward/MUSIQ_c/HPSv2.1 at 4096^2: new SCA 89/52/100, AReA 86/92/100, HRDiT 84/62/95, "
+                     "DyPE 89/69/92, SEGA 82/47/98, UltraImage 77/45/96; old SCA 45/58/30 (HRDiT ImageReward p8)"),
+        rejected={"minus795146951737249951": "overview: two or three double basses and extra men",
+                  "minus5996982714209002611": "overview: lattice along the coat and sleeve edges",
+                  "minus5715104867979054073": "not used: repeats the subject of the showcase portrait",
+                  "1139740195494332405": "overview: an extra wing-like shape on the owl",
+                  "minus3118670343091498341": "overview: two wolves for three",
+                  "7883963688096379563": ("native audit: a second, miniature tree on its own islet (x 218-352, "
+                                          "y 2176-2238) for a solitary tree")}),
+    interior=dict(
+        old="7414267858891695058", new="minus9196631274539277035",
+        why=("a second dress form on a pole stand with a round shelf through its torso (x 2280-2680, y 0-780), about "
+             "0.27 x 0.5 in printed; the prompt asks for one mannequin"),
+        percentiles=("ImageReward/MUSIQ_c/HPSv2.1 at 2048x4096: new SCA 93/70/99, AReA 90/6/87; old SCA 11/29/33, "
+                     "AReA 7/54/3"),
+        accepted_not_used={"5826245701465116957": ("cabin in snow, SCA 84/79/86, AReA 82/33/52: passed the native audit "
+                                                   "and ties the dancer on the ranking sum; the dancer wins on "
+                                                   "ImageReward and HPSv2.1 and adds variety to the row")},
+        rejected={"3943607367684487957": ("native audit (ranked first, SCA 94/98/97): a white pseudo-signature on the hay "
+                                          "(x 45-68, y 1522-1630), an egg-shaped ball wider than the boy's torso and a "
+                                          "horn-like bat top, all visible at print"),
+                  "minus3118670343091498341": "overview: a fused second wolf head",
+                  "1139740195494332405": "overview: two women and two owls",
+                  "1442138154946148100": "overview: vertical streaks around the figure",
+                  "8253776796901638375": "not used: repeats the subject of the showcase portrait"}))
 
 # Zoom windows are (x, y, size) in source pixels. `at` places the inset inside its
 # image: a corner, or "top" (centred above the window). `margin` is the (horizontal,
@@ -87,10 +128,10 @@ SQUARES = [
     # pairs it with its window.
     dict(pid="minus1066207185399086750", what="portrait",
          zoom=dict(box=(1160, 2080, 384), at="bottom-right", side=None)),
-    # Lit spire: inset on the empty sky. The badge sits on the dark rocks because the
-    # top-left corner holds the second peak and its lit tower.
-    dict(pid="minus6845347395255545991", what="illustration", badge="bottom-right",
-         zoom=dict(box=(1850, 420, 384), at="top-right", side="right")),
+    # Owl's face (since 2026-10-30; replaced the illustration minus6845347395255545991, see REPLACED_20261030):
+    # inset docked bottom-right on the forest floor, without leaders, which would cross the owl's body.
+    dict(pid="minus7264311869050248176", what="woman with owl",
+         zoom=dict(box=(2045, 1495, 384), at="bottom-right", side=None)),
     # Vase rim and daisies: inset docked in the corner on the empty tablecloth, clear of the vase. The badge moves to the bottom
     # left because the top-left corner holds the tip of the left branch. (Replaced the pear still life
     # minus947425340308551929 on 2026-10-20: SCA drew a see-through third bottle and a faded second bowl.)
@@ -100,7 +141,7 @@ SQUARES = [
     dict(pid="997293625843621481", what="ice climber",
          zoom=dict(box=(1900, 1250, 384), at="top-right", side="right")),
 ]
-WIDES = [dict(res="2048x4096", pid="7414267858891695058", what="interior"),
+WIDES = [dict(res="2048x4096", pid="minus9196631274539277035", what="dancer underwater"),  # since 2026-10-30
          dict(res="2048x4096", pid="minus5370774387421928008", what="river town")]
 
 # Prompts shown elsewhere in the paper; the showcase must not repeat them.
@@ -115,6 +156,7 @@ SHOWN_ELSEWHERE = {
     "7396058529551312081", "1316997283360365550", "minus8648158440845565467",         # failures
     "minus702025498990232048",
     "7109958488611222679", "2232973817337527860", "minus548913239957610051",         # Figure 6 (zoom4k)
+    "7095623346664983157", "minus7824758602266642611",                                # Figure 1, 6 (2026-10-30)
 }
 
 
@@ -304,7 +346,7 @@ def main() -> None:
     caption = (
         r"\textbf{\sca{} keeps layout and fine detail across three aspect ratios without training.} "
         r"Curated \sca{} outputs at $4096^2$, $2048\times4096$ and $2048\times6144$, picked by eye for "
-        r"variety; insets are 1:1 crops of the outlined windows.")
+        r"variety and clean results, so curation favours \sca{}; insets are 1:1 crops of the outlined windows.")
     comments = ["%% %s %s (%s): %s" % (r["role"], r["config"]["prompt_id"].split("_")[-1],
                                        r["config"]["res"], " ".join(r["prompt"].split())[:140])
                 for r in records]
@@ -322,6 +364,9 @@ def main() -> None:
         selection="Curated by visual inspection of SCA (sca_nb) seed-0 outputs for variety and clean "
                   "results; no metric ranking, except the 2026-10-20 still-life replacement, shortlisted "
                   "with ImageReward and MUSIQ_c in the top half of 195 and confirmed by a 1:1 audit. "
+                  "On 2026-10-30 the illustration and the interior were replaced after the final operator's "
+                  "audit, by the rule in final_operator.replaced_20261030 (metric shortlist on the final "
+                  "operator, fairness to every baseline at that size, native audit). "
                   "Prompts shown in other paper figures and the four development prompts are excluded. "
                   "Since 2026-10-30 every image is the final operator's (sca_v2) image of the same prompt "
                   "and seed; the windows are unchanged except the panorama's first (see final_operator).",
@@ -331,7 +376,8 @@ def main() -> None:
                                               old_inset="top, leaders above", new_box_xys=[3440, 560, 384],
                                               new_inset="top-right, leaders right",
                                               why="the lit watchtower it framed does not exist in the final "
-                                                  "image")),
+                                                  "image"),
+                            replaced_20261030=REPLACED_20261030),
         width_in=W, height_in=round(total_h, 4), dpi_full_images=DPI, pdf=str(OUT_PDF.relative_to(REPO)),
         records=records, asset_sha256={p.name: sha(p) for p in sorted(ASSETS.glob("*.jpg"))}),
         indent=2) + "\n")

@@ -23,7 +23,13 @@ Selection (recorded in figures/zoom4k_provenance.json):
   per-image median there (HPSv2.1 p7, ImageReward p21, MUSIQ_c p2), so the row did not meet the rule
   below either. All three were replaced. The medieval square (m3268147817845827695) that took the middle
   row was replaced in turn: its prompt asks for a lone figure, and SCA adds about three small
-  pedestrians, one of them inside the automatic window.
+  pedestrians, one of them inside the automatic window. On 2026-10-30 the final operator's lily image
+  (2232973817337527860) showed ghost lines along the table top's back edge, a white glow over its rim and streaks
+  across the drape, so the middle row was re-chosen by the same rule on the final operator's metrics
+  (eval/a4k195_main_sca_v2) and a native audit of every tile: the still life m947425340308551929 failed (a
+  see-through third bottle, pears floating inside both bottles) and the blue-skinned character at a desk
+  (m7824758602266642611) passed. The published operator's image of that prompt had two small copies of the
+  character and was rejected on 2026-10-20; the final operator's image has none (READMITTED_V2).
 * Rule: among the 195 evaluation prompts that are not displayed in any other figure and not used in
   development, shortlist by SCA's ImageReward and MUSIQ_c percentiles (eval/a4k195_main), keeping
   prompts where AReA and HRDiT each have ImageReward and HPSv2.1 at or above their own 25th percentile
@@ -31,9 +37,10 @@ Selection (recorded in figures/zoom4k_provenance.json):
   pixels and reject any image with extra or repeated subjects, objects the prompt does not ask for,
   broken anatomy, seams, lattice or speckle; prefer varied subjects. The middle row was meant to show
   architecture or a street, but every such candidate failed the viewing or the rule (REJECTED,
-  METRIC_STAGE), so it shows an interior still life: pink lilies in a vase by a paneled door
-  (2232973817337527860). Ranking on SCA's metrics favours SCA in the printed values, so the caption says
-  the prompts are curated and Table tab:main carries the means.
+  METRIC_STAGE), so it showed an interior still life, pink lilies in a vase by a paneled door
+  (2232973817337527860), and since 2026-10-30 the character at a desk (m7824758602266642611). Ranking on
+  SCA's metrics favours SCA in the printed values, so the caption says the prompts are curated and Table
+  tab:main carries the means.
 * Crop windows are automatic, never placed by hand: fig_qual_main.auto_box, the CROP_W x CROP_H window
   with the most edge energy averaged over the four methods shown, at least 256 px from every border.
 
@@ -65,13 +72,31 @@ TECTONIC = os.path.expanduser("~/.local/bin/tectonic")
 
 EVAL = Path("/scratch/09032/saini_2/sca/eval")         # per-image CSVs behind Table tab:main
 ARCHIVE = REPO / "results" / "evidence" / "eval"         # byte-identical copies archived in the repo
-PROMPTS = ["7109958488611222679", "2232973817337527860", "m548913239957610051"]  # portrait, lilies, waterfall
+PROMPTS = ["7109958488611222679", "m7824758602266642611", "m548913239957610051"]  # portrait, character, waterfall
 REPLACED = {  # previous prompts of this figure and why each was replaced (audits of 2026-10-20)
     "2100482621711410240": "SCA: a smaller copy of the character at a desk in the background; floating hands",
     "m6394968997939197542": "SCA clean; AReA far below its own median (HPSv2.1 p7, ImageReward p21)",
     "m2729538226706404616": "SCA: a second ear with an earring at the back of the head",
     "m3268147817845827695": ("SCA: the prompt asks for a lone figure; SCA adds about three small pedestrians, "
-                             "one of them inside the automatic window")}
+                             "one of them inside the automatic window"),
+    "2232973817337527860": ("final operator (2026-10-30): ghost lines repeat the table top's back edge (x 1100-1750, "
+                            "y 3290-3430, 16 px period), a white glow replaces the left rim (x 1030-1330, y 3380-3850), "
+                            "streaks cross the drape; curtain ribbing locked to the 16 px token grid")}
+REPLACED_V2 = {"2232973817337527860"}  # replaced after the final operator's audit; values and percentiles: sca_v2
+REJECTED_V2 = {  # final-operator candidates for the middle row (2026-10-30), in rank order; percentiles in provenance
+    "m947425340308551929": ("native audit: a see-through third bottle neck inside the tall bottle (x 965-1020, y 1585-1860) "
+                            "and pears floating inside both bottles, visible at print size"),
+    "m9039328566106297566": "overview: neon signs of invented characters",
+    "m795146951737249951": "overview: two or three double basses and extra men for one bass player and one seated man",
+    "m5332089088153794307": "overview: two citrus slices beyond the three lemons and one petal asked for",
+    "m5996982714209002611": "overview: lattice along the coat and sleeve edges",
+    "175243114551627459": "not viewed: repeats the sheep-and-church subject of Figure 1",
+    "5941097972571555184": "not viewed: repeats the sheep-and-church subject of Figure 1"}
+READMITTED_V2 = {  # rejected on 2026-10-20 for the published operator's image; the final operator's image passed
+    "m7824758602266642611": ("native audit 2026-10-30: no copy of the character (shelves, wall, poster checked); flaws "
+                             "only at 1:1: six digits on the character's left hand (x 2100-2580, y 2630-3010, about "
+                             "0.4 mm per finger in print), pseudo-lettering on the plaque, book spines, jar and map, a "
+                             "melted chain tangle (x 350-730, y 3130-3470); the automatic window (the eye) is clean")}
 FAIR_LO = 25  # AReA and HRDiT: ImageReward and HPSv2.1 percentiles at or above this on every shown prompt
 REJECTED = {  # candidates viewed whole and at native pixels and rejected, with the reason (SCA's image)
     # first audit (shortlist for all three rows)
@@ -127,10 +152,8 @@ METHODS = [("full", "Full attention", MAIN195, "full"),
 AUDIT_METHODS = METHODS[:3] + [("sca", "SCA (published operator)", MAIN195, "sca_nb")]
 FINAL_VIEW = {  # the final operator's images of the shown prompts, viewed whole and at native pixels (2026-10-30)
     "7109958488611222679": "clean; nearly identical to the published image (double shoulder straps instead of an O-ring)",
-    "2232973817337527860": ("new defect: a streaked, ribbed band runs along the back-left edge of the table top where "
-                            "it meets the wall (about x 1100 to 1900, y 3500 to 3600), replacing the published "
-                            "image's squared back piece; the curtain gains a ribbed texture; the lilies, vase and "
-                            "door are clean"),
+    "m7824758602266642611": ("one character, one ornate globe, map and compass; no copy of the character; flaws only "
+                             "at 1:1 (READMITTED_V2); the automatic window falls on the eye behind the glasses"),
     "m548913239957610051": ("clean; the two misty background peaks of the published image are gone; a few faint "
                             "light spots in the sky")}
 CROSS = {  # other per-image CSVs that score the same PNG; the value must agree exactly
@@ -250,7 +273,7 @@ def main() -> None:
     for pid, p in pct.items():  # the selection rule holds for every shown prompt
         for key in ("area", "hrdit"):
             assert p[key]["ir"] >= FAIR_LO and p[key]["hpsv21"] >= FAIR_LO, (pid, key, p[key])
-    assert not set(PROMPTS) & (set(REJECTED) | set(METRIC_STAGE) | set(REPLACED))
+    assert not set(PROMPTS) & ((set(REJECTED) - set(READMITTED_V2)) | set(METRIC_STAGE) | set(REPLACED) | set(REJECTED_V2))
 
     for r, pid in enumerate(PROMPTS):
         top = HEAD + r * (BAND + h) + BAND
@@ -330,9 +353,10 @@ def main() -> None:
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         shutil.copy(Path(tmp) / "zoom4k.pdf", out_pdf)
 
-    replaced = {pid: dict(why=why, values={key: float(lookup(path, name, pid)[METRIC])
-                                           for key, _, path, name in AUDIT_METHODS},
-                          percentiles=percentiles(pid, AUDIT_METHODS))
+    replaced = {pid: dict(why=why, operator="sca_v2" if pid in REPLACED_V2 else "sca_nb",
+                          values={key: float(lookup(path, name, pid)[METRIC])
+                                  for key, _, path, name in (METHODS if pid in REPLACED_V2 else AUDIT_METHODS)},
+                          percentiles=percentiles(pid, METHODS if pid in REPLACED_V2 else AUDIT_METHODS))
                 for pid, why in REPLACED.items()}
     published = {pid: dict(value=float(lookup(MAIN195, "sca_nb", pid)[METRIC]),
                            printed=f"{float(lookup(MAIN195, 'sca_nb', pid)[METRIC]):.1f}",
@@ -353,8 +377,8 @@ def main() -> None:
                    "native pixels and reject extra or repeated subjects, objects the prompt does not ask for, broken "
                    "anatomy, seams, lattice or speckle; prefer varied subjects. The middle row was meant to show "
                    "architecture or a street; every such candidate failed the viewing or the rule (see "
-                   "percentiles.rejected and percentiles.metric_stage), so it shows an interior still life, "
-                   "2232973817337527860 (pink lilies in a vase by a paneled door). Its native pixels are clean; "
+                   "percentiles.rejected and percentiles.metric_stage), so it showed an interior still life, "
+                   "2232973817337527860 (pink lilies in a vase by a paneled door). Its native pixels were clean; "
                    "minor background quirks: a flat beige door with a brass knob and a wall plate beside the "
                    "paneled door, and a squared back piece on the round table top; no subject is repeated. Clean "
                    "at overview but not used, being a second landscape: 3638740675706761149. The rule constrains "
@@ -364,7 +388,13 @@ def main() -> None:
                    "operator's images (sca_nb). On 2026-10-30 the SCA column switched to the final operator "
                    "(sca_v2), the same prompts and seed; its images were viewed whole and at native pixels "
                    "(final_operator.viewed) and its printed values come from eval/a4k195_main_sca_v2. The "
-                   "prompts were not re-ranked on the final operator's metrics (its percentiles are in "
+                   "final operator's lily image streaks the table top, so the middle row was re-chosen on "
+                   "2026-10-30 by the same rule on the final operator's metrics (eval/a4k195_main_sca_v2; the "
+                   "development prompts and every prompt shown in any figure excluded) with a native audit of "
+                   "every tile: the still life m947425340308551929 failed (see-through third bottle, floating "
+                   "pears) and the character at a desk m7824758602266642611 passed (its published-operator "
+                   "rejection does not hold for the final operator's image; percentiles.readmitted_final_operator). "
+                   "The other two rows were not re-ranked (their final-operator percentiles are in "
                    "percentiles.shown)." % FAIR_LO),
         final_operator=dict(
             method="sca_v2", images="out/dupfix/sca_v2/4096x4096 (imgsel.final_twin of the published image)",
@@ -397,7 +427,11 @@ def main() -> None:
                   "operator (sca_nb), whose images the audits viewed"),
             rejected={pid: dict(why=why, percentiles=percentiles(pid, AUDIT_METHODS)) for pid, why in REJECTED.items()},
             metric_stage={pid: dict(why=why, percentiles=percentiles(pid, AUDIT_METHODS))
-                          for pid, why in METRIC_STAGE.items()}),
+                          for pid, why in METRIC_STAGE.items()},
+            rejected_final_operator={pid: dict(why=why, percentiles=percentiles(pid))
+                                     for pid, why in REJECTED_V2.items()},
+            readmitted_final_operator={pid: dict(why=why, percentiles=percentiles(pid))
+                                       for pid, why in READMITTED_V2.items()}),
         layout_pt=dict(width=W, height=round(total, 3), row_height=round(h, 3), full_image=round(h, 3),
                        crop_width=round(cw, 3), gutters=dict(full_to_crops=G_OUT, between_crops=G_IN),
                        header_band=HEAD, value_band=BAND, box=dict(colour="#" + RED, width_pt=BOX_LW),

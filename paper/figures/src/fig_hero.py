@@ -14,6 +14,14 @@ operator (sca_nb) on which every curated choice below was made; imgsel.final_twi
 against its published twin (same prompt, prompt id and derived seed) and the sca_v2 flags. The final
 images were viewed whole and at native pixels on 2026-10-30 (FINAL_VIEW, in the provenance).
 
+Final-operator audit (2026-10-30, .agent/notes/figure_curation_20261030.md): the panorama's inset window showed
+garbled lettering on two facades, so the panorama prompt was replaced by the 2026-10-20 rule run on the final
+operator's 2048x6144 per-image CSVs (eval/a4k195_2048x6144_sca_v2): eligible prompts (not shown elsewhere, not
+development), AReA's ImageReward and HPSv2.1 at or above its own 25th percentile, ranked by SCA's ImageReward and
+MUSIQ_c percentiles, overview pre-screen, then every native tile audited. The first prompt that passed is a turquoise
+river below snow peaks (7095623346664983157); its window is on the snow ridges. The cathedral, the portrait and the
+strip image have flaws only at 1:1 and stay (AUDIT_20261030).
+
 Timing and metrics are re-derived from the sources of Table 1 (FLUX.1-dev, 4096^2, 195 prompts) and
 stored in the provenance only; neither the figure nor its snippet caption prints a time or a score.
 Every time is the campaign mean of Table 1 (camp. column: mean over the 195-prompt evaluation on
@@ -73,29 +81,56 @@ FRAME = 0.6 / 72   # line width of the one frame colour (scaZoom), inches
 
 # Mosaic: three curated SCA outputs in one row of equal height (panorama 3h, squares h). A zoom
 # window is (x, y, side) in native pixels; its native-pixel inset sits inside the image at the
-# bottom-right corner, `inset` inches wide. Panorama: the town houses with flower boxes, inset on
-# the lake. Cathedral: the rose window, inset on the pews. Portrait (a bearded man with a hat and
+# bottom-right corner, `inset` inches wide. Panorama (since 2026-10-30): the snow ridges, inset on the
+# gravel of the right bank. Cathedral: the rose window, inset on the pews. Portrait (a bearded man with a hat and
 # an acoustic guitar): no inset, since any corner large enough would cover the guitar or the
 # subject.
 MOSAIC = [
-    (dict(method="sca_v2", res="2048x6144", pid="minus2742856837225126754",
-          zoom=dict(box=(4064, 832, 384), inset=0.50)), "pano"),
+    (dict(method="sca_v2", res="2048x6144", pid="7095623346664983157",
+          zoom=dict(box=(2100, 610, 384), inset=0.50)), "pano"),
     (dict(method="sca_v2", res="4096x4096", pid="minus8737279395568207187",
           zoom=dict(box=(1792, 1536, 448), inset=0.44)), "square"),
     (dict(method="sca_v2", res="4096x4096", pid="5849277588805396896"), "portrait"),
 ]
 OURS = "sca_v2"  # the final operator; every curated choice here was made on the published operator (sca_nb)
 FINAL_VIEW = {  # the final operator's images, viewed whole and at native pixels (2026-10-30)
-    "pano": ("same layout; the bridge has one large arch and fewer small ones, the island church is smaller; no "
-             "repeated subject. New defect in the inset window (4064, 832, 384): two facades carry signs of "
-             "garbled pseudo-lettering, and the flower boxes of the published image are gone. A text-free window "
-             "on the same row of houses, with flower boxes: (3420, 800, 384); the window was left unchanged"),
+    "pano": ("7095623346664983157 (since 2026-10-30): one river and one range of snow peaks; every native tile audited; "
+             "flaws only at 1:1: blocky 4 to 8 px texture on the right-hand snow ridge (x 4096-5300, y 420-850), "
+             "gritty speckle on the right gravel, a small pale lump at (4526, 1488) and a 6 px dark fragment above "
+             "the ridge at (5049, 434); the prompt's starry sky shows only as 1 to 3 px dots. The window "
+             "(2100, 610, 384) on the snow ridges is clean"),
     "square": ("same layout; the rose window is inside the zoom window; a few small seated people and a wall "
                "sign at the end of the side aisles (the published image also has a few seated people)"),
     "portrait": "same man, hat and guitar; the headstock still carries extra tuners, as in the published image",
     "strip": ("one church and the flock, as in the published image; the faint distant spires of the published "
               "image are gone; the strip window still lies on the church tower"),
 }
+AUDIT_20261030 = dict(  # .agent/notes/figure_curation_20261030.md; percentiles are floor(100 x share <= value)
+    replaced=dict(
+        pano=dict(
+            old="minus2742856837225126754", new="7095623346664983157",
+            why=("final operator: garbled two-line pseudo-lettering on a yellow facade (x 4124-4202, y 1046-1077) and "
+                 "partial pseudo-signs inside the inset window (4064, 832, 384), the brightest detail of the inset. A "
+                 "text-free window on the same houses existed (3420, 740, 384), but the prompt also fails the "
+                 "fairness rule at this size (AReA HPSv2.1 p17), so it was replaced, not re-windowed"),
+            rule=("eligible (not shown in any figure, not development; 101 of 195), AReA ImageReward and HPSv2.1 >= its "
+                  "own p25 at 2048x6144 (58 left), ranked by SCA ImageReward + MUSIQ_c percentiles on "
+                  "eval/a4k195_2048x6144_sca_v2; overview pre-screen of the top ten, then every native tile"),
+            percentiles=("ImageReward/MUSIQ_c/HPSv2.1 at 2048x6144, final operator: new SCA 66/87/35 (ImageReward "
+                         "1.17, MUSIQ_c 71.1), AReA 56/96/47; old SCA 70/91/87, AReA 27/98/17"),
+            rejected={"1638867997226496674": "two pairs of children for one boy and one girl",
+                      "1118979843958125111": "smeared, striped forearm and a floating hand on the sofa back",
+                      "m9219623328452982854": "a second face behind the climber",
+                      "m3880872769316591135": "extra cloaked figures and extra trees for a lone figure and tree",
+                      "m293370523718655394": "a second, thinner waterfall for one"},
+            also_accepted={"minus1017950324987649681": "ranked second (SCA 74/76/46); clean at print, kept as backup"})),
+    kept={"cathedral": ("flaws only at 1:1: two chandeliers hang from caps without visible chains, confetti-like "
+                        "lancet glass, a tiny pseudo-text plaque; the rose-window inset is clean"),
+          "portrait": ("flaws only at 1:1: crumpled tuner keys and red striping on the headstock, a bright rim "
+                       "around dark silhouettes; hands sound"),
+          "strip": ("flaws only at 1:1: a loose dark rod on the snowy nave roof (x 2458-2593, y 2173-2388), a "
+                    "1.2 grey-level step in the sky at x 2112; one church, about 40 sheep; the belfry window is "
+                    "clean and shows no lattice")})
 
 # Six-method strip: one curated prompt; the crop window is shared by all methods.
 # Chosen from the 195 evaluation prompts so that SCA's output is clean at native pixels and has
@@ -351,9 +386,11 @@ def main() -> None:
         final_operator=dict(
             method=OURS, images="out/dupfix/sca_v2 (imgsel.final_twin of each published image)",
             switched="2026-10-30: every SCA image (mosaic and strip) now shows the final operator, same "
-                     "prompts and seed; the crops and zoom windows are unchanged; every curated choice and "
-                     "audit below was made on the published operator (sca_nb)",
+                     "prompts and seed; the crops and zoom windows are unchanged except the panorama, whose "
+                     "prompt and window were replaced after the final-operator audit (audit_20261030); every "
+                     "other curated choice and audit below was made on the published operator (sca_nb)",
             viewed=FINAL_VIEW),
+        audit_20261030=AUDIT_20261030,
         selection="Curated. Mosaic: SCA outputs chosen by visual inspection; the portrait was "
                   "re-chosen on 2026-10-20 from a shortlist ranked by SCA's per-image ImageReward "
                   "and MUSIQ_c percentiles (eval/a4k195_main) and viewed at native pixels. Strip: "

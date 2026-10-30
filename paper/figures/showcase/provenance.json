@@ -1,15 +1,15 @@
 {
-  "selection": "Curated by visual inspection of SCA (sca_nb) seed-0 outputs for variety and clean results; no metric ranking, except the 2026-10-20 still-life replacement, shortlisted with ImageReward and MUSIQ_c in the top half of 195 and confirmed by a 1:1 audit. Prompts shown in other paper figures and the four development prompts are excluded. Since 2026-10-30 every image is the final operator's (sca_v2) image of the same prompt and seed; the windows are unchanged except the panorama's first (see final_operator).",
+  "selection": "Curated by visual inspection of SCA (sca_nb) seed-0 outputs for variety and clean results; no metric ranking, except the 2026-10-20 still-life replacement, shortlisted with ImageReward and MUSIQ_c in the top half of 195 and confirmed by a 1:1 audit. On 2026-10-30 the illustration and the interior were replaced after the final operator's audit, by the rule in final_operator.replaced_20261030 (metric shortlist on the final operator, fairness to every baseline at that size, native audit). Prompts shown in other paper figures and the four development prompts are excluded. Since 2026-10-30 every image is the final operator's (sca_v2) image of the same prompt and seed; the windows are unchanged except the panorama's first (see final_operator).",
   "final_operator": {
     "method": "sca_v2",
     "images": "out/dupfix/sca_v2 (imgsel.final_twin of each published image)",
     "viewed": {
       "Great Wall": "the lit wall segment and watchtower on the left ridge of the published image are gone (bare ridge); the first window moved to the lit watchtowers on the main wall (PANO); otherwise clean",
       "portrait": "clean; one pair of earrings, a different earring design",
-      "illustration": "clean of repeats: one waterfall and one lit spire (the published image has a second waterfall and a second lit tower); the spire's tower carries a boxy block; one small lit tower on a hill at left",
       "still life": "clean",
       "ice climber": "clean; the tiny figures at the top of the published image are gone",
-      "interior": "clean of repeats; a dress form on a stand with a small shelf at the back",
+      "woman with owl": "native audit 2026-10-30: one woman, one owl with two wings and two feet, one visible hand; flaws only at 1:1: six talons on the viewer-right owl foot (x 2390-2575, y 2395-2615), a red backlit rim on a curled finger; the window (2045, 1495, 384) frames the owl's face",
+      "dancer underwater": "clean (native audit 2026-10-30): one woman, two hands, two feet; the red and brown band at the top is the dress and hair reflected under the water surface, with no face or limbs",
       "river town": "clean; nearly identical to the published image"
     },
     "moved_window": {
@@ -27,6 +27,39 @@
       ],
       "new_inset": "top-right, leaders right",
       "why": "the lit watchtower it framed does not exist in the final image"
+    },
+    "replaced_20261030": {
+      "rule": "eligible prompts only (not shown in any figure, not development); SCA's ImageReward and MUSIQ_c at or above its own median on the final operator's per-image CSVs (eval/a4k195_main_sca_v2, a4k195_2048x4096_sca_v2); every baseline evaluated at that size (4096^2: AReA, HRDiT, DyPE, SEGA, UltraImage; 2048x4096: AReA) with ImageReward and HPSv2.1 at or above its own 25th percentile; ranked by SCA's two percentiles; overview pre-screen, then every native tile audited",
+      "illustration": {
+        "old": "minus6845347395255545991",
+        "new": "minus7264311869050248176",
+        "why": "a second lit tower, a pagoda with lit windows, on the left hill (x 1412-1499, y 2170-2310); the prompt asks for one glowing tower; visible in the embedded image",
+        "percentiles": "ImageReward/MUSIQ_c/HPSv2.1 at 4096^2: new SCA 89/52/100, AReA 86/92/100, HRDiT 84/62/95, DyPE 89/69/92, SEGA 82/47/98, UltraImage 77/45/96; old SCA 45/58/30 (HRDiT ImageReward p8)",
+        "rejected": {
+          "minus795146951737249951": "overview: two or three double basses and extra men",
+          "minus5996982714209002611": "overview: lattice along the coat and sleeve edges",
+          "minus5715104867979054073": "not used: repeats the subject of the showcase portrait",
+          "1139740195494332405": "overview: an extra wing-like shape on the owl",
+          "minus3118670343091498341": "overview: two wolves for three",
+          "7883963688096379563": "native audit: a second, miniature tree on its own islet (x 218-352, y 2176-2238) for a solitary tree"
+        }
+      },
+      "interior": {
+        "old": "7414267858891695058",
+        "new": "minus9196631274539277035",
+        "why": "a second dress form on a pole stand with a round shelf through its torso (x 2280-2680, y 0-780), about 0.27 x 0.5 in printed; the prompt asks for one mannequin",
+        "percentiles": "ImageReward/MUSIQ_c/HPSv2.1 at 2048x4096: new SCA 93/70/99, AReA 90/6/87; old SCA 11/29/33, AReA 7/54/3",
+        "accepted_not_used": {
+          "5826245701465116957": "cabin in snow, SCA 84/79/86, AReA 82/33/52: passed the native audit and ties the dancer on the ranking sum; the dancer wins on ImageReward and HPSv2.1 and adds variety to the row"
+        },
+        "rejected": {
+          "3943607367684487957": "native audit (ranked first, SCA 94/98/97): a white pseudo-signature on the hay (x 45-68, y 1522-1630), an egg-shaped ball wider than the boy's torso and a horn-like bat top, all visible at print",
+          "minus3118670343091498341": "overview: a fused second wolf head",
+          "1139740195494332405": "overview: two women and two owls",
+          "1442138154946148100": "overview: vertical streaks around the figure",
+          "8253776796901638375": "not used: repeats the subject of the showcase portrait"
+        }
+      }
     }
   },
   "width_in": 5.5,
@@ -300,18 +333,18 @@
       ]
     },
     {
-      "role": "square: illustration",
-      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus6845347395255545991_8ad228c889_seed0.png",
-      "png_sha256": "ccea41a2f7152c7e006267daa077bef9f4667bad370816a260b51236cebf23d3",
-      "prompt": "Majestic mountains bathed in pink and purple hues under a starry night sky, with a glowing tower overlooking a serene waterfall and tranquil blue pool, surrounded by dark trees and rocky terrain.",
+      "role": "square: woman with owl",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus7264311869050248176_b218a46c7c_seed0.png",
+      "png_sha256": "c8d63d5e93eeea1fdd92169024d9078b408bd15cb0ff8c46111b0ef1b46cff96",
+      "prompt": "A woman in a black dress with intricate lace detailing stands in a forest, gazing over her shoulder at a large owl with outstretched wings, illuminated by soft sunlight filtering through the trees.",
       "config": {
         "schema_version": 1,
         "method": "sca_v2",
         "res": "4096x4096",
-        "prompt_id": "a4k_eval_4096_minus6845347395255545991",
-        "prompt": "Majestic mountains bathed in pink and purple hues under a starry night sky, with a glowing tower overlooking a serene waterfall and tranquil blue pool, surrounded by dark trees and rocky terrain.",
+        "prompt_id": "a4k_eval_4096_minus7264311869050248176",
+        "prompt": "A woman in a black dress with intricate lace detailing stands in a forest, gazing over her shoulder at a large owl with outstretched wings, illuminated by soft sunlight filtering through the trees.",
         "seed": 0,
-        "derived_seed": 3906796425664505105,
+        "derived_seed": 1484652318472683573,
         "steps": 28,
         "guidance": 4.5,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -385,12 +418,12 @@
           "stochastic_sampling": false,
           "_use_default_values": [
             "use_beta_sigmas",
-            "stochastic_sampling",
             "shift_terminal",
-            "use_exponential_sigmas",
+            "use_karras_sigmas",
             "time_shift_type",
             "invert_sigmas",
-            "use_karras_sigmas"
+            "stochastic_sampling",
+            "use_exponential_sigmas"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
@@ -400,24 +433,24 @@
       "zooms": [
         {
           "box_xys": [
-            1850,
-            420,
+            2045,
+            1495,
             384
           ],
           "crop": "square2_zoom.jpg",
           "crop_px": 384,
           "inset_in": 0.44,
           "magnification": 3.51,
-          "inset_at": "top-right",
+          "inset_at": "bottom-right",
           "inset_margin_in": [
             0.035,
             0.035
           ],
           "inset_xy_in": [
             0.8625,
-            0.035
+            0.8625
           ],
-          "leaders": true
+          "leaders": false
         }
       ]
     },
@@ -666,18 +699,18 @@
       ]
     },
     {
-      "role": "wide: interior",
-      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/2048x4096/a4k_eval_4096_7414267858891695058_31352fa25b_seed0.png",
-      "png_sha256": "82b10d90b564a5234366236170d7a8054d8b3575893d888a7340932156f8df85",
-      "prompt": "A cluttered artist's workspace featuring an ornate picture frame, an easel, a mannequin, stacked books, and multiple smaller frames in a vintage suitcase, with brushes and paint supplies on a nearby tabletop under warm lighting. A patterned curtain drapes in the background.",
+      "role": "wide: dancer underwater",
+      "source": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/2048x4096/a4k_eval_4096_minus9196631274539277035_99163e1545_seed0.png",
+      "png_sha256": "28d953f56ef8fe60deadfed956cb118b782924a68dad58af12e3a52140c66143",
+      "prompt": "A woman in a flowing red dress dances gracefully underwater, with her long hair swirling around her, against a backdrop of clear blue water and sandy ocean floor.",
       "config": {
         "schema_version": 1,
         "method": "sca_v2",
         "res": "2048x4096",
-        "prompt_id": "a4k_eval_4096_7414267858891695058",
-        "prompt": "A cluttered artist's workspace featuring an ornate picture frame, an easel, a mannequin, stacked books, and multiple smaller frames in a vintage suitcase, with brushes and paint supplies on a nearby tabletop under warm lighting. A patterned curtain drapes in the background.",
+        "prompt_id": "a4k_eval_4096_minus9196631274539277035",
+        "prompt": "A woman in a flowing red dress dances gracefully underwater, with her long hair swirling around her, against a backdrop of clear blue water and sandy ocean floor.",
         "seed": 0,
-        "derived_seed": 1582074450160114218,
+        "derived_seed": 8207145854867416728,
         "steps": 28,
         "guidance": 4.5,
         "model": "black-forest-labs/FLUX.1-dev",
@@ -750,13 +783,13 @@
           "time_shift_type": "exponential",
           "stochastic_sampling": false,
           "_use_default_values": [
-            "use_karras_sigmas",
-            "use_beta_sigmas",
-            "time_shift_type",
+            "stochastic_sampling",
+            "shift_terminal",
             "invert_sigmas",
             "use_exponential_sigmas",
-            "shift_terminal",
-            "stochastic_sampling"
+            "use_beta_sigmas",
+            "use_karras_sigmas",
+            "time_shift_type"
           ],
           "_class_name": "FlowMatchEulerDiscreteScheduler",
           "_diffusers_version": "0.30.0.dev0"
@@ -872,13 +905,13 @@
     "pano_zoom2.jpg": "0e5100b6ee8fbb855086a6d993132c0cbddbc86d3e05a95755251152188e5e15",
     "square1.jpg": "c18f4d9d08ed70c07d63e9403fcce6e6ed33108eda8815c76d24f92e197d0cb9",
     "square1_zoom.jpg": "c9f0f3aa286b162fe424926db42a33af3fb492db5306b0e4dd9cebbc6986371c",
-    "square2.jpg": "2ca4999d4be8edff2eea36bdbd118ad1708e972cf346dc4c6ed5f809e08ff31d",
-    "square2_zoom.jpg": "526a2d1c650a737ca83a6dc93eaf9edec0e1aa71f6a7da42eafd9f87b69b082a",
+    "square2.jpg": "1bed3675cfd1eaaa852246be23a9f9c2f1c06addd095c289f65dc126366f5cb4",
+    "square2_zoom.jpg": "34ff4ac8a98397c137b6ba184bab1f2d40710ed01942fc133f7fb624775e1e68",
     "square3.jpg": "cb6458fe393cb5280a20564fe4f4ec2ef34e30cdb6b2dc2502d86b6029dffc5b",
     "square3_zoom.jpg": "deedf1e26d335dd5db3287ad66c2a89abc40a49a4e577d4719ca936945a28298",
     "square4.jpg": "0068dff337abc8a5393e582d4b3a1aa4daf9e77ed782c974d98842a9ac72a538",
     "square4_zoom.jpg": "3dd14042ca82ec85b995b02caed3032bc95246644e908e98c9125b7beace1bb2",
-    "wide1.jpg": "447198e410c92dae4155e1dfc418eab0ae37f149011ee0cd02e24593897af700",
+    "wide1.jpg": "1c62b1598f51df424ed6915432ff9d5f90b68043d0f69e703456d97619b555ac",
     "wide2.jpg": "1c0b1c2ca3f362c334bd4703ae38a6f141012598da30e910676a814d11b194ae"
   }
 }

@@ -5,13 +5,15 @@ Rewrite paper/ around sca_v2 (opening + shrinking windows 128/112/96/80 + matche
 softmax, code sca/attn.py sca_dedup_forward); swap every table to sca_v2 numbers as groups land; deliver build + notes.
 
 ## Status and next action
-- Structure stage DONE: commit eccbd70 pushed (delivery_lxyo4jjv, 55 pp, Section 6 ends p. 10).
-- 01:36 m4k + m24 + m26 landed. Full-set duplication for sca_v2: 25/95 = 26% [18.5, 36.0] (published 57%, AReA 4%);
-  46-prompt tuning subset said 15%. vs AReA at 4096^2: 11 of 15 wins, none lost, IR +0.33 [0.25, 0.41],
-  FID -5.6 [-9.9, -0.8] (no reference bootstrap yet). 2048x6144: seven of 15 wins. Speed ratio waits for latency.
-- Swap agent S1 running (m4k, m24, m26, plus s1/s2/pg if they land): swap procedure in the notes file, commit+push.
-- NEXT: re-arm waiter for s1 s2 pg kr hd hk latency; spawn S2 for the remaining batch; final render review 2 +
-  delivery + latest_delivery.md + HANDOVER Section 20 + report (12 h mark about 09:20 CDT Oct 30).
+- Structure eccbd70; swap S1 597d7cc (main, m24, m26, s1, s2, pg; corrected-FID CPU bootstraps; images to sca_v2);
+  results seed/prog CSVs 5cf219f. Delivery delivery_31p10jnl (55 pp, Section 6 ends p. 10 y=731, no slack).
+- Numbers: 12 of 15 wins vs AReA at 4096^2, none lost; dup 26% (25/95) vs 57% / AReA 4%; seeds 26-28%;
+  2048x4096 24%, 2048x6144 33%, progressive 6%.
+- Pending: krea195 (eval z986 queued behind HRGen generation; told the lead via SendMessage main), hrgen1k_dev,
+  hrgen1k_krea (generation ~3 h each from 02:00), latency_curve_v2 (8192 running at 02:20).
+- Running: curation agent (teaser/zoom4k/showcase defects). Waiter bg: kr + latency.
+- NEXT: S2 swap for kr+latency, S3 for hd+hk (or deliver pending at ~09:20), then review 2 agent (render review +
+  rubric score), latest_delivery.md, HANDOVER Section 20, final report.
 ## Map
 | note | read it when |
 |---|---|
