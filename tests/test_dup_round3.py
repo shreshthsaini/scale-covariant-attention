@@ -186,3 +186,25 @@ def test_sample_info_round3(sample):  # noqa: F811
     assert c.fixed_scale_now() == 2 and c.pi_table_now().scale == 2
     c.sigma = 0.7
     assert c.fixed_scale_now() == 4 and c.pi_table_now() is c.pi
+
+
+def test_win_pi_interp_log_linear():
+    """Round four: a 112-token window at 4096^2 (ratio 256/112) reads pi interpolated log-linearly between the scale-2
+    and scale-4 tables; ratios 2 and 4 read those tables exactly."""
+    import math
+    from pathlib import Path
+    import numpy as np
+    import pytest
+    from sca.attn import PiTable, SCAContext
+    path = Path("/scratch/09032/saini_2/sca/calib/k1_1024.npz")
+    if not path.exists():
+        pytest.skip("calibrated table not on this machine")
+    pi = PiTable.load(path, "head", None, None, 4)
+    c = SCAContext(mode="sca", pi=pi, gate_sigma=0.89, win_pi_match=True, win_pi_interp=True,
+                   win_sched=((0.88, 128), (0.86, 112)))
+    c.grid, c.sigma = (256, 256), 0.87
+    t = math.log((256 / 112) / 2) / math.log(2)
+    p2, p4 = PiTable.load(path, "head", 2)(0.87), PiTable.load(path, "head", 4)(0.87)
+    assert np.allclose(c.pi_table_now()(0.87), (1 - t) * p2 + t * p4)
+    c.sigma = 0.885
+    assert np.allclose(c.pi_table_now()(0.885), PiTable.load(path, "head", 2)(0.885))

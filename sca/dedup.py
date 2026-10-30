@@ -43,6 +43,8 @@ def add_args(p):
     p.add_argument("--scale-fixed", type=win_sched, default=(), metavar="SIGMA:A,...", help="Every head at apparent "
                    "scale A while sigma > SIGMA (stride s / A lattice, coarse ids, weight from the scale-A table; bridge "
                    "keys at the same coarse ids), the published local branch below (default: off)")
+    p.add_argument("--win-pi-interp", action="store_true", help="With --win-pi-match: interpolate pi log-linearly "
+                   "between the bracketing calibrated scales (e.g. 112-token windows at 4096^2 sit between scale 2 and 4)")
     p.add_argument("--win-pi-match", action="store_true", help="On --win-sched steps read pi from the table at the "
                    "emulated scale max(grid) / window (log-nearest calibrated scale)")
     p.add_argument("--win-heads-below", type=float, default=None, metavar="TAU", help="On --win-sched steps only heads "
@@ -66,7 +68,7 @@ def context_kwargs(args):
                 text_local_lo=args.text_local_lo, bridge_cells=args.bridge_cells, bridge_k=args.bridge_k,
                 bridge_lo=args.bridge_lo, bridge_k_hi=args.bridge_k_hi, bridge_k_hi_lo=args.bridge_k_hi_lo,
                 lse_tau=args.lse_tau, scale_sched=args.scale_sched, scale_lo=args.scale_lo,
-                scale_fixed=args.scale_fixed, win_pi_match=args.win_pi_match, win_heads_below=args.win_heads_below)
+                scale_fixed=args.scale_fixed, win_pi_match=args.win_pi_match, win_pi_interp=args.win_pi_interp, win_heads_below=args.win_heads_below)
 
 
 def anchor(args, ctx):
@@ -99,6 +101,8 @@ def info(args):
         out["scale_fixed"] = [list(x) for x in args.scale_fixed]
     if args.win_pi_match:
         out["win_pi_match"] = True
+    if args.win_pi_interp:
+        out["win_pi_interp"] = True
     if args.win_heads_below is not None:
         out["win_heads_below"] = args.win_heads_below
     if args.anchor_lo:

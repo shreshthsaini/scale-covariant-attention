@@ -780,6 +780,7 @@ class SCAContext:
     scale_lo: float = 0.5               # head h reaches a = max(s) at sigma_end = scale_lo + (gate - scale_lo) * pi_h
     scale_pi: dict = field(default_factory=dict)  # {a: PiTable} weight at apparent scale a (default: from pi's file)
     win_pi_match: bool = False          # win_sched steps read pi at the emulated scale max(grid) / window
+    win_pi_interp: bool = False         # with win_pi_match: log-linear interpolation between the bracketing calibrated scales
     win_heads_below: float | None = None  # TAU: on win_sched steps only heads with published pi < TAU take the wide window
     scale_fixed: tuple = ()             # ((sigma_k, a_k), ...): every head at apparent scale a_k while sigma > sigma_k
     pi: PiTable = field(default_factory=PiTable)
@@ -995,8 +996,25 @@ class SCAContext:
             if a < max(pool_factors(self.grid, self.n0, self.log)):
                 return self.table_at(a)
         if self.win_pi_match and self.window_now() != self.base_window():
-            return self.table_at(max(self.grid) / self.window_now())
+            r = max(self.grid) / self.window_now()
+            if self.win_pi_interp:
+                return self.table_interp(r)
+            return self.table_at(r)
         return self.pi
+
+    def table_interp(self, r):
+        """pi at emulated ratio r by log-linear interpolation between the calibrated scales that bracket r (scale-2 and
+        scale-4 tables of the npz); outside the calibrated range the nearest table."""
+        if getattr(self.pi, "path", None) is None:
+            return self.table_at(r)
+        scales = sorted(int(x) for x in np.load(self.pi.path)["scales"])
+        lo = max([c for c in scales if c <= r], default=scales[0])
+        hi = min([c for c in scales if c >= r], default=scales[-1])
+        if lo == hi:
+            return self.table_at(lo)
+        t = math.log(r / lo) / math.log(hi / lo)
+        a, b = self.table_at(lo), self.table_at(hi)
+        return lambda sigma: (1 - t) * np.asarray(a(sigma), dtype=np.float64) + t * np.asarray(b(sigma), dtype=np.float64)
 
     def bridge_now(self):
         """(cells, tokens per cell) of the AReA bridge at the current sigma, (None, 0) when off (rule of SCAProcessor.sca)."""
