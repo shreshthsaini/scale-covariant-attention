@@ -396,3 +396,8 @@ mean at sigma 0.9 (low contrast), which costs preference scores. x_ reruns stay 
   bridge: implementation sent to the apparent-scale subagent (resumed with its context), tasks prefix g_.
 - Paper story if E or F wins (lead): "each head's window at high noise is set by its calibrated appetite for
   context, and every window size reads its weight from the table at the matching emulated ratio".
+- 20:30 round three implemented (subagent): commit 4bfbde8, freeze code/4bfbde8, 201 tests (9 new in
+  tests/test_dup_round3.py). Enqueued 40 tasks g_d2XX for dup_e_win128pi2 (--win-pi-match), dup_f_headwin50 and
+  dup_f_headwin70 (--win-heads-below 0.5 / 0.7, matched weight, bridge 16), dup_g_dil2 (--scale-fixed 0.80:2 +
+  bridge 16, bridge keys at coarse ids on stride-2 steps). Expected time: E ~83 s (+17%), F50 ~75-76 s (17% of heads
+  widen on steps 8-12), F70 ~78 s (43% widen), G ~74-75 s. Evals g_z97_* release themselves.
