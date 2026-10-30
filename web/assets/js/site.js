@@ -28,6 +28,7 @@
     if (s === null) return NaN;
     return parseFloat(String(s).replace(/−/g, "-").replace(/[^0-9.+\-eE]/g, ""));
   }
+  function short(p, n) { p = String(p || ""); if (p.length <= n) return p; var c = p.slice(0, n), k = c.lastIndexOf(" "); return (k > n * .6 ? c.slice(0, k) : c).replace(/[,;:.]$/, "") + "…"; }
   function sizeLabel(wh) { return wh[1] + " × " + wh[0]; }   /* height x width, as in the paper */
   var store = {
     get: function (k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
@@ -274,7 +275,7 @@
       late.appendChild(el("figure", {}, [
         el("div", { class: "img" }, [img(d.full, "SCA, final operator, uncurated: " + d.prompt)]),
         el("div", { class: "crops" }, d.crop_files.map(function (c) { return img(c, "1:1 crop: " + d.note); })),
-        el("figcaption", { class: "meta", html: "<b>" + d.note.charAt(0).toUpperCase() + d.note.slice(1) + "</b> (detector). " + d.prompt.split(",")[0] + "." })]));
+        el("figcaption", { class: "meta", html: "<b>" + d.note.charAt(0).toUpperCase() + d.note.slice(1) + "</b> (detector). " + short(d.prompt, 80) })]));
     });
     var gl = { gate_v0: "Mix from step 1", gate_w16: "Mix from step 1, 16-token windows", gate_sca: "Global-only opening, no schedule" };
     data.filter(function (d) { return d.group === "gate"; }).forEach(function (d) {
@@ -377,7 +378,7 @@
         el("div", { class: "two" }, [
           el("div", { class: "pi" }, [img(d.old, "Old operator, 1:1 crop: " + d.prompt), el("span", { class: "tag", text: "old" })]),
           el("div", { class: "pi" }, [img(d["new"], "Final operator, same prompt, seed and window: " + d.prompt), el("span", { class: "tag new", text: "final" })])]),
-        el("figcaption", { class: "meta", html: "<b>Detector:</b> " + cap(d.counts_old) + " &rarr; " + cap(d.counts_new) + ". <span class=\"q\">" + d.prompt.split(",")[0] + ".</span>" })]));
+        el("figcaption", { class: "meta", html: "<b>Detector:</b> " + cap(d.counts_old) + " &rarr; " + cap(d.counts_new) + ". <span class=\"q\">" + short(d.prompt, 80) + "</span>" })]));
     });
   })();
   (function latencyChart() {
