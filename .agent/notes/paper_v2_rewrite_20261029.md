@@ -90,3 +90,29 @@ App. app:related and trimming, the conclusion still ended on p. 11 at y = 444 (a
   named in main.tex ("Only CLIP-IQA ...").
 - Generator edits: v2swap/scav2_runs NOTE shortened; fig_dup.py takes Progressive SCA from results/prog195_sca_v2.
 - Page budget: Section 6 ends p. 10 at y=731 (text bottom 732): zero slack. Any added main-text line spills.
+
+## Swap S2 (2026-10-30, 03:25 to ~04:10 CDT): krea195 and latency_curve_v2 folded in
+- collect_latency_v2.py looked for logs/task_x_e_lat_<HxW>.log; the tasks ran as x_d96z_lat_<HxW> (taskq/done). It
+  now accepts both names. All five sizes pass (warm-up then three timed, no skip, idle GH200, sidecars = log).
+  sca_v2 / sca_nb medians (s): 19.8/18.2, 44.3/39.9, 77.1/71.1, 174.7/161.0, 309.7/285.8. The re-timed sca_nb is
+  within 0.8% of the first sweep at every size, so sca_v2 is comparable with the first sweep's AReA and full rows.
+- Clean ratio vs AReA at 4096^2: 202.4/77.1 = 2.63 (was 2.85); 8192^2: 952.0/309.7 = 3.07 (was 3.31). Exponent
+  (lstsq of log median s on log N, 5 sizes, the published protocol, which reproduces 0.997 -> 1.00 for sca_nb):
+  sca_v2 0.992 -> 0.99. Preamble: \hlLatExpSca 0.99, \hlLatEightSca 309.7, \hlLatEightRatio 3.07, \pendFigLatency {}.
+- \hlTimeOverhead now comes from the matched pair (gen_main_tables.py duplication_macros): 77.10/71.13 - 1 = 8.4%
+  -> 8% (8 to 11% across sizes). The old 9% compared 46-image medians from two campaigns (out/main sca_nb vs
+  out/dup46 dup_i_shrink). Section 4.3 and Limitations say "timed back to back"; App. D paragraph rewritten (two
+  sweeps, per-image values, 63.8%/67.5% reductions, 4.4x full at 6144^2, non-square campaign means 41.1/60.5 s).
+- Precision: 4.3 lead "faster than every baseline we timed at every size" (sca_nb, our ablation, is faster);
+  conclusion "method we compared"; Table F.1 lead "runs \hlSpeedArea x faster" (0.38 of AReA's time, not a third).
+- Krea: CPU clone eval/krea195_sca_v2/cpu_bootstrap_sca_v2.sh (reference sca_v2_krea) -> results/krea195_sca_v2/
+  corrected_fidp_ci + SHA256SUMS. sca_v2_krea minus AReA: 7 of 10 per-image wins (IR +0.020 [-0.021, 0.060], CLIP,
+  CLIP-IQA unresolved), IS win, FID +1.0 [-3.6, 6.0], KID, patch KID unresolved, patch FID +3.4 [1.6, 7.1] LOSS
+  (published operator +8.1; sca_v2 vs sca_krea patch FID -4.7 [-7.7, -2.3]). Table K: "wins eight metrics and loses
+  patch FID, in a third of the time" (78.4 vs 239.3 s campaign). Prose: 4.5, Limitations, App. H, App. K ("SCA
+  does not" trail on ImageReward).
+- baseline_deltas.tex: review 2 had hand-labelled the caption "SCA without the schedule"; the figure plots sca_v2
+  (provenance: landed a4k195_main_sca_v2) and the generator restored "SCA beats ...". Keep the generated caption.
+- Still grey: hrgen1k_dev, hrgen1k_krea (Table 4 HRGen row, tab:published_compare HRGen row, phase2_general,
+  published_hrgen, 4.5 "Gains hold ... on 1000 HRGen-1K prompts"). Krea gallery (fig_phase2.py krea_complete)
+  still shows the operator without the schedule, labelled so; regenerate from out/dupfix_krea/sca_v2_krea if wanted.

@@ -674,8 +674,19 @@ def duplication_macros():
     check(nv == np_ == 46, f"46-prompt seconds over {nv} and {np_} images")
     tsrc = f"/scratch/09032/saini_2/sca/eval/dup46_{DEFAULT46}/base/per_image.csv, column seconds, median over 46"
     out += [("hlTimeV", f"{tv:.1f}", f"{tsrc}, method {DEFAULT46} (the final operator)", False),
-            ("hlTimePub", f"{tp:.1f}", f"{tsrc}, method sca_nb", False),
-            ("hlTimeOverhead", f"{100 * (tv / tp - 1):.0f}\\%", f"{tsrc}: {DEFAULT46} / sca_nb - 1, in percent", False)]
+            ("hlTimePub", f"{tp:.1f}", f"{tsrc}, method sca_nb", False)]
+    # The time the schedule and bridge add: the matched pair of the latency_curve_v2 sweep (sca_v2 and sca_nb timed
+    # back to back on one idle GPU, three prompts after a warm-up) once it has landed; until then the 46-prompt
+    # campaign medians above, whose two methods were generated in different campaigns.
+    lat = V.latency_v2() if V.landed(V.LATENCY) else {}
+    if (RES4K, "sca_v2") in lat and (RES4K, "sca_nb") in lat:
+        lv, lp = lat[(RES4K, "sca_v2")][0], lat[(RES4K, "sca_nb")][0]
+        out.append(("hlTimeOverhead", f"{100 * (lv / lp - 1):.0f}\\%",
+                    "results/latency_curve_v2/summary.csv (collect_latency_v2.py), column median_seconds, res "
+                    "4096x4096: sca_v2 / sca_nb - 1, in percent (timed back to back on one GPU)", False))
+    else:
+        out.append(("hlTimeOverhead", f"{100 * (tv / tp - 1):.0f}\\%", f"{tsrc}: {DEFAULT46} / sca_nb - 1, in percent",
+                    False))
     p = V.pair46(DEFAULT46)
     psrc = f"/scratch/09032/saini_2/sca/eval/dup46_{DEFAULT46}/paired/{DEFAULT46}_vs_sca_nb.csv (2000 draws),"
     for name, key, d in (("hlFsArniqa", "arniqa", 4), ("hlFsMusiqc", "musiq_crop1024", 2)):

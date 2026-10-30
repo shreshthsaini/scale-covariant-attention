@@ -2,15 +2,15 @@
 """Clean batch-1 latency of the final operator (sca_v2) and published SCA (sca_nb), timed back to back on one GPU.
 
 Inputs (read-only): /scratch/09032/saini_2/sca/out/latency_curve_v2/<HxW>/{sca_nb,sca_v2}/*.json, the sample.py
-sidecars written by taskq x_e_lat_<HxW>.sh. That task runs sca_nb and then sca_v2 on the same GPU, each in its own
-process over latency4_warmup.jsonl, whose first prompt (sca_latency_warmup) warms up and compiles; the next three are
-timed. The protocol is scripts/audit_latency.py's (results/latency_curve_summary.csv):
+sidecars written by taskq x_d96z_lat_<HxW>.sh (planned as x_e_lat_<HxW>.sh). That task runs sca_nb and then sca_v2
+on the same GPU, each in its own process over latency4_warmup.jsonl, whose first prompt (sca_latency_warmup) warms up
+and compiles; the next three are timed. The protocol is scripts/audit_latency.py's (results/latency_curve_summary.csv):
   * per size and method, exactly the warm-up and the three timed prompts, each a complete sidecar with the method's
     label, the size, 28 steps, guidance 4.5 and seed 0 (sca_v2 also with its schedule and bridge flags, sca_nb with
     neither);
-  * the task log (logs/task_x_e_lat_<HxW>.log or .latest.log, the newer) must show, for each method, the warm-up and
-    then the three timed prompts in order, no 'skip' line (a resumed process would time a cold image), and the same
-    seconds as the sidecars (the log prints three decimals);
+  * the task log (logs/task_<task>_<HxW>.log or .latest.log, either task name, the newest) must show, for each
+    method, the warm-up and then the three timed prompts in order, no 'skip' line (a resumed process would time a
+    cold image), and the same seconds as the sidecars (the log prints three decimals);
   * median, minimum and maximum of the three timed images.
 A size is written only when every timed sidecar of both methods exists and passes; incomplete sizes are reported
 and left out, and nothing is written while no size is complete.
@@ -39,6 +39,7 @@ OUT = ROOT / "results" / "latency_curve_v2"
 S = Path("/scratch/09032/saini_2/sca")
 SRC = S / "out" / "latency_curve_v2"
 LOGS = S / "logs"
+TASKS = ("x_d96z_lat", "x_e_lat")  # the task name that ran, then the planned one
 PROMPTS = S / "latency4_warmup.jsonl"
 SIZES = ("2048x2048", "3072x3072", "4096x4096", "6144x6144", "8192x8192")
 METHODS = ("sca_nb", "sca_v2")
@@ -54,7 +55,7 @@ def operator_ok(method, sca):
 
 
 def task_log(res):
-    names = [LOGS / f"task_x_e_lat_{res}{suffix}.log" for suffix in ("", ".latest")]
+    names = [LOGS / f"task_{t}_{res}{suffix}.log" for t in TASKS for suffix in ("", ".latest")]
     found = [p for p in names if p.exists()]
     return max(found, key=lambda p: p.stat().st_mtime_ns) if found else None
 
@@ -89,7 +90,7 @@ def collect(res, timed):
         sidecars[method] = found
     log = task_log(res)
     if log is None:
-        return None, None, f"no task log for x_e_lat_{res} under {LOGS}"
+        return None, None, f"no task log for {' or '.join(t + '_' + res for t in TASKS)} under {LOGS}"
     raw = log.read_bytes()
     text = raw.decode(errors="replace")
     saved = re.findall(r"saved (\S+) (\S+) (\d+x\d+) seconds=([0-9.]+)", text)
