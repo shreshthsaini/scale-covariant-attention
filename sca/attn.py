@@ -612,20 +612,31 @@ def head_layout(layout, heads):
                       bm.kv_num_blocks.clone(), full)
 
 
-def sca_scale_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, groups, text_bias=0.0):
+def sca_scale_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, groups, text_bias=0.0, cells=None, per=0):
     """SCA with per-head apparent scales (flex). groups: ((stride, rope_q_d, rope_k_d, layout, member), ...), one per
-    apparent scale a > 1, layout a HeadLayout.layout whose block counts set_heads(member) has set; member [1, 1, h, 1]
-    bool. Image queries of the heads in member take pi O_loc(stride) + (1 - pi) O_glob (pi [1, 1, h, 1], the weight
-    at each head's apparent scale); heads in no group (a = 1) and all text queries take O_glob."""
+    apparent scale a > 1, layout a HeadLayout.layout whose block counts set_heads(member) has set (or any layout when
+    member is all True); member [1, 1, h, 1] bool. Image queries of the heads in member take
+    pi O_loc(stride) + (1 - pi) O_glob (pi [1, 1, h, 1], the weight at each head's apparent scale); heads in no group
+    (a = 1) and all text queries take O_glob. per > 0 prepends the AReA bridge (bridge_index, the same tokens for every
+    stride) to each group's lattice keys, its keys at the group's coarse query ids (rope_q_d); layouts are then built
+    for the prefix L + R, R = cells_h * cells_w * per."""
     cos, sin = rot
     rot_txt = (cos[:L], sin[:L])
     k_txt = rope(k[:, :L], rot_txt)
     o_glob = global_branch(q, k, v, L, grid, f, pool, rot_txt, rope_q, rope_k, rope(q[:, :L], rot_txt), k_txt)
     og = o_glob[:, L:]
     img = og
+    if per:
+        idx = bridge_index(k[:, L:], grid, cells, per)                              # [B, R]
+        g = idx[:, :, None, None].expand(-1, -1, k.shape[2], k.shape[3])
+        vb = torch.gather(v[:, L:], 1, g)
     for stride, rqd, rkd, layout, member in groups:
         qc, kc, vc = lattice_qkv(q, k, v, L, grid, stride, rqd, rkd, k_txt)
-        o_loc = local_branch_flex(qc, kc, vc, L, layout, text_bias=text_bias)
+        Lp = L
+        if per:
+            kb = torch.gather(rope(k[:, L:], rqd), 1, g)                             # bridge keys at coarse query ids
+            kc, vc, Lp = torch.cat([kc[:, :L], kb, kc[:, L:]], 1), torch.cat([vc[:, :L], vb, vc[:, L:]], 1), L + g.shape[1]
+        o_loc = local_branch_flex(qc, kc, vc, Lp, layout, text_bias=text_bias, text_len=L)
         img = torch.where(member, (pi * o_loc.float() + (1 - pi) * og.float()).to(og.dtype), img)
     return torch.cat([o_glob[:, :L], img], 1)
 
@@ -658,6 +669,41 @@ def sca_scale_gather(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, tile, g
         p, og = pi.index_select(2, heads), o_glob[:, L:].index_select(2, heads)
         img.index_copy_(2, heads, (p * o_loc.float() + (1 - p) * og.float()).to(og.dtype))
     return torch.cat([o_glob[:, :L], img], 1)
+
+
+def sca_headwin_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, native, wide, member, text_bias=0.0,
+                        cells=None, per=0):
+    """SCA with per-head windows (SCAContext.win_heads_below): heads in member ([1, 1, h, 1] bool) attend the wide
+    window (layout wide), the others the base window (layout native). Both are HeadLayout layouts for the same prefix
+    (text plus R bridge tokens, true ids as in sca_dedup_forward) with block counts set per head; pi [1, 1, h, 1] is
+    each head's weight."""
+    cos, sin = rot
+    kr = rope(k, rot)
+    qi = rope(q[:, L:], (cos[L:], sin[L:]))
+    q_txt = rope(q[:, :L], (cos[:L], sin[:L]))
+    o_glob = global_branch(q, k, v, L, grid, f, pool, (cos[:L], sin[:L]), rope_q, rope_k, q_txt, kr[:, :L])
+    kl, vl, Lp = kr, v, L
+    if per:
+        idx = bridge_index(k[:, L:], grid, cells, per)                              # [B, R]
+        g = idx[:, :, None, None].expand(-1, -1, k.shape[2], k.shape[3])
+        kl = torch.cat([kr[:, :L], torch.gather(kr[:, L:], 1, g), kr[:, L:]], 1)
+        vl = torch.cat([v[:, :L], torch.gather(v[:, L:], 1, g), v[:, L:]], 1)
+        Lp = L + idx.shape[1]
+    o_n = local_branch_flex(qi, kl, vl, Lp, native, True, text_bias, L)              # permuted [B, h, Nq, D]
+    o_w = local_branch_flex(qi, kl, vl, Lp, wide, True, text_bias, L)               # same query order as o_n
+    return mix_branches(o_glob, torch.where(member.reshape(1, -1, 1, 1), o_w, o_n), pi, L, native.q_inv)
+
+
+def sca_headwin_fn(device):
+    """sca_headwin_forward compiled once for CUDA: head sets change only tensor values (block counts, member, pi)."""
+    if torch.device(device).type != "cuda":
+        return sca_headwin_forward
+    if "headwin" not in _FLEX:
+        _envfix()
+        _raise_recompile_limit()
+        flex_fn(device)
+        _FLEX["headwin"] = torch.compile(sca_headwin_forward, dynamic=False)
+    return _FLEX["headwin"]
 
 
 # ----------------------------------------------------------------------------- pi tables
@@ -733,6 +779,9 @@ class SCAContext:
     scale_sched: bool = False           # per-head apparent scale: n0 x n0 keys on the stride-(s / a) lattice, a = 1 .. max(s)
     scale_lo: float = 0.5               # head h reaches a = max(s) at sigma_end = scale_lo + (gate - scale_lo) * pi_h
     scale_pi: dict = field(default_factory=dict)  # {a: PiTable} weight at apparent scale a (default: from pi's file)
+    win_pi_match: bool = False          # win_sched steps read pi at the emulated scale max(grid) / window
+    win_heads_below: float | None = None  # TAU: on win_sched steps only heads with published pi < TAU take the wide window
+    scale_fixed: tuple = ()             # ((sigma_k, a_k), ...): every head at apparent scale a_k while sigma > sigma_k
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -755,7 +804,7 @@ class SCAContext:
     def __post_init__(self):
         self._rope_cache, self._pi_now, self._img_ids = {}, None, None
         self._flex_cache = {}
-        self._scale_now, self._scale_tables = None, {}
+        self._scale_now, self._headwin_now, self._tables_at = None, None, {}
         if self.local_impl not in ("flex", "gather"):
             raise ValueError(f"local_impl must be flex or gather, got {self.local_impl}")
         if (self.bridge_cells or self.lse_tau) and (self.local_impl != "flex" or self.band):
@@ -775,6 +824,17 @@ class SCAContext:
                 raise ValueError("scale_sched takes its lattice keys at block centres (pool center)")
             if not 0 <= self.scale_lo < self.gate_sigma:
                 raise ValueError("scale_sched needs 0 <= scale_lo < gate_sigma")
+        self.scale_fixed = tuple(sorted(((float(a), int(b)) for a, b in self.scale_fixed), reverse=True))
+        if self.scale_fixed:
+            if self.scale_sched or self.band or self.lse_tau or self.ramp_sigma or self.route or self.win_sched:
+                raise ValueError("scale_fixed does not combine with scale_sched, band, lse mixing, pi ramp, routing "
+                                 "or win_sched")
+            if self.pool != "center" or min(b for _, b in self.scale_fixed) < 1:
+                raise ValueError("scale_fixed needs pool center and apparent scales >= 1")
+        if self.win_heads_below is not None and (not self.win_sched or self.local_impl != "flex" or self.band or self.lse_tau
+                                     or self.ramp_sigma or self.route or self.scale_sched):
+            raise ValueError("win_heads_below needs win_sched and local_impl flex, without band, lse mixing, pi ramp, "
+                             "routing or scale_sched")
         self.win_sched = tuple(sorted(((float(a), int(b)) for a, b in self.win_sched), reverse=True))
 
     def flex_layout(self, L, tile, win, device):
@@ -798,11 +858,11 @@ class SCAContext:
         if sigma is not None:
             self.sigma = float(sigma)
         self._pi_now = None
-        self._scale_now = None
+        self._scale_now = self._headwin_now = None
 
     def pi_now(self, layer, heads, device):
         if self._pi_now is None:
-            p = np.atleast_2d(np.asarray(self.pi(self.sigma), dtype=np.float64))  # [layers|1, heads|1]
+            p = np.atleast_2d(np.asarray(self.pi_table_now()(self.sigma), dtype=np.float64))  # [layers|1, heads|1]
             if p.shape[0] not in (1, self.n_layers) or p.shape[1] not in (1, heads):
                 raise ValueError(f"pi table shape {p.shape} does not match {self.n_layers} layers x {heads} heads")
             p = self.ramp(p)
@@ -869,23 +929,32 @@ class SCAContext:
         return f, tile, win
 
 
-    # -- per-head apparent scale (scale_sched)
+    # -- apparent scale (scale_sched, scale_fixed) and matched window weights (win_pi_match, win_heads_below)
+    def table_at(self, scale):
+        """PiTable at emulated scale `scale` (any positive number): scale_pi[scale] if given, else the calibrated scale
+        nearest in log scale in the file pi was loaded from, else pi itself."""
+        if scale not in self._tables_at:
+            if scale in self.scale_pi:
+                t = self.scale_pi[scale]
+            elif getattr(self.pi, "path", None) is not None:
+                t = PiTable.load(self.pi.path, self.pi.variant, None, self.pi.sigma_star, scale)
+                self.log.append(f"pi at emulated scale {scale:g} reads the calibrated scale-{t.scale} table")
+            else:
+                t = self.pi
+                self.log.append(f"pi at emulated scale {scale:g} reads the {self.pi.variant} pi")
+            self._tables_at[scale] = t
+        return self._tables_at[scale]
+
     def scale_tables(self, s_max):
-        """{a: PiTable} mix weight at apparent scale a > 1: scale_pi[a], else the calibrated scale nearest to a (log
-        scale) in the file pi was loaded from, else pi itself."""
-        if s_max not in self._scale_tables:
-            out = {}
-            for a in scale_ladder(s_max)[1:]:
-                if a in self.scale_pi:
-                    out[a] = self.scale_pi[a]
-                elif getattr(self.pi, "path", None) is not None:
-                    out[a] = PiTable.load(self.pi.path, self.pi.variant, None, self.pi.sigma_star, a)
-                    self.log.append(f"scale_sched: apparent scale {a} mixes with the calibrated scale-{out[a].scale} pi")
-                else:
-                    out[a] = self.pi
-                    self.log.append(f"scale_sched: apparent scale {a} mixes with the {self.pi.variant} pi")
-            self._scale_tables[s_max] = out
-        return self._scale_tables[s_max]
+        """{a: PiTable} mix weight at every apparent scale a > 1 of the ladder."""
+        return {a: self.table_at(a) for a in scale_ladder(s_max)[1:]}
+
+    def _rows(self, table, n, heads):
+        """table(sigma) broadcast to [n layers, heads]."""
+        p = np.atleast_2d(np.asarray(table(self.sigma), dtype=np.float64))
+        if p.shape[0] not in (1, n) or p.shape[1] not in (1, heads):
+            raise ValueError(f"pi table shape {p.shape} does not match {n} layers x {heads} heads")
+        return np.broadcast_to(p, (n, heads))
 
     def scale_now(self, layer, heads, device):
         """(a, a_t, w_t) of this layer at the current sigma: apparent scale per head (numpy and device tensor) and the
@@ -893,23 +962,80 @@ class SCAContext:
         copies cost one transfer per step."""
         if self._scale_now is None:
             n = max(self.n_layers, 1)
-
-            def table(t):
-                p = np.atleast_2d(np.asarray(t(self.sigma), dtype=np.float64))
-                if p.shape[0] not in (1, n) or p.shape[1] not in (1, heads):
-                    raise ValueError(f"pi table shape {p.shape} does not match {n} layers x {heads} heads")
-                return np.broadcast_to(p, (n, heads))
             s_max = max(pool_factors(self.grid, self.n0, self.log))
-            a = apparent_scale(self.sigma, table(self.pi), self.gate_sigma, self.scale_lo, s_max)
+            a = apparent_scale(self.sigma, self._rows(self.pi, n, heads), self.gate_sigma, self.scale_lo, s_max)
             w = np.zeros((n, heads))
             for s, t in self.scale_tables(s_max).items():
-                w = np.where(a == s, table(t), w)
+                w = np.where(a == s, self._rows(t, n, heads), w)
             self._scale_now = (a, torch.as_tensor(a, device=device), torch.as_tensor(w, dtype=torch.float32, device=device))
             self.pi_trace.append({"step": self.step, "sigma": self.sigma, "pi_mean": float(w.mean()),
                                   "scale_frac": {str(s): float((a == s).mean()) for s in scale_ladder(s_max)}})
         a, a_t, w_t = self._scale_now
         i = layer if a.shape[0] > 1 else 0
         return a[i], a_t[i], w_t[i]
+
+    def base_window(self):
+        """Local window side without win_sched: window, else n0."""
+        return self.window or self.n0
+
+    def fixed_scale_now(self):
+        """Apparent scale of every head at the current sigma under scale_fixed: a_k while sigma > sigma_k (first
+        match), else max(s), the published local branch."""
+        for s, a in self.scale_fixed:
+            if self.sigma is not None and float(self.sigma) > s:
+                return a
+        return max(pool_factors(self.grid, self.n0, self.log))
+
+    def pi_table_now(self):
+        """Weight table of the current step: the published (target-scale) table, except the table at the step's
+        apparent scale under scale_fixed, and with win_pi_match on a win_sched step the table at the emulated scale
+        max(grid) / window."""
+        if self.scale_fixed:
+            a = self.fixed_scale_now()
+            if a < max(pool_factors(self.grid, self.n0, self.log)):
+                return self.table_at(a)
+        if self.win_pi_match and self.window_now() != self.base_window():
+            return self.table_at(max(self.grid) / self.window_now())
+        return self.pi
+
+    def bridge_now(self):
+        """(cells, tokens per cell) of the AReA bridge at the current sigma, (None, 0) when off (rule of SCAProcessor.sca)."""
+        if not (self.bridge_cells and (self.sigma is None or float(self.sigma) > self.bridge_lo)):
+            return None, 0
+        H, W = self.grid
+        cells = (fit_divisor(H, self.bridge_cells, self.log, "bridge cells"),
+                 fit_divisor(W, self.bridge_cells, self.log, "bridge cells"))
+        return cells, min(self.bridge_k_now(), (H // cells[0]) * (W // cells[1]))
+
+    def headwin_now(self, layer, heads, device):
+        """(member, pi) of this layer on a win_sched step under win_heads_below: member[h] = published pi_h < TAU (the
+        head takes the scheduled window), pi = the weight at that window's emulated scale for those heads and the
+        published weight for the others. Computed for every layer once per step."""
+        if self._headwin_now is None:
+            n = max(self.n_layers, 1)
+            p = self._rows(self.pi, n, heads)
+            m = p < self.win_heads_below
+            w = np.where(m, self._rows(self.table_at(max(self.grid) / self.window_now()), n, heads), p)
+            self._headwin_now = (torch.as_tensor(m, device=device), torch.as_tensor(w, dtype=torch.float32, device=device))
+            self.pi_trace.append({"step": self.step, "sigma": self.sigma, "pi_mean": float(w.mean()),
+                                  "wide_frac": float(m.mean())})
+        m, w = self._headwin_now
+        i = layer if m.shape[0] > 1 else 0
+        return m[i], w[i]
+
+    def strided_layout(self, P, tile, stride, win, device):
+        """strided_flex_layout for prefix length P (text plus bridge), cached."""
+        key = ("strided", P, self.grid, tuple(tile), tuple(stride), tuple(win), str(device))
+        if key not in self._flex_cache:
+            self._flex_cache[key] = strided_flex_layout(P, self.grid, tile, stride, win, device)
+        return self._flex_cache[key]
+
+    def window_layout(self, P, tile, win, heads, role, device):
+        """HeadLayout of flex_layout(P, ...) for win_heads_below (role native or wide), cached."""
+        key = ("headwin", role, P, self.grid, tuple(tile), tuple(win), heads, str(device))
+        if key not in self._flex_cache:
+            self._flex_cache[key] = head_layout(flex_layout(P, self.grid, tile, win, device), heads)
+        return self._flex_cache[key]
 
     def scale_geometry(self, a):
         """(stride, window) of apparent scale a: stride max(1, s // a) per axis (a divisor of the axis), window
@@ -1002,6 +1128,10 @@ class SCAProcessor:
                                  rope(q[:, :L], rope_txt), kr_txt)
         if ctx.scale_sched:
             return self.scale_sched(q, k, v, image_rotary_emb, f, tile)
+        if ctx.scale_fixed and ctx.fixed_scale_now() < max(f):
+            return self.scale_fixed(q, k, v, image_rotary_emb, f, tile, ctx.fixed_scale_now())
+        if ctx.win_heads_below is not None and ctx.window_now() != ctx.base_window():
+            return self.head_windows(q, k, v, image_rotary_emb, f, tile)
         pi = ctx.pi_now(self.layer, q.shape[2], q.device).view(1, 1, -1, 1)
         if ctx.route > 0:
             pi = (pi >= ctx.route).to(pi.dtype)
@@ -1065,6 +1195,48 @@ class SCAProcessor:
                                     tuple(groups), ctx.chunk, tb)
         args = (q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, tuple(groups))
         return sca_scale_fn(q.device)(*args, tb) if tb else sca_scale_fn(q.device)(*args)
+
+    def scale_fixed(self, q, k, v, image_rotary_emb, f, tile, a):
+        """Every head at apparent scale a < max(s) on this step (SCAContext.scale_fixed): the strided local branch with
+        the weight at scale a (pi_now reads that table), plus the bridge with keys at the stride's coarse ids."""
+        ctx = self.ctx
+        L, rope_txt = self._split(q, image_rotary_emb)
+        cos, sin = image_rotary_emb
+        rq, rk = ctx.coarse_rope(f, q.device)
+        if a <= 1:  # the local view is the global branch
+            return global_branch(q, k, v, L, ctx.grid, f, ctx.pool, rope_txt, rq, rk, rope(q[:, :L], rope_txt),
+                                 rope(k[:, :L], rope_txt))
+        d, win = ctx.scale_geometry(a)
+        rqd, rkd = ((cos[L:], sin[L:]),) * 2 if d == (1, 1) else ctx.coarse_rope(d, q.device)
+        pi, tb = ctx.pi_now(self.layer, q.shape[2], q.device).view(1, 1, -1, 1), ctx.text_bias_now()
+        if ctx.local_impl == "gather":
+            heads = torch.arange(q.shape[2], device=q.device)
+            return sca_scale_gather(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, tile,
+                                    ((d, win, rqd, rkd, heads),), ctx.chunk, tb)
+        cells, per = ctx.bridge_now()
+        layout = ctx.strided_layout(L + (cells[0] * cells[1] * per if per else 0), tile, d, win, q.device)
+        member = torch.ones(1, 1, q.shape[2], 1, dtype=torch.bool, device=q.device)
+        return sca_scale_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
+                                      ((d, rqd, rkd, layout, member),), tb, cells, per)
+
+    def head_windows(self, q, k, v, image_rotary_emb, f, tile):
+        """A win_sched step under win_heads_below: heads with published pi < TAU attend the scheduled window with the
+        weight at its emulated scale, the others the base window with their published weight (bridge if on)."""
+        ctx = self.ctx
+        heads = q.shape[2]
+        L, _ = self._split(q, image_rotary_emb)
+        rq, rk = ctx.coarse_rope(f, q.device)
+        cells, per = ctx.bridge_now()
+        P = L + (cells[0] * cells[1] * per if per else 0)
+        H, W = ctx.grid
+        wins = [(min(w, H), min(w, W)) for w in (ctx.base_window(), ctx.window_now())]
+        native, wide = (ctx.window_layout(P, tile, w, heads, r, q.device) for w, r in zip(wins, ("native", "wide")))
+        member, pi = ctx.headwin_now(self.layer, heads, q.device)
+        native.set_heads(~member)
+        wide.set_heads(member)
+        return sca_headwin_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi.view(1, 1, -1, 1), L, ctx.grid,
+                                        f, ctx.pool, native.layout, wide.layout, member.view(1, 1, -1, 1),
+                                        ctx.text_bias_now(), cells, per)
 
     def calibrate(self, q, k, v, image_rotary_emb):
         ctx = self.ctx

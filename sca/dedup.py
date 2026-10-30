@@ -40,6 +40,14 @@ def add_args(p):
                    "on the stride-(s / a) lattice around its tile, a growing from 1 (global branch) to s (native window)")
     p.add_argument("--scale-lo", type=float, default=0.5, metavar="SIGMA", help="--scale-sched: head h reaches its "
                    "native window at SIGMA + (gate - SIGMA) * pi_h")
+    p.add_argument("--scale-fixed", type=win_sched, default=(), metavar="SIGMA:A,...", help="Every head at apparent "
+                   "scale A while sigma > SIGMA (stride s / A lattice, coarse ids, weight from the scale-A table; bridge "
+                   "keys at the same coarse ids), the published local branch below (default: off)")
+    p.add_argument("--win-pi-match", action="store_true", help="On --win-sched steps read pi from the table at the "
+                   "emulated scale max(grid) / window (log-nearest calibrated scale)")
+    p.add_argument("--win-heads-below", type=float, default=None, metavar="TAU", help="On --win-sched steps only heads "
+                   "whose published pi < TAU take the scheduled window, with the weight at its emulated scale; the "
+                   "others keep the base window and the published weight (default: off; 0 = no head widens)")
     p.add_argument("--anchor-lo", type=float, default=0.0, metavar="SIGMA", help="Latent low-band anchor "
                    "(sca/anchor.py): while sigma > SIGMA the low band of x0_hat follows the x0_hat of the last "
                    "global-only step (0 = off)")
@@ -57,7 +65,8 @@ def context_kwargs(args):
                 glob_pos=args.glob_pos, win_sched=args.win_sched, text_local=args.text_local,
                 text_local_lo=args.text_local_lo, bridge_cells=args.bridge_cells, bridge_k=args.bridge_k,
                 bridge_lo=args.bridge_lo, bridge_k_hi=args.bridge_k_hi, bridge_k_hi_lo=args.bridge_k_hi_lo,
-                lse_tau=args.lse_tau, scale_sched=args.scale_sched, scale_lo=args.scale_lo)
+                lse_tau=args.lse_tau, scale_sched=args.scale_sched, scale_lo=args.scale_lo,
+                scale_fixed=args.scale_fixed, win_pi_match=args.win_pi_match, win_heads_below=args.win_heads_below)
 
 
 def anchor(args, ctx):
@@ -86,6 +95,12 @@ def info(args):
         out["lse_tau"] = args.lse_tau
     if args.scale_sched:
         out.update(scale_sched=True, scale_lo=args.scale_lo)
+    if args.scale_fixed:
+        out["scale_fixed"] = [list(x) for x in args.scale_fixed]
+    if args.win_pi_match:
+        out["win_pi_match"] = True
+    if args.win_heads_below is not None:
+        out["win_heads_below"] = args.win_heads_below
     if args.anchor_lo:
         out.update(anchor_lo=args.anchor_lo, anchor_shape=args.anchor_shape, anchor_pool=args.anchor_pool,
                    anchor_refresh=args.anchor_refresh)

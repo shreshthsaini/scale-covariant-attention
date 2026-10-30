@@ -43,6 +43,11 @@ VARIANTS = {  # in priority order: the worker takes the alphabetically first tas
     "dup_head40": ["--pi-ramp", "0.4", "--pi-ramp-mode", "head"],
     "dup_ss50": ["--scale-sched", "--scale-lo", "0.5"],
     "dup_ss40": ["--scale-sched", "--scale-lo", "0.4"],
+    # round three (46-prompt runs via --stage abl46 --flags): bridge 16/cell plus matched-weight windows
+    "dup_e_win128pi2": ["--bridge-cells", "8", "--bridge-k", "16", "--win-sched", "0.80:128", "--win-pi-match"],
+    "dup_f_headwin50": ["--bridge-cells", "8", "--bridge-k", "16", "--win-sched", "0.80:128", "--win-heads-below", "0.5"],
+    "dup_f_headwin70": ["--bridge-cells", "8", "--bridge-k", "16", "--win-sched", "0.80:128", "--win-heads-below", "0.7"],
+    "dup_g_dil2": ["--bridge-cells", "8", "--bridge-k", "16", "--scale-fixed", "0.80:2"],
 }
 
 
