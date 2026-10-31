@@ -43,3 +43,7 @@ gg, ends 2026-11-02 04:12). No job submission. Uploads with nice -n 19, at most 
   planned_not_uploaded (phase 2, 221.15 GB of source).
 - The paper owner's commit 61dbfd3 (HRGen-1K dev row) was pushed by that agent and carried 9b56c20 to origin.
   The pending eval a000_z988 also needs out/hrgen_krea/sca_krea (phase 2); MIGRATION.md Section 4 gives both routes.
+- GitHub check: fresh clone of origin (61dbfd3) plus `git lfs pull` fetched all 91 LFS objects; k1_1024.npz SHA256
+  7c54b727... matches; eval_sidecars, third_party and taskq_archive present. Local commits after 61dbfd3 (MIGRATION.md,
+  manifest, README/HANDOVER pointers, scripts, this log) are NOT on GitHub: the migration agent's push is blocked by the
+  permission classifier. Push them with `git push origin main` from this directory.
