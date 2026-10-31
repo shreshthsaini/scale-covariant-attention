@@ -662,3 +662,5 @@ sca_v2 evaluation was already uploaded by the migration), private storage 85.68 
 `touch /scratch/09032/saini_2/sca/taskq/SYNC_STOP`. After the job ends, restart on the next compute node with the command
 in MIGRATION.md Section 7. The HRGen-1K Krea sca_v2 evaluation (`eval/hrgen1k_krea_sca_v2`) uploads on the first run after
 its `DONE` appears.
+
+Addendum 2026-10-31 14:10: controller node i617-044 has no GPU, so the last evaluation (z988, HRGen-1K Krea for sca_v2) waits for SCA19 job 1112649 (1 gh node, 3 h, about 3 SU); its result is folded in by the paper agent and uploaded by the sync loop.
