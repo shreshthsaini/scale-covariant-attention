@@ -1,0 +1,282 @@
+{
+  "config": {
+    "root": "/scratch/09032/saini_2/sca/out/evalroot/e2_8192",
+    "prompts": "/scratch/09032/saini_2/sca/eval/e2_8192_musiq_shards_20261017/prompts_1.jsonl",
+    "references": null,
+    "reference_method": "area",
+    "res": "8192x8192",
+    "out": "/scratch/09032/saini_2/sca/eval/e2_8192_musiq_shards_20261017/shard_1",
+    "metrics": "musiq",
+    "device": "cpu",
+    "bootstrap": 1000,
+    "bootstrap_seed": 0,
+    "crop_seed": 0,
+    "crops": 4,
+    "threads": 8,
+    "allow_missing": false,
+    "no_wandb": false,
+    "musiq_query_chunk": 256
+  },
+  "metric_schema": 1,
+  "versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "5.19.0",
+    "pyiqa": "0.1.16",
+    "image-reward": "1.5",
+    "hpsv3": null,
+    "torch-fidelity": "0.3.0",
+    "pytorch-fid": null
+  },
+  "status": {
+    "musiq": {
+      "status": "complete",
+      "provenance": {
+        "model": "pyiqa/musiq",
+        "full_input": "native resolution, model preprocessing unchanged",
+        "crop_input": "random 1024x1024, averaged within image",
+        "execution_adapter": "musiq_all_keys_query_chunks_v1",
+        "query_chunk": 256,
+        "attention_modules": 14,
+        "native_patches": "all, unchanged",
+        "mask": "original finite -1000; all keys retained",
+        "pyiqa_musiq_source_sha256": "42d5b3c986537da66d8c9b52615acc93237f25d9cadd4b8bee4d5c4d9ff8812f",
+        "adapter_sha256": "fd34b4a1da8cd2ae7c7362958021ec25b4bc7bc89a0f3dc684d26b67812220d6"
+      }
+    }
+  },
+  "errors": [],
+  "summary": [
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "musiq",
+      "value": 29.89227040608724,
+      "ci_low": 23.36307144165039,
+      "ci_high": 41.623565673828125,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "musiq_crop1024",
+      "value": 49.297990481058754,
+      "ci_low": 45.77023696899414,
+      "ci_high": 54.00624465942383,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "seconds",
+      "value": 1030.6585866656776,
+      "ci_low": 1003.1619800431654,
+      "ci_high": 1046.2675348110497,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "musiq",
+      "value": 22.620358149210613,
+      "ci_low": 20.903223037719727,
+      "ci_high": 24.041786193847656,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "musiq_crop1024",
+      "value": 41.039058685302734,
+      "ci_low": 28.78195285797119,
+      "ci_high": 58.446139335632324,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "seconds",
+      "value": 302.4482628863382,
+      "ci_low": 297.10658023599535,
+      "ci_high": 309.9791575820418,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    }
+  ],
+  "optional_unavailable": [],
+  "model_revisions": {
+    "openai/clip-vit-large-patch14": "32bd64288804d66eefd0ccbe215aa642df71cc41",
+    "yuvalkirstain/PickScore_v1": "a4e4367c6dfa7288a00c550414478f865b875800",
+    "laion/CLIP-ViT-H-14-laion2B-s32B-b79K": "1c2b8495b28150b8a4922ee1c8edee224c284c0c",
+    "THUDM/ImageReward": "5736be03b2652728fb87788c9797b0570450ab72",
+    "MizzenAI/HPSv3": null
+  },
+  "paired_deltas": [
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "musiq",
+      "delta_definition": "method_minus_reference",
+      "value": -7.271912256876628,
+      "ci_low": -17.58177947998047,
+      "ci_high": -0.4470062255859375,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "musiq_crop1024",
+      "delta_definition": "method_minus_reference",
+      "value": -8.258931795756022,
+      "ci_low": -18.11716079711914,
+      "ci_high": 10.328649520874023,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "seconds",
+      "delta_definition": "method_minus_reference",
+      "value": -728.2103237793393,
+      "ci_low": -746.0084839700721,
+      "ci_high": -706.05539980717,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    }
+  ],
+  "per_image": [
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_4673559490456019105",
+      "seed": 0,
+      "prompt": "A woman with blonde hair, wearing a red cardigan over a white blouse and a patterned yellow skirt, sits reading a book with a focused expression.",
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_4673559490456019105_cc91d8ed8c_seed0.png",
+      "config_hash": "481d5f9c0affafc62f6fbb8b7071027053a83dcb90f7a62324c361fda266b257",
+      "seconds": 1003.1619800431654,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_4673559490456019105_cc91d8ed8c_seed0.json",
+      "metrics": {
+        "seconds": 1003.1619800431654,
+        "musiq": 24.690174102783203,
+        "musiq_crop1024": 45.77023696899414
+      },
+      "eval_seconds": {
+        "musiq": 452.15403519850224
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus4469448794852185540",
+      "seed": 0,
+      "prompt": "Silhouettes of twelve characters are arranged in a row, each corresponding to a different backdrop of vibrant colors and cosmic themes, numbered one to twelve. Each figure wears a distinctive outfit, often featuring long coats, with various poses reflecting unique characteristics or actions. The backgrounds exhibit a mix of abstract designs, including starry skies, swirling galaxies, and fiery textures, creating a visually dynamic scene.",
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus4469448794852185540_faa7240901_seed0.png",
+      "config_hash": "a805d3aa4885f8e426151370ab2e1ce3712daaef4c9c1547daa8ac2d94cab61a",
+      "seconds": 1042.5462451428175,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus4469448794852185540_faa7240901_seed0.json",
+      "metrics": {
+        "seconds": 1042.5462451428175,
+        "musiq": 23.36307144165039,
+        "musiq_crop1024": 54.00624465942383
+      },
+      "eval_seconds": {
+        "musiq": 442.3686135523021
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus5691444384207183173",
+      "seed": 0,
+      "prompt": "A wooden window with blue shutters frames sheer curtains, overlooking a flower box brimming with pink and blue blossoms against a warm red wall.",
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus5691444384207183173_1debaf2765_seed0.png",
+      "config_hash": "f53a0de06e2a978b144c9cbc119840e9a827312e5e0f2727edbe91bb2769f188",
+      "seconds": 1046.2675348110497,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus5691444384207183173_1debaf2765_seed0.json",
+      "metrics": {
+        "seconds": 1046.2675348110497,
+        "musiq": 41.623565673828125,
+        "musiq_crop1024": 48.1174898147583
+      },
+      "eval_seconds": {
+        "musiq": 415.3263858174905
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_4673559490456019105",
+      "seed": 0,
+      "prompt": "A woman with blonde hair, wearing a red cardigan over a white blouse and a patterned yellow skirt, sits reading a book with a focused expression.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_4673559490456019105_cc91d8ed8c_seed0.png",
+      "config_hash": "725f2456f21208c59c2487aa02ec10c24006b7f88d7e2dd797eda6fdb29f6893",
+      "seconds": 297.10658023599535,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_4673559490456019105_cc91d8ed8c_seed0.json",
+      "metrics": {
+        "seconds": 297.10658023599535,
+        "musiq": 20.903223037719727,
+        "musiq_crop1024": 28.78195285797119
+      },
+      "eval_seconds": {
+        "musiq": 382.12740830890834
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus4469448794852185540",
+      "seed": 0,
+      "prompt": "Silhouettes of twelve characters are arranged in a row, each corresponding to a different backdrop of vibrant colors and cosmic themes, numbered one to twelve. Each figure wears a distinctive outfit, often featuring long coats, with various poses reflecting unique characteristics or actions. The backgrounds exhibit a mix of abstract designs, including starry skies, swirling galaxies, and fiery textures, creating a visually dynamic scene.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus4469448794852185540_faa7240901_seed0.png",
+      "config_hash": "f70218de84c952077b6a067186f93b42ab5abbc9b459e75d40e30403d0382eb4",
+      "seconds": 309.9791575820418,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus4469448794852185540_faa7240901_seed0.json",
+      "metrics": {
+        "seconds": 309.9791575820418,
+        "musiq": 22.916065216064453,
+        "musiq_crop1024": 35.88908386230469
+      },
+      "eval_seconds": {
+        "musiq": 392.68114742729813
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus5691444384207183173",
+      "seed": 0,
+      "prompt": "A wooden window with blue shutters frames sheer curtains, overlooking a flower box brimming with pink and blue blossoms against a warm red wall.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus5691444384207183173_1debaf2765_seed0.png",
+      "config_hash": "2c1c5b7b5cbe9d0b1a8eb56ecfa34e2e54d6445f7ee17e6085fbb4d8fd6496b2",
+      "seconds": 300.2590508409776,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus5691444384207183173_1debaf2765_seed0.json",
+      "metrics": {
+        "seconds": 300.2590508409776,
+        "musiq": 24.041786193847656,
+        "musiq_crop1024": 58.446139335632324
+      },
+      "eval_seconds": {
+        "musiq": 373.1561245517805
+      }
+    }
+  ],
+  "uncertainty": "95% percentile bootstrap over prompt clusters; seeds and crops stay inside prompts",
+  "paired_note": "Only matching resolution/prompt/seed pairs enter deltas; absent reference yields no delta",
+  "seconds": 2462.284186183475,
+  "wandb": {
+    "status": "logged",
+    "mode": "offline",
+    "run_id": "lsv9dyz0"
+  },
+  "complete": true,
+  "all_metrics_available": true
+}

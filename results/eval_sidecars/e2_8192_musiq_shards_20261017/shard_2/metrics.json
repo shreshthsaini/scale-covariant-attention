@@ -1,0 +1,282 @@
+{
+  "config": {
+    "root": "/scratch/09032/saini_2/sca/out/evalroot/e2_8192",
+    "prompts": "/scratch/09032/saini_2/sca/eval/e2_8192_musiq_shards_20261017/prompts_2.jsonl",
+    "references": null,
+    "reference_method": "area",
+    "res": "8192x8192",
+    "out": "/scratch/09032/saini_2/sca/eval/e2_8192_musiq_shards_20261017/shard_2",
+    "metrics": "musiq",
+    "device": "cpu",
+    "bootstrap": 1000,
+    "bootstrap_seed": 0,
+    "crop_seed": 0,
+    "crops": 4,
+    "threads": 8,
+    "allow_missing": false,
+    "no_wandb": false,
+    "musiq_query_chunk": 256
+  },
+  "metric_schema": 1,
+  "versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "5.19.0",
+    "pyiqa": "0.1.16",
+    "image-reward": "1.5",
+    "hpsv3": null,
+    "torch-fidelity": "0.3.0",
+    "pytorch-fid": null
+  },
+  "status": {
+    "musiq": {
+      "status": "complete",
+      "provenance": {
+        "model": "pyiqa/musiq",
+        "full_input": "native resolution, model preprocessing unchanged",
+        "crop_input": "random 1024x1024, averaged within image",
+        "execution_adapter": "musiq_all_keys_query_chunks_v1",
+        "query_chunk": 256,
+        "attention_modules": 14,
+        "native_patches": "all, unchanged",
+        "mask": "original finite -1000; all keys retained",
+        "pyiqa_musiq_source_sha256": "42d5b3c986537da66d8c9b52615acc93237f25d9cadd4b8bee4d5c4d9ff8812f",
+        "adapter_sha256": "fd34b4a1da8cd2ae7c7362958021ec25b4bc7bc89a0f3dc684d26b67812220d6"
+      }
+    }
+  },
+  "errors": [],
+  "summary": [
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "musiq",
+      "value": 23.736897150675457,
+      "ci_low": 23.036697387695312,
+      "ci_high": 24.690921783447266,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "musiq_crop1024",
+      "value": 35.279609521230064,
+      "ci_low": 26.812452793121338,
+      "ci_high": 40.670451164245605,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "seconds",
+      "value": 988.0342737114601,
+      "ci_low": 949.7248397100484,
+      "ci_high": 1011.584930088371,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "musiq",
+      "value": 21.699146270751953,
+      "ci_low": 17.6895751953125,
+      "ci_high": 23.846458435058594,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "musiq_crop1024",
+      "value": 37.84961477915446,
+      "ci_low": 30.471240997314453,
+      "ci_high": 46.60669708251953,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "seconds",
+      "value": 293.14265219549026,
+      "ci_low": 283.763325185515,
+      "ci_high": 299.7312949709594,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    }
+  ],
+  "optional_unavailable": [],
+  "model_revisions": {
+    "openai/clip-vit-large-patch14": "32bd64288804d66eefd0ccbe215aa642df71cc41",
+    "yuvalkirstain/PickScore_v1": "a4e4367c6dfa7288a00c550414478f865b875800",
+    "laion/CLIP-ViT-H-14-laion2B-s32B-b79K": "1c2b8495b28150b8a4922ee1c8edee224c284c0c",
+    "THUDM/ImageReward": "5736be03b2652728fb87788c9797b0570450ab72",
+    "MizzenAI/HPSv3": null
+  },
+  "paired_deltas": [
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "musiq",
+      "delta_definition": "method_minus_reference",
+      "value": -2.0377508799235025,
+      "ci_low": -5.793497085571289,
+      "ci_high": 0.8097610473632812,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "musiq_crop1024",
+      "delta_definition": "method_minus_reference",
+      "value": 2.570005257924398,
+      "ci_low": -4.199544906616211,
+      "ci_high": 8.250772476196289,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "seconds",
+      "delta_definition": "method_minus_reference",
+      "value": -694.8916215159697,
+      "ci_low": -719.0297261504456,
+      "ci_high": -653.791503280052,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    }
+  ],
+  "per_image": [
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_7265494513082458083",
+      "seed": 0,
+      "prompt": "A young woman with curly hair and rosy cheeks leans out of a stone window, holding a red fan adorned with floral patterns, dressed in a traditional European blouse with intricate detailing and a necklace.",
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_7265494513082458083_3ceeb2ed50_seed0.png",
+      "config_hash": "164fa8459bc2401394fd85ce76bc1473bc01c2ed70c3958d47ada6e1b1aa6ad4",
+      "seconds": 1002.7930513359606,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_7265494513082458083_3ceeb2ed50_seed0.json",
+      "metrics": {
+        "seconds": 1002.7930513359606,
+        "musiq": 23.036697387695312,
+        "musiq_crop1024": 40.670451164245605
+      },
+      "eval_seconds": {
+        "musiq": 452.4963590959087
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus4850138611731379908",
+      "seed": 0,
+      "prompt": "A vast desert landscape under a starry night sky, featuring rolling sand dunes illuminated by a soft glow on the horizon, with a vibrant Milky Way arching overhead.",
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus4850138611731379908_4970b08792_seed0.png",
+      "config_hash": "385ba5859855b42462725e6d638aa7e86908252f1b8e505bf474080fc4a393c9",
+      "seconds": 949.7248397100484,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus4850138611731379908_4970b08792_seed0.json",
+      "metrics": {
+        "seconds": 949.7248397100484,
+        "musiq": 24.690921783447266,
+        "musiq_crop1024": 38.35592460632324
+      },
+      "eval_seconds": {
+        "musiq": 442.5043174000457
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus7320315357894569493.Jpg",
+      "seed": 0,
+      "prompt": "A young man in a black ruffled outfit, adorned with a laurel crown, stands with his left hand resting on a pink pedestal, holding a book in his right hand. His expression is calm, and he gazes directly at the viewer against a backdrop of muted colors and classical architectural elements.",
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus7320315357894569493.Jpg_65228aaf5e_seed0.png",
+      "config_hash": "846762bf6565756747dc8407f8beedea038224abb1bf92aa380b3202dccf1780",
+      "seconds": 1011.584930088371,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus7320315357894569493.Jpg_65228aaf5e_seed0.json",
+      "metrics": {
+        "seconds": 1011.584930088371,
+        "musiq": 23.48307228088379,
+        "musiq_crop1024": 26.812452793121338
+      },
+      "eval_seconds": {
+        "musiq": 414.47922773472965
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_7265494513082458083",
+      "seed": 0,
+      "prompt": "A young woman with curly hair and rosy cheeks leans out of a stone window, holding a red fan adorned with floral patterns, dressed in a traditional European blouse with intricate detailing and a necklace.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_7265494513082458083_3ceeb2ed50_seed0.png",
+      "config_hash": "0fe9e1cd98d8d31e6cae6813b5ee4e89011ed6186fcd2bc9602b6563b07f4e46",
+      "seconds": 283.763325185515,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_7265494513082458083_3ceeb2ed50_seed0.json",
+      "metrics": {
+        "seconds": 283.763325185515,
+        "musiq": 23.846458435058594,
+        "musiq_crop1024": 36.470906257629395
+      },
+      "eval_seconds": {
+        "musiq": 381.7602760763839
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus4850138611731379908",
+      "seed": 0,
+      "prompt": "A vast desert landscape under a starry night sky, featuring rolling sand dunes illuminated by a soft glow on the horizon, with a vibrant Milky Way arching overhead.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus4850138611731379908_4970b08792_seed0.png",
+      "config_hash": "e8681c97789ecfcb9e292dcf3f1e61deae634fb75a8915749ff76c37fd403685",
+      "seconds": 295.9333364299964,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus4850138611731379908_4970b08792_seed0.json",
+      "metrics": {
+        "seconds": 295.9333364299964,
+        "musiq": 23.561405181884766,
+        "musiq_crop1024": 46.60669708251953
+      },
+      "eval_seconds": {
+        "musiq": 391.29174134507775
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus7320315357894569493.Jpg",
+      "seed": 0,
+      "prompt": "A young man in a black ruffled outfit, adorned with a laurel crown, stands with his left hand resting on a pink pedestal, holding a book in his right hand. His expression is calm, and he gazes directly at the viewer against a backdrop of muted colors and classical architectural elements.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus7320315357894569493.Jpg_65228aaf5e_seed0.png",
+      "config_hash": "cde1b779c03903e60cd7846beabb78f8a43bc52a818c0917f6b176a8798c6231",
+      "seconds": 299.7312949709594,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus7320315357894569493.Jpg_65228aaf5e_seed0.json",
+      "metrics": {
+        "seconds": 299.7312949709594,
+        "musiq": 17.6895751953125,
+        "musiq_crop1024": 30.471240997314453
+      },
+      "eval_seconds": {
+        "musiq": 373.62799522001296
+      }
+    }
+  ],
+  "uncertainty": "95% percentile bootstrap over prompt clusters; seeds and crops stay inside prompts",
+  "paired_note": "Only matching resolution/prompt/seed pairs enter deltas; absent reference yields no delta",
+  "seconds": 2460.608241884969,
+  "wandb": {
+    "status": "logged",
+    "mode": "offline",
+    "run_id": "17lpbv6d"
+  },
+  "complete": true,
+  "all_metrics_available": true
+}

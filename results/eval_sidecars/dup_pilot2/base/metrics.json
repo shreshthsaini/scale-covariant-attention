@@ -1,0 +1,748 @@
+{
+  "config": {
+    "root": "/scratch/09032/saini_2/sca/out/evalroot/dup_pilot2",
+    "prompts": "/scratch/09032/saini_2/sca/pilot15_dup.jsonl",
+    "references": null,
+    "reference_method": "sca_nb",
+    "res": "4096x4096",
+    "out": "/scratch/09032/saini_2/sca/eval/dup_pilot2/base",
+    "metrics": "clip,pickscore,musiq",
+    "device": "cuda",
+    "bootstrap": 1000,
+    "bootstrap_seed": 0,
+    "crop_seed": 0,
+    "crops": 4,
+    "threads": 8,
+    "allow_missing": false,
+    "no_wandb": false
+  },
+  "metric_schema": 1,
+  "versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "5.19.0",
+    "pyiqa": "0.1.16",
+    "image-reward": "1.5",
+    "hpsv3": null,
+    "torch-fidelity": "0.3.0",
+    "pytorch-fid": null
+  },
+  "status": {
+    "clip": {
+      "status": "complete",
+      "provenance": {
+        "model": "openai/clip-vit-large-patch14",
+        "processor": "openai/clip-vit-large-patch14",
+        "revision": null,
+        "definition": "100*max(cosine,0)"
+      }
+    },
+    "pickscore": {
+      "status": "complete",
+      "provenance": {
+        "model": "yuvalkirstain/PickScore_v1",
+        "processor": "laion/CLIP-ViT-H-14-laion2B-s32B-b79K",
+        "revision": null,
+        "definition": "exp(logit_scale)*cosine"
+      }
+    },
+    "musiq": {
+      "status": "complete",
+      "provenance": {
+        "model": "pyiqa/musiq",
+        "full_input": "native resolution, model preprocessing unchanged",
+        "crop_input": "random 1024x1024, averaged within image"
+      }
+    }
+  },
+  "errors": [],
+  "summary": [
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "metric": "clip",
+      "value": 30.060300827026367,
+      "ci_low": 28.51748925555836,
+      "ci_high": 31.888563598286023,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "metric": "musiq",
+      "value": 41.8458062952215,
+      "ci_low": 32.00735516548157,
+      "ci_high": 50.881277760592376,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "metric": "musiq_crop1024",
+      "value": 56.575372045690365,
+      "ci_low": 48.270027406649156,
+      "ci_high": 64.50997121334076,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "metric": "pickscore",
+      "value": 22.91925759748979,
+      "ci_low": 22.485944154045796,
+      "ci_high": 23.36209993362427,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "metric": "seconds",
+      "value": 70.78845688620244,
+      "ci_low": 70.7526158892703,
+      "ci_high": 70.83152244221526,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "metric": "clip",
+      "value": 29.040950601751153,
+      "ci_low": 27.341991168802434,
+      "ci_high": 30.743880293586034,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "metric": "musiq",
+      "value": 44.627307718450375,
+      "ci_low": 36.433050888234916,
+      "ci_high": 52.27899710915305,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "metric": "musiq_crop1024",
+      "value": 56.401412443681195,
+      "ci_low": 48.79175237633965,
+      "ci_high": 64.2991720719771,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "metric": "pickscore",
+      "value": 22.736675262451172,
+      "ci_low": 22.13035101890564,
+      "ci_high": 23.295062143152407,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "metric": "seconds",
+      "value": 71.44428665504198,
+      "ci_low": 70.41968909477052,
+      "ci_high": 72.83727168805304,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    }
+  ],
+  "optional_unavailable": [],
+  "model_revisions": {
+    "openai/clip-vit-large-patch14": "32bd64288804d66eefd0ccbe215aa642df71cc41",
+    "yuvalkirstain/PickScore_v1": "a4e4367c6dfa7288a00c550414478f865b875800",
+    "laion/CLIP-ViT-H-14-laion2B-s32B-b79K": "1c2b8495b28150b8a4922ee1c8edee224c284c0c",
+    "THUDM/ImageReward": "5736be03b2652728fb87788c9797b0570450ab72",
+    "MizzenAI/HPSv3": null
+  },
+  "paired_deltas": [
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "reference_method": "sca_nb",
+      "metric": "clip",
+      "delta_definition": "method_minus_reference",
+      "value": 1.0193502252752131,
+      "ci_low": -0.20015690543434836,
+      "ci_high": 2.183204369111494,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "reference_method": "sca_nb",
+      "metric": "musiq",
+      "delta_definition": "method_minus_reference",
+      "value": -2.7815014232288706,
+      "ci_low": -6.833520000631159,
+      "ci_high": 0.19001972458579244,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "reference_method": "sca_nb",
+      "metric": "musiq_crop1024",
+      "delta_definition": "method_minus_reference",
+      "value": 0.17395960200916638,
+      "ci_low": -1.2932325384833596,
+      "ci_high": 1.5340663769028402,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "reference_method": "sca_nb",
+      "metric": "pickscore",
+      "delta_definition": "method_minus_reference",
+      "value": 0.18258233503861862,
+      "ci_low": -0.1897430896759033,
+      "ci_high": 0.5417290210723876,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "reference_method": "sca_nb",
+      "metric": "seconds",
+      "delta_definition": "method_minus_reference",
+      "value": -0.6558297688395462,
+      "ci_low": -2.020777220297499,
+      "ci_high": 0.35603534727230324,
+      "n_prompts": 11,
+      "bootstrap_valid": 1000
+    }
+  ],
+  "per_image": [
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1516768667427572324",
+      "seed": 0,
+      "prompt": "A cluttered artist's corner features an ornate gold frame, a painting of a man with glasses, several empty picture frames, a vintage suitcase, and various brushes in a tin can, all set against a textured gray wall and draped with patterned fabric.",
+      "path": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_1516768667427572324_494392fea7_seed0.png",
+      "config_hash": "9bfa049873e178e02ad48dc4329371395fd0b301588d0afd6043c15cb8b545f6",
+      "seconds": 70.90634043305181,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_1516768667427572324_494392fea7_seed0.json",
+      "metrics": {
+        "seconds": 70.90634043305181,
+        "clip": 28.74359703063965,
+        "pickscore": 21.90372657775879,
+        "musiq": 24.550140380859375,
+        "musiq_crop1024": 73.38849639892578
+      },
+      "eval_seconds": {
+        "clip": 0.5313572671730071,
+        "pickscore": 0.3890992859378457,
+        "musiq": 0.9534712908789515
+      }
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7329730529604954318",
+      "seed": 0,
+      "prompt": "A lone tree stands silhouetted against a starry night sky, with the Milky Way vividly illuminated in shades of purple and blue above.",
+      "path": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_7329730529604954318_1cccfdec77_seed0.png",
+      "config_hash": "899462b4210159f3123d2db80f59c86cb5c658fc892537ab8fdd64d332e0f851",
+      "seconds": 70.7275952489581,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_7329730529604954318_1cccfdec77_seed0.json",
+      "metrics": {
+        "seconds": 70.7275952489581,
+        "clip": 32.0529899597168,
+        "pickscore": 24.207338333129883,
+        "musiq": 25.010501861572266,
+        "musiq_crop1024": 47.351789474487305
+      },
+      "eval_seconds": {
+        "clip": 0.299730519996956,
+        "pickscore": 0.30432029091753066,
+        "musiq": 0.793985998025164
+      }
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7961019668960160206",
+      "seed": 0,
+      "prompt": "A large gas planet with distinctive rings is depicted, accompanied by a smaller moon and a distant sun glowing in a reddish space background.",
+      "path": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_7961019668960160206_bb18420fee_seed0.png",
+      "config_hash": "76edf85a83356d55043022d9347a964ac5a2f2e5d13d0062df72a804090e2c11",
+      "seconds": 70.71848038909957,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_7961019668960160206_bb18420fee_seed0.json",
+      "metrics": {
+        "seconds": 70.71848038909957,
+        "clip": 28.59829330444336,
+        "pickscore": 22.1236572265625,
+        "musiq": 32.239009857177734,
+        "musiq_crop1024": 49.51693248748779
+      },
+      "eval_seconds": {
+        "clip": 0.2343101599253714,
+        "pickscore": 0.24603644595481455,
+        "musiq": 0.7393696911167353
+      }
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_8308343334897494229",
+      "seed": 0,
+      "prompt": "A young man with a stylish afro and reflective visor stands against a vibrant neon backdrop featuring pink and blue lights, wearing a fur-lined jacket over a collared shirt.",
+      "path": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_8308343334897494229_2351f432d0_seed0.png",
+      "config_hash": "66b8538748983c4f7c80e137eb6184fd18a1205439ac26a06c0b21ac22ca3794",
+      "seconds": 70.75518463202752,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_8308343334897494229_2351f432d0_seed0.json",
+      "metrics": {
+        "seconds": 70.75518463202752,
+        "clip": 29.7449951171875,
+        "pickscore": 23.50484275817871,
+        "musiq": 44.52553176879883,
+        "musiq_crop1024": 29.693420886993408
+      },
+      "eval_seconds": {
+        "clip": 0.3914984760340303,
+        "pickscore": 0.3994730659760535,
+        "musiq": 0.8979144119657576
+      }
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus1071233499893339092",
+      "seed": 0,
+      "prompt": "A solitary astronaut in a white spacesuit sits on a rock, surrounded by tall, rocky formations under a blue sky with soft clouds. The landscape is barren and dusty, with some sparse vegetation scattered across the ground.",
+      "path": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus1071233499893339092_fbd1fdeeac_seed0.png",
+      "config_hash": "db8238721e11fbd1d3d65ec9354ba49a614614b9b4b0be3006ef7b0952422192",
+      "seconds": 70.76613370515406,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus1071233499893339092_fbd1fdeeac_seed0.json",
+      "metrics": {
+        "seconds": 70.76613370515406,
+        "clip": 25.003841400146484,
+        "pickscore": 23.88290786743164,
+        "musiq": 56.06835174560547,
+        "musiq_crop1024": 46.05990123748779
+      },
+      "eval_seconds": {
+        "clip": 0.2963122301734984,
+        "pickscore": 0.3063134029507637,
+        "musiq": 0.7956497988197953
+      }
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2679953061215100202",
+      "seed": 0,
+      "prompt": "A dancer in mid-pose creates a dynamic splash of water, set against a black background, illuminated to highlight their silhouette.",
+      "path": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
+      "config_hash": "a3a19eb2e1025ec8bd2b0d7b0395c0fce3c4bcf1d2aaceb30edd38682ad4708c",
+      "seconds": 70.82815512106754,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.json",
+      "metrics": {
+        "seconds": 70.82815512106754,
+        "clip": 36.52609634399414,
+        "pickscore": 22.49117660522461,
+        "musiq": 56.22963333129883,
+        "musiq_crop1024": 49.795533657073975
+      },
+      "eval_seconds": {
+        "clip": 0.22122605703771114,
+        "pickscore": 0.23213474499061704,
+        "musiq": 0.7174840900115669
+      }
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2978915343052374306",
+      "seed": 0,
+      "prompt": "A man with long blonde hair, wearing a black leather jacket and a scarf, gazes down thoughtfully while holding a vintage Stratocaster guitar, featuring a worn and distressed finish.",
+      "path": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus2978915343052374306_bd7264be04_seed0.png",
+      "config_hash": "0b64133c3789145529d04583a4d101f74c934e2986b8c60b59669e55b89a30fc",
+      "seconds": 70.76481393305585,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus2978915343052374306_bd7264be04_seed0.json",
+      "metrics": {
+        "seconds": 70.76481393305585,
+        "clip": 33.001285552978516,
+        "pickscore": 22.917333602905273,
+        "musiq": 18.7501277923584,
+        "musiq_crop1024": 63.565412521362305
+      },
+      "eval_seconds": {
+        "clip": 0.2377871701028198,
+        "pickscore": 0.247827157843858,
+        "musiq": 0.7325847290921956
+      }
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus3130703310573987496",
+      "seed": 0,
+      "prompt": "Rolling green hills under a clear blue sky, dotted with patches of mist and purple heather, feature a solitary tree and a weathered stone wall.",
+      "path": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus3130703310573987496_e9fb769c0e_seed0.png",
+      "config_hash": "d77a5ffb8d607e1dfef647d61cd0739054ada0187a63985e8f89420b8945e7ff",
+      "seconds": 70.77847060305066,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus3130703310573987496_e9fb769c0e_seed0.json",
+      "metrics": {
+        "seconds": 70.77847060305066,
+        "clip": 29.260000228881836,
+        "pickscore": 21.818666458129883,
+        "musiq": 60.605796813964844,
+        "musiq_crop1024": 50.628053188323975
+      },
+      "eval_seconds": {
+        "clip": 0.3138480249326676,
+        "pickscore": 0.32212091889232397,
+        "musiq": 0.8127934690564871
+      }
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus4844341235185759356",
+      "seed": 0,
+      "prompt": "A lone hiker stands on a rocky outcrop, overlooking a stunning landscape of dramatic mountains and a serene, reflective body of water at sunset, with vibrant hues of orange, pink, and purple in the sky.",
+      "path": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus4844341235185759356_43a1af5890_seed0.png",
+      "config_hash": "0e6c57b5710d243027b72c55e9f9e81522172822dc7457be676bfc928134ddbb",
+      "seconds": 70.72121098893695,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus4844341235185759356_43a1af5890_seed0.json",
+      "metrics": {
+        "seconds": 70.72121098893695,
+        "clip": 28.675975799560547,
+        "pickscore": 23.05205535888672,
+        "musiq": 55.38164520263672,
+        "musiq_crop1024": 61.92889976501465
+      },
+      "eval_seconds": {
+        "clip": 0.3630113028921187,
+        "pickscore": 0.3692039798479527,
+        "musiq": 0.8604814859572798
+      }
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus493587068337986360",
+      "seed": 0,
+      "prompt": "A tranquil lake reflects colorful houses and a tall church steeple, surrounded by lush green mountains and a cloudy sky.",
+      "path": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus493587068337986360_6f5a6e77db_seed0.png",
+      "config_hash": "0c7de525eeaf75b03751c919aba1e04917346b905930d046216d6381fb3b1cf2",
+      "seconds": 70.7725163330324,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus493587068337986360_6f5a6e77db_seed0.json",
+      "metrics": {
+        "seconds": 70.7725163330324,
+        "clip": 29.359806060791016,
+        "pickscore": 23.241134643554688,
+        "musiq": 62.45366287231445,
+        "musiq_crop1024": 73.43073749542236
+      },
+      "eval_seconds": {
+        "clip": 0.3275479038711637,
+        "pickscore": 0.33925633202306926,
+        "musiq": 0.8276675811503083
+      }
+    },
+    {
+      "method": "dup_head40",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5673083787255800687",
+      "seed": 0,
+      "prompt": "A character in a vibrant red and patterned coat, holding a navy blue umbrella, stands gracefully among falling pink petals, with a decorative blue hat and dotted gloves, against a backdrop of a charming building staircase.",
+      "path": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus5673083787255800687_743ac241bf_seed0.png",
+      "config_hash": "3577749ea730a51170527fe810de79c4bb4002056f81fbe55b1797d3fa7246d8",
+      "seconds": 70.93412436079234,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup/dup_head40/4096x4096/a4k_eval_4096_minus5673083787255800687_743ac241bf_seed0.json",
+      "metrics": {
+        "seconds": 70.93412436079234,
+        "clip": 29.696428298950195,
+        "pickscore": 22.968994140625,
+        "musiq": 24.48946762084961,
+        "musiq_crop1024": 76.96991539001465
+      },
+      "eval_seconds": {
+        "clip": 0.3938505300320685,
+        "pickscore": 0.4014096341561526,
+        "musiq": 0.893543231068179
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1516768667427572324",
+      "seed": 0,
+      "prompt": "A cluttered artist's corner features an ornate gold frame, a painting of a man with glasses, several empty picture frames, a vintage suitcase, and various brushes in a tin can, all set against a textured gray wall and draped with patterned fabric.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1516768667427572324_494392fea7_seed0.png",
+      "config_hash": "76ccdf6d3c19fa8de6f2aa4954a7a9b5183513cf231fbc2fe74db11658303cb6",
+      "seconds": 75.08817885816097,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1516768667427572324_494392fea7_seed0.json",
+      "metrics": {
+        "seconds": 75.08817885816097,
+        "clip": 29.771896362304688,
+        "pickscore": 21.71574592590332,
+        "musiq": 33.073829650878906,
+        "musiq_crop1024": 73.3877944946289
+      },
+      "eval_seconds": {
+        "clip": 0.3924237200990319,
+        "pickscore": 0.401528705842793,
+        "musiq": 0.8928833620157093
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7329730529604954318",
+      "seed": 0,
+      "prompt": "A lone tree stands silhouetted against a starry night sky, with the Milky Way vividly illuminated in shades of purple and blue above.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_7329730529604954318_1cccfdec77_seed0.png",
+      "config_hash": "7cd867e8e42ae43ec045e6520a6e54be975ec81b29074b8f1f14089375afbc5b",
+      "seconds": 70.35918522253633,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_7329730529604954318_1cccfdec77_seed0.json",
+      "metrics": {
+        "seconds": 70.35918522253633,
+        "clip": 30.651796340942383,
+        "pickscore": 23.780780792236328,
+        "musiq": 26.069284439086914,
+        "musiq_crop1024": 44.13111877441406
+      },
+      "eval_seconds": {
+        "clip": 0.3256078800186515,
+        "pickscore": 0.3343156829942018,
+        "musiq": 0.8234330390114337
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7961019668960160206",
+      "seed": 0,
+      "prompt": "A large gas planet with distinctive rings is depicted, accompanied by a smaller moon and a distant sun glowing in a reddish space background.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_7961019668960160206_bb18420fee_seed0.png",
+      "config_hash": "c7e68b4c75ac995c0b21c02d8d309cc7f487918f031e5c88f93f39fe91c13ed3",
+      "seconds": 70.72085670009255,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_7961019668960160206_bb18420fee_seed0.json",
+      "metrics": {
+        "seconds": 70.72085670009255,
+        "clip": 26.664756774902344,
+        "pickscore": 22.119333267211914,
+        "musiq": 34.3559684753418,
+        "musiq_crop1024": 51.22661209106445
+      },
+      "eval_seconds": {
+        "clip": 0.2387107179965824,
+        "pickscore": 0.25324982311576605,
+        "musiq": 0.7415224488358945
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_8308343334897494229",
+      "seed": 0,
+      "prompt": "A young man with a stylish afro and reflective visor stands against a vibrant neon backdrop featuring pink and blue lights, wearing a fur-lined jacket over a collared shirt.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_8308343334897494229_2351f432d0_seed0.png",
+      "config_hash": "7b51c10b5ec43ab8f4173bda0bdff0274e6d17c100c11c2d898a13dd20295f8c",
+      "seconds": 70.2841176148504,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_8308343334897494229_2351f432d0_seed0.json",
+      "metrics": {
+        "seconds": 70.2841176148504,
+        "clip": 30.769878387451172,
+        "pickscore": 23.205379486083984,
+        "musiq": 41.07162094116211,
+        "musiq_crop1024": 33.26933288574219
+      },
+      "eval_seconds": {
+        "clip": 0.37958457600325346,
+        "pickscore": 0.39168929192237556,
+        "musiq": 0.8818853930570185
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus1071233499893339092",
+      "seed": 0,
+      "prompt": "A solitary astronaut in a white spacesuit sits on a rock, surrounded by tall, rocky formations under a blue sky with soft clouds. The landscape is barren and dusty, with some sparse vegetation scattered across the ground.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus1071233499893339092_fbd1fdeeac_seed0.png",
+      "config_hash": "50a9553f18d80ea96e0293f697c2356c8c3fe1b265594fa38a62a04f05043699",
+      "seconds": 70.23911915160716,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus1071233499893339092_fbd1fdeeac_seed0.json",
+      "metrics": {
+        "seconds": 70.23911915160716,
+        "clip": 22.576520919799805,
+        "pickscore": 23.246662139892578,
+        "musiq": 61.01031494140625,
+        "musiq_crop1024": 49.83780574798584
+      },
+      "eval_seconds": {
+        "clip": 0.32689958601258695,
+        "pickscore": 0.339764011092484,
+        "musiq": 0.8321570649277419
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2679953061215100202",
+      "seed": 0,
+      "prompt": "A dancer in mid-pose creates a dynamic splash of water, set against a black background, illuminated to highlight their silhouette.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
+      "config_hash": "3db2fe21782213b8e179c7ca752f140ada6fcc212588776fbd7ea57b67f92e94",
+      "seconds": 76.69494299218059,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.json",
+      "metrics": {
+        "seconds": 76.69494299218059,
+        "clip": 31.491121292114258,
+        "pickscore": 21.286380767822266,
+        "musiq": 52.89657211303711,
+        "musiq_crop1024": 47.00183725357056
+      },
+      "eval_seconds": {
+        "clip": 0.22968592518009245,
+        "pickscore": 0.24334922595880926,
+        "musiq": 0.7311924798414111
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2978915343052374306",
+      "seed": 0,
+      "prompt": "A man with long blonde hair, wearing a black leather jacket and a scarf, gazes down thoughtfully while holding a vintage Stratocaster guitar, featuring a worn and distressed finish.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2978915343052374306_bd7264be04_seed0.png",
+      "config_hash": "e484f699a5899b62c3f82337a53fd369beb8ea31a5e6ccfde53d94fa4ae3d6fe",
+      "seconds": 70.65512788202614,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2978915343052374306_bd7264be04_seed0.json",
+      "metrics": {
+        "seconds": 70.65512788202614,
+        "clip": 33.37751770019531,
+        "pickscore": 23.030879974365234,
+        "musiq": 37.17893981933594,
+        "musiq_crop1024": 63.09930372238159
+      },
+      "eval_seconds": {
+        "clip": 0.23721645097248256,
+        "pickscore": 0.25153670995496213,
+        "musiq": 0.7382299529854208
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus3130703310573987496",
+      "seed": 0,
+      "prompt": "Rolling green hills under a clear blue sky, dotted with patches of mist and purple heather, feature a solitary tree and a weathered stone wall.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus3130703310573987496_e9fb769c0e_seed0.png",
+      "config_hash": "fca6151afc45e802847ee7f5a8ffd8fec7cfc2296329c9e8793d23c6b05326ad",
+      "seconds": 70.22382475063205,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus3130703310573987496_e9fb769c0e_seed0.json",
+      "metrics": {
+        "seconds": 70.22382475063205,
+        "clip": 25.536352157592773,
+        "pickscore": 20.91005516052246,
+        "musiq": 63.85539245605469,
+        "musiq_crop1024": 49.446166038513184
+      },
+      "eval_seconds": {
+        "clip": 0.3167915011290461,
+        "pickscore": 0.3292423610109836,
+        "musiq": 0.8180041981395334
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus4844341235185759356",
+      "seed": 0,
+      "prompt": "A lone hiker stands on a rocky outcrop, overlooking a stunning landscape of dramatic mountains and a serene, reflective body of water at sunset, with vibrant hues of orange, pink, and purple in the sky.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus4844341235185759356_43a1af5890_seed0.png",
+      "config_hash": "02be5c5ae8ae5f12422526f0afa315902cb7c616e0032dedbe64849f50117edf",
+      "seconds": 70.17818645015359,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus4844341235185759356_43a1af5890_seed0.json",
+      "metrics": {
+        "seconds": 70.17818645015359,
+        "clip": 27.951717376708984,
+        "pickscore": 24.129838943481445,
+        "musiq": 54.194637298583984,
+        "musiq_crop1024": 58.31656837463379
+      },
+      "eval_seconds": {
+        "clip": 0.3675129800103605,
+        "pickscore": 0.3825025788974017,
+        "musiq": 0.8688923299778253
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus493587068337986360",
+      "seed": 0,
+      "prompt": "A tranquil lake reflects colorful houses and a tall church steeple, surrounded by lush green mountains and a cloudy sky.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus493587068337986360_6f5a6e77db_seed0.png",
+      "config_hash": "d3c79121af514da7992803c821bbe23628fe33e0b1ed4545bcc82304d6f9e3d5",
+      "seconds": 70.76570964232087,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus493587068337986360_6f5a6e77db_seed0.json",
+      "metrics": {
+        "seconds": 70.76570964232087,
+        "clip": 28.99787712097168,
+        "pickscore": 23.362098693847656,
+        "musiq": 62.172332763671875,
+        "musiq_crop1024": 73.683349609375
+      },
+      "eval_seconds": {
+        "clip": 0.3351778220385313,
+        "pickscore": 0.35090297088027,
+        "musiq": 0.837922862963751
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5673083787255800687",
+      "seed": 0,
+      "prompt": "A character in a vibrant red and patterned coat, holding a navy blue umbrella, stands gracefully among falling pink petals, with a decorative blue hat and dotted gloves, against a backdrop of a charming building staircase.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus5673083787255800687_743ac241bf_seed0.png",
+      "config_hash": "a5b5288563ba38a063b70a3ba1e31cc83f2e2323211b561049cfa6545b9dc965",
+      "seconds": 70.67790394090116,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus5673083787255800687_743ac241bf_seed0.json",
+      "metrics": {
+        "seconds": 70.67790394090116,
+        "clip": 31.661022186279297,
+        "pickscore": 23.316272735595703,
+        "musiq": 25.02149200439453,
+        "musiq_crop1024": 77.0156478881836
+      },
+      "eval_seconds": {
+        "clip": 0.40042410185560584,
+        "pickscore": 0.4162285791244358,
+        "musiq": 0.9073785310611129
+      }
+    }
+  ],
+  "uncertainty": "95% percentile bootstrap over prompt clusters; seeds and crops stay inside prompts",
+  "paired_note": "Only matching resolution/prompt/seed pairs enter deltas; absent reference yields no delta",
+  "seconds": 41.14111862285063,
+  "wandb": {
+    "status": "logged",
+    "mode": "offline",
+    "run_id": "xqe1ryca"
+  },
+  "complete": true,
+  "all_metrics_available": true
+}

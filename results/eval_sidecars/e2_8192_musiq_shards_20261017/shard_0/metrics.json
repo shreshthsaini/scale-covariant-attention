@@ -1,0 +1,283 @@
+{
+  "config": {
+    "root": "/scratch/09032/saini_2/sca/out/evalroot/e2_8192",
+    "prompts": "/scratch/09032/saini_2/sca/eval/e2_8192_musiq_shards_20261017/prompts_0.jsonl",
+    "references": null,
+    "reference_method": "area",
+    "res": "8192x8192",
+    "out": "/scratch/09032/saini_2/sca/eval/e2_8192_musiq_shards_20261017/shard_0",
+    "metrics": "musiq",
+    "device": "cpu",
+    "bootstrap": 1000,
+    "bootstrap_seed": 0,
+    "crop_seed": 0,
+    "crops": 4,
+    "threads": 8,
+    "allow_missing": false,
+    "no_wandb": false,
+    "musiq_query_chunk": 256,
+    "reference_clusters": "rows"
+  },
+  "metric_schema": 1,
+  "versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "5.19.0",
+    "pyiqa": "0.1.16",
+    "image-reward": "1.5",
+    "hpsv3": null,
+    "torch-fidelity": "0.3.0",
+    "pytorch-fid": null
+  },
+  "status": {
+    "musiq": {
+      "status": "complete",
+      "provenance": {
+        "model": "pyiqa/musiq",
+        "full_input": "native resolution, model preprocessing unchanged",
+        "crop_input": "random 1024x1024, averaged within image",
+        "execution_adapter": "musiq_all_keys_query_chunks_v1",
+        "query_chunk": 256,
+        "attention_modules": 14,
+        "native_patches": "all, unchanged",
+        "mask": "original finite -1000; all keys retained",
+        "pyiqa_musiq_source_sha256": "42d5b3c986537da66d8c9b52615acc93237f25d9cadd4b8bee4d5c4d9ff8812f",
+        "adapter_sha256": "fd34b4a1da8cd2ae7c7362958021ec25b4bc7bc89a0f3dc684d26b67812220d6"
+      }
+    }
+  },
+  "errors": [],
+  "summary": [
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "musiq",
+      "value": 29.85431480407715,
+      "ci_low": 24.046987533569336,
+      "ci_high": 37.86069107055664,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "musiq_crop1024",
+      "value": 49.70615275700887,
+      "ci_low": 45.73463249206543,
+      "ci_high": 52.53043508529663,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "metric": "seconds",
+      "value": 1044.477496382625,
+      "ci_low": 997.8288373849355,
+      "ci_high": 1072.3374347169884,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "musiq",
+      "value": 32.592291514078774,
+      "ci_low": 21.799846649169922,
+      "ci_high": 38.99292755126953,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "musiq_crop1024",
+      "value": 43.59238306681315,
+      "ci_low": 27.870681762695312,
+      "ci_high": 53.45110607147217,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "metric": "seconds",
+      "value": 300.3482021311065,
+      "ci_low": 288.58976185973734,
+      "ci_high": 306.76950014662,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    }
+  ],
+  "optional_unavailable": [],
+  "model_revisions": {
+    "openai/clip-vit-large-patch14": "32bd64288804d66eefd0ccbe215aa642df71cc41",
+    "yuvalkirstain/PickScore_v1": "a4e4367c6dfa7288a00c550414478f865b875800",
+    "laion/CLIP-ViT-H-14-laion2B-s32B-b79K": "1c2b8495b28150b8a4922ee1c8edee224c284c0c",
+    "THUDM/ImageReward": "5736be03b2652728fb87788c9797b0570450ab72",
+    "MizzenAI/HPSv3": null
+  },
+  "paired_deltas": [
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "musiq",
+      "delta_definition": "method_minus_reference",
+      "value": 2.7379767100016275,
+      "ci_low": -2.247140884399414,
+      "ci_high": 11.337661743164062,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "musiq_crop1024",
+      "delta_definition": "method_minus_reference",
+      "value": -6.11376969019572,
+      "ci_low": -22.98270893096924,
+      "ci_high": 3.720728874206543,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "reference_method": "area",
+      "metric": "seconds",
+      "delta_definition": "method_minus_reference",
+      "value": -744.1292942515187,
+      "ci_low": -765.5679345703684,
+      "ci_high": -709.2390755251981,
+      "n_prompts": 3,
+      "bootstrap_valid": 1000
+    }
+  ],
+  "per_image": [
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_305536346962135631",
+      "seed": 0,
+      "prompt": "Snow-capped mountains rise majestically against a clear blue sky, with vibrant clouds drifting above a serene lake reflecting the landscape, framed by lush greenery and winding roads.",
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_305536346962135631_c6f18cbbd1_seed0.png",
+      "config_hash": "ceaaf20ff12d18be59b08651508270c6c5443c0cb6714618e01d0f17e7b3a07c",
+      "seconds": 1063.2662170459516,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_305536346962135631_c6f18cbbd1_seed0.json",
+      "metrics": {
+        "seconds": 1063.2662170459516,
+        "musiq": 37.86069107055664,
+        "musiq_crop1024": 52.53043508529663
+      },
+      "eval_seconds": {
+        "musiq": 701.9987949542701
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus3645125026227080560",
+      "seed": 0,
+      "prompt": "A lone figure stands on a rocky outcrop, overlooking a dramatic landscape of snow-covered mountains and a tranquil fjord, with colorful clouds stretching across the twilight sky.",
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus3645125026227080560_f28cca297c_seed0.png",
+      "config_hash": "b0d7df0d490bfe0bed7bcc4666b9570fcbe72724d11808c18a49fd53762267c7",
+      "seconds": 1072.3374347169884,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus3645125026227080560_f28cca297c_seed0.json",
+      "metrics": {
+        "seconds": 1072.3374347169884,
+        "musiq": 24.046987533569336,
+        "musiq_crop1024": 50.85339069366455
+      },
+      "eval_seconds": {
+        "musiq": 453.7081901403144
+      }
+    },
+    {
+      "method": "area",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus5685677173773420545",
+      "seed": 0,
+      "prompt": "A muscular, bald man holds a flower above his head with both arms, set against a soft circular background in black and white.",
+      "path": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus5685677173773420545_b6a31bd1c6_seed0.png",
+      "config_hash": "108fe1df5e6a7b8347cad889d6ca4ca21f4d4ffc357f68ec7459424ec997d15a",
+      "seconds": 997.8288373849355,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/area/8192x8192/a4k_eval_4096_minus5685677173773420545_b6a31bd1c6_seed0.json",
+      "metrics": {
+        "seconds": 997.8288373849355,
+        "musiq": 27.65526580810547,
+        "musiq_crop1024": 45.73463249206543
+      },
+      "eval_seconds": {
+        "musiq": 446.1670856429264
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_305536346962135631",
+      "seed": 0,
+      "prompt": "Snow-capped mountains rise majestically against a clear blue sky, with vibrant clouds drifting above a serene lake reflecting the landscape, framed by lush greenery and winding roads.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_305536346962135631_c6f18cbbd1_seed0.png",
+      "config_hash": "e5dbb30798fb40864a459796498cc28eab4d794d449175f7d8d888937a25a6c4",
+      "seconds": 305.68534438696224,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_305536346962135631_c6f18cbbd1_seed0.json",
+      "metrics": {
+        "seconds": 305.68534438696224,
+        "musiq": 36.984100341796875,
+        "musiq_crop1024": 53.45110607147217
+      },
+      "eval_seconds": {
+        "musiq": 447.357552469708
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus3645125026227080560",
+      "seed": 0,
+      "prompt": "A lone figure stands on a rocky outcrop, overlooking a dramatic landscape of snow-covered mountains and a tranquil fjord, with colorful clouds stretching across the twilight sky.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus3645125026227080560_f28cca297c_seed0.png",
+      "config_hash": "2a95a3c570911295254e607d91bb62784366b696d78eff385e1c4bdbeef78aa5",
+      "seconds": 306.76950014662,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus3645125026227080560_f28cca297c_seed0.json",
+      "metrics": {
+        "seconds": 306.76950014662,
+        "musiq": 21.799846649169922,
+        "musiq_crop1024": 27.870681762695312
+      },
+      "eval_seconds": {
+        "musiq": 451.5965355616063
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "8192x8192",
+      "prompt_id": "a4k_eval_4096_minus5685677173773420545",
+      "seed": 0,
+      "prompt": "A muscular, bald man holds a flower above his head with both arms, set against a soft circular background in black and white.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus5685677173773420545_b6a31bd1c6_seed0.png",
+      "config_hash": "a43696d3b261eae14f1c4bf8bc7cc03718e3acd1bc27ce7d0c74cabd9e9ec424",
+      "seconds": 288.58976185973734,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/8192x8192/a4k_eval_4096_minus5685677173773420545_b6a31bd1c6_seed0.json",
+      "metrics": {
+        "seconds": 288.58976185973734,
+        "musiq": 38.99292755126953,
+        "musiq_crop1024": 49.45536136627197
+      },
+      "eval_seconds": {
+        "musiq": 454.26467077061534
+      }
+    }
+  ],
+  "uncertainty": "95% percentile bootstrap over prompt clusters; seeds and crops stay inside prompts",
+  "paired_note": "Only matching resolution/prompt/seed pairs enter deltas; absent reference yields no delta",
+  "seconds": 2257.5473199933767,
+  "wandb": {
+    "status": "logged",
+    "mode": "offline",
+    "run_id": "6tyaxwu9"
+  },
+  "complete": true,
+  "all_metrics_available": true
+}

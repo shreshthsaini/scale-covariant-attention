@@ -1,0 +1,2552 @@
+{
+  "config": {
+    "root": "/scratch/09032/saini_2/sca/out/evalroot/dup46_dup_anchor_lin",
+    "prompts": "/scratch/09032/saini_2/sca/abl50.jsonl",
+    "references": "/scratch/09032/saini_2/constancy_rope/prompts/aesthetic4k_refs.jsonl",
+    "reference_method": "sca_nb",
+    "res": "4096x4096",
+    "out": "/scratch/09032/saini_2/sca/eval/dup46_dup_anchor_lin/base",
+    "metrics": "clip,pickscore,musiq,patch_fid,patch_kid",
+    "device": "cuda",
+    "bootstrap": 1000,
+    "bootstrap_seed": 0,
+    "crop_seed": 0,
+    "crops": 4,
+    "threads": 8,
+    "allow_missing": false,
+    "no_wandb": false
+  },
+  "metric_schema": 1,
+  "versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "5.19.0",
+    "pyiqa": "0.1.16",
+    "image-reward": "1.5",
+    "hpsv3": null,
+    "torch-fidelity": "0.3.0",
+    "pytorch-fid": null
+  },
+  "status": {
+    "clip": {
+      "status": "complete",
+      "provenance": {
+        "model": "openai/clip-vit-large-patch14",
+        "processor": "openai/clip-vit-large-patch14",
+        "revision": null,
+        "definition": "100*max(cosine,0)"
+      }
+    },
+    "pickscore": {
+      "status": "complete",
+      "provenance": {
+        "model": "yuvalkirstain/PickScore_v1",
+        "processor": "laion/CLIP-ViT-H-14-laion2B-s32B-b79K",
+        "revision": null,
+        "definition": "exp(logit_scale)*cosine"
+      }
+    },
+    "musiq": {
+      "status": "complete",
+      "provenance": {
+        "model": "pyiqa/musiq",
+        "full_input": "native resolution, model preprocessing unchanged",
+        "crop_input": "random 1024x1024, averaged within image"
+      }
+    },
+    "patch_fid": {
+      "status": "complete",
+      "provenance": {
+        "backend": "torch-fidelity",
+        "feature_dim": 2048,
+        "resize": "official TensorFlow-compatible bilinear to 299x299"
+      },
+      "estimator": "empirical Gaussian FID",
+      "bootstrap": "generated and real prompt clusters independently; shared real draw for paired deltas"
+    },
+    "patch_kid": {
+      "status": "complete",
+      "provenance": {
+        "backend": "torch-fidelity",
+        "feature_dim": 2048,
+        "resize": "official TensorFlow-compatible bilinear to 299x299"
+      },
+      "estimator": "unbiased all-pairs polynomial degree 3",
+      "bootstrap": "generated and real prompt clusters independently; shared real draw for paired deltas"
+    }
+  },
+  "errors": [],
+  "summary": [
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "metric": "patch_fid",
+      "value": 173.24351716740995,
+      "ci_low": 193.87398489607804,
+      "ci_high": 224.59462312626738,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000,
+      "n_reference_prompts": 195,
+      "n_feature_rows": 184,
+      "n_reference_feature_rows": 780
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "metric": "patch_fid",
+      "value": 170.1693954120774,
+      "ci_low": 191.1535111368308,
+      "ci_high": 223.07115328907724,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000,
+      "n_reference_prompts": 195,
+      "n_feature_rows": 184,
+      "n_reference_feature_rows": 780
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "metric": "patch_kid",
+      "value": 0.02075681200763535,
+      "ci_low": 0.018173723466884097,
+      "ci_high": 0.035920390290403226,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000,
+      "n_reference_prompts": 195,
+      "n_feature_rows": 184,
+      "n_reference_feature_rows": 780
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "metric": "patch_kid",
+      "value": 0.014121030754580932,
+      "ci_low": 0.012986801544396631,
+      "ci_high": 0.028741967637145368,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000,
+      "n_reference_prompts": 195,
+      "n_feature_rows": 184,
+      "n_reference_feature_rows": 780
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "metric": "clip",
+      "value": 29.45680692921514,
+      "ci_low": 28.56822983181995,
+      "ci_high": 30.299330752828848,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "metric": "musiq",
+      "value": 44.173160552978516,
+      "ci_low": 40.90886688232422,
+      "ci_high": 47.09178360234136,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "metric": "musiq_crop1024",
+      "value": 60.94343687140423,
+      "ci_low": 57.937310079388,
+      "ci_high": 63.68940543091816,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "metric": "pickscore",
+      "value": 22.796001724574875,
+      "ci_low": 22.47205885804218,
+      "ci_high": 23.09616481739542,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "metric": "seconds",
+      "value": 72.5977205753215,
+      "ci_low": 71.85757703090506,
+      "ci_high": 73.56297977262318,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "metric": "clip",
+      "value": 29.410285452137824,
+      "ci_low": 28.517823412107386,
+      "ci_high": 30.254461327843046,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "metric": "musiq",
+      "value": 46.07271372753641,
+      "ci_low": 42.43410193090853,
+      "ci_high": 49.670951826676074,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "metric": "musiq_crop1024",
+      "value": 62.477825911148734,
+      "ci_low": 59.71633510071298,
+      "ci_high": 65.06717291422513,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "metric": "pickscore",
+      "value": 22.9616175941799,
+      "ci_low": 22.67241806258326,
+      "ci_high": 23.24859803137572,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "metric": "seconds",
+      "value": 71.58125754941821,
+      "ci_low": 71.1199233535409,
+      "ci_high": 72.17114405500166,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    }
+  ],
+  "optional_unavailable": [],
+  "model_revisions": {
+    "openai/clip-vit-large-patch14": "32bd64288804d66eefd0ccbe215aa642df71cc41",
+    "yuvalkirstain/PickScore_v1": "a4e4367c6dfa7288a00c550414478f865b875800",
+    "laion/CLIP-ViT-H-14-laion2B-s32B-b79K": "1c2b8495b28150b8a4922ee1c8edee224c284c0c",
+    "THUDM/ImageReward": "5736be03b2652728fb87788c9797b0570450ab72",
+    "MizzenAI/HPSv3": null
+  },
+  "paired_deltas": [
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "metric": "patch_fid",
+      "reference_method": "sca_nb",
+      "delta_definition": "method_minus_reference",
+      "value": 3.0741217553325555,
+      "ci_low": -4.316966393604211,
+      "ci_high": 9.52993945321091,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000,
+      "n_reference_prompts": 195,
+      "n_feature_rows": 184,
+      "n_reference_feature_rows": 780
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "metric": "patch_kid",
+      "reference_method": "sca_nb",
+      "delta_definition": "method_minus_reference",
+      "value": 0.006635781253054418,
+      "ci_low": 0.0021252966197466195,
+      "ci_high": 0.01141020631993923,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000,
+      "n_reference_prompts": 195,
+      "n_feature_rows": 184,
+      "n_reference_feature_rows": 780
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "reference_method": "sca_nb",
+      "metric": "clip",
+      "delta_definition": "method_minus_reference",
+      "value": 0.046521477077318275,
+      "ci_low": -0.4190231540928716,
+      "ci_high": 0.550049672956052,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "reference_method": "sca_nb",
+      "metric": "musiq",
+      "delta_definition": "method_minus_reference",
+      "value": -1.899553174557893,
+      "ci_low": -3.5605682352314827,
+      "ci_high": -0.22797914691593343,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "reference_method": "sca_nb",
+      "metric": "musiq_crop1024",
+      "delta_definition": "method_minus_reference",
+      "value": -1.5343890397445015,
+      "ci_low": -2.4998885035514835,
+      "ci_high": -0.5809333591357523,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "reference_method": "sca_nb",
+      "metric": "pickscore",
+      "delta_definition": "method_minus_reference",
+      "value": -0.16561586960502292,
+      "ci_low": -0.28673286230667777,
+      "ci_high": -0.03457440500674046,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "reference_method": "sca_nb",
+      "metric": "seconds",
+      "delta_definition": "method_minus_reference",
+      "value": 1.0164630259032887,
+      "ci_low": 0.4471457308036802,
+      "ci_high": 1.7883091965506772,
+      "n_prompts": 46,
+      "bootstrap_valid": 1000
+    }
+  ],
+  "per_image": [
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1041106339713796826",
+      "seed": 0,
+      "prompt": "Silhouettes of figures in hats walk through a foggy urban landscape, surrounded by tall, shadowy buildings and power lines against a soft yellow and orange sky.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_1041106339713796826_4043a88752_seed0.png",
+      "config_hash": "e7397e5b8e62431a09710614785f5efaa2bf786e565157e28ff622aaef346ccb",
+      "seconds": 72.48483941692393,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_1041106339713796826_4043a88752_seed0.json",
+      "metrics": {
+        "seconds": 72.48483941692393,
+        "clip": 28.88544273376465,
+        "pickscore": 24.258684158325195,
+        "musiq": 40.81113052368164,
+        "musiq_crop1024": 54.56696891784668
+      },
+      "eval_seconds": {
+        "clip": 0.4481960888952017,
+        "pickscore": 0.3056265041232109,
+        "musiq": 0.865078279748559,
+        "inception_patch1024": 0.36718723736703396
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1046736963520652161",
+      "seed": 0,
+      "prompt": "Majestic mountains rise against a clear sky, their peaks bathed in golden light, while a serene lake reflects their image surrounded by vibrant autumn foliage and mist hovering over the water.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_1046736963520652161_826d2659e4_seed0.png",
+      "config_hash": "703df5a511d8c8c14390059c00dd57388d04f6727f6be7c1f3aeb3fa796399c1",
+      "seconds": 70.9055638059508,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_1046736963520652161_826d2659e4_seed0.json",
+      "metrics": {
+        "seconds": 70.9055638059508,
+        "clip": 28.905845642089844,
+        "pickscore": 22.29014778137207,
+        "musiq": 50.44941329956055,
+        "musiq_crop1024": 62.96091270446777
+      },
+      "eval_seconds": {
+        "clip": 0.3610493876039982,
+        "pickscore": 0.36627151630818844,
+        "musiq": 0.8559406399726868,
+        "inception_patch1024": 0.3630967531353235
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1139740195494332405",
+      "seed": 0,
+      "prompt": "A woman with short hair and a black dress stands in a forest, holding an owl with large, outstretched wings. The sunlight filters through the trees, highlighting her tattoo and the owl's detailed feathers.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_1139740195494332405_ea628bcb94_seed0.png",
+      "config_hash": "a46425374d50fe06d347fb15d0129862e73a52952fe742b9d0856a5db9c01259",
+      "seconds": 78.2934931400232,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_1139740195494332405_ea628bcb94_seed0.json",
+      "metrics": {
+        "seconds": 78.2934931400232,
+        "clip": 33.19883346557617,
+        "pickscore": 21.569490432739258,
+        "musiq": 54.41398239135742,
+        "musiq_crop1024": 62.80642127990723
+      },
+      "eval_seconds": {
+        "clip": 0.36364349350333214,
+        "pickscore": 0.37041016295552254,
+        "musiq": 0.8620828948915005,
+        "inception_patch1024": 0.36941491067409515
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1516768667427572324",
+      "seed": 0,
+      "prompt": "A cluttered artist's corner features an ornate gold frame, a painting of a man with glasses, several empty picture frames, a vintage suitcase, and various brushes in a tin can, all set against a textured gray wall and draped with patterned fabric.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_1516768667427572324_494392fea7_seed0.png",
+      "config_hash": "e98b0653090a623b680133c3e8fe86a976fc476bd522996b09406228025aa867",
+      "seconds": 75.48615270806476,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_1516768667427572324_494392fea7_seed0.json",
+      "metrics": {
+        "seconds": 75.48615270806476,
+        "clip": 32.093929290771484,
+        "pickscore": 20.969579696655273,
+        "musiq": 25.10910987854004,
+        "musiq_crop1024": 74.20290756225586
+      },
+      "eval_seconds": {
+        "clip": 0.32709162682294846,
+        "pickscore": 0.33497394248843193,
+        "musiq": 0.8245842810720205,
+        "inception_patch1024": 0.34032880887389183
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1594791064055740275",
+      "seed": 0,
+      "prompt": "A mysterious woman stands confidently in elaborate, dark armor adorned with intricate designs, holding a staff, against a backdrop of smoke and an ominous red sky, with shadowy, gothic buildings in the distance.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_1594791064055740275_f7306ee3c6_seed0.png",
+      "config_hash": "d98278bee10c847b90a520f16c22ba5b0454aad19985d830e98933f27fc5b437",
+      "seconds": 75.50641189794987,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_1594791064055740275_f7306ee3c6_seed0.json",
+      "metrics": {
+        "seconds": 75.50641189794987,
+        "clip": 29.658422470092773,
+        "pickscore": 23.927568435668945,
+        "musiq": 27.716108322143555,
+        "musiq_crop1024": 58.30503845214844
+      },
+      "eval_seconds": {
+        "clip": 0.2932255156338215,
+        "pickscore": 0.2988291773945093,
+        "musiq": 0.7881394848227501,
+        "inception_patch1024": 0.29761173762381077
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1638867997226496674",
+      "seed": 0,
+      "prompt": "Two figures, a boy and a girl, stand side by side, gazing at a starry sky filled with swirling colors and shooting stars, connected by ribbons that twist through the air.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_1638867997226496674_812cc05d56_seed0.png",
+      "config_hash": "2fb1dfc27778872b5a298069dcabb73c5adc19a0c80924be24c594dffaf556f7",
+      "seconds": 70.82611831091344,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_1638867997226496674_812cc05d56_seed0.json",
+      "metrics": {
+        "seconds": 70.82611831091344,
+        "clip": 29.872793197631836,
+        "pickscore": 23.392213821411133,
+        "musiq": 40.980255126953125,
+        "musiq_crop1024": 70.12473678588867
+      },
+      "eval_seconds": {
+        "clip": 0.404254162684083,
+        "pickscore": 0.4087388217449188,
+        "musiq": 0.8942695893347263,
+        "inception_patch1024": 0.4080474469810724
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_334788259750040356",
+      "seed": 0,
+      "prompt": "A frozen landscape features a majestic waterfall cascading into a turquoise pool, surrounded by white snow and rocky edges, under a moody, overcast sky with distant mountains.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_334788259750040356_f55a411452_seed0.png",
+      "config_hash": "fbaa5f61c5b55290128aa4d2b465424b0a2b31d1be41a0144fa3fbff4e21f33b",
+      "seconds": 74.43302159802988,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_334788259750040356_f55a411452_seed0.json",
+      "metrics": {
+        "seconds": 74.43302159802988,
+        "clip": 26.16303825378418,
+        "pickscore": 23.074621200561523,
+        "musiq": 52.384315490722656,
+        "musiq_crop1024": 54.777183532714844
+      },
+      "eval_seconds": {
+        "clip": 0.32145289331674576,
+        "pickscore": 0.32980672270059586,
+        "musiq": 0.8162585441023111,
+        "inception_patch1024": 0.33111382462084293
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3667310823951382336",
+      "seed": 0,
+      "prompt": "A stylish woman in a black top and a green striped skirt stands confidently on a city street, while passersby, including a man in a suit and a child, walk nearby, with shop signs and awnings visible in the background.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_3667310823951382336_da7a059989_seed0.png",
+      "config_hash": "75b4329a31988dcef6f68b7dc93ce13b6e1295f627e3e4f9def0b1c6107c57c4",
+      "seconds": 71.11510898545384,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_3667310823951382336_da7a059989_seed0.json",
+      "metrics": {
+        "seconds": 71.11510898545384,
+        "clip": 28.855518341064453,
+        "pickscore": 22.549617767333984,
+        "musiq": 46.72185134887695,
+        "musiq_crop1024": 60.967291831970215
+      },
+      "eval_seconds": {
+        "clip": 0.32217602618038654,
+        "pickscore": 0.3291108850389719,
+        "musiq": 0.8129161857068539,
+        "inception_patch1024": 0.3292905669659376
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3826098298648979216",
+      "seed": 0,
+      "prompt": "Two figures paddle a canoe in a tranquil lake, surrounded by towering mountains and lush trees, with a waterfall cascading down rocky cliffs in the background. Soft light filters through the clouds, casting reflections on the water's surface.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_3826098298648979216_723ba70c9b_seed0.png",
+      "config_hash": "1bf2e992a93d7e7c21c95cb12db99f4771f67acf6a32fda02a105ef68409543f",
+      "seconds": 70.9771559080109,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_3826098298648979216_723ba70c9b_seed0.json",
+      "metrics": {
+        "seconds": 70.9771559080109,
+        "clip": 31.03109359741211,
+        "pickscore": 23.484233856201172,
+        "musiq": 37.2640380859375,
+        "musiq_crop1024": 66.45956516265869
+      },
+      "eval_seconds": {
+        "clip": 0.32379262894392014,
+        "pickscore": 0.33084044978022575,
+        "musiq": 0.8159228675067425,
+        "inception_patch1024": 0.3308312054723501
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3943607367684487957",
+      "seed": 0,
+      "prompt": "A boy in a cap sits relaxed on a bed of hay, engrossed in a book, with a baseball and bat resting beside him.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_3943607367684487957_9d11855e8c_seed0.png",
+      "config_hash": "f9d90fab3064f5181be2796a1e39d685a5875a5126866280b1cabd1862abdc64",
+      "seconds": 70.87465226999484,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_3943607367684487957_9d11855e8c_seed0.json",
+      "metrics": {
+        "seconds": 70.87465226999484,
+        "clip": 31.22970962524414,
+        "pickscore": 23.185861587524414,
+        "musiq": 53.248260498046875,
+        "musiq_crop1024": 63.64505481719971
+      },
+      "eval_seconds": {
+        "clip": 0.3754702750593424,
+        "pickscore": 0.38328724540770054,
+        "musiq": 0.8649364877492189,
+        "inception_patch1024": 0.3810960967093706
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_4525259556400020626",
+      "seed": 0,
+      "prompt": "Snow-covered landscape featuring a group of sheep in the foreground, with a quaint, snow-dusted church and rustic houses in the background surrounded by trees.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_4525259556400020626_bfb8afb9a4_seed0.png",
+      "config_hash": "70217cb7eaa946f9a1b9159ac8590be7829302306d09a78260fbcd888c28a4ad",
+      "seconds": 70.77991364011541,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_4525259556400020626_bfb8afb9a4_seed0.json",
+      "metrics": {
+        "seconds": 70.77991364011541,
+        "clip": 30.037044525146484,
+        "pickscore": 23.457536697387695,
+        "musiq": 47.34196853637695,
+        "musiq_crop1024": 62.66834735870361
+      },
+      "eval_seconds": {
+        "clip": 0.3103686012327671,
+        "pickscore": 0.3199342396110296,
+        "musiq": 0.8040898442268372,
+        "inception_patch1024": 0.3150052595883608
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_5826245701465116957",
+      "seed": 0,
+      "prompt": "A wooden cabin sits in a snowy landscape, surrounded by evergreen trees and towering mountains under a colorful, cloud-streaked sky at dusk.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_5826245701465116957_e0c324d43e_seed0.png",
+      "config_hash": "1db71bdea4aebcc775047a82ec7678e947621a7989c7aa996451330714a18a89",
+      "seconds": 70.48196531273425,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_5826245701465116957_e0c324d43e_seed0.json",
+      "metrics": {
+        "seconds": 70.48196531273425,
+        "clip": 30.722505569458008,
+        "pickscore": 24.106918334960938,
+        "musiq": 57.01946258544922,
+        "musiq_crop1024": 51.419118881225586
+      },
+      "eval_seconds": {
+        "clip": 0.3124824184924364,
+        "pickscore": 0.3222056571394205,
+        "musiq": 0.8114769905805588,
+        "inception_patch1024": 0.3213700093328953
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_5968998903196670637",
+      "seed": 0,
+      "prompt": "A man in 19th-century attire sits beside a woman dressed in a floral-patterned gown, both holding hands on an ornate teal couch, surrounded by rich dark-hued walls and vintage artwork.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_5968998903196670637_d418993014_seed0.png",
+      "config_hash": "592ab4f07403f70e80836e1b9d2652677a196effe18ffe8c6f7876b87d39a7fa",
+      "seconds": 72.55218917794991,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_5968998903196670637_d418993014_seed0.json",
+      "metrics": {
+        "seconds": 72.55218917794991,
+        "clip": 23.817096710205078,
+        "pickscore": 23.580005645751953,
+        "musiq": 50.75551223754883,
+        "musiq_crop1024": 75.23645782470703
+      },
+      "eval_seconds": {
+        "clip": 0.3480928484350443,
+        "pickscore": 0.35779643803834915,
+        "musiq": 0.8438366446644068,
+        "inception_patch1024": 0.35704921185970306
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_6066373865342273390",
+      "seed": 0,
+      "prompt": "A white church with a golden dome stands against a bright blue sky, featuring arched windows and a cross on top, while a solitary figure walks nearby.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_6066373865342273390_350bfa414f_seed0.png",
+      "config_hash": "a91ad4ef8518efb7986af27ddcb88ed4e277dceca5610d0305614f082ebb864b",
+      "seconds": 73.75724556995556,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_6066373865342273390_350bfa414f_seed0.json",
+      "metrics": {
+        "seconds": 73.75724556995556,
+        "clip": 23.166561126708984,
+        "pickscore": 22.271921157836914,
+        "musiq": 51.41831588745117,
+        "musiq_crop1024": 55.47256517410278
+      },
+      "eval_seconds": {
+        "clip": 0.28721189871430397,
+        "pickscore": 0.2992320563644171,
+        "musiq": 0.7832105718553066,
+        "inception_patch1024": 0.29428614489734173
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7009273464006889449",
+      "seed": 0,
+      "prompt": "A smiling man in a blue jacket holds a sign labeled \"Fantasyland\" in front of a stone castle with turrets and flags under a clear sky.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_7009273464006889449_b157fdee37_seed0.png",
+      "config_hash": "40422743cad584c341774d9ea16e335c57b0461eaf794057b14cc53846ce25dc",
+      "seconds": 70.82544989604503,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_7009273464006889449_b157fdee37_seed0.json",
+      "metrics": {
+        "seconds": 70.82544989604503,
+        "clip": 36.31721878051758,
+        "pickscore": 23.472362518310547,
+        "musiq": 44.72309875488281,
+        "musiq_crop1024": 53.05528545379639
+      },
+      "eval_seconds": {
+        "clip": 0.36052900552749634,
+        "pickscore": 0.36996920220553875,
+        "musiq": 0.8545263428241014,
+        "inception_patch1024": 0.36953017488121986
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7543519915112968451",
+      "seed": 0,
+      "prompt": "A charming, narrow alley adorned with vibrant flowers and hanging planters, featuring colorful restaurant signs, leads to a couple strolling hand in hand, surrounded by picturesque half-timbered buildings and a backdrop of green vineyards.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_7543519915112968451_3b3ac7d375_seed0.png",
+      "config_hash": "da271640ceee4743844e78a005fd2492c9e4a88a78d75bb67345e502fa8e988d",
+      "seconds": 86.64291614852846,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_7543519915112968451_3b3ac7d375_seed0.json",
+      "metrics": {
+        "seconds": 86.64291614852846,
+        "clip": 32.81169509887695,
+        "pickscore": 21.761682510375977,
+        "musiq": 59.61661911010742,
+        "musiq_crop1024": 76.75288963317871
+      },
+      "eval_seconds": {
+        "clip": 0.4130460415035486,
+        "pickscore": 0.42543659918010235,
+        "musiq": 0.9072075355798006,
+        "inception_patch1024": 0.42438142374157906
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7637161027288029693",
+      "seed": 0,
+      "prompt": "A dramatic landscape features dark, swirling clouds above serene water, highlighted by rays of light breaking through. Several angular, purple-tinted rock formations emerge from the water, contrasting with the calm blue tones of the surrounding scene.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_7637161027288029693_13300f1b3f_seed0.png",
+      "config_hash": "170f6b40eb800d16afcb15d1c44612eaa29b0a9cee8ed73605a564d9b3ecdf4a",
+      "seconds": 70.4023683425039,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_7637161027288029693_13300f1b3f_seed0.json",
+      "metrics": {
+        "seconds": 70.4023683425039,
+        "clip": 27.600265502929688,
+        "pickscore": 20.988418579101562,
+        "musiq": 32.18357467651367,
+        "musiq_crop1024": 45.61646366119385
+      },
+      "eval_seconds": {
+        "clip": 0.3456411436200142,
+        "pickscore": 0.35576709918677807,
+        "musiq": 0.8388420026749372,
+        "inception_patch1024": 0.35587581247091293
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_8020030205210970395",
+      "seed": 0,
+      "prompt": "Snow-capped mountains surround a tranquil lake, reflecting their peaks against a twilight sky with soft, colorful clouds. Mist rises gently from the water's surface, enhancing the serene landscape.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_8020030205210970395_fc4191b3ca_seed0.png",
+      "config_hash": "516e99ee1465a8ba54fca2fb2f88477352db13cd63ec2050b758be20cc298fc5",
+      "seconds": 70.52237178105861,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_8020030205210970395_fc4191b3ca_seed0.json",
+      "metrics": {
+        "seconds": 70.52237178105861,
+        "clip": 28.894180297851562,
+        "pickscore": 21.84328269958496,
+        "musiq": 31.81242561340332,
+        "musiq_crop1024": 46.34965705871582
+      },
+      "eval_seconds": {
+        "clip": 0.33535829186439514,
+        "pickscore": 0.34644840285182,
+        "musiq": 0.8288081735372543,
+        "inception_patch1024": 0.34161955676972866
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_8065862701789418887",
+      "seed": 0,
+      "prompt": "Majestic snow-capped mountains rise against a twilight sky, reflecting in a calm, glassy lake, with scattered rocks in the foreground and stars beginning to twinkle above.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_8065862701789418887_761282129a_seed0.png",
+      "config_hash": "fae06289e70dfda43797f3cd8cd83a106638592a29ef14f9cc51e2b063e9ff2e",
+      "seconds": 71.05329523002729,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_8065862701789418887_761282129a_seed0.json",
+      "metrics": {
+        "seconds": 71.05329523002729,
+        "clip": 26.687570571899414,
+        "pickscore": 22.777196884155273,
+        "musiq": 31.046245574951172,
+        "musiq_crop1024": 51.479795932769775
+      },
+      "eval_seconds": {
+        "clip": 0.28706815652549267,
+        "pickscore": 0.29740854166448116,
+        "musiq": 0.7817558888345957,
+        "inception_patch1024": 0.29468092881143093
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_820801809737345747",
+      "seed": 0,
+      "prompt": "A woman with glasses and a short outfit poses confidently alongside a muscular man dressed in traditional clothing, holding a sword; a small bear-like character in a hat gestures excitedly. In the background, two figures in kimonos walk under a red umbrella, surrounded by glowing lanterns and cherry blossoms.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_820801809737345747_4d9fe5cb8e_seed0.png",
+      "config_hash": "4eed3fdf1745e06149ada5015d5f8249648813b637256d517488ca7b64ef053e",
+      "seconds": 72.22892449004576,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_820801809737345747_4d9fe5cb8e_seed0.json",
+      "metrics": {
+        "seconds": 72.22892449004576,
+        "clip": 28.90894317626953,
+        "pickscore": 21.614009857177734,
+        "musiq": 27.642454147338867,
+        "musiq_crop1024": 67.73237419128418
+      },
+      "eval_seconds": {
+        "clip": 0.3794157989323139,
+        "pickscore": 0.3922368548810482,
+        "musiq": 0.8770316205918789,
+        "inception_patch1024": 0.3955445699393749
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_880657115260655727",
+      "seed": 0,
+      "prompt": "A stone bridge with arched spans reflects golden light on the water, flanked by buildings and a leafy tree under a clear blue sky.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_880657115260655727_a6ae047101_seed0.png",
+      "config_hash": "45850eef00262d23ecb2df5f4b6eb2f1e56e38691c921b74bc2c182c12660972",
+      "seconds": 72.98735848499928,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_880657115260655727_a6ae047101_seed0.json",
+      "metrics": {
+        "seconds": 72.98735848499928,
+        "clip": 24.62240219116211,
+        "pickscore": 23.25829315185547,
+        "musiq": 58.51218032836914,
+        "musiq_crop1024": 59.02553844451904
+      },
+      "eval_seconds": {
+        "clip": 0.33510923758149147,
+        "pickscore": 0.34853118285536766,
+        "musiq": 0.8301989566534758,
+        "inception_patch1024": 0.34653243981301785
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_9082507599514684465",
+      "seed": 0,
+      "prompt": "A young man in a white shirt and green tunic sits on a stone, using a measuring tool, while two standing figures, one in red robes with a turban and another in a yellow cloak, observe him against a backdrop of trees and a distant landscape.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_9082507599514684465_660fbe6453_seed0.png",
+      "config_hash": "2b8461f50e0a68942a3631fc2e5c723c858de04686acf2be6c41577111cee6a1",
+      "seconds": 71.00364504521713,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_9082507599514684465_660fbe6453_seed0.json",
+      "metrics": {
+        "seconds": 71.00364504521713,
+        "clip": 28.209632873535156,
+        "pickscore": 22.88228988647461,
+        "musiq": 56.24317932128906,
+        "musiq_crop1024": 71.2126874923706
+      },
+      "eval_seconds": {
+        "clip": 0.35313609801232815,
+        "pickscore": 0.36399136297404766,
+        "musiq": 0.846909498795867,
+        "inception_patch1024": 0.3657973185181618
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus1017950324987649681",
+      "seed": 0,
+      "prompt": "Majestic snow-covered mountains rise sharply against a pastel sky, reflecting hues of pink and blue, while a tranquil sea meets a rugged coastline amidst patches of ice and snow.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus1017950324987649681_56e590b0d6_seed0.png",
+      "config_hash": "53ad410819db9fa343119ed1c628a5a03fe7a3dc93a9424c508a9a8151b4e3af",
+      "seconds": 70.45435748249292,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus1017950324987649681_56e590b0d6_seed0.json",
+      "metrics": {
+        "seconds": 70.45435748249292,
+        "clip": 27.86628532409668,
+        "pickscore": 21.6916561126709,
+        "musiq": 49.80759048461914,
+        "musiq_crop1024": 56.371716022491455
+      },
+      "eval_seconds": {
+        "clip": 0.28159607388079166,
+        "pickscore": 0.29211486503481865,
+        "musiq": 0.7769008930772543,
+        "inception_patch1024": 0.2911840733140707
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2014927182109364975",
+      "seed": 0,
+      "prompt": "A panoramic view of Paris featuring the Eiffel Tower, the Seine River, and various ornate buildings with greenery and bustling activity, including boats on the water and crowds along walkways.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus2014927182109364975_81f6a4b6e1_seed0.png",
+      "config_hash": "2157863b3b6a7a3a3660716d808fb5a667fb358d275edf870677f4f469656765",
+      "seconds": 72.1488346880069,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus2014927182109364975_81f6a4b6e1_seed0.json",
+      "metrics": {
+        "seconds": 72.1488346880069,
+        "clip": 28.158143997192383,
+        "pickscore": 22.202680587768555,
+        "musiq": 61.526309967041016,
+        "musiq_crop1024": 71.32247352600098
+      },
+      "eval_seconds": {
+        "clip": 0.3644975386559963,
+        "pickscore": 0.3773592635989189,
+        "musiq": 0.8583389054983854,
+        "inception_patch1024": 0.3711331132799387
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2447481760626661988",
+      "seed": 0,
+      "prompt": "A towering brown bear stands on its hind legs in a misty forest, surrounded by tall trees and moss-covered rocks, with sunlight filtering through the foliage.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.png",
+      "config_hash": "7040fcb2119f5fc65d390d6d0852101abb8257fa5ed7edc9f69379e625c2be2a",
+      "seconds": 70.93555066548288,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.json",
+      "metrics": {
+        "seconds": 70.93555066548288,
+        "clip": 28.378582000732422,
+        "pickscore": 24.341623306274414,
+        "musiq": 28.148069381713867,
+        "musiq_crop1024": 64.35884189605713
+      },
+      "eval_seconds": {
+        "clip": 0.3488113731145859,
+        "pickscore": 0.3588705789297819,
+        "musiq": 0.8471849542111158,
+        "inception_patch1024": 0.36205239966511726
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus263777997664289445",
+      "seed": 0,
+      "prompt": "A rocky landscape features large, weathered stone formations under a vibrant night sky filled with countless stars and the Milky Way stretching across.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus263777997664289445_4849f3fe75_seed0.png",
+      "config_hash": "5d46591c514d43eff63276fc1ad17d149808bc275aeeff3c978193f7fe4ab107",
+      "seconds": 70.7886915341951,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus263777997664289445_4849f3fe75_seed0.json",
+      "metrics": {
+        "seconds": 70.7886915341951,
+        "clip": 28.164777755737305,
+        "pickscore": 23.07479476928711,
+        "musiq": 22.5178279876709,
+        "musiq_crop1024": 57.6692419052124
+      },
+      "eval_seconds": {
+        "clip": 0.34477621875703335,
+        "pickscore": 0.35681714303791523,
+        "musiq": 0.8408978991210461,
+        "inception_patch1024": 0.35620799846947193
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2679953061215100202",
+      "seed": 0,
+      "prompt": "A dancer in mid-pose creates a dynamic splash of water, set against a black background, illuminated to highlight their silhouette.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
+      "config_hash": "1f7a0dbe7c7f8c840cc00b20393d630eb7fcada1f18395d72fcf7dd33c8e340a",
+      "seconds": 75.4094529892318,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.json",
+      "metrics": {
+        "seconds": 75.4094529892318,
+        "clip": 35.39841842651367,
+        "pickscore": 22.41826820373535,
+        "musiq": 42.226104736328125,
+        "musiq_crop1024": 45.76097011566162
+      },
+      "eval_seconds": {
+        "clip": 0.2718971222639084,
+        "pickscore": 0.28209476359188557,
+        "musiq": 0.7633576057851315,
+        "inception_patch1024": 0.2771151177585125
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2712631331773394876",
+      "seed": 0,
+      "prompt": "A woman in a light blue dress with puffed sleeves poses thoughtfully, adorned with a red flower in her hair, beside a table decorated with various items and a reflection of her image in a mirror.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus2712631331773394876_9142f070f1_seed0.png",
+      "config_hash": "fa40eb7a9e79780604409acab52c54afa22cfeac36d75a546fc95cbcbd1c9e6b",
+      "seconds": 70.77018093504012,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus2712631331773394876_9142f070f1_seed0.json",
+      "metrics": {
+        "seconds": 70.77018093504012,
+        "clip": 29.381916046142578,
+        "pickscore": 23.501712799072266,
+        "musiq": 56.06040954589844,
+        "musiq_crop1024": 70.78625392913818
+      },
+      "eval_seconds": {
+        "clip": 0.3531571850180626,
+        "pickscore": 0.3651211205869913,
+        "musiq": 0.8478361200541258,
+        "inception_patch1024": 0.3625940643250942
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2729538226706404616",
+      "seed": 0,
+      "prompt": "A woman\u2019s profile emerges among swirling clouds, with a deep gaze and delicate earrings, set against a gradient of blues and hints of gold.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png",
+      "config_hash": "51bbfe9c90819d9b2c08344d470759e848e0fb2a864584a1b7b419f064c6967c",
+      "seconds": 70.70364437391981,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.json",
+      "metrics": {
+        "seconds": 70.70364437391981,
+        "clip": 27.669355392456055,
+        "pickscore": 22.46768569946289,
+        "musiq": 53.33125686645508,
+        "musiq_crop1024": 45.06468486785889
+      },
+      "eval_seconds": {
+        "clip": 0.37414912693202496,
+        "pickscore": 0.387078370898962,
+        "musiq": 0.8725769426673651,
+        "inception_patch1024": 0.38905441015958786
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2857555394095239941",
+      "seed": 0,
+      "prompt": "A fierce warrior with long, flowing hair and intricate braids stands poised with a sword, dressed in rugged leather armor and a tunic, against a dramatic stormy backdrop.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus2857555394095239941_4b19eaa5c9_seed0.png",
+      "config_hash": "b970b40bf8c9b3b2d242c50d0fdd69c4a75db489b36e601658aec0d53ccd23b8",
+      "seconds": 70.9002831671387,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus2857555394095239941_4b19eaa5c9_seed0.json",
+      "metrics": {
+        "seconds": 70.9002831671387,
+        "clip": 26.85491943359375,
+        "pickscore": 21.981489181518555,
+        "musiq": 37.17039108276367,
+        "musiq_crop1024": 75.39399909973145
+      },
+      "eval_seconds": {
+        "clip": 0.3366572316735983,
+        "pickscore": 0.3471110612154007,
+        "musiq": 0.8303283266723156,
+        "inception_patch1024": 0.3472973685711622
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus3145908358244441177",
+      "seed": 0,
+      "prompt": "Blonde woman with elegantly styled hair and striking blue eyes rests her chin on her hand, wearing a floral blue dress and a red ring.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus3145908358244441177_04bcf2b825_seed0.png",
+      "config_hash": "fd42328208e7ee57f5172a90862a39217e51fd95701e9896cf06e3d66654f51f",
+      "seconds": 74.65077556110919,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus3145908358244441177_04bcf2b825_seed0.json",
+      "metrics": {
+        "seconds": 74.65077556110919,
+        "clip": 23.65131378173828,
+        "pickscore": 23.924087524414062,
+        "musiq": 41.383766174316406,
+        "musiq_crop1024": 46.72054862976074
+      },
+      "eval_seconds": {
+        "clip": 0.3301396518945694,
+        "pickscore": 0.34525602497160435,
+        "musiq": 0.8272298388183117,
+        "inception_patch1024": 0.3427821137011051
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus4012780704267384036",
+      "seed": 0,
+      "prompt": "A woman in a white dress with cape sleeves stands on a rooftop holding a black clutch, against a blurred city skyline and overcast sky.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus4012780704267384036_82a570368c_seed0.png",
+      "config_hash": "9fad828fc783ffb586a52fcb43139f257241b39a136f2348a76a4e5631993686",
+      "seconds": 72.48823996819556,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus4012780704267384036_82a570368c_seed0.json",
+      "metrics": {
+        "seconds": 72.48823996819556,
+        "clip": 28.965675354003906,
+        "pickscore": 23.34048080444336,
+        "musiq": 27.513221740722656,
+        "musiq_crop1024": 35.06177377700806
+      },
+      "eval_seconds": {
+        "clip": 0.33954010531306267,
+        "pickscore": 0.35271990671753883,
+        "musiq": 0.8356382343918085,
+        "inception_patch1024": 0.34847211465239525
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus4469448794852185540",
+      "seed": 0,
+      "prompt": "Silhouettes of twelve characters are arranged in a row, each corresponding to a different backdrop of vibrant colors and cosmic themes, numbered one to twelve. Each figure wears a distinctive outfit, often featuring long coats, with various poses reflecting unique characteristics or actions. The backgrounds exhibit a mix of abstract designs, including starry skies, swirling galaxies, and fiery textures, creating a visually dynamic scene.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus4469448794852185540_faa7240901_seed0.png",
+      "config_hash": "16d56e593f122a6dfad92330661fa5367648618320ab4a38fdbfe7dc10045127",
+      "seconds": 70.49850316299126,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus4469448794852185540_faa7240901_seed0.json",
+      "metrics": {
+        "seconds": 70.49850316299126,
+        "clip": 24.468854904174805,
+        "pickscore": 22.28803253173828,
+        "musiq": 35.77849578857422,
+        "musiq_crop1024": 55.83649444580078
+      },
+      "eval_seconds": {
+        "clip": 0.36180474422872066,
+        "pickscore": 0.3729253187775612,
+        "musiq": 0.8553514275699854,
+        "inception_patch1024": 0.3728315085172653
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5023570400257826529",
+      "seed": 0,
+      "prompt": "A large planet with prominent rings occupies the foreground against a backdrop of deep red space, while two smaller celestial bodies are silhouetted nearby, one near the planet's rings and another near a distant sun.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
+      "config_hash": "252379085bf52eddf5b70180cd62ed2e60a1fdcc254feba575f68b42930c8018",
+      "seconds": 70.8708795341663,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.json",
+      "metrics": {
+        "seconds": 70.8708795341663,
+        "clip": 25.197898864746094,
+        "pickscore": 20.835054397583008,
+        "musiq": 45.76076889038086,
+        "musiq_crop1024": 52.57419300079346
+      },
+      "eval_seconds": {
+        "clip": 0.2324880212545395,
+        "pickscore": 0.24457157030701637,
+        "musiq": 0.7296105958521366,
+        "inception_patch1024": 0.2471151351928711
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5673083787255800687",
+      "seed": 0,
+      "prompt": "A character in a vibrant red and patterned coat, holding a navy blue umbrella, stands gracefully among falling pink petals, with a decorative blue hat and dotted gloves, against a backdrop of a charming building staircase.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus5673083787255800687_743ac241bf_seed0.png",
+      "config_hash": "d656509d79216af4cc81dafab3da341420be04f0f72e3ea8016a35a5f711caac",
+      "seconds": 70.84187949402258,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus5673083787255800687_743ac241bf_seed0.json",
+      "metrics": {
+        "seconds": 70.84187949402258,
+        "clip": 30.48627471923828,
+        "pickscore": 22.471269607543945,
+        "musiq": 23.89479637145996,
+        "musiq_crop1024": 75.91773414611816
+      },
+      "eval_seconds": {
+        "clip": 0.3829656131565571,
+        "pickscore": 0.39317454397678375,
+        "musiq": 0.8825416564941406,
+        "inception_patch1024": 0.39475023560225964
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5685677173773420545",
+      "seed": 0,
+      "prompt": "A muscular, bald man holds a flower above his head with both arms, set against a soft circular background in black and white.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus5685677173773420545_b6a31bd1c6_seed0.png",
+      "config_hash": "554f98291c7b55ea200f5b15d7781faafbea22316b7df151d3eb5ddf45a7867f",
+      "seconds": 74.431733335834,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus5685677173773420545_b6a31bd1c6_seed0.json",
+      "metrics": {
+        "seconds": 74.431733335834,
+        "clip": 35.63005447387695,
+        "pickscore": 24.020471572875977,
+        "musiq": 51.84770584106445,
+        "musiq_crop1024": 67.00787925720215
+      },
+      "eval_seconds": {
+        "clip": 0.3109219130128622,
+        "pickscore": 0.323205079883337,
+        "musiq": 0.8103249594569206,
+        "inception_patch1024": 0.320773147046566
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5805253890620089726",
+      "seed": 0,
+      "prompt": "Four characters in detailed, ornate military-style uniforms stand side by side, each exuding a unique persona; the first two are men with various facial hair styles, intricate coat designs, and accessories, while the third is a man holding a weapon, and the fourth, a woman, wears a coat with a high collar and buttons, showcasing a blend of historical and fantastical elements.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus5805253890620089726_3370207da3_seed0.png",
+      "config_hash": "f160ca46bfbfaf39b7577794ef77a1af4eda584cb0f05710e4a8829c28d637a6",
+      "seconds": 74.66377779399045,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus5805253890620089726_3370207da3_seed0.json",
+      "metrics": {
+        "seconds": 74.66377779399045,
+        "clip": 31.508838653564453,
+        "pickscore": 24.39652442932129,
+        "musiq": 28.598962783813477,
+        "musiq_crop1024": 74.94149398803711
+      },
+      "eval_seconds": {
+        "clip": 0.34643918834626675,
+        "pickscore": 0.35891358740627766,
+        "musiq": 0.8419963605701923,
+        "inception_patch1024": 0.3546556830406189
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus6493435680635123221",
+      "seed": 0,
+      "prompt": "Towering rock formations rise sharply from a vast, arid landscape under a dramatic sky at sunset, casting long shadows across the undulating terrain.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus6493435680635123221_fd5d202fae_seed0.png",
+      "config_hash": "ebfa52ae54f8b057a61b87a691a8f334e8673282ae421ce53d5abe64481e4ef5",
+      "seconds": 70.68273597117513,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus6493435680635123221_fd5d202fae_seed0.json",
+      "metrics": {
+        "seconds": 70.68273597117513,
+        "clip": 26.352033615112305,
+        "pickscore": 20.718822479248047,
+        "musiq": 50.5538215637207,
+        "musiq_crop1024": 60.228272438049316
+      },
+      "eval_seconds": {
+        "clip": 0.3186583388596773,
+        "pickscore": 0.3264063820242882,
+        "musiq": 0.8122753873467445,
+        "inception_patch1024": 0.322383351624012
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus680414676224257344",
+      "seed": 0,
+      "prompt": "A woman in a light blue dress stands on a balcony, gazing out at the ocean and mountains beyond. The architectural details showcase a Mediterranean style, with terracotta roofs and lush greenery surrounding the property.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus680414676224257344_a837f3298b_seed0.png",
+      "config_hash": "bcd3277094e45bc1ad75c7614a0e7868db4487fb4ab483d8b6f26122b1b95d13",
+      "seconds": 70.99495661212131,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus680414676224257344_a837f3298b_seed0.json",
+      "metrics": {
+        "seconds": 70.99495661212131,
+        "clip": 32.00515365600586,
+        "pickscore": 23.36180877685547,
+        "musiq": 50.54375076293945,
+        "musiq_crop1024": 54.83196544647217
+      },
+      "eval_seconds": {
+        "clip": 0.3467781636863947,
+        "pickscore": 0.357318552210927,
+        "musiq": 0.8437077477574348,
+        "inception_patch1024": 0.3602274749428034
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus702025498990232048",
+      "seed": 0,
+      "prompt": "A woman with glasses and a sword poses confidently beside a muscular man in traditional attire holding a sword, while a small creature with a large hat waves enthusiastically. In the background, figures in colorful kimonos walk along a bridge under lanterns and cherry blossoms.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus702025498990232048_96bdbd2410_seed0.png",
+      "config_hash": "f3366f5b7cb43aed8acc593fec5913649fc38942056b84a3f920d5061c8d822f",
+      "seconds": 72.29753154423088,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus702025498990232048_96bdbd2410_seed0.json",
+      "metrics": {
+        "seconds": 72.29753154423088,
+        "clip": 32.492919921875,
+        "pickscore": 20.0814266204834,
+        "musiq": 49.95509338378906,
+        "musiq_crop1024": 69.805344581604
+      },
+      "eval_seconds": {
+        "clip": 0.38074792362749577,
+        "pickscore": 0.3913649842143059,
+        "musiq": 0.8747931011021137,
+        "inception_patch1024": 0.3872936461120844
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus7393293802729135153",
+      "seed": 0,
+      "prompt": "A woman with a vintage-inspired look wears a shimmering gold sequined dress and multiple bracelets, partially concealed by a delicate veil; her expression is contemplative with bold makeup and a statement ring.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus7393293802729135153_10c2d3e039_seed0.png",
+      "config_hash": "6791080e77964521c586b70119048730b1e4ac2812c1696fac0802ef74fb9037",
+      "seconds": 70.88478638790548,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus7393293802729135153_10c2d3e039_seed0.json",
+      "metrics": {
+        "seconds": 70.88478638790548,
+        "clip": 34.082244873046875,
+        "pickscore": 23.937217712402344,
+        "musiq": 53.18525695800781,
+        "musiq_crop1024": 69.42073249816895
+      },
+      "eval_seconds": {
+        "clip": 0.32549108751118183,
+        "pickscore": 0.3366836979985237,
+        "musiq": 0.8227773737162352,
+        "inception_patch1024": 0.33463832922279835
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8032855769722351595",
+      "seed": 0,
+      "prompt": "A woman in a flowing red dress floats gracefully underwater, her long hair billowing around her as she covers her mouth with one hand, surrounded by clear blue water and a sandy seabed.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus8032855769722351595_74d00fbb31_seed0.png",
+      "config_hash": "016f175e1791e3dd0222a2dcc8a7047b87e7665bbc2a463f84d20ed96589fdfc",
+      "seconds": 75.00250521895941,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus8032855769722351595_74d00fbb31_seed0.json",
+      "metrics": {
+        "seconds": 75.00250521895941,
+        "clip": 33.173763275146484,
+        "pickscore": 23.92763900756836,
+        "musiq": 52.2653923034668,
+        "musiq_crop1024": 60.176297187805176
+      },
+      "eval_seconds": {
+        "clip": 0.36423638835549355,
+        "pickscore": 0.37708959728479385,
+        "musiq": 0.8608003072440624,
+        "inception_patch1024": 0.3801787868142128
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8041742109062037958",
+      "seed": 0,
+      "prompt": "A woman in a black top and a green striped skirt stands against a storefront, looking over her shoulder. Pedestrians, including a man with a newspaper and a boy, pass by in the foreground. The street features various shop signs, including \"Kodak\" and \"Paradis.\"",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus8041742109062037958_f5c747aef8_seed0.png",
+      "config_hash": "7458425ad611a9c931372c69a3fc0895175e684c57a3fcbad518c9123566236f",
+      "seconds": 78.43709257710725,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus8041742109062037958_f5c747aef8_seed0.json",
+      "metrics": {
+        "seconds": 78.43709257710725,
+        "clip": 30.24069595336914,
+        "pickscore": 21.924650192260742,
+        "musiq": 40.07154083251953,
+        "musiq_crop1024": 63.191433906555176
+      },
+      "eval_seconds": {
+        "clip": 0.36274711042642593,
+        "pickscore": 0.3750503733754158,
+        "musiq": 0.8564988784492016,
+        "inception_patch1024": 0.371325945481658
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8648158440845565467",
+      "seed": 0,
+      "prompt": "A ballerina in a flowing yellow dress performs an elegant pose on one leg, showcasing her strength and grace against a backdrop of geometric wall art and soft natural light.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus8648158440845565467_16f444f640_seed0.png",
+      "config_hash": "2655d8580ef05d42c135aca9fdcef50ed907e6ecb2f2cd629c7140bc79b1b651",
+      "seconds": 72.48848052392714,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus8648158440845565467_16f444f640_seed0.json",
+      "metrics": {
+        "seconds": 72.48848052392714,
+        "clip": 32.102783203125,
+        "pickscore": 24.030683517456055,
+        "musiq": 47.832496643066406,
+        "musiq_crop1024": 61.42548084259033
+      },
+      "eval_seconds": {
+        "clip": 0.36232989467680454,
+        "pickscore": 0.3723350539803505,
+        "musiq": 0.8583175279200077,
+        "inception_patch1024": 0.3768186029046774
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8737279395568207187",
+      "seed": 0,
+      "prompt": "A grand interior with soaring arches, intricate stonework, and vibrant stained glass windows, illuminated by ornate chandeliers and soft light, creating an atmosphere of reverence and awe.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus8737279395568207187_52f0aa879e_seed0.png",
+      "config_hash": "042c844a47783221ab825fcb1505651aed930a1e4800b00f140b34af9eb8a2bd",
+      "seconds": 73.17709585500415,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus8737279395568207187_52f0aa879e_seed0.json",
+      "metrics": {
+        "seconds": 73.17709585500415,
+        "clip": 27.779281616210938,
+        "pickscore": 22.43602752685547,
+        "musiq": 48.12207794189453,
+        "musiq_crop1024": 66.47414588928223
+      },
+      "eval_seconds": {
+        "clip": 0.3410140201449394,
+        "pickscore": 0.3498383164405823,
+        "musiq": 0.8383751884102821,
+        "inception_patch1024": 0.34789765253663063
+      }
+    },
+    {
+      "method": "dup_anchor_lin",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus9196631274539277035",
+      "seed": 0,
+      "prompt": "A woman in a flowing red dress dances gracefully underwater, with her long hair swirling around her, against a backdrop of clear blue water and sandy ocean floor.",
+      "path": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus9196631274539277035_99163e1545_seed0.png",
+      "config_hash": "10e56113e2402b15fb096ac5f6efa1c8ee2698880e5189a59e9fdddacaa5c8e7",
+      "seconds": 70.83301592804492,
+      "sidecar": "/scratch/09032/saini_2/sca/out/dup46/dup_anchor_lin/4096x4096/a4k_eval_4096_minus9196631274539277035_99163e1545_seed0.json",
+      "metrics": {
+        "seconds": 70.83301592804492,
+        "clip": 33.31319046020508,
+        "pickscore": 24.52603530883789,
+        "musiq": 56.4567756652832,
+        "musiq_crop1024": 58.218862533569336
+      },
+      "eval_seconds": {
+        "clip": 0.35094170458614826,
+        "pickscore": 0.362324807792902,
+        "musiq": 0.8464297875761986,
+        "inception_patch1024": 0.36277057603001595
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1041106339713796826",
+      "seed": 0,
+      "prompt": "Silhouettes of figures in hats walk through a foggy urban landscape, surrounded by tall, shadowy buildings and power lines against a soft yellow and orange sky.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1041106339713796826_4043a88752_seed0.png",
+      "config_hash": "51fa91efb3259d58be89430fb238cbe559447baf86f4f6b20eaf080b5297eb1c",
+      "seconds": 70.61756204813719,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1041106339713796826_4043a88752_seed0.json",
+      "metrics": {
+        "seconds": 70.61756204813719,
+        "clip": 32.310909271240234,
+        "pickscore": 24.682682037353516,
+        "musiq": 40.13683319091797,
+        "musiq_crop1024": 50.839144706726074
+      },
+      "eval_seconds": {
+        "clip": 0.2840494755655527,
+        "pickscore": 0.29851190000772476,
+        "musiq": 0.7800974622368813,
+        "inception_patch1024": 0.2966234851628542
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1046736963520652161",
+      "seed": 0,
+      "prompt": "Majestic mountains rise against a clear sky, their peaks bathed in golden light, while a serene lake reflects their image surrounded by vibrant autumn foliage and mist hovering over the water.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1046736963520652161_826d2659e4_seed0.png",
+      "config_hash": "7b6a3fc7a05eb8f2e9827d67112abcd0447c071b2d21bfb53f388d960a6a03e5",
+      "seconds": 70.71449215244502,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1046736963520652161_826d2659e4_seed0.json",
+      "metrics": {
+        "seconds": 70.71449215244502,
+        "clip": 28.141069412231445,
+        "pickscore": 22.547170639038086,
+        "musiq": 54.89466857910156,
+        "musiq_crop1024": 64.39789009094238
+      },
+      "eval_seconds": {
+        "clip": 0.3362115379422903,
+        "pickscore": 0.34887489303946495,
+        "musiq": 0.833163233473897,
+        "inception_patch1024": 0.34741957299411297
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1139740195494332405",
+      "seed": 0,
+      "prompt": "A woman with short hair and a black dress stands in a forest, holding an owl with large, outstretched wings. The sunlight filters through the trees, highlighting her tattoo and the owl's detailed feathers.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1139740195494332405_ea628bcb94_seed0.png",
+      "config_hash": "ffd82f737ec72254c11c2ab7812b7fdb24c81870712a79835b929c722617dd1c",
+      "seconds": 74.722278512083,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1139740195494332405_ea628bcb94_seed0.json",
+      "metrics": {
+        "seconds": 74.722278512083,
+        "clip": 32.949493408203125,
+        "pickscore": 22.11359977722168,
+        "musiq": 56.0697135925293,
+        "musiq_crop1024": 62.89746332168579
+      },
+      "eval_seconds": {
+        "clip": 0.3824579995125532,
+        "pickscore": 0.3947279825806618,
+        "musiq": 0.8784407060593367,
+        "inception_patch1024": 0.3991572633385658
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1516768667427572324",
+      "seed": 0,
+      "prompt": "A cluttered artist's corner features an ornate gold frame, a painting of a man with glasses, several empty picture frames, a vintage suitcase, and various brushes in a tin can, all set against a textured gray wall and draped with patterned fabric.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1516768667427572324_494392fea7_seed0.png",
+      "config_hash": "76ccdf6d3c19fa8de6f2aa4954a7a9b5183513cf231fbc2fe74db11658303cb6",
+      "seconds": 75.08817885816097,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1516768667427572324_494392fea7_seed0.json",
+      "metrics": {
+        "seconds": 75.08817885816097,
+        "clip": 29.771896362304688,
+        "pickscore": 21.71574592590332,
+        "musiq": 33.073829650878906,
+        "musiq_crop1024": 73.3877944946289
+      },
+      "eval_seconds": {
+        "clip": 0.39189330115914345,
+        "pickscore": 0.40298610366880894,
+        "musiq": 0.8884911760687828,
+        "inception_patch1024": 0.40022062323987484
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1594791064055740275",
+      "seed": 0,
+      "prompt": "A mysterious woman stands confidently in elaborate, dark armor adorned with intricate designs, holding a staff, against a backdrop of smoke and an ominous red sky, with shadowy, gothic buildings in the distance.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1594791064055740275_f7306ee3c6_seed0.png",
+      "config_hash": "7e526b98c7aa1dd77b59a91380d3419b4b730bb5f0fbdef8352e85147d5a2edf",
+      "seconds": 71.02054397389293,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1594791064055740275_f7306ee3c6_seed0.json",
+      "metrics": {
+        "seconds": 71.02054397389293,
+        "clip": 30.969751358032227,
+        "pickscore": 23.856359481811523,
+        "musiq": 21.325918197631836,
+        "musiq_crop1024": 62.67518424987793
+      },
+      "eval_seconds": {
+        "clip": 0.3052403926849365,
+        "pickscore": 0.31532977521419525,
+        "musiq": 0.7987801916897297,
+        "inception_patch1024": 0.31255602091550827
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1638867997226496674",
+      "seed": 0,
+      "prompt": "Two figures, a boy and a girl, stand side by side, gazing at a starry sky filled with swirling colors and shooting stars, connected by ribbons that twist through the air.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1638867997226496674_812cc05d56_seed0.png",
+      "config_hash": "50a5cfa95b13e0472ab66863ce5be3b4821943ea2e8860f5a84e4e50fa3486eb",
+      "seconds": 70.60671816393733,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_1638867997226496674_812cc05d56_seed0.json",
+      "metrics": {
+        "seconds": 70.60671816393733,
+        "clip": 29.01228141784668,
+        "pickscore": 23.518024444580078,
+        "musiq": 27.697912216186523,
+        "musiq_crop1024": 71.9954891204834
+      },
+      "eval_seconds": {
+        "clip": 0.3546556457877159,
+        "pickscore": 0.36454204842448235,
+        "musiq": 0.8487625792622566,
+        "inception_patch1024": 0.36579735204577446
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_334788259750040356",
+      "seed": 0,
+      "prompt": "A frozen landscape features a majestic waterfall cascading into a turquoise pool, surrounded by white snow and rocky edges, under a moody, overcast sky with distant mountains.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_334788259750040356_f55a411452_seed0.png",
+      "config_hash": "9c3984a2aa02f5c229ecca968b693f1219e7389a982c364b7849e207c064c149",
+      "seconds": 70.65716418810189,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_334788259750040356_f55a411452_seed0.json",
+      "metrics": {
+        "seconds": 70.65716418810189,
+        "clip": 27.876407623291016,
+        "pickscore": 23.821693420410156,
+        "musiq": 54.476314544677734,
+        "musiq_crop1024": 62.403138160705566
+      },
+      "eval_seconds": {
+        "clip": 0.3288969360291958,
+        "pickscore": 0.34176137670874596,
+        "musiq": 0.8266349006444216,
+        "inception_patch1024": 0.341093223541975
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3667310823951382336",
+      "seed": 0,
+      "prompt": "A stylish woman in a black top and a green striped skirt stands confidently on a city street, while passersby, including a man in a suit and a child, walk nearby, with shop signs and awnings visible in the background.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_3667310823951382336_da7a059989_seed0.png",
+      "config_hash": "5e2e297a39585b671bc1984be0db3cabbbd268b50618c0f784902662c46635d3",
+      "seconds": 70.69043748266995,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_3667310823951382336_da7a059989_seed0.json",
+      "metrics": {
+        "seconds": 70.69043748266995,
+        "clip": 28.577482223510742,
+        "pickscore": 22.79962730407715,
+        "musiq": 42.81938552856445,
+        "musiq_crop1024": 66.31730651855469
+      },
+      "eval_seconds": {
+        "clip": 0.32461672089993954,
+        "pickscore": 0.33542197197675705,
+        "musiq": 0.817349836230278,
+        "inception_patch1024": 0.3341284394264221
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3826098298648979216",
+      "seed": 0,
+      "prompt": "Two figures paddle a canoe in a tranquil lake, surrounded by towering mountains and lush trees, with a waterfall cascading down rocky cliffs in the background. Soft light filters through the clouds, casting reflections on the water's surface.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_3826098298648979216_723ba70c9b_seed0.png",
+      "config_hash": "e0fedd94a958274e1c87c95d0ea573cf495885d4ea72f7ee99553fb3269047db",
+      "seconds": 70.75679795909673,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_3826098298648979216_723ba70c9b_seed0.json",
+      "metrics": {
+        "seconds": 70.75679795909673,
+        "clip": 30.00115966796875,
+        "pickscore": 23.448625564575195,
+        "musiq": 49.42259216308594,
+        "musiq_crop1024": 70.37258720397949
+      },
+      "eval_seconds": {
+        "clip": 0.3508582152426243,
+        "pickscore": 0.3607222530990839,
+        "musiq": 0.846270652487874,
+        "inception_patch1024": 0.361631216481328
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3943607367684487957",
+      "seed": 0,
+      "prompt": "A boy in a cap sits relaxed on a bed of hay, engrossed in a book, with a baseball and bat resting beside him.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_3943607367684487957_9d11855e8c_seed0.png",
+      "config_hash": "93253911e6818ade5d4e33135d88328011aa5793f323f415e951b3e5a6951415",
+      "seconds": 70.93433283176273,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_3943607367684487957_9d11855e8c_seed0.json",
+      "metrics": {
+        "seconds": 70.93433283176273,
+        "clip": 32.785892486572266,
+        "pickscore": 22.752962112426758,
+        "musiq": 58.741111755371094,
+        "musiq_crop1024": 65.19095134735107
+      },
+      "eval_seconds": {
+        "clip": 0.37635743990540504,
+        "pickscore": 0.3928790930658579,
+        "musiq": 0.8739798869937658,
+        "inception_patch1024": 0.3957983609288931
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_4525259556400020626",
+      "seed": 0,
+      "prompt": "Snow-covered landscape featuring a group of sheep in the foreground, with a quaint, snow-dusted church and rustic houses in the background surrounded by trees.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_4525259556400020626_bfb8afb9a4_seed0.png",
+      "config_hash": "67e76e83ddd14a177ba60784cec6b4fd60468e6403ef7e0529201a0bde13eccf",
+      "seconds": 70.81595818698406,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_4525259556400020626_bfb8afb9a4_seed0.json",
+      "metrics": {
+        "seconds": 70.81595818698406,
+        "clip": 32.886783599853516,
+        "pickscore": 24.038883209228516,
+        "musiq": 55.009918212890625,
+        "musiq_crop1024": 63.67099094390869
+      },
+      "eval_seconds": {
+        "clip": 0.3396732248365879,
+        "pickscore": 0.3523416370153427,
+        "musiq": 0.8361781034618616,
+        "inception_patch1024": 0.35589011386036873
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_5826245701465116957",
+      "seed": 0,
+      "prompt": "A wooden cabin sits in a snowy landscape, surrounded by evergreen trees and towering mountains under a colorful, cloud-streaked sky at dusk.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_5826245701465116957_e0c324d43e_seed0.png",
+      "config_hash": "7d6091231164ac2dfeacabf10ee6502ddd88af42d0dddc9fdab34fdad5f6f408",
+      "seconds": 70.19463177025318,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_5826245701465116957_e0c324d43e_seed0.json",
+      "metrics": {
+        "seconds": 70.19463177025318,
+        "clip": 30.089563369750977,
+        "pickscore": 25.209135055541992,
+        "musiq": 58.89304733276367,
+        "musiq_crop1024": 50.495840072631836
+      },
+      "eval_seconds": {
+        "clip": 0.34667662903666496,
+        "pickscore": 0.3600927498191595,
+        "musiq": 0.843786146491766,
+        "inception_patch1024": 0.35853963904082775
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_5968998903196670637",
+      "seed": 0,
+      "prompt": "A man in 19th-century attire sits beside a woman dressed in a floral-patterned gown, both holding hands on an ornate teal couch, surrounded by rich dark-hued walls and vintage artwork.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_5968998903196670637_d418993014_seed0.png",
+      "config_hash": "3a098aa0bfb1b2fe2f3bd7ee83cb9f030e1a0762d2c864f6809ae0d9399fb04f",
+      "seconds": 70.1790664177388,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_5968998903196670637_d418993014_seed0.json",
+      "metrics": {
+        "seconds": 70.1790664177388,
+        "clip": 26.657238006591797,
+        "pickscore": 24.082901000976562,
+        "musiq": 61.5518913269043,
+        "musiq_crop1024": 75.35489082336426
+      },
+      "eval_seconds": {
+        "clip": 0.38420640863478184,
+        "pickscore": 0.3912224881350994,
+        "musiq": 0.875945033505559,
+        "inception_patch1024": 0.3907637186348438
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_6066373865342273390",
+      "seed": 0,
+      "prompt": "A white church with a golden dome stands against a bright blue sky, featuring arched windows and a cross on top, while a solitary figure walks nearby.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_6066373865342273390_350bfa414f_seed0.png",
+      "config_hash": "938ef7a2a6ae8b580def3f449512407388884f5c523d169426df0996a8086c01",
+      "seconds": 70.68963683210313,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_6066373865342273390_350bfa414f_seed0.json",
+      "metrics": {
+        "seconds": 70.68963683210313,
+        "clip": 24.32842254638672,
+        "pickscore": 22.203245162963867,
+        "musiq": 45.54695510864258,
+        "musiq_crop1024": 53.880733489990234
+      },
+      "eval_seconds": {
+        "clip": 0.29132033698260784,
+        "pickscore": 0.301206324249506,
+        "musiq": 0.7884583994746208,
+        "inception_patch1024": 0.3024831786751747
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7009273464006889449",
+      "seed": 0,
+      "prompt": "A smiling man in a blue jacket holds a sign labeled \"Fantasyland\" in front of a stone castle with turrets and flags under a clear sky.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_7009273464006889449_b157fdee37_seed0.png",
+      "config_hash": "7c3c19dfdf70d992d5e44e98656eb9741021a844cd59c9fe317272f122181391",
+      "seconds": 70.1826999001205,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_7009273464006889449_b157fdee37_seed0.json",
+      "metrics": {
+        "seconds": 70.1826999001205,
+        "clip": 35.343719482421875,
+        "pickscore": 23.416419982910156,
+        "musiq": 42.338680267333984,
+        "musiq_crop1024": 62.15277862548828
+      },
+      "eval_seconds": {
+        "clip": 0.3430306240916252,
+        "pickscore": 0.3547289911657572,
+        "musiq": 0.8411426357924938,
+        "inception_patch1024": 0.36020840518176556
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7543519915112968451",
+      "seed": 0,
+      "prompt": "A charming, narrow alley adorned with vibrant flowers and hanging planters, featuring colorful restaurant signs, leads to a couple strolling hand in hand, surrounded by picturesque half-timbered buildings and a backdrop of green vineyards.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_7543519915112968451_3b3ac7d375_seed0.png",
+      "config_hash": "61a55f6acb7fcfec1c4eb1267cd13ad6810d99c01626bf7362873ed6d69d199f",
+      "seconds": 74.07393393106759,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_7543519915112968451_3b3ac7d375_seed0.json",
+      "metrics": {
+        "seconds": 74.07393393106759,
+        "clip": 34.14937973022461,
+        "pickscore": 22.356704711914062,
+        "musiq": 57.52424621582031,
+        "musiq_crop1024": 76.21045875549316
+      },
+      "eval_seconds": {
+        "clip": 0.4344343338161707,
+        "pickscore": 0.4452449921518564,
+        "musiq": 0.9330718480050564,
+        "inception_patch1024": 0.4446607939898968
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7637161027288029693",
+      "seed": 0,
+      "prompt": "A dramatic landscape features dark, swirling clouds above serene water, highlighted by rays of light breaking through. Several angular, purple-tinted rock formations emerge from the water, contrasting with the calm blue tones of the surrounding scene.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_7637161027288029693_13300f1b3f_seed0.png",
+      "config_hash": "7f2238497f81094b317efaf3e9faadd6b5235c3a7f43bd100c55aff9ade53b2b",
+      "seconds": 70.23352320306003,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_7637161027288029693_13300f1b3f_seed0.json",
+      "metrics": {
+        "seconds": 70.23352320306003,
+        "clip": 30.00543785095215,
+        "pickscore": 21.552343368530273,
+        "musiq": 27.595462799072266,
+        "musiq_crop1024": 53.11129951477051
+      },
+      "eval_seconds": {
+        "clip": 0.3336737845093012,
+        "pickscore": 0.3463749997317791,
+        "musiq": 0.8295386992394924,
+        "inception_patch1024": 0.347611702978611
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_8020030205210970395",
+      "seed": 0,
+      "prompt": "Snow-capped mountains surround a tranquil lake, reflecting their peaks against a twilight sky with soft, colorful clouds. Mist rises gently from the water's surface, enhancing the serene landscape.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_8020030205210970395_fc4191b3ca_seed0.png",
+      "config_hash": "977c3cc9189280bb9f2446b6beb9817c4b6f4e51d657df0ccac7c12e5794a2bb",
+      "seconds": 70.81506503745914,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_8020030205210970395_fc4191b3ca_seed0.json",
+      "metrics": {
+        "seconds": 70.81506503745914,
+        "clip": 27.361190795898438,
+        "pickscore": 22.164501190185547,
+        "musiq": 34.674720764160156,
+        "musiq_crop1024": 57.11319828033447
+      },
+      "eval_seconds": {
+        "clip": 0.2942303419113159,
+        "pickscore": 0.3044482357800007,
+        "musiq": 0.7896849848330021,
+        "inception_patch1024": 0.30606838688254356
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_8065862701789418887",
+      "seed": 0,
+      "prompt": "Majestic snow-capped mountains rise against a twilight sky, reflecting in a calm, glassy lake, with scattered rocks in the foreground and stars beginning to twinkle above.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_8065862701789418887_761282129a_seed0.png",
+      "config_hash": "4354cf38cd85fab443c23a9532ed8054bb2ed2aafbffdd7e1f7644660c39e28e",
+      "seconds": 70.77022599894553,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_8065862701789418887_761282129a_seed0.json",
+      "metrics": {
+        "seconds": 70.77022599894553,
+        "clip": 25.416786193847656,
+        "pickscore": 22.907243728637695,
+        "musiq": 27.450925827026367,
+        "musiq_crop1024": 50.68350076675415
+      },
+      "eval_seconds": {
+        "clip": 0.2928127124905586,
+        "pickscore": 0.30532388016581535,
+        "musiq": 0.7918121814727783,
+        "inception_patch1024": 0.30917922407388687
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_820801809737345747",
+      "seed": 0,
+      "prompt": "A woman with glasses and a short outfit poses confidently alongside a muscular man dressed in traditional clothing, holding a sword; a small bear-like character in a hat gestures excitedly. In the background, two figures in kimonos walk under a red umbrella, surrounded by glowing lanterns and cherry blossoms.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_820801809737345747_4d9fe5cb8e_seed0.png",
+      "config_hash": "0b9cf4e3b2b93418cf3d35ea60b46de83325ed205be82f2cb5d19986b31dadd5",
+      "seconds": 72.994559539482,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_820801809737345747_4d9fe5cb8e_seed0.json",
+      "metrics": {
+        "seconds": 72.994559539482,
+        "clip": 32.41985321044922,
+        "pickscore": 22.21507453918457,
+        "musiq": 24.786970138549805,
+        "musiq_crop1024": 70.87189865112305
+      },
+      "eval_seconds": {
+        "clip": 0.4006451200693846,
+        "pickscore": 0.4118632283061743,
+        "musiq": 0.8959710914641619,
+        "inception_patch1024": 0.41217140853405
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_880657115260655727",
+      "seed": 0,
+      "prompt": "A stone bridge with arched spans reflects golden light on the water, flanked by buildings and a leafy tree under a clear blue sky.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_880657115260655727_a6ae047101_seed0.png",
+      "config_hash": "d9444c15cf498f150ef687bd9b660d0591ba9d0d5d54fafc1ebacafabb5b52cb",
+      "seconds": 70.2316266540438,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_880657115260655727_a6ae047101_seed0.json",
+      "metrics": {
+        "seconds": 70.2316266540438,
+        "clip": 24.830060958862305,
+        "pickscore": 23.516544342041016,
+        "musiq": 62.705135345458984,
+        "musiq_crop1024": 57.10202598571777
+      },
+      "eval_seconds": {
+        "clip": 0.3507646806538105,
+        "pickscore": 0.36224666610360146,
+        "musiq": 0.846508314833045,
+        "inception_patch1024": 0.3586767930537462
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_9082507599514684465",
+      "seed": 0,
+      "prompt": "A young man in a white shirt and green tunic sits on a stone, using a measuring tool, while two standing figures, one in red robes with a turban and another in a yellow cloak, observe him against a backdrop of trees and a distant landscape.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_9082507599514684465_660fbe6453_seed0.png",
+      "config_hash": "38f802d4cd8637c4a967f6d6f40fe509d83229807e331258535f35fb7a1e16af",
+      "seconds": 70.75277065392584,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_9082507599514684465_660fbe6453_seed0.json",
+      "metrics": {
+        "seconds": 70.75277065392584,
+        "clip": 28.038454055786133,
+        "pickscore": 23.04813575744629,
+        "musiq": 52.68277359008789,
+        "musiq_crop1024": 74.38373374938965
+      },
+      "eval_seconds": {
+        "clip": 0.3988437782973051,
+        "pickscore": 0.4092023093253374,
+        "musiq": 0.89684490673244,
+        "inception_patch1024": 0.41579053178429604
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus1017950324987649681",
+      "seed": 0,
+      "prompt": "Majestic snow-covered mountains rise sharply against a pastel sky, reflecting hues of pink and blue, while a tranquil sea meets a rugged coastline amidst patches of ice and snow.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus1017950324987649681_56e590b0d6_seed0.png",
+      "config_hash": "cd118976b7b7e5b2464846703af27ef2569788e6f3cbf3efbf77807b3b440f3f",
+      "seconds": 70.16297955997288,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus1017950324987649681_56e590b0d6_seed0.json",
+      "metrics": {
+        "seconds": 70.16297955997288,
+        "clip": 27.269203186035156,
+        "pickscore": 21.744739532470703,
+        "musiq": 48.28856658935547,
+        "musiq_crop1024": 57.53674650192261
+      },
+      "eval_seconds": {
+        "clip": 0.2936268262565136,
+        "pickscore": 0.30283767729997635,
+        "musiq": 0.7923613004386425,
+        "inception_patch1024": 0.3011658079922199
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2014927182109364975",
+      "seed": 0,
+      "prompt": "A panoramic view of Paris featuring the Eiffel Tower, the Seine River, and various ornate buildings with greenery and bustling activity, including boats on the water and crowds along walkways.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2014927182109364975_81f6a4b6e1_seed0.png",
+      "config_hash": "0878f6b02fd774cac08962bf65d9791b0be0d56f233e2650769657f651708d7b",
+      "seconds": 70.25105760805309,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2014927182109364975_81f6a4b6e1_seed0.json",
+      "metrics": {
+        "seconds": 70.25105760805309,
+        "clip": 27.648263931274414,
+        "pickscore": 22.351112365722656,
+        "musiq": 63.41107177734375,
+        "musiq_crop1024": 71.24697875976562
+      },
+      "eval_seconds": {
+        "clip": 0.3715252298861742,
+        "pickscore": 0.3828218672424555,
+        "musiq": 0.8700821679085493,
+        "inception_patch1024": 0.38232652470469475
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2447481760626661988",
+      "seed": 0,
+      "prompt": "A towering brown bear stands on its hind legs in a misty forest, surrounded by tall trees and moss-covered rocks, with sunlight filtering through the foliage.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.png",
+      "config_hash": "5dd989870df042e8b2ceed8f78643e611d53efb161268e07913e6be8e144027b",
+      "seconds": 70.65445762127638,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.json",
+      "metrics": {
+        "seconds": 70.65445762127638,
+        "clip": 26.20101547241211,
+        "pickscore": 24.64457893371582,
+        "musiq": 29.738988876342773,
+        "musiq_crop1024": 65.07077598571777
+      },
+      "eval_seconds": {
+        "clip": 0.36963448487222195,
+        "pickscore": 0.3795262649655342,
+        "musiq": 0.8660271409898996,
+        "inception_patch1024": 0.38136204704642296
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus263777997664289445",
+      "seed": 0,
+      "prompt": "A rocky landscape features large, weathered stone formations under a vibrant night sky filled with countless stars and the Milky Way stretching across.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus263777997664289445_4849f3fe75_seed0.png",
+      "config_hash": "c4d0e384d3c92af25cff475412397e7db11325c45081a7d1a8813c98d598c722",
+      "seconds": 70.79589196294546,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus263777997664289445_4849f3fe75_seed0.json",
+      "metrics": {
+        "seconds": 70.79589196294546,
+        "clip": 26.743417739868164,
+        "pickscore": 22.622663497924805,
+        "musiq": 24.439064025878906,
+        "musiq_crop1024": 52.72741985321045
+      },
+      "eval_seconds": {
+        "clip": 0.3368805591017008,
+        "pickscore": 0.35037783347070217,
+        "musiq": 0.8344249930232763,
+        "inception_patch1024": 0.34685829654335976
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2679953061215100202",
+      "seed": 0,
+      "prompt": "A dancer in mid-pose creates a dynamic splash of water, set against a black background, illuminated to highlight their silhouette.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
+      "config_hash": "3db2fe21782213b8e179c7ca752f140ada6fcc212588776fbd7ea57b67f92e94",
+      "seconds": 76.69494299218059,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.json",
+      "metrics": {
+        "seconds": 76.69494299218059,
+        "clip": 31.491121292114258,
+        "pickscore": 21.286380767822266,
+        "musiq": 52.89657211303711,
+        "musiq_crop1024": 47.00183725357056
+      },
+      "eval_seconds": {
+        "clip": 0.23229553923010826,
+        "pickscore": 0.24631805904209614,
+        "musiq": 0.7288749013096094,
+        "inception_patch1024": 0.24697699025273323
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2712631331773394876",
+      "seed": 0,
+      "prompt": "A woman in a light blue dress with puffed sleeves poses thoughtfully, adorned with a red flower in her hair, beside a table decorated with various items and a reflection of her image in a mirror.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2712631331773394876_9142f070f1_seed0.png",
+      "config_hash": "8b411e9b3aa64614502e2292027363c92308835e033b9fe42b9c4ce126ce095a",
+      "seconds": 70.63187690638006,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2712631331773394876_9142f070f1_seed0.json",
+      "metrics": {
+        "seconds": 70.63187690638006,
+        "clip": 29.52705955505371,
+        "pickscore": 23.235979080200195,
+        "musiq": 60.5068359375,
+        "musiq_crop1024": 73.45648002624512
+      },
+      "eval_seconds": {
+        "clip": 0.39289576187729836,
+        "pickscore": 0.40360222943127155,
+        "musiq": 0.8836848679929972,
+        "inception_patch1024": 0.40165258571505547
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2729538226706404616",
+      "seed": 0,
+      "prompt": "A woman\u2019s profile emerges among swirling clouds, with a deep gaze and delicate earrings, set against a gradient of blues and hints of gold.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png",
+      "config_hash": "3167df5a1aaf4a80834f6f00d7956efd63b311710b0968faf5539340f31328f6",
+      "seconds": 70.38069213926792,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.json",
+      "metrics": {
+        "seconds": 70.38069213926792,
+        "clip": 25.823760986328125,
+        "pickscore": 22.57892608642578,
+        "musiq": 55.78164291381836,
+        "musiq_crop1024": 49.8045768737793
+      },
+      "eval_seconds": {
+        "clip": 0.3837096784263849,
+        "pickscore": 0.3945694863796234,
+        "musiq": 0.8775444980710745,
+        "inception_patch1024": 0.3930990733206272
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2857555394095239941",
+      "seed": 0,
+      "prompt": "A fierce warrior with long, flowing hair and intricate braids stands poised with a sword, dressed in rugged leather armor and a tunic, against a dramatic stormy backdrop.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2857555394095239941_4b19eaa5c9_seed0.png",
+      "config_hash": "7e3a89fbcbe6317d731996440194920dc57051caeb5eef27c9bed40cff9b4c80",
+      "seconds": 70.59977774508297,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2857555394095239941_4b19eaa5c9_seed0.json",
+      "metrics": {
+        "seconds": 70.59977774508297,
+        "clip": 26.548009872436523,
+        "pickscore": 22.47581672668457,
+        "musiq": 55.112327575683594,
+        "musiq_crop1024": 75.1093921661377
+      },
+      "eval_seconds": {
+        "clip": 0.3569772709161043,
+        "pickscore": 0.37050769850611687,
+        "musiq": 0.8553238529711962,
+        "inception_patch1024": 0.3718319274485111
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus3145908358244441177",
+      "seed": 0,
+      "prompt": "Blonde woman with elegantly styled hair and striking blue eyes rests her chin on her hand, wearing a floral blue dress and a red ring.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus3145908358244441177_04bcf2b825_seed0.png",
+      "config_hash": "141a540c461a0d1388a086e1e9d175fd8ab8d0ea8232b095af5a6ae90274cc81",
+      "seconds": 74.74682696536183,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus3145908358244441177_04bcf2b825_seed0.json",
+      "metrics": {
+        "seconds": 74.74682696536183,
+        "clip": 23.099998474121094,
+        "pickscore": 23.56609344482422,
+        "musiq": 57.55667495727539,
+        "musiq_crop1024": 52.185330390930176
+      },
+      "eval_seconds": {
+        "clip": 0.33444514125585556,
+        "pickscore": 0.3473312184214592,
+        "musiq": 0.8319572545588017,
+        "inception_patch1024": 0.3483629319816828
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus4012780704267384036",
+      "seed": 0,
+      "prompt": "A woman in a white dress with cape sleeves stands on a rooftop holding a black clutch, against a blurred city skyline and overcast sky.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus4012780704267384036_82a570368c_seed0.png",
+      "config_hash": "cef32d2209c067626b5eba1fcbc79891cb978cb4caaaff84d078846413ea6873",
+      "seconds": 71.38066348060966,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus4012780704267384036_82a570368c_seed0.json",
+      "metrics": {
+        "seconds": 71.38066348060966,
+        "clip": 27.758014678955078,
+        "pickscore": 23.141773223876953,
+        "musiq": 24.96862030029297,
+        "musiq_crop1024": 40.22517013549805
+      },
+      "eval_seconds": {
+        "clip": 0.32928499579429626,
+        "pickscore": 0.34177097864449024,
+        "musiq": 0.8293945416808128,
+        "inception_patch1024": 0.34412972815334797
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus4469448794852185540",
+      "seed": 0,
+      "prompt": "Silhouettes of twelve characters are arranged in a row, each corresponding to a different backdrop of vibrant colors and cosmic themes, numbered one to twelve. Each figure wears a distinctive outfit, often featuring long coats, with various poses reflecting unique characteristics or actions. The backgrounds exhibit a mix of abstract designs, including starry skies, swirling galaxies, and fiery textures, creating a visually dynamic scene.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus4469448794852185540_faa7240901_seed0.png",
+      "config_hash": "13b5026d3dbd4f85ea71955da5118895ea8a2b61c59da18e02a361f8a846bf1d",
+      "seconds": 70.89350427500904,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus4469448794852185540_faa7240901_seed0.json",
+      "metrics": {
+        "seconds": 70.89350427500904,
+        "clip": 23.29033088684082,
+        "pickscore": 21.907066345214844,
+        "musiq": 32.6794319152832,
+        "musiq_crop1024": 50.86238384246826
+      },
+      "eval_seconds": {
+        "clip": 0.3684403747320175,
+        "pickscore": 0.3789373077452183,
+        "musiq": 0.867494797334075,
+        "inception_patch1024": 0.378695011138916
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5023570400257826529",
+      "seed": 0,
+      "prompt": "A large planet with prominent rings occupies the foreground against a backdrop of deep red space, while two smaller celestial bodies are silhouetted nearby, one near the planet's rings and another near a distant sun.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
+      "config_hash": "3523d5bd3d003efc1f43c7ad8f7bf29919a6fe7e866974928a68ed331f37d379",
+      "seconds": 70.86507967952639,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.json",
+      "metrics": {
+        "seconds": 70.86507967952639,
+        "clip": 27.449708938598633,
+        "pickscore": 21.070037841796875,
+        "musiq": 43.160362243652344,
+        "musiq_crop1024": 49.62469291687012
+      },
+      "eval_seconds": {
+        "clip": 0.22618544846773148,
+        "pickscore": 0.2367265671491623,
+        "musiq": 0.7218853197991848,
+        "inception_patch1024": 0.23354694247245789
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5673083787255800687",
+      "seed": 0,
+      "prompt": "A character in a vibrant red and patterned coat, holding a navy blue umbrella, stands gracefully among falling pink petals, with a decorative blue hat and dotted gloves, against a backdrop of a charming building staircase.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus5673083787255800687_743ac241bf_seed0.png",
+      "config_hash": "a5b5288563ba38a063b70a3ba1e31cc83f2e2323211b561049cfa6545b9dc965",
+      "seconds": 70.67790394090116,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus5673083787255800687_743ac241bf_seed0.json",
+      "metrics": {
+        "seconds": 70.67790394090116,
+        "clip": 31.661022186279297,
+        "pickscore": 23.316272735595703,
+        "musiq": 25.02149200439453,
+        "musiq_crop1024": 77.0156478881836
+      },
+      "eval_seconds": {
+        "clip": 0.4074287470430136,
+        "pickscore": 0.41762647591531277,
+        "musiq": 0.8995046988129616,
+        "inception_patch1024": 0.4166468530893326
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5685677173773420545",
+      "seed": 0,
+      "prompt": "A muscular, bald man holds a flower above his head with both arms, set against a soft circular background in black and white.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus5685677173773420545_b6a31bd1c6_seed0.png",
+      "config_hash": "c3358a8e458baed6fdc1338e005866749aa9fef125d425d28c927aca12b60442",
+      "seconds": 76.6856614369899,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus5685677173773420545_b6a31bd1c6_seed0.json",
+      "metrics": {
+        "seconds": 76.6856614369899,
+        "clip": 33.067317962646484,
+        "pickscore": 23.77125358581543,
+        "musiq": 50.52416229248047,
+        "musiq_crop1024": 65.43437480926514
+      },
+      "eval_seconds": {
+        "clip": 0.2714996561408043,
+        "pickscore": 0.28338416293263435,
+        "musiq": 0.7672054246068001,
+        "inception_patch1024": 0.28406661935150623
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5805253890620089726",
+      "seed": 0,
+      "prompt": "Four characters in detailed, ornate military-style uniforms stand side by side, each exuding a unique persona; the first two are men with various facial hair styles, intricate coat designs, and accessories, while the third is a man holding a weapon, and the fourth, a woman, wears a coat with a high collar and buttons, showcasing a blend of historical and fantastical elements.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus5805253890620089726_3370207da3_seed0.png",
+      "config_hash": "7f24d815a58aedde6376cd48f58b0dc5d1b3dfb65142823c85022fdb4053a2ac",
+      "seconds": 74.63365791272372,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus5805253890620089726_3370207da3_seed0.json",
+      "metrics": {
+        "seconds": 74.63365791272372,
+        "clip": 32.170860290527344,
+        "pickscore": 24.272470474243164,
+        "musiq": 34.077579498291016,
+        "musiq_crop1024": 76.15385627746582
+      },
+      "eval_seconds": {
+        "clip": 0.33577672205865383,
+        "pickscore": 0.34710833989083767,
+        "musiq": 0.8278799224644899,
+        "inception_patch1024": 0.34283350594341755
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus6493435680635123221",
+      "seed": 0,
+      "prompt": "Towering rock formations rise sharply from a vast, arid landscape under a dramatic sky at sunset, casting long shadows across the undulating terrain.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus6493435680635123221_fd5d202fae_seed0.png",
+      "config_hash": "c0edd317dcdc83d18ee7d22c454f1fcfafcc889af8d32fcb636c922ad2196a1f",
+      "seconds": 70.42740256525576,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus6493435680635123221_fd5d202fae_seed0.json",
+      "metrics": {
+        "seconds": 70.42740256525576,
+        "clip": 28.296512603759766,
+        "pickscore": 21.628217697143555,
+        "musiq": 53.6074104309082,
+        "musiq_crop1024": 60.98819923400879
+      },
+      "eval_seconds": {
+        "clip": 0.3329175300896168,
+        "pickscore": 0.34514050371944904,
+        "musiq": 0.8289411049336195,
+        "inception_patch1024": 0.3467792887240648
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus680414676224257344",
+      "seed": 0,
+      "prompt": "A woman in a light blue dress stands on a balcony, gazing out at the ocean and mountains beyond. The architectural details showcase a Mediterranean style, with terracotta roofs and lush greenery surrounding the property.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus680414676224257344_a837f3298b_seed0.png",
+      "config_hash": "a7fad2fd8bb84c6c35ecd37861d256b1e2c45e252564210755d533139bce4127",
+      "seconds": 70.74001171812415,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus680414676224257344_a837f3298b_seed0.json",
+      "metrics": {
+        "seconds": 70.74001171812415,
+        "clip": 31.28485107421875,
+        "pickscore": 23.58652687072754,
+        "musiq": 52.21418380737305,
+        "musiq_crop1024": 55.991493225097656
+      },
+      "eval_seconds": {
+        "clip": 0.35547756403684616,
+        "pickscore": 0.36708940379321575,
+        "musiq": 0.8522848226130009,
+        "inception_patch1024": 0.3656826000660658
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus702025498990232048",
+      "seed": 0,
+      "prompt": "A woman with glasses and a sword poses confidently beside a muscular man in traditional attire holding a sword, while a small creature with a large hat waves enthusiastically. In the background, figures in colorful kimonos walk along a bridge under lanterns and cherry blossoms.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus702025498990232048_96bdbd2410_seed0.png",
+      "config_hash": "abfc70f759f2c0051649ef2dfb34332ec2f695a8b712cd6d1e2fdc0d371735ae",
+      "seconds": 70.89213001914322,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus702025498990232048_96bdbd2410_seed0.json",
+      "metrics": {
+        "seconds": 70.89213001914322,
+        "clip": 32.27511215209961,
+        "pickscore": 20.34806251525879,
+        "musiq": 47.79572296142578,
+        "musiq_crop1024": 69.5221300125122
+      },
+      "eval_seconds": {
+        "clip": 0.4007493071258068,
+        "pickscore": 0.41201983764767647,
+        "musiq": 0.8974662702530622,
+        "inception_patch1024": 0.41860329546034336
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus7393293802729135153",
+      "seed": 0,
+      "prompt": "A woman with a vintage-inspired look wears a shimmering gold sequined dress and multiple bracelets, partially concealed by a delicate veil; her expression is contemplative with bold makeup and a statement ring.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus7393293802729135153_10c2d3e039_seed0.png",
+      "config_hash": "02c6913fa121e98f331f87282367167c82791e638d4c8d40253d8734764d99d9",
+      "seconds": 70.56154937669635,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus7393293802729135153_10c2d3e039_seed0.json",
+      "metrics": {
+        "seconds": 70.56154937669635,
+        "clip": 34.072959899902344,
+        "pickscore": 24.039945602416992,
+        "musiq": 60.289302825927734,
+        "musiq_crop1024": 74.22418975830078
+      },
+      "eval_seconds": {
+        "clip": 0.39657191187143326,
+        "pickscore": 0.40802052058279514,
+        "musiq": 0.8937573209404945,
+        "inception_patch1024": 0.4047358110547066
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8032855769722351595",
+      "seed": 0,
+      "prompt": "A woman in a flowing red dress floats gracefully underwater, her long hair billowing around her as she covers her mouth with one hand, surrounded by clear blue water and a sandy seabed.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8032855769722351595_74d00fbb31_seed0.png",
+      "config_hash": "c5c767b1592b79a52c30fd880cd65c7990e6d150202de5ec7efe443903e31c7e",
+      "seconds": 76.46657178550959,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8032855769722351595_74d00fbb31_seed0.json",
+      "metrics": {
+        "seconds": 76.46657178550959,
+        "clip": 33.19234848022461,
+        "pickscore": 23.82616424560547,
+        "musiq": 60.79960250854492,
+        "musiq_crop1024": 61.986239433288574
+      },
+      "eval_seconds": {
+        "clip": 0.3661671970039606,
+        "pickscore": 0.378192700445652,
+        "musiq": 0.8635295256972313,
+        "inception_patch1024": 0.3759481068700552
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8041742109062037958",
+      "seed": 0,
+      "prompt": "A woman in a black top and a green striped skirt stands against a storefront, looking over her shoulder. Pedestrians, including a man with a newspaper and a boy, pass by in the foreground. The street features various shop signs, including \"Kodak\" and \"Paradis.\"",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8041742109062037958_f5c747aef8_seed0.png",
+      "config_hash": "4842d61a2913178f4d03027fcfd7a63d8c2f96a8bdcbdaeac021377bc1dab25a",
+      "seconds": 74.01058159768581,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8041742109062037958_f5c747aef8_seed0.json",
+      "metrics": {
+        "seconds": 74.01058159768581,
+        "clip": 28.582372665405273,
+        "pickscore": 22.254108428955078,
+        "musiq": 45.799434661865234,
+        "musiq_crop1024": 71.37700843811035
+      },
+      "eval_seconds": {
+        "clip": 0.3852721694856882,
+        "pickscore": 0.3935604654252529,
+        "musiq": 0.876150680705905,
+        "inception_patch1024": 0.39431513473391533
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8648158440845565467",
+      "seed": 0,
+      "prompt": "A ballerina in a flowing yellow dress performs an elegant pose on one leg, showcasing her strength and grace against a backdrop of geometric wall art and soft natural light.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8648158440845565467_16f444f640_seed0.png",
+      "config_hash": "2d976a81a402053748c6c37e4c2d8e2c62e5185cde03b9598d3099431117c9c7",
+      "seconds": 70.19085146486759,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8648158440845565467_16f444f640_seed0.json",
+      "metrics": {
+        "seconds": 70.19085146486759,
+        "clip": 31.33185577392578,
+        "pickscore": 23.875051498413086,
+        "musiq": 49.80289840698242,
+        "musiq_crop1024": 60.61395454406738
+      },
+      "eval_seconds": {
+        "clip": 0.34377772361040115,
+        "pickscore": 0.35478905588388443,
+        "musiq": 0.8406287543475628,
+        "inception_patch1024": 0.3596003744751215
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8737279395568207187",
+      "seed": 0,
+      "prompt": "A grand interior with soaring arches, intricate stonework, and vibrant stained glass windows, illuminated by ornate chandeliers and soft light, creating an atmosphere of reverence and awe.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8737279395568207187_52f0aa879e_seed0.png",
+      "config_hash": "f5610ce366834ffaaf740dbf62b19062a54384d524de8802661c93aa63d5b3a7",
+      "seconds": 70.75149700045586,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus8737279395568207187_52f0aa879e_seed0.json",
+      "metrics": {
+        "seconds": 70.75149700045586,
+        "clip": 26.740276336669922,
+        "pickscore": 22.62628173828125,
+        "musiq": 46.44515609741211,
+        "musiq_crop1024": 63.6776123046875
+      },
+      "eval_seconds": {
+        "clip": 0.34471029974520206,
+        "pickscore": 0.355538971722126,
+        "musiq": 0.8419008795171976,
+        "inception_patch1024": 0.35666720010340214
+      }
+    },
+    {
+      "method": "sca_nb",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus9196631274539277035",
+      "seed": 0,
+      "prompt": "A woman in a flowing red dress dances gracefully underwater, with her long hair swirling around her, against a backdrop of clear blue water and sandy ocean floor.",
+      "path": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus9196631274539277035_99163e1545_seed0.png",
+      "config_hash": "3b0d44e715b6df58b86e299e1988d6b643f1ab2ce1fa99e1348b826cc11217ae",
+      "seconds": 70.90007322374731,
+      "sidecar": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus9196631274539277035_99163e1545_seed0.json",
+      "metrics": {
+        "seconds": 70.90007322374731,
+        "clip": 33.424503326416016,
+        "pickscore": 24.09726333618164,
+        "musiq": 55.00872039794922,
+        "musiq_crop1024": 56.635202407836914
+      },
+      "eval_seconds": {
+        "clip": 0.35570866614580154,
+        "pickscore": 0.36802869848906994,
+        "musiq": 0.8490619789808989,
+        "inception_patch1024": 0.36849491111934185
+      }
+    }
+  ],
+  "uncertainty": "95% percentile bootstrap over prompt clusters; seeds and crops stay inside prompts",
+  "paired_note": "Only matching resolution/prompt/seed pairs enter deltas; absent reference yields no delta",
+  "seconds": 365.9589966200292,
+  "wandb": {
+    "status": "logged",
+    "mode": "offline",
+    "run_id": "jpd5y6oz"
+  },
+  "complete": true,
+  "all_metrics_available": true
+}

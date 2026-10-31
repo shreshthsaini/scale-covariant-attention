@@ -1,0 +1,1959 @@
+{
+  "config": {
+    "root": "/scratch/09032/saini_2/sca/out/flux2_eval",
+    "prompts": "/scratch/09032/saini_2/constancy_rope/prompts/aesthetic4k_eval.jsonl",
+    "out": "/scratch/09032/saini_2/sca/eval/flux2_4k_extra",
+    "metrics": "ir,aesthetic,hpsv2,hpsv21,clipiqa,arniqa,is,latency",
+    "reference_method": "flux2_full",
+    "res": null,
+    "methods": null,
+    "device": "cuda",
+    "batch_size": 16,
+    "threads": 8,
+    "iqa_long_side": 1024,
+    "is_splits": 10,
+    "bootstrap": 1000,
+    "bootstrap_seed": 0,
+    "crope_root": "/work/09032/saini_2/vista/Projects/Exploration/constancy_rope",
+    "hf_home": "/scratch/09032/saini_2/tmp/hf",
+    "torch_home": "/scratch/09032/saini_2/tmp/torch",
+    "allow_download": false,
+    "allow_missing": false
+  },
+  "metrics": [
+    "ir",
+    "aesthetic",
+    "hpsv2",
+    "hpsv21",
+    "clipiqa",
+    "arniqa",
+    "is",
+    "latency"
+  ],
+  "versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "4.45.2",
+    "image-reward": "1.5",
+    "hpsv2": "1.2.0",
+    "pyiqa": "0.1.15",
+    "torch-fidelity": "0.3.0",
+    "open-clip-torch": "3.3.0"
+  },
+  "provenance": {
+    "ir": {
+      "model": "THUDM/ImageReward v1.0",
+      "checkpoint_sha": "5736be03b2652728fb87788c9797b0570450ab72",
+      "definition": "official normalized reward, batched copy of ImageReward.score",
+      "load_seconds": 26.278725992888212
+    },
+    "aesthetic": {
+      "model": "LAION improved-aesthetic-predictor sac+logos+ava1-l14-linearMSE",
+      "backbone": "openai/clip-vit-large-patch14",
+      "sha256": "21dd590f3ccdc646f0d53120778b296013b096a035a2718c9cb0d511bff0f1e0",
+      "revision": null,
+      "load_seconds": 0.2649654122069478
+    },
+    "hpsv2": {
+      "model": "xswu/HPSv2 HPS_v2_compressed.pt",
+      "checkpoint_sha": "697403c78157020a1ae59d23f111aa58ced35b0a",
+      "definition": "diag(image_features @ text_features.T), official val transform",
+      "load_seconds": 8.721764664165676
+    },
+    "hpsv21": {
+      "model": "xswu/HPSv2 HPS_v2.1_compressed.pt",
+      "checkpoint_sha": "697403c78157020a1ae59d23f111aa58ced35b0a",
+      "definition": "diag(image_features @ text_features.T), official val transform",
+      "load_seconds": 7.555305182002485
+    },
+    "clipiqa": {
+      "model": "pyiqa 0.1.15 clipiqa",
+      "long_side": 1024,
+      "resize": "PIL bicubic antialiased, aspect kept",
+      "load_seconds": 2.2481620833277702
+    },
+    "arniqa": {
+      "model": "pyiqa 0.1.15 arniqa",
+      "long_side": 1024,
+      "resize": "PIL bicubic antialiased, aspect kept",
+      "load_seconds": 0.9168344950303435
+    },
+    "is": {
+      "model": "torch-fidelity inception-v3-compat logits_unbiased",
+      "resize": "PIL bicubic antialiased to 299x299",
+      "load_seconds": 0.2807177370414138
+    }
+  },
+  "errors": [],
+  "summary": [
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "metric": "aesthetic",
+      "value": 6.078039426803588,
+      "ci_low": 5.963354042768478,
+      "ci_high": 6.201263128995896,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "metric": "arniqa",
+      "value": 0.6354444795846939,
+      "ci_low": 0.6160623318701982,
+      "ci_high": 0.6537025165110827,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "metric": "clipiqa",
+      "value": 0.5697890597581864,
+      "ci_low": 0.5331056265234948,
+      "ci_high": 0.6075095696151256,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "metric": "hpsv2",
+      "value": 0.28424052000045774,
+      "ci_low": 0.27999382339417933,
+      "ci_high": 0.28799879492819314,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "metric": "hpsv21",
+      "value": 0.26898326218128205,
+      "ci_low": 0.26072330140322447,
+      "ci_high": 0.2772037379220128,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "metric": "ir",
+      "value": 0.7483811803651043,
+      "ci_low": 0.5208900518998271,
+      "ci_high": 0.9734752922231564,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "metric": "latency",
+      "value": 444.00629900326953,
+      "ci_low": 439.70340182491327,
+      "ci_high": 448.9631112864892,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "metric": "aesthetic",
+      "value": 6.382801399230957,
+      "ci_low": 6.261942411422729,
+      "ci_high": 6.509881972551345,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "metric": "arniqa",
+      "value": 0.7066607517004013,
+      "ci_low": 0.6886578132510185,
+      "ci_high": 0.7213752613663673,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "metric": "clipiqa",
+      "value": 0.6356956994533539,
+      "ci_low": 0.6068789359927178,
+      "ci_high": 0.6669137873351574,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "metric": "hpsv2",
+      "value": 0.2927363693714142,
+      "ci_low": 0.28809753529727455,
+      "ci_high": 0.29721476358175275,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "metric": "hpsv21",
+      "value": 0.28742214530706406,
+      "ci_low": 0.27784399630129336,
+      "ci_high": 0.29730385904759166,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "metric": "ir",
+      "value": 1.2039643697068094,
+      "ci_low": 1.0165993001125753,
+      "ci_high": 1.3794790791384874,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "metric": "latency",
+      "value": 220.1727928882325,
+      "ci_low": 218.51085205588979,
+      "ci_high": 222.0416790862269,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "metric": "is",
+      "value": 3.058897690982675,
+      "ci_low": 2.6940513755908166,
+      "ci_high": 3.273235491023276,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000,
+      "n_images": 50,
+      "split_std": 0.45584281951243466
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "metric": "is",
+      "value": 2.9403011146086167,
+      "ci_low": 2.5982017856616526,
+      "ci_high": 3.171704125503213,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000,
+      "n_images": 50,
+      "split_std": 0.4614799282096624
+    }
+  ],
+  "paired_deltas": [
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "reference_method": "flux2_full",
+      "metric": "aesthetic",
+      "delta_definition": "method_minus_reference",
+      "value": 0.3047619724273682,
+      "ci_low": 0.1843333616256714,
+      "ci_high": 0.4196750814914703,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "reference_method": "flux2_full",
+      "metric": "arniqa",
+      "delta_definition": "method_minus_reference",
+      "value": 0.0712162721157074,
+      "ci_low": 0.053225671246647836,
+      "ci_high": 0.0871732637733221,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "reference_method": "flux2_full",
+      "metric": "clipiqa",
+      "delta_definition": "method_minus_reference",
+      "value": 0.06590663969516754,
+      "ci_low": 0.04641491700708866,
+      "ci_high": 0.0858242650181055,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "reference_method": "flux2_full",
+      "metric": "hpsv2",
+      "delta_definition": "method_minus_reference",
+      "value": 0.008495849370956422,
+      "ci_low": 0.005295571774244309,
+      "ci_high": 0.01179092089831829,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "reference_method": "flux2_full",
+      "metric": "hpsv21",
+      "delta_definition": "method_minus_reference",
+      "value": 0.018438883125782013,
+      "ci_low": 0.01137723984569311,
+      "ci_high": 0.025965424112975595,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "reference_method": "flux2_full",
+      "metric": "ir",
+      "delta_definition": "method_minus_reference",
+      "value": 0.4555831893417053,
+      "ci_low": 0.30356206465122526,
+      "ci_high": 0.6018068588491297,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "reference_method": "flux2_full",
+      "metric": "latency",
+      "delta_definition": "method_minus_reference",
+      "value": -223.833506115037,
+      "ci_low": -229.06389312505675,
+      "ci_high": -219.3155063766554,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "reference_method": "flux2_full",
+      "metric": "is",
+      "delta_definition": "method_minus_reference",
+      "value": -0.1185965763740584,
+      "ci_low": -0.389400796368905,
+      "ci_high": 0.16708593746880374,
+      "n_prompts": 50,
+      "bootstrap_valid": 1000,
+      "n_images": 50
+    }
+  ],
+  "per_image": [
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1041106339713796826",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_1041106339713796826_4043a88752_seed0.png",
+      "metrics": {
+        "latency": 491.6387707090471,
+        "ir": 1.4320518970489502,
+        "aesthetic": 6.373848915100098,
+        "hpsv2": 0.2818334996700287,
+        "hpsv21": 0.2548268139362335,
+        "clipiqa": 0.5515373349189758,
+        "arniqa": 0.5800796747207642
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1046736963520652161",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_1046736963520652161_826d2659e4_seed0.png",
+      "metrics": {
+        "latency": 438.19269871897995,
+        "ir": 0.9459881782531738,
+        "aesthetic": 6.753777027130127,
+        "hpsv2": 0.28330281376838684,
+        "hpsv21": 0.26729145646095276,
+        "clipiqa": 0.5145347118377686,
+        "arniqa": 0.6061323285102844
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1139740195494332405",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_1139740195494332405_ea628bcb94_seed0.png",
+      "metrics": {
+        "latency": 438.36548821628094,
+        "ir": 1.7172940969467163,
+        "aesthetic": 6.3272833824157715,
+        "hpsv2": 0.29612985253334045,
+        "hpsv21": 0.2922912836074829,
+        "clipiqa": 0.6576096415519714,
+        "arniqa": 0.6624295115470886
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1516768667427572324",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_1516768667427572324_494392fea7_seed0.png",
+      "metrics": {
+        "latency": 441.05966756492853,
+        "ir": 1.6206836700439453,
+        "aesthetic": 5.794121742248535,
+        "hpsv2": 0.25884148478507996,
+        "hpsv21": 0.23208412528038025,
+        "clipiqa": 0.45326361060142517,
+        "arniqa": 0.7194830179214478
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1594791064055740275",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_1594791064055740275_f7306ee3c6_seed0.png",
+      "metrics": {
+        "latency": 440.8469175193459,
+        "ir": 0.7091725468635559,
+        "aesthetic": 6.318692207336426,
+        "hpsv2": 0.29976171255111694,
+        "hpsv21": 0.29672688245773315,
+        "clipiqa": 0.608268678188324,
+        "arniqa": 0.5552083253860474
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1638867997226496674",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_1638867997226496674_812cc05d56_seed0.png",
+      "metrics": {
+        "latency": 432.7585560102016,
+        "ir": 1.7626694440841675,
+        "aesthetic": 6.524203300476074,
+        "hpsv2": 0.29930272698402405,
+        "hpsv21": 0.3143016993999481,
+        "clipiqa": 0.7894217371940613,
+        "arniqa": 0.5995188355445862
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3305730548209556640",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_3305730548209556640_10611bc6b2_seed0.png",
+      "metrics": {
+        "latency": 439.8717402666807,
+        "ir": 1.5569357872009277,
+        "aesthetic": 6.240192413330078,
+        "hpsv2": 0.28929269313812256,
+        "hpsv21": 0.27092429995536804,
+        "clipiqa": 0.7407869696617126,
+        "arniqa": 0.5104894042015076
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_334788259750040356",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_334788259750040356_f55a411452_seed0.png",
+      "metrics": {
+        "latency": 442.17425109725446,
+        "ir": 1.219713807106018,
+        "aesthetic": 6.259756565093994,
+        "hpsv2": 0.2790333926677704,
+        "hpsv21": 0.24719426035881042,
+        "clipiqa": 0.5530195236206055,
+        "arniqa": 0.6426776647567749
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3667310823951382336",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_3667310823951382336_da7a059989_seed0.png",
+      "metrics": {
+        "latency": 432.6990348882973,
+        "ir": 0.18078407645225525,
+        "aesthetic": 6.367112159729004,
+        "hpsv2": 0.30078190565109253,
+        "hpsv21": 0.2777103781700134,
+        "clipiqa": 0.26536497473716736,
+        "arniqa": 0.5768729448318481
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3826098298648979216",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_3826098298648979216_723ba70c9b_seed0.png",
+      "metrics": {
+        "latency": 437.71538628451526,
+        "ir": 1.0297439098358154,
+        "aesthetic": 6.930535316467285,
+        "hpsv2": 0.2728356420993805,
+        "hpsv21": 0.26609206199645996,
+        "clipiqa": 0.6569662094116211,
+        "arniqa": 0.6286807656288147
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3943607367684487957",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_3943607367684487957_9d11855e8c_seed0.png",
+      "metrics": {
+        "latency": 438.264002502081,
+        "ir": 0.9681633710861206,
+        "aesthetic": 4.8918867111206055,
+        "hpsv2": 0.2810487449169159,
+        "hpsv21": 0.25276830792427063,
+        "clipiqa": 0.6488224267959595,
+        "arniqa": 0.606544017791748
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_4525259556400020626",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_4525259556400020626_bfb8afb9a4_seed0.png",
+      "metrics": {
+        "latency": 441.04658689908683,
+        "ir": 0.6092409491539001,
+        "aesthetic": 6.159501075744629,
+        "hpsv2": 0.31060105562210083,
+        "hpsv21": 0.3144835829734802,
+        "clipiqa": 0.49247199296951294,
+        "arniqa": 0.6791174411773682
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_5826245701465116957",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_5826245701465116957_e0c324d43e_seed0.png",
+      "metrics": {
+        "latency": 441.79755527805537,
+        "ir": 1.5874438285827637,
+        "aesthetic": 5.703180313110352,
+        "hpsv2": 0.27804914116859436,
+        "hpsv21": 0.2709626853466034,
+        "clipiqa": 0.5461279153823853,
+        "arniqa": 0.6287844181060791
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_5968998903196670637",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_5968998903196670637_d418993014_seed0.png",
+      "metrics": {
+        "latency": 432.9483125694096,
+        "ir": 1.0812232494354248,
+        "aesthetic": 6.488739013671875,
+        "hpsv2": 0.29175373911857605,
+        "hpsv21": 0.30974990129470825,
+        "clipiqa": 0.5055562853813171,
+        "arniqa": 0.6632950901985168
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_6066373865342273390",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_6066373865342273390_350bfa414f_seed0.png",
+      "metrics": {
+        "latency": 491.3365878480254,
+        "ir": -0.6860589385032654,
+        "aesthetic": 5.307412624359131,
+        "hpsv2": 0.29032182693481445,
+        "hpsv21": 0.2738775610923767,
+        "clipiqa": 0.471219927072525,
+        "arniqa": 0.7481111288070679
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7009273464006889449",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_7009273464006889449_b157fdee37_seed0.png",
+      "metrics": {
+        "latency": 442.1100138654001,
+        "ir": 0.07293520122766495,
+        "aesthetic": 4.602859020233154,
+        "hpsv2": 0.281545490026474,
+        "hpsv21": 0.24523210525512695,
+        "clipiqa": 0.3529335558414459,
+        "arniqa": 0.7192583084106445
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7543519915112968451",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_7543519915112968451_3b3ac7d375_seed0.png",
+      "metrics": {
+        "latency": 442.02365704253316,
+        "ir": 1.3652833700180054,
+        "aesthetic": 6.088257312774658,
+        "hpsv2": 0.26709967851638794,
+        "hpsv21": 0.2695777416229248,
+        "clipiqa": 0.4202702045440674,
+        "arniqa": 0.6994534730911255
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7637161027288029693",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_7637161027288029693_13300f1b3f_seed0.png",
+      "metrics": {
+        "latency": 442.02323217876256,
+        "ir": 1.3931881189346313,
+        "aesthetic": 6.182923793792725,
+        "hpsv2": 0.27006345987319946,
+        "hpsv21": 0.24910998344421387,
+        "clipiqa": 0.7366005778312683,
+        "arniqa": 0.6062958240509033
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_8020030205210970395",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_8020030205210970395_fc4191b3ca_seed0.png",
+      "metrics": {
+        "latency": 441.77584419446066,
+        "ir": 1.269163727760315,
+        "aesthetic": 6.1390790939331055,
+        "hpsv2": 0.26823675632476807,
+        "hpsv21": 0.23056921362876892,
+        "clipiqa": 0.4880170524120331,
+        "arniqa": 0.5709435939788818
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_8065862701789418887",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_8065862701789418887_761282129a_seed0.png",
+      "metrics": {
+        "latency": 432.72983888722956,
+        "ir": 1.3456263542175293,
+        "aesthetic": 6.404178619384766,
+        "hpsv2": 0.2844735383987427,
+        "hpsv21": 0.24786339700222015,
+        "clipiqa": 0.6910214424133301,
+        "arniqa": 0.6874253749847412
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_820801809737345747",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_820801809737345747_4d9fe5cb8e_seed0.png",
+      "metrics": {
+        "latency": 443.7193216495216,
+        "ir": -0.0010042650392279029,
+        "aesthetic": 6.5737714767456055,
+        "hpsv2": 0.28112155199050903,
+        "hpsv21": 0.2825903296470642,
+        "clipiqa": 0.512578010559082,
+        "arniqa": 0.6717281937599182
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_880657115260655727",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_880657115260655727_a6ae047101_seed0.png",
+      "metrics": {
+        "latency": 432.43509270902723,
+        "ir": -0.26224228739738464,
+        "aesthetic": 6.079164028167725,
+        "hpsv2": 0.2718999683856964,
+        "hpsv21": 0.2599562406539917,
+        "clipiqa": 0.49655815958976746,
+        "arniqa": 0.6244747042655945
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_9082507599514684465",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_9082507599514684465_660fbe6453_seed0.png",
+      "metrics": {
+        "latency": 437.81747549027205,
+        "ir": 0.7238415479660034,
+        "aesthetic": 5.6513776779174805,
+        "hpsv2": 0.30383917689323425,
+        "hpsv21": 0.2959657907485962,
+        "clipiqa": 0.6704042553901672,
+        "arniqa": 0.7011821866035461
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_924453187493270635",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_924453187493270635_ffa586d637_seed0.png",
+      "metrics": {
+        "latency": 440.52200279198587,
+        "ir": -0.09517914056777954,
+        "aesthetic": 5.876395225524902,
+        "hpsv2": 0.2763938307762146,
+        "hpsv21": 0.23111820220947266,
+        "clipiqa": 0.7948560118675232,
+        "arniqa": 0.6487834453582764
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus1017950324987649681",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus1017950324987649681_56e590b0d6_seed0.png",
+      "metrics": {
+        "latency": 441.67541870381683,
+        "ir": 1.0226091146469116,
+        "aesthetic": 5.882540225982666,
+        "hpsv2": 0.283756822347641,
+        "hpsv21": 0.2593647241592407,
+        "clipiqa": 0.7178362011909485,
+        "arniqa": 0.7276176810264587
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2014927182109364975",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus2014927182109364975_81f6a4b6e1_seed0.png",
+      "metrics": {
+        "latency": 442.7726912032813,
+        "ir": -1.1297037601470947,
+        "aesthetic": 5.670109748840332,
+        "hpsv2": 0.2682226002216339,
+        "hpsv21": 0.2328898161649704,
+        "clipiqa": 0.5856370329856873,
+        "arniqa": 0.7691611647605896
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2447481760626661988",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.png",
+      "metrics": {
+        "latency": 441.52685901522636,
+        "ir": 0.9098139405250549,
+        "aesthetic": 6.271483421325684,
+        "hpsv2": 0.2911689877510071,
+        "hpsv21": 0.27123141288757324,
+        "clipiqa": 0.6761726140975952,
+        "arniqa": 0.6238322257995605
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus263777997664289445",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus263777997664289445_4849f3fe75_seed0.png",
+      "metrics": {
+        "latency": 441.9064508229494,
+        "ir": 1.0342633724212646,
+        "aesthetic": 6.248335838317871,
+        "hpsv2": 0.2585759162902832,
+        "hpsv21": 0.20752078294754028,
+        "clipiqa": 0.63750821352005,
+        "arniqa": 0.5911223292350769
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2679953061215100202",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
+      "metrics": {
+        "latency": 441.3356549879536,
+        "ir": 1.050843596458435,
+        "aesthetic": 6.225725173950195,
+        "hpsv2": 0.2800315022468567,
+        "hpsv21": 0.2783791720867157,
+        "clipiqa": 0.7430061101913452,
+        "arniqa": 0.5731737613677979
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2712631331773394876",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus2712631331773394876_9142f070f1_seed0.png",
+      "metrics": {
+        "latency": 438.6288147000596,
+        "ir": 0.2651883065700531,
+        "aesthetic": 5.883258819580078,
+        "hpsv2": 0.30573704838752747,
+        "hpsv21": 0.27682584524154663,
+        "clipiqa": 0.39739176630973816,
+        "arniqa": 0.6029524207115173
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2729538226706404616",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png",
+      "metrics": {
+        "latency": 491.75026646698825,
+        "ir": 1.762926459312439,
+        "aesthetic": 6.61917781829834,
+        "hpsv2": 0.29637065529823303,
+        "hpsv21": 0.3275644779205322,
+        "clipiqa": 0.650458812713623,
+        "arniqa": 0.5949122309684753
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2857555394095239941",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus2857555394095239941_4b19eaa5c9_seed0.png",
+      "metrics": {
+        "latency": 432.47924790438265,
+        "ir": 1.3834434747695923,
+        "aesthetic": 6.037397861480713,
+        "hpsv2": 0.3048267364501953,
+        "hpsv21": 0.29491156339645386,
+        "clipiqa": 0.7454764246940613,
+        "arniqa": 0.6706069111824036
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus3130703310573987496",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus3130703310573987496_e9fb769c0e_seed0.png",
+      "metrics": {
+        "latency": 442.14786737784743,
+        "ir": 1.0806188583374023,
+        "aesthetic": 6.2555832862854,
+        "hpsv2": 0.26886308193206787,
+        "hpsv21": 0.22295621037483215,
+        "clipiqa": 0.5695829391479492,
+        "arniqa": 0.6643255949020386
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus3145908358244441177",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus3145908358244441177_04bcf2b825_seed0.png",
+      "metrics": {
+        "latency": 432.40256246272475,
+        "ir": -0.45959270000457764,
+        "aesthetic": 6.078005790710449,
+        "hpsv2": 0.27996766567230225,
+        "hpsv21": 0.24941426515579224,
+        "clipiqa": 0.49071478843688965,
+        "arniqa": 0.557828962802887
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus4012780704267384036",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus4012780704267384036_82a570368c_seed0.png",
+      "metrics": {
+        "latency": 441.74187191948295,
+        "ir": 1.9666404724121094,
+        "aesthetic": 6.065279960632324,
+        "hpsv2": 0.3077126145362854,
+        "hpsv21": 0.2896757125854492,
+        "clipiqa": 0.3965194821357727,
+        "arniqa": 0.7149103283882141
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus4469448794852185540",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus4469448794852185540_faa7240901_seed0.png",
+      "metrics": {
+        "latency": 441.952895544935,
+        "ir": 1.1680126190185547,
+        "aesthetic": 6.10258674621582,
+        "hpsv2": 0.27499955892562866,
+        "hpsv21": 0.2570997178554535,
+        "clipiqa": 0.6986609101295471,
+        "arniqa": 0.6345787644386292
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5023570400257826529",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
+      "metrics": {
+        "latency": 433.2726072752848,
+        "ir": 0.8029657602310181,
+        "aesthetic": 6.0802130699157715,
+        "hpsv2": 0.2710174322128296,
+        "hpsv21": 0.23622524738311768,
+        "clipiqa": 0.751978874206543,
+        "arniqa": 0.4200538098812103
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5673083787255800687",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus5673083787255800687_743ac241bf_seed0.png",
+      "metrics": {
+        "latency": 444.53218522528186,
+        "ir": 0.03535082936286926,
+        "aesthetic": 5.948399066925049,
+        "hpsv2": 0.29086387157440186,
+        "hpsv21": 0.2968156337738037,
+        "clipiqa": 0.36110708117485046,
+        "arniqa": 0.6827309131622314
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5685677173773420545",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus5685677173773420545_b6a31bd1c6_seed0.png",
+      "metrics": {
+        "latency": 438.0607351460494,
+        "ir": 0.7827737331390381,
+        "aesthetic": 5.873920440673828,
+        "hpsv2": 0.2884942293167114,
+        "hpsv21": 0.25041839480400085,
+        "clipiqa": 0.6949988603591919,
+        "arniqa": 0.671868085861206
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5805253890620089726",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus5805253890620089726_3370207da3_seed0.png",
+      "metrics": {
+        "latency": 438.01083001005463,
+        "ir": 0.3477928936481476,
+        "aesthetic": 5.888648986816406,
+        "hpsv2": 0.28533095121383667,
+        "hpsv21": 0.30016422271728516,
+        "clipiqa": 0.5325796604156494,
+        "arniqa": 0.6591310501098633
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus6493435680635123221",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus6493435680635123221_fd5d202fae_seed0.png",
+      "metrics": {
+        "latency": 439.1149170426652,
+        "ir": 0.6755535006523132,
+        "aesthetic": 6.887816429138184,
+        "hpsv2": 0.27293330430984497,
+        "hpsv21": 0.24844445288181305,
+        "clipiqa": 0.757814347743988,
+        "arniqa": 0.656716525554657
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus680414676224257344",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus680414676224257344_a837f3298b_seed0.png",
+      "metrics": {
+        "latency": 437.9352057278156,
+        "ir": 1.690686821937561,
+        "aesthetic": 6.254189491271973,
+        "hpsv2": 0.27318501472473145,
+        "hpsv21": 0.3106832504272461,
+        "clipiqa": 0.5092906951904297,
+        "arniqa": 0.7363556623458862
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus702025498990232048",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus702025498990232048_96bdbd2410_seed0.png",
+      "metrics": {
+        "latency": 438.7371062700404,
+        "ir": -0.06006045266985893,
+        "aesthetic": 6.615687370300293,
+        "hpsv2": 0.2951500713825226,
+        "hpsv21": 0.2895471155643463,
+        "clipiqa": 0.5003589987754822,
+        "arniqa": 0.695520281791687
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus7320315357894569493.Jpg",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus7320315357894569493.Jpg_65228aaf5e_seed0.png",
+      "metrics": {
+        "latency": 441.6796450596303,
+        "ir": 1.00615394115448,
+        "aesthetic": 5.187930107116699,
+        "hpsv2": 0.29130345582962036,
+        "hpsv21": 0.26152706146240234,
+        "clipiqa": 0.5224609375,
+        "arniqa": 0.6489225625991821
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus7393293802729135153",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus7393293802729135153_10c2d3e039_seed0.png",
+      "metrics": {
+        "latency": 439.46704814303666,
+        "ir": 0.7717691659927368,
+        "aesthetic": 5.711885452270508,
+        "hpsv2": 0.2840500771999359,
+        "hpsv21": 0.2554471492767334,
+        "clipiqa": 0.5092383623123169,
+        "arniqa": 0.5791236162185669
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8032855769722351595",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus8032855769722351595_74d00fbb31_seed0.png",
+      "metrics": {
+        "latency": 490.54422694898676,
+        "ir": -1.201411247253418,
+        "aesthetic": 6.057612419128418,
+        "hpsv2": 0.29220059514045715,
+        "hpsv21": 0.2916485667228699,
+        "clipiqa": 0.5642262697219849,
+        "arniqa": 0.5793593525886536
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8041742109062037958",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus8041742109062037958_f5c747aef8_seed0.png",
+      "metrics": {
+        "latency": 432.70964205637574,
+        "ir": -0.4878136217594147,
+        "aesthetic": 5.674216270446777,
+        "hpsv2": 0.2758679986000061,
+        "hpsv21": 0.24818527698516846,
+        "clipiqa": 0.2796006500720978,
+        "arniqa": 0.6214814782142639
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8648158440845565467",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus8648158440845565467_16f444f640_seed0.png",
+      "metrics": {
+        "latency": 432.5154981892556,
+        "ir": 1.7782573699951172,
+        "aesthetic": 6.162537574768066,
+        "hpsv2": 0.31292036175727844,
+        "hpsv21": 0.32526475191116333,
+        "clipiqa": 0.44214972853660583,
+        "arniqa": 0.6215577125549316
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8737279395568207187",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus8737279395568207187_52f0aa879e_seed0.png",
+      "metrics": {
+        "latency": 489.797411181964,
+        "ir": -1.1729271411895752,
+        "aesthetic": 6.004866600036621,
+        "hpsv2": 0.2464536428451538,
+        "hpsv21": 0.20750455558300018,
+        "clipiqa": 0.4980355203151703,
+        "arniqa": 0.5828713178634644
+      }
+    },
+    {
+      "method": "flux2_full",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus9196631274539277035",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_full/4096x4096/a4k_eval_4096_minus9196631274539277035_99163e1545_seed0.png",
+      "metrics": {
+        "latency": 437.7452555960044,
+        "ir": 0.8482412099838257,
+        "aesthetic": 6.176314353942871,
+        "hpsv2": 0.2944581210613251,
+        "hpsv21": 0.30618542432785034,
+        "clipiqa": 0.638436496257782,
+        "arniqa": 0.5545395612716675
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1041106339713796826",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_1041106339713796826_4043a88752_seed0.png",
+      "metrics": {
+        "latency": 217.89717609295622,
+        "ir": 0.7624711990356445,
+        "aesthetic": 7.0009074211120605,
+        "hpsv2": 0.26799285411834717,
+        "hpsv21": 0.21518303453922272,
+        "clipiqa": 0.5306702852249146,
+        "arniqa": 0.47427132725715637
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1046736963520652161",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_1046736963520652161_826d2659e4_seed0.png",
+      "metrics": {
+        "latency": 218.1099299006164,
+        "ir": 0.9286599159240723,
+        "aesthetic": 6.521551132202148,
+        "hpsv2": 0.2935889661312103,
+        "hpsv21": 0.2863162159919739,
+        "clipiqa": 0.7187401056289673,
+        "arniqa": 0.704828143119812
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1139740195494332405",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_1139740195494332405_ea628bcb94_seed0.png",
+      "metrics": {
+        "latency": 214.66939723817632,
+        "ir": 1.9134892225265503,
+        "aesthetic": 6.307281494140625,
+        "hpsv2": 0.31222882866859436,
+        "hpsv21": 0.3322290778160095,
+        "clipiqa": 0.704133927822113,
+        "arniqa": 0.729492723941803
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1516768667427572324",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_1516768667427572324_494392fea7_seed0.png",
+      "metrics": {
+        "latency": 214.7372476439923,
+        "ir": 1.6319392919540405,
+        "aesthetic": 6.376471519470215,
+        "hpsv2": 0.2655092477798462,
+        "hpsv21": 0.22618070244789124,
+        "clipiqa": 0.6000128984451294,
+        "arniqa": 0.7369365692138672
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1594791064055740275",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_1594791064055740275_f7306ee3c6_seed0.png",
+      "metrics": {
+        "latency": 214.64656843524426,
+        "ir": 1.6853286027908325,
+        "aesthetic": 6.346561431884766,
+        "hpsv2": 0.2927998900413513,
+        "hpsv21": 0.29134172201156616,
+        "clipiqa": 0.6751397252082825,
+        "arniqa": 0.6196520924568176
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_1638867997226496674",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_1638867997226496674_812cc05d56_seed0.png",
+      "metrics": {
+        "latency": 218.1027910541743,
+        "ir": 1.6897854804992676,
+        "aesthetic": 6.916794776916504,
+        "hpsv2": 0.30327314138412476,
+        "hpsv21": 0.3264530599117279,
+        "clipiqa": 0.8374482989311218,
+        "arniqa": 0.6749025583267212
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3305730548209556640",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_3305730548209556640_10611bc6b2_seed0.png",
+      "metrics": {
+        "latency": 231.86203417391516,
+        "ir": 0.9720749855041504,
+        "aesthetic": 7.064275741577148,
+        "hpsv2": 0.2905205488204956,
+        "hpsv21": 0.28530770540237427,
+        "clipiqa": 0.7992632985115051,
+        "arniqa": 0.5772764682769775
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_334788259750040356",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_334788259750040356_f55a411452_seed0.png",
+      "metrics": {
+        "latency": 228.10645413771272,
+        "ir": 1.315559983253479,
+        "aesthetic": 6.615564823150635,
+        "hpsv2": 0.2890316843986511,
+        "hpsv21": 0.270979106426239,
+        "clipiqa": 0.6128754019737244,
+        "arniqa": 0.7177262902259827
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3667310823951382336",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_3667310823951382336_da7a059989_seed0.png",
+      "metrics": {
+        "latency": 218.39503033738583,
+        "ir": 0.22721780836582184,
+        "aesthetic": 6.093544960021973,
+        "hpsv2": 0.30661359429359436,
+        "hpsv21": 0.290752649307251,
+        "clipiqa": 0.4624803066253662,
+        "arniqa": 0.7330085039138794
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3826098298648979216",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_3826098298648979216_723ba70c9b_seed0.png",
+      "metrics": {
+        "latency": 214.30266851512715,
+        "ir": 0.7151951789855957,
+        "aesthetic": 6.598090171813965,
+        "hpsv2": 0.2603626251220703,
+        "hpsv21": 0.2493608593940735,
+        "clipiqa": 0.6572031378746033,
+        "arniqa": 0.6918211579322815
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_3943607367684487957",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_3943607367684487957_9d11855e8c_seed0.png",
+      "metrics": {
+        "latency": 218.11498670838773,
+        "ir": 1.802785873413086,
+        "aesthetic": 5.951314926147461,
+        "hpsv2": 0.29499268531799316,
+        "hpsv21": 0.2791345715522766,
+        "clipiqa": 0.8142260909080505,
+        "arniqa": 0.7882559299468994
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_4525259556400020626",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_4525259556400020626_bfb8afb9a4_seed0.png",
+      "metrics": {
+        "latency": 219.39815641893074,
+        "ir": 1.0951838493347168,
+        "aesthetic": 6.5687031745910645,
+        "hpsv2": 0.31402456760406494,
+        "hpsv21": 0.2954171299934387,
+        "clipiqa": 0.5920771956443787,
+        "arniqa": 0.7178806066513062
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_5826245701465116957",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_5826245701465116957_e0c324d43e_seed0.png",
+      "metrics": {
+        "latency": 215.05736340209842,
+        "ir": 1.8879480361938477,
+        "aesthetic": 6.748931884765625,
+        "hpsv2": 0.301525354385376,
+        "hpsv21": 0.3094816505908966,
+        "clipiqa": 0.7043359875679016,
+        "arniqa": 0.7135034203529358
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_5968998903196670637",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_5968998903196670637_d418993014_seed0.png",
+      "metrics": {
+        "latency": 215.03247207100503,
+        "ir": 0.9596958160400391,
+        "aesthetic": 6.079010009765625,
+        "hpsv2": 0.2859627604484558,
+        "hpsv21": 0.3129195272922516,
+        "clipiqa": 0.4462849795818329,
+        "arniqa": 0.7121356725692749
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_6066373865342273390",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_6066373865342273390_350bfa414f_seed0.png",
+      "metrics": {
+        "latency": 217.93856247887015,
+        "ir": 0.37996628880500793,
+        "aesthetic": 5.678070068359375,
+        "hpsv2": 0.2906562387943268,
+        "hpsv21": 0.26495450735092163,
+        "clipiqa": 0.570434033870697,
+        "arniqa": 0.7701268196105957
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7009273464006889449",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_7009273464006889449_b157fdee37_seed0.png",
+      "metrics": {
+        "latency": 219.07144497602712,
+        "ir": 1.9089926481246948,
+        "aesthetic": 5.336038589477539,
+        "hpsv2": 0.2969677150249481,
+        "hpsv21": 0.28408706188201904,
+        "clipiqa": 0.41245365142822266,
+        "arniqa": 0.7806798815727234
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7543519915112968451",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_7543519915112968451_3b3ac7d375_seed0.png",
+      "metrics": {
+        "latency": 215.06831263564527,
+        "ir": 1.5608035326004028,
+        "aesthetic": 6.528120040893555,
+        "hpsv2": 0.29219597578048706,
+        "hpsv21": 0.2857200503349304,
+        "clipiqa": 0.5385101437568665,
+        "arniqa": 0.7339485287666321
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_7637161027288029693",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_7637161027288029693_13300f1b3f_seed0.png",
+      "metrics": {
+        "latency": 215.0935490410775,
+        "ir": 1.7423508167266846,
+        "aesthetic": 6.863200664520264,
+        "hpsv2": 0.2951512634754181,
+        "hpsv21": 0.29221147298812866,
+        "clipiqa": 0.7322223782539368,
+        "arniqa": 0.6827941536903381
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_8020030205210970395",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_8020030205210970395_fc4191b3ca_seed0.png",
+      "metrics": {
+        "latency": 215.0685089599574,
+        "ir": 1.6524405479431152,
+        "aesthetic": 6.483168601989746,
+        "hpsv2": 0.2854708433151245,
+        "hpsv21": 0.27091920375823975,
+        "clipiqa": 0.6760228276252747,
+        "arniqa": 0.6964184045791626
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_8065862701789418887",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_8065862701789418887_761282129a_seed0.png",
+      "metrics": {
+        "latency": 222.38941410183907,
+        "ir": 1.7023584842681885,
+        "aesthetic": 6.739931106567383,
+        "hpsv2": 0.28780269622802734,
+        "hpsv21": 0.25658416748046875,
+        "clipiqa": 0.7637300491333008,
+        "arniqa": 0.712027370929718
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_820801809737345747",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_820801809737345747_4d9fe5cb8e_seed0.png",
+      "metrics": {
+        "latency": 214.39058859925717,
+        "ir": -0.300606369972229,
+        "aesthetic": 6.851597309112549,
+        "hpsv2": 0.2835049033164978,
+        "hpsv21": 0.3004901707172394,
+        "clipiqa": 0.6481840014457703,
+        "arniqa": 0.7871703505516052
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_880657115260655727",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_880657115260655727_a6ae047101_seed0.png",
+      "metrics": {
+        "latency": 214.92824263800867,
+        "ir": 0.5468576550483704,
+        "aesthetic": 6.222949028015137,
+        "hpsv2": 0.2903742492198944,
+        "hpsv21": 0.2832109332084656,
+        "clipiqa": 0.6171800494194031,
+        "arniqa": 0.7096924185752869
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_9082507599514684465",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_9082507599514684465_660fbe6453_seed0.png",
+      "metrics": {
+        "latency": 214.40944289509207,
+        "ir": 1.3384021520614624,
+        "aesthetic": 6.954230308532715,
+        "hpsv2": 0.32333338260650635,
+        "hpsv21": 0.34169527888298035,
+        "clipiqa": 0.7369821667671204,
+        "arniqa": 0.7334848046302795
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_924453187493270635",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_924453187493270635_ffa586d637_seed0.png",
+      "metrics": {
+        "latency": 225.1683145670686,
+        "ir": 1.2391724586486816,
+        "aesthetic": 6.436713695526123,
+        "hpsv2": 0.30200377106666565,
+        "hpsv21": 0.29494327306747437,
+        "clipiqa": 0.720844030380249,
+        "arniqa": 0.7152102589607239
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus1017950324987649681",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus1017950324987649681_56e590b0d6_seed0.png",
+      "metrics": {
+        "latency": 215.06042698025703,
+        "ir": 1.653566837310791,
+        "aesthetic": 6.502008438110352,
+        "hpsv2": 0.30422499775886536,
+        "hpsv21": 0.31137046217918396,
+        "clipiqa": 0.6883231997489929,
+        "arniqa": 0.7031601667404175
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2014927182109364975",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus2014927182109364975_81f6a4b6e1_seed0.png",
+      "metrics": {
+        "latency": 224.60875688912347,
+        "ir": -0.22771985828876495,
+        "aesthetic": 5.970226287841797,
+        "hpsv2": 0.2885192930698395,
+        "hpsv21": 0.2676506042480469,
+        "clipiqa": 0.6104808449745178,
+        "arniqa": 0.7432233095169067
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2447481760626661988",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.png",
+      "metrics": {
+        "latency": 230.46295402001124,
+        "ir": 0.5838965773582458,
+        "aesthetic": 6.700169563293457,
+        "hpsv2": 0.3003580570220947,
+        "hpsv21": 0.310686856508255,
+        "clipiqa": 0.7464920878410339,
+        "arniqa": 0.6699697971343994
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus263777997664289445",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus263777997664289445_4849f3fe75_seed0.png",
+      "metrics": {
+        "latency": 214.591875410988,
+        "ir": 1.3105336427688599,
+        "aesthetic": 6.889636993408203,
+        "hpsv2": 0.28154200315475464,
+        "hpsv21": 0.24721935391426086,
+        "clipiqa": 0.7685797810554504,
+        "arniqa": 0.6760717630386353
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2679953061215100202",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
+      "metrics": {
+        "latency": 214.66251137503423,
+        "ir": 1.846675992012024,
+        "aesthetic": 6.801061630249023,
+        "hpsv2": 0.28725773096084595,
+        "hpsv21": 0.2943730652332306,
+        "clipiqa": 0.716813325881958,
+        "arniqa": 0.5761260986328125
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2712631331773394876",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus2712631331773394876_9142f070f1_seed0.png",
+      "metrics": {
+        "latency": 228.80398176203016,
+        "ir": 0.893680214881897,
+        "aesthetic": 6.193790435791016,
+        "hpsv2": 0.30953824520111084,
+        "hpsv21": 0.28840386867523193,
+        "clipiqa": 0.44399380683898926,
+        "arniqa": 0.7873995900154114
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2729538226706404616",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png",
+      "metrics": {
+        "latency": 228.31151063693687,
+        "ir": 1.8618459701538086,
+        "aesthetic": 6.664525508880615,
+        "hpsv2": 0.2893761992454529,
+        "hpsv21": 0.28019505739212036,
+        "clipiqa": 0.6556156873703003,
+        "arniqa": 0.6999498009681702
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus2857555394095239941",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus2857555394095239941_4b19eaa5c9_seed0.png",
+      "metrics": {
+        "latency": 218.18023086059839,
+        "ir": 1.6251189708709717,
+        "aesthetic": 6.142634868621826,
+        "hpsv2": 0.2988411784172058,
+        "hpsv21": 0.3026774525642395,
+        "clipiqa": 0.8018363118171692,
+        "arniqa": 0.7236688733100891
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus3130703310573987496",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus3130703310573987496_e9fb769c0e_seed0.png",
+      "metrics": {
+        "latency": 224.78511957102455,
+        "ir": 1.6982964277267456,
+        "aesthetic": 6.58502721786499,
+        "hpsv2": 0.27101030945777893,
+        "hpsv21": 0.21997913718223572,
+        "clipiqa": 0.6504924297332764,
+        "arniqa": 0.6529801487922668
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus3145908358244441177",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus3145908358244441177_04bcf2b825_seed0.png",
+      "metrics": {
+        "latency": 218.49079492036253,
+        "ir": 0.37989792227745056,
+        "aesthetic": 4.950775623321533,
+        "hpsv2": 0.25865638256073,
+        "hpsv21": 0.2129451036453247,
+        "clipiqa": 0.6042079329490662,
+        "arniqa": 0.7288669347763062
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus4012780704267384036",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus4012780704267384036_82a570368c_seed0.png",
+      "metrics": {
+        "latency": 214.35337782511488,
+        "ir": 1.9820128679275513,
+        "aesthetic": 5.571267127990723,
+        "hpsv2": 0.3197322189807892,
+        "hpsv21": 0.3160649240016937,
+        "clipiqa": 0.5256353616714478,
+        "arniqa": 0.7510107755661011
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus4469448794852185540",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus4469448794852185540_faa7240901_seed0.png",
+      "metrics": {
+        "latency": 215.0838345469674,
+        "ir": 1.55086088180542,
+        "aesthetic": 6.4951581954956055,
+        "hpsv2": 0.2890450656414032,
+        "hpsv21": 0.2782360017299652,
+        "clipiqa": 0.619630753993988,
+        "arniqa": 0.6540275812149048
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5023570400257826529",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus5023570400257826529_b6561f2b88_seed0.png",
+      "metrics": {
+        "latency": 227.5900486469036,
+        "ir": 1.249205231666565,
+        "aesthetic": 6.017601490020752,
+        "hpsv2": 0.27851831912994385,
+        "hpsv21": 0.26227137446403503,
+        "clipiqa": 0.713850200176239,
+        "arniqa": 0.6030948162078857
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5673083787255800687",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus5673083787255800687_743ac241bf_seed0.png",
+      "metrics": {
+        "latency": 233.37067788490094,
+        "ir": 1.2022854089736938,
+        "aesthetic": 6.5313873291015625,
+        "hpsv2": 0.3113785982131958,
+        "hpsv21": 0.3505067229270935,
+        "clipiqa": 0.5693449378013611,
+        "arniqa": 0.74596107006073
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5685677173773420545",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus5685677173773420545_b6a31bd1c6_seed0.png",
+      "metrics": {
+        "latency": 230.7022549880203,
+        "ir": 1.863175868988037,
+        "aesthetic": 5.798679828643799,
+        "hpsv2": 0.28290802240371704,
+        "hpsv21": 0.23045742511749268,
+        "clipiqa": 0.7369419932365417,
+        "arniqa": 0.6900823712348938
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus5805253890620089726",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus5805253890620089726_3370207da3_seed0.png",
+      "metrics": {
+        "latency": 218.40438609570265,
+        "ir": 1.187181830406189,
+        "aesthetic": 6.225498199462891,
+        "hpsv2": 0.30275988578796387,
+        "hpsv21": 0.3129650056362152,
+        "clipiqa": 0.6680225133895874,
+        "arniqa": 0.7582554817199707
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus6493435680635123221",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus6493435680635123221_fd5d202fae_seed0.png",
+      "metrics": {
+        "latency": 229.32567095407285,
+        "ir": 1.0435444116592407,
+        "aesthetic": 6.89268159866333,
+        "hpsv2": 0.2841937839984894,
+        "hpsv21": 0.2724851369857788,
+        "clipiqa": 0.8014422655105591,
+        "arniqa": 0.6829421520233154
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus680414676224257344",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus680414676224257344_a837f3298b_seed0.png",
+      "metrics": {
+        "latency": 214.57828855281696,
+        "ir": 1.7887840270996094,
+        "aesthetic": 6.376232147216797,
+        "hpsv2": 0.2755364775657654,
+        "hpsv21": 0.312158465385437,
+        "clipiqa": 0.5344865322113037,
+        "arniqa": 0.7697606682777405
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus702025498990232048",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus702025498990232048_96bdbd2410_seed0.png",
+      "metrics": {
+        "latency": 228.5601794011891,
+        "ir": -0.0965074747800827,
+        "aesthetic": 6.793175220489502,
+        "hpsv2": 0.2971932888031006,
+        "hpsv21": 0.33217352628707886,
+        "clipiqa": 0.6153858304023743,
+        "arniqa": 0.7558823227882385
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus7320315357894569493.Jpg",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus7320315357894569493.Jpg_65228aaf5e_seed0.png",
+      "metrics": {
+        "latency": 231.8505926229991,
+        "ir": 1.956899642944336,
+        "aesthetic": 6.5096049308776855,
+        "hpsv2": 0.3233850300312042,
+        "hpsv21": 0.34022992849349976,
+        "clipiqa": 0.5280588269233704,
+        "arniqa": 0.7573947906494141
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus7393293802729135153",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus7393293802729135153_10c2d3e039_seed0.png",
+      "metrics": {
+        "latency": 231.56889051303733,
+        "ir": 1.2736536264419556,
+        "aesthetic": 5.410063743591309,
+        "hpsv2": 0.260996550321579,
+        "hpsv21": 0.22522100806236267,
+        "clipiqa": 0.5839018225669861,
+        "arniqa": 0.7657268047332764
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8032855769722351595",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus8032855769722351595_74d00fbb31_seed0.png",
+      "metrics": {
+        "latency": 217.87664705794305,
+        "ir": 0.10829224437475204,
+        "aesthetic": 6.7627153396606445,
+        "hpsv2": 0.3018527030944824,
+        "hpsv21": 0.31758806109428406,
+        "clipiqa": 0.6169228553771973,
+        "arniqa": 0.7012036442756653
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8041742109062037958",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus8041742109062037958_f5c747aef8_seed0.png",
+      "metrics": {
+        "latency": 214.81410351290833,
+        "ir": -0.027799921110272408,
+        "aesthetic": 5.951796531677246,
+        "hpsv2": 0.29483556747436523,
+        "hpsv21": 0.2936875522136688,
+        "clipiqa": 0.40159907937049866,
+        "arniqa": 0.7422992587089539
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8648158440845565467",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus8648158440845565467_16f444f640_seed0.png",
+      "metrics": {
+        "latency": 214.59004373697098,
+        "ir": 1.9154150485992432,
+        "aesthetic": 6.0474138259887695,
+        "hpsv2": 0.3175896406173706,
+        "hpsv21": 0.327157586812973,
+        "clipiqa": 0.49379444122314453,
+        "arniqa": 0.7228814363479614
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus8737279395568207187",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus8737279395568207187_52f0aa879e_seed0.png",
+      "metrics": {
+        "latency": 217.96147096715868,
+        "ir": 0.26456278562545776,
+        "aesthetic": 6.21380090713501,
+        "hpsv2": 0.2697211503982544,
+        "hpsv21": 0.2768396735191345,
+        "clipiqa": 0.5066726207733154,
+        "arniqa": 0.6648955941200256
+      }
+    },
+    {
+      "method": "flux2_sca",
+      "res": "4096x4096",
+      "prompt_id": "a4k_eval_4096_minus9196631274539277035",
+      "seed": 0,
+      "path": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_minus9196631274539277035_99163e1545_seed0.png",
+      "metrics": {
+        "latency": 218.09235765598714,
+        "ir": 1.952785849571228,
+        "aesthetic": 6.860114097595215,
+        "hpsv2": 0.31195998191833496,
+        "hpsv21": 0.3416907787322998,
+        "clipiqa": 0.610804557800293,
+        "arniqa": 0.692957878112793
+      }
+    }
+  ],
+  "uncertainty": "95% percentile bootstrap over prompt clusters; seeds stay inside prompts",
+  "paired_note": "Only matching resolution/prompt/seed pairs enter deltas",
+  "is_note": "IS per method/res from torch-fidelity isc_features_to_metric; CI resamples prompts",
+  "seconds": 63.21836518822238,
+  "complete": true
+}
