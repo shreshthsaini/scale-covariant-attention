@@ -614,6 +614,17 @@ backfill shapes: SCA15 1107850 (gh-dev 4x2h, IDLE_MAX 900), SCA16 1107851 (gh 2x
 the same spool; cancel the still-pending ones once enough are running. Pilots so far ran on the one guest GPU (cntrl-cmd
 1103038). Queue: 14 b_ (46-prompt check), 16 w_trace, 473 x_ reruns.
 
+## 21. 2026-10-31: moved off TACC Vista (migration agent; full log .agent/notes/migration_20261031.md)
+`MIGRATION.md` is now the entry point: what lives where, restore steps, path mapping (`repro/migration/relocate_paths.sh`
+or same-path symlinks), model revisions, work in flight. GitHub gained `calib/` (Git LFS), `third_party/` (pinned AReA,
+UltraImage, DyPE, SEGA; README with all six baseline pins; no local patches existed), `repro/taskq_archive/` (2,463 task
+scripts plus the spool state) and `results/eval_sidecars/` (1,507 per-image metric files). Private Hugging Face repos:
+`sca-calibration`, `sca-eval-outputs`, `sca-frozen-code`, `sca-generated-images` (phase 1: headline 4096^2 sets of every
+main-table method, the sca_v2 reruns, latency, and the HRGen-1K Krea sca_v2 images). Phase 2 (221 GB: other HRGen-1K
+sets, comparators, 6144^2, 8192^2, FLUX.2, ablations, duplication variants) was not uploaded because the free Hugging
+Face plan caps private storage at 100 GB; `results/migration_manifest.csv` lists every archive, status and SHA256.
+Still open: the HRGen-1K Krea sca_v2 evaluation (`taskq/pending/a000_z988_eval_hrgen1k_krea_sca_v2.sh`, never ran).
+
 ## 22. 2026-10-31: HRGen-1K dev row folded in (paper owner; Section 21 is the migration)
 Build /scratch/09032/saini_2/sca/paper_builds/delivery_tj1oh6am (53 pp., main text 1-10 with Section 6 ending on the last
 line of p. 10, 0 overfull, 0 undefined, fresh unzip passes, no word box past a margin); hashes in .agent/notes/latest_delivery.md.

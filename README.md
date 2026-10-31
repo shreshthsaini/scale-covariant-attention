@@ -5,8 +5,10 @@ Private repository; paper under review. Start here if you are a fresh agent pick
 
 ## Read first, in this order
 
-1. `HANDOVER.md`: authoritative state. Sections 13 to 17 are the latest (gold-standard rubric scores, the
-   191 to 195 prompt extension, the standard evaluation protocol, open items).
+1. `MIGRATION.md`: the project left TACC Vista on 2026-10-31. What lives where (GitHub, private Hugging Face
+   repos, public downloads), restore steps, path layout, work in flight.
+   `HANDOVER.md`: authoritative state. Sections 13 to 20 are the latest (gold-standard rubric scores, the
+   191 to 195 prompt extension, the standard evaluation protocol, the sca_v2 rewrite, open items).
 2. `.agent/STATE.md` and `.agent/notes/latest_delivery.md` (current PDF and zip hashes, build directory).
 3. `.agent/notes/eval_protocol_survey.md`: what every related paper benchmarks on, with sources, and the
    13 paper edits that followed from it. `.agent/notes/paper_presentation_20261020.md`: the figure and layout
@@ -31,26 +33,34 @@ Private repository; paper under review. Start here if you are a fresh agent pick
 - `repro/`: baseline promotion records and spool task archive (`repro/taskq_control/` holds the evaluation
   release order).
 - `tests/`: unit tests for the kernels and the spool tooling.
+- `calib/`: calibration tables (`k1_1024.npz` is the FLUX.1-dev table every result uses; npz in Git LFS).
+- `third_party/`: pinned AReA, UltraImage, DyPE and SEGA sources; README lists all six baseline revisions.
+- `MIGRATION.md`, `repro/migration/`: the 2026-10-31 move off Vista and the scripts that built and checked it.
 
-## Where the heavy data lives (TACC Vista, scratch, purged after about 10 idle days)
+## Where the heavy data lives
 
-- `/scratch/09032/saini_2/sca/out/<campaign>/<method>/<HxW>/`: generated PNGs with JSON sidecars.
-- `/scratch/09032/saini_2/sca/eval/<group>/`: metric outputs; `DONE` and `BOOTSTRAP_DONE` markers.
-- `/scratch/09032/saini_2/sca/taskq/{pending,running,done,failed,hold_*}`: the resumable task spool.
-  Workers take the alphabetically first pending task. Create `taskq/STOP` to make every worker exit.
-- `/scratch/09032/saini_2/sca/code/<tag>/`: frozen code copies that the task scripts run.
-- `/scratch/09032/saini_2/sca/calib/k1_1024.npz`: the calibrated per-head table used at inference.
-- Environment: `/work/09032/saini_2/vista/library/uv-envs/sca` (uv only; torch 2.11 cu128, diffusers 0.39).
+The project moved off TACC Vista on 2026-10-31; `MIGRATION.md` is the map and the restore recipe.
+
+- This repository: code, paper, web, notes, every reported number (`results/`, with per-image metric files in
+  `results/eval_sidecars/`), calibration tables (`calib/`, Git LFS), pinned baseline sources (`third_party/`), every
+  task script (`repro/taskq_archive/`), environment locks and model revisions (`repro/`).
+- Private Hugging Face repos (`shreshthsaini/`): `sca-calibration` (model), `sca-eval-outputs` (evaluation tree with
+  feature banks, logs, prompts), `sca-generated-images` (headline and sca_v2 image sets as tar archives),
+  `sca-frozen-code` (frozen code copies, web assets, trace renders). `results/migration_manifest.csv` lists every
+  archive with its SHA256.
+- Vista paths the code still uses (`MIGRATION.md` Section 2 maps them to a new machine):
+  `/scratch/09032/saini_2/sca/{out,eval,calib,code,taskq,logs}`; environments under
+  `/work/09032/saini_2/vista/library/uv-envs/{sca,sca-metrics}` (uv only; torch 2.11 cu128, diffusers 0.39).
 
 ## Restart recipe
 
-1. `squeue -u $USER` and `ls /scratch/09032/saini_2/sca/taskq/*/ | head`: see what is still running.
-2. If the spool is not empty and no workers run: submit `slurm/fleet_SCA13.sbatch` from a login node
-   (`ssh login1 'sbatch /abs/path/fleet_SCA13.sbatch'`) or start guest workers on held nodes.
-3. `nohup bash slurm/release_evals.sh > /scratch/09032/saini_2/sca/logs/release_evals.log 2>&1 &` if the
-   held evaluations (`taskq/hold_eval`) still need releasing.
-4. When new `results/*` CSVs land: regenerate tables (`paper/figures/gen_tables.py` and friends), edit
-   `paper/main.tex`, then `uv run --no-project --python /work/09032/saini_2/vista/library/uv-envs/sca/bin/python python paper/build_delivery.py`.
+1. Restore code, data and environments with `MIGRATION.md` Section 3, and point the paths with Section 2.
+2. Finish the work in flight (`MIGRATION.md` Section 4): the HRGen-1K Krea evaluation of sca_v2, and the HRGen-1K
+   swap into the paper and page if it is not on GitHub.
+3. Generation and evaluation run through the file spool (`taskq/pending`, alphabetical order; `taskq/STOP` stops every
+   worker): `slurm/worker_loop.sh` is the worker; the `slurm/fleet_*.sbatch` files are Vista-specific examples.
+4. When new `results/*` CSVs land: regenerate tables (`paper/figures/gen_tables.py`, `paper/figures/src/swap_all.sh`),
+   edit `paper/main.tex`, then `uv run --no-project --python $SCA_ENVS/sca/bin/python python paper/build_delivery.py`.
 5. Commit and push after every meaningful change (no attribution trailers).
 
 ## Rules that apply to all work here
