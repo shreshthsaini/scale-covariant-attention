@@ -402,7 +402,7 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
   \input{figures/snippets/main_tables/tab_main.tex}
 \end{table}
 
-\paragraph{Data and seeds.} The main set (Table~\ref{tab:main}) is the Aesthetic-4K evaluation split with 4K references~\citep{zhang2025diffusion4k}: \ifmainfull{all 195 prompts. Four of them (\devprompts) were used during development, which favours \sca{} slightly}{\nmain{} prompts after excluding the four used during development (\devprompts)}. A fixed \nabl-prompt subset, chosen before any ablation ran, serves the ablations and the choice of the schedule. We also evaluate \ifhrgenfull{all 1000}{the first \nhrgen{} of the 1000} HRGen-1K prompts~\citep{rajabi2026area}, which have no references. Sizes are $4096^2$, $2048\times4096$, and $2048\times6144$ (height$\times$width), plus $6144^2$ and $8192^2$ for the operator without the schedule. Seeds hash the prompt id and seed label 0 and are shared by all methods; labels 1 and 2 repeat \ifseedfull{all prompts}{\nseed{} prompts}.
+\paragraph{Data and seeds.} The main set (Table~\ref{tab:main}) is the Aesthetic-4K evaluation split with 4K references~\citep{zhang2025diffusion4k}: \ifmainfull{all 195 prompts. Four (\devprompts) were used in development, which favours \sca{} slightly}{\nmain{} prompts after excluding the four used during development (\devprompts)}. A fixed \nabl-prompt subset, chosen before any ablation ran, serves the ablations and the schedule choice. We also evaluate \ifhrgenfull{all 1000}{the first \nhrgen{} of the 1000} HRGen-1K prompts~\citep{rajabi2026area}, which have no references. Sizes are $4096^2$, $2048\times4096$, and $2048\times6144$ (height$\times$width), plus $6144^2$ and $8192^2$ without the schedule. Seeds hash the prompt id and seed label 0 and are shared by all methods; labels 1 and 2 repeat \ifseedfull{all prompts}{\nseed{} prompts}.
 
 \paragraph{Models and baselines.} The main model is FLUX.1-dev~\citep{flux2024}. FLUX.1-Krea-dev (\nkrea{} prompts, against AReA) and FLUX.2-dev (50 prompts, against full attention, without the schedule) test other checkpoints, each calibrated on 16 prompts at $1024^2$. \sca{} uses the window schedule of Section~\ref{sec:sched} and one calibrated table at every size (Table~\ref{tab:hparams}). Full attention, AReA from its released code (Appendix~\ref{app:area}), DyPE~\citep{issachar2025dype}, SEGA~\citep{rajabi2026sega}, and SigMa~\citep{zhao2026sigma} share AReA's sampler: 28 Euler flow-matching steps, guidance 4.5, shift $\mu=1.15$, bf16, and tiled VAE decoding. UltraImage~\citep{zhao2025ultraimage} runs its guided two-stage recipe (30 steps per stage) and HRDiT~\citep{xue2026hrdit} its progressive recipe, each with its own budget (Appendix~\ref{app:additional_protocols}). Each process uses one NVIDIA GH200 120GB; worker logs give at least 123.3 GH200-hours for the operator without the schedule (Appendix~\ref{app:compute}).
 
@@ -413,12 +413,14 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
   \label{fig:qual_main}
 \end{figure}
 
-\paragraph{Metrics.} Preference and alignment scores are ImageReward, HPSv2, HPSv2.1, PickScore, CLIP score, and aesthetic score~\citep{xu2023imagereward,wu2023hpsv2,kirstain2023pickapic,radford2021clip,schuhmann2022aesthetic}. No-reference quality is MUSIQ on the full image and over four $1024^2$ crops (MUSIQ$_\text{c}$; Figure~\ref{fig:qual_main}), CLIP-IQA, and ARNIQA~\citep{ke2021musiq,wang2022clipiqa,agnolucci2024arniqa}. Distribution scores are FID and KID against all 195 official Aesthetic-4K references, Inception score at $299^2$, and patch FID and KID on the same crops~\citep{heusel2017fid,salimans2016improved}. Patch FID is our own definition and is never compared across papers. Intervals are 95\% paired percentile bootstraps over prompt ids (1000 or 2000 draws), which also resample references for FID and KID (Figure~\ref{fig:paired_area}; Appendix~\ref{app:metrics}).
+\paragraph{Metrics.} Preference and alignment scores are ImageReward, HPSv2, HPSv2.1, PickScore, CLIP score, and aesthetic score~\citep{xu2023imagereward,wu2023hpsv2,kirstain2023pickapic,radford2021clip,schuhmann2022aesthetic}. No-reference quality is MUSIQ on the full image and over four $1024^2$ crops (MUSIQ$_\text{c}$; Figure~\ref{fig:qual_main}), CLIP-IQA, and ARNIQA~\citep{ke2021musiq,wang2022clipiqa,agnolucci2024arniqa}. Distribution scores are FID and KID against all 195 Aesthetic-4K references, Inception score at $299^2$, and patch FID and KID on the same crops~\citep{heusel2017fid,salimans2016improved}. Patch FID is our own definition, never compared across papers. Intervals are 95\% paired percentile bootstraps over prompt ids that also resample FID and KID references (Appendix~\ref{app:metrics}).
 
 \paragraph{Duplication.} An open-vocabulary detector, Grounding DINO~\citep{liu2023groundingdino}, counts each subject the prompt names. An image is duplicated when its person or animal count exceeds the prompt's; 95 of the 195 prompts imply one, with subject lists from the prompt text alone. The detector matches our visual review on all 20 labelled images of people or animals (Appendix~\ref{app:dupfix}).\enlargethispage{-2\baselineskip}
 
 \subsection{Main results}
 \label{sec:main}
+
+\paragraph{\sca{} beats AReA on \hlWinsArea{} of \hlMetricsArea{} metrics at \textbf{$\hlSpeedArea\times$} the speed.} The gains include ImageReward (0.92 to \hlIrScaAbs, $\hlIrDelta$ $[\hlIrLo,\hlIrHi]$) and FID (145.8 to \hlFidScaAbs, $\hlFidDelta$ $[\hlFidLo,\hlFidHi]$); \hlUnresolvedAreaWord{} are unresolved (Tables~\ref{tab:main} and~\ref{tab:app_4k}; Figures~\ref{fig:teaser}, \ref{fig:qual_main}, and~\ref{fig:paired_area}). \sca{} takes \hlSecSca\,s per image and AReA \hlSecArea\,s. Our AReA run reproduces AReA's published FLUX.1-Krea-dev scores within 0.3 (Table~\ref{tab:published_compare}).
 
 \begin{wrapfigure}[21]{r}{0.46\linewidth}
   \wraptop
@@ -428,9 +430,7 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
   \label{fig:paired_area}
   \wrapbot
 \end{wrapfigure}
-\paragraph{\sca{} beats AReA on \hlWinsArea{} of \hlMetricsArea{} metrics at \textbf{$\hlSpeedArea\times$} the speed.} The gains include ImageReward (0.92 to \hlIrScaAbs, $\hlIrDelta$ $[\hlIrLo,\hlIrHi]$) and FID (145.8 to \hlFidScaAbs, $\hlFidDelta$ $[\hlFidLo,\hlFidHi]$); \hlUnresolvedAreaWord{} are unresolved (Tables~\ref{tab:main} and~\ref{tab:app_4k}; Figures~\ref{fig:teaser}, \ref{fig:qual_main}, and~\ref{fig:paired_area}). \sca{} takes \hlSecSca\,s per image and AReA \hlSecArea\,s. Our AReA run reproduces AReA's published FLUX.1-Krea-dev scores within 0.3 (Table~\ref{tab:published_compare}).
-
-\paragraph{Every shared-sampler baseline trails \sca{} on all ten per-image metrics.} This holds for DyPE, SEGA, and SigMa (Tables~\ref{tab:phase2_baselines} and~\ref{tab:panel46_deltas}). UltraImage, at over $\hlUltraTimeOver\times$ \sca{}'s time, and HRDiT's three-stage recipe, at $\hlHrditTimeX\times$, are significantly better on five and six per-image metrics, among them HPSv2.1 and PickScore, and worse on both MUSIQ scores (Table~\ref{tab:phase2_baselines}).
+\paragraph{Every shared-sampler baseline trails \sca{} on all ten per-image metrics.} This holds for DyPE, SEGA, and SigMa (Tables~\ref{tab:phase2_baselines} and~\ref{tab:panel46_deltas}). UltraImage, at over $\hlUltraTimeOver\times$ \sca{}'s time, and HRDiT's three-stage recipe, at $\hlHrditTimeX\times$, are significantly better on five and six per-image metrics, including HPSv2.1 and PickScore, and worse on both MUSIQ scores.
 
 \begin{table}[t]
   \caption{\textbf{Multi-stage recipes and sampling budgets.} $4096^2$, \npanel{} prompts, campaign times, columns and bold as in Table~\ref{tab:main}; against \sca{}: $^{+}$ significantly better, $^{\circ}$ unresolved, $^{\ast}$ no interval, unmarked significantly worse; budget rows use \sca{} without the schedule and are marked against it at 28 steps.\pendTabPanel{} Key result: progressive \sca{} matches HRDiT's preference scores at \hlCampProg\,s against \hlCampHrdit\,s; Tables~\ref{tab:panel46_deltas}, \ref{tab:phase2_budget}, and~\ref{tab:prog_deltas} add intervals.}
@@ -439,7 +439,7 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
   \input{figures/snippets/main_tables/tab_panel46.tex}
 \end{table}
 
-\paragraph{Progressive \sca{} matches HRDiT's preference scores in less than half the time.} HRDiT's lead thus comes from its schedule. Progressive \sca{} takes \hlCampProg\,s per image and HRDiT \hlCampHrdit\,s, as campaign means (Table~\ref{tab:panel46}; Figure~\ref{fig:progressive}). ImageReward differs by $\hlProgHrditIr$ $[\hlProgHrditIrLo,\hlProgHrditIrHi]$, HPSv2.1 by $\hlProgHrditHps$ $[\hlProgHrditHpsLo,\hlProgHrditHpsHi]$, and PickScore by $\hlProgHrditPick$ $[\hlProgHrditPickLo,\hlProgHrditPickHi]$. Only CLIP-IQA is significantly worse ($-0.9$ $[-1.8,-0.1]$, $\times100$), while HPSv2, MUSIQ, and ARNIQA are better; intervals that include zero do not establish equivalence (Table~\ref{tab:prog_deltas}). Against single-pass \sca{}, the parity costs fidelity: patch FID rises and MUSIQ$_\text{c}$ falls (Table~\ref{tab:panel46}; Appendix~\ref{app:budget}).
+\paragraph{Progressive \sca{} matches HRDiT's preference scores in less than half the time.} HRDiT's lead thus comes from its schedule. Progressive \sca{} takes \hlCampProg\,s per image and HRDiT \hlCampHrdit\,s (campaign means; Table~\ref{tab:panel46}; Figure~\ref{fig:progressive}). ImageReward differs by $\hlProgHrditIr$ $[\hlProgHrditIrLo,\hlProgHrditIrHi]$, HPSv2.1 by $\hlProgHrditHps$ $[\hlProgHrditHpsLo,\hlProgHrditHpsHi]$, and PickScore by $\hlProgHrditPick$ $[\hlProgHrditPickLo,\hlProgHrditPickHi]$. Only CLIP-IQA is significantly worse ($-0.9$ $[-1.8,-0.1]$, $\times100$), while HPSv2, MUSIQ, and ARNIQA are better; intervals including zero do not establish equivalence (Table~\ref{tab:prog_deltas}). Against single-pass \sca{}, parity costs fidelity: patch FID rises and MUSIQ$_\text{c}$ falls (Appendix~\ref{app:budget}).
 
 \subsection{Late duplication}
 \label{sec:dup}
@@ -485,7 +485,7 @@ Table~\ref{tab:ablation} changes one component at a time (examples in Figure~\re
 \subsection{Generality and sensitivity}
 \label{sec:generality}
 
-\textbf{Gains hold across seeds, prompt sets, and checkpoints.} Gains over AReA hold with seeds 1 and 2 and on \nhrgen{} HRGen-1K prompts (Tables~\ref{tab:generality} and~\ref{tab:phase2_general}). On FLUX.1-Krea-dev (\nkrea{} prompts), \sca{} wins \hlKreaWinsWord{} per-image metrics and loses none, in a third of the time, but trails AReA on patch FID ($+3.4$ $[1.6,7.1]$; Table~\ref{tab:krea_6144}). Without the schedule, calibrating on 4 to 16 prompts instead of 32 moves ImageReward by ${\le}\,0.012$, and gates of 0.85 and 0.93 lose some metrics. On FLUX.2-dev, the same operator beats full attention on nine of ten per-image metrics in half the time (ImageReward 0.75 to 1.20).
+\textbf{Gains hold across seeds, prompt sets, and checkpoints.} Gains over AReA hold with seeds 1 and 2 and on \nhrgen{} HRGen-1K prompts (Tables~\ref{tab:generality} and~\ref{tab:phase2_general}). On FLUX.1-Krea-dev (\nkrea{} prompts), \sca{} wins \hlKreaWinsWord{} per-image metrics and loses none, in a third of the time, but trails AReA on patch FID ($+3.4$ $[1.6,7.1]$; Table~\ref{tab:krea_6144}). Without the schedule, calibrating on 4 to 16 prompts, not 32, moves ImageReward by ${\le}\,0.012$, and gates of 0.85 and 0.93 lose some metrics. On FLUX.2-dev, the same operator beats full attention on nine of ten per-image metrics in half the time (ImageReward 0.75 to 1.20).
 
 % =====================================================================================
 \section{Related work}
@@ -497,7 +497,7 @@ Table~\ref{tab:ablation} changes one component at a time (examples in Figure~\re
 % =====================================================================================
 \section{Limitations and conclusion}
 \label{sec:limits}
-\paragraph{Limitations.} \textbf{Duplication is reduced, not solved.} \hlDupLimit{} We chose the schedule's sizes by hand on the 46-prompt subset, which is part of the evaluation set; there the rate was 15\% (\hlDupFsV{} of \hlDupFsN{}), below the full-set rate. \textbf{The schedule costs time and two no-reference metrics.} Timed back to back at $4096^2$, it adds \hlTimeOverhead{} to the clean time per image. On the 46 prompts, against \sca{} without it, ARNIQA falls by 0.007 and MUSIQ$_\text{c}$ by 1.7. Sharp copies explain part of this: MUSIQ$_\text{c}$ falls by 1.4 where duplicates disappear. Part is real softening: on the 13 prompts clean under both operators, ImageReward falls by 0.06 and ARNIQA by 0.014. \textbf{Other limits.} Multi-stage recipes keep higher learned preference scores than single-pass \sca{}, and on FLUX.1-Krea-dev \sca{} trails AReA on patch FID (Sections~\ref{sec:main} and~\ref{sec:generality}). The $6144^2$, $8192^2$, FLUX.2-dev, and sensitivity results use \sca{} without the schedule. SigMa's dev-matched profile gives lattice-degraded images, possibly from our port. We did not run ResDiT (no verified official code) or UltraImage's direct-extrapolation variant. Metrics and the duplication detector are automatic, and intervals ignore multiple comparisons.
+\paragraph{Limitations.} \textbf{Duplication is reduced, not solved.} \hlDupLimit{} We chose the schedule's sizes by hand on the 46-prompt subset, which is part of the evaluation set; there the rate was 15\% (\hlDupFsV{} of \hlDupFsN{}), below the full-set rate. \textbf{The schedule costs time and some quality.} Timed back to back at $4096^2$, it adds \hlTimeOverhead{} to the clean time per image. Against \sca{} without it, eight of ten per-image metrics fall slightly on HRGen-1K (ImageReward $-0.055$ $[-0.072,-0.038]$), and on the 46 prompts ARNIQA falls by 0.007 and MUSIQ$_\text{c}$ by 1.7. Sharp copies explain part of this: MUSIQ$_\text{c}$ falls by 1.4 where duplicates disappear. Part is real softening: on the 13 prompts clean under both operators, ImageReward falls by 0.06 and ARNIQA by 0.014. \textbf{Other limits.} Multi-stage recipes keep higher learned preference scores than single-pass \sca{}, and on FLUX.1-Krea-dev \sca{} trails AReA on patch FID (Sections~\ref{sec:main} and~\ref{sec:generality}). The $6144^2$, $8192^2$, FLUX.2-dev, and sensitivity results use \sca{} without the schedule. SigMa's dev-matched profile gives lattice-degraded images, possibly from our port. We did not run ResDiT (no verified official code) or UltraImage's direct-extrapolation variant. Metrics and the duplication detector are automatic, and intervals ignore multiple comparisons.
 
 \paragraph{Conclusion.} Each head's appetite for context can be measured once at the training resolution and reused at 4K for any window size. A global opening, four steps of shrinking windows, and weights read at the current ratio give the strongest and fastest single-pass training-free method we compared for FLUX.1-dev at $4096^2$. The schedule halves repeated subjects, from \hlDupPub\% to \hlDupV\% of prompts, though AReA's \hlDupArea\% is lower. Code: \codeurl.
 
@@ -521,18 +521,18 @@ Section~\ref{sec:experiments} states the protocol, including timing (Section~\re
 \counterwithin{table}{section}
 
 \section*{Appendix contents}
-\newcommand{\appline}[2]{\ref{#1} & #2\dotfill & \pageref{#1}\\}
+\newcommand{\appline}[2]{\ref{#1} & #2\nobreak\dotfill\nobreak\pageref{#1}\\}% number ends the entry's last line
 {\small\setlength{\tabcolsep}{3pt}
 \noindent\begin{minipage}[t]{0.485\linewidth}
-\begin{tabular}[t]{@{}l p{0.78\linewidth} r@{}}
-\multicolumn{3}{@{}l}{\textbf{Method}}\\
+\begin{tabular}[t]{@{}l >{\raggedright\arraybackslash}p{0.88\linewidth}@{}}
+\multicolumn{2}{@{}l}{\textbf{Method}}\\
 \appline{app:proofs}{Proofs}
 \appline{app:calib}{Calibration details and statistics}
 \appline{app:prompts}{Calibration prompts}
 \appline{app:impl}{Implementation details and cost}
 \appline{app:code}{Algorithms in full}
 \appline{app:hparams}{Hyperparameters}
-\multicolumn{3}{@{}l}{\textbf{Evaluation setup}}\\
+\multicolumn{2}{@{}l}{\textbf{Evaluation setup}}\\
 \appline{app:metrics}{Evaluation protocol and metrics}
 \appline{app:area}{Reproducing AReA}
 \appline{app:additional_protocols}{Other baselines and FLUX.2-dev}
@@ -540,8 +540,8 @@ Section~\ref{sec:experiments} states the protocol, including timing (Section~\re
 \end{tabular}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.485\linewidth}
-\begin{tabular}[t]{@{}l p{0.78\linewidth} r@{}}
-\multicolumn{3}{@{}l}{\textbf{Quantitative results}}\\
+\begin{tabular}[t]{@{}l >{\raggedright\arraybackslash}p{0.88\linewidth}@{}}
+\multicolumn{2}{@{}l}{\textbf{Quantitative results}}\\
 \appline{app:tables}{Extended results with intervals}
 \appline{app:phase2}{Additional paired intervals}
 \appline{app:budget}{Sampling-budget, guidance, and schedule checks}
@@ -549,10 +549,10 @@ Section~\ref{sec:experiments} states the protocol, including timing (Section~\re
 \appline{app:ps2}{Calibration table at non-square sizes}
 \appline{app:dupfix}{Late duplication: detector and variants}
 \appline{app:band}{The low-band duplication guard}
-\multicolumn{3}{@{}l}{\textbf{Compute and impact}}\\
+\multicolumn{2}{@{}l}{\textbf{Compute and impact}}\\
 \appline{app:compute}{Compute and reproducibility}
 \appline{app:impact}{Broader impact}
-\multicolumn{3}{@{}l}{\textbf{Qualitative results}}\\
+\multicolumn{2}{@{}l}{\textbf{Qualitative results}}\\
 \appline{app:galleries}{Qualitative galleries}
 \appline{app:failures}{Failure cases}
 \end{tabular}
@@ -681,7 +681,7 @@ This section lists the prompts behind the calibration of Section~\ref{sec:analys
 
 {\scriptsize
 \begin{multicols}{2}
-\begin{enumerate}[leftmargin=1.6em,itemsep=0pt,topsep=0pt,parsep=0pt]
+\begin{enumerate}[leftmargin=2.1em,itemsep=0pt,topsep=0pt,parsep=0pt]
   \item A candid street portrait of an elderly fisherman with a weathered face and a knitted wool cap, harbor in the background, overcast light
   \item Two children laughing while running through a lawn sprinkler on a summer afternoon, backlit by the sun
   \item A professional headshot of a young woman with curly red hair and freckles, soft studio lighting, neutral grey backdrop

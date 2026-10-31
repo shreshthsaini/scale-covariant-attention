@@ -699,7 +699,7 @@ def fig_ablation(a):
     if man["methods"] != methods:
         raise ValueError(f"ablation is frozen for methods {man['methods']}")
     nm = len(methods)
-    geo = Geo(nm, (nm - 1) * G_GROUP)
+    geo = Geo(nm, (nm - 1) * G_GROUP + 6)  # 3 pt each side: the last header, "SCA w/o sched.", is wider than a tile
     jobs = [dict(out=out, name=f"{e['short_id']}_{m}", label=m, res=res, sid=e["short_id"], px=geo.px(),
                  crops=[(tuple(e["crop_xy_size"]), "crop")]) for e in man["prompts"] for m in methods]
     t = run_grid(jobs, a.workers)

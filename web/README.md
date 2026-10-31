@@ -11,8 +11,7 @@ the native 64 (each head's weight read from the calibration table at the matchin
 log-linear between the scale-2 and scale-4 tables), and 1,024 bridge tokens (16 per cell of an 8 x 8 partition) in
 every local softmax (`.agent/notes/duplication_fix_20261027.md`, "ADOPTED operator"). Every SCA number and image is
 the final operator's where its run exists. What exists only for the operator without the schedule (`sca_nb`) is
-labelled "previous operator" on the page: 6144^2, FLUX.2-dev, HRGen-1K (until `results/hrgen1k_dev_sca_v2` lands),
-the Moai development prompt, the four curated local failures, and any trace video not yet re-rendered.
+labelled "previous operator" on the page: 6144^2, FLUX.2-dev, the Moai development prompt, the four curated local failures, and any trace video not yet re-rendered.
 
 ## Layout
 
@@ -55,14 +54,14 @@ marked; run with `nice -n 19` on shared nodes and keep ffmpeg at `-threads 4`.
 3. **Numbers**: `$PY web/build/build_numbers.py --fill web/index.html` reads `results/` and writes
    `build/numbers.json` (value, display string, source CSV and row filter for every key) and
    `assets/js/numbers.js`, then rewrites every `data-num` element in the page. It prints each value next to the
-   value the paper quotes and flags mismatches (292 of 292 agree with delivery `delivery_32xjiemn`). Two inputs of
+   value the paper quotes and flags mismatches (292 of 292 agree with delivery `delivery_tj1oh6am`). Two inputs of
    the final operator live outside `results/`, exactly as in the paper's own generator
    (`paper/figures/src/scav2_runs.py`): the eval.py paired deltas of the `*_sca_v2` runs (1000 prompt draws,
    `/scratch/09032/saini_2/sca/eval/<run>/{base/paired_deltas,extra/extra_paired_deltas}.csv`, which the evaluation
    tasks do not copy) and the `sca_v2` generation sidecars (`out/dupfix/sca_v2/4096x4096`) for the configuration
    constants and the schedule. Duplication rates come from `results/dup_audit_20261027` and each run's
-   `dup_rates_people.csv`. HRGen-1K switches to the final operator by itself once
-   `results/hrgen1k_dev_sca_v2/sca_v2_vs_area.csv` exists (then reword the HRGen-1K item of the results list).
+   `dup_rates_people.csv`. HRGen-1K reads the final operator's run (`results/hrgen1k_dev_sca_v2/sca_v2_vs_area.csv`,
+   landed 2026-10-30); the values without the schedule stay in `numbers.json` as `general.hrgen_prev.*`.
    Never type a number into the page by hand.
 4. **Method video**: `nice -n 19 $PY web/build/render_method_video.py` (matplotlib frames piped to the vendored ffmpeg
    at `/work/09032/saini_2/vista/library/ffmpeg-7.1-shared`, `-threads 4`; about 3 min on a GH200 node) writes

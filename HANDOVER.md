@@ -613,3 +613,28 @@ Addendum 2026-10-28 21:20: SCA14 (1105980, 8x10h) has not started after 18 h (gh
 backfill shapes: SCA15 1107850 (gh-dev 4x2h, IDLE_MAX 900), SCA16 1107851 (gh 2x6h), SCA17 1107852 (gh 4x8h). All drain
 the same spool; cancel the still-pending ones once enough are running. Pilots so far ran on the one guest GPU (cntrl-cmd
 1103038). Queue: 14 b_ (46-prompt check), 16 w_trace, 473 x_ reruns.
+
+## 22. 2026-10-31: HRGen-1K dev row folded in (paper owner; Section 21 is the migration)
+Build /scratch/09032/saini_2/sca/paper_builds/delivery_tj1oh6am (53 pp., main text 1-10 with Section 6 ending on the last
+line of p. 10, 0 overfull, 0 undefined, fresh unzip passes, no word box past a margin); hashes in .agent/notes/latest_delivery.md.
+- hrgen1k_dev_sca_v2 (eval z987, DONE 2026-10-30 20:24 UTC). Its task ran the paired bootstrap (2000 draws, seed 0) and copied
+  the CSVs with SHA256SUMS to results/hrgen1k_dev_sca_v2. HRGen-1K has no references, so there is no reference bootstrap and
+  no BOOTSTRAP_DONE. sca_v2 minus AReA, 1000 prompts at 4096^2: 10 of 10 per-image metrics significantly better, ImageReward
+  +0.764 [0.714, 0.816], HPSv2.1 +4.60, MUSIQ_c +12.56; absolute IR 0.73, aesthetic 6.19, CLIP 28.43, PickScore 21.52, HPSv2
+  27.96, IS 15.8, MUSIQ 45.1. Against SCA without the schedule: 8 of 10 significantly lower (MUSIQ and CLIP-IQA unresolved),
+  ImageReward -0.055 [-0.072, -0.038]. For comparison, the 195-prompt main set has 4 of 10 lower (aesthetic, ARNIQA, CLIP-IQA,
+  MUSIQ_c) and none higher.
+- Paper: swap_all.sh regenerated Table 4 (HRGen-1K row), Table L.3 (HRGen-1K column) and Table H.2 (FLUX.1-dev SCA row);
+  \pendTabGen and \pendAppPhaseGeneral are empty. Limitations now says "The schedule costs time and some quality" and gives
+  the HRGen-1K number; the old "two no-reference metrics" held only on the 46 prompts.
+- Render review of every page (subagent), fixed: widowed 4.1 heading (paired-area wrapfigure moved after the first 4.1
+  paragraph; wording trims on pp. 7, 8 and 10 keep Section 6 on p. 10, zero slack), appendix contents entry M (the page number
+  now ends the wrapped line; \appline macro, ragged column), calibration prompt labels inside the margin (leftmargin 2.1em),
+  Figure M.1 progressive label off the y-axis spine (fig_quality_time.py WRAP_PLOT offset), Figure T.7 header inside the
+  margin (fig_qual.py ablation grid 6 pt narrower; ablation.tex edited to the same \scaT line).
+- Web: build_numbers.py quotes the new HRGen-1K values (292 of 292 agree); the HRGen-1K fact reads the final operator and sits
+  next to the seeds; check_page PASS (desktop, phone, light, dark).
+- Still pending: hrgen1k_krea_sca_v2 (grey "SCA (ours), FLUX.1-Krea-dev" rows of Tables H.1 and H.2, caption notes). Its eval
+  task taskq/pending/a000_z988_eval_hrgen1k_krea_sca_v2.sh needs a GPU worker: no SCA job is in squeue, and
+  guest_worker_shared.sh on CPU node i617-044 (cntrl-cmd 1111046) cannot claim it because the node has no GPU. Once its DONE
+  exists: bash paper/figures/src/swap_all.sh, then paper/build_delivery.py, a render check of p. 26, commit.

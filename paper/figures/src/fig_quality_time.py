@@ -117,7 +117,7 @@ WRAP_PLOT = {  # as PLOT, offsets re-placed for the smaller canvas
     "sca_g7": ("budget", None, "left", "bottom"),
     "sca_s42": ("budget", None, "center", "top"),
     "sca_s56": ("budget", None, "left", "center"),
-    "sca_prog": ("prog", (-12, 13.5), "left", "bottom"),
+    "sca_prog": ("prog", (-8, 13.5), "left", "bottom"),  # -12 touched the y-axis spine (review 2026-10-31)
 }
 
 

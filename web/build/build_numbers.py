@@ -2,8 +2,8 @@
 """Every number the SCA project page prints, computed from the archived results.
 
 SCA is the final operator (sca_v2: the window schedule after the opening and 1,024 bridge tokens) wherever its run
-exists; rows that exist only for the operator without the schedule (sca_nb: 6144^2, FLUX.2-dev, HRGen-1K until
-its final run lands) keep sca_nb and the page labels them. Two inputs live outside results/, as in the paper's own
+exists; rows that exist only for the operator without the schedule (sca_nb: 6144^2, FLUX.2-dev) keep sca_nb and
+the page labels them. HRGen-1K reads the final operator's run (results/hrgen1k_dev_sca_v2, landed 2026-10-30). Two inputs live outside results/, as in the paper's own
 generator (paper/figures/src/scav2_runs.py): the eval.py paired deltas of the sca_v2 runs (1000 prompt draws,
 /scratch/09032/saini_2/sca/eval/<run>/{base/paired_deltas,extra/extra_paired_deltas}.csv; the evaluation tasks do
 not copy them) and the sca_v2 generation sidecars (out/dupfix/sca_v2/4096x4096) for its configuration constants.
@@ -212,9 +212,7 @@ PAPER_QUOTES = {
 # without the schedule are dropped where the paper no longer prints them.
 for _k in [k for k in PAPER_QUOTES if k.startswith(("general.hrgen.", "general.seed", "general.krea", "general.prog.",
                                                      "latency.growth"))]:
-    _v = PAPER_QUOTES.pop(_k)
-    if _k.startswith("general.hrgen."):
-        PAPER_QUOTES["general.hrgen_prev." + _k.split(".", 2)[2]] = _v   # published operator, grey in the paper
+    PAPER_QUOTES.pop(_k)   # 2026-10-31: the paper no longer prints the HRGen-1K values without the schedule
 PAPER_QUOTES.update({
     **{f"main.sca.{k}": v for k, v in zip(("time_clean", "time_camp", "ir", "hps21", "pick", "clip", "musiqc", "fid",
                                            "fidp"), ("77.1", "78.4", "1.25", "29.73", "23.12", "29.14", "60.1", "140.2",
@@ -243,6 +241,9 @@ PAPER_QUOTES.update({
     "sizes.2048x6144.worse_metrics": "aesthetic score, patch FID", "sizes.2048x6144.time_sca": "60.5",
     "sizes.2048x4096.n_better": "3", "sizes.2048x4096.n_worse": "3",
     "sizes.2048x4096.worse_metrics": "aesthetic score, CLIP score, CLIP-IQA", "sizes.2048x4096.time_sca": "41.1",
+    "general.hrgen.n": "1000", "general.hrgen.n_better": "10", "general.hrgen.n_total": "10",
+    "general.hrgen.ir": "+0.764 [+0.714, +0.816]", "general.hrgen.ir_delta": "+0.764", "general.hrgen.hps21": "+4.60",
+    "general.hrgen.musiqc": "+12.56",
     "general.seed1.ir_delta": "+0.306", "general.seed1.hps21": "+2.49", "general.seed1.musiqc": "+10.27",
     "general.seed2.ir_delta": "+0.264", "general.seed2.hps21": "+2.53", "general.seed2.musiqc": "+10.94",
     "general.krea.n": "195", "general.krea.ir_delta": "+0.020", "general.krea.hps21": "+0.91",
