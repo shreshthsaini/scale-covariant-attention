@@ -655,7 +655,8 @@ line of p. 10, 0 overfull, 0 undefined, fresh unzip passes, no word box past a m
 2026-11-02 04:12): commit and push of `results/`, `.agent/`, paper PDF and zip, `web/`, `HANDOVER.md`, `README.md`,
 `MIGRATION.md`; upload of new evaluation groups (with `DONE`), calibration files, frozen code, trace renders and phase-1
 image sets to the four private Hugging Face repos, capped at 97 GB of private storage, each upload verified and recorded
-in `results/migration_manifest.csv`. The loop PID and one status line per run are in `.agent/notes/sync_log.md`; loop
+in `results/migration_manifest.csv`. Loop PID 2553656 (started 2026-10-31 15:35); the PID and one status line per run
+are in `.agent/notes/sync_log.md`; loop
 output in `/scratch/09032/saini_2/sca/logs/sync_loop.log`. First run 2026-10-31 15:30: nothing new (the HRGen-1K dev
 sca_v2 evaluation was already uploaded by the migration), private storage 85.68 GB. Stop:
 `touch /scratch/09032/saini_2/sca/taskq/SYNC_STOP`. After the job ends, restart on the next compute node with the command
