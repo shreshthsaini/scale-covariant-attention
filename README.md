@@ -35,7 +35,8 @@ Private repository; paper under review. Start here if you are a fresh agent pick
 - `tests/`: unit tests for the kernels and the spool tooling.
 - `calib/`: calibration tables (`k1_1024.npz` is the FLUX.1-dev table every result uses; npz in Git LFS).
 - `third_party/`: pinned AReA, UltraImage, DyPE and SEGA sources; README lists all six baseline revisions.
-- `MIGRATION.md`, `repro/migration/`: the 2026-10-31 move off Vista and the scripts that built and checked it.
+- `MIGRATION.md`, `repro/migration/`: the 2026-10-31 move off Vista, the scripts that built and checked it, and the
+  incremental sync that keeps GitHub and Hugging Face current (`sync_incremental.sh`, `sync_hf.py`, `sync_loop.sh`).
 
 ## Where the heavy data lives
 
@@ -48,6 +49,13 @@ The project moved off TACC Vista on 2026-10-31; `MIGRATION.md` is the map and th
   feature banks, logs, prompts), `sca-generated-images` (headline and sca_v2 image sets as tar archives),
   `sca-frozen-code` (frozen code copies, web assets, trace renders). `results/migration_manifest.csv` lists every
   archive with its SHA256.
+- Keeping both current while work continues on Vista: `repro/migration/sync_loop.sh` runs
+  `repro/migration/sync_incremental.sh` every 6 hours on a compute node. Each run commits and pushes `results/`,
+  `.agent/`, `paper/main.pdf`, `paper/sca_overleaf.zip`, `web/`, `HANDOVER.md`, `README.md` and `MIGRATION.md`, and
+  uploads new evaluation outputs, calibration tables, frozen code, trace renders and phase-1 image sets to the private
+  Hugging Face repos while the account stays at or under 97 GB. `--dry-run` reports without changing anything; one
+  status line per run in `.agent/notes/sync_log.md`; stop with `touch /scratch/09032/saini_2/sca/taskq/SYNC_STOP`.
+  Details and restart: `MIGRATION.md` Section 7.
 - Vista paths the code still uses (`MIGRATION.md` Section 2 maps them to a new machine):
   `/scratch/09032/saini_2/sca/{out,eval,calib,code,taskq,logs}`; environments under
   `/work/09032/saini_2/vista/library/uv-envs/{sca,sca-metrics}` (uv only; torch 2.11 cu128, diffusers 0.39).

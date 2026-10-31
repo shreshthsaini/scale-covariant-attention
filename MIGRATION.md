@@ -18,7 +18,8 @@ its source path on Vista, file counts, bytes, SHA256 and status. Log of the migr
 
 The Hugging Face account is on the free plan, whose private storage is capped at 100 GB for the whole account. The four
 repositories hold 85.7 GB (calibration 0.28, eval outputs 1.88, frozen code 1.51, images 82.02), so other projects cannot add private Hugging Face data until the plan is upgraded (PRO
-gives 1 TB) or one of these sets is deleted.
+gives 1 TB) or one of these sets is deleted. The incremental sync (Section 7) keeps the account at or under 97 GB; the
+last line of `.agent/notes/sync_log.md` gives the current figure.
 
 ## 2. Paths the code assumes
 
@@ -163,3 +164,58 @@ python $M/write_manifest.py $ST results/migration_manifest.csv --uploaded sca-ca
 
 Without that, these sets can be regenerated from the task scripts in `repro/taskq_archive/` (each names its frozen code
 tag, prompts, seed and flags); their per-image metrics and every number they produced are already in `results/`.
+`write_manifest.py` rebuilds the manifest from `plan.tsv` alone, so once the sync of Section 7 has run, merge its output
+into `results/migration_manifest.csv` instead of overwriting the file (the sync adds rows that `plan.tsv` does not know,
+such as trace renders and revised archives).
+
+## 7. Keeping the mirrors current
+
+While work continues on Vista, `repro/migration/sync_loop.sh` runs `repro/migration/sync_incremental.sh` every 6 hours
+on a compute node, so GitHub and the four Hugging Face repositories follow the work without manual steps.
+
+One run of `sync_incremental.sh` is safe to repeat. A lock keeps runs from overlapping, and a run that finds nothing new
+makes no commit and no upload.
+
+1. GitHub: `git add -A` on `results/`, `.agent/`, `paper/main.pdf`, `paper/sca_overleaf.zip`, `web/`, `HANDOVER.md`,
+   `README.md` and `MIGRATION.md`, then one commit of only those paths, named `Sync: <date> <changed paths>`. What other
+   agents staged elsewhere stays staged. Files over 95 MB outside Git LFS, symlinks into `/scratch` and files that look
+   like credentials stay out and are named in the sync log. If `origin/main` moved, the script runs `git pull --rebase
+   origin main`; uncommitted edits of other agents are stashed and restored with their staged state, and only when the
+   incoming commits touch other files (otherwise the push waits for a later run). Then `git push origin HEAD:main`,
+   never forced.
+2. Hugging Face (`repro/migration/sync_hf.py`): the script reads the live listing of each repository and the manifest,
+   and uploads only what is new.
+   - `sca-eval-outputs`: each `eval/<group>` with a `DONE` marker that is not on the Hub, or whose file count or byte
+     total changed since its upload, archived as in the migration; `eval/_toplevel_files.tar.zst` when the loose files
+     change.
+   - `sca-calibration`: new or changed files under `calib/` (compared by SHA256), and `calib/PART_LINKS.txt`.
+   - `sca-frozen-code`: new frozen code copies (`code/<tag>.tar.zst`); new or changed trace renders as
+     `web_assets/trace/<method>/<prompt>.tar.zst` (renders already inside `web_assets.tar.zst` are skipped).
+   - `sca-generated-images`: image sets that `plan_archives.py` puts in phase 1 but that have no archive on the Hub yet,
+     headline first, then reruns, latency and pending-eval; `images/linktrees.tar` when the symlink trees change.
+
+   An upload happens only if the account's private storage stays at or under 97 GB (`SYNC_CAP_GB`). A set that does not
+   fit is skipped, named in the sync log and listed in the manifest as `planned_not_uploaded`. Every upload is checked
+   (remote size and SHA256) and recorded in `results/migration_manifest.csv` and in the repository's `MANIFEST.csv`.
+   Image sets and frozen code that change after their upload are reported, not uploaded again. Nothing is deleted on
+   scratch or on the Hub: new archives fill empty slots of `hf_staging/`, revised ones go to `hf_staging/sync/rev/<run>/`.
+   Inputs modified in the last 15 minutes, evaluation groups without `DONE` and image sets named by a pending or running
+   task wait for a later run.
+3. One status line per run goes to `.agent/notes/sync_log.md`. When the manifest changed, the manifest and the log are
+   committed and pushed; otherwise the line reaches GitHub with the next sync commit.
+
+```bash
+bash repro/migration/sync_incremental.sh --dry-run   # report what a run would do, change nothing
+bash repro/migration/sync_incremental.sh             # one sync
+# every 6 hours until the stop file exists; compute node only, detached; the loop writes its PID to the sync log
+setsid nohup bash repro/migration/sync_loop.sh >> /scratch/09032/saini_2/sca/logs/sync_loop.log 2>&1 < /dev/null &
+touch /scratch/09032/saini_2/sca/taskq/SYNC_STOP    # stops the loop within a minute
+```
+
+The loop ends with the Slurm job that hosts it (first started 2026-10-31 on i617-044, job 1111046, which ends
+2026-11-02 04:12). To keep syncing, start the same command on the next node after removing a leftover `SYNC_STOP`. To
+send a new paper-critical image set, add its `<campaign>/<method>/<size>` key to `HEADLINE`, `RERUN` or `PENDING_EVAL`
+in `plan_archives.py`. Not synced: `logs/`, `wandb/`, `prompts/`, `misc_scratch_files` and web assets other than the
+trace renders (their migration archives stay as they are); `calib/` in this repository stays the migration snapshot,
+and the Hugging Face copy is the current one. Per-run logs and build records:
+`/scratch/09032/saini_2/sca/hf_staging/sync/{runs,built}/`.
