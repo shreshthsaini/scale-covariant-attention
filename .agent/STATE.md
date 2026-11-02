@@ -8,7 +8,7 @@ build (paper/build_delivery.py), two render-review cycles, delivery with fresh-u
 ## Status and next action
 - WARNING: controller job 1111046 on i617-044 ends 2026-11-02 04:12; this session dies then. Files on /work persist.
 - Done: meta_review.md (all dispositions); deferred specs in /scratch/09032/saini_2/sca/taskq/hold_review_round/README.md;
-  decisions 1 to 7 applied, decisions 8 and 9 for Table 1, decision 10 in part; delivery delivery_0r7c7qpg (55 pp, main 1-10).
+  decisions 1 to 7 applied, decisions 8 and 9 for Table 1, decision 10 in part; delivery delivery_2duo3frk (55 pp, main 1-10).
   Open FIX items are listed under "NOT YET DONE" in HANDOVER.md Section 24 (start there).
 - In progress: main.tex edits in this order: (1) abstract/intro/bullets/conclusion framing (decision 1),
   (2) Section 2.3/2.4 duplication mechanism + 28-step tie (decisions 2, 3), (3) table generators (Krea cells,

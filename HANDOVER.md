@@ -696,7 +696,9 @@ Applied this pass (commits a3503ce, b462139, 5895abb, ff17113, 2ffea28 and the d
   in the caption (gen_main_tables.py).
 - Decision 10 (part): Figure 1 top row dropped (trim of teaser.pdf; caption lead plus two sentences, curated and pointing to
   the uncurated gallery); Figure 7 states n; ARNIQA on the x100 scale in Limitations; page 7 \enlargethispage removed;
-  main text ends on page 10 with about 3 lines of slack.
+  main text ends on page 10 with about 3 lines of slack; main-text sentences over 35 words split (bullet 3, Sections
+  2.3, 2.4 and 4 setup, Proposition 2, conclusion). Delivery: /scratch/09032/saini_2/sca/paper_builds/delivery_2duo3frk
+  (55 pp., 0 overfull, 0 undefined, fresh unzip passes); hashes in .agent/notes/latest_delivery.md.
 NOT YET DONE (next agent; the controller job on i617-044 ends 2026-11-02 04:12 and ends this session): Table 2 to 4 significance
 convention (one code), Table 4 intervals and Dup., Table H.1 ranking within block, operator labels in the row names of
 Tables L.1 (krea_6144), N.1, L.3 to L.5; the remaining sentences over 35 words (python3 -I long.py scan: intro bullets,
