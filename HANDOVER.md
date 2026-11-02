@@ -711,3 +711,17 @@ bullets 1, sentence length 0, method diagram 1 (pending figure agent), equations
 table 2, finding paragraphs 2, ablations 1, plots under 6 pt 0, qualitative grid 1, limitations 2, reproducibility 2,
 appendix 2, float placement 1, captions 1, colours 1, dashes and section symbol 1. Mean 1.23 with two zeros: not
 shippable under the house rule until the long sentences and sub-6 pt figure text are fixed.
+
+## 25. 2026-11-02 04:05 CT: session node i617-044 ends 04:12; allocation at 79 SU (no GPU work possible here)
+State: review round 1 done (.agent/notes/review_round1/: three reviews and meta_review.md); revision round 1 pushed
+(6d87526, build delivery_2duo3frk, 55 pp, rubric 1.23 with two zeros). Figure redesign (Figure 3, D.1, calibration
+figures) was in progress: see .agent/notes/figure_redesign_20261102.md and figures/src/ for its state.
+Next agent, in order: (1) finish revision round 1's open items listed in Section 24 (Tables 2-4 one significance
+convention, Table 4 intervals and Dup., Table H.1 ranking, "without the schedule" row names, captions of Figures 4, 5,
+A.1, D.1, B.1 to bold lead plus two sentences, Figures 4a, 5b, 6 fixes, pages 17 and 21 half blank, all figure text
+at least 6 pt); (2) land the redesigned Figure 3/D.1/calibration figures; (3) re-run the three reviewers on the new
+build and fix anything blocking; (4) delivery build, push, publish the PDF. GPU-deferred experiments: taskq/hold_review_round
+(README with order and GPU-hours; needs a new allocation or another machine, see MIGRATION.md). The 6-hourly sync loop
+(repro/migration/sync_loop.sh) also dies with this node; restart it on the next node (MIGRATION.md Section 7).
+User directive 2026-11-02: finished oral-standard paper by morning; framing per meta_review.md (equal-or-better quality
+at 2.6x AReA's speed on FLUX.1-dev, parity on Krea, duplication stated as a weakness; never "much better" in general).
