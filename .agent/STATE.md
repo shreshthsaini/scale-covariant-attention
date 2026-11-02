@@ -1,29 +1,28 @@
-# SCA live state, 2026-10-29 21:30 CDT (paper rewrite around sca_v2; Opus paper owner, subagent of the SCA lead)
+# SCA live state, 2026-11-02 03:40 CST (review round 1 revision; Opus revision author, subagent of the SCA lead)
 
 ## Goal
-Rewrite paper/ around sca_v2 (opening + shrinking windows 128/112/96/80 + matched pi + 1,024-token bridge in the LOCAL
-softmax, code sca/attn.py sca_dedup_forward); swap every table to sca_v2 numbers as groups land; deliver build + notes.
+Apply every "FIX" item of .agent/notes/review_round1/meta_review.md to paper/main.tex and the scripted tables,
+build (paper/build_delivery.py), two render-review cycles, delivery with fresh-unzip check, update
+.agent/notes/latest_delivery.md and HANDOVER.md Section 24 (rubric self-score), commit, pull --rebase, push.
 
 ## Status and next action
-- DELIVERED 2026-10-30 09:20: commit a51e9ae pushed; build delivery_32xjiemn (53 pp, main 1-10, 0 overfull,
-  0 undefined, fresh unzip ok). latest_delivery.md and HANDOVER 20.1 updated. No background tasks left.
-- Pending: hrgen1k_dev_sca_v2, hrgen1k_krea_sca_v2 (grey cells). NEXT (any agent): when their eval DONE exists,
-  follow the Swap procedure in .agent/notes/paper_v2_rewrite_20261029.md (swap_all.sh + HRGen prose by hand).
+- WARNING: controller job 1111046 on i617-044 ends 2026-11-02 04:12; this session dies then. Files on /work persist.
+- Done: meta_review.md (all dispositions); deferred specs in /scratch/09032/saini_2/sca/taskq/hold_review_round/README.md.
+- In progress: main.tex edits in this order: (1) abstract/intro/bullets/conclusion framing (decision 1),
+  (2) Section 2.3/2.4 duplication mechanism + 28-step tie (decisions 2, 3), (3) table generators (Krea cells,
+  Table 1 groups/Time/Dup header, Table 4 intervals), (4) labels "SCA without the schedule", (5) appendix F.2
+  hand-set table, J.1 AReA note, limitations (decision 4), (6) sentences over 35 words, captions, figures 1/4/5/6.
+- Check `git log origin/main` and `git diff --stat` to see which steps landed before continuing.
+
 ## Map
 | note | read it when |
 |---|---|
-| .agent/notes/duplication_fix_20261027.md (end) | exact sca_v2 definition, 46-prompt evidence |
-| .agent/notes/state_20261020_final_pass.md | previous STATE (Oct 20 final pass) |
-| .agent/notes/latest_delivery.md | last delivery hashes |
-| .agent/notes/rubric_20261030.md | review 2 scorecard (22 items) and AReA verdict |
-| .agent/notes/paper_v2_rewrite_20261029.md | macro system, pending hand edits, claims to re-check, page budget |
-| results/dup_audit_20261027/rates_*_people.txt | duplication rates (46 and 195 prompts) |
+| .agent/notes/review_round1/meta_review.md | dispositions (the work list) |
+| .agent/notes/paper_v2_rewrite_20261029.md | macro system, swap_all.sh procedure |
+| .agent/notes/state_20261029_paper_v2.md | previous STATE |
+| .agent/notes/duplication_fix_20261027.md | sca_v2 definition, 46-prompt evidence |
+| results/dup_audit_20261027/review_round1_cpu/pairs.csv | McNemar p for dup comparisons (46, 195) |
 
 ## Decisions
-- Bridge lives in the local softmax (code), not the global branch as the lead's brief says; paper follows the code.
-- Window schedule is fixed by hand (not calibrated); only the weight is read from the table. Paper says so.
-- Old numbers stay visible behind \pend{} until each group lands (generator emits it); no \todo in the build.
-- main.tex has one writer (me); subagents edit only paper/figures/src, snippets and figure PDFs.
-
-## Open questions
-- None yet.
+- Figure agent owns figures/src/method.tex, method_zoom (D.1), Appendix B calibration figures; commit only own files.
+- No GPU, no sbatch; never alter a measured number.
