@@ -48,8 +48,9 @@ os.environ.setdefault("SOURCE_DATE_EPOCH", "0")  # byte-identical PDF on rerun
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import patheffects
+from matplotlib.colors import LinearSegmentedColormap, LogNorm
 from matplotlib.lines import Line2D
-from matplotlib.patches import PathPatch, Rectangle
+from matplotlib.patches import FancyBboxPatch, PathPatch, Rectangle
 from matplotlib.path import Path as MPath
 from PIL import Image, ImageEnhance
 from scipy.stats import rankdata
@@ -86,7 +87,15 @@ TILE, WINDOW, POOL = 8, 64, 4
 TILE_RC = (12, 14)        # query tile (row, column) in tile units, on the church tower
 KEY_OFFSET, KEY_STEP = 1, 4
 
-W, H = sf.TEXT, 1.72      # 5.5 in by 1.72 in
+W, H = sf.TEXT, 1.62      # 5.5 in by 1.62 in
+FS_TITLE, FS_SUP = 8.5, 6.5   # panel titles as in Figure 3 (method.tex)
+FS_LAB, FS_NUM = 7.5, 7.0     # labels; numbers and tick labels
+LOCAL_TEXT, GLOBAL_TEXT = "#A85F12", "#245A96"  # darker amber and blue for text (method.tex)
+ZOOM_R = 20              # (b) tiles show the tokens within Chebyshev radius 20 of the query
+DMIN, DMAX = 0.1, 100.0  # (b) colour scale: mass density vs. uniform, log; clipped at both ends
+HEAT_A = 0.88            # heatmap opacity over the grey photo
+MASS_CMAP = LinearSegmentedColormap.from_list(
+    "mass", ["#FFFBF5", sf.LOCAL_LIGHT, sf.LOCAL, "#9C5512", "#4A2606"])
 COL = {"local": sf.LOCAL, "mid": sf.INK, "global": sf.GLOBAL}
 DOT_GREY = "#A9B1B9"
 BAND_GREY = "#ECEEF0"
@@ -228,7 +237,13 @@ def load() -> dict:
     cv = {k: np.array([float(c[k]) for c in curves]) for k in curves[0]}
     rings = {}
     for row in read_csv("rings.csv"):
-        rings.setdefault(row["role"], []).append(float(row["opacity"]))
+        rg = rings.setdefault(row["role"], dict(density=[], share=[]))
+        rg["density"].append(float(row["density_vs_uniform"]))
+        rg["share"].append(float(row["share"]))
+    outer = (NATIVE ** 2 - (2 * RADII[-1] + 1) ** 2) / NATIVE ** 2   # 3007 of the 4096 tokens
+    for role, rg in rings.items():
+        assert abs(sum(rg["share"]) - heads[role]["share_r16"]) < 1e-5
+        rg["outside"] = (1.0 - heads[role]["share_r16"]) / outer      # beyond 16 tokens, derived
     return dict(x=x, y=y, r=r, heads=heads, curves=cv, rings=rings)
 
 
@@ -270,28 +285,33 @@ def annulus(q: float, r_out: int, r_in: int | None) -> MPath:
     return MPath(verts, codes)
 
 
-def letter(fig, x_in, y_in, ch, title):
-    fig.text(x_in / W, y_in / H, ch, fontsize=sf.FS_PANEL, fontweight="bold", va="baseline", color=sf.INK)
-    fig.text((x_in + 0.11) / W, y_in / H, title, fontsize=sf.FS_TICK, va="baseline", color=sf.INK)
+def title(fig, x_in, y_in, text, sup=None):
+    """Panel title "(a) Name" in bold 8.5 pt sans as in Figure 3; `sup` prints as a 6.5 pt bold superscript."""
+    t = fig.text(x_in / W, y_in / H, text, fontsize=FS_TITLE, fontweight="bold", va="baseline", ha="left",
+                 color=sf.INK)
+    if sup:
+        bb = t.get_window_extent(renderer=fig.canvas.get_renderer())
+        fig.text(bb.x1 / fig.dpi / W + 0.004 / W, (y_in + 0.042) / H, sup, fontsize=FS_SUP, fontweight="bold",
+                 va="baseline", ha="left", color=sf.INK)
 
 
 def plot(d: dict, img_a: np.ndarray, img_b: np.ndarray) -> tuple:
     sf.use_style()
-    sf.script_floor(sf.FS)  # the h of pi_h in the 8 pt axis label prints at 6 pt, not 5.6
+    sf.script_floor(FS_LAB)  # the h of pi_h in the 7.5 pt labels prints at 6 pt
     top = H - 0.17                       # top edge of every panel
-    ya = 0.02
-    sa = top - ya                        # (a) square side
+    y_title = H - 0.115                  # title baseline
+    sa = 1.41                            # (a) square side; (b) is a square of the same side
+    ya = top - sa
     xa = 0.0
-    gap_t = 0.025                        # 1.8 pt white gutters between thumbnails
-    st = (sa - 2 * gap_t) / 3            # thumbnail side
-    xb = xa + sa + 0.09
-    xc, wc = 2.84, 1.27                  # (c) axes
-    xd = xc + wc + 0.12                  # (d) axes, y shared with (c)
-    wd = W - 0.06 - xd
-    yc = 0.31
+    xb = xa + sa + 0.07
+    gap_b = 0.05                         # white gutter of the 2 x 2 grid in (b)
+    tb = (sa - gap_b) / 2                # heatmap tile side
+    xc, wc = 3.25, 1.05                  # (c) axes
+    xd = xc + wc + 0.1                   # (d) axes, y shared with (c)
+    wd = W - 0.04 - xd
+    yc = 0.30
     hc = top - yc
     fig = plt.figure(figsize=(W, H))
-    y_letter = top + 0.055
 
     # (a) the two key sets on the 4096^2 output
     ax = fig.add_axes([xa / W, ya / H, sa / W, sa / H])
@@ -309,36 +329,65 @@ def plot(d: dict, img_a: np.ndarray, img_b: np.ndarray) -> tuple:
     halo = [patheffects.withStroke(linewidth=1.3, foreground="white")]
     ax.add_patch(Rectangle((tc * TILE * PX, tr * TILE * PX), TILE * PX, TILE * PX, fill=False, ec=sf.INK,
                            lw=0.65, zorder=5, path_effects=halo))
-    letter(fig, xa, y_letter, "a", "keys at 4096²")
+    title(fig, xa, y_title, "(a) Keys at 4096", sup="2")
 
-    # (b) three thumbnails, local-leaning on top
+    # (b) 2 x 2 grid: the three heads as ring-density heatmaps (zoomed to ZOOM_R tokens), then the colour scale
     roles = [r for r, _ in TARGETS]
     q = NATIVE // 2
-    for k, role in enumerate(roles):
-        y0 = ya + (2 - k) * (st + gap_t)
-        tx = fig.add_axes([xb / W, y0 / H, st / W, st / H])
+    lo, hi = q - ZOOM_R, q + ZOOM_R + 1
+    norm = LogNorm(vmin=DMIN, vmax=DMAX)
+    cells = {"local": (0, 0), "mid": (0, 1), "global": (1, 0)}
+    tiles = {}
+    for role in roles:
+        rr, cc = cells[role]
+        x0, y0 = xb + cc * (tb + gap_b), ya + (1 - rr) * (tb + gap_b)
+        tiles[role] = [round(x0, 4), round(y0, 4), round(tb, 4), round(tb, 4)]
+        tx = fig.add_axes([x0 / W, y0 / H, tb / W, tb / H])
         tx.imshow(img_b, extent=(0, NATIVE, NATIVE, 0), interpolation="none", zorder=0)
-        tx.set_xlim(0, NATIVE)
-        tx.set_ylim(NATIVE, 0)
+        tx.set_xlim(lo, hi)
+        tx.set_ylim(hi, lo)
         tx.axis("off")
+        rg = d["rings"][role]
+        tx.add_patch(PathPatch(annulus(q, NATIVE, RADII[-1]), fc=MASS_CMAP(norm(rg["outside"])), alpha=HEAT_A,
+                               lw=0, zorder=2))
         for j, r in enumerate(RADII):
-            tx.add_patch(PathPatch(annulus(q, r, RADII[j - 1] if j else None), fc=sf.LOCAL,
-                                   alpha=d["rings"][role][j], lw=0, zorder=2))
-            tx.add_patch(Rectangle((q - r, q - r), 2 * r + 1, 2 * r + 1, fill=False, ec=sf.MID, lw=0.3,
-                                   alpha=0.8, zorder=3))
-        tx.plot([q + 0.5], [q + 0.5], "o", ms=1.6, mfc=sf.INK, mec="none", zorder=4)
-        ym = (y0 + st / 2) / H
-        fig.add_artist(Line2D([(xb + st + 0.06) / W], [ym], marker="o", ms=4.0, mfc=COL[role], mec="white",
-                              mew=0.5, ls="none", transform=fig.transFigure))
-        fig.text((xb + st + 0.11) / W, ym, f"{d['heads'][role]['share_r16']:.2f}", fontsize=sf.FS_TICK,
-                 va="center", ha="left", color=sf.INK)
-    letter(fig, xb, y_letter, "b", "measured reach")
+            tx.add_patch(PathPatch(annulus(q, r, RADII[j - 1] if j else None), fc=MASS_CMAP(norm(rg["density"][j])),
+                                   alpha=HEAT_A, lw=0, zorder=2))
+            tx.add_patch(Rectangle((q - r, q - r), 2 * r + 1, 2 * r + 1, fill=False, ec="white", lw=0.45,
+                                   zorder=3))
+        tx.plot([q + 0.5], [q + 0.5], "o", ms=2.0, mfc=sf.INK, mec="white", mew=0.4, zorder=4)
+        lx, ly = x0 + 0.07, y0 + tb - 0.075
+        fig.patches.append(FancyBboxPatch(((lx - 0.045) / W, (ly - 0.05) / H), 0.32 / W, 0.1 / H,
+                                          boxstyle="round,pad=0,rounding_size=0.012", transform=fig.transFigure,
+                                          fc="white", ec="none", alpha=0.92, zorder=5))
+        fig.add_artist(Line2D([lx / W], [ly / H], marker="o", ms=4.0, mfc=COL[role], mec="white", mew=0.5,
+                              ls="none", transform=fig.transFigure, zorder=6))
+        fig.text((lx + 0.05) / W, ly / H, f"{d['heads'][role]['share_r16']:.2f}", fontsize=FS_NUM, va="center",
+                 ha="left", color=sf.INK, zorder=6)
+    title(fig, xb, y_title, "(b) Measured reach")
+    # colour scale in the fourth cell
+    x0, y0 = xb + tb + gap_b, ya
+    cb_w, cb_h = tb - 0.14, 0.075
+    cbx = fig.add_axes([(x0 + 0.07) / W, (y0 + 0.22) / H, cb_w / W, cb_h / H])
+    grad = np.logspace(np.log10(DMIN), np.log10(DMAX), 256)[None, :]
+    cbx.imshow(grad, aspect="auto", cmap=MASS_CMAP, norm=norm, alpha=HEAT_A,
+               extent=(np.log10(DMIN), np.log10(DMAX), 0, 1), interpolation="bilinear")
+    cbx.set_yticks([])
+    cbx.set_xticks([-1, 0, 1, 2], ["0.1", "1", "10", "100"])
+    cbx.tick_params(axis="x", length=2.0, width=0.5, labelsize=FS_NUM, pad=1.5)
+    for sp in cbx.spines.values():
+        sp.set_linewidth(0.4)
+        sp.set_color(sf.MID)
+    fig.text((x0 + tb / 2) / W, (y0 + 0.22 + cb_h + 0.06) / H, "mass density\nvs. uniform", fontsize=FS_NUM,
+             ha="center", va="bottom", color=sf.INK, linespacing=1.1)
 
     # (c) pi(sigma)
     cx = fig.add_axes([xc / W, yc / H, wc / W, hc / H])
     cv = d["curves"]
     s = cv["sigma"]
     cx.axvspan(SIGMA_G, 1.0, color=BAND_GREY, lw=0, zorder=0)
+    cx.axvline(SIGMA_G, color=sf.INK, lw=0.7, ls=(0, (2.4, 1.6)), zorder=2)
+    cx.text(SIGMA_G - 0.02, 0.0, r"$\sigma_g$", fontsize=FS_LAB, ha="right", va="bottom", color=sf.INK)
     cx.fill_between(s, cv["q25_all"], cv["q75_all"], color=sf.SCA_LIGHT, lw=0, zorder=1)
     cx.plot(s, cv["median_all"], color=sf.SCA, lw=1.4, zorder=3, solid_capstyle="round")
     i8 = list(cv["bin"]).index(BIN)
@@ -349,16 +398,17 @@ def plot(d: dict, img_a: np.ndarray, img_b: np.ndarray) -> tuple:
     cx.set_ylim(-0.03, 1.09)
     cx.set_xticks([0, 0.5, 1], ["0", "0.5", "1"])
     cx.set_yticks([0, 0.5, 1], ["0", "0.5", "1"])
-    cx.set_xlabel(r"noise level $\sigma$")
-    cx.set_ylabel(r"local weight $\pi_h$")
+    cx.tick_params(labelsize=FS_NUM)
+    cx.set_xlabel(r"noise level $\sigma$", fontsize=FS_LAB)
+    cx.set_ylabel(r"local weight $\pi_h$", fontsize=FS_LAB)
     for side in ("top", "right"):
         cx.spines[side].set_visible(False)
-    lab = dict(fontsize=sf.FS_TICK, ha="left")
-    cx.text(0.12, 0.975, "local", color=sf.LOCAL, va="bottom", **lab)
-    cx.text(0.46, 0.715, "median", color=sf.SCA, va="top", **lab)
-    cx.text(0.12, 0.47, "mid", color=sf.INK, va="top", **lab)
-    cx.text(0.20, 0.13, "global", color=sf.GLOBAL, va="bottom", **lab)
-    letter(fig, xc, y_letter, "c", "calibrated π")
+    lab = dict(fontsize=FS_LAB, ha="left")
+    cx.text(0.10, 0.975, "local", color=LOCAL_TEXT, va="bottom", **lab)
+    cx.text(0.40, 0.715, "median", color=sf.SCA, va="top", **lab)
+    cx.text(0.10, 0.47, "mid", color=sf.INK, va="top", **lab)
+    cx.text(0.20, 0.13, "global", color=GLOBAL_TEXT, va="bottom", **lab)
+    title(fig, xc - 0.33, y_title, r"(c) Calibrated $\pi_h$")
 
     # (d) pi against the share within 16 tokens
     dx = fig.add_axes([xd / W, yc / H, wd / W, hc / H], sharey=cx)
@@ -370,12 +420,13 @@ def plot(d: dict, img_a: np.ndarray, img_b: np.ndarray) -> tuple:
     dx.set_xlim(0, 1)
     dx.set_xticks([0, 0.5, 1], ["0", "0.5", "1"])
     dx.tick_params(axis="y", labelleft=False)
-    dx.set_xlabel("share within 16 tokens")
+    dx.tick_params(labelsize=FS_NUM)
+    dx.set_xlabel("share within 16 tokens", fontsize=FS_LAB)
     for side in ("top", "right"):
         dx.spines[side].set_visible(False)
     dx.text(0.97, 0.03, f"r = {d['r']:.2f}", transform=dx.transAxes, ha="right", va="bottom",
-            fontsize=sf.FS_TICK, color=sf.INK)
-    letter(fig, xd, y_letter, "d", "π vs. reach")
+            fontsize=FS_NUM, color=sf.INK)
+    title(fig, xd, y_title, r"(d) $\pi_h$ vs. reach")
 
     geometry = dict(
         query_tile_rc=list(TILE_RC),
@@ -386,7 +437,15 @@ def plot(d: dict, img_a: np.ndarray, img_b: np.ndarray) -> tuple:
                                   f"of 0..{RES_PX // (POOL * PX) - 1} (every {KEY_STEP}th)",
         pooled_key_px_centres=[float(c) for c in centres],
         keys_drawn=int(centres.size ** 2), keys_total=int((RES_PX // (POOL * PX)) ** 2))
-    return fig, geometry
+    layout = dict(
+        panels_in_xywh=dict(a=[xa, round(ya, 4), sa, sa], b=[round(xb, 4), round(ya, 4), sa, sa],
+                            b_tiles=tiles, c=[xc, yc, wc, round(hc, 4)], d=[round(xd, 4), yc, round(wd, 4),
+                                                                              round(hc, 4)]),
+        titles="'(a) Name' bold sans 8.5 pt on one baseline (Figure 3 style); superscript 6.5 pt",
+        text_pt=dict(labels=FS_LAB, numbers=FS_NUM, title=FS_TITLE, math_scripts_min=6.0),
+        panel_b="2 x 2 grid at the height of (a): local, mid (top), global (bottom left), colour scale",
+        panel_c_gate=f"dashed vertical at sigma_g = {SIGMA_G}, labelled; grey band beyond it")
+    return fig, geometry, layout
 
 
 def main():
@@ -413,7 +472,7 @@ def main():
     assert img.size == (RES_PX, RES_PX)
     img_a, path_a = thumb(img, 768, SAT_A, VEIL_A, "a_church")
     img_b, path_b = thumb(img, 256, SAT_B, VEIL_B, "b_church")
-    fig, geometry = plot(d, img_a, img_b)
+    fig, geometry, layout = plot(d, img_a, img_b)
     sf.save(fig, str(OUT), formats=("pdf",))
     cfg = meta["config"]
     provenance = dict(
@@ -437,13 +496,20 @@ def main():
         panel_b=dict(thumbnail="same image, 256 px, greyscale, white veil "
                                f"{VEIL_B}; stands in for the 1024^2 native view of 64x64 tokens",
                      query_token=[NATIVE // 2, NATIVE // 2], radii_tokens=list(RADII),
-                     opacity=f"alpha = {ALPHA_MAX} * min(1, density / {DENSITY_CAP}), density = ring share / "
-                             "(ring tokens / 4096), nominal (2r+1)^2 squares; label = share within 16 tokens",
+                     view=f"each tile shows tokens {NATIVE // 2 - ZOOM_R}..{NATIVE // 2 + ZOOM_R} per axis "
+                          f"(Chebyshev radius {ZOOM_R} around the query)",
+                     heatmap=f"colour = mass density vs. uniform (ring share / (ring tokens / 4096)), log scale "
+                             f"{DMIN} to {DMAX}, clipped, amber sequential map, opacity {HEAT_A} over the photo; "
+                             "beyond 16 tokens: (1 - share within 16) / (3007 / 4096), derived from the same "
+                             "data; label = share within 16 tokens; rings.csv opacity column is not drawn",
+                     densities={r: dict(rings=d["rings"][r]["density"], outside=d["rings"][r]["outside"])
+                                for r in d["rings"]},
                      note="measured masses average over sampled queries, including queries whose squares the "
                           "image border clips; the drawn rings use nominal areas"),
+        layout=layout,
         panel_c="pi_h(sigma) of the three heads (scale-2 table) at the 13 populated bin centres, joined linearly; "
                 "green = median of all 1368 heads, band = interquartile range; grey = sigma > 0.89 (global "
-                "branch only at inference); dots mark the bin of panel (d)",
+                "branch only at inference), dashed line labelled sigma_g at 0.89; dots mark the bin of panel (d)",
         panel_d=f"all 1368 heads at bin {BIN}: x = share within 16 tokens, y = pi_h (scale {SCALE}); Pearson r",
         selection=dict(rule="heads with image mass >= 0.5 at the bin; mid-ranks of pi and share scaled to (0,1); "
                             "nearest head to (q, q) in rank space",

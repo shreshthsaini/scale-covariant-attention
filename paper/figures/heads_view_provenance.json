@@ -3,11 +3,11 @@
   "script": "paper/figures/src/fig_heads_view.py",
   "printed_size_in": [
     5.5,
-    1.72
+    1.62
   ],
   "printed_size_texpt": [
     397.5,
-    124.3
+    117.1
   ],
   "calibration": "FLUX.1-dev at 1024^2 (64x64 tokens), 57 blocks x 24 heads x 14 sigma bins, 32 prompts; results/evidence/calib/k1_1024.npz",
   "share_definition": "share within r tokens = mass_mean[r] / (1 - mass_mean[0]): full-attention softmax mass within Chebyshev radius r of the query over the mass on image keys",
@@ -139,10 +139,97 @@
       8,
       16
     ],
-    "opacity": "alpha = 0.9 * min(1, density / 12.0), density = ring share / (ring tokens / 4096), nominal (2r+1)^2 squares; label = share within 16 tokens",
+    "view": "each tile shows tokens 12..52 per axis (Chebyshev radius 20 around the query)",
+    "heatmap": "colour = mass density vs. uniform (ring share / (ring tokens / 4096)), log scale 0.1 to 100.0, clipped, amber sequential map, opacity 0.88 over the photo; beyond 16 tokens: (1 - share within 16) / (3007 / 4096), derived from the same data; label = share within 16 tokens; rings.csv opacity column is not drawn",
+    "densities": {
+      "local": {
+        "rings": [
+          134.500645,
+          2.443545,
+          0.521895,
+          0.104307
+        ],
+        "outside": 0.13456728965746598
+      },
+      "mid": {
+        "rings": [
+          8.024828,
+          3.590006,
+          2.014617,
+          0.918666
+        ],
+        "outside": 0.8448166863984038
+      },
+      "global": {
+        "rings": [
+          1.190778,
+          1.030206,
+          0.934259,
+          0.792201
+        ],
+        "outside": 1.0576833681410043
+      }
+    },
     "note": "measured masses average over sampled queries, including queries whose squares the image border clips; the drawn rings use nominal areas"
   },
-  "panel_c": "pi_h(sigma) of the three heads (scale-2 table) at the 13 populated bin centres, joined linearly; green = median of all 1368 heads, band = interquartile range; grey = sigma > 0.89 (global branch only at inference); dots mark the bin of panel (d)",
+  "layout": {
+    "panels_in_xywh": {
+      "a": [
+        0.0,
+        0.04,
+        1.41,
+        1.41
+      ],
+      "b": [
+        1.48,
+        0.04,
+        1.41,
+        1.41
+      ],
+      "b_tiles": {
+        "local": [
+          1.48,
+          0.77,
+          0.68,
+          0.68
+        ],
+        "mid": [
+          2.21,
+          0.77,
+          0.68,
+          0.68
+        ],
+        "global": [
+          1.48,
+          0.04,
+          0.68,
+          0.68
+        ]
+      },
+      "c": [
+        3.25,
+        0.3,
+        1.05,
+        1.15
+      ],
+      "d": [
+        4.4,
+        0.3,
+        1.06,
+        1.15
+      ]
+    },
+    "titles": "'(a) Name' bold sans 8.5 pt on one baseline (Figure 3 style); superscript 6.5 pt",
+    "text_pt": {
+      "labels": 7.5,
+      "numbers": 7.0,
+      "title": 8.5,
+      "math_scripts_min": 6.0
+    },
+    "panel_b": "2 x 2 grid at the height of (a): local, mid (top), global (bottom left), colour scale",
+    "panel_c_gate": "dashed vertical at sigma_g = 0.89, labelled; grey band beyond it"
+  },
+  "panel_c": "pi_h(sigma) of the three heads (scale-2 table) at the 13 populated bin centres, joined linearly; green = median of all 1368 heads, band = interquartile range; grey = sigma > 0.89 (global branch only at inference), dashed line labelled sigma_g at 0.89; dots mark the bin of panel (d)",
   "panel_d": "all 1368 heads at bin 8: x = share within 16 tokens, y = pi_h (scale 2); Pearson r",
   "selection": {
     "rule": "heads with image mass >= 0.5 at the bin; mid-ranks of pi and share scaled to (0,1); nearest head to (q, q) in rank space",
