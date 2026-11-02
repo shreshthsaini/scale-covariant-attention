@@ -218,7 +218,7 @@ The schedule comes from a failure we measured. Our first operator switched every
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/method.pdf}
-  \caption{\textbf{\sca{} sampling and calibration.} (a)~After the global opening, windows shrink from 128 to 64 tokens and their softmax adds 1,024 bridge tokens (dots); heads weigh the branches by $\pi_h$ at $r=\max(H,W)/w$. (b)~At $1024^2$, $\pi$ per head and noise bin is fit to full attention at emulated ratios 2 and 4 (zoom: Figure~\ref{fig:method_zoom}).}
+  \caption{\textbf{Calibrate once, then mix per head.} (a)~At $1024^2$, $\pi_h$ is fit to full attention per head, $\sigma$, and $r$; (b)~at $4096^2$, sampling opens globally, shrinks the window over steps 9 to 12, and (c)~mixes both operators by $\pi_h$ at $r=256/w$. Figure~\ref{fig:method_zoom} draws the operators, the bridge tokens, and the mix at component level.}
   \label{fig:method}
 \end{figure}
 
@@ -745,7 +745,7 @@ This section expands Section~\ref{sec:branches} and Figure~\ref{fig:method}. Fig
 \begin{figure}[t]
   \centering
   \IfFileExists{figures/method_zoom.pdf}{\includegraphics[width=\linewidth]{figures/method_zoom.pdf}}{\fbox{\parbox{0.9\linewidth}{\centering method\_zoom.pdf pending}}}
-  \caption{\textbf{The operators at component level.} (a)~The global operator keeps the centre token $\kappa(b)$ of each $s\times s$ block as a key at coarse position $b$ and places query $i$ at $c(p_i)$ (Equation~\ref{eq:glob}). (b)~Each $t\times t$ query tile attends in one softmax to the text keys, the bridge set $\mathcal{B}$ (dots; Equation~\ref{eq:bridge}) and a window at original positions, clipped at the border (dashed: unclipped $a'$), whose side shrinks from $2n_0$ (dotted) to $n_0$ after the gate (Equation~\ref{eq:sched}); inset: block mask at $w=n_0$ (grey: text, dark amber: bridge; Equation~\ref{eq:loc}). (c)~Block 2, head 8 (chosen for a large gap; median 0.05) at $r=2$ (dashed) and $r=4$ (solid): window steps (amber ticks) read $\pi_{lh}$ at $r=\max(H,W)/w$, native steps at $r=4$; for $\sigma>\sigma_g$ every head returns $\Oglob_i$ (Equation~\ref{eq:mix}). (d)~The $r=4$ table, all $57\times24$ heads. Toy grid: $H=24$, $s=4$, $n_0=6$, $t=2$, one schematic bridge token per $6\times6$ cell.}
+  \caption{\textbf{The operators at component level.} (a)~The global operator keeps the centre token $\kappa(b)$ of each $s\times s$ block as a key at coarse position $b$ and places query $i$ at $c(p_i)$ (Equation~\ref{eq:glob}). (b)~Each $t\times t$ query tile attends in one softmax to the text keys $\mathcal{T}$, the bridge set $\mathcal{B}$ (dots; Equation~\ref{eq:bridge}), and a window at original positions, clamped at the border (dashed: unclipped start $a'$), whose side shrinks from $2n_0$ (dotted) to $n_0$ (filled); right: the block mask at $w=n_0$ (Equation~\ref{eq:loc}). (c)~$\pi_{lh}$ of the head of Figure~\ref{fig:method} at $r=2$ (dashed) and $r=4$ (solid); amber dots: the four window steps, read at $r=\max(H,W)/w$ (Equation~\ref{eq:sched}); green dots: native steps at $r=4$; for $\sigma>\sigma_g$ and text queries $O_i=\Oglob_i$ (Equation~\ref{eq:mix}). (d)~The $r=4$ table, $57\times24$ heads sorted per block, 14 noise bins. Toy grid: $H=24$, $s=4$, $n_0=6$, $t=2$, one schematic bridge token per $6\times6$ cell.}
   \label{fig:method_zoom}
 \end{figure}
 
