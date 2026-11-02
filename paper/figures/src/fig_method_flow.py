@@ -1,37 +1,42 @@
-"""Assets and data for the SCA method figure (fig:method, figures/src/method.tex), operator sca_v2.
+"""Assets and data for the SCA method figure (Figure 3, fig:method), operator sca_v2.
 
-The figure is TikZ (figures/src/method.tex, compiled to figures/method.pdf). This script writes what it
-draws from into figures/method_flow/:
+The figure is TikZ (figures/src/method.tex, compiled to figures/method.pdf). This script writes everything it
+draws from into figures/method_flow/ and records provenance in figures/method_provenance.json.
 
-  thumb.jpg   the clean sca_v2 sample at 4096^2 (FLUX.1-dev, seed 0), downsampled; panel (a) draws the
-              shrinking and native phases on it.
-  global.png  the opening-phase view: the block-centre token kappa(b) = s b + floor(s/2) of every s x s
-              block (s = 4) of the same sample, 64 x 64 cells, nearest-neighbour upsampled.
-  data.tex    TikZ macros: the per-step local share of the 28-step strip, the window frames (to scale on
-              the 256-token side), the query tile, the schematic bridge dots, and the two calibrated tables
-              (r = 2 and r = 4) of one block for panel (b).
+Panels (redesign of 2026-11-02):
+  (a) Calibrate at 1024^2. One calibration image; three key maps of one query at emulated ratio r = 4 on the
+      64 x 64 token grid, to scale: full attention (every key, grey), global (the block-centre key of every 4 x 4
+      block, a 16 x 16 lattice, blue), local (the 16 x 16 window around the query tile, amber); the closed-form
+      fit of one table cell, J(pi) = E - 2 pi B + pi^2 A on [0, 1] with minimum pi* = clip(B/A, 0, 1); and a
+      3 x 3 excerpt of the r = 4 table (the three heads of Figure 5, sigma = 0.10, 0.54, 0.90), the fitted cell
+      outlined.
+  (b) Mix per head. O^glob and O^loc into the weighted sum O_i; the 24 heads of one block at one sampling step
+      as stacked bars (amber pi_h, blue 1 - pi_h), sorted, the head of panel (c) outlined.
+  (c) Sample at 4096^2. Input noise; one head's pi_h over the 28 steps (0 before the gate, one value per step);
+      the shrinking window as nested frames (w = 128, 112, 96, 80, 64 tokens, to scale) on the real crop of the
+      output around one query tile; the output.
 
-Rules, all from sca/attn.py with the sca_v2 flags (--bridge-cells 8 --bridge-k 16 --win-sched
+Files in figures/method_flow/:
+  calib.jpg   calibration prompt calib00, seed 0, as a 1024 px stand-in (see CALIB_NOTE).
+  noise.png   seeded Gaussian RGB noise on a 64 x 64 grid, nearest-neighbour upsampled (an icon for x_1).
+  output.jpg  the sca_v2 output at 4096^2 (FLUX.1-dev, seed 0), downsampled.
+  crop.jpg    the 128-token (2048 px) window around the query tile of that output, downsampled.
+  data.tex    TikZ macros: the pi_h staircase, the bar heights, the table excerpt and its colours, the fit
+              parabola, the frame offsets.
+
+Rules (sca/attn.py with the sca_v2 flags --bridge-cells 8 --bridge-k 16 --win-sched
 0.88:128,0.86:112,0.84:96,0.82:80 --win-pi-match --win-pi-interp, gate 0.89):
+  gate     sigma > 0.89: every query takes O^glob, pi = 0 (eq:mix).
   window   w = 128, 112, 96, 80 while sigma > 0.88, 0.86, 0.84, 0.82 (SCAContext.window_now), else n0 = 64;
-           start a = clip(t tau + floor(t/2) - floor(w/2), 0, H - w) per axis (flex_layout), t = 8.
-  weight   pi at ratio r = max(H, W) / w, log-linear between the scale-2 and scale-4 tables, t = log2(r/2)
-           (SCAContext.table_interp); at w = n0 the scale-4 table (pi_table_now returns the published pi).
-  lookup   linear in sigma between all 14 bin centres, clamped (PiTable.__call__).
-  strip    share = mean of that weight over all 57 x 24 heads at the step's sigma; steps with sigma > 0.89
-           are global only (share 0).
-  bridge   1,024 tokens, 16 per cell of an 8 x 8 grid, chosen per block and step from the keys
-           (bridge_index); the drawn dots are SCHEMATIC (one per selected cell, positions seeded), since the
-           selection needs the model's keys, which were not recorded.
-  dots     the opening view's blue dots are SCHEMATIC too: one per 16 x 16 tokens (the operator keeps one
-           key per 4 x 4 block, 64 x 64 keys, which global.png shows as cells).
+           start a = clip(t tau + floor(t/2) - floor(w/2), 0, H - w) per axis, t = 8.
+  weight   pi at r = max(H, W) / w, log-linear between the r = 2 and r = 4 tables (SCAContext.table_interp);
+           at w = n0 the r = 4 table. Lookup linear in sigma between the 14 bin centres (PiTable.__call__).
+  check    the mean of that weight over all 57 x 24 heads reproduces the pi_trace stored with the output image at
+           every post-gate step (asserted below, tolerance 1e-9).
 
 Run from paper/figures/src on a compute node (no GPU needed):
   /work/09032/saini_2/vista/library/uv-envs/sca/bin/python -I fig_method_flow.py
 then compile:  ~/.local/bin/tectonic --outdir .. method.tex
-then record:   python -I fig_method_flow.py --prov    (provenance with the PDF check; needs pymupdf < 1.26,
-               e.g. uv run --no-project --with numpy --with pillow --with matplotlib --with 'pymupdf<1.26')
-or only check: python -I fig_method_flow.py --check
 """
 from __future__ import annotations
 
@@ -46,28 +51,32 @@ from PIL import Image
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+import imgsel  # noqa: E402  (checked final-operator images)
 import scafig  # noqa: E402  (palette and the paper-wide pi colormap)
 
 FIG = HERE.parent
+REPO = FIG.parent.parent
 OUT = FIG / "method_flow"
-NPZ = HERE / "data" / "k1_1024_pi.npz"
-TEX = HERE / "method.tex"
-PDF = FIG / "method.pdf"
+NPZ = REPO / "results" / "evidence" / "calib" / "k1_1024.npz"
 PROV = FIG / "method_provenance.json"
 
-SRC = Path("/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/"
-           "a4k_eval_4096_minus3145908358244441177_04bcf2b825_seed0.png")
-PROMPT_ID = "a4k_eval_4096_minus3145908358244441177"
+PID = "a4k_eval_4096_minus8343371271909676658"     # church and sheep, as in Figures 1 and 5
+CALIB_SRC = Path("/scratch/09032/saini_2/sca/out/smoke_sca_2048/calib00_f4378132a3_seed0.png")
+CALIB_NOTE = ("stand-in: the calibration pass stores sufficient statistics, not images. This is calibration prompt "
+              "calib00 (seed 0) rendered by SCA at 2048^2 (smoke run), resized to 1024 px; the image the pass "
+              "observed is the full-attention 1024^2 sample of the same prompt and seed.")
 
 H = 256                      # latent tokens per side at 4096^2
-N0, T_TILE, S = 64, 8, 4     # native side, query tile, block size
-SIGMA_G, MU, STEPS = 0.89, 1.15, 28
+N0, T = 64, 8                # native side, query tile
+GATE = 0.89
 WIN_SCHED = ((0.88, 128), (0.86, 112), (0.84, 96), (0.82, 80))
-TILE = (13, 11)              # query tile (x, y): tokens 104..111 x 88..95, between the eyes
-BLOCK = 7                    # zero-based; "block 8" (as in the previous version of the figure)
-CELLS, PER = 8, 16           # bridge grid and tokens per cell (drawn: one dot per selected cell)
-BRIDGE_SEED = 3
-PX_THUMB, PX_GLOB = 720, 512
+TILE = (12, 14)              # query tile (row, col), the tile of Figure 5a: tokens 96..103 x 112..119
+HEADS = {"local": (6, 9), "mid": (24, 20), "global": (11, 23)}   # (block, head), zero-based, Figure 5's heads
+CURVE = "global"             # head drawn in (c) and outlined in (b)
+TABLE_R = 4                  # ratio of the excerpt and the key maps
+TABLE_BINS = (1, 7, 12)      # sigma centres 0.105, 0.536, 0.896
+FIT_BIN = 7                  # the outlined cell: CURVE head, sigma = 0.536
+BAR_STEP = 20                # one-based sampling step of the bars (and the dot on the curve)
 
 
 def sha256(path: Path) -> str:
@@ -78,24 +87,8 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def schedule() -> list[float]:
-    t = np.linspace(1.0, 1.0 / STEPS, STEPS)
-    return [float(math.exp(MU) / (math.exp(MU) + (1.0 / s - 1.0))) for s in t]
-
-
-def window(sigma: float) -> int:
-    for s, w in WIN_SCHED:
-        if sigma > s:
-            return w
-    return N0
-
-
-def start(tau: int, w: int) -> int:
-    return int(np.clip(T_TILE * tau + T_TILE // 2 - w // 2, 0, H - w))
-
-
 def lookup(table: np.ndarray, centres: np.ndarray, sigma: float) -> np.ndarray:
-    """PiTable.__call__: linear between all bin centres, clamped at the ends."""
+    """PiTable.__call__: linear in sigma between bin centres, clamped at both ends."""
     j = int(np.searchsorted(centres, sigma))
     if j <= 0:
         return table[..., 0]
@@ -105,175 +98,163 @@ def lookup(table: np.ndarray, centres: np.ndarray, sigma: float) -> np.ndarray:
     return (1 - a) * table[..., j - 1] + a * table[..., j]
 
 
-def weight(d, sigma: float) -> np.ndarray:
-    """pi of every head at this sigma under sca_v2 (pi_table_now with win_pi_match and win_pi_interp)."""
+def window(sigma: float) -> int:
+    for s, w in WIN_SCHED:
+        if sigma > s:
+            return w
+    return N0
+
+
+def weight(z, sigma: float) -> np.ndarray:
+    """pi for every (block, head) at one step of the 4096^2 sampler."""
+    c = z["sigma_centers"]
+    if sigma > GATE:
+        return np.zeros(z["s4_pi_head"].shape[:2])
     w = window(sigma)
-    s4 = lookup(d["s4_pi_head"], d["sigma_centers"], sigma)
     if w == N0:
-        return s4
-    r = H / w
-    t = math.log(r / 2) / math.log(4 / 2)
-    return (1 - t) * lookup(d["s2_pi_head"], d["sigma_centers"], sigma) + t * s4
+        return lookup(z["s4_pi_head"], c, sigma)
+    t = math.log(H / w / 2) / math.log(2)
+    return (1 - t) * lookup(z["s2_pi_head"], c, sigma) + t * lookup(z["s4_pi_head"], c, sigma)
 
 
-def rgb255(hexcolor: str) -> tuple[int, int, int]:
-    h = hexcolor.lstrip("#")
-    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+def start(tau: int, w: int) -> int:
+    return int(np.clip(T * tau + T // 2 - w // 2, 0, H - w))
 
 
-def bridge_dots(phase: int, frames: list[tuple[int, int, int]], q: tuple[int, int]) -> list[tuple[int, int]]:
-    """Schematic bridge dots: one token in each selected cell of the 8 x 8 grid, kept clear of the drawn
-    frames and the query tile so that the marks stay legible."""
-    rng = np.random.default_rng(BRIDGE_SEED + phase)
-    side = H // CELLS
-    dots = []
-    for cy in range(CELLS):
-        for cx in range(CELLS):
-            if (cx + 3 * cy + 2 * phase) % 5:
-                continue
-            for _ in range(200):
-                x = cx * side + int(rng.integers(4, side - 4))
-                y = cy * side + int(rng.integers(4, side - 4))
-                near = any(min(abs(x - a), abs(x - a - w)) < 6 and a - 6 <= y <= a + w + 6 or
-                           min(abs(y - b), abs(y - b - w)) < 6 and b - 6 <= x <= b + w + 6
-                           for w, a, b in frames)
-                if not near and max(abs(x - q[0] - 4), abs(y - q[1] - 4)) > 14:
-                    dots.append((x, y))
-                    break
-    return dots
+def hexcol(rgb) -> str:
+    return "".join(f"{int(round(255 * v)):02X}" for v in rgb[:3])
 
 
-def build_images() -> dict:
-    img = Image.open(SRC).convert("RGB")
-    assert img.size == (4096, 4096), img.size
-    paths = {}
-    th = img.resize((PX_THUMB, PX_THUMB), Image.LANCZOS)
-    paths["thumb"] = OUT / "thumb.jpg"
-    th.save(paths["thumb"], quality=92)
-    arr = np.asarray(img, dtype=np.float32)
-    tok = 4096 // H                                     # 16 px per latent token
-    n = H // S                                          # 64 block centres per side
-    cells = np.zeros((n, n, 3), np.float32)
-    for by in range(n):
-        for bx in range(n):
-            ky, kx = S * by + S // 2, S * bx + S // 2   # kappa(b)
-            cells[by, bx] = arr[ky * tok:(ky + 1) * tok, kx * tok:(kx + 1) * tok].mean((0, 1))
-    glob = np.repeat(np.repeat(cells, PX_GLOB // n, 0), PX_GLOB // n, 1)
-    paths["global"] = OUT / "global.png"
-    Image.fromarray(np.clip(glob + 0.5, 0, 255).astype(np.uint8)).save(paths["global"])
-    return paths
+def pale(value: float, keep: float = 0.42) -> str:
+    """Cell fill: the paper's pi colour mixed with white, so black text stays legible."""
+    r, g, b, _ = scafig.PI_CMAP(float(np.clip(value, 0, 1)))
+    return hexcol([keep * v + (1 - keep) for v in (r, g, b)])
 
 
-def build_data() -> dict:
-    d = np.load(NPZ)
-    sig = schedule()
-    share = [0.0 if s > SIGMA_G else float(weight(d, s).mean()) for s in sig]
-    n_global = sum(s > SIGMA_G for s in sig)
-    shrink = [k for k, s in enumerate(sig) if s <= SIGMA_G and window(s) != N0]
-    q = (T_TILE * TILE[0], T_TILE * TILE[1])
-    frames = [(w, start(TILE[0], w), start(TILE[1], w)) for w in (128, 112, 96, 80, 64)]
-    dots_a = bridge_dots(0, frames[:4], q)
-    dots_b = bridge_dots(1, frames[4:], q)
-    blk2, blk4 = d["s2_pi_head"][BLOCK], d["s4_pi_head"][BLOCK]
-    lines = ["% Written by fig_method_flow.py (sca_v2) from src/data/k1_1024_pi.npz and the rules in its docstring."]
-    lines.append(r"\def\stepshare{%s}" % ",".join("%d/%.3f" % (k + 1, v) for k, v in enumerate(share)))
-    lines.append(r"\def\nglobal{%d}" % n_global)
-    lines.append(r"\def\nshrink{%d}" % len(shrink))
-    lines.append(r"\def\winframes{%s}" % ",".join("%d/%d/%d" % f for f in frames[:4]))
-    lines.append(r"\def\nativeframe{%d/%d/%d}" % frames[4])
-    lines.append(r"\def\qx{%d}\def\qy{%d}" % q)
-    lines.append(r"\def\bridgeA{%s}" % ",".join("%d/%d" % p for p in dots_a))
-    lines.append(r"\def\bridgeB{%s}" % ",".join("%d/%d" % p for p in dots_b))
-    for name, blk in (("pitableA", blk2), ("pitableB", blk4)):
-        cells = []
-        for c in range(14):                       # column c = bin 13 - c (sigma decreasing left to right)
-            for r in range(24):
-                R, G, B = rgb255(scafig.pi_color(blk[r, 13 - c]))
-                cells.append("%d/%d/%d/%d/%d" % (c, r, R, G, B))
-        lines.append(r"\def\%s{%s}" % (name, ",".join(cells)))
-    bar = []
-    for k in range(24):
-        R, G, B = rgb255(scafig.pi_color((k + 0.5) / 24))
-        bar.append("%d/%d/%d/%d" % (k, R, G, B))
-    lines.append(r"\def\pibar{%s}" % ",".join(bar))
-    lines.append(r"\def\gatex{%.4f}" % ((1.0 - SIGMA_G) * 14))                 # sigma_g in table columns
-    lines.append(r"\def\shrinkxa{%.4f}\def\shrinkxb{%.4f}" % ((1 - sig[shrink[0]]) * 14, (1 - sig[shrink[-1]]) * 14))
+def build_images(png: Path) -> dict:
+    OUT.mkdir(exist_ok=True)
+    img = Image.open(png).convert("RGB")
+    assert img.size == (4096, 4096)
+    img.resize((560, 560), Image.LANCZOS).save(OUT / "output.jpg", quality=92, subsampling=0)
+    px = 4096 // H
+    r0, c0 = start(TILE[0], 128), start(TILE[1], 128)
+    box = (c0 * px, r0 * px, (c0 + 128) * px, (r0 + 128) * px)
+    img.crop(box).resize((560, 560), Image.LANCZOS).save(OUT / "crop.jpg", quality=92, subsampling=0)
+    cal = Image.open(CALIB_SRC).convert("RGB").resize((1024, 1024), Image.LANCZOS)
+    cal.resize((300, 300), Image.LANCZOS).save(OUT / "calib.jpg", quality=92, subsampling=0)
+    rng = np.random.default_rng(20261102)
+    noise = np.clip(0.5 + 0.22 * rng.standard_normal((64, 64, 3)), 0, 1)
+    Image.fromarray((255 * noise).astype(np.uint8)).resize((256, 256), Image.NEAREST).save(OUT / "noise.png")
+    return {"crop_px_xyxy": list(box), "crop_tokens_rc": [r0, c0, 128]}
+
+
+def build_data(z, meta: dict) -> dict:
+    c = z["sigma_centers"]
+    sig = [float(s) for s in meta["sigmas"][:28]]
+    trace = {d["step"]: d["pi_mean"] for d in meta["pi_trace"]}
+    steps = []
+    for k, s in enumerate(sig):
+        p = weight(z, s)
+        if k in trace:
+            assert abs(float(p.mean()) - trace[k]) < 1e-9, (k, float(p.mean()), trace[k])
+        steps.append(p)
+    assert len(trace) == 20, "expected the 20 post-gate steps in the stored pi_trace"
+    bl, hd = HEADS[CURVE]
+    curve = [float(p[bl, hd]) for p in steps]
+    windows = [window(s) if s <= GATE else None for s in sig]
+
+    lines = ["% Written by fig_method_flow.py; do not edit by hand.",
+             f"% pi_h of block {bl + 1}, head {hd + 1} (one-based) at the 28 steps of the 4096^2 sampler."]
+    stair = []
+    for k, v in enumerate(curve, start=1):
+        stair += [f"({k - 0.5:g},{v:.4f})", f"({k + 0.5:g},{v:.4f})"]
+    lines.append(r"\def\PiStair{" + " -- ".join(stair) + "}")
+    lines.append(rf"\def\PiDotStep{{{BAR_STEP}}}\def\PiDotVal{{{curve[BAR_STEP - 1]:.4f}}}")
+
+    p = steps[BAR_STEP - 1][bl]
+    order = np.argsort(-p, kind="stable")
+    bars = ",".join(f"{p[h]:.4f}/{int(h == hd)}" for h in order)
+    lines.append(rf"\def\PiBars{{{bars}}}")
+
+    tab = z[f"s{TABLE_R}_pi_head"]
+    rows = []
+    for i, name in enumerate(("local", "mid", "global")):
+        b, h = HEADS[name]
+        vals = [float(tab[b, h, j]) for j in TABLE_BINS]
+        rows.append(vals)
+        for j, v in enumerate(vals):
+            lines.append(rf"\definecolor{{tab{i}{j}}}{{HTML}}{{{pale(v)}}}\expandafter\def\csname tabv{i}{j}\endcsname{{{v:.2f}}}")
+    lines.append(r"\def\TabSigmas{" + ",".join(f"{c[j]:.1f}" for j in TABLE_BINS) + "}")
+
+    si = [2, 4].index(TABLE_R)
+    A, B, E = (float(z["stats"][si, q, bl, hd, FIT_BIN]) for q in (0, 1, 2))
+    pstar = float(np.clip(B / A, 0, 1))
+    assert abs(pstar - float(tab[bl, hd, FIT_BIN])) < 1e-12
+    a, b = A / E, B / E
+    jmin, j0, j1 = 1 - b * b / a, 1.0, 1 - 2 * b + a
+    lines.append(rf"\def\FitA{{{a:.5f}}}\def\FitB{{{b:.5f}}}\def\FitPi{{{pstar:.4f}}}\def\FitJmin{{{jmin:.5f}}}"
+                 rf"\def\FitJlo{{{min(jmin, j0, j1):.5f}}}\def\FitJhi{{{max(j0, j1):.5f}}}")
+
+    offs = [(128 - w) / 256 for w in (128, 112, 96, 80, 64)]
+    lines.append(r"\def\FrameOffsets{" + ",".join(f"{o:.6f}" for o in offs) + "}")
+    q0 = (T * TILE[0] - start(TILE[0], 128)) / 128
+    q1 = (T * TILE[1] - start(TILE[1], 128)) / 128
+    lines.append(rf"\def\QueryRow{{{q0:.6f}}}\def\QueryCol{{{q1:.6f}}}\def\QuerySide{{{T / 128:.6f}}}")
     (OUT / "data.tex").write_text("\n".join(lines) + "\n")
-    return {"sigma": sig, "share": share, "n_global": n_global, "shrink": shrink, "frames": frames,
-            "query": q, "dots_a": dots_a, "dots_b": dots_b, "blk2": blk2, "blk4": blk4,
-            "n_prompts": int(d["n_prompts"]),
-            "weights": {k + 1: {"sigma": round(sig[k], 4), "w": window(sig[k]), "r": round(H / window(sig[k]), 4),
-                                "mean_pi": round(share[k], 4)} for k in range(STEPS) if sig[k] <= SIGMA_G}}
 
-
-def check_pdf() -> dict:
-    import fitz  # pymupdf < 1.26
-    page = fitz.open(PDF)[0]
-    w, h = page.rect.width, page.rect.height
-    sizes, outside = [], []
-    for block in page.get_text("dict")["blocks"]:
-        for line in block.get("lines", []):
-            for span in line["spans"]:
-                if not span["text"].strip():
-                    continue
-                sizes.append(round(span["size"], 2))
-                x0, y0, x1, y1 = span["bbox"]
-                if x0 < -0.5 or y0 < -0.5 or x1 > w + 0.5 or y1 > h + 0.5:
-                    outside.append(span["text"])
-    words = [wd[4] for wd in page.get_text("words")]
-    return {"width_bp": round(w, 2), "height_bp": round(h, 2), "min_text_pt": min(sizes), "max_text_pt": max(sizes),
-            "words": words, "n_words": len(words), "outside": outside}
+    return {
+        "curve_head_one_based": {"block": bl + 1, "head": hd + 1},
+        "curve_pi_per_step": [round(v, 4) for v in curve],
+        "sigma_per_step": [round(s, 4) for s in sig],
+        "window_per_step": windows,
+        "pi_trace_check": "mean over 57 x 24 heads equals the stored pi_trace at all 20 post-gate steps (|d| < 1e-9)",
+        "bars": {"block_one_based": bl + 1, "step_one_based": BAR_STEP, "sigma": round(sig[BAR_STEP - 1], 4),
+                 "ratio": H / windows[BAR_STEP - 1], "pi_sorted": [round(float(p[h]), 4) for h in order],
+                 "outlined_head_one_based": hd + 1},
+        "table": {"ratio": TABLE_R, "sigma_bins": list(TABLE_BINS),
+                  "sigma_centres": [round(float(c[j]), 4) for j in TABLE_BINS],
+                  "rows": {n: {"block_one_based": HEADS[n][0] + 1, "head_one_based": HEADS[n][1] + 1,
+                               "pi": [round(v, 4) for v in r]} for n, r in zip(("local", "mid", "global"), rows)},
+                  "outlined": {"row": "global", "sigma_bin": FIT_BIN}},
+        "fit": {"cell": {"block_one_based": bl + 1, "head_one_based": hd + 1, "ratio": TABLE_R, "sigma_bin": FIT_BIN},
+                "A": A, "B": B, "E": E, "pi_star": pstar,
+                "drawn": "J(pi)/E = 1 - 2 (B/E) pi + (A/E) pi^2 on [0, 1]"},
+    }
 
 
 def main():
-    OUT.mkdir(exist_ok=True)
-    data = build_data()
-    paths = {"thumb": OUT / "thumb.jpg", "global": OUT / "global.png"} if "--prov" in sys.argv else build_images()
+    z = np.load(NPZ)
+    png, digest = imgsel.final_png("4096x4096", PID)
+    png = Path(png)
+    meta = json.loads(png.with_suffix(".json").read_text())
+    assert meta["config"]["sca"]["pi_table_sha256"] == sha256(NPZ), "image not generated with this table"
+    geo = build_images(png)
+    data = build_data(z, meta)
     prov = {
-        "figure": "fig:method (main.tex Figure 2), operator sca_v2",
-        "tikz": "paper/figures/src/method.tex", "script": "paper/figures/src/fig_method_flow.py",
+        "figure": "fig:method (Figure 3), operator sca_v2",
+        "tikz": "paper/figures/src/method.tex",
+        "script": "paper/figures/src/fig_method_flow.py",
         "assets_dir": "paper/figures/method_flow",
         "palette": {"method_green": scafig.SCA, "local_amber": scafig.LOCAL, "global_blue": scafig.GLOBAL,
-                    "neutral_ink": scafig.INK, "neutral_mid": scafig.MID,
-                    "pi_colormap": "scafig.PI_CMAP (blue 0 = global, amber 1 = local)"},
-        "image": {"source_png": str(SRC), "source_sha256": sha256(SRC), "prompt_id": PROMPT_ID,
-                  "method": "sca_v2, FLUX.1-dev, 4096x4096, seed 0, 28 steps (out/dupfix/sca_v2)",
-                  "thumb": "clean sample, Lanczos to %d px" % PX_THUMB,
-                  "global": "block-centre token of every 4 x 4 block (64 x 64 cells), mean colour of its 16 x 16 px"},
-        "geometry": {"latent_side": H, "n0": N0, "t": T_TILE, "s": S, "query_tile_xy": list(TILE),
-                     "query_tokens_xy": list(data["query"]),
-                     "frames_w_ax_ay": [list(f) for f in data["frames"]],
-                     "drawn_to_scale": "frames and query tile in tokens of the 256-token side",
-                     "opening_dots": "schematic: one blue dot per 16 x 16 tokens",
-                     "bridge_dots": "schematic: one dot per selected cell of the 8 x 8 grid (real: 16 per cell, "
-                                    "1,024 tokens, chosen from the keys per block and step), seed %d; "
-                                    "shrink view %s, native view %s" % (BRIDGE_SEED, data["dots_a"], data["dots_b"])},
-        "schedule": {"mu": MU, "steps": STEPS, "sigma": [round(s, 4) for s in data["sigma"]], "sigma_g": SIGMA_G,
-                     "global_only_steps": list(range(1, data["n_global"] + 1)),
-                     "shrink_steps": [k + 1 for k in data["shrink"]], "win_sched": [list(x) for x in WIN_SCHED],
-                     "strip_local_share": [round(v, 3) for v in data["share"]],
-                     "post_gate_weights": data["weights"]},
-        "pi": {"data": "paper/figures/src/data/k1_1024_pi.npz", "data_sha256": sha256(NPZ),
-               "keys": ["s2_pi_head", "s4_pi_head"], "n_prompts": data["n_prompts"],
-               "block_zero_based": BLOCK, "block_label": BLOCK + 1,
-               "table_layout": "24 heads (rows) x 14 bins (columns, sigma 1 -> 0); r = 2 top, r = 4 bottom",
-               "s2_block": [[round(float(v), 4) for v in row] for row in data["blk2"]],
-               "s4_block": [[round(float(v), 4) for v in row] for row in data["blk4"]]},
-        "assets_sha256": {p.name: sha256(p) for p in paths.values()},
+                    "neutral_ink": scafig.INK, "full_grey": "#9AA3AC",
+                    "table_cells": "scafig.PI_CMAP mixed 42% with white"},
+        "calibration_table": {"path": str(NPZ.relative_to(REPO)), "sha256": sha256(NPZ)},
+        "output_image": {"path": str(png), "sha256": digest, "prompt_id": PID,
+                         "prompt": meta["config"]["prompt"], "method": meta["config"]["method"],
+                         "res": meta["config"]["res"], "seed": meta["config"]["seed"],
+                         "query_tile_rc": list(TILE), **geo},
+        "calibration_image": {"path": str(CALIB_SRC), "sha256": sha256(CALIB_SRC), "note": CALIB_NOTE},
+        "noise": "numpy default_rng(20261102), N(0.5, 0.22^2) per channel on 64 x 64, clipped; an icon, not the "
+                 "sampler's latent noise",
+        "key_maps": "vector, drawn to scale on the 64 x 64 grid at r = 4: 16 x 16 block-centre lattice "
+                    "(kappa(b) = 4 b + 2), 16 x 16 window centred on the query tile",
+        "frames": "w = 128, 112, 96, 80, 64 tokens, concentric on the query tile (no clamping at this tile), "
+                  "crop = the w = 128 window",
+        **data,
     }
-    prov["assets_sha256"]["data.tex"] = sha256(OUT / "data.tex")
-    if PDF.exists() and PDF.stat().st_mtime >= TEX.stat().st_mtime:
-        try:
-            prov["pdf"] = check_pdf()
-            prov["pdf"]["sha256"] = sha256(PDF)
-        except ImportError:
-            pass
     PROV.write_text(json.dumps(prov, indent=1) + "\n")
     print("wrote", OUT, PROV)
 
 
 if __name__ == "__main__":
-    if "--check" in sys.argv:
-        print(json.dumps(check_pdf(), indent=1))
-    else:
-        main()
+    main()

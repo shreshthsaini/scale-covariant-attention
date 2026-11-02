@@ -40,10 +40,10 @@ N_DOUBLE = 19
 WIN_SCHED = ((0.88, 128), (0.86, 112), (0.84, 96), (0.82, 80))
 GRID_4096, N0_FLUX = 256, 64
 CALIB_SCALES = (2, 4)
-# example head of panel (c), one-based: chosen because its scale-2 and scale-4 weights differ visibly on the
+# example head of panel (c), one-based: the head drawn in Figure 3; its scale-2 and scale-4 weights differ visibly on the
 # window steps (see stats["example_choice"]); the main diagram's block 29, head 18 has nearly equal tables there
-EX_BLOCK, EX_HEAD = 2, 8
-READ_STEP = 23                      # one-based native step whose weight feeds the mix node (sigma = 0.4627)
+EX_BLOCK, EX_HEAD = 12, 24             # the head of Figure 3 (zero-based 11, 23), large r = 2 vs r = 4 gap
+READ_STEP = 20                      # one-based native step whose weight feeds the mix node (sigma = 0.5582), as in Figure 3
 HX, VY = 4, 20                      # raster upsampling: pixels per head column, per bin row
 TOY = dict(H=24, s=4, n0=6, t=2, w=6, w_max=12, text_cols=6, bridge_cells=4)  # grid of panels (a) and (b)
 QUERY_TILES = ((3, 4), (11, 11))    # (x, y) tile indices drawn in panel (b)

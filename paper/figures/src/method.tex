@@ -1,214 +1,211 @@
-% SCA method diagram, operator sca_v2 (main.tex Figure 2, fig:method), TikZ, self-contained.
+% SCA method figure (Figure 3, fig:method), operator sca_v2. TikZ, self-contained apart from the data and
+% images that fig_method_flow.py writes into ../method_flow/ (its docstring and ../method_provenance.json record
+% every source, rule and value).
 %
 % Build from this directory:  ~/.local/bin/tectonic --outdir .. method.tex   (writes ../method.pdf)
-% Assets and data macros live in ../method_flow/ and are written by fig_method_flow.py (its docstring and
-% ../method_provenance.json record every source and rule). Built at full text width (5.5 in) and placed at
-% \linewidth, so sizes here are printed sizes: titles 8 pt bold sans, labels 7 pt, ticks 6.5 pt, math 8 pt
-% with 6.5 pt scripts (Helvetica metrics, Computer Modern math).
+% Drawn at print size: 1 unit = 1 pt, canvas 5.5 in x 128 pt, placed at \linewidth. Text: panel titles 8.5 pt
+% bold sans, labels 7.5 pt, numbers 7 pt, math 8 pt (scripts 6 pt). Helvetica metrics, Computer Modern math.
 %
-% Colours (sca_colors.tex): blue = global branch, amber = local branch, green = SCA's weight pi, grey =
-% neutral. The pi colormap runs from blue (pi = 0, global) through a light neutral to amber (pi = 1, local).
-%
-% (a) Apply at target, 4096^2 (256 x 256 tokens). Strip: the 28 steps; steps 1-8 (sigma > sigma_g = 0.89)
-%     are global only; later steps split into the mean local weight (amber, top) and global (blue). The four
-%     shrink steps 9-12 (outlined green) read pi_h at ratio r = 256 / w between the r = 2 and r = 4 tables.
-%     Thumbnails under each phase: opening, the block-centre view (64 x 64 cells; blue dots schematic, one
-%     per 16 x 16 tokens); shrink, the windows of side 128, 112, 96, 80 around the query tile (black), to
-%     scale; native, the n0 = 64 window. Amber dots: schematic bridge tokens (real: 16 in every cell of an
-%     8 x 8 grid, 1,024 tokens, recomputed per block and step).
-% (b) Calibrate at 1024^2: emulated ratios r = 2 and r = 4 on the native grid (16 x 16 schematic: window
-%     n / r, block-centre stride r, query black) fit the tables of block 8 (24 heads x 14 noise bins, sigma
-%     1 -> 0 left to right); sigma > sigma_g is veiled, and the green band is the sigma range of the shrink
-%     steps.
-
-\RequirePackage{fix-cm}
+% Layout (redesign of 2026-11-02, after the round-1 presentation review and the lead's brief):
+%   (a) Calibrate at 1024^2, left to right: one calibration image; the key maps of one query at emulated ratio
+%       r = 4, to scale on the 64 x 64 grid (full: every key; global: the 16 x 16 block-centre lattice; local:
+%       the 16 x 16 window); the closed-form fit J(pi) of one cell with pi* = clip(B/A); a 3 x 3 excerpt of the
+%       r = 4 table (dots: the three heads of Figure 5; sigma rising left to right as in Figures 5 and B.1).
+%   (b) Sample at 4096^2, left to right: input noise; one head's pi_h at each of the 28 steps (blue: global
+%       share, amber: local share; dashed: the gate sigma_g after step 8); the windows of steps 9 to 12 and 13 to 28
+%       as nested frames on the real 128-token crop around one query tile; the output.
+%   (c) Mix per head, a pale green panel fed by the table: O^glob (blue) and O^loc (amber) into the sum weighted
+%       1 - pi_h and pi_h, output O_i (green); bars: the 24 heads of the curve's block at step 20, sorted, amber
+%       pi_h under blue 1 - pi_h, the curve's head outlined (green dots link it to the curve).
+% Colours (sca_colors.tex): green = SCA (fit, weights, output), amber = local, blue = global, grey = neutral.
 \documentclass[border=0pt]{standalone}
+\RequirePackage{fix-cm}
 \usepackage[T1]{fontenc}
 \usepackage{helvet}
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{tikz}
-\DeclareMathSizes{8}{8}{6.5}{6.5}
 \usetikzlibrary{arrows.meta, calc}
+\DeclareMathSizes{7}{7}{6}{6}
+\DeclareMathSizes{7.5}{7.5}{6}{6}
+\DeclareMathSizes{8}{8}{6.2}{6}
+\DeclareMathSizes{8.5}{8.5}{6.5}{6}
 \input{sca_colors.tex}
 \input{../method_flow/data.tex}
+\definecolor{scaLocalText}{HTML}{A85F12}
+\definecolor{scaGlobalText}{HTML}{245A96}
 
-\newcommand{\sq}{\raisebox{0.55ex}{\fontsize{6.5}{7}\selectfont 2}}   % superscript 2, 6.5 pt
+\newcommand{\lab}{\fontsize{7.5}{9}\selectfont\sffamily}
+\newcommand{\sml}{\fontsize{7}{8}\selectfont\sffamily}
+\newcommand{\ttl}{\fontsize{8.5}{10}\selectfont\sffamily\bfseries}
+\newcommand{\mth}{\fontsize{8}{9.5}\selectfont}
+\newcommand{\Oglob}{O^{\mathrm{glob}}}
+\newcommand{\Oloc}{O^{\mathrm{loc}}}
+
 \tikzset{
-  every node/.style={inner sep=0pt, outer sep=0pt},
-  lbl/.style={font=\sffamily\fontsize{7}{8.4}\selectfont, text=scaInk},
-  sym/.style={font=\fontsize{8}{9.6}\selectfont, text=scaInk},
-  tick/.style={font=\sffamily\fontsize{6.5}{7.8}\selectfont, text=scaMid},
-  ttl/.style={font=\sffamily\bfseries\fontsize{8}{9.6}\selectfont, text=scaInk},
-  chip/.style={lbl, fill=white, inner xsep=1.2pt, inner ysep=0.9pt, rounded corners=0.8pt},
-  flow/.style={-{Stealth[length=3.2pt, width=2.8pt]}, line width=0.6pt},
-  halo/.style={draw=white, line width=1.2pt},
+  every node/.style={inner sep=0pt, outer sep=0pt, text=scaInk},
+  arr/.style={-{Stealth[length=3.2pt, width=2.8pt]}, line width=0.6pt, draw=scaInk},
+  blk/.style={rounded corners=2pt, line width=0.8pt},
+  gblk/.style={blk, draw=scaGlobal, fill=scaGlobalLight},
+  lblk/.style={blk, draw=scaLocal, fill=scaLocalLight},
+  sblk/.style={blk, draw=scaAccent, fill=scaAccentLight},
+  nblk/.style={blk, draw=scaFull, fill=white},
+  img/.style={line width=0.4pt, draw=scaRule},
 }
+
+% ---------------------------------------------------------------- key map at r = 4, 64 x 64 tokens, to scale
+% \KeyMap{x}{y}{side}{content}; content is \KMfull, \KMglobal or \KMlocal, drawn in token coordinates (row down).
+% Query tile (2 x 2 tokens at r = 4): tokens 26..27 x 30..31; its 16 x 16 window: rows 19..34, cols 23..38
+% (start = clip(2 tau + 1 - 8, 0, 48)); block centres kappa(b) = 4 b + 2.
+\newcommand{\KMfull}{\fill[scaFull!55] (0,0) rectangle (64,64);}
+\newcommand{\KMglobal}{\foreach \i in {0,...,15}{\foreach \j in {0,...,15}{\fill[scaGlobal] (4*\i+2.5,4*\j+2.5) circle[radius=0.82];}}}
+\newcommand{\KMlocal}{\fill[scaLocal] (23,19) rectangle (39,35);}
+\newcommand{\KeyMap}[4]{%
+  \pgfmathsetmacro{\kmu}{#3/64}%
+  \begin{scope}[shift={(#1,#2+#3)}, x=\kmu pt, y=-\kmu pt]
+    \fill[white] (0,0) rectangle (64,64);
+    #4
+    \draw[line width=0.5pt, scaFull] (0,0) rectangle (64,64);
+    \fill[scaInk] (29,25) rectangle (33,29);
+    \draw[white, line width=0.35pt] (29,25) rectangle (33,29);
+  \end{scope}}
+
+% ---------------------------------------------------------------- closed-form fit of one cell
+% \FitPlot{x}{y}{w}{h}: J(pi)/E over pi in [0,1], minimum at pi* (green); axes only at the bottom.
+\newcommand{\FitPlot}[4]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \pgfmathsetmacro{\fyl}{\FitJlo-0.18*(\FitJhi-\FitJlo)}
+    \pgfmathsetmacro{\fyh}{\FitJhi+0.05*(\FitJhi-\FitJlo)}
+    \draw[line width=0.5pt, scaMid] (0,0) -- (#3,0);
+    \draw[line width=0.5pt, scaMid] (0,0) -- (0,1.5) (#3,0) -- (#3,1.5);
+    \draw[line width=1pt, scaInk, domain=0:1, samples=50, smooth]
+      plot ({#3*\x}, {#4*((1-2*\FitB*\x+\FitA*\x*\x)-\fyl)/(\fyh-\fyl)});
+    \pgfmathsetmacro{\fpy}{#4*(\FitJmin-\fyl)/(\fyh-\fyl)}
+    \draw[line width=0.6pt, scaAccent, dash pattern=on 1.2pt off 0.9pt] ({#3*\FitPi},0) -- ({#3*\FitPi},\fpy);
+    \fill[scaAccent] ({#3*\FitPi},\fpy) circle[radius=1.5pt];
+  \end{scope}}
+
+% ---------------------------------------------------------------- table excerpt, r = 4
+% \TableX{x}{y}{cell w}{cell h}: lower-left corner at (x,y); three rows (local, mid, global head), sigma rising.
+\newcommand{\HeadDot}[3]{\fill[#3] (#1,#2) circle[radius=1.7pt];}
+\newcommand{\TableX}[4]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \foreach \i/\dc in {0/scaLocal, 1/scaInk, 2/scaGlobal}{
+      \pgfmathsetmacro{\ry}{(2-\i)*#4}
+      \HeadDot{-4.5}{\ry+0.5*#4}{\dc}
+      \foreach \j in {0,1,2}{
+        \fill[tab\i\j] (\j*#3, \ry) rectangle ++(#3,#4);
+        \node at ({(\j+0.5)*#3}, {\ry+0.5*#4}) {\sml\csname tabv\i\j\endcsname};
+      }
+    }
+    \draw[white, line width=0.8pt] (0,0) grid[xstep=#3, ystep=#4] (3*#3, 3*#4);
+    \draw[scaAccent, line width=0.9pt] (#3, 0) rectangle ++(#3, #4);
+    \foreach \s [count=\j from 0] in \TabSigmas{\node[anchor=south, text=scaMid] at ({(\j+0.5)*#3}, 3*#4+1.2) {\sml \s};}
+    \node[anchor=south east] at (-1.5, 3*#4+1.0) {\mth $\sigma$};
+  \end{scope}}
+
+% ---------------------------------------------------------------- pi_h of one head over the 28 steps
+% \PiPlot{x}{y}{w}{h}: plot box lower-left at (x,y). Blue: global share, amber: local share pi_h.
+\newcommand{\PiPlot}[4]{%
+  \pgfmathsetmacro{\ppu}{#3/28}%
+  \begin{scope}[shift={(#1,#2)}, x=\ppu pt, y=#4pt]
+    \fill[scaGlobalLight] (0.5,0) rectangle (28.5,1);
+    \fill[scaLocalLight] (0.5,0) -- \PiStair -- (28.5,0) -- cycle;
+    \draw[line width=1.1pt, scaAccent, line join=round] \PiStair;
+    \draw[line width=0.5pt, scaMid] (0.5,1) -- (0.5,0) -- (28.5,0);
+    \foreach \t in {1,9,13,28}{\draw[line width=0.5pt, scaMid] (\t,0) -- (\t,-0.06);
+      \node[anchor=north, text=scaMid] at (\t,-0.09) {\sml\t};}
+    \foreach \v in {0,1}{\draw[line width=0.5pt, scaMid] (0.5,\v) -- (0.05,\v);}
+    \node[anchor=east, text=scaMid] at (0.0,0) {\sml 0};
+    \node[anchor=east, text=scaMid] at (0.0,1) {\sml 1};
+    \draw[line width=0.6pt, scaInk, dash pattern=on 1.6pt off 1.1pt] (8.5,0) -- (8.5,1);
+    \node[anchor=north west] at (8.85,0.97) {\mth $\sigma_g$};
+    \fill[white] (\PiDotStep,\PiDotVal) circle[radius=2.3pt];
+    \fill[scaAccent] (\PiDotStep,\PiDotVal) circle[radius=1.5pt];
+  \end{scope}}
+
+% ---------------------------------------------------------------- nested windows on the real crop
+% \Frames{x}{y}{side}: crop = the w = 128 window; frames w = 128, 112, 96, 80, 64, step tabs on the left edges.
+\newcommand{\Frames}[3]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \node[anchor=south west] at (0,0) {\includegraphics[width=#3pt]{../method_flow/crop.jpg}};
+    \foreach \o [count=\k from 0] in \FrameOffsets{
+      \draw[white, line width=1.0pt] ({#3*\o},{#3*\o}) rectangle ({#3*(1-\o)},{#3*(1-\o)});
+      \draw[scaLocal, line width=0.55pt] ({#3*\o},{#3*\o}) rectangle ({#3*(1-\o)},{#3*(1-\o)});
+    }
+    \fill[scaInk] ({#3*\QueryCol},{#3*(1-\QueryRow-\QuerySide)}) rectangle ++({#3*\QuerySide},{#3*\QuerySide});
+    \draw[white, line width=0.4pt] ({#3*\QueryCol},{#3*(1-\QueryRow-\QuerySide)}) rectangle ++({#3*\QuerySide},{#3*\QuerySide});
+    \node[anchor=north west, fill=white, inner xsep=1pt, inner ysep=0.8pt] at (0.6,{#3-0.6}) {\sml 9};
+    \node[anchor=south west, fill=white, inner xsep=1pt, inner ysep=0.8pt] at ({#3*0.25+0.5},{#3*0.25+0.5}) {\sml 13+};
+  \end{scope}}
+
+% ---------------------------------------------------------------- stacked bars: 24 heads of one block
+% \Bars{x}{y}{w}{h}: amber pi_h at the bottom, blue 1 - pi_h on top; the head of the curve outlined.
+\newcommand{\Bars}[4]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \pgfmathsetmacro{\bw}{#3/24}
+    \foreach \v/\hi [count=\k from 0] in \PiBars{
+      \fill[scaLocal] ({\k*\bw+0.25}, 0) rectangle ({(\k+1)*\bw-0.25}, {#4*\v});
+      \fill[scaGlobal!85] ({\k*\bw+0.25}, {#4*\v}) rectangle ({(\k+1)*\bw-0.25}, #4);
+      \ifnum\hi=1
+        \draw[scaAccent, line width=0.8pt] ({\k*\bw-0.25}, -0.6) rectangle ({(\k+1)*\bw+0.25}, {#4+0.6});
+        \fill[white] ({(\k+0.5)*\bw}, {#4+3.4}) circle[radius=2.3pt];
+        \fill[scaAccent] ({(\k+0.5)*\bw}, {#4+3.4}) circle[radius=1.5pt];
+      \fi
+    }
+  \end{scope}}
 
 \begin{document}
-\begin{tikzpicture}[x=1cm, y=1cm]
-
-% ================================================================== geometry
-\def\W{13.97}        % 5.5 in
-\def\H{4.30}
-\useasboundingbox (0,0) rectangle (\W,\H);
-\def\AW{10.22}       % panel (a) width
-\def\TS{3.0}         % thumbnail side (256 tokens)
-\def\TY{0.0}         % thumbnail bottom
-\def\TA{0}  \def\TB{3.61}  \def\TC{7.22}      % thumbnail left edges
-\def\sya{3.42} \def\syb{3.64}                 % strip
-\pgfmathsetmacro{\cw}{\AW/28}
-\pgfmathsetmacro{\tu}{\TS/256}                % cm per token
-\pgfmathsetmacro{\tt}{\TY+\TS}                % thumbnail top
-\pgfmathsetmacro{\xg}{\nglobal*\cw}           % gate
-\pgfmathsetmacro{\xs}{(\nglobal+\nshrink)*\cw}% end of the shrink steps
-
-% ================================================================ (a) header and strip
-\node[ttl, anchor=north west] at (0, \H) {(a) Apply at target};
-% zoom wedges from the phases of the strip to their thumbnails
-\fill[scaGrid] (0,\sya) -- (\xg,\sya) -- (\TA+\TS,\tt) -- (\TA,\tt) -- cycle;
-\fill[scaGrid] (\xg,\sya) -- (\xs,\sya) -- (\TB+\TS,\tt) -- (\TB,\tt) -- cycle;
-\fill[scaGrid] (\xs,\sya) -- (\AW,\sya) -- (\TC+\TS,\tt) -- (\TC,\tt) -- cycle;
-\foreach \k/\p in \stepshare {
-  \pgfmathsetmacro{\xa}{(\k-1)*\cw}
-  \pgfmathsetmacro{\xb}{\xa+\cw}
-  \ifnum\k>\nglobal
-    \pgfmathsetmacro{\ys}{\sya+(1-\p)*(\syb-\sya)}
-    \fill[scaGlobal] (\xa,\sya) rectangle (\xb,\ys);
-    \fill[scaLocal]  (\xa,\ys) rectangle (\xb,\syb);
-  \else
-    \fill[scaGlobal] (\xa,\sya) rectangle (\xb,\syb);
-  \fi
-}
-\foreach \k in {1,...,27} { \draw[white, line width=0.35pt] (\k*\cw,\sya) -- (\k*\cw,\syb); }
-\draw[scaInk, line width=0.6pt] (\xg,\sya-0.05) -- (\xg,\syb+0.05);
-\node[sym, anchor=south] at (\xg, \syb+0.07) {$\sigma_g$};
-% the shrink steps read pi_h at ratio r (green, as the band in (b))
-\draw[white, line width=1.3pt] (\xg,\sya-0.02) rectangle (\xs,\syb+0.02);
-\draw[scaAccent, line width=0.8pt] (\xg,\sya-0.02) rectangle (\xs,\syb+0.02);
-\node[sym, anchor=south, text=scaAccent!80!black] at (0.5*\xg+0.5*\xs+0.12, \syb+0.07) {$\pi_h(r)$};
-% phase labels on the wedges
-\pgfmathsetmacro{\ly}{0.5*\sya+0.5*\tt}
-\node[lbl, anchor=center] at (\TA+0.5*\TS, \ly) {opening};
-\node[lbl, anchor=center] at (\TB+0.5*\TS, \ly) {shrink};
-\node[lbl, anchor=center] at (\TC+0.5*\TS, \ly) {native};
-
-% ================================================================ (a) thumbnails
-% -- opening: the block-centre view, global only
-\node[anchor=south west] at (\TA,\TY) {\includegraphics[width=\TS cm]{../method_flow/global.png}};
-\begin{scope}[shift={(\TA,\tt)}, x=\tu cm, y=-\tu cm]     % token (i, j), j down
-  \foreach \i in {8,24,...,248} { \foreach \j in {8,24,...,248} {
-    \fill[white] (\i,\j) circle[radius=0.95pt];
-    \fill[scaGlobal] (\i,\j) circle[radius=0.62pt];
-  } }
-\end{scope}
-\draw[scaGlobal, line width=0.9pt] (\TA,\TY) rectangle ++(\TS,\TS);
-
-% -- shrink: windows of side 128, 112, 96, 80 around the query tile, to scale
-\node[anchor=south west] at (\TB,\TY) {\includegraphics[width=\TS cm]{../method_flow/thumb.jpg}};
-\begin{scope}[shift={(\TB,\tt)}, x=\tu cm, y=-\tu cm]
-  \foreach \w/\ax/\ay in \winframes { \draw[halo, line width=0.95pt] (\ax,\ay) rectangle ++(\w,\w); }
-  \foreach \w/\ax/\ay [count=\n] in \winframes {
-    \pgfmathsetmacro{\op}{0.45+0.18*\n}
-    \draw[scaLocal, line width=0.65pt, draw opacity=\op] (\ax,\ay) rectangle ++(\w,\w);
-  }
-  \foreach \x/\y in \bridgeA {
-    \fill[white] (\x,\y) circle[radius=1.35pt];
-    \fill[scaLocal] (\x,\y) circle[radius=0.95pt];
-  }
-  \fill[white] (\qx-2.5,\qy-2.5) rectangle ++(13,13);
-  \fill[scaInk] (\qx,\qy) rectangle ++(8,8);
-  \coordinate (lab128) at (44,28);
-\end{scope}
-\node[chip, anchor=south west] at ($(lab128)+(0,0.06)$) {128};
-\draw[scaMid, line width=0.4pt] (\TB,\TY) rectangle ++(\TS,\TS);
-
-% -- native: the n0 = 64 window
-\node[anchor=south west] at (\TC,\TY) {\includegraphics[width=\TS cm]{../method_flow/thumb.jpg}};
-\begin{scope}[shift={(\TC,\tt)}, x=\tu cm, y=-\tu cm]
-  \foreach \w/\ax/\ay in \nativeframe {
-    \fill[scaLocal, opacity=0.18] (\ax,\ay) rectangle ++(\w,\w);
-    \draw[halo, line width=1.3pt] (\ax,\ay) rectangle ++(\w,\w);
-    \draw[scaLocal, line width=0.9pt] (\ax,\ay) rectangle ++(\w,\w);
-    \coordinate (lab64) at (\ax,\ay);
-  }
-  \foreach \x/\y [count=\n] in \bridgeB {
-    \fill[white] (\x,\y) circle[radius=1.35pt];
-    \fill[scaLocal] (\x,\y) circle[radius=0.95pt];
-    \ifnum\n=5 \coordinate (bref) at (\x,\y); \fi
-  }
-  \fill[white] (\qx-2.5,\qy-2.5) rectangle ++(13,13);
-  \fill[scaInk] (\qx,\qy) rectangle ++(8,8);
-\end{scope}
-\node[chip, anchor=south west] at ($(lab64)+(0,0.06)$) {64};
-\draw[white, line width=1.1pt] ($(bref)+(-0.06,-0.06)$) -- ++(-0.22,-0.22);
-\draw[scaInk, line width=0.45pt] ($(bref)+(-0.06,-0.06)$) -- ++(-0.22,-0.22);
-\node[chip, anchor=north east] at ($(bref)+(-0.24,-0.24)$) {bridge};
-\draw[scaMid, line width=0.4pt] (\TC,\TY) rectangle ++(\TS,\TS);
-
-% ================================================================ (b) calibration
-\def\BX{10.42}
-\path[fill=scaAccentLight!55, rounded corners=2.5pt] (\BX,0) rectangle (\W,\H);
-\node[ttl, anchor=north west] at (\BX+0.1, \H-0.06) {(b) Calibrate at 1024\sq};
-\def\TXa{11.42} \def\TXb{13.06}
-\def\RAa{2.12} \def\RAb{3.52}       % r = 2 table rows
-\def\RBa{0.55} \def\RBb{1.95}       % r = 4 table rows
-\pgfmathsetmacro{\tw}{(\TXb-\TXa)/14}
-\pgfmathsetmacro{\rh}{(\RAb-\RAa)/24}
-% emulated operators on the native grid (16 x 16 schematic): window n / r and block-centre stride r
-\def\gs{0.62} \def\gx{10.55}
-\pgfmathsetmacro{\gu}{\gs/16}
-\foreach \r/\yc/\lo/\hi/\st/\ce in {2/2.82/4/12/2/1, 4/1.25/6/10/4/2} {
-  \pgfmathsetmacro{\gy}{\yc-0.5*\gs}
-  \begin{scope}[shift={(\gx,\gy)}, x=\gu cm, y=\gu cm]
-    \fill[white] (0,0) rectangle (16,16);
-    \fill[scaLocalLight] (\lo,\lo) rectangle (\hi,\hi);
-    \foreach \i in {4,8,12} { \draw[scaRule, line width=0.25pt] (\i,0) -- (\i,16) (0,\i) -- (16,\i); }
-    \draw[scaLocal, line width=0.7pt] (\lo,\lo) rectangle (\hi,\hi);
-    \foreach \i in {0,...,15} { \foreach \j in {0,...,15} {
-      \pgfmathtruncatemacro{\mi}{mod(\i,\st)} \pgfmathtruncatemacro{\mj}{mod(\j,\st)}
-      \ifnum\mi=\ce \ifnum\mj=\ce \fill[scaGlobal] (\i+0.5,\j+0.5) circle[radius=0.42pt]; \fi\fi
-    } }
-    \fill[scaInk] (8,8) rectangle (9,9);
-    \draw[scaMid, line width=0.4pt] (0,0) rectangle (16,16);
-  \end{scope}
-  \node[sym, anchor=south] at (\gx+0.5*\gs, \yc+0.5*\gs+0.05) {$r{=}\r$};
-  \draw[flow, draw=scaMid] (\gx+\gs+0.05, \yc) -- (\TXa-0.05, \yc);
-}
-% tables of block 8: 24 heads x 14 noise bins, sigma decreasing left to right
-\foreach \c/\r/\R/\Gc/\B in \pitableA {
-  \definecolor{cellc}{RGB}{\R,\Gc,\B}
-  \fill[cellc] (\TXa+\c*\tw, {\RAb-(\r+1)*\rh}) rectangle ++(\tw,\rh);
-}
-\foreach \c/\r/\R/\Gc/\B in \pitableB {
-  \definecolor{cellc}{RGB}{\R,\Gc,\B}
-  \fill[cellc] (\TXa+\c*\tw, {\RBb-(\r+1)*\rh}) rectangle ++(\tw,\rh);
-}
-\foreach \ya/\yb in {\RAa/\RAb, \RBa/\RBb} {
-  \fill[white, opacity=0.55] (\TXa,\ya) rectangle (\TXa+\gatex*\tw,\yb);
-  \draw[scaInk, line width=0.5pt, dash pattern=on 1.5pt off 1pt] (\TXa+\gatex*\tw,\ya) -- (\TXa+\gatex*\tw,\yb);
-  \draw[scaMid, line width=0.4pt] (\TXa,\ya) rectangle (\TXb,\yb);
-}
-% sigma range of the shrink steps, read between the two tables
-\draw[halo] (\TXa+\shrinkxa*\tw,\RBa-0.04) rectangle (\TXa+\shrinkxb*\tw,\RAb+0.04);
-\draw[scaAccent, line width=0.8pt] (\TXa+\shrinkxa*\tw,\RBa-0.04) rectangle (\TXa+\shrinkxb*\tw,\RAb+0.04);
-% sigma axis
-\def\ay{0.25}
-\draw[flow, draw=scaMid, line width=0.5pt] (\TXa+0.2,\ay) -- (\TXb-0.2,\ay);
-\node[tick, anchor=east] at (\TXa+0.14,\ay) {1};
-\node[tick, anchor=west] at (\TXb-0.14,\ay) {0};
-\node[sym, anchor=center, fill=scaAccentLight!55, inner sep=1.2pt] at (0.5*\TXa+0.5*\TXb,\ay) {$\sigma$};
-% pi colour bar
-\def\bxa{13.27} \def\bxb{13.37}
-\pgfmathsetmacro{\seg}{(\RAb-\RBa)/24}
-\foreach \k/\R/\Gc/\B in \pibar {
-  \definecolor{barc}{RGB}{\R,\Gc,\B}
-  \fill[barc] (\bxa,\RBa+\k*\seg) rectangle (\bxb,\RBa+\k*\seg+\seg);
-}
-\draw[scaMid, line width=0.4pt] (\bxa,\RBa) rectangle (\bxb,\RAb);
-\node[tick, anchor=west] at (\bxb+0.06,\RAb-0.08) {1};
-\node[tick, anchor=west] at (\bxb+0.06,\RBa+0.08) {0};
-\node[sym, anchor=west] at (\bxb+0.05,0.5*\RBa+0.5*\RAb) {$\pi$};
-
+\begin{tikzpicture}[x=1pt, y=1pt]
+\useasboundingbox (0,0) rectangle (397.48,128);
+% ------------------------------------------------------------------ (a) calibrate
+\node[anchor=north west] at (0,128) {\ttl (a) Calibrate at 1024\textsuperscript{2}};
+\node[anchor=south west] at (0,76) {\includegraphics[width=34pt]{../method_flow/calib.jpg}};
+\draw[arr] (35.5,93) -- (41,93);
+\KeyMap{43}{84}{26}{\KMfull}
+\KeyMap{72}{84}{26}{\KMglobal}
+\KeyMap{101}{84}{26}{\KMlocal}
+\node[anchor=south east, text=scaMid] at (127,111.5) {\mth $r=4$};
+\node[anchor=north, text=scaMid] at (56,82.5) {\lab full};
+\node[anchor=north, text=scaGlobalText] at (85,82.5) {\lab global};
+\node[anchor=north, text=scaLocalText] at (114,82.5) {\lab local};
+\draw[arr] (128.5,97) -- (134,97);
+\draw[blk, draw=scaAccent, fill=white] (136,74) rectangle (198,116);
+\node[anchor=north west] at (139,114.5) {\mth $J(\pi)$};
+\FitPlot{144}{90}{46}{14}
+\node at (167,80) {\mth $\pi^\star=\mathrm{clip}(B/A)$};
+\draw[arr] (199.5,93) -- (205,93);
+\node[anchor=north, text=scaMid] at (215.5,75) {\sml head};
+\TableX{220}{76}{15}{8.5}
+% ------------------------------------------------------------------ (b) sample
+\node[anchor=north west] at (0,62) {\ttl (b) Sample at 4096\textsuperscript{2}};
+\node[anchor=south west] at (0,12) {\includegraphics[width=30pt]{../method_flow/noise.png}};
+\draw[arr] (32,27) -- (39,27);
+\PiPlot{56}{12}{100}{30}
+\node[anchor=east] at (48,40) {\mth $\pi_h$};
+\node[anchor=east, text=scaMid] at (51.5,5.6) {\sml step};
+\node[text=scaGlobalText] at ({56+4.5*100/28},27) {\lab global};
+\node[text=scaLocalText] at ({56+20*100/28},18) {\lab local};
+\draw[arr] (158,28) -- (165,28);
+\Frames{167}{4}{48}
+\draw[arr] (216.5,28) -- (222.5,28);
+\node[anchor=south west] at (224,4) {\includegraphics[width=48pt]{../method_flow/output.jpg}};
+% ------------------------------------------------------------------ (c) mix
+\fill[scaAccentLight!55, rounded corners=4pt] (278,0) rectangle (397.48,128);
+\node[anchor=north west] at (284,124) {\ttl (c) Mix per head};
+\node[gblk, minimum width=34pt, minimum height=14pt] (og) at (304,100) {\mth $\Oglob$};
+\node[lblk, minimum width=34pt, minimum height=14pt] (ol) at (304,28) {\mth $\Oloc$};
+\Bars{287}{50}{54}{28}
+\node[anchor=north, text=scaMid] at (314,47.5) {\sml heads};
+\node[circle, draw=scaInk, line width=0.8pt, fill=white, minimum size=10pt] (pl) at (358,64) {};
+\draw[line width=0.8pt, scaInk] (354.5,64) -- (361.5,64) (358,60.5) -- (358,67.5);
+\draw[arr, draw=scaGlobal] (og.east) -| (pl.north);
+\draw[arr, draw=scaLocal] (ol.east) -| (pl.south);
+\draw[arr] (342.5,64) -- (pl.west);
+\node[anchor=south, text=scaGlobalText] at (339,102) {\mth $1-\pi_h$};
+\node[anchor=north, text=scaLocalText] at (339,26) {\mth $\pi_h$};
+\node[sblk, minimum width=22pt, minimum height=14pt] (oi) at (383,64) {\mth $O_i$};
+\draw[arr] (pl.east) -- (oi.west);
+\draw[arr] (265.5,93) -- (272,93) -- (272,64) -- (285,64);
 \end{tikzpicture}
 \end{document}
