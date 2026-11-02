@@ -261,7 +261,7 @@ It is recomputed at every block and step with AReA's selection rule~\citep{rajab
 
 \begin{proposition}[Trained position range]
 \label{prop:range}
-Assume exact integer positions and $t\le n_0\le\min(H,W)$. Every query-key offset of the global operator, and every offset between an image query and a key of its window $\Win_{n_0}(i)$, is at most $n_0-1$ per axis. Each global-operator query sees the native $T+n_0^2$ keys.
+Assume exact integer positions and $t\le n_0\le\min(H,W)$. Every query-key offset of the global operator, and every offset between an image query and a key of its native window $\Win_{n_0}(i)$ (bridge keys and wider windows excluded), is at most $n_0-1$ per axis. Each global-operator query sees the native $T+n_0^2$ keys.
 \end{proposition}
 
 \begin{proposition}[Cost]
@@ -575,6 +575,7 @@ Let the keys of a query be partitioned into a near set $\Kset^{\mathrm{near}}$ a
 \begin{proof}
 Write $Z^{\mathrm{near}}=\sum_{j\in\Kset^{\mathrm{near}}}e^{\ell_j}$, so that $Z^{\mathrm{near}}O^{\mathrm{near}}=\sum_{j\in\Kset^{\mathrm{near}}}e^{\ell_j}v_j$, and likewise for the far set. Then $\Ofull=(Z^{\mathrm{near}}O^{\mathrm{near}}+Z^{\mathrm{far}}O^{\mathrm{far}})/(Z^{\mathrm{near}}+Z^{\mathrm{far}})$, and $Z^{\mathrm{near}}/(Z^{\mathrm{near}}+Z^{\mathrm{far}})=m$.
 \end{proof}
+The lemma motivates the two-branch form; \sca{}'s key sets are not a partition. Block centres can fall inside the window, text keys enter both branches, and a bridge token inside the window appears twice in the local softmax (not deduplicated), which doubles its weight there.
 
 \begin{proof}[Proof of Proposition~\ref{prop:range}]
 \emph{Global operator.} Image queries sit at $c(p_i)\in\Gnat=[n_0]^2$ and text queries at $0\in\Gnat$; subsampled keys sit at $b\in\Gnat$ and text keys at $0$. Any two points of $[n_0]^2$ differ by at most $n_0-1$ per axis. The key count is $T+|\Gnat|=T+n_0^2$.
@@ -1046,7 +1047,7 @@ This section gives the settings of the other baselines in Tables~\ref{tab:main} 
 This section expands Section~\ref{sec:related}: Table~\ref{tab:related} compares how the closest training-free methods change attention.
 
 \begin{table}[!htbp]
-  \caption{\textbf{How training-free methods change attention.} Entries follow each paper's text or, where marked $^\ast$, its mechanism; offsets: whether image query-key offsets stay in the trained range (text keys aside, Remark~\ref{rem:text}); cost: order in the image tokens $N$ at a fixed native size. Key result: among single-pass methods, only \sca{} fits per-head weights in advance at the training resolution, and it runs at linear cost.}
+  \caption{\textbf{How training-free methods change attention.} Entries follow each paper's text or, where marked $^\ast$, its mechanism; offsets: whether image query-key offsets stay in the trained range (text keys aside, Remark~\ref{rem:text}); cost: order in the image tokens $N$ at a fixed native size. AReA's entry follows its code: its pooled steps at factor 2 attend to $N/4$ keys, and its first window is the largest whose cost stays below full attention; fitted latency exponents are 1.12 for AReA and \hlLatExpSca{} for \sca{} (Section~\ref{sec:sizes}). Key result: among single-pass methods, only \sca{} fits per-head weights in advance at the training resolution, and it runs at linear cost.}
   \label{tab:related}
   \centering\footnotesize
   \setlength{\tabcolsep}{2.8pt}
@@ -1286,7 +1287,7 @@ This section expands the budget and schedule rows of Table~\ref{tab:panel46}: Fi
 \begin{figure}[!htbp]
   \centering
   \includegraphics[width=0.5\linewidth]{figures/quality_time_wrap.pdf}
-  \caption{\textbf{Quality against time.} \npanel{} prompts, $4096^2$. Open circles: \sca{} at guidance 7, 42 and 56 steps. Every \sca{} point, progressive included, is without the schedule.}
+  \caption{\textbf{Quality against time.} \npanel{} prompts, $4096^2$. Open circles: \sca{} at guidance 7, 42 and 56 steps. Every \sca{} point, progressive included, is without the schedule; the progressive row of Table~\ref{tab:panel46} uses it.}
   \label{fig:quality_time}
 \end{figure}
 
