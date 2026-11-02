@@ -1,0 +1,17 @@
+Baseline validation of the duplicate-subject detector (2026-11-02). Flags: scripts/dup_rate.py defaults (thr 0.35, sides 800,1333, nms 0.5, contain 0.9, contain-area 0.3, max-frac 0.9), any subject, identical to per_image_a4k195_any.csv.
+
+Stratified validation sample of baseline images for the duplicate-subject detector.
+
+Population: images of each method whose prompt has at least one subject with a numeric implied count
+(the rows dup_rate.py writes with --per-image). Rule, one RNG = random.Random(20261102) used in the method
+order area, hrdit, full, ultraimage: flagged and unflagged prompt ids are sorted; take
+nf = min(#flagged, quota // 2) flagged ids with rng.sample, then quota - nf unflagged ids with rng.sample.
+Afterwards the same RNG shuffles all sampled images once to assign blind ids v01..v50.
+
+method quota pop_flagged pop_unflagged sampled_flagged sampled_unflagged
+area 20 11 136 10 10
+hrdit 10 21 126 5 5
+full 10 10 137 5 5
+ultraimage 10 22 125 5 5
+
+precision = TP/(TP+FP) in the flagged sample. recall_corrected = P*Nf / (P*Nf + (FN/n_unflagged)*Nu).
