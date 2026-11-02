@@ -51,3 +51,11 @@
 3. main.tex text (owner only): "Figures~\ref{fig:method}b" in Appendix B's opening now means sampling; calibration
    is panel (a).
 4. Finish and review heads_view (Figure 5), rebuild with paper/build_delivery.py, check pages 3 and the D.1 page.
+
+## Update 04:08
+- Figure 5 (heads_view) redrawn by the helper agent and committed (a80e517) with a new fig:heads caption:
+  titles in the Figure 3 style, (b) a 2 x 2 grid with mass density on an amber log scale (0.1 to 100 times
+  uniform) and its scale, sigma_g dashed in (c), smallest text 6.05 pt, CSVs unchanged.
+- Stale main text (owner only): Appendix B "Attention mass" paragraph says panel b "caps the opacity at 12 times
+  the uniform density"; (b) now shows a log colour scale clipped at 0.1 and 100.
+- calib.pdf (fig:calib) untouched.
