@@ -467,3 +467,33 @@ to 15% at 9% extra time, and SCA keeps all ten of its per-image wins over AReA."
 - i_bridge32: 4/26, 79.0 s (+12%); losses ARNIQA -0.0067, CLIP-IQA -0.012, MUSIQ_c -1.81; vs AReA 9/10 (CLIP-IQA n.s.).
 - i_160 (first wide step 160): 4/26, 77.9 s (+10%); losses ARNIQA -0.0096, MUSIQ_c -1.94; vs AReA 8/10.
 Swap condition (<= 2/26, every win over AReA intact, no real softening) not met by any; reruns continue with sca_v2.
+
+## 2026-11-02: review round 1, CPU-only answers (allocation exhausted; GPU items written to taskq/hold_review_round)
+results/dup_audit_20261027/review_round1_cpu/pairs.csv (scripts/dup_pair.py: per-image paired deltas, 4000-draw
+bootstrap; exact McNemar on detector flags):
+- 195 prompts, sca_v2 vs published SCA: people/animal duplication 25/95 (26%) vs 54/95 (57%), McNemar p = 3.7e-9;
+  any subject 46/147 vs 82/147, p = 4.4e-8. IR +0.019 and HPSv2.1 +0.0006 (n.s.); ARNIQA -0.0054 and MUSIQ_c -1.13
+  (significant).
+- 195 prompts, sca_v2 vs AReA: duplication 25/95 vs 4/95 (p = 5.7e-6, AReA still duplicates less); quality wins
+  kept: IR +0.33, HPSv2.1 +0.026, ARNIQA +0.034, MUSIQ_c +9.7 (all significant). Published SCA vs AReA for
+  reference: 54/95 vs 4/95 (p = 1.8e-15).
+- 46 prompts, decomposition: bridge only vs published SCA: duplication 5/26 vs 15/26 (p = 0.006), any 9/34 vs
+  21/34 (p = 0.002); IR +0.059, HPSv2.1 +0.0017 (significant gains), MUSIQ_c -1.26. Schedule added on top of the
+  bridge (sca_v2 = dup_i_shrink minus dup_bridge): duplication 4/26 vs 5/26 (p = 1), any 6/34 vs 9/34 (p = 0.25);
+  ARNIQA -0.0069 and MUSIQ_c -0.47 (significant), other metrics n.s. So on 46 prompts the bridge carries most of
+  the duplication reduction; a schedule-only run (no bridge) at 195 is item 1 of the held GPU tasks.
+- Detector validation on baselines (item 6, subagent, commit becec26; results/dup_audit_20261027/
+  validation_by_method.csv, validation_baselines_labels.csv, validation_baselines_sampling.txt): 50 sampled images
+  (25 flagged, 25 unflagged, stratified, labels written before seeing boxes, 0 of 50 changed after). Precision /
+  sampling-corrected recall (any subject): AReA 0.50 / 0.29 (5 TP, 5 FP, 9 TN, 1 FN), HRDiT 0.60 / 0.33, full 1.00 /
+  1.00, UltraImage 0.20 / 1.00, pooled 0.51 / 0.46; SCA (earlier) 0.91 / 0.84. False flags: one waterfall split in
+  two boxes, scenery read as the subject (jugs as water pumps, a cottage as a church, shutters as a window, pines as
+  the tree), a wall portrait as a person. Misses: tiny extra people. Consequence: the detector is not equally valid
+  across methods; on AReA its flags are half false and it misses about two thirds of real copies, so AReA's true
+  any-subject rate is plausibly near flagged x precision / recall = 7.5% x 0.50 / 0.29 = 13% (wide interval), and
+  the paper should report per-method precision/recall next to the rates or report human-audited rates.
+- Krea-195 duplication (CPU detector on eval/dup_detect_20261102_krea plus eval/krea195_sca_v2/det;
+  review_round1_cpu/rates_krea195_*.csv), people/animals of 95 and any subject of 147: sca_v2 28/95 (29.5%) and
+  55/147 (37.4%); published SCA on Krea 61/95 (64.2%, McNemar vs sca_v2 p = 2.3e-10) and 100/147 (68.0%); AReA 8/95
+  (8.4%) and 22/147 (15.0%); DyPE 19/95 (20.0%) and 39/147 (26.5%); SEGA 8/95 (8.4%) and 22/147 (15.0%). Same caveat:
+  baseline flags carry about 0.5 precision and 0.3 recall (see validation_by_method.csv).
