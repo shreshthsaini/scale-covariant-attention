@@ -15,6 +15,7 @@ import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from sca import dedup  # noqa: E402
 from sca.runtime import (atomic_json, code_revision, file_sha256, fingerprint, image_seed, image_stem,
                          implementation_hash, read_prompts, resolution, runtime_environment)
 
@@ -48,6 +49,7 @@ def parser():
     p.add_argument("--route", type=float, default=0.0, help="Hard per-head routing threshold on pi (0 = soft mix)")
     p.add_argument("--chunk", type=int, help="Query tiles per local-branch chunk, gather only")
     p.add_argument("--local-impl", choices=("flex", "gather"), default="flex")
+    dedup.add_args(p)  # late-duplication options (bridge, window schedule, matched weights); all off by default
     p.add_argument("--encode-only", action="store_true", help="Fill the prompt-embedding cache and exit")
     p.add_argument("--embedding-cache", type=Path, help="Prompt-embedding cache directory; default preserves the campaign cache")
     p.add_argument("--device", default="cuda")
@@ -61,6 +63,8 @@ def build_context(args, grid):
     if variant is None:
         return Flux2SCAContext(mode="full"), {}
     target = max(pool_factors(grid, args.n0))
+    if args.anchor_lo:
+        raise SystemExit("--anchor-* works in scripts/sample.py (FLUX.1) only")
     if args.pi_const is not None:
         pi = PiTable("const", value=args.pi_const)
     elif variant == "switch" and args.sigma_star is not None:
@@ -71,12 +75,13 @@ def build_context(args, grid):
         pi = PiTable.load(args.pi_table, variant, args.pi_scale, args.sigma_star, target)
     ctx = Flux2SCAContext(mode="sca", known_grid=grid, n0=args.n0, tile=args.tile, window=args.window,
                           pool=args.pool, chunk=args.chunk, local_impl=args.local_impl, pi=pi,
-                          gate_sigma=args.gate_sigma, route=args.route)
+                          gate_sigma=args.gate_sigma, route=args.route, **dedup.context_kwargs(args))
     info = {"n0": args.n0, "tile": args.tile, "window": args.window or args.n0, "pool": args.pool,
             "chunk": args.chunk, "gate_sigma": args.gate_sigma, "band": 0, "route": args.route,
             "pool_factors": list(pool_factors(grid, args.n0)), "pi_variant": pi.variant,
             "pi_const": args.pi_const, "sigma_star": pi.sigma_star, "pi_scale": getattr(pi, "scale", None),
             "pi_table_sha256": file_sha256(args.pi_table) if args.pi_const is None and args.pi_table else None}
+    info.update(dedup.info(args))  # only options that are set, so earlier FLUX.2 configs are unchanged
     return ctx, info
 
 

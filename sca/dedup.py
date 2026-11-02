@@ -35,6 +35,9 @@ def add_args(p):
                    "--bridge-k-hi-lo, --bridge-k below (0 = off: --bridge-k at every sigma)")
     p.add_argument("--bridge-k-hi-lo", type=float, default=0.0, metavar="SIGMA", help="--bridge-k-hi applies while "
                    "sigma > SIGMA")
+    p.add_argument("--bridge-ratio", type=float, default=0.0, metavar="RHO", help="Bridge size tied to the local window "
+                   "as in AReA: round(RHO * w)^2 tokens for window side w, split evenly over the cells (replaces "
+                   "--bridge-k; 0 = off). RHO 0.5 gives 16 per cell of 8 x 8 at w = 64")
     p.add_argument("--lse-tau", type=float, default=0.0, help="Per-query LSE mixing strength (0 = per-head pi)")
     p.add_argument("--scale-sched", action="store_true", help="Per-head apparent scale: each head attends n0 x n0 keys "
                    "on the stride-(s / a) lattice around its tile, a growing from 1 (global branch) to s (native window)")
@@ -67,6 +70,7 @@ def context_kwargs(args):
                 glob_pos=args.glob_pos, win_sched=args.win_sched, text_local=args.text_local,
                 text_local_lo=args.text_local_lo, bridge_cells=args.bridge_cells, bridge_k=args.bridge_k,
                 bridge_lo=args.bridge_lo, bridge_k_hi=args.bridge_k_hi, bridge_k_hi_lo=args.bridge_k_hi_lo,
+                bridge_ratio=args.bridge_ratio,
                 lse_tau=args.lse_tau, scale_sched=args.scale_sched, scale_lo=args.scale_lo,
                 scale_fixed=args.scale_fixed, win_pi_match=args.win_pi_match, win_pi_interp=args.win_pi_interp, win_heads_below=args.win_heads_below)
 
@@ -93,6 +97,8 @@ def info(args):
         out.update(bridge_cells=args.bridge_cells, bridge_k=args.bridge_k, bridge_lo=args.bridge_lo)
     if args.bridge_k_hi:
         out.update(bridge_k_hi=args.bridge_k_hi, bridge_k_hi_lo=args.bridge_k_hi_lo)
+    if args.bridge_ratio:
+        out["bridge_ratio"] = args.bridge_ratio
     if args.lse_tau:
         out["lse_tau"] = args.lse_tau
     if args.scale_sched:

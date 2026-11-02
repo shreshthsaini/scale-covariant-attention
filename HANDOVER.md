@@ -725,3 +725,5 @@ build and fix anything blocking; (4) delivery build, push, publish the PDF. GPU-
 (repro/migration/sync_loop.sh) also dies with this node; restart it on the next node (MIGRATION.md Section 7).
 User directive 2026-11-02: finished oral-standard paper by morning; framing per meta_review.md (equal-or-better quality
 at 2.6x AReA's speed on FLUX.1-dev, parity on Krea, duplication stated as a weakness; never "much better" in general).
+
+Addendum 04:12: Figure 3 and D.1 redrawn (figures/candidates/*_print300.png for review). Open from the figure agent: the calibration thumbnail in Figure 3 is a stand-in (calib00 resized from a 2048^2 SCA output; generate a real 1024^2 full-attention image for it); Appendix B opening cites Figure 3b for calibration, now panel (a); Figure 5 (heads_view) and the calibration-results figure still need the redesign.

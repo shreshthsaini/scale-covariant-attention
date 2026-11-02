@@ -9,6 +9,12 @@ guidance 4.5, Phase I 8 steps, subsample pooling, Halo 8, bridge ratio 0.5, AReA
 equal to the run seed, VAE tiling always on, scheduler base_shift = max_shift (mu = 1.15).
 The checkpoint is the local FLUX.1-dev snapshot instead of AReA's FLUX.1-Krea-dev default.
 
+--phase2-windows W1,W2,... (review round 1) replaces the Phase II window sizes without editing the
+vendored code: W1, W2, ... on the first Phase II steps, AReA's last (smallest) window on the rest,
+applied by wrapping the backbone's schedule(); bridge (rho * w)^2, Halo and jitter follow the new
+window. --label sets the sidecar method name (default area) so such a variant and AReA can share one
+evaluation root.
+
 --dry-run parses arguments, loads prompts, builds the AReA config and the per-step
 schedule and prints one sidecar config without importing a model; it runs on CPU.
 """
@@ -46,6 +52,43 @@ sys.path.insert(0, str(AREA_DIR))   # official AReA package
 from crope.utils import atomic_json, file_sha256, image_seed, image_stem, read_prompts, resolution  # noqa: E402
 
 
+def window_list(text):
+    """'128,112,96,80' -> (128, 112, 96, 80)."""
+    out = tuple(int(x) for x in text.split(",") if x.strip())
+    if not out or min(out) < 1:
+        raise argparse.ArgumentTypeError("need positive window sizes, e.g. 128,112,96,80")
+    return out
+
+
+def override_windows(windows, head, extent):
+    """AReA's Phase II windows with the first len(head) replaced by head and the rest set to AReA's last (smallest)
+    window w_min; each new size must lie in [w_min, extent]."""
+    windows, head = tuple(int(x) for x in windows), tuple(int(x) for x in head)
+    if not windows:
+        return windows
+    if len(head) > len(windows):
+        raise ValueError(f"{len(head)} windows given for {len(windows)} Phase II steps")
+    floor = windows[-1]
+    if min(head) < floor or max(head) > extent:
+        raise ValueError(f"Phase II windows must lie in [{floor}, {extent}] patches, got {head}")
+    return head + (floor,) * (len(windows) - len(head))
+
+
+def patch_schedule(backbone, head):
+    """Wrap backbone.schedule (area/backbones/base.py) so every Phase II step reads override_windows; Phase I, the
+    bridge ratio, Halo and jitter are untouched. No vendored file is edited."""
+    from area.schedule import Schedule
+    original = backbone.schedule
+
+    def schedule(h, w, steps, txt_len=0):
+        s = original(h, w, steps, txt_len)
+        if s is None or not s.windows:
+            return s
+        return Schedule(s.grid, s.factors, override_windows(s.windows, head, max(h, w)))
+    backbone.schedule = schedule
+    return original
+
+
 def parser():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--res", type=resolution, required=True, metavar="HxW")
@@ -61,6 +104,10 @@ def parser():
     p.add_argument("--phase1-steps", type=int, default=None, help="Phase I steps; default AReA flux1 value 8")
     p.add_argument("--halo", type=int, default=8, help="delta_max in patches")
     p.add_argument("--bridge-ratio", type=float, default=0.5, help="rho")
+    p.add_argument("--phase2-windows", type=window_list, default=None, metavar="W1,W2,...",
+                   help="Phase II window sizes for the first steps, AReA's smallest window after them "
+                        "(default: AReA's own schedule)")
+    p.add_argument("--label", default="area", help="Method name written to the sidecar (default area)")
     p.add_argument("--area-seed", type=int, default=None,
                    help="AReA jitter/Halo seed; default --seed, as in AReA generate.py")
     p.add_argument("--model", choices=("dev", "krea"), default="dev",
@@ -118,7 +165,7 @@ def area_config(args):
                       bridge_ratio=args.bridge_ratio, seed=args.seed if args.area_seed is None else args.area_seed)
 
 
-def area_schedule(res, steps, cfg):
+def area_schedule(res, steps, cfg, phase2_windows=None):
     from area.backbones.flux import NATIVE_PATCHES, PHASE1_STEPS
     from area.schedule import build_schedule
     h, w = res[0] // 16, res[1] // 16
@@ -126,8 +173,13 @@ def area_schedule(res, steps, cfg):
         return {"phase1_steps": 0, "factors": [], "windows": [], "note": "native or below: plain attention"}
     phase1 = PHASE1_STEPS if cfg.phase1_steps is None else cfg.phase1_steps
     s = build_schedule(h, w, steps, phase1, NATIVE_PATCHES, txt_len=TXT_LEN)
-    return {"phase1_steps": phase1, "native_patches": NATIVE_PATCHES, "txt_len": TXT_LEN,
-            "factors": list(s.factors), "windows": list(s.windows)}
+    out = {"phase1_steps": phase1, "native_patches": NATIVE_PATCHES, "txt_len": TXT_LEN,
+           "factors": list(s.factors), "windows": list(s.windows)}
+    if phase2_windows:  # keys added only when set, so default configs are unchanged
+        out["area_windows"] = out["windows"]
+        out["windows"] = list(override_windows(s.windows, phase2_windows, max(h, w)))
+        out["phase2_windows"] = list(phase2_windows)
+    return out
 
 
 class AReARunner:
@@ -136,7 +188,7 @@ class AReARunner:
         import torch
         self.args, self.res = args, tuple(args.res)
         self.cfg = area_config(args)
-        self.schedule = area_schedule(self.res, args.steps, self.cfg)
+        self.schedule = area_schedule(self.res, args.steps, self.cfg, args.phase2_windows)
         self.pipe, self.area, self.offload, self.calls = None, None, False, 0
         try:
             source, self.model_revision = snapshot_dir()
@@ -156,6 +208,8 @@ class AReARunner:
         self.pipe = self.load(source)
         from area import AReA
         self.area = AReA(self.pipe, config=self.cfg)
+        if args.phase2_windows:
+            patch_schedule(self.area.backbone, args.phase2_windows)
         self.scheduler_config = {k: v for k, v in dict(self.pipe.scheduler.config).items()}
 
     def load(self, source):
@@ -189,7 +243,7 @@ class AReARunner:
 
     def config(self, row, seed):
         a = self.args
-        return {"schema_version": 1, "method": "area", "res": f"{self.res[0]}x{self.res[1]}",
+        return {"schema_version": 1, "method": a.label, "res": f"{self.res[0]}x{self.res[1]}",
                 "prompt_id": str(row["id"]), "prompt": row["prompt"], "seed": int(seed),
                 "derived_seed": image_seed(row["id"], seed), "steps": a.steps, "guidance": a.guidance,
                 "model": self.model_id, "model_revision": self.model_revision, "dtype": "bfloat16", "batch_size": 1,
@@ -238,7 +292,7 @@ class AReARunner:
                     im.verify()
                 if file_sha256(png) != saved["png_sha256"]:
                     raise ValueError(f"Existing PNG checksum differs: {png}")
-                print(f"skip {row['id']} area {config['res']}", flush=True)
+                print(f"skip {row['id']} {config['method']} {config['res']}", flush=True)
                 return saved
         first = self.calls == 0
         image, seconds, peak_memory, sigmas = self.generate(row, seed)
@@ -252,7 +306,7 @@ class AReARunner:
                   "seconds_scope": "prompt encoding, denoising, and VAE decode; excludes model loading and PNG I/O",
                   "first_call_in_process": first, "peak_memory_bytes": peak_memory, "sigmas": sigmas}
         atomic_json(metadata, record)
-        print(f"saved {row['id']} area {config['res']} seconds={seconds:.3f}", flush=True)
+        print(f"saved {row['id']} {config['method']} {config['res']} seconds={seconds:.3f}", flush=True)
         return record
 
     def close(self):
