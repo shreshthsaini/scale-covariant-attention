@@ -1,21 +1,16 @@
-# Latest verified paper delivery, 2026-10-31 14:50 CDT (HRGen-1K dev row folded in; operator sca_v2)
+# Latest verified paper delivery, 2026-11-02 03:56 CST (review round 1 revision, partial; operator sca_v2)
 
-- [Paper PDF](../../paper/main.pdf), 53 pages: main text pages 1 to 10 (Section 6 ends on the last line of page 10),
-  reproducibility statement and references from page 11, appendix after. SHA256
-  b4d22b9fecb42e98970e9124ee1ae66b1109d6adc48cb18e05df896944e43f53, 27771529 bytes.
+- [Paper PDF](../../paper/main.pdf), 55 pages: main text pages 1 to 10 (Section 6 ends on page 10 with about three lines
+  of slack), reproducibility statement and references from page 11, appendix after. SHA256
+  392c5592e3dc8093ef8d9920710eabf566e9ad11f7ac35f5c1cdd27b5efc5a4f.
 - [Overleaf source ZIP](../../paper/sca_overleaf.zip), 308 source files, SHA256
-  68b264132d9b70829b409f684e34b41ef4a145aaa53d69322cfb621157a045b4.
+  90a69154865a97bb64b16bc45e9288a622ba12a3733263f55507b4f626137edd.
 - [Build receipt](../../paper/delivery_receipt.json); build and fresh-unzip check in
-  `/scratch/09032/saini_2/sca/paper_builds/delivery_tj1oh6am/` (`primary/`, `extracted/`, `standalone/`).
+  `/scratch/09032/saini_2/sca/paper_builds/delivery_0r7c7qpg/`.
 
-Both builds have zero overfull boxes and zero undefined references; the fresh unzip builds on its own (53 pages); the
-PDF text has no em dash, no section symbol and no "??"; no word box crosses a margin on any page. Every page of the
-previous build was reviewed as rendered (subagent, 2026-10-31); its five findings are fixed (HANDOVER Section 22).
-
-Numbers folded in this pass: hrgen1k_dev_sca_v2 (Table 4 HRGen-1K row, Table L.3 HRGen-1K column, Table H.2 FLUX.1-dev
-SCA row, Limitations sentence on the schedule's cost). SCA minus AReA on all 1000 HRGen-1K prompts: 10 of 10 per-image
-metrics significantly better, ImageReward +0.764 [0.714, 0.816]. CSVs and SHA256SUMS in results/hrgen1k_dev_sca_v2.
-
-PENDING (grey cells with caption notes): hrgen1k_krea_sca_v2, the "SCA (ours), FLUX.1-Krea-dev" rows of Tables H.1
-and H.2 (p. 26). Its eval task `taskq/pending/a000_z988_eval_hrgen1k_krea_sca_v2.sh` needs a GPU worker. To fold it
-in: `bash paper/figures/src/swap_all.sh`, then `paper/build_delivery.py`, check p. 26, commit, push.
+Both builds: zero overfull boxes, zero undefined references, fresh unzip builds on its own (55 pages); PDF text has no em
+dash, no section symbol, no "??". Render review this pass: one contact-sheet pass over pages 1 to 10 and a page-1 check
+(teaser trim); the second full render-review cycle over all 55 pages is still owed (HANDOVER Section 24 lists the open items).
+The build used the figure agent's working-tree files as they stood (Figure 3, D.1, Appendix B unchanged by this pass).
+Numbers folded in: hrgen1k_krea_sca_v2 (Table H.2 SCA Krea row, caption notes cleared) and
+results/dup_audit_20261027/validation_by_method.csv (Section 4 setup, Appendix P).

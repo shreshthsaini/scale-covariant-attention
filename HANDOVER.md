@@ -664,3 +664,48 @@ in MIGRATION.md Section 7. The HRGen-1K Krea sca_v2 evaluation (`eval/hrgen1k_kr
 its `DONE` appears.
 
 Addendum 2026-10-31 14:10: controller node i617-044 has no GPU, so the last evaluation (z988, HRGen-1K Krea for sca_v2) waits for SCA19 job 1112649 (1 gh node, 3 h, about 3 SU); its result is folded in by the paper agent and uploaded by the sync loop.
+
+## 24. 2026-11-02: review round 1 revision (revision author; dispositions in .agent/notes/review_round1/meta_review.md)
+Three reviews (method, experiments, presentation) and the lead's ten binding decisions are dispositioned item by item in
+`.agent/notes/review_round1/meta_review.md`; GPU work is specified, held, in
+`/scratch/09032/saini_2/sca/taskq/hold_review_round/README.md` (RR01 to RR17; nothing pending, no job submitted).
+Applied this pass (commits a3503ce, b462139, 5895abb, ff17113, 2ffea28 and the delivery commit):
+- Framing (decision 1): abstract gives 77.1 vs 202.4 s, the 26% vs 4% duplication, Krea parity in a third of the time and
+  50.7 vs 110.4 s; intro paragraphs reordered ("We introduce" before the emulation answer); bullets and conclusion put the
+  duplication number beside every 12-of-15 claim; Section 4.1 names the families (all ten per-image metrics, two of five
+  set-level) and the three unresolved ones (KID, patch FID, IS); Section 4.5 is a three-checkpoint block (FLUX.1-dev,
+  Krea with ImageReward +0.020 [-0.020, 0.063], patch FID +3.4 [1.6, 7.1], 29% duplication; FLUX.2 without the schedule).
+- Mechanism (decision 2): Section 2.4 "Why narrow windows repeat small subjects": ramp with native windows 5/26, bridge
+  alone 5/26, bridge plus 128 windows 1/26; the schedule is called a cheap width schedule; AReA's remaining advantage is an
+  open question. Section 4.4 cites McNemar p = 1.0 for schedule (4/26) vs bridge alone (5/26) from
+  results/dup_audit_20261027/review_round1_cpu/pairs.csv.
+- Decisions 3 to 5: Table F.2 (tab:handset) lists every setting as hand-set or calibrated; Section 2.3 ties the sigma bins
+  to the 28-step sampler and says the 42/56-step rows run without the schedule; Limitations states the calibration gap
+  (no bridge, 16x fewer keys per branch); "scale covariance" narrowed in the intro; Table J.1 caption justifies AReA's
+  quadratic entry from its code (f = 2 pooled steps, cost-capped first window) with exponents 1.12 vs 0.99; Proposition 1
+  scoped to native windows; Lemma 1 stated as motivation with the bridge double count; Proposition 2 scoped to constant
+  weights per cell.
+- Decision 6: HRGen-1K Krea sca_v2 cells filled by swap_all.sh (Table H.2 SCA Krea row: IR 0.84, aesthetic 5.96, CLIP
+  30.02, PickScore 21.68, HPSv2 28.06, IS 16.4, MUSIQ 44.5); "without the schedule" added to the 8192^2, FLUX.2,
+  sensitivity sentences, Table 2's budget group heading and Figure M.1's caption.
+- Decision 7: detector validation stated exactly; baseline validation from results/dup_audit_20261027/validation_by_method.csv
+  (AReA precision 0.50, corrected recall 0.29, implied any-subject rate 13% vs detected 7.5%) in Section 4 setup and
+  Appendix P.
+- Decisions 8 and 9 (Table 1 only): ranked within the single-pass group, multi-stage rows grey context
+  (\ctxrow), campaign time unranked, one header line with arrows, Dup. as percent, FID_p dagger, sweep note and FID bias
+  in the caption (gen_main_tables.py).
+- Decision 10 (part): Figure 1 top row dropped (trim of teaser.pdf; caption lead plus two sentences, curated and pointing to
+  the uncurated gallery); Figure 7 states n; ARNIQA on the x100 scale in Limitations; page 7 \enlargethispage removed;
+  main text ends on page 10 with about 3 lines of slack.
+NOT YET DONE (next agent; the controller job on i617-044 ends 2026-11-02 04:12 and ends this session): Table 2 to 4 significance
+convention (one code), Table 4 intervals and Dup., Table H.1 ranking within block, operator labels in the row names of
+Tables L.1 (krea_6144), N.1, L.3 to L.5; the remaining sentences over 35 words (python3 -I long.py scan: intro bullets,
+Sections 2.2, 2.3, 2.5, 4 setup); captions of Figures 4, 5, A.1, D.1, B.1 to lead plus two sentences; Figure 4a
+declutter (fig_dup.py), Figure 5b enlargement and rho label (fig_heads_view.py), Figure 6 full-attention column to HRDiT
+(fig_zoom4k.py), Table 3 Err. column to K.5, Figure M.1 markers, algorithm type at 6 pt, half-blank pages 17 and 21,
+Table N.1 fp32 note. Figures 3, D.1 and the Appendix B calibration figures belong to the figure agent.
+Rubric self-score (gold-standard 22 items, 0/1/2): abstract 1, hero 1, footnotes 1, question and wrap 2, introduce and
+bullets 1, sentence length 0, method diagram 1 (pending figure agent), equations 1, algorithms 2, setup run-ins 1, main
+table 2, finding paragraphs 2, ablations 1, plots under 6 pt 0, qualitative grid 1, limitations 2, reproducibility 2,
+appendix 2, float placement 1, captions 1, colours 1, dashes and section symbol 1. Mean 1.23 with two zeros: not
+shippable under the house rule until the long sentences and sub-6 pt figure text are fixed.

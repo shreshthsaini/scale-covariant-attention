@@ -114,3 +114,14 @@ bridge alone on 195; RR04 schedule at 42 and 56 steps; RR05 deployed-operator er
 bridge; RR06 bin count and tile sensitivity; RR07 two-step schedule; RR08 non-square baselines; RR09 to RR11 sca_v2
 at 6144^2, 8192^2, FLUX.2; RR12 one latency sweep of all methods; RR13 per-method detector validation; RR14 Krea
 baselines; RR15 one interval recipe; RR16 Holm count; RR17 the 149 prompts outside the subset.
+
+## Status after the first revision pass (2026-11-02 03:56 CST)
+Applied: decisions 1 to 7 in full; decisions 8 and 9 for Table 1 (per-group ranking, grey context rows, unranked campaign
+time, sweep note, Dup. percent, FID_p dagger, KID and FID bias in the caption); decision 10 in part (abstract numbers,
+intro order, Figure 1 top row dropped, Figure 7 n, ARNIQA x100, page 7 spacing). R1 items 1, 3 (text), 4 (text), 5, 6, 7,
+8, 9, 10, 11, 13, 14, 15 done; R1.12 done in the text (figure label pending). R2 P2 now uses validation_by_method.csv.
+Still FIX and not yet applied: Tables 2 to 4 significance convention, Table 4 intervals and Dup., Table H.1 ranking within
+block, operator labels in appendix row names (L.1, N.1, L.3 to L.5), long sentences, figure captions (4, 5, A.1, D.1, B.1),
+Figures 4a, 5b, 6, Table 3 Err. column, Figure M.1 markers, algorithm type size, pages 17 and 21, Table N.1 fp32 note.
+Not available in results/: AReA's duplication rate on Krea (the "about 2%" in the brief), so the paper quotes only SCA's
+29% (28 of 95) on Krea.
