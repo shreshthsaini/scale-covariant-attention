@@ -2,22 +2,22 @@
 \setlength{\tabcolsep}{2.4pt}
 \begin{tabular}{@{}lcrr*{7}{r<{\hspace{2.5pt}}}r@{}}
   \toprule
-   & & \multicolumn{2}{c}{Time (s)$\downarrow$} & Image$\uparrow$ & $\uparrow$ & Pick$\uparrow$ & $\uparrow$ & $\uparrow$ & $\downarrow$ & $\downarrow$ & $\downarrow$ \\
+   & & \multicolumn{2}{c}{Time (s)} & & & & & & & & \\
   \cmidrule(lr){3-4}
-  Method & Steps & clean & camp. & Reward & HPSv2.1 & Score & CLIP & MUSIQ$_\text{c}$ & FID & FID$_\text{p}$ & Dup. \\
+  Method & Steps & clean$\downarrow$ & camp. & IR$\uparrow$ & HPS$\uparrow$ & Pick$\uparrow$ & CLIP$\uparrow$ & M$_\text{c}\!\uparrow$ & FID$\downarrow$ & FID$_\text{p}^{\dagger}\!\downarrow$ & Dup.\,\%$\downarrow$ \\
   \midrule
   \multicolumn{12}{@{}l}{\emph{Single pass, shared sampler (28 steps, guidance 4.5; other rows in Table~\ref{tab:main})}} \\
   SigMa & 28 & n/m & 192.5 & $-0.52$ & 18.65 & 20.01 & 23.51 & 49.9 & 216.9\rlap{$^{\ast}$} & 184.6\rlap{$^{\ast}$} & 27 \\
-  \rowcolor[HTML]{EAF4F1}\textbf{\sca{} (ours)} & 28 & \textbf{77.1} & 78.4 & 1.25 & 29.73 & 23.12 & 29.14 & 60.1 & 140.2 & \textbf{98.4} & 26 \\
+  \rowcolor[HTML]{EAF4F1}\textbf{\sca{} (ours)} & 28 & \textbf{77.1} & \textbf{78.4} & \textbf{1.25} & \textbf{29.73} & \textbf{23.12} & \textbf{29.14} & \textbf{60.1} & \textbf{140.2} & \textbf{98.4} & \textbf{26} \\
   \midrule
   \multicolumn{12}{@{}l}{\emph{Multi-stage, own recipe and budget}} \\
   UltraImage & 30+30 & n/m & 308.5 & 1.28\rlap{$^{\circ}$} & 30.77\rlap{$^{+}$} & 23.33\rlap{$^{+}$} & 28.84 & 41.7 & 142.0\rlap{$^{\ast}$} & 109.5\rlap{$^{\ast}$} & \textbf{5} \\
-  HRDiT & 30+17+10 & 108.6 & 110.4 & \textbf{1.34}\rlap{$^{+}$} & 30.92\rlap{$^{+}$} & \textbf{23.46}\rlap{$^{+}$} & 29.12\rlap{$^{\circ}$} & 53.5 & \textbf{138.4}\rlap{$^{\ast}$} & 103.0\rlap{$^{\ast}$} & 11 \\
-  \rowcolor[HTML]{EAF4F1}\textbf{Prog.\ \sca{}} & 30+17+10 & n/m & \textbf{50.7} & 1.32\rlap{$^{+}$} & \textbf{31.02}\rlap{$^{+}$} & 23.41\rlap{$^{+}$} & \textbf{29.39}\rlap{$^{\circ}$} & 54.1 & 141.9\rlap{$^{\ast}$} & 107.7\rlap{$^{\ast}$} & 6 \\
+  HRDiT & 30+17+10 & \textbf{108.6} & 110.4 & \textbf{1.34}\rlap{$^{+}$} & 30.92\rlap{$^{+}$} & \textbf{23.46}\rlap{$^{+}$} & 29.12\rlap{$^{\circ}$} & 53.5 & \textbf{138.4}\rlap{$^{\ast}$} & \textbf{103.0}\rlap{$^{\ast}$} & 11 \\
+  \rowcolor[HTML]{EAF4F1}\textbf{Prog.\ \sca{}} & 30+17+10 & n/m & \textbf{50.7} & 1.32\rlap{$^{+}$} & \textbf{31.02}\rlap{$^{+}$} & 23.41\rlap{$^{+}$} & \textbf{29.39}\rlap{$^{\circ}$} & \textbf{54.1} & 141.9\rlap{$^{\ast}$} & 107.7\rlap{$^{\ast}$} & 6 \\
   \midrule
-  \multicolumn{12}{@{}l}{\emph{Without the schedule, other budgets}} \\
-  \quad 56 steps & 56 & n/m & 139.9 & 1.26\rlap{$^{+}$} & 30.55\rlap{$^{+}$} & 23.22\rlap{$^{+}$} & 29.14\rlap{$^{\circ}$} & \textbf{64.1}\rlap{$^{+}$} & 139.8\rlap{$^{\circ}$} & 102.9 & 55 \\
-  \quad guidance 7 & 28 & n/m & 71.9 & 1.16 & 29.07 & 22.82 & 28.94\rlap{$^{\circ}$} & 61.4\rlap{$^{\circ}$} & 140.4\rlap{$^{\circ}$} & \textbf{98.4}\rlap{$^{\circ}$} & 49 \\
-  \quad 42 steps & 42 & n/m & 106.8 & 1.26\rlap{$^{\circ}$} & 30.27\rlap{$^{+}$} & 23.17\rlap{$^{+}$} & 29.14\rlap{$^{\circ}$} & 63.1\rlap{$^{+}$} & 140.5 & 100.6\rlap{$^{\circ}$} & 57 \\
+  \multicolumn{12}{@{}l}{\emph{\sca{} without the schedule, other budgets}} \\
+  \quad 56 steps & 56 & n/m & 139.9 & \textbf{1.26}\rlap{$^{+}$} & \textbf{30.55}\rlap{$^{+}$} & \textbf{23.22}\rlap{$^{+}$} & \textbf{29.14}\rlap{$^{\circ}$} & \textbf{64.1}\rlap{$^{+}$} & \textbf{139.8}\rlap{$^{\circ}$} & 102.9 & 55 \\
+  \quad guidance 7 & 28 & n/m & \textbf{71.9} & 1.16 & 29.07 & 22.82 & 28.94\rlap{$^{\circ}$} & 61.4\rlap{$^{\circ}$} & 140.4\rlap{$^{\circ}$} & \textbf{98.4}\rlap{$^{\circ}$} & \textbf{49} \\
+  \quad 42 steps & 42 & n/m & 106.8 & \textbf{1.26}\rlap{$^{\circ}$} & 30.27\rlap{$^{+}$} & 23.17\rlap{$^{+}$} & \textbf{29.14}\rlap{$^{\circ}$} & 63.1\rlap{$^{+}$} & 140.5 & 100.6\rlap{$^{\circ}$} & 57 \\
   \bottomrule
 \end{tabular}%

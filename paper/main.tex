@@ -94,6 +94,8 @@
 % (paper/figures/src/gen_main_tables.py, gen_app_tables.py, swap_all.sh) wrap them; never replace one with a guess.
 % Inside a grey cell the significance marks keep their weight (\up bold, \dn italic) but lose their colour.
 \definecolor{pendgrey}{HTML}{8A9099}
+% Context rows (multi-stage methods in Table 1): grey text, not ranked.
+\newcommand{\ctxrow}[1]{{\color{black!55}#1}}
 \DeclareRobustCommand{\pend}[1]{{\leavevmode\color{pendgrey}\let\up\textbf\let\dn\textit#1}}
 % Prose and caption status macros; headline.tex may define the same names, which then win.
 \providecommand{\pendTabMain}{}\providecommand{\pendTabPanel}{}\providecommand{\pendTabAbl}{}\providecommand{\pendTabGen}{}
@@ -174,8 +176,8 @@ Diffusion transformers trained near one megapixel fail at higher resolutions: at
 
 \begin{center}
   \vspace{-4pt}
-  \includegraphics[width=\linewidth]{figures/teaser.pdf}
-  \captionof{figure}{\textbf{\sca{} at 4K without training.} Top: curated outputs with native-pixel insets. Bottom: 1:1 crops of one curated $4096^2$ prompt on which no baseline scores unusually low (curation favours \sca{}); full attention gives a flat field, DyPE and SEGA a lattice, and the other three keep the church and flock.\pendImgTeaser}
+  \includegraphics[width=\linewidth,trim=0 0 0 1.10in,clip]{figures/teaser.pdf}
+  \captionof{figure}{\textbf{Six methods on one $4096^2$ prompt.} Each column shows the image and a 1:1 crop; full attention gives a flat field, DyPE and SEGA a lattice, and the other three keep the church and flock. The prompt is curated so that no baseline scores unusually low, which favours \sca{}; Figure~\ref{fig:gallery_4096} is uncurated.\pendImgTeaser}
   \label{fig:teaser}
 \end{center}
 
@@ -183,7 +185,7 @@ Diffusion transformers trained near one megapixel fail at higher resolutions: at
 \section{Introduction}
 \label{sec:intro}
 
-Diffusion transformers~\citep{peebles2022dit} such as FLUX.1~\citep{flux2024} and Stable Diffusion~3~\citep{esser2024sd3} are trained near one megapixel. At $4096\times4096$ the image has 16 times as many tokens, full attention costs about 256 times as much, and every layer meets token counts and position offsets it never saw in training. Full attention then returns stripes or a flat field (Figure~\ref{fig:teaser}, bottom left). A native-size window per query keeps the offsets in range, but from step 1 it draws five Moai where the prompt asks for one (Figure~\ref{fig:motivation}a). We ask whether each head's balance between such a window and a coarse view of the whole image can be measured at the training resolution, and when in sampling each head should receive its window.
+Diffusion transformers~\citep{peebles2022dit} such as FLUX.1~\citep{flux2024} and Stable Diffusion~3~\citep{esser2024sd3} are trained near one megapixel. At $4096\times4096$ the image has 16 times as many tokens, full attention costs about 256 times as much, and every layer meets token counts and position offsets it never saw in training. Full attention then returns stripes or a flat field (Figure~\ref{fig:teaser}, left). A native-size window per query keeps the offsets in range, but from step 1 it draws five Moai where the prompt asks for one (Figure~\ref{fig:motivation}a). We ask whether each head's balance between such a window and a coarse view of the whole image can be measured at the training resolution, and when in sampling each head should receive its window.
 
 \begin{wrapfigure}{r}{0.42\linewidth}
   \wraptop
@@ -396,7 +398,7 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
 \label{sec:experiments}
 
 \begin{table}[t]
-  \caption{\textbf{Main comparison at $4096^2$.} FLUX.1-dev, \nmain{} Aesthetic-4K prompts, seed label 0; HPSv2.1 $\times100$, MUSIQ$_\text{c}$ on $1024^2$ crops, FID$_\text{p}$ patch FID, Dup.\ duplicated share of the 95 person or animal prompts; \textbf{best}, \underline{second best}, ours shaded; seconds per image on one GH200: clean batch-1 median or campaign mean on shared nodes (camp.); n/m: not measured; Table~\ref{tab:all_metrics} adds all metrics.\pendTabMain{} Key result: among single-pass methods, \sca{} is best on every score and $\hlSpeedArea\times$ faster than AReA, but repeats subjects most often.}
+  \caption{\textbf{Main comparison at $4096^2$.} FLUX.1-dev, \nmain{} Aesthetic-4K prompts, seed label 0. IR ImageReward, HPS HPSv2.1 $\times100$, Pick PickScore, M$_\text{c}$ MUSIQ$_\text{c}$ on $1024^2$ crops, FID$_\text{p}$ patch FID by our crop rule ($^\dagger$, Appendix~\ref{app:metrics}), Dup.\ percentage of the 95 person or animal prompts with a repeat. \textbf{Best} and \underline{second} among single-pass rows; multi-stage rows in grey are context. Time on one GH200: clean batch-1 median (AReA and full attention from sweep 1, \sca{} from sweep 2) and campaign mean on shared nodes (camp., not ranked); n/m: not measured. At $n=195$ FID is dominated by finite-sample bias; Table~\ref{tab:all_metrics} adds KID and all metrics.\pendTabMain{} Key result: among single-pass methods, \sca{} is best on every score but Dup.\ and $\hlSpeedArea\times$ faster than AReA.}
   \label{tab:main}
   \centering\footnotesize
   \input{figures/snippets/main_tables/tab_main.tex}
@@ -420,7 +422,8 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
 \subsection{Main results}
 \label{sec:main}
 
-\paragraph{\sca{} beats AReA on \hlWinsArea{} of \hlMetricsArea{} metrics at \textbf{$\hlSpeedArea\times$} the speed, but repeats subjects more.} The wins cover all ten per-image metrics, which form correlated families, and two of five set-level ones. They include ImageReward (0.92 to \hlIrScaAbs, $\hlIrDelta$ $[\hlIrLo,\hlIrHi]$) and FID (145.8 to \hlFidScaAbs, $\hlFidDelta$ $[\hlFidLo,\hlFidHi]$); KID, patch FID, and IS are unresolved (Tables~\ref{tab:main} and~\ref{tab:app_4k}; Figure~\ref{fig:paired_area}). With 195 images FID is dominated by finite-sample bias, so KID is the cleaner set-level test. Duplication is the exception: \hlDupV\% against \hlDupArea\% (Section~\ref{sec:dup}). Our AReA run reproduces AReA's published FLUX.1-Krea-dev scores within 0.3 (Table~\ref{tab:published_compare}).
+\paragraph{\sca{} beats AReA on \hlWinsArea{} of \hlMetricsArea{} metrics at \textbf{$\hlSpeedArea\times$} the speed, but repeats subjects more.} The wins cover all ten per-image metrics, which form correlated families, and two of five set-level ones. They include ImageReward (0.92 to \hlIrScaAbs, $\hlIrDelta$ $[\hlIrLo,\hlIrHi]$) and FID (145.8 to \hlFidScaAbs, $\hlFidDelta$ $[\hlFidLo,\hlFidHi]$); KID, patch FID, and IS are unresolved (Tables~\ref{tab:main} and~\ref{tab:app_4k}; Figure~\ref{fig:paired_area}).@@END
+ Duplication is the exception: \hlDupV\% against \hlDupArea\% (Section~\ref{sec:dup}). Our AReA run reproduces AReA's published FLUX.1-Krea-dev scores within 0.3 (Table~\ref{tab:published_compare}).
 
 \begin{wrapfigure}[21]{r}{0.46\linewidth}
   \wraptop

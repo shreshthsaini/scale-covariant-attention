@@ -192,16 +192,15 @@ TAB_PANEL = [
      [("pub", PANEL_RUN, "ultraimage", "UltraImage", "30+30"),
       ("pub", PANEL_RUN, "hrdit_dev_author", "HRDiT", "30+17+10"),
       ("prog", PANEL_RUN, "sca_prog", PROG_LABEL, "30+17+10")]),
-    ("Without the schedule, other budgets",
+    (r"\sca{} without the schedule, other budgets",
      [("ctl", PANEL_RUN, "sca_s56", r"\quad 56 steps", "56"), ("ctl", PANEL_RUN, "sca_g7", r"\quad guidance 7", "28"),
       ("ctl", PANEL_RUN, "sca_s42", r"\quad 42 steps", "42")]),
 ]
 HEAD12 = [r"\toprule",
-          r" & & \multicolumn{2}{c}{Time (s)$\downarrow$} & Image$\uparrow$ & $\uparrow$ & Pick$\uparrow$ & $\uparrow$ & "
-          r"$\uparrow$ & $\downarrow$ & $\downarrow$ & $\downarrow$ \\",
+          r" & & \multicolumn{2}{c}{Time (s)} & & & & & & & & \\",
           r"\cmidrule(lr){3-4}",
-          r"Method & Steps & clean & camp. & Reward & HPSv2.1 & Score & CLIP & MUSIQ$_\text{c}$ & FID & "
-          r"FID$_\text{p}$ & Dup. \\"]
+          r"Method & Steps & clean$\downarrow$ & camp. & IR$\uparrow$ & HPS$\uparrow$ & Pick$\uparrow$ & CLIP$\uparrow$ & "
+          r"M$_\text{c}\!\uparrow$ & FID$\downarrow$ & FID$_\text{p}^{\dagger}\!\downarrow$ & Dup.\,\%$\downarrow$ \\"]
 NCOL12 = 12
 
 
@@ -325,12 +324,22 @@ def table2_marks(row, sca_row):
 def table12(name, spec, clean, underline):
     flat = table12_rows(spec, clean)
     cells = [list(r[6]) for r in flat]
-    for j, (_, _, _, lower) in enumerate(COLS):
-        for i, r in ranks([c[j] for c in cells], lower).items():
-            if r == "best":
-                cells[i][j] = rf"\textbf{{{cells[i][j]}}}"
-            elif underline:
-                cells[i][j] = rf"\underline{{{cells[i][j]}}}"
+    # Review round 1: rank within each group (Table 1: single-pass rows only; its multi-stage rows are grey
+    # context), never across groups; the campaign-time column ("seconds") is not ranked in Table 1.
+    starts, k0 = [], 0
+    for _, group in spec:
+        starts.append((k0, k0 + len(group)))
+        k0 += len(group)
+    groups = starts[:1] if name == "tab_main" else starts
+    for a, b in groups:
+        for j, (key, _, _, lower) in enumerate(COLS):
+            if name == "tab_main" and key == "seconds":
+                continue
+            for i, r in ranks([c[j] for c in cells[a:b]], lower).items():
+                if r == "best":
+                    cells[a + i][j] = rf"\textbf{{{cells[a + i][j]}}}"
+                elif underline:
+                    cells[a + i][j] = rf"\underline{{{cells[a + i][j]}}}"
     sca_row = next(r for r in flat if r[0] == "sca")
     for i, row in enumerate(flat):
         marks = {}
@@ -350,7 +359,10 @@ def table12(name, spec, clean, underline):
         body += ([r"\midrule"] if g else []) + [rf"\multicolumn{{{NCOL12}}}{{@{{}}l}}{{\emph{{{heading}}}}} \\"]
         for _ in group:
             shade = SHADE if flat[i][0] in ("sca", "prog") else ""
-            body.append(shade + " & ".join([flat[i][3], flat[i][4]] + cells[i]) + r" \\")
+            row_cells = [flat[i][3], flat[i][4]] + cells[i]
+            if name == "tab_main" and g > 0:  # multi-stage rows: grey context, unranked
+                row_cells = [rf"\ctxrow{{{c}}}" for c in row_cells]
+            body.append(shade + " & ".join(row_cells) + r" \\")
             i += 1
     if name == "tab_main":
         # Table 1 caption: among the single-pass rows (first group), SCA prints the best value of every column but Dup.
