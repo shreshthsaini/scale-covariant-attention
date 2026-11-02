@@ -775,6 +775,8 @@ class SCAContext:
     bridge_lo: float = 0.0              # bridge active only while sigma > bridge_lo
     bridge_k_hi: int = 0                # >0: bridge_k_hi tokens per cell while sigma > bridge_k_hi_lo, bridge_k below
     bridge_k_hi_lo: float = 0.0         # (two prefix lengths, so two cached flex layouts)
+    bridge_ratio: float = 0.0           # >0: AReA's bridge size R = round(ratio * w)^2 for the current window side w,
+                                        # R / cells per cell (rounded, >= 1); replaces bridge_k (review round 1)
     lse_tau: float = 0.0                # >0: per-query mix, logit w = logit pi + tau * (lse_loc - lse_glob - mean)
     scale_sched: bool = False           # per-head apparent scale: n0 x n0 keys on the stride-(s / a) lattice, a = 1 .. max(s)
     scale_lo: float = 0.5               # head h reaches a = max(s) at sigma_end = scale_lo + (gate - scale_lo) * pi_h
@@ -812,6 +814,8 @@ class SCAContext:
             raise ValueError("bridge and lse mixing need local_impl flex and band 0")
         if self.bridge_k_hi < 0 or (self.bridge_k_hi and not self.bridge_cells):
             raise ValueError("bridge_k_hi needs bridge_cells > 0 and a positive token count")
+        if self.bridge_ratio < 0 or (self.bridge_ratio and (not self.bridge_cells or self.bridge_k_hi)):
+            raise ValueError("bridge_ratio needs bridge_cells > 0, a positive ratio and no bridge_k_hi")
         if self.ramp_mode not in ("linear", "head"):
             raise ValueError(f"ramp_mode must be linear or head, got {self.ramp_mode}")
         if self.ramp_sigma > 0 and not 0 < self.ramp_sigma < self.gate_sigma:
@@ -893,8 +897,13 @@ class SCAContext:
             return float(self.text_local)
         return 0.0
 
-    def bridge_k_now(self):
-        """Bridge tokens per cell at the current sigma: bridge_k_hi while sigma > bridge_k_hi_lo (if set), else bridge_k."""
+    def bridge_k_now(self, n_cells=None):
+        """Bridge tokens per cell at the current sigma. With bridge_ratio: AReA's R = round(ratio * w)^2 tokens for the
+        current window side w (area/backbones/flux.py), spread evenly over the n_cells cells (default bridge_cells^2),
+        rounded and at least 1. Otherwise bridge_k_hi while sigma > bridge_k_hi_lo (if set), else bridge_k."""
+        if self.bridge_ratio:
+            n = n_cells or self.bridge_cells ** 2
+            return max(1, round(max(1, round(self.window_now() * self.bridge_ratio)) ** 2 / n))
         if self.bridge_k_hi and (self.sigma is None or float(self.sigma) > self.bridge_k_hi_lo):
             return self.bridge_k_hi
         return self.bridge_k
@@ -1023,7 +1032,7 @@ class SCAContext:
         H, W = self.grid
         cells = (fit_divisor(H, self.bridge_cells, self.log, "bridge cells"),
                  fit_divisor(W, self.bridge_cells, self.log, "bridge cells"))
-        return cells, min(self.bridge_k_now(), (H // cells[0]) * (W // cells[1]))
+        return cells, min(self.bridge_k_now(cells[0] * cells[1]), (H // cells[0]) * (W // cells[1]))
 
     def headwin_now(self, layer, heads, device):
         """(member, pi) of this layer on a win_sched step under win_heads_below: member[h] = published pi_h < TAU (the
@@ -1166,7 +1175,7 @@ class SCAProcessor:
             H, W = ctx.grid
             cells = (fit_divisor(H, ctx.bridge_cells, ctx.log, "bridge cells"),
                      fit_divisor(W, ctx.bridge_cells, ctx.log, "bridge cells")) if on else None
-            per = min(ctx.bridge_k_now(), (H // cells[0]) * (W // cells[1])) if on else 0
+            per = min(ctx.bridge_k_now(cells[0] * cells[1]), (H // cells[0]) * (W // cells[1])) if on else 0
             layout = ctx.flex_layout(L + (cells[0] * cells[1] * per if on else 0), tile, win, q.device)
             return sca_dedup_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
                                           layout, tb, cells, per, float(ctx.lse_tau))
