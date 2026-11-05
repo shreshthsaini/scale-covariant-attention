@@ -84,8 +84,38 @@ def sheets(trace, out):
     print("sheets in", out)
 
 
+def overread(npz, out):
+    """Text over-read of a window: full attention's text mass at 1024^2 (calibration masses) against the text mass of a
+    window holding only the near-field share of the image mass, alpha_win = a / (a + share (1 - a)), per layer, head
+    and populated sigma bin, for windows of 64 to 128 tokens on a 256-token canvas (emulated radius 64 w / 512)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from sca.textgate import near_share
+    z = np.load(npz)
+    mass, radii, c, pop, pi4 = z["mass_mean"], z["radii"], z["sigma_centers"], z["populated"], z["s4_pi_head"]
+    text = mass[0]
+    rows = []
+    for w in (64, 80, 96, 112, 128):
+        share = near_share(mass, radii, 0.5 * 64 * w / 256)
+        win = text / (text + share * (1 - text))
+        f = win / np.clip(text, 1e-9, None)
+        for b in np.flatnonzero(pop):
+            fb = f[..., b].ravel()
+            g = pi4[..., b].ravel() < 0.5
+            rows.append({"window": w, "sigma": round(float(c[b]), 3), "text_full": round(float(text[..., b].mean()), 4),
+                         "text_window": round(float(win[..., b].mean()), 4), "overread_median": round(float(np.median(fb)), 3),
+                         "overread_p90": round(float(np.percentile(fb, 90)), 3), "heads_over_2x": round(float(np.mean(fb > 2)), 3),
+                         "overread_median_pi_below_half": round(float(np.median(fb[g])), 3) if g.any() else ""})
+    with open(out, "w", newline="") as fh:
+        wr = csv.DictWriter(fh, fieldnames=list(rows[0]))
+        wr.writeheader()
+        wr.writerows(rows)
+    print("wrote", out, len(rows), "rows")
+
+
 if __name__ == "__main__":
-    if sys.argv[1] == "probe":
+    if sys.argv[1] == "overread":
+        overread(sys.argv[2], sys.argv[3])
+    elif sys.argv[1] == "probe":
         probe(sys.argv[2], sys.argv[4] if len(sys.argv) > 4 and sys.argv[3] == "--out" else None)
     else:
         sheets(sys.argv[2], sys.argv[3])

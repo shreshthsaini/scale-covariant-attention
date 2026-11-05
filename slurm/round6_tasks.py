@@ -75,24 +75,45 @@ if [ "$(cat {out}/VERDICT)" = PASS ]; then n=$(ls {HOLD}/a6_d2*.sh 2>/dev/null |
     dt.write(Path(QUEUE) / "a6_a000_smoke.sh", "".join(lines), dry)
 
 
-def trace(code, dry, sids, per_task):
+def trace(code, dry, sids, per_task, methods, tag="c0", hold=None):
     sel = f"{R6}/trace_selection.json"
-    for method in ("sca_v2", "area"):
+    for mi, method in enumerate(methods):
         for k in range(0, len(sids), per_task):
             part = sids[k:k + per_task]
-            name = f"a6_t{k // per_task:02d}_trace_{method}.sh"
+            name = f"a6_{tag}{mi}{k // per_task}_trace_{method}.sh"
             text = (header(name, f"x0 traces of {method} at the copies' crops", 5400) + f"set -uo pipefail\ncd {code}\n"
                     + f"{PY} scripts/sample_trace.py --method {method} --selection {sel} --out-root {R6}/trace "
                     + "--sid " + " ".join(part) + "\n")
-            dt.write(Path(QUEUE) / name, text, dry)
+            dt.write(Path(hold or QUEUE) / name, text, dry)
 
 
-def abl46(code, dry, label, flags, chunk, hold=False):
+def probe(code, dry, label, flags, tag, hold=None):
+    name = f"a6_{tag}_probe_{label}.sh"
+    camp = SCA_V2_DIR if label == "sca_v2" else f"{R6}/out/{label}/4096x4096"
+    text = (header(name, f"Step 2 attention probe of {label} at six labeled copies", 3600) + f"set -uo pipefail\ncd {code}\n"
+            + f"{PY} scripts/r6_attn_probe.py --spec {R6}/probe_spec.json --out {R6}/probe/{label} --label {label} "
+            + f"--campaign-dir {camp} " + " ".join(flags) + "\n")
+    dt.write(Path(hold or QUEUE) / name, text, dry)
+
+
+def extra(code, dry, label, flags, prompts, tag, release_hold):
+    """One generation task of `label` on extra prompts (e.g. the traced ones) into the label's directory; on success it
+    moves every task of `release_hold` into the queue (the traces and probe that need these images)."""
+    out = f"{R6}/out/{label}/4096x4096"
+    name = f"a6_{tag}_{label}_extra.sh"
+    text = (header(name, f"{label} on {prompts} (images for traces and probe)", 3600) + f"cd {code}\n"
+            + gen(label, flags, prompts, out) + " || exit $?\n"
+            + f"n=$(ls {release_hold}/*.sh 2>/dev/null | wc -l); mv {release_hold}/*.sh {S}/taskq/pending/ 2>/dev/null; "
+            + "echo \"released $n tasks\"\n")
+    dt.write(Path(QUEUE) / name, text, dry)
+
+
+def abl46(code, dry, label, flags, chunk, hold=False, gen_tag="d2", eval_tag="z97"):
     out = f"{R6}/out/{label}/4096x4096"
     E = f"{S}/eval/r6_46_{label}"
-    ename = f"a6_z97_eval_{label}.sh"
+    ename = f"a6_{eval_tag}_eval_{label}.sh"
     starts = list(range(0, 46, chunk))
-    names = [f"a6_d2{i:02d}_{label}.sh" for i in range(len(starts))]
+    names = [f"a6_{gen_tag}{i:02d}_{label}.sh" for i in range(len(starts))]
     pat = "|".join(n[:-3] for n in names)
     for a, name in zip(starts, names):
         dt.write(Path(HOLD if hold else QUEUE) / name, header(name, f"{label} on the 46-prompt subset: {' '.join(flags)}", 3600)
@@ -130,7 +151,7 @@ date -u +%FT%TZ > $E/DONE
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--code", required=True)
-    p.add_argument("--stage", choices=("smoke", "trace", "abl46"), required=True)
+    p.add_argument("--stage", choices=("smoke", "trace", "abl46", "probe", "extra"), required=True)
     p.add_argument("--label")
     p.add_argument("--flags", default="")
     p.add_argument("--chunk", type=int, default=8)
@@ -138,6 +159,13 @@ def main():
     p.add_argument("--sids", nargs="*", default=[])
     p.add_argument("--per-task", type=int, default=5)
     p.add_argument("--hold", action="store_true", help="abl46: park generation in taskq/hold_r6 (the smoke releases it)")
+    p.add_argument("--gen-tag", default="d2", help="abl46: generation task names a6_<tag>NN_<label>")
+    p.add_argument("--eval-tag", default="z97", help="abl46: evaluation task name a6_<tag>_eval_<label>")
+    p.add_argument("--tag", default="c0", help="trace / probe / extra: name tag after a6_")
+    p.add_argument("--methods", default="sca_v2,area", help="trace: methods")
+    p.add_argument("--hold-dir", help="trace / probe: write into this hold directory instead of the queue; extra: the "
+                   "hold directory to release after the generation succeeds")
+    p.add_argument("--prompts", help="extra: prompt file")
     p.add_argument("--dry", action="store_true")
     a = p.parse_args()
     if not Path(a.code, "FREEZE_COMMIT").exists():
@@ -145,11 +173,15 @@ def main():
     if a.stage == "smoke":
         smoke(a.code, a.dry, {k: shlex.split(v) for k, v in json.loads(a.candidates).items()})
     elif a.stage == "trace":
-        trace(a.code, a.dry, a.sids, a.per_task)
+        trace(a.code, a.dry, a.sids, a.per_task, a.methods.split(","), a.tag, a.hold_dir)
+    elif a.stage == "probe":
+        probe(a.code, a.dry, a.label, shlex.split(a.flags), a.tag, a.hold_dir)
+    elif a.stage == "extra":
+        extra(a.code, a.dry, a.label, shlex.split(a.flags), a.prompts, a.tag, a.hold_dir)
     else:
         if not a.label or not a.label.startswith("r6_"):
             raise SystemExit("--label r6_<name> is required for abl46")
-        abl46(a.code, a.dry, a.label, shlex.split(a.flags), a.chunk, a.hold)
+        abl46(a.code, a.dry, a.label, shlex.split(a.flags), a.chunk, a.hold, a.gen_tag, a.eval_tag)
 
 
 if __name__ == "__main__":

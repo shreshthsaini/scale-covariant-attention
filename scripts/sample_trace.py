@@ -64,7 +64,11 @@ CAMPAIGN = {
                         "--bridge-cells", "8", "--bridge-k", "16", "--win-sched", "0.88:128,0.86:112,0.84:96,0.82:80",
                         "--win-pi-match", "--win-pi-interp"]},
 }
-SCA_METHODS = ("sca", "sca_v2")                         # built by scripts/sample.py; the rest through run_area.py
+# round 6 candidate (c): sca_v2 plus the calibrated text offset in the windows (sca/textgate.py, --text-mode ctw); its
+# campaign images are the round-6 runs in r6/out/r6_ctw (46-prompt subset plus the traced prompts)
+CAMPAIGN["r6_ctw"] = {"dir": SCRATCH / "r6/out/r6_ctw" / RES, "label": "r6_ctw",
+                      "argv": [a if a != "sca_v2" else "r6_ctw" for a in CAMPAIGN["sca_v2"]["argv"]] + ["--text-mode", "ctw"]}
+SCA_METHODS = ("sca", "sca_v2", "r6_ctw")               # built by scripts/sample.py; the rest through run_area.py
 IGNORED = ("implementation_sha256", "code_revision")   # differ by construction: frozen tree with this file
 VERSIONS = ("diffusers", "torch")                       # reported, not fatal
 STEP_FILES = ("steps/x0_{:02d}.webp", "steps/crop_{:02d}.png")

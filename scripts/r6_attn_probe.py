@@ -65,18 +65,21 @@ def window_keys(idx, grid, tile, win):
     return rr.flatten()
 
 
-def _masses(qi, keys, scale, groups):
-    """qi [n, h, D], keys [M, h, D]; groups: list of index tensors into keys -> [len(groups), h] mean softmax mass."""
-    p = torch.einsum("nhd,mhd->hnm", qi, keys).mul(scale).softmax(-1)          # [h, n, M]
+def _masses(qi, keys, scale, groups, bias=None):
+    """qi [n, h, D], keys [M, h, D]; groups: list of index tensors into keys -> [len(groups), h] mean softmax mass.
+    bias: optional [h, M] additive logit offset."""
+    s = torch.einsum("nhd,mhd->hnm", qi, keys).mul(scale)
+    p = (s if bias is None else s + bias[:, None, :]).softmax(-1)              # [h, n, M]
     return torch.stack([p[..., g].sum(-1).mean(-1) if len(g) else torch.zeros(p.shape[0], device=p.device)
                         for g in groups])
 
 
 @torch.no_grad()
-def measure(q, k, rot, ctx, regions, subj_idx, main_mask):
+def measure(q, k, rot, ctx, regions, subj_idx, main_mask, text_bias=None):
     """[regions, 3 operators, 3 quantities, heads] for one block. q, k pre-RoPE [1, L + N, h, D] (text first);
     rot = (cos, sin) of all L + N tokens; regions: list of image-token index tensors (each inside one query tile);
-    subj_idx: text-token indices of the subject words; main_mask: bool [N] image tokens of the main subject."""
+    subj_idx: text-token indices of the subject words; main_mask: bool [N] image tokens of the main subject;
+    text_bias: optional [h] offset on the window's text logits (round-6 calibrated text weight, --text-mode ctw)."""
     from sca.attn import bridge_index, pool_tokens, rope
     H, W = ctx.grid
     N = H * W
@@ -106,7 +109,11 @@ def measure(q, k, rot, ctx, regions, subj_idx, main_mask):
         keys = torch.cat([kr[:L], kr[L + bidx], kr[L + wk]], 0)
         img = torch.cat([bidx, wk])
         main_loc = L + torch.nonzero(main_mask[img]).flatten()
-        out[ri, 1] = _masses(qi, keys, scale, [txt, subj, main_loc])
+        lb = None
+        if text_bias is not None:
+            lb = torch.zeros(q.shape[2], keys.shape[0], device=dev)
+            lb[:, :L] = text_bias.float().to(dev)[:, None]
+        out[ri, 1] = _masses(qi, keys, scale, [txt, subj, main_loc], lb)
         qg = rope(q[:, L + idx], (rq[0][idx], rq[1][idx]))[0].float()
         main_glob = L + torch.nonzero(main_mask[centres]).flatten()
         out[ri, 2] = _masses(qg, kg, scale, [txt, subj, main_glob])
@@ -126,6 +133,10 @@ def main(argv=None):
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--steps", default="6,8,9,10,11,12,13,14,16,18,20,24")
     p.add_argument("--device", default="cuda")
+    p.add_argument("--text-mode", default="", help="round-6 window text option for the probed run (ctw: the window's "
+                   "text logits carry the calibrated offset, in the run and in the 'loc' measurement)")
+    p.add_argument("--label", default="sca_v2")
+    p.add_argument("--campaign-dir", default="/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096")
     a = p.parse_args(argv)
     import sample
     from sca.attn import SCAProcessor, install
@@ -137,9 +148,10 @@ def main(argv=None):
     prompts = {r["id"]: r for r in read_prompts(Path("/scratch/09032/saini_2/constancy_rope/prompts/aesthetic4k_eval.jsonl"))}
     args = sample.parser().parse_args(["--method", "sca", "--res", "4096x4096", "--seed", "0", "--guidance", "4.5",
                                        "--pi-table", "/scratch/09032/saini_2/sca/calib/k1_1024.npz", "--gate-sigma", "0.89",
-                                       "--label", "sca_v2", "--bridge-cells", "8", "--bridge-k", "16", "--win-sched",
+                                       "--label", a.label, "--bridge-cells", "8", "--bridge-k", "16", "--win-sched",
                                        "0.88:128,0.86:112,0.84:96,0.82:80", "--win-pi-match", "--win-pi-interp",
-                                       "--prompts", "x", "--out", str(a.out), "--device", a.device])
+                                       "--prompts", "x", "--out", str(a.out), "--device", a.device]
+                                      + (["--text-mode", a.text_mode] if a.text_mode else []))
     h, w = args.res
     grid = (h // 16, w // 16)
     ctx, _ = sample.build_context(args, grid)
@@ -156,8 +168,9 @@ def main(argv=None):
         st = state.get("cur")
         if st is not None and ctx.step in st["steps"]:
             s = st["steps"].index(ctx.step)
+            tb = ctx.ctw_beta_now(self.layer, q.shape[2], q.device) if "ctw" in ctx.text_mode_now() else None
             st["stats"][s, self.layer] = measure(q, k, image_rotary_emb, ctx, st["regions"], st["subj"],
-                                                 st["main"]).permute(3, 0, 1, 2).cpu().numpy()
+                                                 st["main"], tb).permute(3, 0, 1, 2).cpu().numpy()
             st["pi"][s, self.layer] = ctx.pi_now(self.layer, q.shape[2], q.device).float().cpu().numpy()
             st["sigma"][s] = ctx.sigma
         return o
@@ -183,7 +196,7 @@ def main(argv=None):
                          generator=g, max_sequence_length=512).images[0]
         image.save(out / "final.png")
         st = state.pop("cur")
-        camp = Path(f"/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/{image_stem(pid, 0)}.png")
+        camp = Path(a.campaign_dir) / f"{image_stem(pid, 0)}.png"
         psnr = None
         if camp.exists():
             x = np.asarray(image.convert("RGB"), np.float64)
