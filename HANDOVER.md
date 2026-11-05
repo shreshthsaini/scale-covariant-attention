@@ -729,3 +729,18 @@ at 2.6x AReA's speed on FLUX.1-dev, parity on Krea, duplication stated as a weak
 Addendum 04:12: Figure 3 and D.1 redrawn (figures/candidates/*_print300.png for review). Open from the figure agent: the calibration thumbnail in Figure 3 is a stand-in (calib00 resized from a 2048^2 SCA output; generate a real 1024^2 full-attention image for it); Appendix B opening cites Figure 3b for calibration, now panel (a); Figure 5 (heads_view) and the calibration-results figure still need the redesign.
 
 Addendum 04:09 (method agent, pushed fe5a56c/f479459): (a) detector validation on baselines (results/dup_audit_20261027/validation_by_method.csv): AReA precision 0.50 recall 0.29, HRDiT 0.60/0.33, SCA 0.91/0.84; AReA true rate plausibly about 13 percent, so the paper must report detector-measured rates with this caveat and not state "4 percent" as fact. (b) On 46 prompts the bridge alone gives 5/26 and bridge plus schedule 4/26 (McNemar p 1), schedule costs ARNIQA -0.007 and MUSIQ_c -0.5: present the bridge as the main fix and the schedule as a small, not yet significant addition, pending the 195-prompt schedule-only ablation (held, item 1). (c) Krea-195 duplication: sca_v2 30, published SCA 64, AReA 8, DyPE 20, SEGA 8 percent. (d) 148 GPU task scripts in taskq/hold_review_round (33.5 GPU-h); copy the reference sets named in its README off scratch before the purge.
+
+Addendum 2026-11-04 23:55 CST (review-round GPU campaign owner; controller node i615-133, job 1123393, ends 2026-11-06 23:31):
+allocation refilled (9,992 SU); fleet SCA21 (job 1123398, 4 gh nodes, 10 h, slurm/fleet_SCA21.sbatch: node_launch.sh, bash
+worker_loop.sh, IDLE_MAX 1800 s) queued. All 140 GPU tasks of taskq/hold_review_round are in taskq/pending; 8 stay held and
+release themselves (r1_z, r2_z, r3_z_eval_6144, r3_z_eval_flux2, c3_eval_8192_cpu, c1/c3/c5 boot). One change to the README
+run order (5, 1, 2, 3, 4): r4_latency_sweep.sh is now r1_zz_b_r4_latency_sweep.sh and the six r3_g_8192 tasks carry the
+prefix r1_zz_a_, so the order is 5, 1, (3b generation and 4), 2, rest of 3. Item 4 is one 5 to 6 h task: placed last it
+would start near hour 6.5 of the 10 h fleet and be cut off, and each GH200 node has one GPU and one worker, so the sweep is
+alone on its node at any time (its timing covers encode, denoise and decode only). The 8192 tasks go early because their
+CPU evaluation takes about 6 h. Release loop (backup to the generation tasks' own release; matches the prefixed names;
+sends the CPU evaluation to taskq_cpu): /scratch/09032/saini_2/sca/dispatch/review_round1/release_review_evals.sh, PID
+2733390, log logs/release_review_evals.log. CPU workers (nice 19, frozen slurm/worker_loop_v2.py on taskq_cpu, logs
+logs/cpu): PIDs 2733389 and 2733391, idle exit 36 h, deadline 2026-11-06 23:10; stop them with taskq_cpu/STOP once the CPU
+work is done, never taskq/STOP while GPU work remains. Status: bash /scratch/09032/saini_2/sca/dispatch/review_round1/status.sh.
+Copies of the three scripts: .agent/notes/review_round1/campaign_scripts/.
