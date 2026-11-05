@@ -218,3 +218,26 @@ def test_sample_info_lists_text_mode_only_when_set():
     assert info["text_mode"] == "ctw+gtg" and info["text_mode_lo"] == 0.5
     kw = dedup.context_kwargs(a)
     assert kw["text_mode"] == "ctw+gtg" and kw["text_gamma"] == 1.0
+
+
+def test_probe_measure_reduces_to_full_attention():
+    """scripts/r6_attn_probe.measure: with one window covering the grid and no pooling, the window and global
+    operators are full attention, so all three rows agree; masses are probabilities."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    import r6_attn_probe as pr
+    m = model().double()
+    Hh = Ww = 8
+    Lt = 4
+    ids = __import__("test_sca").inputs(Hh, Ww)["img_ids"].double()
+    rot = m.pos_embed(torch.cat([torch.zeros(Lt, 3, dtype=torch.float64), ids]))
+    c = SCAContext(mode="sca", n0=8, tile=2, window=8, pi=PiTable("const", value=0.5))
+    c.pos_embed = m.pos_embed
+    c.set_inputs(ids)
+    q, k, _ = _qkv(Hh, Ww, Lt, seed=5)
+    regions = [pr.patch_indices((40, 40), (Hh, Ww), tile=4, side=2), pr.patch_indices((100, 20), (Hh, Ww), tile=4, side=2)]
+    main = pr.box_mask((0, 0, 60, 60), (Hh, Ww))
+    out = pr.measure(q, k, rot, c, regions, [1, 2], main)
+    assert out.shape == (2, 3, 3, 2) and float(out.min()) >= 0 and float(out.max()) <= 1 + 1e-9
+    assert torch.allclose(out[:, 1], out[:, 0], atol=1e-9) and torch.allclose(out[:, 2], out[:, 0], atol=1e-9)
+    assert pr.box_mask((0, 0, 60, 60), (Hh, Ww)).sum() == 16          # token centres 8, 24, 40, 56 px
+    assert pr.window_keys(torch.tensor([0]), (Hh, Ww), (2, 2), (4, 4)).tolist()[:4] == [0, 1, 2, 3]
