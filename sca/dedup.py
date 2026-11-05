@@ -58,6 +58,8 @@ def add_args(p):
     p.add_argument("--text-mode-lo", type=float, default=0.0, metavar="SIGMA", help="--text-mode applies while sigma > this")
     p.add_argument("--text-gamma", type=float, default=1.0, help="gtg: strength of the global text gate")
     p.add_argument("--text-clip", type=float, default=6.0, help="gtg: floor of the gate's log ratio")
+    p.add_argument("--native-open", type=int, default=0, metavar="K", help="Round 6 candidate d: first K steps at 1024^2 "
+                   "with full attention, then upsample, renoise at the next sigma and continue at the target (0 = off)")
     p.add_argument("--anchor-lo", type=float, default=0.0, metavar="SIGMA", help="Latent low-band anchor "
                    "(sca/anchor.py): while sigma > SIGMA the low band of x0_hat follows the x0_hat of the last "
                    "global-only step (0 = off)")
@@ -121,6 +123,8 @@ def info(args):
     if args.text_mode:
         out.update(text_mode=args.text_mode, text_mode_lo=args.text_mode_lo, text_gamma=args.text_gamma,
                    text_clip=args.text_clip)
+    if getattr(args, "native_open", 0):
+        out["native_open"] = args.native_open
     if args.anchor_lo:
         out.update(anchor_lo=args.anchor_lo, anchor_shape=args.anchor_shape, anchor_pool=args.anchor_pool,
                    anchor_refresh=args.anchor_refresh)

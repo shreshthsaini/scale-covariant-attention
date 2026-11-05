@@ -135,8 +135,13 @@ def main(argv=None):
                 torch.cuda.reset_peak_memory_stats()
             start = time.perf_counter()
             with torch.inference_mode():
-                image = pipe(prompt=row["prompt"], height=h, width=w, num_inference_steps=args.steps,
-                             guidance_scale=args.guidance, generator=generator, max_sequence_length=512).images[0]
+                if args.native_open:  # round 6 candidate d (sca/native_open.py); off by default
+                    from sca.native_open import generate
+                    image = generate(pipe, ctx, row["prompt"], h, w, image_seed(row["id"], args.seed), args.native_open,
+                                     args.steps, args.guidance, log=ctx.log)
+                else:
+                    image = pipe(prompt=row["prompt"], height=h, width=w, num_inference_steps=args.steps,
+                                 guidance_scale=args.guidance, generator=generator, max_sequence_length=512).images[0]
             if cuda:
                 torch.cuda.synchronize()
             seconds = time.perf_counter() - start

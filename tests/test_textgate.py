@@ -241,3 +241,28 @@ def test_probe_measure_reduces_to_full_attention():
     assert torch.allclose(out[:, 1], out[:, 0], atol=1e-9) and torch.allclose(out[:, 2], out[:, 0], atol=1e-9)
     assert pr.box_mask((0, 0, 60, 60), (Hh, Ww)).sum() == 16          # token centres 8, 24, 40, 56 px
     assert pr.window_keys(torch.tensor([0]), (Hh, Ww), (2, 2), (4, 4)).tolist()[:4] == [0, 1, 2, 3]
+
+
+def test_native_open_latent_helpers():
+    from sca.native_open import renoise, upsample_packed
+    lat = torch.full((1, 64 * 64, 64), 0.25)
+    up = upsample_packed(lat, (1024, 1024), (4096, 4096))
+    assert up.shape == (1, 256 * 256, 64) and torch.allclose(up, torch.full_like(up, 0.25), atol=1e-6)
+    yy, xx = torch.meshgrid(torch.linspace(0, 6.28, 128), torch.linspace(0, 6.28, 128), indexing="ij")
+    small = torch.stack([torch.sin(xx * (1 + c % 3)) * torch.cos(yy * (1 + c % 2)) for c in range(16)])[None]   # smooth layout
+    from diffusers import FluxPipeline
+    packed = FluxPipeline._pack_latents(small, 1, 16, 128, 128)
+    back = FluxPipeline._unpack_latents(upsample_packed(packed, (1024, 1024), (4096, 4096)), 4096, 4096, 8)
+    pooled = torch.nn.functional.avg_pool2d(back, 4)
+    assert (pooled - small).abs().mean() < 0.02 * small.abs().mean()         # the upsample keeps the layout
+    x0, eps = torch.ones(2, 3), torch.zeros(2, 3)
+    assert torch.allclose(renoise(x0, eps, 0.8), torch.full((2, 3), 0.2))
+
+
+def test_native_open_flag_in_info_only_when_set():
+    from scripts.sample import parser
+    from sca import dedup
+    base = ["--method", "sca", "--res", "64x64", "--prompts", "x.jsonl", "--out", "o"]
+    assert "native_open" not in dedup.info(parser().parse_args(base))
+    assert dedup.info(parser().parse_args(base + ["--native-open", "8"]))["native_open"] == 8
+    assert "native_open" not in dedup.context_kwargs(parser().parse_args(base + ["--native-open", "8"]))
