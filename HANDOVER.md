@@ -791,3 +791,5 @@ Rubric self-score (22 items, 0/1/2): abstract 1, hero 1, footnotes 1, question a
 sentence length 1, method diagram 1, equations 1, algorithms 2, setup run-ins 1, main table 2, finding paragraphs 2,
 ablations 1, plots under 6 pt 1, qualitative grid 1, limitations 2, reproducibility 2, appendix 2, float placement 1,
 captions 1, colours 1, dashes and section symbol 1. Mean 1.32 (29/22), no zero.
+
+Addendum 2026-11-05 (lead): human-validated duplication on the 95 person/animal prompts (results/dup_audit_20261027/human_rates_95.txt): AReA 4.2%, HRDiT 6.3%, full attention 4.2% (but subject missing in 22 of 37 labeled), sca_v2 26.7%. The paper build delivery_eeofzli6 says AReA corrects to about 7% (13% any subject): WRONG, must be replaced by the human-validated 4.2% in the next revision (Section 4 Duplication paragraph, Table 1 caption, Appendix P). Bar for the round-6 fix: human rate at most 4.2% on the same prompts.
