@@ -1,14 +1,20 @@
 """Late duplication at 4096^2: the gate sweep, the rates of every method, and uncurated before/after pairs.
 
-(a) Gate sweep on the 46-prompt ablation set (abl50 minus dev4; 26 prompts name a person or animal with a
-    count): share of those 26 prompts whose image shows more copies of the subject than the prompt implies,
-    for published SCA (hard switch from the global-only opening to native windows) with the gate at
-    sigma_g = 0.93, 0.89 (published), 0.85 and global only at every step. sca_v2 (final operator: windows of
-    128, 112, 96, 80 tokens on the four steps after the gate, weights read at the matching ratio, 1,024 bridge
-    tokens; 46-prompt run label dup_i_shrink) is the green dot on the published gate's row, AReA the purple
-    line. The one annotation is the quality cost of gate 0.85 against gate 0.89: the number of the ten
-    per-image metrics whose paired 95% bootstrap interval lies below zero (results/e7_sca_g85_deltas.csv,
-    same 46 prompts).
+(a) Late duplication on the 46-prompt ablation set (abl50 minus dev4; 26 prompts name a person or animal with
+    a count): share of those 26 prompts whose image shows more copies of the subject than the prompt implies.
+    Two groups share one x axis, split by a gap that holds the second heading. "Gate, no bridge": the operator
+    without bridge or schedule (hard switch from the global-only opening to native windows; SCA w/o schedule)
+    with the gate at sigma_g = 0.93, 0.89 (published), 0.85, and with the global branch only at every step
+    (results/dup_audit_20261027/rates_abl46_people.csv). "Gate 0.89": that operator plus 1,024 bridge tokens in
+    the local softmax (run dup_bridge, grey dot), and bridge plus the four-step window schedule (windows of 128,
+    112, 96, 80 tokens on the four steps after the gate, weights read at the matching ratio; run dup_i_shrink,
+    the final operator sca_v2: green dot, bold green SCA (ours), direct label "+ schedule"), both from
+    results/dup_audit_20261027/rates_46_all_people.csv. Every row's operator is checked in its image sidecars.
+    AReA is the purple dashed line. Kept in the provenance for the caption, not drawn: McNemar p of the bridge
+    against gate 0.89 and of bridge plus schedule against the bridge (metric dup_people of
+    results/dup_audit_20261027/review_round1_cpu/pairs.csv), and the quality cost of gate 0.85 against gate
+    0.89, the number of the ten per-image metrics whose paired 95% bootstrap interval lies below zero
+    (results/e7_sca_g85_deltas.csv, same 46 prompts).
 (b) The same rate on the 95 people/animal prompts of the 195-prompt Aesthetic-4K set at 4096^2 for every
     method, with Wilson 95% intervals (results/dup_audit_20261027/rates_a4k195_people.csv). sca_v2's row is
     read from results/a4k195_main_sca_v2/dup_rates_people.csv, or from the eval directory once its DONE marker
@@ -22,7 +28,7 @@
     subject with the largest excess count (dup_rate.py count_boxes, threshold 0.35), minus the `implied`
     largest (the intended subjects), are the extra copies; the box is the CROP_PX square that holds the most
     extra copies (ties: higher summed score), centred on their union and clamped to the image. The same box is
-    drawn on both images and cropped from both.
+    drawn on both images and cropped from both; each crop tile carries a red frame of the box's line width.
 
 Every number comes from the CSVs named above; nothing is computed except counts, shares already in them, and
 the opening length in steps (sigmas > sigma_g in the image sidecars), which goes to the provenance only.
@@ -43,7 +49,7 @@ from pathlib import Path
 os.environ.setdefault("SOURCE_DATE_EPOCH", "0")  # byte-identical PDF on rerun
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import FancyArrowPatch, Rectangle
+from matplotlib.patches import Rectangle
 from PIL import Image
 
 HERE = Path(__file__).resolve().parent
@@ -54,7 +60,8 @@ Image.MAX_IMAGE_PIXELS = None
 
 ROOT = HERE.parents[2]
 AUDIT = ROOT / "results/dup_audit_20261027"
-RATES46 = AUDIT / "rates_46_all_people.csv"      # sca_nb, area, dup_i_shrink (= sca_v2) on the 46-prompt set
+RATES46 = AUDIT / "rates_46_all_people.csv"      # sca_nb, area, dup_bridge, dup_i_shrink (= sca_v2), 46 prompts
+PAIRS46 = AUDIT / "review_round1_cpu/pairs.csv"  # paired tests; McNemar p on dup_people for the 46-prompt runs
 RATESABL = AUDIT / "rates_abl46_people.csv"      # gate sweep and ablations on the same 46 prompts
 RATES195 = AUDIT / "rates_a4k195_people.csv"     # every method, 195 prompts (95 people/animal)
 PERIMG = AUDIT / "per_image_a4k195_people.csv"
@@ -73,6 +80,7 @@ V2_DIRS = [OUTROOT / "dupfix/sca_v2/4096x4096", OUTROOT / "dup46/dup_i_shrink/40
 V2_DETS = [("sca_v2", V2_EVAL / "det"), ("dup_i_shrink", Path("/scratch/09032/saini_2/sca/eval/dup46_dup_i_shrink/det"))]
 GATE_DIRS = {"sca_g93": OUTROOT / "gate/sca_g93/4096x4096", "sca_nb": PUB_DIR,
              "sca_g85": OUTROOT / "gate/sca_g85/4096x4096", "abl_globalonly": OUTROOT / "abl/abl_globalonly/4096x4096"}
+FIX_DIRS = {"dup_bridge": OUTROOT / "dup46/dup_bridge/4096x4096", "dup_i_shrink": OUTROOT / "dup46/dup_i_shrink/4096x4096"}
 OUT = ROOT / "paper/figures/dup"                 # dup.pdf, dup_provenance.json; tiles in dup/
 TILES = ROOT / "paper/figures/dup"
 RULE_TEX = ROOT / "paper/figures/snippets/dup_examples_rule.tex"  # the selection rule as a caption/text sentence
@@ -90,9 +98,15 @@ THR, SIDES, NMS, CONTAIN, CONTAIN_AREA, MAX_FRAC = 0.35, {800, 1333}, 0.5, 0.9, 
 V2_SCA = {"gate_sigma": 0.89, "win_sched": [[0.88, 128], [0.86, 112], [0.84, 96], [0.82, 80]], "bridge_cells": 8,
           "bridge_k": 16, "win_pi_match": True, "win_pi_interp": True, "window": 64, "pi_variant": "head"}
 
-# Panel (a): rows top to bottom, later gate = longer global-only opening.
+# Panel (a), group 1, top to bottom: the operator without bridge or schedule; later gate = longer global-only
+# opening. Group 2, at the published gate: the bridge alone, then bridge plus schedule (the final operator).
 GATES = [("sca_g93", "0.93", 0.93), ("sca_nb", "0.89", 0.89), ("sca_g85", "0.85", 0.85),
          ("abl_globalonly", "global\nonly", None)]
+FIXES = [("dup_bridge", "bridge"), ("dup_i_shrink", "SCA\n(ours)")]
+HEADINGS = ("Gate, no bridge", "Gate 0.89")
+SCHED_LABEL = "+ schedule"                        # direct label of the final operator's dot
+BRIDGE = {"gate_sigma": 0.89, "bridge_cells": 8, "bridge_k": 16, "window": 64, "pi_variant": "head"}
+MCNEMAR = [("dup_bridge", "sca_nb"), ("dup_i_shrink", "dup_bridge")]  # (method, reference), metric dup_people
 # Panel (b): published SCA first, the baselines by rate, ours last.
 METHODS = {"sca_nb": "SCA w/o schedule", "sigma": "SigMa", "dype": "DyPE", "sega": "SEGA", "hrdit": "HRDiT",
            "sca_prog": "Progressive SCA", "full": "Full attention", "ultraimage": "UltraImage", "area": "AReA",
@@ -135,20 +149,47 @@ def gate_data(read: set) -> dict:
         sig = set()
         for js in sorted(GATE_DIRS[method].glob("*.json")):
             meta = json.loads(js.read_text())
+            sca = meta["config"]["sca"]
             sig.add(tuple(meta["sigmas"]))
-            g = meta["config"]["sca"]["gate_sigma"]
+            assert "bridge_cells" not in sca and "win_sched" not in sca, f"{js}: has a bridge or a window schedule"
             if gate is not None:
-                assert abs(g - gate) < 1e-9, f"{js}: gate {g} != {gate}"
+                assert abs(sca["gate_sigma"] - gate) < 1e-9, f"{js}: gate {sca['gate_sigma']} != {gate}"
             else:
-                assert meta["config"]["sca"]["pi_variant"] == "const" and meta["config"]["sca"]["pi_const"] == 0.0
+                assert sca["pi_variant"] == "const" and sca["pi_const"] == 0.0
         assert len(sig) == 1, f"{method}: more than one sigma schedule"
         sigmas = list(sig.pop())
-        r.update(tick=tick.replace("\n", " "), gate_sigma=gate, steps=len(sigmas),
+        r.update(tick=tick.replace("\n", " "), label=tick, gate_sigma=gate, steps=len(sigmas),
                  opening_steps=len(sigmas) if gate is None else sum(s > gate for s in sigmas),
-                 image_dir=str(GATE_DIRS[method]))
+                 image_dir=str(GATE_DIRS[method]), source=rel(RATESABL))
         rows.append(r)
-    v2, area = dict(all46["dup_i_shrink"]), dict(all46["area"])
-    assert v2["n"] == 26 and area["n"] == 26
+    # At the published gate: the bridge alone, then bridge plus schedule (sca_v2's 46-prompt run).
+    fixes = []
+    for method, tick in FIXES:
+        r = dict(all46[method])
+        assert r["n"] == 26, f"{method}: expected the 26 people/animal prompts of the 46-prompt set"
+        want, sched = (V2_SCA, True) if method == "dup_i_shrink" else (BRIDGE, False)
+        cfgs = set()
+        for js in sorted(FIX_DIRS[method].glob("*.json")):
+            sca = json.loads(js.read_text())["config"]["sca"]
+            assert all(sca.get(k) == v for k, v in want.items()), f"{js}: not the {method} operator"
+            assert ("win_sched" in sca) == sched, f"{js}: window schedule {'missing' if sched else 'present'}"
+            cfgs.add(json.dumps(sca, sort_keys=True))
+        assert len(cfgs) == 1, f"{method}: more than one operator config in {FIX_DIRS[method]}"
+        r.update(tick=tick.replace("\n", " "), label=tick, gate_sigma=0.89, image_dir=str(FIX_DIRS[method]),
+                 sca=json.loads(cfgs.pop()), source=rel(RATES46))
+        fixes.append(r)
+    # McNemar on the 26 prompts; duplication rows of pairs.csv hold the two counts where others hold the CI.
+    tests, prs = [], list(csv.DictReader(open(PAIRS46)))
+    read.add(PAIRS46)
+    for a, b in MCNEMAR:
+        hit = [t for t in prs if (t["comparison"], t["set"], t["metric"]) == (f"{a} - {b}", "46", "dup_people")]
+        assert len(hit) == 1, f"{a} - {b}: expected one dup_people row on the 46-prompt set"
+        t, counts = hit[0], [f"{all46[k]['dup']}/{all46[k]['n']}" for k in (a, b)]
+        assert [t["ci_low"], t["ci_high"]] == counts and int(t["n"]) == 26, f"{a} - {b}: counts disagree"
+        tests.append(dict(comparison=f"{a} - {b}", metric="dup_people", n=int(t["n"]), counts=counts,
+                          delta=float(t["delta"]), mcnemar_p=float(t["mcnemar_p"]), source=rel(PAIRS46)))
+    area = dict(all46["area"])
+    assert area["n"] == 26
     # Quality cost of the later gate: per-image metrics significantly worse than gate 0.89.
     e7 = list(csv.DictReader(open(E7_G85)))
     read.add(E7_G85)
@@ -160,7 +201,7 @@ def gate_data(read: set) -> dict:
     cost = dict(source=rel(E7_G85), n_metrics=len(e7), worse=worse, n_worse=len(worse),
                 rule="paired 95% bootstrap interval (gate 0.85 minus gate 0.89) entirely below zero",
                 deltas={r["metric"]: [float(r["delta"]), float(r["ci_low"]), float(r["ci_high"])] for r in e7})
-    return dict(rows=rows, v2=v2, area=area, cost=cost)
+    return dict(rows=rows, fixes=fixes, tests=tests, area=area, cost=cost)
 
 
 def v2_rate(read: set):
@@ -351,8 +392,8 @@ def make_tiles(pr: list[dict], tile_in: float) -> None:
 
 
 # ----------------------------------------------------------------------------- figure
-def ax_at(fig, x, y, w, h):
-    return fig.add_axes([x / W, y / H, w / W, h / H])
+def ax_at(fig, x, y, w, h, **kw):
+    return fig.add_axes([x / W, y / H, w / W, h / H], **kw)
 
 
 def letter(fig, x_in, y_in, ch, title=None):
@@ -373,38 +414,47 @@ def style_rate_axis(ax):
 
 def plot(g: dict, m: dict, pr: list[dict]) -> tuple:
     sf.use_style()
-    sf.script_floor(sf.FS_TICK)  # the g of sigma_g in the 7 pt title prints at 6 pt or more
     plt.rcParams["svg.hashsalt"] = "sca-dup"
     fig = plt.figure(figsize=(W, H))
     y_letter = H - 0.115
     bottom, top = 0.33, H - 0.21
 
-    # (a) gate sweep, 46 prompts
-    xa, wa = 0.37, 0.93
-    ax = ax_at(fig, xa, bottom, wa, top - bottom)
-    rows = g["rows"]
-    ys = np.arange(len(rows))[::-1].astype(float)
-    ax.axvline(100 * g["area"]["rate"], color=sf.AREA, lw=0.9, ls=(0, (3.0, 1.6)), zorder=1)
-    ax.plot([100 * r["rate"] for r in rows], ys, "o", ms=4.0, mfc=GREY_DOT, mec="white", mew=0.5, zorder=3)
-    y89 = ys[[r["method"] for r in rows].index("sca_nb")]
-    x_nb, x_v2 = 100 * rows[1]["rate"], 100 * g["v2"]["rate"]
-    ax.add_patch(FancyArrowPatch((x_nb - 3.2, y89), (x_v2 + 3.4, y89), arrowstyle="-|>,head_length=2.6,head_width=1.5",
-                                 color=sf.MID, lw=0.7, shrinkA=0, shrinkB=0, zorder=2))
-    ax.plot([x_v2], [y89], "o", ms=4.6, mfc=sf.SCA, mec="white", mew=0.5, zorder=4)
-    ax.set_yticks(ys, [t for _, t, _ in GATES], fontsize=sf.FS_TICK)
-    ax.set_ylim(-0.75, len(rows) - 0.45)
-    style_rate_axis(ax)
+    # (a) 46 prompts. Group 1, the gate sweep without bridge or schedule; group 2, at the published gate, the
+    # bridge alone and then bridge plus schedule. One axes per group, one x scale and one row pitch; the gap
+    # between the axes divides the groups and holds the second heading.
+    xa, wa, gap = 0.37, 0.93, 0.17                       # gap between the groups, inches
+    lim_g, lim_f = (-0.55, 3.42), (-0.9, 1.42)          # y limits in rows: gate sweep, fixes
+    top_a = 1.68                                         # top of the gate-sweep axes
+    pitch = (top_a - bottom - gap) / (lim_g[1] - lim_g[0] + lim_f[1] - lim_f[0])  # row pitch, inches
+    h_g, h_f = pitch * (lim_g[1] - lim_g[0]), pitch * (lim_f[1] - lim_f[0])
+    af = ax_at(fig, xa, bottom, wa, h_f)
+    ag = ax_at(fig, xa, top_a - h_g, wa, h_g, sharex=af)
+    x_area = 100 * g["area"]["rate"]
+    for ax, rows, lim in ((ag, g["rows"], lim_g), (af, g["fixes"], lim_f)):
+        ys = np.arange(len(rows))[::-1].astype(float)
+        ax.axvline(x_area, color=sf.AREA, lw=0.9, ls=(0, (3.0, 1.6)), zorder=1)
+        for r, y in zip(rows, ys):
+            ours = r["method"] == "dup_i_shrink"
+            ax.plot([100 * r["rate"]], [y], "o", ms=4.6 if ours else 4.0, mfc=sf.SCA if ours else GREY_DOT,
+                    mec="white", mew=0.5, zorder=4 if ours else 3)
+        ax.set_yticks(ys, [r["label"] for r in rows], fontsize=sf.FS_TICK)
+        for t, r in zip(ax.get_yticklabels(), rows):
+            t.set_linespacing(1.1)
+            if r["method"] == "dup_i_shrink":
+                t.set_fontweight("bold")
+                t.set_color(sf.SCA)
+        ax.set_ylim(*lim)
+        style_rate_axis(ax)
+    ag.set_xlabel("")
+    ag.spines["bottom"].set_visible(False)
+    ag.tick_params(axis="x", length=0, labelbottom=False)
     lab = dict(fontsize=sf.FS_TICK, va="center")
-    ax.text(100 * rows[0]["rate"] - 4.5, ys[0], "SCA w/o\nschedule", ha="right", color=GREY_DOT, linespacing=1.0,
-            **lab)
-    ax.text(100 * g["area"]["rate"] + 2.2, y89 - 0.36, "SCA (ours)", ha="left", color=sf.SCA, fontweight="bold",
-            **lab)
-    ax.text(100 * g["area"]["rate"] + 2.2, -0.52, "AReA", ha="left", color=sf.AREA, **lab)
-    y85 = ys[[r["method"] for r in rows].index("sca_g85")]
-    c = g["cost"]
-    ax.text(100 * rows[2]["rate"] + 5.0, y85, f"{c['n_worse']}/{c['n_metrics']} metrics\nworse",
-            ha="left", va="center", fontsize=sf.FS_SMALL, color=sf.MID, linespacing=1.0)
-    letter(fig, 0.02, y_letter, "a", r"Gate $\sigma_g$, 46 prompts")
+    af.text(100 * g["fixes"][-1]["rate"] + 4.5, 0, SCHED_LABEL, ha="left", color=sf.MID, **lab)
+    ag.text(x_area + 2.2, 2.5, "AReA", ha="left", color=sf.AREA, **lab)  # between the 0.93 and 0.89 rows
+    head = dict(fontsize=sf.FS_SMALL, color=sf.MID, va="baseline")
+    fig.text(0.02 / W, (top_a + 0.035) / H, HEADINGS[0], **head)
+    fig.text(0.02 / W, (bottom + h_f + 0.035) / H, HEADINGS[1], **head)
+    letter(fig, 0.02, y_letter, "a", "46 prompts")
 
     # (b) every method, 195 prompts
     xb, wb = 2.20, 0.86
@@ -454,7 +504,7 @@ def plot(g: dict, m: dict, pr: list[dict]) -> tuple:
                 a.set_ylim(SIDE, 0)
             else:
                 a.imshow(arr, extent=(0, 1, 1, 0), interpolation="none")
-                a.add_patch(Rectangle((0, 0), 1, 1, fill=False, ec=RED, lw=BOX_LW * 2, zorder=3, clip_on=True))
+                a.add_patch(Rectangle((0, 0), 1, 1, fill=False, ec=RED, lw=BOX_LW, zorder=3, clip_on=True))
                 a.set_xlim(0, 1)
                 a.set_ylim(1, 0)
             a.axis("off")
@@ -472,13 +522,21 @@ def tile_size() -> float:
     return (W - 0.01 - xc0 - 2 * gut - mid_gap) / 4
 
 
+def pfmt(p: float) -> str:
+    return f"{p:.2g}" if p < 0.1 else f"{p:.1f}"
+
+
 def caption(g: dict, m: dict, pr: list[dict]) -> str:
     v2 = m["rows"][-1]
     b = "" if v2.get("pending") else rf" (ours {100 * v2['rate']:.0f}\%)"
     words = {2: "two", 3: "three"}[len(pr) - 1]
     seen = "".join(f"; {OBSERVED[p['prompt_id']]}" for p in pr if p["prompt_id"] in OBSERVED)
-    return (r"\textbf{A gradual handover cuts late duplication.} "
-            r"(a)~A later gate cuts it but costs quality; ours keeps $\sigma_g=0.89$; "
+    nb, (br, ours), (t_br, t_sch), c = g["rows"][1], g["fixes"], g["tests"], g["cost"]
+    return (r"\textbf{Bridge tokens cut late duplication.} "
+            rf"(a)~Of 26 people or animal prompts (46-prompt subset), a later gate cuts it but costs quality "
+            rf"($\sigma_g=0.85$: {c['n_worse']} of {c['n_metrics']} metrics worse); at $\sigma_g=0.89$ the bridge cuts "
+            rf"it from {nb['dup']} to {br['dup']} (McNemar $p={pfmt(t_br['mcnemar_p'])}$) and the schedule to "
+            rf"{ours['dup']} ($p={pfmt(t_sch['mcnemar_p'])}$); "
             r"(b)~all methods, 95 people and animal prompts at $4096^2$" + b + ". "
             rf"(c)~Uncurated, same seed: the ice climber, then the next {words} detector-flagged prompts by id"
             + seen + ".")
@@ -517,12 +575,19 @@ def main():
                   "often than implied; validated 20/20 on labelled published-SCA images "
                   "(results/dup_audit_20261027/validation_people_dup_reviewed.txt)",
         panel_a=dict(set="46 prompts (abl50 minus dev4), 26 name a person or animal with a count; 4096x4096, seed 0",
-                     gate_sweep=g["rows"], sca_v2=dict(g["v2"], label="dup_i_shrink (46-prompt run of sca_v2)"),
-                     area=g["area"], annotation=dict(g["cost"], text=f"{g['cost']['n_worse']}/{g['cost']['n_metrics']} "
-                                                                        "metrics worse", at="gate 0.85 row"),
-                     drawn="grey dots: published operator at each gate; green dot: sca_v2 at the published gate "
-                           "(arrow from published SCA); purple dashed line: AReA; no intervals drawn (Wilson 95% "
-                           "intervals listed here)"),
+                     gate_sweep=dict(heading=HEADINGS[0], operator="without bridge or schedule (SCA w/o schedule), "
+                                     "gate varied", source=rel(RATESABL), rows=g["rows"]),
+                     at_gate_089=dict(heading=HEADINGS[1], operator="gate 0.89: bridge alone (dup_bridge), then "
+                                      "bridge plus the four-step window schedule (dup_i_shrink, the 46-prompt run of "
+                                      "sca_v2, SCA (ours))", source=rel(RATES46), rows=g["fixes"]),
+                     mcnemar_dup_people=g["tests"], area=g["area"],
+                     gate085_quality_cost=dict(g["cost"], drawn=False, use="stated in the caption"),
+                     drawn=("two groups on one x axis (0 to 85%), split by a gap that holds the second heading; "
+                            f"'{HEADINGS[0]}': grey dots for gates 0.93, 0.89, 0.85 and global only; "
+                            f"'{HEADINGS[1]}': grey dot for the bridge alone, green dot with the bold green row label "
+                            f"SCA (ours) and the direct label '{SCHED_LABEL}' for bridge plus schedule; purple dashed "
+                            "line: AReA; no intervals drawn (Wilson 95% intervals listed here); no arrow, no "
+                            "annotation")),
         panel_b=dict(set="195 Aesthetic-4K prompts at 4096x4096, seed 0; 95 people/animal prompts",
                      rows=m["rows"], sca_v2_source=m["v2_source"],
                      sca_v2_status="pending: drawn as an empty outline, no number" if v2.get("pending") else "loaded",
@@ -538,8 +603,9 @@ def main():
                                "most extra copies (ties: higher summed score), centred on their union and clamped to "
                                "the image. The same box is drawn on both images; both crops come from it."),
                      prompts=[p["prompt_id"] for p in pr], pairs=pr,
-                     tiles=f"Lanczos to {DPI_PRINT} dpi at the printed tile size, JPEG quality 92, 4:4:4; red boxes "
-                           "and crop frames 0.6 pt, drawn as vectors", **geometry),
+                     tiles=f"Lanczos to {DPI_PRINT} dpi at the printed tile size, JPEG quality 92, 4:4:4; red window "
+                           f"boxes {BOX_LW} pt; crop-tile frames {BOX_LW} pt stroked on the tile edge and clipped to "
+                           f"the tile, so {BOX_LW / 2:g} pt prints; vectors", **geometry),
         sources={rel(p): sha(p) for p in sorted(read, key=str)},
         regenerate=("PATH=$HOME/.local/bin:$PATH UV_CACHE_DIR=/work/09032/saini_2/vista/library/uv-cache uv run "
                     "--no-project --python /work/09032/saini_2/vista/library/uv-envs/sca/bin/python python "
@@ -549,7 +615,11 @@ def main():
     print(cap)
     for r in g["rows"]:
         print(f"gate {r['tick']:12s} {r['dup']:2d}/{r['n']} = {100 * r['rate']:.1f}%  opening {r['opening_steps']} steps")
-    print(f"sca_v2 46: {g['v2']['dup']}/26  AReA 46: {g['area']['dup']}/26  g85 worse on {g['cost']['worse']}")
+    for r in g["fixes"]:
+        print(f"gate 0.89 {r['tick']:12s} {r['dup']:2d}/{r['n']} = {100 * r['rate']:.1f}%")
+    for t in g["tests"]:
+        print(f"McNemar {t['comparison']:26s} {t['counts'][0]} vs {t['counts'][1]}  p = {t['mcnemar_p']:.4g}")
+    print(f"AReA 46: {g['area']['dup']}/26  g85 worse on {g['cost']['worse']}")
     for r in m["rows"]:
         print(f"{r['name']:18s} " + ("pending" if r.get("pending") else f"{r['dup']:2d}/{r['n']} = {100 * r['rate']:.1f}%"))
     for p in pr:

@@ -12,7 +12,7 @@ unless every value rounds to the number printed in the paper (PRINTED: seconds t
 to 0.01), every row covers the same 195 prompts at 4096^2, and the caption's claims still hold.
 
 Encoding (house style, figures/REFERENCE_STYLE.md): AReA purple circle, SEGA grey circle; dark grey
-diamonds, multi-stage baselines with their own recipes (UltraImage, HRDiT); filled green circle,
+diamond (HRDiT) and square (UltraImage), multi-stage baselines with their own recipes; filled green circle,
 single-pass SCA at 28 steps (labelled SCA: on 195 prompts the guidance-7 marker sits just below it and
 the 42-step marker beside it, which leaves no room for a longer label); hollow green circles, its budget
 variants (42 and 56 steps, guidance 7), named only in the caption; filled green star, progressive SCA.
@@ -85,6 +85,8 @@ KIND = {
     "single": dict(marker="o", ms=4.6, mfc=GREY, mec="white", mew=0.5, zorder=3),
     "area": dict(marker="o", ms=4.6, mfc=sf.METHOD_COLOR["area"], mec="white", mew=0.5, zorder=3),
     "multi": dict(marker="D", ms=4.2, mfc=DARK, mec="white", mew=0.5, zorder=3),
+    # review round 1: UltraImage gets its own marker so the two multi-stage baselines differ without their labels
+    "multi_sq": dict(marker="s", ms=4.0, mfc=DARK, mec="white", mew=0.5, zorder=3),
     "sca": dict(marker="o", ms=5.0, mfc=sf.SCA, mec="white", mew=0.5, zorder=4),
     "budget": dict(marker="o", ms=4.6, mfc="none", mec=sf.SCA, mew=0.9, zorder=5),
     "prog": dict(marker="*", ms=10.5, mfc=sf.SCA, mec="white", mew=0.5, zorder=6),
@@ -92,7 +94,7 @@ KIND = {
 PLOT = {
     "sega_official": ("single", (5, 0), "left", "center"),
     "area": ("area", (5, 0), "left", "center"),
-    "ultraimage": ("multi", (-5.5, 0), "right", "center"),
+    "ultraimage": ("multi_sq", (-5.5, 0), "right", "center"),
     "hrdit_dev_author": ("multi", (5, 1.5), "left", "center"),
     "sca_nb": ("sca", (4.5, 0), "left", "center"),
     "sca_g7": ("budget", None, "left", "bottom"),     # budget variants: markers only, the
@@ -111,7 +113,7 @@ WRAP_RATIO_OFFSET, WRAP_RATIO_VA = (0, 2.5), "bottom"  # just above the guide, a
 WRAP_PLOT = {  # as PLOT, offsets re-placed for the smaller canvas
     "sega_official": ("single", (4.5, 0), "left", "center"),
     "area": ("area", (4.5, 0), "left", "center"),
-    "ultraimage": ("multi", (3.5, -3.5), "right", "top"),  # below its marker: HRDiT's label fills the row
+    "ultraimage": ("multi_sq", (3.5, -3.5), "right", "top"),  # below its marker: HRDiT's label fills the row
     "hrdit_dev_author": ("multi", (4.5, 1.5), "left", "center"),
     "sca_nb": ("sca", (4, 0), "left", "center"),
     "sca_g7": ("budget", None, "left", "bottom"),
@@ -265,7 +267,7 @@ def write_snippet(path, values, paired):
     cap = (  # at most 50 words: a bold claim, then two sentences of measurement conditions
         r"\textbf{Progressive \sca{} reaches HRDiT's ImageReward in less than half its time; extra "
         r"single-pass steps gain less per second.}" "\n"
-        rf"  {N_PROMPTS} prompts at $4096^2$, campaign means on shared nodes; diamonds: multi-stage recipes; "
+        rf"  {N_PROMPTS} prompts at $4096^2$, campaign means on shared nodes; diamond and square: multi-stage recipes; "
         r"open circles: \sca{} at guidance 7, 42 and 56 steps." "\n"
         r"  Below the range: " + ", ".join(NAME[m] for m in below[:-1]) + f" and {NAME[below[-1]]} "
         r"(Table~\ref{tab:panel46})."

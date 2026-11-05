@@ -9,77 +9,204 @@
     397.5,
     143.1
   ],
-  "caption_draft": "\\textbf{A gradual handover cuts late duplication.} (a)~A later gate cuts it but costs quality; ours keeps $\\sigma_g=0.89$; (b)~all methods, 95 people and animal prompts at $4096^2$ (ours 26\\%). (c)~Uncurated, same seed: the ice climber, then the next two detector-flagged prompts by id; one astronaut copy remains.",
-  "caption_words": 49,
+  "caption_draft": "\\textbf{Bridge tokens cut late duplication.} (a)~Of 26 people or animal prompts (46-prompt subset), a later gate cuts it but costs quality ($\\sigma_g=0.85$: 7 of 10 metrics worse); at $\\sigma_g=0.89$ the bridge cuts it from 15 to 5 (McNemar $p=0.0063$) and the schedule to 4 ($p=1.0$); (b)~all methods, 95 people and animal prompts at $4096^2$ (ours 26\\%). (c)~Uncurated, same seed: the ice climber, then the next two detector-flagged prompts by id; one astronaut copy remains.",
+  "caption_words": 77,
   "visual_check": {
     "a4k_eval_4096_minus1071233499893339092": "one astronaut copy remains"
   },
   "detector": "Grounding DINO boxes (scripts/dup_detect.py), counted by scripts/dup_rate.py at threshold 0.35; a prompt is duplicated when a person or animal subject with an implied count is detected more often than implied; validated 20/20 on labelled published-SCA images (results/dup_audit_20261027/validation_people_dup_reviewed.txt)",
   "panel_a": {
     "set": "46 prompts (abl50 minus dev4), 26 name a person or animal with a count; 4096x4096, seed 0",
-    "gate_sweep": [
+    "gate_sweep": {
+      "heading": "Gate, no bridge",
+      "operator": "without bridge or schedule (SCA w/o schedule), gate varied",
+      "source": "results/dup_audit_20261027/rates_abl46_people.csv",
+      "rows": [
+        {
+          "method": "sca_g93",
+          "n": 26,
+          "dup": 20,
+          "rate": 0.7692,
+          "lo95": 0.5795,
+          "hi95": 0.8897,
+          "tick": "0.93",
+          "label": "0.93",
+          "gate_sigma": 0.93,
+          "steps": 28,
+          "opening_steps": 6,
+          "image_dir": "/scratch/09032/saini_2/sca/out/gate/sca_g93/4096x4096",
+          "source": "results/dup_audit_20261027/rates_abl46_people.csv"
+        },
+        {
+          "method": "sca_nb",
+          "n": 26,
+          "dup": 15,
+          "rate": 0.5769,
+          "lo95": 0.3895,
+          "hi95": 0.7446,
+          "tick": "0.89",
+          "label": "0.89",
+          "gate_sigma": 0.89,
+          "steps": 28,
+          "opening_steps": 8,
+          "image_dir": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096",
+          "source": "results/dup_audit_20261027/rates_abl46_people.csv"
+        },
+        {
+          "method": "sca_g85",
+          "n": 26,
+          "dup": 7,
+          "rate": 0.2692,
+          "lo95": 0.137,
+          "hi95": 0.4608,
+          "tick": "0.85",
+          "label": "0.85",
+          "gate_sigma": 0.85,
+          "steps": 28,
+          "opening_steps": 11,
+          "image_dir": "/scratch/09032/saini_2/sca/out/gate/sca_g85/4096x4096",
+          "source": "results/dup_audit_20261027/rates_abl46_people.csv"
+        },
+        {
+          "method": "abl_globalonly",
+          "n": 26,
+          "dup": 1,
+          "rate": 0.0385,
+          "lo95": 0.0068,
+          "hi95": 0.1889,
+          "tick": "global only",
+          "label": "global\nonly",
+          "gate_sigma": null,
+          "steps": 28,
+          "opening_steps": 28,
+          "image_dir": "/scratch/09032/saini_2/sca/out/abl/abl_globalonly/4096x4096",
+          "source": "results/dup_audit_20261027/rates_abl46_people.csv"
+        }
+      ]
+    },
+    "at_gate_089": {
+      "heading": "Gate 0.89",
+      "operator": "gate 0.89: bridge alone (dup_bridge), then bridge plus the four-step window schedule (dup_i_shrink, the 46-prompt run of sca_v2, SCA (ours))",
+      "source": "results/dup_audit_20261027/rates_46_all_people.csv",
+      "rows": [
+        {
+          "method": "dup_bridge",
+          "n": 26,
+          "dup": 5,
+          "rate": 0.1923,
+          "lo95": 0.0851,
+          "hi95": 0.3788,
+          "tick": "bridge",
+          "label": "bridge",
+          "gate_sigma": 0.89,
+          "image_dir": "/scratch/09032/saini_2/sca/out/dup46/dup_bridge/4096x4096",
+          "sca": {
+            "band": 0,
+            "bridge_cells": 8,
+            "bridge_k": 16,
+            "bridge_lo": 0.0,
+            "chunk": null,
+            "gate_sigma": 0.89,
+            "n0": 64,
+            "pi_const": null,
+            "pi_scale": 4,
+            "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+            "pi_variant": "head",
+            "pool": "center",
+            "pool_factors": [
+              4,
+              4
+            ],
+            "route": 0.0,
+            "sigma_star": null,
+            "tile": 8,
+            "window": 64
+          },
+          "source": "results/dup_audit_20261027/rates_46_all_people.csv"
+        },
+        {
+          "method": "dup_i_shrink",
+          "n": 26,
+          "dup": 4,
+          "rate": 0.1538,
+          "lo95": 0.0615,
+          "hi95": 0.3353,
+          "tick": "SCA (ours)",
+          "label": "SCA\n(ours)",
+          "gate_sigma": 0.89,
+          "image_dir": "/scratch/09032/saini_2/sca/out/dup46/dup_i_shrink/4096x4096",
+          "sca": {
+            "band": 0,
+            "bridge_cells": 8,
+            "bridge_k": 16,
+            "bridge_lo": 0.0,
+            "chunk": null,
+            "gate_sigma": 0.89,
+            "n0": 64,
+            "pi_const": null,
+            "pi_scale": 4,
+            "pi_table_sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+            "pi_variant": "head",
+            "pool": "center",
+            "pool_factors": [
+              4,
+              4
+            ],
+            "route": 0.0,
+            "sigma_star": null,
+            "tile": 8,
+            "win_pi_interp": true,
+            "win_pi_match": true,
+            "win_sched": [
+              [
+                0.88,
+                128
+              ],
+              [
+                0.86,
+                112
+              ],
+              [
+                0.84,
+                96
+              ],
+              [
+                0.82,
+                80
+              ]
+            ],
+            "window": 64
+          },
+          "source": "results/dup_audit_20261027/rates_46_all_people.csv"
+        }
+      ]
+    },
+    "mcnemar_dup_people": [
       {
-        "method": "sca_g93",
+        "comparison": "dup_bridge - sca_nb",
+        "metric": "dup_people",
         "n": 26,
-        "dup": 20,
-        "rate": 0.7692,
-        "lo95": 0.5795,
-        "hi95": 0.8897,
-        "tick": "0.93",
-        "gate_sigma": 0.93,
-        "steps": 28,
-        "opening_steps": 6,
-        "image_dir": "/scratch/09032/saini_2/sca/out/gate/sca_g93/4096x4096"
+        "counts": [
+          "5/26",
+          "15/26"
+        ],
+        "delta": -0.38461538461538464,
+        "mcnemar_p": 0.00634765625,
+        "source": "results/dup_audit_20261027/review_round1_cpu/pairs.csv"
       },
       {
-        "method": "sca_nb",
+        "comparison": "dup_i_shrink - dup_bridge",
+        "metric": "dup_people",
         "n": 26,
-        "dup": 15,
-        "rate": 0.5769,
-        "lo95": 0.3895,
-        "hi95": 0.7446,
-        "tick": "0.89",
-        "gate_sigma": 0.89,
-        "steps": 28,
-        "opening_steps": 8,
-        "image_dir": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096"
-      },
-      {
-        "method": "sca_g85",
-        "n": 26,
-        "dup": 7,
-        "rate": 0.2692,
-        "lo95": 0.137,
-        "hi95": 0.4608,
-        "tick": "0.85",
-        "gate_sigma": 0.85,
-        "steps": 28,
-        "opening_steps": 11,
-        "image_dir": "/scratch/09032/saini_2/sca/out/gate/sca_g85/4096x4096"
-      },
-      {
-        "method": "abl_globalonly",
-        "n": 26,
-        "dup": 1,
-        "rate": 0.0385,
-        "lo95": 0.0068,
-        "hi95": 0.1889,
-        "tick": "global only",
-        "gate_sigma": null,
-        "steps": 28,
-        "opening_steps": 28,
-        "image_dir": "/scratch/09032/saini_2/sca/out/abl/abl_globalonly/4096x4096"
+        "counts": [
+          "4/26",
+          "5/26"
+        ],
+        "delta": -0.038461538461538464,
+        "mcnemar_p": 1.0,
+        "source": "results/dup_audit_20261027/review_round1_cpu/pairs.csv"
       }
     ],
-    "sca_v2": {
-      "method": "dup_i_shrink",
-      "n": 26,
-      "dup": 4,
-      "rate": 0.1538,
-      "lo95": 0.0615,
-      "hi95": 0.3353,
-      "label": "dup_i_shrink (46-prompt run of sca_v2)"
-    },
     "area": {
       "method": "area",
       "n": 26,
@@ -88,7 +215,7 @@
       "lo95": 0.0068,
       "hi95": 0.1889
     },
-    "annotation": {
+    "gate085_quality_cost": {
       "source": "results/e7_sca_g85_deltas.csv",
       "n_metrics": 10,
       "worse": [
@@ -154,10 +281,10 @@
           0.0249861
         ]
       },
-      "text": "7/10 metrics worse",
-      "at": "gate 0.85 row"
+      "drawn": false,
+      "use": "stated in the caption"
     },
-    "drawn": "grey dots: published operator at each gate; green dot: sca_v2 at the published gate (arrow from published SCA); purple dashed line: AReA; no intervals drawn (Wilson 95% intervals listed here)"
+    "drawn": "two groups on one x axis (0 to 85%), split by a gap that holds the second heading; 'Gate, no bridge': grey dots for gates 0.93, 0.89, 0.85 and global only; 'Gate 0.89': grey dot for the bridge alone, green dot with the bold green row label SCA (ours) and the direct label '+ schedule' for bridge plus schedule; purple dashed line: AReA; no intervals drawn (Wilson 95% intervals listed here); no arrow, no annotation"
   },
   "panel_b": {
     "set": "195 Aesthetic-4K prompts at 4096x4096, seed 0; 95 people/animal prompts",
@@ -775,7 +902,7 @@
         }
       }
     ],
-    "tiles": "Lanczos to 300 dpi at the printed tile size, JPEG quality 92, 4:4:4; red boxes and crop frames 0.6 pt, drawn as vectors",
+    "tiles": "Lanczos to 300 dpi at the printed tile size, JPEG quality 92, 4:4:4; red window boxes 0.6 pt; crop-tile frames 0.6 pt stroked on the tile edge and clipped to the tile, so 0.3 pt prints; vectors",
     "tile_in": 0.5215,
     "columns_in": [
       3.3,
@@ -791,6 +918,7 @@
     "results/dup_audit_20261027/rates_46_all_people.csv": "bf5af8962faec5890772739c8536e9f7d7c8907618a9a1c13fe0647087d8b634",
     "results/dup_audit_20261027/rates_a4k195_people.csv": "ed1fc752a0cc560fb8eb52ff8f5e76583d37ef757159f452db5cf2c5cfa6d147",
     "results/dup_audit_20261027/rates_abl46_people.csv": "c1327abe95c6153752e8c3244e1b2839cfefe4137f676ad72eb9960133ce2523",
+    "results/dup_audit_20261027/review_round1_cpu/pairs.csv": "75e46cd77580461231351d008b37b9f970379ea5af2e95131b6f99523dbe5739",
     "results/dup_audit_20261027/subjects_a4k195.json": "77ff5faddbeb6d2ba1f84fb1976140c1aa74210ad841b0611cc5b3978c79915f",
     "results/e7_sca_g85_deltas.csv": "9d4cce79183d209f7ef66002fec1de6070f550a05bd6108bde4dd94f4b5e13c6",
     "results/prog195_sca_v2/dup_rates_people.csv": "cb49c844a8a862b06f2b2a2a5bf24f0b083f3b8e048b3571fd9c60977f1a5868",

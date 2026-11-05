@@ -189,7 +189,7 @@ def plot(d):
         dax.spines[side].set_visible(False)
     dax.set_xlabel(r"$\pi_h$, even half")
     dax.set_ylabel(r"$\pi_h$, odd half", labelpad=1.5)
-    dax.text(0.04, 0.96, f"r = {d['r']:.3f}", transform=dax.transAxes, ha="left", va="top",
+    dax.text(0.04, 0.96, rf"$\rho$ = {d['r']:.3f}", transform=dax.transAxes, ha="left", va="top",
              fontsize=sf.FS_TICK, color=sf.INK)
     bb = dax.get_position()
     fig.text(bb.x0, bb.y1 + 0.05 / H, "d", fontsize=sf.FS_PANEL, fontweight="bold", va="baseline")

@@ -13,7 +13,9 @@ final operator (sca_v2) as its runs land; nothing is typed by hand.
 
 Published rendering (every run pending; gen_app_tables.py --check compares it with today's tables):
   all_metrics  values as printed; bold = best printed value of each column within a size block, ties share.
-               \\sg / \\sw: the 95% paired interval against AReA excludes zero in the row's favour / against it.
+               \\up / \\dn (blue / orange, the paper's one significance convention): the 95% paired interval
+               against AReA excludes zero in the row's favour / against it (sig_mark gives \\sg / \\sw, which
+               am_block maps to the colour wrappers).
                Full attention: full_vs_area.csv (scripts/paired_bootstrap.py, 2000 draws), per-image metrics only.
                \\sca{} band row: the 191-prompt final4k run as gen_tables.py reads it (corrected FID points with
                eval.py intervals, corrected patch FID without). \\sca{} (final): eval.py / eval_extra.py deltas
@@ -241,8 +243,9 @@ def am_block(rows):
                 txt = rf"\textbf{{{txt}}}"
             if key == "seconds":
                 txt += r"\rlap{$^\ddagger$}" if r["campaign"] else ""
-            else:
-                txt += sig_mark(r["marks"].get(key), lower)
+            else:  # one significance convention for every table (review round 1): colour, not superscripts
+                txt = {r"\sg": rf"\up{{{txt}}}", r"\sw": rf"\dn{{{txt}}}"}.get(sig_mark(r["marks"].get(key), lower),
+                                                                            txt)
             pend = r["pend"] if isinstance(r["pend"], bool) else r["pend"].get(key, False)
             cells.append(PEND(txt, pend))
         out.append(f"{r['label']} & " + " & ".join(cells) + r" \\")
@@ -349,7 +352,7 @@ def all_metrics(g):
 
 
 # tab:app_4k and tab:app_wide ========================================================================================
-BAND_HEAD = r"\sca{} + band"  # unchanged so the table keeps its height; the caption says "without the schedule"
+BAND_HEAD = r"\shortstack{\sca{} + band\\w/o sched.}"  # review round 1: the operator is named in the head
 
 
 def app_4k(g):
@@ -657,12 +660,17 @@ def published_compare(B, pub, ours, pending):
             if not vals:
                 continue
             n = min(ns)
-            rows.append((bid, OUR_NAME[m], vals, n, bid == "krea" and n == 195, m.startswith("sca"),
+            rows.append((bid, OUR_NAME[m], vals, n, n == 195, m.startswith("sca"),
                          pending.get((bid, m), False)))
+    # Review round 1: rank within each block, never across blocks (published and our runs use different seeds and
+    # checkpoints). Blocks with more than two ranked rows mark best and second; two-row blocks mark the best only.
     best = {}
-    for c in COLS:
-        cand = sorted({round(r[2][c], 6) for r in rows if r[4] and c in r[2]}, reverse=METRICS[c][1])
-        best[c] = cand[:2]
+    for g in {r[0] for r in rows}:
+        ranked = [r for r in rows if r[0] == g and r[4]]
+        best[g] = {}
+        for c in COLS:
+            cand = sorted({round(r[2][c], 6) for r in ranked if c in r[2]}, reverse=METRICS[c][1])
+            best[g][c] = cand[:2] if len(ranked) > 2 else cand[:1]
     hpub = B["hrgen_published"](pub)
     hrows = [("hpub", "AReA, published (FLUX.1)", hpub["AReA"], 1000, True, False, False)] + \
         [r for r in hrgen_ours(B, ours, pending) if r[0] == "hrgen_krea"]
@@ -680,7 +688,7 @@ def published_compare(B, pub, ours, pending):
         "HRGen-1K (all rows in Table~\\ref{tab:published_hrgen}). HPS: HPSv2 $\\times100$; MUSIQ on the full image; "
         "FID at $299^2$ against the 195 reference rows; patch FID is omitted because AReA does not state its crops. "
         "$^\\dagger$Fewer than all prompts; not ranked. \\textbf{Bold} / \\underline{underline}: best / second "
-        "best among ranked rows (HRGen-1K: bold only); ours shaded. Key result: " + key_result(B, rows, hrows)
+        "best within each block (bold only in two-row blocks); ours shaded. Key result: " + key_result(B, rows, hrows)
         + "\\pendAppPublishedCompare}",
         "  \\label{tab:published_compare}",
         "  \\centering\\footnotesize",
@@ -701,7 +709,7 @@ def published_compare(B, pub, ours, pending):
                 lines.append("    \\midrule")
             lines.append(f"    \\multicolumn{{9}}{{@{{}}l}}{{\\emph{{{titles[g]}}}}} \\\\")
             group = g
-        cells = [cell(B, c, vals, rankable, best, pend,
+        cells = [cell(B, c, vals, rankable, best[g], pend,
                       f"{vals[c]:.1f}" if (c == "clip" and g == "pubms" and label in prec1 and c in vals) else None)
                  for c in COLS]
         name = "\\textbf{\\sca{} (ours)}" if is_ours else label
@@ -745,8 +753,8 @@ def published_hrgen(B, pub, ours, pending):
         "  \\caption{\\textbf{HRGen-1K: AReA's published Table~2 next to our runs.} All 1000 prompts at $4096^2$, no "
         "reference images. Top: AReA's Table~2 (``FLUX.1'', which its released code runs as FLUX.1-Krea-dev). Bottom: "
         "\\sca{} with a Krea-calibrated table on FLUX.1-Krea-dev (28 steps, guidance 4.5), and our paired FLUX.1-dev "
-        "runs of AReA and \\sca{}. HPS: HPSv2 $\\times100$; IS: Inception score; MUSIQ on the full image; "
-        "$^\\dagger$fewer than 1000 prompts. \\textbf{Bold} / \\underline{underline}: best / second best among the "
+        "runs of AReA and \\sca{}. HPS: HPSv2 $\\times100$; IS: Inception score; MUSIQ on the full image. "
+        "\\textbf{Bold} / \\underline{underline}: best / second best among the "
         "published rows and our FLUX.1-Krea-dev row. Table~\\ref{tab:published_compare} holds the Aesthetic-4K "
         "comparison. Key result: " + key + "\\pendAppPublishedHrgen}",
         "  \\label{tab:published_hrgen}",

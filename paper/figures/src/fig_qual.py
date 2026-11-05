@@ -35,7 +35,7 @@ COLORS = ["#E69F00", "#56B4E9", "#009E73", "#D55E00"]  # Okabe-Ito, matches orx_
 GAP = 0.004  # gap between tiles, fraction of \linewidth
 LABW = 0.022  # width reserved for a rotated row label
 NAMES = {"sca": r"\textbf{SCA (ours)}", "area": "AReA", "full": "Full attention",
-         "abl_v0": "No gate", "abl_local": "Local only", "abl_uniform": r"Uniform $\pi$",
+         "abl_v0": "No opening", "abl_local": "Local only", "abl_uniform": r"Shared $\pi$",
          "abl_global": "Global only", "abl_mean": "Mean pooling", "abl_layer": r"Per-layer $\pi$",
          "dev_w16": "No gate, window 16", "dev_w32": "No gate, window 32",
          "dypes": "DyPE", "sega": "SEGA", "ultraimage": "UltraImage"}
@@ -714,7 +714,7 @@ def fig_ablation(a):
             full += ([G_GROUP] if k else []) + [t_full(t[f"{s}_{m}"]["full"], b, res)]
             crop += ([G_GROUP] if k else []) + [t_crop(t[f"{s}_{m}"]["crop"])]
         rows += [(g_row(full), G_PAIR), (g_row(crop), G_SECTION)]
-    cap = (r"\textbf{Without the gate the subject repeats; global only leaves the pooled branch's coarse grid; "
+    cap = (r"\textbf{Without the opening the subject repeats; global only leaves the pooled branch's coarse grid; "
            r"mean pooling loses the layout.} Four curated prompts at $4096^2$, variants of SCA without the schedule "
            r"(Table~\ref{tab:ablation}); 1:1 crops below.")
     grid_snippet("ablation", geo, rows, cap, "fig:ablation_grid",
@@ -774,7 +774,7 @@ def fig_failures(a):
     # small second Moai); the dancer window holds an extra raised foot, not a foot replacing an arm; none of
     # the four named errors appears in AReA's windows.
     cap = (r"\textbf{Curated failures: ungated windows duplicate subjects; SCA without the schedule makes local "
-           r"errors.} Top: development prompts; the gate leaves small duplicates. 1:1 crops: staircase sword, "
+           r"errors.} Top: development prompts, all without the schedule; the gate leaves small duplicates. 1:1 crops: staircase sword, "
            r"blocky patch, extra foot, border speckle, none in AReA.")
     # below the section text (a top float after \clearpage would sit above the section heading)
     grid_snippet("failures", geo, rows, cap, "fig:failures", pre=pre, env="figure", placement="!hb", pre_geo=FAIL_LABEL_PRE,

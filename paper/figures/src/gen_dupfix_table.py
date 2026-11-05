@@ -54,7 +54,7 @@ GROUPS = [
         ("dup_ramp70", r"Linear $\pi$ ramp to $\sigma=0.7$"),
         ("dup_bridge_ramp70", r"Linear $\pi$ ramp, bridge"),
         ("dup_head40", r"Per-head opening by $\sigma=0.4$"),
-        ("dup_bridge_head50", r"Per-head opening by $0.5$, bridge"),
+        ("dup_bridge_head50", r"Per-head opening by $\sigma=0.5$, bridge"),
     ]),
     ("Low-band anchor from the opening", [
         ("dup_anchor_lin", r"Anchor, linear fade to $\sigma=0.3$"),
@@ -171,12 +171,17 @@ def main():
     area_k = int(ar["dup"])
     reach = [r for r in rows if r["k"] <= area_k]
     assert reach and all(r["soft"] for r in reach), "the key-result claim about runs that reach AReA does not hold"
-    key = (rf"Key result: the schedule cuts duplication from {nb['dup']}/26 to {ours['k']}/26 at {pct:.0f}\% more "
-           rf"time per image and loses only {prose(ours['losses'])}; no run reaches AReA's {area_k}/26 without "
-           r"softening clean prompts.")
+    # Review round 1: the bridge alone does most of the work (McNemar p = 0.006 against the operator without it;
+    # results/dup_audit_20261027/review_round1_cpu/pairs.csv); the shrinking windows add one prompt (p = 1.0).
+    br = by["dup_bridge"]
+    pct_br = 100 * (br["seconds"] / base_t - 1)
+    key = (rf"Key result: the bridge alone cuts duplication from {nb['dup']}/26 to {br['k']}/26 at {pct_br:.0f}\% more "
+           rf"time per image and loses only {prose(br['losses'])}; the shrinking windows on top give {ours['k']}/26 at "
+           rf"{pct:.0f}\% (McNemar $p=1.0$ against the bridge alone) and lose {prose(ours['losses'])}; no run reaches "
+           rf"AReA's detector count of {area_k}/26 without softening clean prompts.")
 
     def line(desc, r, shade=False):
-        pre = r"\rowcolor[HTML]{EAF4F1}[0pt][0pt]" if shade else ""
+        pre = r"\rowcolor[HTML]{EAF4F1}" if shade else ""
         return (pre + f"{desc} & {r['k']}/{r['n']} & {r['seconds']:.1f} & {names(r['losses'])} & "
                 f"{names(r['soft'])} \\\\")
 
@@ -186,7 +191,8 @@ def main():
          r"\caption{\textbf{Every schedule variant on the 46-prompt subset.} Each row is one run at $4096^2$, seed 0: "
          r"Dup.\ is the number of the 26 people and animal prompts with a duplicated subject (open-vocabulary detector), s/img "
          r"is the median time per image over the 46 generated images, Worse lists the metrics (of 12) whose paired "
-         r"95\% interval against published \sca{} lies on the losing side, and Softens repeats that test for the ten "
+         r"95\% interval against \sca{} without the schedule lies on the losing side, and Softens repeats that test for "
+         r"the ten "
          r"per-image metrics on prompts with no duplicated subject in either run. "
          + key + "}",
          r"\label{tab:dupfix}",
@@ -195,9 +201,9 @@ def main():
          r"\begin{tabular}{@{}l r r >{\raggedright\arraybackslash}p{0.30\linewidth} "
          r">{\raggedright\arraybackslash}p{0.22\linewidth}@{}}",
          r"\toprule",
-         r"Variant & Dup.\,$\downarrow$ & s/img\,$\downarrow$ & Worse than published \sca{} & Softens clean prompts \\",
+         r"Variant & Dup.\,$\downarrow$ & s/img\,$\downarrow$ & Worse than \sca{} w/o sched. & Softens clean prompts \\",
          r"\midrule",
-         rf"Without the schedule (published) & {nb['dup']}/{nb['n']} & {base_t:.1f} & reference & reference \\",
+         rf"\sca{{}} without the schedule (no bridge) & {nb['dup']}/{nb['n']} & {base_t:.1f} & reference & reference \\",
          rf"\textcolor{{gray}}{{AReA}} & \textcolor{{gray}}{{{ar['dup']}/{ar['n']}}} & \textcolor{{gray}}{{n/a}} & "
          rf"\textcolor{{gray}}{{{'all 10 per-image' if len(area_worse) == 10 else names(area_worse)}}} & "
          r"\textcolor{gray}{n/a} \\"]

@@ -64,7 +64,10 @@ PID = "a4k_eval_4096_minus8343371271909676658"     # church and sheep, as in Fig
 CALIB_SRC = Path("/scratch/09032/saini_2/sca/out/smoke_sca_2048/calib00_f4378132a3_seed0.png")
 CALIB_NOTE = ("stand-in: the calibration pass stores sufficient statistics, not images. This is calibration prompt "
               "calib00 (seed 0) rendered by SCA at 2048^2 (smoke run), resized to 1024 px; the image the pass "
-              "observed is the full-attention 1024^2 sample of the same prompt and seed.")
+              "observed is the full-attention 1024^2 sample of the same prompt and seed. Searched 2026-11-04: no "
+              "1024^2 full-attention image of any calibration prompt exists under /scratch/09032/saini_2/sca/out or "
+              "/scratch/09032/saini_2/sca/calib (calib holds only the per-prompt statistics in *_parts/*.npz), so "
+              "the stand-in stays until a GPU run renders that sample.")
 
 H = 256                      # latent tokens per side at 4096^2
 N0, T = 64, 8                # native side, query tile

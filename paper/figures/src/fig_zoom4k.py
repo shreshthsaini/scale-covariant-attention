@@ -1,12 +1,22 @@
 """Zoom comparison at 4096^2 (replaces fig:qual_main), in the style of MFlow Figure 22, as a TikZ PDF.
 
-Three prompts at 4096^2, seed 0, one row each: SCA's full image with the crop window outlined in red,
-then that window at native resolution (1:1) from full attention, AReA, HRDiT and SCA (ours, last).
-Above each crop is the image's MUSIQ_c (MUSIQ averaged over four fixed random 1024^2 crops per image,
-Appendix app:metrics), read from the 195-prompt per-image CSVs behind Table tab:main (eval/a4k195_main;
-HRDiT from eval/a4k195_panel; SCA from eval/a4k195_main_sca_v2), and checked to be identical, for the same
-PNG, in every older per-image CSV that scored it (hrdit191_base, final4k_*, and their archived copies; no
-other CSV scores the final operator's images); the best value in each row is bold.
+Three prompts at 4096^2, seed 0, one row each: SCA's full image with the crop window outlined in red
+(1 pt), then that CROP_W x CROP_H (432 x 240 px) window at native resolution (1:1) from AReA, HRDiT and SCA
+(ours, last). Above each crop is the image's MUSIQ_c (MUSIQ averaged over four fixed random 1024^2 crops per
+image, Appendix app:metrics), read from the 195-prompt per-image CSVs behind Table tab:main
+(eval/a4k195_main; HRDiT from eval/a4k195_panel; SCA from eval/a4k195_main_sca_v2), and checked to be
+identical, for the same PNG, in every older per-image CSV that scored it (hrdit191_base, final4k_*, and their
+archived copies; no other CSV scores the final operator's images); the best of the three values in each row
+is bold.
+
+Review round 1 (2026-11-04) dropped the full-attention column (NOT_DRAWN): it spent three cells on the flat
+texture that Figure 1 (fig:teaser) already shows, and Table tab:main carries its means. Full attention is
+still loaded and checked (its Table tab:main mean, the same prompt and derived seed as the drawn images, its
+value in every CSV of CROSS) and recorded in the provenance as not drawn; nothing of it is displayed. The
+freed width went to a wider window (320 to 432 px wide, CROP_H kept at 240) at about the same row height
+(61.3 pt, was 61.7); the total height may exceed the previous one (220.7 pt) by at most HEIGHT_SLACK
+(asserted), and the window outline went from 0.7 to 1 pt. The new windows were viewed at 300 dpi and at 2x
+native pixels (WINDOW_VIEW_R1, asserted to name the windows drawn).
 
 SCA is the final operator (sca_v2, out/dupfix/sca_v2): the same prompts and seed as the published operator
 (sca_nb) on which the prompts were selected and audited (below); imgsel.final_twin checks that each image is
@@ -42,7 +52,9 @@ Selection (recorded in figures/zoom4k_provenance.json):
   SCA's metrics favours SCA in the printed values, so the caption says the prompts are curated and Table
   tab:main carries the means.
 * Crop windows are automatic, never placed by hand: fig_qual_main.auto_box, the CROP_W x CROP_H window
-  with the most edge energy averaged over the four methods shown, at least 256 px from every border.
+  with the most edge energy averaged over the three methods drawn, at least 256 px from every border.
+  Averaged over the four images of the version before review round 1 (full attention included), it gives
+  the same window in every row at this size (asserted; both are recorded in the provenance).
 
 Run on compute from paper/figures/src:
   /work/09032/saini_2/vista/library/uv-envs/sca/bin/python fig_zoom4k.py [--out-dir DIR]
@@ -163,13 +175,32 @@ CROSS = {  # other per-image CSVs that score the same PNG; the value must agree 
     "hrdit": [EVAL / "hrdit191_base" / "per_image.csv"],
     "sca": []}  # no other per-image CSV scores the final operator's PNGs
 TABLE = {"full": 33.1, "area": 50.4, "hrdit": 53.5, "sca": 60.1}  # Table tab:main (195 prompts), MUSIQ_c column
+NOT_DRAWN = {  # loaded, checked and recorded in the provenance, but given no column (review round 1, 2026-11-04)
+    "full": ("review round 1: the column spent three cells on the flat texture that Figure 1 (fig:teaser) "
+             "already shows; Table tab:main carries its means; HRDiT is already shown")}
+DRAWN = [m for m in METHODS if m[0] not in NOT_DRAWN]  # the crop columns
+assert [k for k, *_ in DRAWN] == ["area", "hrdit", "sca"]  # SCA (ours) last
+WINDOW_VIEW_R1 = {  # review round 1 (2026-11-04): each row's new window (x, y), viewed at 300 dpi and at 2x native
+    "7109958488611222679": ((1288, 1360), (
+        "hair at the image-left edge of her face, the cheek in the top right corner; SCA clean (no seam, lattice "
+        "or extra subject); AReA clean; HRDiT soft, its layout puts dark background behind the strands")),
+    "m7824758602266642611": ((2120, 1312), (
+        "the eye behind the image-right lens, the bridge at the left edge (the previous window widened 72 px to "
+        "the left and 40 px to the right, 24 px lower); SCA clean; the dark panes and white arcs inside the lens "
+        "are a reflection already in the previous window; AReA shows its echo outlines (concentric contour lines "
+        "around the eye and lens, hatching on the frame), as before; HRDiT clean")),
+    "m548913239957610051": ((704, 1440), (
+        "the lip of the left fall with rocks in the river above it; SCA clean; AReA clean; HRDiT soft, its "
+        "layout differs (a lower ledge and a rock pillar)"))}
 
 W = 397.5                    # text width (TeX pt); the layout unit is the TeX point
-CROP_W, CROP_H = 320, 240    # native window (px), shown 1:1 at about 280 pixels per printed inch
+CROP_W, CROP_H = 432, 240    # native window (px), 1:1 at about 283 px per printed inch; 320 x 240 before round 1
 G_OUT, G_IN = 2.0, 1.5       # white gutters (pt): full image to crops, between crops
 HEAD, BAND = 10.0, 8.5       # method-name band and the value band above every row (pt)
 THUMB_DPI = 800              # SCA's full image, Lanczos-downscaled to this many px per printed inch
-RED, BOX_LW = "D62728", 0.7  # the one frame colour (window boxes only) and its width (pt)
+RED, BOX_LW = "D62728", 1.0  # the one frame colour (window boxes only) and its width (pt); 0.7 before round 1
+R0_CROPS, R0_CROP_W = 4, 320  # the layout before review round 1: four crops of R0_CROP_W x CROP_H px
+HEIGHT_SLACK = 6.0           # review round 1 page budget: at most this many pt taller than before
 
 
 def sha(path: Path) -> str:
@@ -232,12 +263,14 @@ def source(path: Path, method: str, pid: str) -> tuple[dict, Path, dict]:
     return row, png, meta
 
 
-def layout() -> tuple[float, float, list[float]]:
-    """Row height h (the full image is h x h), crop width cw, and the crop x positions."""
-    a = CROP_W / CROP_H
-    h = (W - G_OUT - 3 * G_IN) / (1 + 4 * a)
+def layout(n: int | None = None, crop_w: int = CROP_W) -> tuple[float, float, list[float]]:
+    """Row height h (the full image is h x h), crop width cw, and the x positions of n crops (default: one per
+    drawn method) of crop_w x CROP_H px that fill the width W beside the full image."""
+    n = len(DRAWN) if n is None else n
+    a = crop_w / CROP_H
+    h = (W - G_OUT - (n - 1) * G_IN) / (1 + n * a)
     cw = a * h
-    xs = [h + G_OUT + i * (cw + G_IN) for i in range(4)]
+    xs = [h + G_OUT + i * (cw + G_IN) for i in range(n)]
     assert abs(xs[-1] + cw - W) < 1e-9
     return h, cw, xs
 
@@ -254,7 +287,9 @@ def main() -> None:
         old.unlink()
     h, cw, xs = layout()
     total = HEAD + len(PROMPTS) * (BAND + h)
-    tex, records, examples = [], [], []
+    total_r0 = HEAD + len(PROMPTS) * (BAND + layout(R0_CROPS, R0_CROP_W)[0])  # before review round 1
+    assert total <= total_r0 + HEIGHT_SLACK, (total, total_r0)  # review round 1 page budget
+    tex, records, examples, not_drawn = [], [], [], []
 
     def node(x, y, w, hh, name):
         tex.append(r"\node[anchor=north west,inner sep=0pt] at (%.4f,%.4f) "
@@ -287,7 +322,10 @@ def main() -> None:
         for key, (_, png, _) in got.items():
             imgs[key] = Image.open(png).convert("RGB")
             assert imgs[key].size == (4096, 4096), (png, imgs[key].size)
-        bx, by, bw, bh = auto_box([imgs[k] for k, *_ in METHODS], CROP_W, CROP_H)
+        bx, by, bw, bh = auto_box([imgs[k] for k, *_ in DRAWN], CROP_W, CROP_H)
+        box_all = auto_box([imgs[k] for k, *_ in METHODS], CROP_W, CROP_H)  # the image set before review round 1
+        assert box_all == (bx, by, bw, bh), (pid, box_all, (bx, by, bw, bh))  # the docstring says they agree
+        assert WINDOW_VIEW_R1.get(pid, (None,))[0] == (bx, by), (pid, (bx, by), "view the new window first")
 
         # SCA's full image with the window in red
         px = round(THUMB_DPI * h / 72.27)
@@ -298,32 +336,39 @@ def main() -> None:
         s = h / 4096
         tex.append(r"\draw[win] (%.4f,%.4f) rectangle (%.4f,%.4f);" % (bx * s, -(top + by * s), (bx + bw) * s,
                                                                        -(top + (by + bh) * s)))
-        # crops at native resolution, values above them, the best one bold
+        # crops at native resolution, values above them, the best drawn one bold; full attention checked, not drawn
         vals = {key: float(got[key][0][METRIC]) for key, *_ in METHODS}
-        best = f"{max(vals.values()):.1f}"  # every value that prints as the maximum is bold
-        for i, (key, _, path, name) in enumerate(METHODS):
+        best = f"{max(vals[k] for k, *_ in DRAWN):.1f}"  # every drawn value that prints as the maximum is bold
+        drawn = [k for k, *_ in DRAWN]
+        for key, _, path, name in METHODS:
             row, png, meta = got[key]
-            cp = assets / f"{pid}_{key}_crop.jpg"
-            imgs[key].crop((bx, by, bx + bw, by + bh)).save(cp, "JPEG", quality=95, optimize=True, subsampling=0)
-            node(xs[i], top, cw, h, cp.name)
-            shown = f"{vals[key]:.1f}"
-            text("val", "base", xs[i] + cw / 2, top - 2.2, r"\textbf{%s}" % shown if shown == best else shown)
             cross = []
             for other in CROSS.get(key, []):
                 o = lookup(other, name, pid)
                 assert o[METRIC] == row[METRIC] and Path(o["path"]).resolve() == png.resolve(), (other, pid)
                 cross.append(str(other))
-            records.append(dict(
-                prompt_id=pid, csv_prompt_id=row["prompt_id"], seed=int(row["seed"]), method=key, csv_method=name,
-                metric_file=str(path), column=METRIC, value=vals[key], printed=shown, best=shown == best,
-                same_value_in=cross, image=str(png), image_sha256=sha(png),
-                derived_seed=meta["config"]["derived_seed"], crop=cp.name, crop_xywh=[bx, by, bw, bh]))
+            rec = dict(prompt_id=pid, csv_prompt_id=row["prompt_id"], seed=int(row["seed"]), method=key,
+                       csv_method=name, metric_file=str(path), column=METRIC, value=vals[key])
+            if key in NOT_DRAWN:  # recorded with its checks; no crop, no printed value
+                not_drawn.append(dict(rec, drawn=False, same_value_in=cross, image=str(png), image_sha256=sha(png),
+                                      derived_seed=meta["config"]["derived_seed"]))
+                continue
+            i = drawn.index(key)
+            cp = assets / f"{pid}_{key}_crop.jpg"
+            imgs[key].crop((bx, by, bx + bw, by + bh)).save(cp, "JPEG", quality=95, optimize=True, subsampling=0)
+            node(xs[i], top, cw, h, cp.name)
+            shown = f"{vals[key]:.1f}"
+            text("val", "base", xs[i] + cw / 2, top - 2.2, r"\textbf{%s}" % shown if shown == best else shown)
+            records.append(dict(rec, printed=shown, best=shown == best, same_value_in=cross, image=str(png),
+                                image_sha256=sha(png), derived_seed=meta["config"]["derived_seed"], crop=cp.name,
+                                crop_xywh=[bx, by, bw, bh]))
         if r == 0:  # the metric is named once, left of the first row of values
             text("lab", "base east", h, top - 2.2, r"MUSIQ\raisebox{-0.3ex}{\fontsize{6.1}{6}\selectfont c}\,$\uparrow$")
         examples.append(dict(prompt_id=pid, prompt=prompts.pop(), derived_seed=seeds.pop(), crop_xywh=[bx, by, bw, bh],
+                             crop_xywh_with_full_attention=list(box_all), window_view=WINDOW_VIEW_R1[pid][1],
                              full_image=thumb.name, full_image_px=px))
 
-    for i, (key, head, _, _) in enumerate(METHODS):
+    for i, (key, head, _, _) in enumerate(DRAWN):
         text("headours" if key == "sca" else "head", "base", xs[i] + cw / 2, HEAD - 2.6, head)
 
     doc = r"""%% Generated by paper/figures/src/fig_zoom4k.py; edit the script, not this file.
@@ -366,6 +411,23 @@ def main() -> None:
     prov = dict(
         figure="zoom4k (replaces fig:qual_main)", script="paper/figures/src/fig_zoom4k.py",
         pdf=str(out_pdf), pdf_sha256=sha(out_pdf), pdf_bytes=out_pdf.stat().st_size,
+        methods_drawn=[k for k, *_ in DRAWN],
+        not_drawn={key: dict(why=why, values=[r for r in not_drawn if r["method"] == key],
+                             checks=("its Table tab:main mean (table_check); the same prompt and derived seed as the "
+                                     "drawn images; its value identical in every CSV of same_value_in"))
+                   for key, why in NOT_DRAWN.items()},
+        review_round_1=dict(
+            date="2026-11-04",
+            comment=("The full-attention column spends three cells on texture already shown in Figure 1 (flat "
+                     "field). Source window to 1 pt."),
+            changes=["full-attention column dropped (not_drawn); HRDiT is already shown",
+                     "window widened from %dx%d to %dx%d px to use the freed width at about the same row height; "
+                     "crops stay 1:1" % (R0_CROP_W, CROP_H, CROP_W, CROP_H),
+                     "window outline on the full image from 0.7 to %g pt" % BOX_LW,
+                     "every new window viewed at 300 dpi and at 2x native pixels (examples[].window_view)"],
+            height_pt=dict(before=round(total_r0, 3), after=round(total, 3),
+                           budget=round(total_r0 + HEIGHT_SLACK, 3)),
+            row_height_pt=dict(before=round(layout(R0_CROPS, R0_CROP_W)[0], 3), after=round(h, 3))),
         selection=("Curated (audits of 2026-10-20). The first three prompts of the older fig:qual_main were viewed "
                    "whole and at native pixels and all three were replaced; the medieval square that then took the "
                    "middle row was replaced in turn (see 'replaced'). Eligible: the 195 evaluation prompts minus the "
@@ -401,21 +463,24 @@ def main() -> None:
             metric_file=str(MAIN195_V2), viewed=FINAL_VIEW,
             published_operator=dict(metric_file=str(MAIN195), method="sca_nb", values=published,
                                     note="the values this figure printed for SCA before the switch")),
-        crop_rule=("Automatic, not hand-placed: fig_qual_main.auto_box over full, area, hrdit and sca, i.e. the "
-                   "%dx%d (width x height) window with the largest mean PIL FIND_EDGES response of the 8x "
-                   "box-downsampled greyscale images, at least 256 px from every border. The same window is "
-                   "cropped from every method; layouts differ between methods, so the crops differ in content."
-                   % (CROP_W, CROP_H)),
+        crop_rule=("Automatic, not hand-placed: fig_qual_main.auto_box over the drawn methods (area, hrdit and "
+                   "sca), i.e. the %dx%d (width x height) window with the largest mean PIL FIND_EDGES response of "
+                   "the 8x box-downsampled greyscale images, at least 256 px from every border. Over the four "
+                   "images used before review round 1 (full attention included) auto_box gives the same window "
+                   "in every row (asserted; examples[].crop_xywh_with_full_attention). The same window is "
+                   "cropped from every drawn method; layouts differ between methods, so the crops differ in "
+                   "content. Before review round 1 the window was %dx%d over all four methods."
+                   % (CROP_W, CROP_H, R0_CROP_W, CROP_H)),
         metric=("MUSIQ_c (CSV column %s): pyiqa MUSIQ averaged over four fixed random 1024^2 crops per image, "
                 "crop positions set by the prompt id and shared across methods (Appendix app:metrics). It is "
                 "a per-image score, not a score of the displayed window. Printed to one decimal; the best "
                 "printed value per row is bold." % METRIC),
-        sources=dict(full_attention="out/main/full", area="out/main/area",
+        sources=dict(full_attention="out/main/full (checked, not drawn)", area="out/main/area",
                      hrdit="out/baseline_expansion_20261017_{v1,rest145}/hrdit_dev_author (paths as listed in "
                            "eval/a4k195_panel)",
                      sca="out/dupfix/sca_v2 (final operator; the selection audits used out/main/sca_nb)"),
-        metric_files={str(p): sha(p) for p in sorted({r["metric_file"] for r in records}
-                                                     | {c for r in records for c in r["same_value_in"]})},
+        metric_files={str(p): sha(p) for p in sorted({r["metric_file"] for r in records + not_drawn}
+                                                     | {c for r in records + not_drawn for c in r["same_value_in"]})},
         table_check=table_check, examples=examples, values=records,
         replaced=replaced,
         percentiles=dict(
@@ -433,16 +498,18 @@ def main() -> None:
             readmitted_final_operator={pid: dict(why=why, percentiles=percentiles(pid))
                                        for pid, why in READMITTED_V2.items()}),
         layout_pt=dict(width=W, height=round(total, 3), row_height=round(h, 3), full_image=round(h, 3),
-                       crop_width=round(cw, 3), gutters=dict(full_to_crops=G_OUT, between_crops=G_IN),
+                       crops=len(DRAWN), crop_width=round(cw, 3), crop_px=[CROP_W, CROP_H],
+                       gutters=dict(full_to_crops=G_OUT, between_crops=G_IN),
                        header_band=HEAD, value_band=BAND, box=dict(colour="#" + RED, width_pt=BOX_LW),
-                       crop_ppi=round(CROP_W / (cw / 72.27), 1)),
+                       crop_ppi=round(CROP_W / (cw / 72.27), 1), height_before_review_round_1=round(total_r0, 3)),
         jpeg=dict(full=f"SCA full image, Lanczos to {THUMB_DPI} px per printed inch, quality 90, 4:4:4",
                   crop="native pixels (1:1), quality 95, 4:4:4"),
         asset_sha256={p.name: sha(p) for p in sorted(assets.glob("*.jpg"))})
     prov_path.write_text(json.dumps(prov, indent=2) + "\n")
     size = sum(p.stat().st_size for p in assets.glob("*.jpg"))
-    print(f"{out_pdf} {out_pdf.stat().st_size / 1e6:.2f} MB, {W} x {total:.1f} pt, row {h:.2f} pt, crop {cw:.2f} pt "
-          f"({CROP_W / (cw / 72.27):.0f} ppi), assets {size / 1e6:.2f} MB")
+    print(f"{out_pdf} {out_pdf.stat().st_size / 1e6:.2f} MB, {W} x {total:.1f} pt (before review round 1 "
+          f"{total_r0:.1f}), row {h:.2f} pt, crop {cw:.2f} pt ({CROP_W / (cw / 72.27):.0f} ppi), "
+          f"assets {size / 1e6:.2f} MB")
     for e in examples:
         print(e["prompt_id"], e["crop_xywh"])
     for r in records:

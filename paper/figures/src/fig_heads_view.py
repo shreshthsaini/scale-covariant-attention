@@ -15,7 +15,8 @@
     DENSITY_CAP. Each thumbnail is labelled with its share within 16 tokens.
 (c) pi_h(sigma) of those heads in the scale-2 table, with the median and interquartile range of
     all 1368 heads at every populated bin; sigma > sigma_g = 0.89 runs the global branch only.
-(d) pi_h against the share within 16 tokens for all 1368 heads at bin BIN, with Pearson r.
+(d) pi_h against the share within 16 tokens for all 1368 heads at bin BIN, with the Pearson correlation
+    (printed as rho, since r is the image-to-window ratio in the paper).
 
 Heads: among heads that put at least IMG_FLOOR of their mass on image keys at bin BIN, rank pi
 and share (mid-ranks scaled to (0, 1)) and take the head nearest (q, q) in rank space, with
@@ -424,7 +425,7 @@ def plot(d: dict, img_a: np.ndarray, img_b: np.ndarray) -> tuple:
     dx.set_xlabel("share within 16 tokens", fontsize=FS_LAB)
     for side in ("top", "right"):
         dx.spines[side].set_visible(False)
-    dx.text(0.97, 0.03, f"r = {d['r']:.2f}", transform=dx.transAxes, ha="right", va="bottom",
+    dx.text(0.97, 0.03, rf"$\rho$ = {d['r']:.2f}", transform=dx.transAxes, ha="right", va="bottom",
             fontsize=FS_NUM, color=sf.INK)
     title(fig, xd, y_title, r"(d) $\pi_h$ vs. reach")
 

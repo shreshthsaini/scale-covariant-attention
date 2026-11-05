@@ -11,11 +11,11 @@
 \begin{table}[t]
 \centering\footnotesize
 \setlength{\tabcolsep}{4pt}
-\caption{\textbf{Exploratory $8192^2$ comparison: \sca{} is significantly better than AReA on six of ten metrics.} FLUX.1-dev, 12 matched prompts, seed 0. All metrics are higher-is-better. Intervals are paired prompt-bootstrap 95\% percentile intervals (2000 draws, bootstrap seed 0); \up{blue}: significantly better than AReA.}
+\caption{\textbf{Exploratory $8192^2$ comparison: \sca{} without the schedule is significantly better than AReA on six of ten metrics.} FLUX.1-dev, 12 matched prompts, seed 0, both methods scored on CPU with the same settings; HPS runs in float32 here and in mixed precision in the main evaluation, so its values are not comparable across resolutions. All metrics are higher-is-better. Intervals are paired prompt-bootstrap 95\% percentile intervals (2000 draws, bootstrap seed 0); \up{blue}: significantly better than AReA.}
 \label{tab:e2_8192_per_image}
 \begin{tabular}{lrrr}
 \toprule
-Metric & AReA & SCA & SCA $-$ AReA [95\% CI] \\
+Metric & AReA & \sca{} w/o sched. & Difference [95\% CI] \\
 \midrule
 ImageReward & $-0.376$ & $0.675$ & \up{$+1.051$} [$+0.386$, $+1.754$] \\
 Aesthetic & $5.64$ & $5.72$ & $+0.08$ [$-0.26$, $+0.44$] \\
