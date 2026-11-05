@@ -793,3 +793,13 @@ ablations 1, plots under 6 pt 1, qualitative grid 1, limitations 2, reproducibil
 captions 1, colours 1, dashes and section symbol 1. Mean 1.32 (29/22), no zero.
 
 Addendum 2026-11-05 (lead): human-validated duplication on the 95 person/animal prompts (results/dup_audit_20261027/human_rates_95.txt): AReA 4.2%, HRDiT 6.3%, full attention 4.2% (but subject missing in 22 of 37 labeled), sca_v2 26.7%. The paper build delivery_eeofzli6 says AReA corrects to about 7% (13% any subject): WRONG, must be replaced by the human-validated 4.2% in the next revision (Section 4 Duplication paragraph, Table 1 caption, Appendix P). Bar for the round-6 fix: human rate at most 4.2% on the same prompts.
+
+Addendum 2026-11-05 14:58 CST (review-round campaign owner): fleets SCA21 (1123398) and SCA22 (1123443, submitted by the
+method agent; the lead says no further submissions) still pending on priority; SCA23 (1124593, gh-dev 4 x 2 h) and SCA24
+(1124594, 1124595, gh 1 x 3 h) share taskq/pending with the same bash workers, which ignore SCA_MIN_SECONDS. So the six
+non-resumable tasks got a walltime guard (dispatch/review_round1/add_guard.sh; originals in dispatch/review_round1/originals):
+if the claiming job has less than GUARD_NEED seconds left the task parks itself in hold_review_round and exits 3 (its
+failed/ entry is that bounce, not a failure). GUARD_NEED: item 4 sweep 23400 s (renamed b0_r4_latency_sweep.sh, sorts
+after the method agent's a6_ tasks), item 5 evaluation 7200, item 1 evaluation 6300, item 2 2700, 6144 6300, FLUX.2 3600.
+Release loop v2 (PID 632229, same script path and log; v1 PID 2733390 stopped) re-releases a parked guarded task only
+while a running SCA fleet has GUARD_NEED + 300 s left, at most every 600 s. Generation tasks are resumable and unguarded.
