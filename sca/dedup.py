@@ -53,6 +53,11 @@ def add_args(p):
     p.add_argument("--win-heads-below", type=float, default=None, metavar="TAU", help="On --win-sched steps only heads "
                    "whose published pi < TAU take the scheduled window, with the weight at its emulated scale; the "
                    "others keep the base window and the published weight (default: off; 0 = no head widens)")
+    p.add_argument("--text-mode", default="", metavar="MODE", help="Round-6 window text option (sca/textgate.py): "
+                   "ctw (calibrated text weight), gtg (global text gate), gtx (global text read-out), ctw+gtg")
+    p.add_argument("--text-mode-lo", type=float, default=0.0, metavar="SIGMA", help="--text-mode applies while sigma > this")
+    p.add_argument("--text-gamma", type=float, default=1.0, help="gtg: strength of the global text gate")
+    p.add_argument("--text-clip", type=float, default=6.0, help="gtg: floor of the gate's log ratio")
     p.add_argument("--anchor-lo", type=float, default=0.0, metavar="SIGMA", help="Latent low-band anchor "
                    "(sca/anchor.py): while sigma > SIGMA the low band of x0_hat follows the x0_hat of the last "
                    "global-only step (0 = off)")
@@ -72,7 +77,9 @@ def context_kwargs(args):
                 bridge_lo=args.bridge_lo, bridge_k_hi=args.bridge_k_hi, bridge_k_hi_lo=args.bridge_k_hi_lo,
                 bridge_ratio=args.bridge_ratio,
                 lse_tau=args.lse_tau, scale_sched=args.scale_sched, scale_lo=args.scale_lo,
-                scale_fixed=args.scale_fixed, win_pi_match=args.win_pi_match, win_pi_interp=args.win_pi_interp, win_heads_below=args.win_heads_below)
+                scale_fixed=args.scale_fixed, win_pi_match=args.win_pi_match, win_pi_interp=args.win_pi_interp, win_heads_below=args.win_heads_below,
+                text_mode=args.text_mode, text_mode_lo=args.text_mode_lo, text_gamma=args.text_gamma,
+                text_clip=args.text_clip)
 
 
 def anchor(args, ctx):
@@ -111,6 +118,9 @@ def info(args):
         out["win_pi_interp"] = True
     if args.win_heads_below is not None:
         out["win_heads_below"] = args.win_heads_below
+    if args.text_mode:
+        out.update(text_mode=args.text_mode, text_mode_lo=args.text_mode_lo, text_gamma=args.text_gamma,
+                   text_clip=args.text_clip)
     if args.anchor_lo:
         out.update(anchor_lo=args.anchor_lo, anchor_shape=args.anchor_shape, anchor_pool=args.anchor_pool,
                    anchor_refresh=args.anchor_refresh)

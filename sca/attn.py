@@ -785,6 +785,10 @@ class SCAContext:
     win_pi_interp: bool = False         # with win_pi_match: log-linear interpolation between the bracketing calibrated scales
     win_heads_below: float | None = None  # TAU: on win_sched steps only heads with published pi < TAU take the wide window
     scale_fixed: tuple = ()             # ((sigma_k, a_k), ...): every head at apparent scale a_k while sigma > sigma_k
+    text_mode: str = ""                 # round 6 (sca/textgate.py): "", ctw, gtg, gtx or ctw+gtg (window text options)
+    text_mode_lo: float = 0.0           # text_mode applies while sigma > text_mode_lo
+    text_gamma: float = 1.0             # gtg: strength of the global text gate
+    text_clip: float = 6.0              # gtg: floor of the gate's log ratio
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -808,6 +812,7 @@ class SCAContext:
         self._rope_cache, self._pi_now, self._img_ids = {}, None, None
         self._flex_cache = {}
         self._scale_now, self._headwin_now, self._tables_at = None, None, {}
+        self._ctw_now = None
         if self.local_impl not in ("flex", "gather"):
             raise ValueError(f"local_impl must be flex or gather, got {self.local_impl}")
         if (self.bridge_cells or self.lse_tau) and (self.local_impl != "flex" or self.band):
@@ -841,6 +846,15 @@ class SCAContext:
             raise ValueError("win_heads_below needs win_sched and local_impl flex, without band, lse mixing, pi ramp, "
                              "routing or scale_sched")
         self.win_sched = tuple(sorted(((float(a), int(b)) for a, b in self.win_sched), reverse=True))
+        if self.text_mode:
+            from sca.textgate import parse_mode
+            parse_mode(self.text_mode)
+            if (self.local_impl != "flex" or self.band or self.lse_tau or self.scale_sched or self.scale_fixed
+                    or self.win_heads_below is not None or self.route or self.text_local):
+                raise ValueError("text_mode needs local_impl flex, without band, lse mixing, scale_sched, scale_fixed, "
+                                 "win_heads_below, routing or text_local")
+            if self.text_gamma < 0 or self.text_clip <= 0:
+                raise ValueError("text_mode needs text_gamma >= 0 and text_clip > 0")
 
     def flex_layout(self, L, tile, win, device):
         """BlockMask and permutations, cached per (text length, grid, tile, window, device)."""
@@ -864,6 +878,7 @@ class SCAContext:
             self.sigma = float(sigma)
         self._pi_now = None
         self._scale_now = self._headwin_now = None
+        self._ctw_now = None
 
     def pi_now(self, layer, heads, device):
         if self._pi_now is None:
@@ -1025,6 +1040,27 @@ class SCAContext:
         a, b = self.table_at(lo), self.table_at(hi)
         return lambda sigma: (1 - t) * np.asarray(a(sigma), dtype=np.float64) + t * np.asarray(b(sigma), dtype=np.float64)
 
+    def text_mode_now(self):
+        """Round-6 text modes active at the current sigma (sca/textgate.py), () when off."""
+        if not self.text_mode or (self.sigma is not None and float(self.sigma) <= self.text_mode_lo):
+            return ()
+        from sca.textgate import parse_mode
+        return parse_mode(self.text_mode)
+
+    def ctw_beta_now(self, layer, heads, device):
+        """[heads] calibrated text-logit offset of this layer for the current window and sigma (one table per step)."""
+        if self._ctw_now is None:
+            from sca.textgate import ctw_beta
+            path = getattr(self.pi, "path", None)
+            if path is None:
+                raise ValueError("text_mode ctw needs a pi table loaded from a calibration npz")
+            b = np.atleast_2d(ctw_beta(path, float(self.sigma), self.window_now(), self.grid, self.n0))
+            if b.shape[0] not in (1, max(self.n_layers, 1)) or b.shape[1] != heads:
+                raise ValueError(f"ctw table shape {b.shape} does not match {self.n_layers} layers x {heads} heads")
+            self._ctw_now = torch.as_tensor(b, dtype=torch.float32, device=device)
+        t = self._ctw_now
+        return t[layer if t.shape[0] > 1 else 0]
+
     def bridge_now(self):
         """(cells, tokens per cell) of the AReA bridge at the current sigma, (None, 0) when off (rule of SCAProcessor.sca)."""
         if not (self.bridge_cells and (self.sigma is None or float(self.sigma) > self.bridge_lo)):
@@ -1168,6 +1204,9 @@ class SCAProcessor:
             band = int(round(-band * sg / max(1e-3, 1 - sg)))
             band = min(band, min(ctx.grid))
         tb = ctx.text_bias_now()
+        modes = ctx.text_mode_now()
+        if modes:
+            return self.text_forward(q, k, v, image_rotary_emb, f, tile, win, pi, modes)
         if ctx.bridge_cells or ctx.lse_tau:
             L, _ = self._split(q, image_rotary_emb)
             rq, rk = ctx.coarse_rope(f, q.device)
@@ -1192,6 +1231,18 @@ class SCAProcessor:
             return sca_flex_fn(q.device)(*args, tb) if tb else sca_flex_fn(q.device)(*args)
         L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True, text_bias=tb)
         return mix_fn(q.device)(o_glob, o_loc, pi, L, inv)
+
+    def text_forward(self, q, k, v, image_rotary_emb, f, tile, win, pi, modes):
+        """Round-6 text modes (sca/textgate.py): the window softmax split into its text and image parts."""
+        from sca.textgate import sca_text_fn
+        ctx = self.ctx
+        L, _ = self._split(q, image_rotary_emb)
+        rq, rk = ctx.coarse_rope(f, q.device)
+        cells, per = ctx.bridge_now()
+        layout = ctx.flex_layout(cells[0] * cells[1] * per if per else 0, tile, win, q.device)
+        beta = ctx.ctw_beta_now(self.layer, q.shape[2], q.device) if "ctw" in modes else None
+        return sca_text_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, layout,
+                                     cells, per, modes, beta, float(ctx.text_gamma), float(ctx.text_clip))
 
     def scale_sched(self, q, k, v, image_rotary_emb, f, tile):
         """Per-head apparent scale (SCAContext.scale_sched), below the gate: heads at a = 1 take O_glob, each group of
