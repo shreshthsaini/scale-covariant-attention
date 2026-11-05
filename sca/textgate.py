@@ -175,7 +175,11 @@ def sca_text_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout,
     else:
         tb = None
         if "gtg" in mode:
-            tb = gate_bias(text_map(rope(q[:, L:], rope_q), kt, lse_gi), gamma, clip)
+            tb = gate_bias(text_map(rope(q[:, L:], rope_q), kt, lse_gi), gamma, clip).contiguous()
+            # Inductor's flex template needs captured buffers with a fixed layout; a tensor computed in the same graph
+            # has a flexible one ("convert FlexibleLayout to FixedLayout first"), so the gate enters the flex call as
+            # an input of the next graph. No-op in eager mode.
+            torch._dynamo.graph_break()
         o_t, lse_t = text_part(qi, kt, vt, beta if "ctw" in mode else None, tb)
         o_loc = merge_lse(o_t, lse_t, o_i, lse_i)
     img = (pi * o_loc + (1 - pi) * _hi(o_glob[:, L:])).to(o_glob.dtype)
