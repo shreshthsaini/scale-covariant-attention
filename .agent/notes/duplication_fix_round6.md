@@ -59,3 +59,28 @@ and merged as one softmax; a gamma-0 split run is the GPU identity check (a6_a00
   branch's text mass; sigma > 0.5.
 - r6_bw (own, context side): bridge keys get + log(N / R) = log 64, the tokens each stands for; sigma > 0.5.
 - Candidate d (native opening, --native-open K, sca/native_open.py, commit 8c0cd0c) is implemented, held for round 2.
+
+## Prior art for the round-1 candidates (literature subagent, 2026-11-05 01:40; citations as reported, to verify before the paper)
+- Global text gate (gtg): closest AccDiffusion (Lin et al., ECCV 2024, arXiv 2407.10738): binarizes each word's
+  low-resolution cross-attention map at the word's image mean, keeps the word in a patch prompt only if the mask covers
+  more than 30% of the patch; its diagnosis ("small object repetition is the adversarial outcome of an identical text
+  prompt on all patches") is the same as ours. New in gtg: a continuous one-sided log bias per query and word, read
+  online from the same layer's global branch inside the joint softmax (no second pass, no prompt editing). Layout or
+  region methods (DenseDiffusion 2308.12964, Regional Prompting for FLUX 2411.02395, Prompt-to-Prompt, FAM 2411.18552,
+  HiPrompt 2409.02919, ResMaster 2406.16476) need user masks, MLLM prompts or another pass.
+- Calibrated text weight (ctw): closest TIDE (arXiv 2603.08928, 2026): one constant +ln(pixel ratio) on text logits
+  under full attention (raises text weight; opposite sign to ctw); I-Max (2410.07536) repeats text tokens; Jin et al.
+  (NeurIPS 2023, 2306.08645) scale logits by sqrt(log_T N); Re-ttention (NeurIPS 2025, 2505.22918) measures the in-mask
+  share of full-attention mass from cached full steps and rescales sparse attention. New in ctw: an offline per-head,
+  per-noise table from native-resolution emulation, applied only to text logits inside windows, lowering a window's
+  text share to the full-attention value. Window methods with all text keys add no compensation (CLEAR 2412.16112;
+  TVSDA 2611.01696 reports repetition from local attention).
+- Global text read-out (gtx): closest FreeSwim (arXiv 2511.14712): replaces the window branch's text cross-attention
+  output with the full branch's in Wan2.1 (separate cross-attention) and shows duplicates receding as the swap weight
+  grows. Only the joint-softmax form (global text mass and text output, image keys renormalized) is new.
+- Weighted bridge (bw): standard importance weighting of sampled keys (sampled softmax, Blanc and Rendle 1712.00527;
+  HyperAttention 2310.05869; ToMe log s 2210.09461); AReA's bridge has no count correction and is a deterministic
+  top-k, so log(N/R) is a heuristic there. Novelty small.
+- How baselines treat duplicates: AReA names it (a window cannot see a copy elsewhere; bridge removal brings duplicates
+  back); DyPE and UltraImage address periodic RoPE repetition, not subject copies; HRDiT addresses spatial disorder;
+  FreeScale and ScaleCrafter blame receptive field (FreeScale notes small-object repetition in local-patch methods).
