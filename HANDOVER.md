@@ -744,3 +744,50 @@ sends the CPU evaluation to taskq_cpu): /scratch/09032/saini_2/sca/dispatch/revi
 logs/cpu): PIDs 2733389 and 2733391, idle exit 36 h, deadline 2026-11-06 23:10; stop them with taskq_cpu/STOP once the CPU
 work is done, never taskq/STOP while GPU work remains. Status: bash /scratch/09032/saini_2/sca/dispatch/review_round1/status.sh.
 Copies of the three scripts: .agent/notes/review_round1/campaign_scripts/.
+
+## 27. 2026-11-05: review round 1 finished (revision author; paper/ only, no GPU)
+Closed every open item of Sections 24 and 25 and folded in the method agent's 04:09 findings. Numbers come from
+results/*.csv through the generators (gen_main_tables.py, gen_app_tables.py with app_tab_main.py, gen_dupfix_table.py);
+no measured number was changed. Delivery: /scratch/09032/saini_2/sca/paper_builds/delivery_eeofzli6 (54 pp, main text
+pages 1 to 10, 0 overfull, 0 undefined, fresh unzip builds to the same 54 pages); hashes in .agent/notes/latest_delivery.md.
+- Significance: one colour convention in every table, defined once (Section 4, Metrics): blue/orange = 95% paired interval
+  excludes zero for/against the row; bold/underline only rank within a group. \up and \dn are colour-only; Table 2's
+  superscripts and Table K.1's \sg/\sw became colours; Table 1's SCA row is coloured against AReA. Dup. is unranked in
+  Tables 1 and 2 (detector validity differs by method).
+- Table 3: Err. column moved to Table K.5 (output-error rows from results/evidence/calib/k1_1024.json), no n/a,
+  \footnotesize. Table 4: HRGen-1K, seeds 1 and 2, Krea (against AReA) and FLUX.2 (without the schedule), each
+  difference with its interval underneath, Dup. as SCA / reference (28/3, 26/6, 29/8); the sensitivity rows now live
+  only in Table L.4. Table H.1 ranked within block; Table P.1 key result leads with the bridge (McNemar p = 1.0 for the
+  windows on top). \DeclareMathSizes{7}{7}{6}{6} lifts scripts in \scriptsize tables to 6 pt.
+- "SCA without the schedule" is defined once (Section 2.3: one-step switch and no bridge) and named in the heads or
+  captions of Tables K.1, K.2, K.4, K.5, K.6, L.1, L.3, L.4, L.5, L.6, M.1, N.1 (with the fp32 note), P.1, Q.1, Figure
+  M.1 (caption lead), Figures T.7 and U.1, and Appendices I, M, U.
+- Finding (a): every duplication rate is called a detector rate; Section 4 gives precision/recall (SCA without the
+  schedule 0.91/0.84, AReA 0.50/0.29) and the corrected estimates (AReA about 7% for people or animals, 13% any subject;
+  SCA about 28%), Appendix P the derivation; abstract, bullets, Sections 4.1 and 4.2 and the conclusion say "AReA's
+  detected 4%". Finding (b): bridge alone 15 to 5 of 26 (McNemar p = 0.006), wide windows on top 4 (p = 1.0, ARNIQA
+  -0.7 x100, MUSIQ_c -0.5): intro, bullet 2, Sections 2.4 and 4.4, limitations, Figure 4a and Appendices P and U
+  present the bridge as the main fix and the schedule's gain as unresolved (Section 4.4 says a 195-prompt decomposition
+  is running). Finding (c): Krea-195 rates in Section 4.5 (29, 64, 20, 8, 8%) and Table 4. Note: sca_v2 on Krea is
+  28/95 = 29.5% (review_round1_cpu/rates_krea195_people.csv), printed 29%, not the 30 of the 04:09 addendum.
+- Figures: Figure 4 (fig_dup.py) shows the gate sweep and bridge/schedule as two groups, no arrow or floating note,
+  thinner crop frames; the zoom figure (fig_zoom4k.py) dropped full attention (AReA, HRDiT, SCA crops, windows 432x240
+  px, outline 1 pt, same height); Figures 5d and B.2 print Pearson rho; Figure M.1 gives UltraImage a square. Figure order
+  changed for layout: paired_area is now Figure 6 (wrap on p7), the zoom figure Figure 7, latency Figure 8 (wrap on p8).
+  Captions of Figures 4, 5, 7, A.1, B.1 and D.1 are a bold lead plus at most two sentences.
+- Layout: no section heading at a page bottom, every main float within one page of its first reference, B.3/B.4 [!tb]
+  (no half-blank page), K.1 and K.2 share a page; main text ends on page 10 with no slack. Sentences in the main text:
+  median 20 words, none over 35 (citation chains split). Smallest figure text 6.0 pt.
+- Two render-review cycles over all pages: main pages by the revision author, appendix pages by two reviewer subagents
+  per cycle; every MUST item fixed (Appendix G intervals now quote the final operator, F.1 calibration and seed rows,
+  Appendix C spare prompts 33 to 48, J.1 offsets, Figure L.1 sign, App. P 64-key bridge, D.1 ratios, Algorithm 5).
+- Figure 3 calibration thumbnail: no 1024^2 full-attention image of a calibration prompt exists under
+  /scratch/09032/saini_2/sca/out or calib (2026-11-04 search); stand-in kept, recorded in method_provenance.json.
+- Left: Figure 1 insets still amber; Figure D.1(d) numbers blocks 1 to 57 while B.2/B.5 use 0 to 56; resized appendix
+  tables L.1, L.2, M.1, Q.1 print a few scripts at 5.7 to 5.9 pt; the code URL in the abstract names the author (swap
+  for an anonymous mirror before submission); the 195-prompt bridge/schedule decomposition (held task item 1) will need a
+  text update when it lands.
+Rubric self-score (22 items, 0/1/2): abstract 1, hero 1, footnotes 1, question and wrap 2, introduce and bullets 1,
+sentence length 1, method diagram 1, equations 1, algorithms 2, setup run-ins 1, main table 2, finding paragraphs 2,
+ablations 1, plots under 6 pt 1, qualitative grid 1, limitations 2, reproducibility 2, appendix 2, float placement 1,
+captions 1, colours 1, dashes and section symbol 1. Mean 1.32 (29/22), no zero.
