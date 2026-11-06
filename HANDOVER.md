@@ -837,19 +837,22 @@ keep running first and the review items follow in the same queue; no submissions
   Deferred tasks in taskq/hold_r6_ctw (traces of candidate c), superseded copies in taskq/hold_r6/superseded_20261105.
 
 ## 28. 2026-11-06: round 7 duplication work (method owner; full log .agent/notes/duplication_fix_round7.md)
-State 06:50 CST (this session's node i615-133 ends 23:31; a new lead continues from here).
-- Code (commits 30b3e8f and 80396bd, frozen /scratch/09032/saini_2/sca/code/80396bd): ffl options behind default-off
-  flags (--ffl-near bridge, --ffl-head-frac, --ffl-fade-lo, --ffl-outside, --text-bw-lo) and --open-pool/--open-pool-hi
-  (finer global grid on the last opening steps); slurm/round7_tasks.py (smoke, abl46, gen195, eval195);
-  scripts/r7_decide.py (bar plus fixed/clean/new split; usage: r7_decide.py eval/r7_46_<label>:<label> ...),
-  scripts/r7_label_prep.py (blind packets), scripts/r7_crops.py (adjudication crops).
-- Queued (spool order): a7_a000_smoke (pending; on PASS it releases taskq/hold_r7), Track B wave 1 on 46 prompts:
-  r7_op2, r7_op4, r7_fd60, r7_fo, r7_op2bw, r7_hs40 (evaluations a7_a0_eval_* self-release from taskq/hold_dup_eval
-  into eval/r7_46_<label>); Track A a7_t000..t029 (r6_ffl on the 149 missing prompts, people prompts first, tree
-  5be811d, out r6/out/r6_ffl) and a7_a1_eval195_r6_ffl (eval/r7_195_r6_ffl; then the CPU bootstrap
-  r7/cpuboot/r6_ffl.sh on the operator node); last r7_hs20, r7_fd70.
-- GPU: SCA25 (1125967, gh-dev 4 nodes 2 h, est. start 07:50); SCA21/SCA22/SCA24 pending in gh without estimate. One
-  short job left in the lead's allowance: submit a gh-dev 4-node 2 h job (slurm/fleet_SCA26.sbatch) once SCA25 has left
-  the queue (the gh-dev submit limit counts the held BL23/V2P1 jobs).
-- Human checks: protocol copy and labeler prompt in /scratch/09032/saini_2/sca/r7/label/; labels go to
-  results/dup_audit_20261027/human_labels_r7.csv (label, prompt_id, img, detector_flag, ..., human_final).
+State 10:50 CST (this session's node i615-133 ends 23:31; a new lead continues from here).
+- Code (frozen trees /scratch/09032/saini_2/sca/code/80396bd and 764f337): ffl options behind default-off flags
+  (--ffl-near bridge, --ffl-head-frac, --ffl-fade-lo, --ffl-outside, --ffl-coarse, --text-bw-lo), --open-pool and
+  --open-pool-hi; slurm/round7_tasks.py; scripts/r7_decide.py (bar plus fixed/clean/new split), r7_label_prep.py,
+  r7_label_collect.py, r7_crops.py, r7_grid_index.py.
+- Track B results on the 46 prompts (results/dup_audit_20261027/round7_frontier_46.csv; human labels
+  human_labels_r7.csv; 26 people/animal prompts, sca_v2 4 flags, AReA 1 false flag): finer opening op2 4 flags (3 yes),
+  no loss; op4 (AReA's 4-step pool) 6 flags (4 yes), 3 losses; fade fd60 3 (3 yes), 9 losses; outside-window far field
+  fo 2 (1 yes, 1 borderline), 10 losses; hs40o 3 flags (metrics on CPU, pending). None passes. Finding: the far field
+  removes copies but costs quality whenever it is read at true positions (in-window lattice keys alias into a token
+  checkerboard on flat illustrations; outside-window keys sit at offsets up to 255, 4x the native range).
+- Iteration queued: r7_fg (far field read at the global branch's coarse ids, outside the window, near bridge, through
+  0.5; tree 764f337), spool tasks a7_b500..b505, evaluation a7_a0_eval_r7_fg.
+- Track A: r6_ffl at 195: 6 of 30 generation tasks done (people prompts first); a7_t006..t029 and the evaluation
+  a7_a1_eval195_r6_ffl wait for GPU; then CPU bootstrap r7/cpuboot/r6_ffl.sh and human labels
+  (r7/trackA_people_labels.sh builds the packet).
+- GPU: SCA25 ran 08:31 to 10:31. SCA26 (job 1126265, gh-dev 4 nodes 2 h) is pending with an estimated start of 13:40;
+  it is the second and last short job of the lead's allowance. Parked tasks: taskq/hold_r7_parked (op2bw, the
+  full-lattice hs40/hs20/fd70, and hs40o's GPU evaluation, which ran on CPU instead).
