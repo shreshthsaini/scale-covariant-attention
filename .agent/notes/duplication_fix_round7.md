@@ -214,3 +214,21 @@ the image at 2.6 times SCA's cost. Giving SCA's windows a calibrated far field m
 main subject rather than removing them, and the one far field that does remove them costs ten of fifteen metrics. An
 automatic detector undercounts such crowded figures, so we report rates corrected by blind human labels."
 
+## Lead directive 13:40 (urgent): put AReA's wide shrinking windows into SCA
+"AReA keeps windows wider than the subject's scale for most of the trajectory (Phase II windows shrink 180 to 68 over
+steps 8 to 26, with its outlier bridge), while SCA drops to 64 within four steps." Run review item 2's sca_area20 first,
+on the 46 prompts and copyprone21; add AReA's schedule truncated to its first 8 and 12 window steps with matched
+weights; hand-check every image of all three. Relaxed bar: human-corrected repeats at or below AReA's; no significant
+loss vs sca_v2 on IR, HPSv2.1, PickScore; every other metric within its interval or better than AReA; time below
+AReA's 202 s. A pass on 46 is promoted to 95 and 195 at once (staged like hold_r7_promote) with an operator paragraph.
+Report as soon as sca_area20's 46-prompt result is in (under 200 words).
+Queued at the head of the spool (prefix a0_, tree f479459 = the review's, so sca_area20 images serve both):
+- a0_r2_g_sca_area20_* (the review's 9 generation tasks, renamed; each also releases a0_e_eval_sca_area20 once all 46
+  images exist; the review's pair evaluation still waits for area_sca4), out/review1/sca_area20.
+  Operator: --win-sched 0.87858:180,...,0.15009:68 (AReA's 19 Phase II windows on steps 8 to 26, 64 on step 27)
+  --win-pi-match --win-pi-interp --bridge-cells 8 --bridge-ratio 0.5 (bridge round(0.5 w)^2 tokens).
+- r7_area8 (a0_s8*, eval a0_e_eval_r7_area8): AReA's first 8 windows 180, 170, 161, 153, 145, 137, 130, 123 on steps
+  8 to 15, then 64; r7_area12 (a0_s9*): first 12 (to 99 on step 19), then 64; same weights and bridge rule.
+- copyprone21 runs of all three: a0_t1* (sca_area20), a0_t2* (area8), a0_t3* (area12).
+- scripts/r7_decide.py prints the relaxed-bar verdict next to the original bar (columns relaxed_pass, relaxed_fail).
+

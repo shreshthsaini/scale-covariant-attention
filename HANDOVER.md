@@ -851,6 +851,10 @@ State 11:50 CST (this session's node i615-133 ends 23:31; a new lead continues f
   says ffl removed sca_v2's copy, 4 still have one (extra figures packed around the main subject, merged by the
   detector's NMS). Round 6's "ffl 1 of 26, AReA's count" was a detector artifact; r6_ffl's human-corrected rate is
   close to sca_v2's. Detector counts of far-field variants must not be used without labeling every image.
+- LEAD DIRECTIVE 13:40 (urgent): AReA's wide shrinking windows in SCA, ahead of everything: sca_area20 (review
+  item 2, renamed a0_r2_g_*), r7_area8, r7_area12 on the 46 prompts and copyprone21 (a0_s8*, a0_s9*, a0_t1..t3*), evals
+  a0_e_eval_* (self-released); hand-check every person/animal image; relaxed bar in scripts/r7_decide.py (relaxed_pass);
+  report when sca_area20's 46-prompt result is in. Details: round-7 notes, "Lead directive 13:40".
 - Iteration queued: r7_fg (far field read at the global branch's coarse ids, outside the window, near bridge, through
   0.5; tree 764f337): a7_b500..b505 (46 prompts, evaluation a7_a0_eval_r7_fg) and a7_b800..b802 (the 21 people
   prompts outside the subset where sca_v2 has a copy, r7/copyprone21.jsonl; label every image by hand). Its 195
