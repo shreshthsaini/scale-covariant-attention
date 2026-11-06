@@ -811,3 +811,27 @@ The i615-133 processes (release loop 632229, CPU workers 2733389 and 2733391) we
 campaign stays on i615-133. Lead decisions 2026-11-06 00:30: the a6_ tasks (duplication fix, the user's top priority)
 keep running first and the review items follow in the same queue; no submissions by this agent. As of 05:03 none of the
 140 review tasks had run: SCA21 and SCA22 (10 h each) still pending, the short fleets SCA23 and SCA24 drained a6_ work.
+
+## 27. 2026-11-06: round 6 duplication work (method owner; full log .agent/notes/duplication_fix_round6.md)
+- Step 1, human-validated bar (commit 9f464ba): blind full-resolution labels of every detector flag plus 30 random
+  unflagged images per method (166 images, 42 Opus labelers, all disagreements adjudicated from full-resolution crops).
+  Human-corrected people/animal duplication on the 95 prompts at 4096^2: AReA 4.2% [1.6, 17.0], HRDiT 6.3%, full
+  attention 4.2% (subject missing in 22 of 37 labeled images), sca_v2 26.7% [24.6, 36.5]. The detector is near exact on
+  sca_v2; the earlier "AReA plausibly 13%" estimate does not hold. Files: results/dup_audit_20261027/human_labels_95.csv,
+  human_rates_95.txt (scripts/human_rates.py).
+- Step 2, mechanism: copies are seeded in the first 1 to 3 window steps after the gate (sigma 0.888 to 0.85) on props the
+  global-only phase leaves open (a second rock gets an astronaut), finished by about 0.75 (trace sheets at 10 labeled
+  copies, results/round6_mechanism/). At copy sites the window reads the prompt about 2x as strongly as full attention
+  and sees the main subject with 0.4 to 0.5x full attention's mass (attention probe, scripts/r6_attn_probe.py). Fixing
+  the text over-read leaves the copies; far-field context removes them in proportion to its weight and its duration.
+- Step 3: 13 variants on the 46-prompt subset (code sca/textgate.py and sca/native_open.py behind default-off flags,
+  tests/test_textgate.py; tasks slurm/round6_tasks.py; decisions scripts/r6_decide.py). None passes the bar (rate at or
+  below AReA's, no significant loss vs sca_v2, wins over AReA kept, <= +25% time). Frontier:
+  results/dup_audit_20261027/round6_frontier_46.csv. Best quality-neutral: bridge +0.25 log(N/R) at the three hand-off
+  steps (3 of 26 vs 4). Lowest duplication with intact images: lattice far field over sigma > 0.5 (--text-mode ffl
+  --text-mode-lo 0.5; 1 of 26, AReA's count; 9 paired losses incl. PickScore -0.24, IR -0.066; 7/10 wins over AReA;
+  x1.08 time). Applying it only at the hand-off steps removes nothing. Not promoted; no rerun staged.
+- Side finding: lowering the window's text weight (--text-mode ctw) puts a garbage band in the last token column on about
+  a third of images; the exact window split itself is clean (identity 34 dB).
+- Open: next hypothesis (head-selective or sigma-decaying far field; or a finer opening layout) in the round-6 notes.
+  Deferred tasks in taskq/hold_r6_ctw (traces of candidate c), superseded copies in taskq/hold_r6/superseded_20261105.
