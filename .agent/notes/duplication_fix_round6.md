@@ -117,3 +117,17 @@ and merged as one softmax; a gamma-0 split run is the GPU identity check (a6_a00
   is what it sees of the existing subject, not how strongly it reads the prompt.
 - Round-1/2 human-checked duplicates on the 26 people/animal prompts (detector flags confirmed): sca_v2 4, ctw 3,
   gtg 4, ffc 3, native opening K=12 2 (2 of 4 flags false); detector only: gtx 8, K=8 7, bw 0 (images destroyed).
+
+## Round 2 (2026-11-06)
+- r6_gtg (a): detector 4/26 (the same prompts as sca_v2), 4 human-confirmed; no significant loss, all 10 wins over
+  AReA kept, +12% time. Fails on duplication: the global branch's subject-word attention is as high at copy sites as at
+  the main subject, so the gate has nothing to act on.
+- r6_ffc (far-field calibrated share, sigma > 0.5): detector 3/26, 3 human-confirmed, human-corrected 14.1% (sca_v2
+  17.0%, AReA 2.2%); significant losses PickScore -0.27, IR -0.071, CLIP -0.65, HPSv2.1 -0.0063, HPSv2 -0.0024,
+  aesthetic -0.049, MUSIQ_c -1.55 (also on prompts clean in both: IR, HPSv2.1, PickScore, CLIP); 8/10 wins over AReA
+  kept (aesthetic and CLIP-IQA lost); +3.4% time. FAIL: the far field buys copies down with prompt adherence.
+- CPU-detector reads (GPU evaluations queued): gtx 8/26, native opening K=12 4/26 (2 human-confirmed), K=8 7/26.
+- Lead's round 2 (queued after the pending evaluations, code 8937ed1): weighted bridge gamma log(N/R) with gamma 0.25,
+  0.5, 0.75 only for sigma in (0.84, 0.89] (steps 8 to 10, the seeding steps), plain sca_v2 elsewhere (r6_bwh25/50/75);
+  subject bridge (bridge tokens = block centres most attended by the subject words in the global branch, gamma 0.5,
+  same steps; r6_sbh50; subject words r6/subject_words.json). Then r6_ffl (lattice far field).
