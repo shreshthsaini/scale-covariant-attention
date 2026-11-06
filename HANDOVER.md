@@ -837,15 +837,19 @@ keep running first and the review items follow in the same queue; no submissions
   Deferred tasks in taskq/hold_r6_ctw (traces of candidate c), superseded copies in taskq/hold_r6/superseded_20261105.
 
 ## 28. 2026-11-06: round 7 duplication work (method owner; full log .agent/notes/duplication_fix_round7.md)
-State 06:55 CST (this session's node i615-133 ends 23:31; a new lead continues from here).
-- Code (commits 30b3e8f and 80396bd, frozen /scratch/09032/saini_2/sca/code/80396bd): ffl options behind default-off flags
-  (--ffl-near bridge, --ffl-head-frac, --ffl-fade-lo, --ffl-outside, --text-bw-lo) and --open-pool/--open-pool-hi
-  (finer global grid on the last opening steps); slurm/round7_tasks.py (smoke, abl46, gen195, eval195).
-- Queued: a7_a000_smoke (pending; on PASS it releases the 36 Track B generation tasks in taskq/hold_r7), Track B wave 1
-  r7_op2, r7_fd60, r7_hs40, r7_fd70, r7_hs20, r7_op2bw (46 prompts; evaluations a7_a0_eval_* self-release from
-  taskq/hold_dup_eval into eval/r7_46_<label>); Track A a7_t000..t029 (r6_ffl on the 149 missing prompts, tree 5be811d)
-  and a7_a1_eval195_r6_ffl (eval/r7_195_r6_ffl).
-- GPU: SCA25 (1125967, gh-dev 4 nodes 2 h) pending; SCA21/SCA22/SCA24 pending in gh. One short job left in the lead's
-  allowance (gh-dev is blocked while SCA25 and the held BL23/V2P1 gh-dev jobs exist; submit after SCA25 ends).
-- Next: when evaluations land, run scripts/r6_decide.py-style checks (round-7 eval dirs), human-check every flag, iterate
-  once on the strongest Track B variant, promote a pass to 95 and 195.
+State 06:50 CST (this session's node i615-133 ends 23:31; a new lead continues from here).
+- Code (commits 30b3e8f and 80396bd, frozen /scratch/09032/saini_2/sca/code/80396bd): ffl options behind default-off
+  flags (--ffl-near bridge, --ffl-head-frac, --ffl-fade-lo, --ffl-outside, --text-bw-lo) and --open-pool/--open-pool-hi
+  (finer global grid on the last opening steps); slurm/round7_tasks.py (smoke, abl46, gen195, eval195);
+  scripts/r7_decide.py (bar plus fixed/clean/new split; usage: r7_decide.py eval/r7_46_<label>:<label> ...),
+  scripts/r7_label_prep.py (blind packets), scripts/r7_crops.py (adjudication crops).
+- Queued (spool order): a7_a000_smoke (pending; on PASS it releases taskq/hold_r7), Track B wave 1 on 46 prompts:
+  r7_op2, r7_op4, r7_fd60, r7_fo, r7_op2bw, r7_hs40 (evaluations a7_a0_eval_* self-release from taskq/hold_dup_eval
+  into eval/r7_46_<label>); Track A a7_t000..t029 (r6_ffl on the 149 missing prompts, people prompts first, tree
+  5be811d, out r6/out/r6_ffl) and a7_a1_eval195_r6_ffl (eval/r7_195_r6_ffl; then the CPU bootstrap
+  r7/cpuboot/r6_ffl.sh on the operator node); last r7_hs20, r7_fd70.
+- GPU: SCA25 (1125967, gh-dev 4 nodes 2 h, est. start 07:50); SCA21/SCA22/SCA24 pending in gh without estimate. One
+  short job left in the lead's allowance: submit a gh-dev 4-node 2 h job (slurm/fleet_SCA26.sbatch) once SCA25 has left
+  the queue (the gh-dev submit limit counts the held BL23/V2P1 jobs).
+- Human checks: protocol copy and labeler prompt in /scratch/09032/saini_2/sca/r7/label/; labels go to
+  results/dup_audit_20261027/human_labels_r7.csv (label, prompt_id, img, detector_flag, ..., human_final).
