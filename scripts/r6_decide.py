@@ -10,7 +10,7 @@ Human-corrected rate on the P eligible prompts: TP (human-confirmed detector fla
 miss the method's unflagged duplicate rate from Step 1 (results/dup_audit_20261027/human_rates_95.csv; candidates take
 sca_v2's). sca_v2 and AReA use their Step 1 labels where an image was labeled. Candidate flags are confirmed from
 results/dup_audit_20261027/human_labels_r6.csv (label, prompt_id, human_final); without it the detector flag stands.
-Usage: r6_decide.py LABEL [LABEL ...]
+Usage: r6_decide.py LABEL [LABEL ...]   |   r6_decide.py --frontier OUT.csv LABEL [LABEL ...] (one row per label)
 """
 
 import csv
@@ -75,7 +75,12 @@ def sig(r, metric):
 def main():
     labels, miss = step1()
     cand = {(r["label"], r["prompt_id"]): r["human_final"] for r in read(A / "human_labels_r6.csv")}
-    for label in sys.argv[1:]:
+    args = sys.argv[1:]
+    frontier = None
+    if args and args[0] == "--frontier":
+        frontier, args = Path(args[1]), args[2:]
+    table = []
+    for label in args:
         E = S / f"eval/r6_46_{label}"
         if not (E / "DONE").exists():
             print(f"{label}: not finished ({E}/DONE missing)")
@@ -130,6 +135,17 @@ def main():
                 if hi < 0:
                     soft.append(f"{m} {sum(dd) / len(dd):+.4g} [{lo:+.4g},{hi:+.4g}]")
         print(f"  {label}: softening on {len(clean)} prompts clean in both (any subject): {soft or 'none'}")
+        table.append({"label": label, "detector_flags": res[label][1], "human_confirmed": res[label][0],
+                      "flags_checked": int(checked), "human_rate": round(hr, 4), "area_rate": round(ha, 4),
+                      "sca_v2_rate": round(hv, 4), "n_losses": len(losses), "losses": "; ".join(losses),
+                      "gains": "; ".join(gains), "wins_kept": f"{len(wins) - len(lost)}/{len(wins)}",
+                      "clean_softening": "; ".join(soft), "time_ratio": round(ratio, 3), "pass": int(ok)})
+    if frontier and table:
+        with open(frontier, "w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=list(table[0]))
+            w.writeheader()
+            w.writerows(table)
+        print("frontier ->", frontier)
 
 
 if __name__ == "__main__":
