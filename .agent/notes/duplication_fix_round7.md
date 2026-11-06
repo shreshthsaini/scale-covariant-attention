@@ -133,4 +133,9 @@ the dose can be lowered instead.
 | r7_fo | outside-window lattice, true positions, through 0.5 | 2 | 1 (+1 borderline) | 6.9% | 10 | 3/10 | x1.13 |
 | r7_hs40o | fo in the 40% lowest-pi heads | 3 | 3 | pending | pending | pending | pending |
 (round7_frontier_46.csv holds the exact intervals.)
+- Track A early read (11:05, CPU detector, r7/cpu_det/r6_ffl; 61 of the 95 people/animal prompts generated so far:
+  the 26 of the subset plus 35 more): r6_ffl 8 flags, all a subset of sca_v2's 18 on the same prompts; AReA 4. On the
+  35 prompts outside the subset ffl keeps 7 of sca_v2's 14 copies. The 46-prompt subset understates duplication
+  (sca_v2 4 of 26 there, 21 of 69 elsewhere), so ffl's 1 of 26 there becomes roughly half of sca_v2's rate on the 95,
+  about three times AReA's. The official read comes from the GPU evaluation (eval/r7_195_r6_ffl).
 
