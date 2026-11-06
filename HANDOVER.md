@@ -848,6 +848,11 @@ State 10:50 CST (this session's node i615-133 ends 23:31; a new lead continues f
   fo 2 (1 yes, 1 borderline), 10 losses; hs40o 3 flags (metrics on CPU, pending). None passes. Finding: the far field
   removes copies but costs quality whenever it is read at true positions (in-window lattice keys alias into a token
   checkerboard on flat illustrations; outside-window keys sit at offsets up to 255, 4x the native range).
+- KEY FINDING (11:30): the detector misses most copies of far-field variants. Blind labels of a random sample of
+  r6_ffl's unflagged images: 5 of 19 are duplicates (sca_v2 and AReA: 1 of 30). Of 6 sampled prompts where the detector
+  says ffl removed sca_v2's copy, 4 still have one (extra figures packed around the main subject, merged by the
+  detector's NMS). Round 6's "ffl 1 of 26, AReA's count" was a detector artifact; r6_ffl's human-corrected rate is
+  close to sca_v2's. Detector counts of far-field variants must not be used without labeling every image.
 - Iteration queued: r7_fg (far field read at the global branch's coarse ids, outside the window, near bridge, through
   0.5; tree 764f337), spool tasks a7_b500..b505, evaluation a7_a0_eval_r7_fg.
 - Track A: r6_ffl at 195: 6 of 30 generation tasks done (people prompts first); a7_t006..t029 and the evaluation
