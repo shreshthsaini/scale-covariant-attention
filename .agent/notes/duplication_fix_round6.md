@@ -84,3 +84,20 @@ and merged as one softmax; a gamma-0 split run is the GPU identity check (a6_a00
 - How baselines treat duplicates: AReA names it (a window cannot see a copy elsewhere; bridge removal brings duplicates
   back); DyPE and UltraImage address periodic RoPE repetition, not subject copies; HRDiT addresses spatial disorder;
   FreeScale and ScaleCrafter blame receptive field (FreeScale notes small-object repetition in local-patch methods).
+
+## Round 1 results (46-prompt subset, 26 people/animal prompts; scripts/r6_decide.py; eval/r6_46_<label>)
+- GPU path checks: the exact window split with gamma 0 reproduces sca_v2 at 34.4 / 32.0 dB PSNR (smoke2, two prompts;
+  differences are bf16 trajectory noise); gtg first failed to compile (a tensor computed in the same graph cannot be a
+  captured flex buffer), fixed by a graph break (commit 049d062). Two transient task failures: stale Lustre file handles
+  in the shared Triton cache (requeued); a per-node cache made Triton rebuild its CUDA stub with nvc and fail (reverted).
+- r6_ctw (candidate c, calibrated text weight, all post-gate steps): FAIL. Detector people/animal 4/26 (sca_v2 4/26,
+  AReA 1/26), any subject 7/34 (sca_v2 6/34); human check of its 4 flags: 3 yes, 1 borderline; 3 sampled unflagged:
+  0 yes; human-corrected 14% vs sca_v2 17% vs AReA 2.2%. Significant losses vs sca_v2: IR -0.057, PickScore -0.098,
+  HPSv2.1 -0.0029, HPSv2 -0.0018, aesthetic -0.034, CLIP-IQA -0.011, patch FID +4.2, patch KID +0.0021 (also on
+  prompts clean in both: HPSv2, HPSv2.1, PickScore, CLIP-IQA); gains MUSIQ, MUSIQ_c; win over AReA lost on CLIP-IQA;
+  time 80.2 vs 76.9 s (+4%). It also leaves a band of colored garbage in the last token column (right edge, 16 to 24 px)
+  on about a third of its images (8 of 37); the gamma-0 split is clean on the same prompts and ctw restricted to
+  sigma > 0.5 still shows it on 3 of 5, so lowering the window's text weight at mid noise destabilizes the last column.
+  Reading: the window's prompt over-read (2x median) is real but is not what seeds the copies; restoring the native
+  text balance only weakens prompt adherence. The copies need context (the window must see that the subject exists
+  elsewhere), not a weaker prompt.
