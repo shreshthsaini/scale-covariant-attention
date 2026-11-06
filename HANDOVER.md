@@ -835,3 +835,17 @@ keep running first and the review items follow in the same queue; no submissions
   a third of images; the exact window split itself is clean (identity 34 dB).
 - Open: next hypothesis (head-selective or sigma-decaying far field; or a finer opening layout) in the round-6 notes.
   Deferred tasks in taskq/hold_r6_ctw (traces of candidate c), superseded copies in taskq/hold_r6/superseded_20261105.
+
+## 28. 2026-11-06: round 7 duplication work (method owner; full log .agent/notes/duplication_fix_round7.md)
+State 06:55 CST (this session's node i615-133 ends 23:31; a new lead continues from here).
+- Code (commit 30b3e8f, frozen /scratch/09032/saini_2/sca/code/11b08d2): ffl options behind default-off flags
+  (--ffl-near bridge, --ffl-head-frac, --ffl-fade-lo, --ffl-outside, --text-bw-lo) and --open-pool/--open-pool-hi
+  (finer global grid on the last opening steps); slurm/round7_tasks.py (smoke, abl46, gen195, eval195).
+- Queued: a7_a000_smoke (pending; on PASS it releases the 36 Track B generation tasks in taskq/hold_r7), Track B wave 1
+  r7_op2, r7_fd60, r7_hs40, r7_fd70, r7_hs20, r7_op2bw (46 prompts; evaluations a7_a0_eval_* self-release from
+  taskq/hold_dup_eval into eval/r7_46_<label>); Track A a7_t000..t029 (r6_ffl on the 149 missing prompts, tree 5be811d)
+  and a7_a1_eval195_r6_ffl (eval/r7_195_r6_ffl).
+- GPU: SCA25 (1125967, gh-dev 4 nodes 2 h) pending; SCA21/SCA22/SCA24 pending in gh. One short job left in the lead's
+  allowance (gh-dev is blocked while SCA25 and the held BL23/V2P1 gh-dev jobs exist; submit after SCA25 ends).
+- Next: when evaluations land, run scripts/r6_decide.py-style checks (round-7 eval dirs), human-check every flag, iterate
+  once on the strongest Track B variant, promote a pass to 95 and 195.
