@@ -852,10 +852,13 @@ State 11:50 CST (this session's node i615-133 ends 23:31; a new lead continues f
   detector's NMS). Round 6's "ffl 1 of 26, AReA's count" was a detector artifact; r6_ffl's human-corrected rate is
   close to sca_v2's. Detector counts of far-field variants must not be used without labeling every image.
 - Iteration queued: r7_fg (far field read at the global branch's coarse ids, outside the window, near bridge, through
-  0.5; tree 764f337), spool tasks a7_b500..b505, evaluation a7_a0_eval_r7_fg.
-- Track A: r6_ffl at 195: 6 of 30 generation tasks done (people prompts first); a7_t006..t029 and the evaluation
-  a7_a1_eval195_r6_ffl wait for GPU; then CPU bootstrap r7/cpuboot/r6_ffl.sh and human labels
-  (r7/trackA_people_labels.sh builds the packet).
-- GPU: SCA25 ran 08:31 to 10:31. SCA26 (job 1126265, gh-dev 4 nodes 2 h) is pending with an estimated start of 13:40;
-  it is the second and last short job of the lead's allowance. Parked tasks: taskq/hold_r7_parked (op2bw, the
-  full-lattice hs40/hs20/fd70, and hs40o's GPU evaluation, which ran on CPU instead).
+  0.5; tree 764f337): a7_b500..b505 (46 prompts, evaluation a7_a0_eval_r7_fg) and a7_b800..b802 (the 21 people
+  prompts outside the subset where sca_v2 has a copy, r7/copyprone21.jsonl; label every image by hand). Its 195
+  promotion is staged in taskq/hold_r7_promote (release only on a pass). Item (4) r7_op2bw re-queued after Track A.
+- Track A (r6_ffl at 195): 7 of 30 generation tasks done; the people tasks were renamed a7_a9_t007..t013 so they run
+  first; then a7_t014..t029 and a7_a1_eval195_r6_ffl (eval/r7_195_r6_ffl); then the CPU bootstrap
+  r7/cpuboot/r6_ffl.sh. Human check: 8 of 8 flags so far confirmed; stratified unflagged sample, stratum A done (19:
+  5 yes, r7/label/trackA_strata_A.json), stratum B (11 more, from the 34 people prompts still to generate) to do.
+- GPU: SCA25 ran 08:31 to 10:31. SCA26 (job 1126265, gh-dev 4 nodes 2 h; estimated start 13:50) is the second and
+  last short job of the lead's allowance. Parked tasks: taskq/hold_r7_parked (op2bw's first copy, the full-lattice
+  hs40/hs20/fd70, hs20o, and hs40o's GPU evaluation, which ran on CPU instead).
