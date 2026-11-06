@@ -248,4 +248,7 @@ Queued at the head of the spool (prefix a0_, tree f479459 = the review's, so sca
   195 tasks stay in taskq/hold_r7_promote_area20.
 - Still running on SCA26 (until 18:28): r7_area8, r7_area12 (46), then the copyprone21 runs of all three; their
   evaluations self-release (a0_e_eval_r7_area8/12); label every person/animal image with r7/label_people.sh.
+- r7_area8 (eval 17:29; detector only, its 26 person/animal images not yet hand-labeled): 1 flag; 9 significant losses
+  vs sca_v2 incl. PickScore -0.13, IR -0.056, HPSv2.1 -0.0067 (core three again); 7/10 wins over AReA; 96.1 s (x1.25).
+  Relaxed bar fails on the core losses whatever its hand count. r7_area12 and the copyprone21 runs still on SCA26.
 
