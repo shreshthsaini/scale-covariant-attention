@@ -1,7 +1,7 @@
 #!/bin/bash
 # Compact status of the review-round 1 campaign (read-only).
 S=/scratch/09032/saini_2/sca; Q=$S/taskq; QC=$S/taskq_cpu; R=/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results
-RE='^(r[0-4]_|c[0-9]_)'
+RE='^(r[0-4]_|c[0-9]_|b0_r4)'
 echo "== $(date +%FT%T)"
 squeue -u saini_2 -h -o '%i %j %T %D %M %L %N' | grep -E ' SCA2[0-9] | cntrl-cmd '
 printf 'gpu q: '; for d in pending running done failed; do printf '%s %s  ' $d "$(ls $Q/$d 2>/dev/null | grep -cE "$RE")"; done; echo

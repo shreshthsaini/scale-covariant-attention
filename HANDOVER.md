@@ -803,3 +803,11 @@ failed/ entry is that bounce, not a failure). GUARD_NEED: item 4 sweep 23400 s (
 after the method agent's a6_ tasks), item 5 evaluation 7200, item 1 evaluation 6300, item 2 2700, 6144 6300, FLUX.2 3600.
 Release loop v2 (PID 632229, same script path and log; v1 PID 2733390 stopped) re-releases a parked guarded task only
 while a running SCA fleet has GUARD_NEED + 300 s left, at most every 600 s. Generation tasks are resumable and unguarded.
+
+Addendum 2026-11-06 05:08 CST (review-round campaign owner): moved to the new controller i615-091 (job 1125760, ends
+2026-11-08 04:59), started by dispatch/review_round1/start_on_controller.sh 1125760: release loop v2 PID 1692172, CPU
+workers PIDs 1692173 and 1692174 (nice 19, deadline 2026-11-08 04:39, idle exit 48 h; the 8192 CPU evaluation runs here).
+The i615-133 processes (release loop 632229, CPU workers 2733389 and 2733391) were stopped with SIGTERM; nothing of this
+campaign stays on i615-133. Lead decisions 2026-11-06 00:30: the a6_ tasks (duplication fix, the user's top priority)
+keep running first and the review items follow in the same queue; no submissions by this agent. As of 05:03 none of the
+140 review tasks had run: SCA21 and SCA22 (10 h each) still pending, the short fleets SCA23 and SCA24 drained a6_ work.
