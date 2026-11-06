@@ -37,13 +37,22 @@ tests/test_review_round.py::test_generated_tasks, which already fails on the cle
 - --text-bw-lo S: text mode bw applies only while sigma > S (for ffl+bw: far field through --text-mode-lo, hand-off
   bridge only at sigma > 0.84). ffl+bw needs --ffl-near bridge.
 
+## Far-field dose of each variant relative to r6_ffl (sum over steps 8 to 21 of the mean over layers and heads of
+pi x weight x calibrated far share, actual window schedule; computed on CPU from the calibration)
+hs20 0.15, hs40 0.38, fd60 0.45 (0.99 / 0.93 / 0.86 of ffl's at the three seeding steps), fd70 0.32, fflh (round 6,
+three steps only) 0.17. Round 6 reached 1 of 26 only at dose 1 (ffl) and removed nothing at 0.17 (fflh), so the head
+sets and fades are expected to sit between; r7_fo (outside-window far field at full dose) tests whether the cost of
+the dose can be lowered instead.
+
 ## Tasks (round7_tasks.py; smoke releases taskq/hold_r7; evaluations self-release from taskq/hold_dup_eval)
 - a7_a000_smoke (tree 80396bd): r7_id0 (ffl near bridge, empty head set; must match sca_v2, PSNR >= 24 dB on 2 prompts) plus one
   prompt each of r7_op2, r7_fd60, r7_hs40, r7_fo, r7_fd60bw.
 - Track B wave 1 (46 prompts, chunk 8, eval/r7_46_<label>; order of the spool): r7_op2 (b1), r7_fd60 (b2), r7_hs40 (b3),
-  r7_fd70 (b4), r7_hs20 (b5), r7_op2bw (b6: op2 plus the hand-off bridge 0.25 log(N/R), sigma > 0.84; run in wave 1
-  because the two act on disjoint steps).
-- Track A: a7_t000..t029 r6_ffl on the 149 prompts it lacks (r7/ffl_rest149.jsonl, frozen tree 5be811d, same out dir
+  r7_op2bw (b4: op2 plus the hand-off bridge 0.25 log(N/R), sigma > 0.84; in wave 1 because the two act on disjoint
+  steps), r7_fo (b5: ffl near bridge with the outside-window far field, through 0.5), then Track A, then r7_hs20 (u1)
+  and r7_fd70 (u2).
+- Track A: a7_t000..t029 r6_ffl on the 149 prompts it lacks, the 69 people/animal prompts first (t000..t013;
+  r7/ffl_rest149_pf.jsonl = rest_people69 + rest_other80), frozen tree 5be811d, same out dir
   r6/out/r6_ffl, so the 46 round-6 images are reused with identical fingerprints), then a7_a1_eval195_r6_ffl
   (eval/r7_195_r6_ffl, results/r7_195_r6_ffl). Set-level CIs: CPU bootstrap afterwards on the operator node.
 - GPU: fleet SCA25 (job 1125967, gh-dev, 4 nodes, 2 h) submitted 06:16; a second gh-dev job was refused
