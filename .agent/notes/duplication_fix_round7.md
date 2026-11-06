@@ -77,4 +77,18 @@ the dose can be lowered instead.
   5968998903196670637 and minus2679953061215100202, fixes none); 3 significant losses vs sca_v2 (aesthetic -0.088,
   MUSIQ crop -2.3, PickScore -0.12), ARNIQA gain; 9/10 wins kept; x1.049. Item (3) is refuted on the 46 prompts: a finer
   opening layout leaves the seeds (op2) or adds them (op4).
+- Human check of the op2 and op4 flags (packet r7/label/p1, 3 blind Opus labelers, human_labels_r7.csv): op2 3 yes,
+  1 borderline (572324: a framed picture that may show a face); op4 4 yes, 1 no (670637), 1 borderline (minus...100202:
+  one dancer with merged limbs). Human-corrected: op2 14.3%, op4 17.9% (sca_v2 17.0%, AReA 2.2%).
+- r7_fd60 (fade to 0 at 0.6, near bridge; eval 09:54): 3 of 26 flags (fixes 979216 and 684465, adds
+  minus2679953061215100202); 9 significant losses (PickScore -0.18, IR -0.085, CLIP -0.45, HPSv2 -0.0034, HPSv2.1
+  -0.0067, aesthetic -0.078, ARNIQA -0.014, CLIP-IQA -0.019, MUSIQ crop -1.16), also on the 26 prompts clean in both
+  (IR, PickScore, HPS, aesthetic, ARNIQA, MUSIQ crop); 7/10 wins kept; x1.086. PickScore falls on 37 of 46 prompts.
+- Finding (visual, results/round7_mechanism/): r6_ffl and fd60 images carry a periodic grid with the lattice's
+  4-token (64 px) period: a halftone dot texture on fabric and backgrounds (fd60_vs_sca_v2_800687.jpg) and a diamond
+  lattice in the stained glass (lattice_aliasing_207187.jpg). The far field of ffl includes the lattice keys inside the
+  query's own window; a query near a lattice key attends to it more than a query between two, so the output is
+  modulated with the lattice phase. r7_fo, whose far field excludes the in-window lattice keys, shows no grid on the
+  same prompt. The quality cost measured for ffl in round 6 (9 losses) and for fd60 is then mostly this aliasing, not
+  the far field itself.
 
