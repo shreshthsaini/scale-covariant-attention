@@ -106,4 +106,9 @@ the dose can be lowered instead.
 - Parked (taskq/hold_r7_parked): r7_op2bw (the finer opening it combined is refuted), and the full-lattice r7_hs40,
   r7_hs20, r7_fd70 (they carry the aliasing); queued instead r7_hs40o and r7_hs20o (head sets with the outside far
   field; hs20o after Track A).
+- Human check of the fd60 and fo flags (packet r7/label/p2, 2 labelers): fd60 3 yes (345747, 273390, the dancer);
+  fo 1 yes (the dancer: a fused pile of about three bodies in mid-air plus a figure standing in the splash) and the
+  church borderline (a cut-off figure at the doorway). Human-corrected on the 26: fd60 14.5%, fo 7.0% (AReA 2.2%).
+- 10:33 SCA25 ended (r7_hs40o generation complete, its evaluation pending); fleet SCA26 submitted (job 1126265,
+  gh-dev 4 nodes 2 h; balance 9,957 SU), the second and last short job of the allowance.
 
