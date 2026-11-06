@@ -131,7 +131,7 @@ the dose can be lowered instead.
 | r7_op4 | pool 2 on steps 4-7 (AReA's Phase I) | 6 | 4 | 17.9% | 3 | 9/10 | x1.05 |
 | r7_fd60 | lattice, bridge near, fade to 0 at 0.6 | 3 | 3 | 14.5% | 9 | 7/10 | x1.09 |
 | r7_fo | outside-window lattice, true positions, through 0.5 | 2 | 1 (+1 borderline) | 6.9% | 10 | 3/10 | x1.13 |
-| r7_hs40o | fo in the 40% lowest-pi heads | 3 | 3 | pending | pending | pending | pending |
+| r7_hs40o | fo in the 40% lowest-pi heads | 3 | 3 | 14.5% | 8 | 7/10 | x1.13 |
 (round7_frontier_46.csv holds the exact intervals.)
 - Track A early read (11:05, CPU detector, r7/cpu_det/r6_ffl; 61 of the 95 people/animal prompts generated so far:
   the 26 of the subset plus 35 more): r6_ffl 8 flags, all a subset of sca_v2's 18 on the same prompts; AReA 4. On the
@@ -143,4 +143,9 @@ the dose can be lowered instead.
   metric evaluation): a paired count of copies removed, with r6_ffl's images from Track A as the reference. r7_hs20o
   parked (dose 0.15, lowest value); r7_op2bw re-queued after Track A as item (4) (op2 is the only no-loss point among
   items 1 to 3). SCA26 budget: fg 46 and 21, Track A 23 tasks plus the 195 evaluation, then op2bw.
+- r7_hs40o (eval 11:06, CPU): 3 of 26 flags, 3 confirmed (the canoe, the church, the kimono scene: none of sca_v2's
+  copies removed except 684465); 8 losses (PickScore -0.12, IR -0.044, CLIP -0.40, HPSv2 -0.0021, HPSv2.1 -0.0046,
+  aesthetic -0.064, CLIP-IQA -0.012, MUSIQ crop -0.65); 7/10 wins; x1.13. Caveat: its extra metrics were computed on
+  CPU while sca_v2's and AReA's came from the seeded GPU cache; CLIP, PickScore and MUSIQ of all three were recomputed
+  on CPU, and those losses alone fail the bar.
 
