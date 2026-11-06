@@ -184,4 +184,11 @@ duplication; a candidate needs all its people/animal images labeled before any c
   far-field variants, whose sampled miss rate is 26%): op2 18.1%, op4 17.9%, fd60 21.9%, fo 10.4%, hs40o 14.3%,
   r6_ffl 13.6% (was 6.6%); sca_v2 17.0%, AReA 2.2%. fo is the only variant clearly below sca_v2, and it carries 10
   quality losses.
+- Reading for the next round (hypothesis, not tested here): copies need two things, the window's prompt over-read
+  (about 2x full attention's text mass at copy sites, round 6 probe) and its context deficit (it sees the main subject
+  at 0.4 to 0.5x full attention's mass). Round 6's ctw removed the over-read alone and left distant copies; the far
+  field removes the deficit alone and the extra figures move next to the main subject (a crowd the detector merges).
+  AReA avoids both at once: its first Phase II steps attend about 62% of all keys, so the text competes with nearly
+  every image key and the subject is in view. A fix within SCA's cost would need both parts together, e.g. a far field
+  read at coarse ids (fg) whose partition also restores full attention's text-to-image balance.
 
