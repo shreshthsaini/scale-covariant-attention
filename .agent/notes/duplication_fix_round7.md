@@ -47,10 +47,11 @@ the dose can be lowered instead.
 ## Tasks (round7_tasks.py; smoke releases taskq/hold_r7; evaluations self-release from taskq/hold_dup_eval)
 - a7_a000_smoke (tree 80396bd): r7_id0 (ffl near bridge, empty head set; must match sca_v2, PSNR >= 24 dB on 2 prompts) plus one
   prompt each of r7_op2, r7_fd60, r7_hs40, r7_fo, r7_fd60bw.
-- Track B wave 1 (46 prompts, chunk 8, eval/r7_46_<label>; order of the spool): r7_op2 (b1), r7_fd60 (b2), r7_hs40 (b3),
-  r7_op2bw (b4: op2 plus the hand-off bridge 0.25 log(N/R), sigma > 0.84; in wave 1 because the two act on disjoint
-  steps), r7_fo (b5: ffl near bridge with the outside-window far field, through 0.5), then Track A, then r7_hs20 (u1)
-  and r7_fd70 (u2).
+- Track B wave 1 (46 prompts, chunk 8, eval/r7_46_<label>), spool order: r7_op2 (b1: pool 2 on steps 6 and 7),
+  r7_op4 (b2: pool 2 on steps 4 to 7, AReA's own Phase I schedule 4,4,4,4,2,2,2,2 at 4096^2, area_code.md), r7_fd60
+  (b3), r7_fo (b4: ffl near bridge, outside-window far field, through 0.5), r7_op2bw (b5: op2 plus the hand-off bridge
+  0.25 log(N/R) at sigma > 0.84; in wave 1 because the two act on disjoint steps), r7_hs40 (b6); then Track A; then
+  r7_hs20 (u1) and r7_fd70 (u2), which run only if GPU time is left (doses 0.15 and 0.32).
 - Track A: a7_t000..t029 r6_ffl on the 149 prompts it lacks, the 69 people/animal prompts first (t000..t013;
   r7/ffl_rest149_pf.jsonl = rest_people69 + rest_other80), frozen tree 5be811d, same out dir
   r6/out/r6_ffl, so the 46 round-6 images are reused with identical fingerprints), then a7_a1_eval195_r6_ffl
