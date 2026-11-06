@@ -1253,10 +1253,10 @@ class SCAProcessor:
         cells, per = ctx.bridge_now()
         if "ffc" in modes and not per:
             raise ValueError("text mode ffc needs the bridge (bridge_cells > 0)")
-        prefix = 0 if "ffc" in modes else (cells[0] * cells[1] * per if per else 0)
+        prefix = 0 if ("ffc" in modes or "ffl" in modes) else (cells[0] * cells[1] * per if per else 0)
         layout = ctx.flex_layout(prefix, tile, win, q.device)
         beta = ctx.ctw_beta_now(self.layer, q.shape[2], q.device) if "ctw" in modes else None
-        far = ctx.ffc_far_now(self.layer, q.shape[2], q.device) if "ffc" in modes else None
+        far = ctx.ffc_far_now(self.layer, q.shape[2], q.device) if ("ffc" in modes or "ffl" in modes) else None
         return sca_text_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, layout,
                                      cells, per, modes, beta, float(ctx.text_gamma), float(ctx.text_clip), far)
 

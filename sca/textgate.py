@@ -22,6 +22,9 @@ Modes (SCAContext.text_mode; several may be joined with "+"):
        keys (the far-field sample); their outputs are mixed so the far field carries the share of the image mass that
        full attention gives it, 1 - share_lh(sigma, r), from the same calibration masses as ctw; the text part and the
        text-to-image balance stay those of sca_v2 (raw partition of window plus bridge). Needs the bridge.
+  ffl  as ffc, with the far field read from a uniform lattice (the block-centre token of every s x s block, 4,096 keys at
+       4096^2, true positions) instead of the outlier-selected bridge, so the far-field sample covers every region,
+       the main subject included, in proportion to its area. Does not need the bridge.
   bw   weighted bridge (image side, combines with the others). Each bridge key gets the logit offset log(N / R), the
        number of image tokens it stands for, so the far field enters the window softmax with the mass full attention
        would give it rather than as R single tokens.
@@ -38,7 +41,7 @@ import torch
 from sca.attn import _FLEX, _envfix, _raise_recompile_limit, bridge_index, flex_fn, global_branch_lse, \
     local_branch_flex, rope
 
-MODES = ("ctw", "gtg", "gtx", "bw", "ffc")
+MODES = ("ctw", "gtg", "gtx", "bw", "ffc", "ffl")
 
 
 def parse_mode(text):
@@ -47,7 +50,9 @@ def parse_mode(text):
     bad = [p for p in parts if p not in MODES]
     if bad:
         raise ValueError(f"unknown text mode(s) {bad}; choose from {MODES}")
-    if "ffc" in parts and ("bw" in parts or "gtx" in parts):
+    if "ffc" in parts and "ffl" in parts:
+        raise ValueError("text modes ffc and ffl are alternatives")
+    if ("ffc" in parts or "ffl" in parts) and ("bw" in parts or "gtx" in parts):
         raise ValueError("text mode ffc sets the bridge's share itself; it does not combine with bw or gtx")
     if "gtx" in parts and ("ctw" in parts or "gtg" in parts):
         raise ValueError("text mode gtx replaces the window's text part and does not combine with ctw or gtg")
@@ -175,11 +180,16 @@ def sca_text_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout,
         R = idx.shape[1]
     else:
         kl, vl, R = kimg, vimg, 0
-    if "ffc" in mode:   # layout built for prefix 0: window keys only; the bridge is attended densely
+    if "ffc" in mode or "ffl" in mode:   # layout for prefix 0: window keys only; the far field is attended densely
         o_w, lse_w = local_branch_flex(qi, kimg, vimg, 0, layout, True, 0.0, None, return_lse=True)
         o_w = o_w.transpose(1, 2).index_select(1, layout.q_inv)
         lse_w = lse_w.index_select(2, layout.q_inv)
-        o_b, lse_b = text_part(qi, kl[:, :R], vl[:, :R])
+        if "ffl" in mode:   # block-centre lattice at true positions (pool "center" ids)
+            H, W = grid
+            cen = torch.arange(H * W, device=k.device).view(H, W)[f[0] // 2::f[0], f[1] // 2::f[1]].reshape(-1)
+            o_b, lse_b = text_part(qi, kimg[:, cen], vimg[:, cen])
+        else:
+            o_b, lse_b = text_part(qi, kl[:, :R], vl[:, :R])
         fr = far.to(o_w.device).view(1, 1, -1, 1)
         fr = fr if o_w.dtype == torch.float64 else fr.float()
         o_i = (1 - fr) * _hi(o_w) + fr * _hi(o_b)
