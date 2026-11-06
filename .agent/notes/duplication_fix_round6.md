@@ -101,3 +101,19 @@ and merged as one softmax; a gamma-0 split run is the GPU identity check (a6_a00
   Reading: the window's prompt over-read (2x median) is real but is not what seeds the copies; restoring the native
   text balance only weakens prompt adherence. The copies need context (the window must see that the subject exists
   elsewhere), not a weaker prompt.
+
+## Step 2 statement (reported 2026-11-06 00:45)
+- When: x0 traces of sca_v2 and AReA at 10 human-labeled copies (results/round6_mechanism/trace_sheets: crops on the
+  copy, steps 6 to 21, sca_v2 above AReA) and the web traces of published SCA: every copy is seeded in the first 1 to 3
+  window steps after the gate (sigma 0.888 to 0.85), is a recognizable figure by 0.85 and finished by about 0.75. It
+  grows on a structure the global-only phase left open (a second rock gets an astronaut for "astronaut sits on a rock";
+  a snowy ridge path gets a climber). AReA's coarse layout at the same place is plain sand or slope.
+- Why (probe, results/round6_mechanism/probe_*.csv): at the copy sites in those steps the window reads the prompt about
+  2x as strongly as full attention (text mass 0.06 to 0.10 vs 0.035 to 0.05) and sees the main subject with 0.4 to 0.5x
+  full attention's mass (0.035 to 0.045 vs 0.08 to 0.10). Interventions: removing the over-read (c; measured over-read
+  ~1.0) leaves the copies; far-field mass reduces them in proportion to its weight (bridge 57% -> 19%; calibrated share
+  ffc 4 -> 3 of 26; uncalibrated weighted bridge 0 of 26 with destroyed images; wide windows at the hand-off reach AReA's
+  level but soften). The window completes the prompt's composition on whatever prop the coarse layout offers; the lever
+  is what it sees of the existing subject, not how strongly it reads the prompt.
+- Round-1/2 human-checked duplicates on the 26 people/animal prompts (detector flags confirmed): sca_v2 4, ctw 3,
+  gtg 4, ffc 3, native opening K=12 2 (2 of 4 flags false); detector only: gtx 8, K=8 7, bw 0 (images destroyed).
