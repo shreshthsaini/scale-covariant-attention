@@ -126,6 +126,14 @@ def main(argv=None):
                     print(f"skip {row['id']} {label} {config['res']}", flush=True)
                     continue
             ctx.pi_trace.clear()
+            if getattr(args, "subject_words", ""):  # round 6 sb: subject words -> T5 token indices for this prompt
+                import re
+                words = json.loads(Path(args.subject_words).read_text()).get(str(row["id"]), [])
+                enc = pipe.tokenizer_2(row["prompt"], padding="max_length", max_length=512, truncation=True,
+                                       return_offsets_mapping=True)
+                spans = [m.span() for w_ in words for m in re.finditer(r"\b" + re.escape(w_) + r"\w*", row["prompt"], re.I)]
+                ctx.subject_tokens = tuple(j for j, (a, b) in enumerate(enc["offset_mapping"])
+                                           if b > a and any(a < e and b > s for s, e in spans))
             if anchor is not None:
                 anchor.reset()
             generator = torch.Generator(device="cpu").manual_seed(image_seed(row["id"], args.seed))

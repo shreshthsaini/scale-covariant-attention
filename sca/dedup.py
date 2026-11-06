@@ -58,6 +58,8 @@ def add_args(p):
     p.add_argument("--text-mode-lo", type=float, default=0.0, metavar="SIGMA", help="--text-mode applies while sigma > this")
     p.add_argument("--text-gamma", type=float, default=1.0, help="gtg: strength of the global text gate")
     p.add_argument("--text-clip", type=float, default=6.0, help="gtg: floor of the gate's log ratio")
+    p.add_argument("--text-bw-scale", type=float, default=1.0, help="bw: scale of the bridge offset log(N / R)")
+    p.add_argument("--subject-words", default="", metavar="JSON", help="sb: JSON {prompt_id: [words]} (subject words)")
     p.add_argument("--native-open", type=int, default=0, metavar="K", help="Round 6 candidate d: first K steps at 1024^2 "
                    "with full attention, then upsample, renoise at the next sigma and continue at the target (0 = off)")
     p.add_argument("--anchor-lo", type=float, default=0.0, metavar="SIGMA", help="Latent low-band anchor "
@@ -81,7 +83,7 @@ def context_kwargs(args):
                 lse_tau=args.lse_tau, scale_sched=args.scale_sched, scale_lo=args.scale_lo,
                 scale_fixed=args.scale_fixed, win_pi_match=args.win_pi_match, win_pi_interp=args.win_pi_interp, win_heads_below=args.win_heads_below,
                 text_mode=args.text_mode, text_mode_lo=args.text_mode_lo, text_gamma=args.text_gamma,
-                text_clip=args.text_clip)
+                text_clip=args.text_clip, text_bw_scale=args.text_bw_scale)
 
 
 def anchor(args, ctx):
@@ -123,6 +125,10 @@ def info(args):
     if args.text_mode:
         out.update(text_mode=args.text_mode, text_mode_lo=args.text_mode_lo, text_gamma=args.text_gamma,
                    text_clip=args.text_clip)
+        if args.text_bw_scale != 1.0:
+            out["text_bw_scale"] = args.text_bw_scale
+        if args.subject_words:
+            out["subject_words"] = args.subject_words
     if getattr(args, "native_open", 0):
         out["native_open"] = args.native_open
     if args.anchor_lo:

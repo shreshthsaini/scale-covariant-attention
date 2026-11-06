@@ -330,3 +330,36 @@ def test_ffl_reads_the_far_field_from_the_block_lattice():
     assert (out[0, L:] - (a * o_t + (1 - a) * o_img)).abs().max() < 1e-9
     with pytest.raises(ValueError):
         tg.parse_mode("ffc+ffl")
+
+
+def test_subject_bridge_and_bw_scale():
+    """sb: bridge = top-R block centres by the subject words' global attention; bwscale scales log(N / R)."""
+    q, k, v = _qkv(H, W, L, seed=19)
+    _, _, rot, rq, rk = _setup(H, W, L, F)
+    cells, per, idx = _bridge(k)
+    R = len(idx)
+    lay = flex_layout(R, (H, W), TILE, WIN, "cpu", (2, 2), (2, 2))
+    pi = torch.ones(1, 1, 2, 1, dtype=torch.float64)
+    w = torch.zeros(L, dtype=torch.float64)
+    w[1] = w[2] = 1.0
+    qr, kr = rope(q, rot), rope(k, rot)
+    d = q.shape[-1] ** -0.5
+    cen = torch.tensor([(a * 2 + 1) * W + b * 2 + 1 for a in range(H // 2) for b in range(W // 2)])
+    kg = torch.cat([kr[0, :L], rope(k[:, L:][:, cen], rk)[0]], 0)
+    pt = (torch.einsum("thd,mhd->htm", qr[0, :L], kg) * d).softmax(-1)          # text queries of the global branch
+    score = (pt[:, :, L:] * w.view(1, -1, 1)).sum((0, 1))
+    top = cen[score.topk(R).indices]
+    for scale in (0.0, 0.5):
+        out = tg.sca_text_forward(q, k, v, rot, rq, rk, pi, L, (H, W), F, "center", lay, cells, per, ("sb", "bw"),
+                                  bwscale=scale, w_subj=w)
+        keys_img = torch.cat([kr[0, L + top], kr[0, L:]], 0)
+        vals_img = torch.cat([v[0, L + top], v[0, L:]], 0)
+        ib = torch.zeros(H * W, R + H * W, dtype=torch.float64)
+        ib[:, :R] = scale * math.log(H * W / R)
+        ref = _brute_local(qr[0, L:], kr[0, :L], v[0, :L], keys_img, vals_img, _window_mask(R), torch.zeros(2, H * W, L, dtype=torch.float64), ib)
+        assert (out[0, L:] - ref).abs().max() < 1e-9
+    out0 = tg.sca_text_forward(q, k, v, rot, rq, rk, pi, L, (H, W), F, "center", lay, cells, per, ("sb",),
+                               w_subj=torch.zeros(L, dtype=torch.float64))
+    ref0 = tg.sca_text_forward(q, k, v, rot, rq, rk, pi, L, (H, W), F, "center", lay, cells, per, ("ctw",),
+                               torch.zeros(2, dtype=torch.float64))
+    assert (out0 - ref0).abs().max() < 1e-9                                       # no subject words: AReA's selection

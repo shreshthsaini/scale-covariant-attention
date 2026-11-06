@@ -25,7 +25,10 @@ Modes (SCAContext.text_mode; several may be joined with "+"):
   ffl  as ffc, with the far field read from a uniform lattice (the block-centre token of every s x s block, 4,096 keys at
        4096^2, true positions) instead of the outlier-selected bridge, so the far-field sample covers every region,
        the main subject included, in proportion to its area. Does not need the bridge.
-  bw   weighted bridge (image side, combines with the others). Each bridge key gets the logit offset log(N / R), the
+  sb   subject bridge: the bridge tokens are the block-centre tokens most attended by the subject words in the global
+       branch (text queries of the subject tokens, SCAContext.subject_tokens, over the block keys), instead of AReA's
+       farthest-from-mean keys; prompts without subject words keep AReA's selection. Combines with bw.
+  bw   weighted bridge (image side, combines with the others); SCAContext.text_bw_scale scales its log(N / R). Each bridge key gets the logit offset log(N / R), the
        number of image tokens it stands for, so the far field enters the window softmax with the mass full attention
        would give it rather than as R single tokens.
 Off by default; the published and sca_v2 paths (sca.attn.sca_flex_forward, sca_dedup_forward) are untouched.
@@ -41,7 +44,7 @@ import torch
 from sca.attn import _FLEX, _envfix, _raise_recompile_limit, bridge_index, flex_fn, global_branch_lse, \
     local_branch_flex, rope
 
-MODES = ("ctw", "gtg", "gtx", "bw", "ffc", "ffl")
+MODES = ("ctw", "gtg", "gtx", "bw", "ffc", "ffl", "sb")
 
 
 def parse_mode(text):
@@ -160,8 +163,23 @@ def gate_bias(m, gamma, clip):
     return (gamma * torch.log(r.clamp_min(1e-30))).clamp(min=-clip, max=0.0)
 
 
+def subject_bridge(q_txt, k, lse_txt, w_subj, L, grid, f, pool, rope_k, R):
+    """[B, R] image-token indices: the block-centre tokens with the largest global-branch attention from the subject
+    words, sum_h sum_t w_t P(t -> block), P with the global branch's own normaliser (lse_txt [B, h, L])."""
+    from sca.attn import pool_tokens
+    H, W = grid
+    kpr = rope(pool_tokens(k[:, L:], grid, f, pool), rope_k)                       # [B, Nb, h, D]
+    D = q_txt.shape[-1]
+    s = torch.einsum("bthd,bjhd->bhtj", _hi(q_txt), _hi(kpr)) * (D ** -0.5)        # [B, h, L, Nb]
+    p = torch.exp(s - _hi(lse_txt)[..., None])
+    score = (p * _hi(w_subj).view(1, 1, -1, 1)).sum((1, 2))                      # [B, Nb]
+    top = score.topk(R, dim=-1).indices
+    cen = torch.arange(H * W, device=k.device).view(H, W)[f[0] // 2::f[0], f[1] // 2::f[1]].reshape(-1)
+    return cen[top]
+
+
 def sca_text_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, cells=None, per_cell=0, mode=(),
-                     beta=None, gamma=1.0, clip=6.0, far=None):
+                     beta=None, gamma=1.0, clip=6.0, far=None, bwscale=1.0, w_subj=None):
     """SCA with the bridge (cells, per_cell; layout built for prefix R = cells_h * cells_w * per_cell, the bridge
     only) and the text modes of this module. q, k, v pre-RoPE [B, L + N, h, D]; returns [B, L + N, h, D]."""
     cos, sin = rot
@@ -174,6 +192,9 @@ def sca_text_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout,
     kimg, vimg = kr[:, L:], v[:, L:]
     if per_cell:
         idx = bridge_index(k[:, L:], grid, cells, per_cell)                       # [B, R]
+        if "sb" in mode and w_subj is not None:
+            sb = subject_bridge(q_txt, k, lse_glob[:, :, :L], w_subj, L, grid, f, pool, rope_k, idx.shape[1])
+            idx = torch.where(w_subj.sum() > 0, sb, idx)
         g = idx[:, :, None, None].expand(-1, -1, k.shape[2], k.shape[3])
         kl = torch.cat([torch.gather(kimg, 1, g), kimg], 1)
         vl = torch.cat([torch.gather(vimg, 1, g), vimg], 1)
@@ -195,7 +216,7 @@ def sca_text_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout,
         o_i = (1 - fr) * _hi(o_w) + fr * _hi(o_b)
         lse_i = torch.logaddexp(_hi(lse_w), _hi(lse_b))
     else:
-        bw = math.log(kimg.shape[1] / R) if ("bw" in mode and R) else 0.0          # bridge keys stand for N / R tokens
+        bw = bwscale * math.log(kimg.shape[1] / R) if ("bw" in mode and R) else 0.0   # bridge keys stand for N / R
         o_i, lse_i = local_branch_flex(qi, kl, vl, R, layout, True, bw, None, return_lse=True)
         o_i = o_i.transpose(1, 2).index_select(1, layout.q_inv)                   # [B, N, h, D]
         lse_i = lse_i.index_select(2, layout.q_inv)                                # [B, h, N]

@@ -789,6 +789,8 @@ class SCAContext:
     text_mode_lo: float = 0.0           # text_mode applies while sigma > text_mode_lo
     text_gamma: float = 1.0             # gtg: strength of the global text gate
     text_clip: float = 6.0              # gtg: floor of the gate's log ratio
+    text_bw_scale: float = 1.0          # bw: scale of the bridge offset log(N / R)
+    subject_tokens: tuple = ()          # sb: T5 token indices of the prompt's subject words (set per prompt by the sampler)
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -1257,8 +1259,15 @@ class SCAProcessor:
         layout = ctx.flex_layout(prefix, tile, win, q.device)
         beta = ctx.ctw_beta_now(self.layer, q.shape[2], q.device) if "ctw" in modes else None
         far = ctx.ffc_far_now(self.layer, q.shape[2], q.device) if ("ffc" in modes or "ffl" in modes) else None
+        w = None
+        if "sb" in modes:
+            w = torch.zeros(L, dtype=torch.float32, device=q.device)
+            idx = [t for t in ctx.subject_tokens if 0 <= int(t) < L]
+            if idx:
+                w[torch.as_tensor(idx, device=q.device)] = 1.0
         return sca_text_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, layout,
-                                     cells, per, modes, beta, float(ctx.text_gamma), float(ctx.text_clip), far)
+                                     cells, per, modes, beta, float(ctx.text_gamma), float(ctx.text_clip), far,
+                                     float(ctx.text_bw_scale), w)
 
     def scale_sched(self, q, k, v, image_rotary_emb, f, tile):
         """Per-head apparent scale (SCAContext.scale_sched), below the gate: heads at a = 1 take O_glob, each group of
