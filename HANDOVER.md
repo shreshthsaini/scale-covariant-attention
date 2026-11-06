@@ -852,7 +852,8 @@ where the review release loop and the two CPU workers (PIDs 1692172 to 1692174) 
   says ffl removed sca_v2's copy, 4 still have one (extra figures packed around the main subject, merged by the
   detector's NMS). Round 6's "ffl 1 of 26, AReA's count" was a detector artifact; r6_ffl's human-corrected rate is
   close to sca_v2's. Detector counts of far-field variants must not be used without labeling every image.
-- LEAD DIRECTIVE 13:40 (urgent): AReA's wide shrinking windows in SCA, ahead of everything: sca_area20 (review
+- LEAD DIRECTIVE 13:40 (urgent; running on SCA26 since 16:28; stale Triton-cache handles are requeued with a retry by
+  r7/requeue_stale.py, PID 1886414 on i615-091, exits by 20:35): AReA's wide shrinking windows in SCA: sca_area20 (review
   item 2, renamed a0_r2_g_*), r7_area8, r7_area12 on the 46 prompts and copyprone21 (a0_s8*, a0_s9*, a0_t1..t3*), evals
   a0_e_eval_* (self-released); hand-check every person/animal image; relaxed bar in scripts/r7_decide.py (relaxed_pass);
   report when sca_area20's 46-prompt result is in. Details: round-7 notes, "Lead directive 13:40". sca_area20's
