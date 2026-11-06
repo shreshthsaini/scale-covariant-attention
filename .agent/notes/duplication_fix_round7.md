@@ -191,4 +191,9 @@ duplication; a candidate needs all its people/animal images labeled before any c
   AReA avoids both at once: its first Phase II steps attend about 62% of all keys, so the text competes with nearly
   every image key and the subject is in view. A fix within SCA's cost would need both parts together, e.g. a far field
   read at coarse ids (fg) whose partition also restores full attention's text-to-image balance.
+- fo unflagged sample (packet p5, 10 of its 21 unlabeled unflagged people images): 0 yes, 1 borderline (a fused second
+  head on the owl). fo's human count on the 26: 2 yes (the dancer, the canoe's extra rowers), 3 borderline (church,
+  kimono scene, owl), 11 unflagged unlabeled at a sampled miss rate of 0 of 10: about 2 of 26 (7.7%). So the
+  outside-window far field does remove copies (unlike r6_ffl, whose copies mostly moved next to the subject), at the
+  cost of 10 significant losses.
 
