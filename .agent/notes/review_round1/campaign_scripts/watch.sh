@@ -10,14 +10,14 @@ sig(){ J=$(fleets); [ -n "$EXTRA" ] && J=${J:+$J,}$EXTRA; [ -n "$J" ] && squeue 
 marks(){ ls $S/eval/review1_*/DONE $S/eval/review1_*/CPU_BOOTSTRAP_COMPLETE $R/review1_latency/latency_summary.csv 2>/dev/null | wc -l; }
 MINE='^(r[0-4]_|c[0-9]_|b0_r4)'
 nfail(){ ls $Q/failed $QC/failed $Q/quarantine $QC/quarantine 2>/dev/null | grep -E "$MINE" | grep -c '\.sh'; }
-s0=$(sig); m0=$(marks); f0=$(nfail); idle=0
+s0=$(sig); m0=$(marks); f0=$(nfail); idle=0; cp0=""
 while [ $(date +%s) -lt $END ]; do
   sleep 600
   s1=$(sig); m1=$(marks); f1=$(nfail)
   [ "$s1" != "$s0" ] && { echo "EVENT fleet state: [$s0] -> [$s1]"; exit 0; }
   [ $f1 -gt $f0 ] && { echo "EVENT new failed/quarantined task(s): $(ls $Q/failed $QC/failed $Q/quarantine $QC/quarantine 2>/dev/null | grep -E "$MINE" | tr "\n" " ")"; exit 0; }
   [ $m1 -gt $m0 ] && { echo "EVENT new result marker(s)"; exit 0; }
-  nw=$(pgrep -u saini_2 -f "worker_loop_v2.py worker --queue /scratch/09032/saini_2/sca/taskq_cpu" | wc -l); np2=$(ls $QC/pending 2>/dev/null | grep -c "\.sh"); [ $nw -eq 0 ] && [ $np2 -gt 0 ] && { echo "EVENT CPU workers gone with $np2 CPU task(s) pending"; exit 0; }
+  cp1=$(ls $QC/pending 2>/dev/null | grep "\.sh" | sort | tr "\n" " "); st=$(comm -12 <(echo "$cp0" | tr " " "\n" | sed "/^$/d") <(echo "$cp1" | tr " " "\n" | sed "/^$/d") | tr "\n" " "); [ -n "$st" ] && { echo "EVENT CPU task(s) unclaimed for 10 min (CPU workers on the controller alive?): $st"; exit 0; }; cp0=$cp1
   fx=$(ls $QC/pending $QC/running 2>/dev/null | grep "\.sh" | grep -v -E "$MINE" | head -3 | tr "\n" " "); [ -n "$fx" ] && { echo "EVENT non-review task in taskq_cpu (would run on the controller): $fx"; exit 0; }
   J=$(fleets); nodes=$([ -n "$J" ] && for j in $(squeue -h -j $J -t R -o %i 2>/dev/null); do scontrol show hostnames $(squeue -h -j $j -o %N); done | sort -u)
   if [ -n "$nodes" ]; then
