@@ -155,3 +155,20 @@ the dose can be lowered instead.
   34 people prompts generated later (11 to sample). Estimate: (confirmed flags + known unflagged dups + sum over strata
   of unlabeled unflagged x k_s / n_s) / 95, with the official flags from the GPU detector of eval/r7_195_r6_ffl.
 
+## Finding (11:35): the detector misses most of the far field's copies; round 6's "ffl 1 of 26" was a detector artifact
+Stratum-A unflagged sample of r6_ffl (19 blind labels, packet pA2): 5 yes, 1 borderline, 13 no (miss rate 26%,
+Wilson [12, 49]; sca_v2 and AReA had 1 of 30 each in Step 1). Of the 10 prompts where the detector says ffl removed
+sca_v2's copy (sca_v2 flagged, ffl not; 61 prompts so far), 6 were sampled: 4 still have a copy (979216 canoe,
+918576, 345747 kimono scene, 660958 campers), 2 are truly clean (341041, 591135). The copies did not go away; they
+moved: in the canoe image (results/round7_mechanism/ffl_canoe_detector_miss_979216.jpg) the detector counts 2
+people where the canoe holds 6 (a blue-capped rower and two children packed between the two paddlers, a head behind
+one of them); occluded figures overlapping the main subject fall to the detector's NMS and containment rules. With
+far-field context the extra figures cluster around the main subject instead of appearing elsewhere as copies.
+Rough human-corrected estimate on the 61 prompts: 8 confirmed flags + 10 x 4/6 + 43 x 1/13 = about 18 (29%), against
+sca_v2's 18 flags + 43 x 1/30 = about 19.4 (32%) on the same prompts. So r6_ffl does not materially reduce human-
+counted duplication. On the 46-subset at least 3 of 26 r6_ffl images are human-confirmed duplicates (273390, 979216,
+345747), not 1. Consequences: (a) Track A will report a human-corrected rate with r6_ffl's own miss rate (stratified
+sample), not the detector rate; (b) detector counts of far-field variants (fo, fd60, hs40o, fg) understate their
+duplication; a candidate needs all its people/animal images labeled before any claim; (c) the round-6 frontier's
+"lowest duplication" point does not hold.
+
