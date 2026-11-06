@@ -34,7 +34,9 @@ Modes (SCAContext.text_mode; several may be joined with "+"):
 Round-7 options of ffl (sca_text_forward keywords; SCAContext.ffl_*, .agent/notes/duplication_fix_round7.md):
   near="bridge"  the near part is sca_v2's window plus bridge (bw weights its bridge keys) instead of the window alone,
                  so a head or step whose far weight is 0 is exactly sca_v2.
-  far_sel        [h] bool: heads outside the set keep their near part and its partition (far weight 0 there).
+  lat_w          [h] weights in [0, 1] (head set x sigma fade): the far field enters the image part with weight
+                 lat_w * far and the window's partition with weight lat_w (lattice logits + log lat_w), so lat_w = 0
+                 is the near part alone, partition included, and lat_w = 1 is round-6 ffl.
   lat            BlockMask from lattice_layout(): lattice keys inside the query's own window are left out of the far
                  field, which then holds only what the window cannot see.
 Off by default; the published and sca_v2 paths (sca.attn.sca_flex_forward, sca_dedup_forward) are untouched.
@@ -233,12 +235,12 @@ def subject_bridge(q_txt, k, lse_txt, w_subj, L, grid, f, pool, rope_k, R):
 
 
 def sca_text_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, cells=None, per_cell=0, mode=(),
-                     beta=None, gamma=1.0, clip=6.0, far=None, bwscale=1.0, w_subj=None, near="window", far_sel=None,
+                     beta=None, gamma=1.0, clip=6.0, far=None, bwscale=1.0, w_subj=None, near="window", lat_w=None,
                      lat=None):
     """SCA with the bridge (cells, per_cell; layout built for prefix R = cells_h * cells_w * per_cell, the bridge
     only) and the text modes of this module. q, k, v pre-RoPE [B, L + N, h, D]; returns [B, L + N, h, D].
     ffl round-7 keywords (module docstring): near "window" | "bridge" (ffc and ffl near "window" need a layout for
-    prefix 0, ffl near "bridge" one for prefix R), far_sel [h] bool, lat = lattice_layout() or None."""
+    prefix 0, ffl near "bridge" one for prefix R), lat_w [h] tensor or None (= 1), lat = lattice_layout() or None."""
     cos, sin = rot
     kr = rope(k, rot)
     qi = rope(q[:, L:], (cos[L:], sin[L:]))
@@ -273,14 +275,15 @@ def sca_text_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout,
             o_b, lse_b = text_part(qi, kl[:, :R], vl[:, :R])
         fr = far.to(o_w.device).view(1, 1, -1, 1)
         fr = fr if o_w.dtype == torch.float64 else fr.float()
-        if far_sel is not None:
-            fr = fr * far_sel.to(o_w.device).view(1, 1, -1, 1).to(fr.dtype)
+        if lat_w is not None:
+            fr = fr * lat_w.to(o_w.device).view(1, 1, -1, 1).to(fr.dtype)
         if lat is not None:   # a query whose window covers the whole lattice has no far field
             fr = fr * torch.isfinite(lse_b).transpose(1, 2)[..., None].to(fr.dtype)
         o_i = (1 - fr) * _hi(o_w) + fr * _hi(o_b)
-        lse_i = torch.logaddexp(_hi(lse_w), _hi(lse_b))
-        if far_sel is not None:   # heads outside the far set keep their near part's partition
-            lse_i = torch.where(far_sel.to(o_w.device).view(1, -1, 1), lse_i, _hi(lse_w))
+        lse_b = _hi(lse_b)
+        if lat_w is not None:     # the far field enters the partition with weight lat_w (0: the near part's own)
+            lse_b = lse_b + torch.log(lat_w.to(o_w.device).view(1, -1, 1).to(lse_b.dtype))
+        lse_i = torch.logaddexp(_hi(lse_w), lse_b)
     else:
         bw = bwscale * math.log(kimg.shape[1] / R) if ("bw" in mode and R) else 0.0   # bridge keys stand for N / R
         o_i, lse_i = local_branch_flex(qi, kl, vl, R, layout, True, bw, None, return_lse=True)

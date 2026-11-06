@@ -374,7 +374,8 @@ def _lattice():
 @pytest.mark.parametrize("bw", [False, True])
 def test_ffl_near_bridge_head_set_and_outside_match_bruteforce(bw):
     """Round 7: near part = sca_v2's window plus bridge (bw weights the bridge keys), far field = lattice keys outside
-    each query's window, mixed only in the heads of far_sel; the other heads keep the near part and its partition."""
+    each query's window, mixed with weight lat_w per head (0: the near part and its partition; 0.5: half the far share
+    and the lattice partition at weight 0.5)."""
     q, k, v = _qkv(H, W, L, seed=23)
     _, _, rot, rq, rk = _setup(H, W, L, F)
     cells, per, idx = _bridge(k)
@@ -383,10 +384,10 @@ def test_ffl_near_bridge_head_set_and_outside_match_bruteforce(bw):
     lat = tg.lattice_layout((H, W), TILE, WIN, F, "cpu")
     pi = torch.ones(1, 1, 2, 1, dtype=torch.float64)
     far = torch.tensor([0.3, 0.6], dtype=torch.float64)
-    sel = torch.tensor([True, False])
+    lw = torch.tensor([0.5, 0.0], dtype=torch.float64)
     mode = ("ffl", "bw") if bw else ("ffl",)
     out = tg.sca_text_forward(q, k, v, rot, rq, rk, pi, L, (H, W), F, "center", layR, cells, per, mode, far=far,
-                              bwscale=0.25, near="bridge", far_sel=sel, lat=lat)
+                              bwscale=0.25, near="bridge", lat_w=lw, lat=lat)
     qr, kr = rope(q, rot), rope(k, rot)
     qi = qr[0, L:]
     d = q.shape[-1] ** -0.5
@@ -403,10 +404,10 @@ def test_ffl_near_bridge_head_set_and_outside_match_bruteforce(bw):
     o_n = torch.einsum("hnm,mhd->nhd", sn.softmax(-1), vals_n)
     o_f = torch.einsum("hnm,mhd->nhd", sf.softmax(-1), v[0, L + cen])
     o_t = torch.einsum("hnl,lhd->nhd", st.softmax(-1), v[0, :L])
-    fr = (far * sel).view(1, -1, 1)
+    fr = (far * lw).view(1, -1, 1)
     o_img = (1 - fr) * o_n + fr * o_f
     zn, zf = sn.logsumexp(-1), sf.logsumexp(-1)
-    zi = torch.where(sel.view(-1, 1), torch.logaddexp(zn, zf), zn).transpose(0, 1)[..., None]
+    zi = torch.logaddexp(zn, zf + torch.log(lw).view(-1, 1)).transpose(0, 1)[..., None]
     a = torch.sigmoid(st.logsumexp(-1).transpose(0, 1)[..., None] - zi)
     assert (out[0, L:] - (a * o_t + (1 - a) * o_img)).abs().max() < 1e-9
 
@@ -424,7 +425,7 @@ def test_ffl_near_bridge_with_no_far_heads_is_sca_v2():
     far = torch.tensor([0.5, 0.5], dtype=torch.float64)
     for lat in (None, tg.lattice_layout((H, W), TILE, WIN, F, "cpu")):
         out = tg.sca_text_forward(q, k, v, rot, rq, rk, pi, L, (H, W), F, "center", layR, cells, per, ("ffl",),
-                                  far=far, near="bridge", far_sel=torch.tensor([False, False]), lat=lat)
+                                  far=far, near="bridge", lat_w=torch.zeros(2, dtype=torch.float64), lat=lat)
         ref = sca_dedup_forward(q, k, v, rot, rq, rk, pi, L, (H, W), F, "center", layLR, 0.0, cells, per)
         assert (out - ref).abs().max() < 1e-6     # the reference mixes in fp32 (mix_branches)
 
@@ -450,10 +451,13 @@ def test_ffl_context_options():
                      ffl_fade_lo=0.6)
     sel = ctx.ffl_sel(3)
     assert sel.sum() == 3 and sel[1, 0] and sel[0, 1] and sel[1, 2] and not sel[0, 0]
-    assert ctx.ffl_sel_now(0, 3, "cpu").tolist() == [False, True, False]
     for s, want in ((0.89, 1.0), (0.745, 0.5), (0.6, 0.0), (0.5, 0.0), (0.95, 1.0)):
         ctx.sigma = s
         assert abs(ctx.ffl_fade() - want) < 1e-9
+    ctx.sigma = 0.745
+    assert ctx.ffl_weight_now(0, 3, "cpu").tolist() == [0.0, 0.5, 0.0]
+    assert ctx.ffl_weight_now(1, 3, "cpu").tolist() == [0.5, 0.0, 0.5]
+    assert SCAContext(mode="sca", gate_sigma=0.89, text_mode="ffl").ffl_weight_now(0, 3, "cpu") is None
     c2 = SCAContext(mode="sca", gate_sigma=0.89, bridge_cells=2, text_mode="ffl+bw", ffl_near="bridge",
                     text_mode_lo=0.5, text_bw_lo=0.84)
     for s, want in ((0.888, ("ffl", "bw")), (0.84, ("ffl",)), (0.7, ("ffl",)), (0.5, ())):

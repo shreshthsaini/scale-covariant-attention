@@ -1101,12 +1101,16 @@ class SCAContext:
             raise ValueError(f"pi table shape {p.shape} does not match {n} layers x {heads} heads")
         return np.array(np.broadcast_to(p, (n, heads)))
 
-    def ffl_sel_now(self, layer, heads, device):
-        """[heads] bool tensor of ffl_sel() for this layer, None when every head takes the far field."""
-        if not self.ffl_head_frac:
+    def ffl_weight_now(self, layer, heads, device):
+        """[heads] float32 far-field weight of this layer (textgate lat_w): head set x sigma fade, None when neither
+        is on (every head at weight 1, round-6 ffl)."""
+        if not self.ffl_head_frac and not self.ffl_fade_lo:
             return None
-        sel = self.ffl_sel(heads)
-        return torch.as_tensor(sel[layer if sel.shape[0] > 1 else 0], device=device)
+        w = np.full(heads, self.ffl_fade(), dtype=np.float64)
+        if self.ffl_head_frac:
+            sel = self.ffl_sel(heads)
+            w = w * sel[layer if sel.shape[0] > 1 else 0]
+        return torch.as_tensor(w, dtype=torch.float32, device=device)
 
     def ffl_fade(self):
         """Far-share factor of the sigma fade (1 without ffl_fade_lo)."""
@@ -1156,9 +1160,6 @@ class SCAContext:
             if path is None:
                 raise ValueError("text_mode ffc needs a pi table loaded from a calibration npz")
             b = np.atleast_2d(ffc_far(path, float(self.sigma), self.window_now(), self.grid, self.n0))
-            if self.ffl_head_frac:
-                b = b * self.ffl_sel(heads)
-            b = b * self.ffl_fade()
             self._ffc_now = torch.as_tensor(b, dtype=torch.float32, device=device)
         t = self._ffc_now
         return t[layer if t.shape[0] > 1 else 0]
@@ -1350,7 +1351,7 @@ class SCAProcessor:
         layout = ctx.flex_layout(prefix, tile, win, q.device)
         beta = ctx.ctw_beta_now(self.layer, q.shape[2], q.device) if "ctw" in modes else None
         far = ctx.ffc_far_now(self.layer, q.shape[2], q.device) if ("ffc" in modes or "ffl" in modes) else None
-        sel = ctx.ffl_sel_now(self.layer, q.shape[2], q.device) if "ffl" in modes else None
+        lat_w = ctx.ffl_weight_now(self.layer, q.shape[2], q.device) if "ffl" in modes else None
         lat = ctx.lattice_layout(tile, win, f, q.device) if ("ffl" in modes and ctx.ffl_outside) else None
         w = None
         if "sb" in modes:
@@ -1360,7 +1361,7 @@ class SCAProcessor:
                 w[torch.as_tensor(idx, device=q.device)] = 1.0
         return sca_text_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, layout,
                                      cells, per, modes, beta, float(ctx.text_gamma), float(ctx.text_clip), far,
-                                     float(ctx.text_bw_scale), w, ctx.ffl_near, sel, lat)
+                                     float(ctx.text_bw_scale), w, ctx.ffl_near, lat_w, lat)
 
     def scale_sched(self, q, k, v, image_rotary_emb, f, tile):
         """Per-head apparent scale (SCAContext.scale_sched), below the gate: heads at a = 1 take O_glob, each group of
