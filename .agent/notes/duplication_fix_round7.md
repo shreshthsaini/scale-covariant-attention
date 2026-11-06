@@ -177,4 +177,11 @@ duplication; a candidate needs all its people/animal images labeled before any c
 - Packet p4 (7 images): every image where a wave-1 variant's detector says it removed one of sca_v2's 4 copies on the
   subset (op2 979216; fd60 979216, 684465; fo 979216, 345747, 684465; hs40o 684465), to test whether any variant
   removes copies rather than hiding them from the detector.
+- Packet p4 result (11:36): of the 7 images where a variant's detector says it removed one of sca_v2's copies, 4 are
+  still duplicates: the canoe 979216 keeps extra rowers under op2, fd60 and fo (7 real people under fd60), 684465
+  keeps an extra man under fd60; truly removed: 684465 under fo and hs40o; 345747 under fo is borderline. Recomputed
+  human-corrected rates on the 26 (unlabeled unflagged images still at sca_v2's 1/30 miss rate, so lower bounds for
+  far-field variants, whose sampled miss rate is 26%): op2 18.1%, op4 17.9%, fd60 21.9%, fo 10.4%, hs40o 14.3%,
+  r6_ffl 13.6% (was 6.6%); sca_v2 17.0%, AReA 2.2%. fo is the only variant clearly below sca_v2, and it carries 10
+  quality losses.
 
