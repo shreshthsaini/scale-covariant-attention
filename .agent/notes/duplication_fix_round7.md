@@ -66,3 +66,11 @@ the dose can be lowered instead.
   100.5, 95.1, 97.3, 145.8, 104.9 s; the identity's second image, with the lattice computed at weight 0, 85.4 s). Visual
   check (r7/smoke/sheet.jpg): all intact; op2 and fo change the composition, fd60, hs40 and fd60bw stay close to
   sca_v2. 48 generation tasks released.
+- r7_op2 (pool 2 on steps 6 and 7; eval 09:20): 4 of 26 people/animal flags, the same count as sca_v2 (fixes the
+  canoe prompt 979216, adds 1516768667427572324, keeps 273390, 345747, 684465); no significant loss vs sca_v2; wins over
+  AReA kept 8/10 (aesthetic and CLIP-IQA no longer significant); x1.025 time (78.9 vs 76.9 s). A finer layout on the
+  last two opening steps does not remove the seeds. Consistent with the round-6 trace of the bear-on-rocks copy
+  (results/round6_mechanism/trace_sheets/r6_4820545723762191815.jpg): AReA's x0 at step 8 shows the same thin spike that
+  becomes sca_v2's copy; it dissolves over steps 9 and 10 under AReA's wide Phase II attention (180-token windows plus a
+  bridge of round(0.5 w)^2 = 8,100 tokens, about 62% of the keys), not under its opening.
+
