@@ -123,3 +123,14 @@ the dose can be lowered instead.
 - r7_hs40o (40% head set, outside far field, true positions; evaluated on CPU on the operator node because no GPU was
   free, detector included): 3 of 26 flags (metrics pending).
 
+## Frontier on the 46 prompts so far (26 people/animal prompts; sca_v2 4 flags 4 confirmed 17.0%, AReA 1 false flag 2.2%)
+| variant | what | flags | confirmed | human-corrected | losses vs sca_v2 | wins over AReA | time |
+|---|---|---|---|---|---|---|---|
+| r6_ffl (round 6) | true-position lattice, window near, through 0.5 | 1 | 1 | 6.6% | 9 | 7/10 | x1.08 |
+| r7_op2 | pool 2 on steps 6-7 | 4 | 3 | 14.3% | 0 | 8/10 | x1.025 |
+| r7_op4 | pool 2 on steps 4-7 (AReA's Phase I) | 6 | 4 | 17.9% | 3 | 9/10 | x1.05 |
+| r7_fd60 | lattice, bridge near, fade to 0 at 0.6 | 3 | 3 | 14.5% | 9 | 7/10 | x1.09 |
+| r7_fo | outside-window lattice, true positions, through 0.5 | 2 | 1 (+1 borderline) | 6.9% | 10 | 3/10 | x1.13 |
+| r7_hs40o | fo in the 40% lowest-pi heads | 3 | 3 | pending | pending | pending | pending |
+(round7_frontier_46.csv holds the exact intervals.)
+
