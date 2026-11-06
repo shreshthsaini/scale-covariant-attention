@@ -142,3 +142,11 @@ and merged as one softmax; a gamma-0 split run is the GPU identity check (a6_a00
   - r6_nop12 (native opening K=12): 4 flags, 2 human-confirmed (10.1% human-corrected), 0.62x time, but softer and a
     different composition: MUSIQ -9.9, CLIP-IQA -0.096, ARNIQA -0.033, patch FID +9.1, PickScore -0.18 (6/10 wins kept).
     r6_nop8: 7 flags (worse), 0.80x time, 4 losses. r6_gtx: 8 flags (worse), only CLIP -0.60.
+  - r6_ffl (lattice far field: window/far mix at the calibrated per-head share, far field = all 4,096 block-centre
+    tokens at true positions, sigma > 0.5): 1 flag of 26 (AReA's count; about 7% human-corrected), 9 significant losses
+    (PickScore -0.24, IR -0.066, HPSv2.1 -0.011, HPSv2 -0.0048, CLIP -0.48, CLIP-IQA -0.030, ARNIQA -0.021, aesthetic
+    -0.064, MUSIQ_c -1.39), 7/10 wins over AReA kept, x1.08 time. A uniform view of the far field removes the copies that
+    AReA's outlier-selected bridge leaves; the cost comes with applying it over all mid-noise steps.
+  - Frontier table: results/dup_audit_20261027/round6_frontier_46.csv (scripts/r6_decide.py --frontier). Reported 05:30.
+  - Next hypothesis, queued first (a6_b50x, code 8937ed1): r6_fflh = ffl only at the three seeding steps
+    (sigma 0.888, 0.870, 0.850), plain sca_v2 elsewhere.
