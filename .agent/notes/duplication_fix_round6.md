@@ -150,3 +150,22 @@ and merged as one softmax; a gamma-0 split run is the GPU identity check (a6_a00
   - Frontier table: results/dup_audit_20261027/round6_frontier_46.csv (scripts/r6_decide.py --frontier). Reported 05:30.
   - Next hypothesis, queued first (a6_b50x, code 8937ed1): r6_fflh = ffl only at the three seeding steps
     (sigma 0.888, 0.870, 0.850), plain sca_v2 elsewhere.
+  - r6_ffl human check: its 1 flag is a real copy (tiny second walker, "solitary figure"); 3 sampled unflagged clean;
+    human-corrected 6.6% (AReA 2.2%: AReA's single flag on these prompts was a false alarm).
+  - r6_fflh (lattice far field only at sigma 0.888, 0.870, 0.850): 4 flags, the same 4 prompts as sca_v2 (any subject
+    8/34); 7 small losses (PickScore -0.063, HPSv2.1 -0.0031, HPSv2 -0.0019, aesthetic -0.037, ARNIQA -0.010, CLIP-IQA
+    -0.0095, MUSIQ_c -0.46); 7/10 wins kept; x1.02. Copies become visible at steps 8 to 10 but are prevented only when the
+    window keeps seeing the far field through mid noise (sigma > 0.5); that extended exposure is what costs quality.
+
+## Step 3 conclusion (2026-11-06 06:10): no variant passes the bar after three iterations (13 variants)
+Frontier on the 46-prompt subset (26 people/animal prompts; results/dup_audit_20261027/round6_frontier_46.csv):
+duplication falls only with the far-field context a window sees, and quality falls with it. Quality-neutral points:
+sca_v2 (4 flags, 17% human-corrected), global gate (4), hand-off bridge 0.25 (3, all confirmed). Lowest duplication
+with intact images: lattice far field over sigma > 0.5 (1 flag of 26, AReA's count; 9 losses, 7/10 wins over AReA kept,
+x1.08 time, still about 2.6x faster than AReA). Native opening K=12: 2 confirmed, 0.62x time, but softer (8 losses).
+Next hypothesis: the far-field dose is the lever; the cost comes from mixing the far field into every head and every
+mid-noise step. A head-selective far field (only heads whose calibrated near-field share is small, which full attention
+uses for long-range context; local heads keep their window) or a far-field share that decays with sigma from 0.89 to 0.5
+may keep the lattice's 1 of 26 at a smaller quality cost. Alternatively, the props the global-only phase leaves open
+(the second rock) point to the opening phase: a finer coarse layout before the hand-off (AReA's f = 2 in its last opening
+steps) could remove the seeds instead of suppressing them later.
