@@ -197,3 +197,20 @@ duplication; a candidate needs all its people/animal images labeled before any c
   outside-window far field does remove copies (unlike r6_ffl, whose copies mostly moved next to the subject), at the
   cost of 10 significant losses.
 
+## Draft conclusion (13:35, before fg, Track A's last 34 people prompts and its 195 evaluation)
+1. No variant meets the bar. The finer opening (op2, op4) leaves or adds seeds. Every far field read at true
+   positions costs quality on clean prompts (PickScore -0.12 to -0.61), and the one that genuinely removes copies (fo,
+   about 2 of 26 by hand) costs the most (10 losses, 3/10 wins over AReA kept).
+2. The duplication detector undercounts far-field variants: ffl's extra figures crowd around the main subject and are
+   merged by NMS (unflagged miss rate 5 of 19 vs 1 of 30 for sca_v2 and AReA). Round 6's "ffl 1 of 26" and the
+   "duplication-free mode" premise of Track A do not hold; on the 61 people prompts so far r6_ffl's human-corrected
+   rate (34.7% [22.8, 53.1]) is not below sca_v2's. Any future candidate must be judged by labels of every
+   person/animal image, not by detector flags.
+3. Reading: the copies need both the window's prompt over-read and its context deficit; AReA removes both by
+   attending about 62% of the keys in its first Phase II steps (2.6x SCA's time).
+Paper paragraph (limitations, proposed): "Late duplication is reduced but not solved. On the 95 person and animal
+prompts, human-corrected duplication is 26.7% for SCA and 4.2% for AReA, whose first refinement steps attend most of
+the image at 2.6 times SCA's cost. Giving SCA's windows a calibrated far field moves most extra figures next to the
+main subject rather than removing them, and the one far field that does remove them costs ten of fifteen metrics. An
+automatic detector undercounts such crowded figures, so we report rates corrected by blind human labels."
+
