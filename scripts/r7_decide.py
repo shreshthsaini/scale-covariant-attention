@@ -105,6 +105,12 @@ def decide(E, label, labels, miss, cand):
     ratio = t.get(label, float("nan")) / t.get("sca_v2", float("nan"))
     hr, ha, hv = res[label][4], res["area"][4], res["sca_v2"][4]
     ok = (hr <= ha + 1e-9) and not losses and not lost and ratio <= 1.25
+    # relaxed bar (lead, 2026-11-06 13:40): no significant loss on IR, HPSv2.1 and PickScore; every other metric either
+    # without a significant loss or better than AReA (point estimate); time below AReA's 202 s; rate <= AReA's
+    core = [m for m, r in d.items() if m in ("ir", "hpsv21", "pickscore") and r6.sig(r, m) < 0]
+    other = [m for m, r in d.items() if m not in ("ir", "hpsv21", "pickscore") and r6.sig(r, m) < 0
+             and not (m in mine and (float(mine[m]["delta"]) < 0 if m in r6.LOWER else float(mine[m]["delta"]) > 0))]
+    relaxed = (hr <= ha + 1e-9) and not core and not other and t.get(label, 1e9) < 202.0
     sets, rows = split(E, label, people, anyf, per_image(E))
     P = len(people.get(label, {}))
     flagged = sorted(p for p, f in people.get(label, {}).items() if f)
@@ -114,6 +120,8 @@ def decide(E, label, labels, miss, cand):
           f"sca_v2 {hv:.1%} | significant losses vs sca_v2 ({len(losses)}): {losses or 'none'}; gains: {gains or 'none'} "
           f"| wins over AReA kept {len(wins) - len(lost)}/{len(wins)} (lost: {lost or 'none'}) | time {t.get(label)} s "
           f"vs {t.get('sca_v2')} s = x{ratio:.3f}")
+    print(f"  relaxed bar: {'PASS' if relaxed else 'FAIL'} (core losses {core or 'none'}; other losses not better than "
+          f"AReA {other or 'none'}; time {t.get(label)} s vs 202 s)")
     print(f"  flagged prompts: {flagged}")
     print(f"  split: fixed {len(sets['fixed'])}, clean {len(sets['clean'])}, new {len(sets['new'])} prompts; "
           + "; ".join(f"{r['subset']} {r['metric']} {r['delta']:+.4g} [{r['ci_low']:+.4g},{r['ci_high']:+.4g}]"
@@ -125,7 +133,9 @@ def decide(E, label, labels, miss, cand):
            "n_new": len(sets["new"]),
            "clean_losses": "; ".join(f"{r['metric']} {r['delta']:+.4g}" for r in rows if r["subset"] == "clean" and r["sig"] == "loss"),
            "fixed_losses": "; ".join(f"{r['metric']} {r['delta']:+.4g}" for r in rows if r["subset"] == "fixed" and r["sig"] == "loss"),
-           "time_ratio": round(ratio, 3), "pass": int(ok)}
+           "time_ratio": round(ratio, 3), "pass": int(ok), "relaxed_pass": int(relaxed),
+           "relaxed_fail": "; ".join([f"core loss {m}" for m in core] + [f"loss not better than AReA {m}" for m in other]
+                                     + (["rate above AReA"] if hr > ha + 1e-9 else []) + (["time >= 202 s"] if t.get(label, 1e9) >= 202.0 else []))}
     return row, rows
 
 

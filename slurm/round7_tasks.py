@@ -38,6 +38,7 @@ AREA_DIR = f"{S}/out/main/area/4096x4096"
 SCA_V2 = ["--bridge-cells", "8", "--bridge-k", "16", "--win-sched", "0.88:128,0.86:112,0.84:96,0.82:80",
           "--win-pi-match", "--win-pi-interp"]
 QUEUE = f"{S}/taskq/pending"
+PREFIX = "a7_"                 # task-name prefix (--prefix; a0_ runs before everything else in the spool)
 HOLD = dt.EVAL_HOLD
 SEED46 = f"{S}/eval/r6_46_r6_ffl"            # round-6 evaluation that scored sca_v2 and AReA on the 46 prompts
 SEED195 = f"{S}/eval/a4k195_main_sca_v2"     # evaluation that scored sca_v2 and AReA on the 195 prompts
@@ -61,7 +62,7 @@ def n_prompts(path):
 def gen(code, dry, label, flags, prompts, out, chunk, tag, markers, release, queue=QUEUE):
     n = n_prompts(prompts)
     starts = list(range(0, n, chunk))
-    names = [f"a7_{tag}{i:02d}_{label}.sh" for i in range(len(starts))]
+    names = [f"{PREFIX}{tag}{i:02d}_{label}.sh" for i in range(len(starts))]
     pat = "|".join(x[:-3] for x in names)
     for a, name in zip(starts, names):
         text = (header(name, f"{label} on {Path(prompts).name} [{a}, {min(a + chunk, n)}): {' '.join(flags)}", 3600)
@@ -91,18 +92,24 @@ PYEOF
 """
 
 
-def abl46(code, dry, label, flags, chunk, gen_tag, eval_tag, queue=QUEUE):
-    out = f"{R7}/out/{label}/4096x4096"
+def abl46(code, dry, label, flags, chunk, gen_tag, eval_tag, queue=QUEUE, out=None, gens=True):
+    out = out or f"{R7}/out/{label}/4096x4096"
     E = f"{S}/eval/r7_46_{label}"
-    ename = f"a7_{eval_tag}_eval_{label}.sh"
-    names, pat = gen(code, dry, label, flags, ABL46, out, chunk, gen_tag, f"{E}/gen_done", ename, queue)
+    ename = f"{PREFIX}{eval_tag}_eval_{label}.sh"
+    if gens:
+        names, pat = gen(code, dry, label, flags, ABL46, out, chunk, gen_tag, f"{E}/gen_done", ename, queue)
+        guard = dt.guard(ename, pat, (f"{E}/gen_done", len(names))) + \
+            f"ls $Q/failed 2>/dev/null | grep -E '^({pat})[.]sh' | sed 's/^/WARNING failed generation task: /'\n"
+    else:   # images from tasks written elsewhere: require all 46 complete sidecars, else fail (the caller releases it)
+        guard = (f"n=$({PY} -c \"import glob,json; ids={{json.loads(l)['id'] for l in open('{ABL46}') if l.strip()}}; "
+                 f"print(sum(1 for f in glob.glob('{out}/*.json') if json.load(open(f)).get('complete') and "
+                 f"json.load(open(f))['config']['prompt_id'] in ids))\"); [ \"$n\" -ge 46 ] || {{ echo \"only $n of 46 images\"; exit 5; }}\n")
     dirs = f"sca_v2={SCA_V2_DIR} {label}={out} area={AREA_DIR}"
     det = f"{S}/eval/dup_detect_20261027 {S}/eval/a4k195_main_sca_v2/det $E/det"
     root = f"{S}/out/evalroot/r7_46_{label}"
     ev = header(ename, f"{label} vs sca_v2 and AReA on the 46 prompts: detector, metrics, paired bootstrap", 5400) + f"""set -uo pipefail
 Q={S}/taskq; E={E}; mkdir -p $E/paired
-""" + dt.guard(ename, pat, (f"{E}/gen_done", len(names))) + f"""ls $Q/failed 2>/dev/null | grep -E '^({pat})[.]sh' | sed 's/^/WARNING failed generation task: /'
-cd {code}
+""" + guard + f"""cd {code}
 {PY} scripts/dup_detect.py --subjects {SUB} --device cuda --threads 8 --sides 800,1333 --out $E/det --dirs {label}={out}
 {PY} scripts/dup_rate.py --dets {det} --subjects {SUB} --ids {ABL46} --thr 0.35 --kinds person,animal --methods sca_v2,{label},area --ref sca_v2 --per-image $E/dup_per_image_people.csv --out $E/dup_rates_people.csv | tee $E/dup_rates_people.txt
 {PY} scripts/dup_rate.py --dets {det} --subjects {SUB} --ids {ABL46} --thr 0.35 --methods sca_v2,{label},area --ref sca_v2 --per-image $E/dup_per_image_any.csv --out $E/dup_rates_any.csv | tee $E/dup_rates_any.txt
@@ -212,7 +219,7 @@ if [ "$(cat {out}/VERDICT)" = PASS ]; then n=$(ls {hold}/a7_*.sh 2>/dev/null | w
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--code", required=True)
-    p.add_argument("--stage", choices=("gen", "abl46", "eval195", "gen195", "smoke"), required=True)
+    p.add_argument("--stage", choices=("gen", "abl46", "eval195", "gen195", "smoke", "eval46"), required=True)
     p.add_argument("--label", default="")
     p.add_argument("--candidates", default="{}", help="smoke: JSON {label: flags string}")
     p.add_argument("--hold", help="abl46 / gen195: park generation tasks here (the smoke task releases them)")
@@ -223,7 +230,14 @@ def main():
     p.add_argument("--gen-tag", default="b0")
     p.add_argument("--eval-tag", default="z0")
     p.add_argument("--dry", action="store_true")
+    p.add_argument("--prefix", default="a7_", help="task-name prefix")
+    p.add_argument("--base", default="sca_v2", choices=("sca_v2", "none"),
+                   help="sca_v2: prepend sca_v2's flags (default); none: --flags is the whole operator")
     a = p.parse_args()
+    global PREFIX, SCA_V2
+    PREFIX = a.prefix
+    if a.base == "none":
+        SCA_V2 = []
     if not Path(a.code, "FREEZE_COMMIT").exists():
         raise SystemExit(f"{a.code} is not a frozen code tree (no FREEZE_COMMIT)")
     flags = shlex.split(a.flags)
@@ -236,6 +250,8 @@ def main():
         if not a.label.startswith("r7_"):
             raise SystemExit("--label r7_<name> is required for abl46")
         abl46(a.code, a.dry, a.label, flags, a.chunk, a.gen_tag, a.eval_tag, a.hold or QUEUE)
+    elif a.stage == "eval46":   # evaluation only, of images written by other tasks into --out
+        abl46(a.code, a.dry, a.label, flags, a.chunk, a.gen_tag, a.eval_tag, out=a.out, gens=False)
     elif a.stage == "gen195":   # generation on --prompts (default the 195) into --out, then the 195 evaluation
         prompts = a.prompts or A4K
         ename = f"a7_{a.eval_tag}_eval195_{a.label}.sh"
