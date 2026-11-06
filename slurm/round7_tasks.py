@@ -91,11 +91,11 @@ PYEOF
 """
 
 
-def abl46(code, dry, label, flags, chunk, gen_tag, eval_tag):
+def abl46(code, dry, label, flags, chunk, gen_tag, eval_tag, queue=QUEUE):
     out = f"{R7}/out/{label}/4096x4096"
     E = f"{S}/eval/r7_46_{label}"
     ename = f"a7_{eval_tag}_eval_{label}.sh"
-    names, pat = gen(code, dry, label, flags, ABL46, out, chunk, gen_tag, f"{E}/gen_done", ename)
+    names, pat = gen(code, dry, label, flags, ABL46, out, chunk, gen_tag, f"{E}/gen_done", ename, queue)
     dirs = f"sca_v2={SCA_V2_DIR} {label}={out} area={AREA_DIR}"
     det = f"{S}/eval/dup_detect_20261027 {S}/eval/a4k195_main_sca_v2/det $E/det"
     root = f"{S}/out/evalroot/r7_46_{label}"
@@ -174,11 +174,48 @@ date -u +%FT%TZ > $E/DONE; echo "DONE r7_195_{label}: $E -> $R"
     return ename
 
 
+def smoke(code, dry, candidates, hold):
+    """a7_a000_smoke: ffl near "bridge" with an empty head set is sca_v2 computed through the split (two prompts; PSNR
+    against the sca_v2 images, >= 24 dB as in round 6), then one prompt of every candidate (crash check, time). On
+    PASS it moves the generation tasks parked in `hold` to pending."""
+    out = f"{R7}/smoke"
+    name = "a7_a000_smoke.sh"
+    ident = ["--text-mode", "ffl", "--text-mode-lo", "0.5", "--ffl-near", "bridge", "--ffl-head-frac", "0.0001"]
+    lines = [header(name, "round-7 GPU identity and crash check", 3000), f"set -uo pipefail\ncd {code}\n",
+             dt.gen_cmd("r7_id0", SCA_V2 + ident, ABL46, f"{out}/id0", 4, 6) + "\n"]
+    for lab, fl in candidates.items():
+        lines.append(dt.gen_cmd(lab, SCA_V2 + fl, ABL46, f"{out}/{lab}", 4, 5) + f" || echo 'SMOKE FAIL {lab}'\n")
+    lines.append(f"""{PY} - <<'PYEOF'
+import glob, json, numpy as np
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
+rows = []
+for f in sorted(glob.glob("{out}/id0/*.png")):
+    ref = "{SCA_V2_DIR}/" + f.split("/")[-1]
+    a = np.asarray(Image.open(f).convert("RGB"), dtype=np.float64); b = np.asarray(Image.open(ref).convert("RGB"), dtype=np.float64)
+    mse = ((a - b) ** 2).mean(); rows.append((f.split("/")[-1], 10 * np.log10(255 ** 2 / max(mse, 1e-12))))
+for r in rows: print("identity PSNR id0 vs sca_v2", r[0], round(r[1], 2), "dB")
+for d in sorted(glob.glob("{out}/*/")):
+    for j in sorted(glob.glob(d + "*.json")):
+        x = json.load(open(j)); print(d.split("/")[-2], x["config"]["prompt_id"], "seconds", round(x["seconds"], 1), x.get("sca_log", [])[:3])
+labels = {sorted(candidates)!r}
+ok = len(rows) == 2 and min(r[1] for r in rows) >= 24.0 and all(glob.glob("{out}/" + l + "/*.png") for l in labels)
+print("SMOKE", "PASS" if ok else "FAIL")
+open("{out}/VERDICT", "w").write("PASS" if ok else "FAIL")
+PYEOF
+date -u +%FT%TZ > {out}/DONE
+if [ "$(cat {out}/VERDICT)" = PASS ]; then n=$(ls {hold}/a7_*.sh 2>/dev/null | wc -l); mv {hold}/a7_*.sh {QUEUE}/ 2>/dev/null; echo "released $n generation tasks"; else echo "smoke failed: generation tasks stay in {hold}"; exit 4; fi
+""")
+    dt.write(Path(QUEUE) / name, "".join(lines), dry)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--code", required=True)
-    p.add_argument("--stage", choices=("gen", "abl46", "eval195", "gen195"), required=True)
-    p.add_argument("--label", required=True)
+    p.add_argument("--stage", choices=("gen", "abl46", "eval195", "gen195", "smoke"), required=True)
+    p.add_argument("--label", default="")
+    p.add_argument("--candidates", default="{}", help="smoke: JSON {label: flags string}")
+    p.add_argument("--hold", help="abl46 / gen195: park generation tasks here (the smoke task releases them)")
     p.add_argument("--flags", default="")
     p.add_argument("--prompts", help="gen / gen195: prompt file (default: all 195)")
     p.add_argument("--out", help="gen / gen195 / eval195: image directory")
@@ -190,15 +227,20 @@ def main():
     if not Path(a.code, "FREEZE_COMMIT").exists():
         raise SystemExit(f"{a.code} is not a frozen code tree (no FREEZE_COMMIT)")
     flags = shlex.split(a.flags)
+    if a.hold:
+        Path(a.hold).mkdir(parents=True, exist_ok=True)
+    if a.stage == "smoke":
+        smoke(a.code, a.dry, {k: shlex.split(v) for k, v in json.loads(a.candidates).items()}, a.hold or f"{S}/taskq/hold_r7")
+        return
     if a.stage == "abl46":
         if not a.label.startswith("r7_"):
             raise SystemExit("--label r7_<name> is required for abl46")
-        abl46(a.code, a.dry, a.label, flags, a.chunk, a.gen_tag, a.eval_tag)
+        abl46(a.code, a.dry, a.label, flags, a.chunk, a.gen_tag, a.eval_tag, a.hold or QUEUE)
     elif a.stage == "gen195":   # generation on --prompts (default the 195) into --out, then the 195 evaluation
         prompts = a.prompts or A4K
         ename = f"a7_{a.eval_tag}_eval195_{a.label}.sh"
         names, pat = gen(a.code, a.dry, a.label, flags, prompts, a.out, a.chunk, a.gen_tag,
-                         f"{S}/eval/r7_195_{a.label}/gen_done", ename)
+                         f"{S}/eval/r7_195_{a.label}/gen_done", ename, a.hold or QUEUE)
         eval195(a.code, a.dry, a.label, a.out, a.eval_tag, names, pat)
     elif a.stage == "eval195":
         eval195(a.code, a.dry, a.label, a.out, a.eval_tag)
