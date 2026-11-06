@@ -91,4 +91,19 @@ the dose can be lowered instead.
   modulated with the lattice phase. r7_fo, whose far field excludes the in-window lattice keys, shows no grid on the
   same prompt. The quality cost measured for ffl in round 6 (9 losses) and for fd60 is then mostly this aliasing, not
   the far field itself.
+- r7_fo (ffl near bridge, far field = lattice keys outside the query's window at true positions, through 0.5; eval
+  10:17): 2 of 26 flags (fixes sca_v2's canoe 979216, kimono scene 345747 and three-men 684465; keeps the church
+  273390, adds the dancer minus2679953061215100202, a tangle of fused bodies); but 10 significant losses, larger than
+  r6_ffl's: PickScore -0.61, IR -0.17, CLIP -0.84, HPSv2 -0.0096, HPSv2.1 -0.020, aesthetic -0.14, ARNIQA -0.027,
+  CLIP-IQA -0.049, MUSIQ -3.3, MUSIQ crop -4.0 (on the 25 clean prompts too); 3/10 wins kept; x1.13 time. Visually
+  (results/round7_mechanism/ffl_vs_fo_800687.jpg) the grid is gone but surfaces are flattened, detail is lost and
+  bright halos outline shapes. Reading: with true positions the far keys sit at query-key offsets up to 255 tokens,
+  four times the native range (FLUX sees at most 63 at 1024^2); r6_ffl's lattice was dominated by its in-window keys
+  (in range, but phase-aliased), fo's is entirely out of range. Both costs come from reading the far field at true
+  positions. Iteration (queued, tree 764f337): r7_fg = fo with the far field read at the global branch's coarse ids
+  (--ffl-coarse: queries at floor(p / 4), block keys at block ids, offsets within 63), i.e. the far field at the
+  native resolution, where full attention's calibrated far share was measured.
+- Parked (taskq/hold_r7_parked): r7_op2bw (the finer opening it combined is refuted), and the full-lattice r7_hs40,
+  r7_hs20, r7_fd70 (they carry the aliasing); queued instead r7_hs40o and r7_hs20o (head sets with the outside far
+  field; hs20o after Track A).
 
