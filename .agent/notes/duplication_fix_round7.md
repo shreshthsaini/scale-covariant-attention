@@ -73,4 +73,8 @@ the dose can be lowered instead.
   (results/round6_mechanism/trace_sheets/r6_4820545723762191815.jpg): AReA's x0 at step 8 shows the same thin spike that
   becomes sca_v2's copy; it dissolves over steps 9 and 10 under AReA's wide Phase II attention (180-token windows plus a
   bridge of round(0.5 w)^2 = 8,100 tokens, about 62% of the keys), not under its opening.
+- r7_op4 (pool 2 on steps 4 to 7, AReA's own Phase I schedule; eval 09:35): 6 of 26 flags, worse than sca_v2 (adds
+  5968998903196670637 and minus2679953061215100202, fixes none); 3 significant losses vs sca_v2 (aesthetic -0.088,
+  MUSIQ crop -2.3, PickScore -0.12), ARNIQA gain; 9/10 wins kept; x1.049. Item (3) is refuted on the 46 prompts: a finer
+  opening layout leaves the seeds (op2) or adds them (op4).
 
