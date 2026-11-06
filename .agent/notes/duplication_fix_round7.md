@@ -138,4 +138,9 @@ the dose can be lowered instead.
   35 prompts outside the subset ffl keeps 7 of sca_v2's 14 copies. The 46-prompt subset understates duplication
   (sca_v2 4 of 26 there, 21 of 69 elsewhere), so ffl's 1 of 26 there becomes roughly half of sca_v2's rate on the 95,
   about three times AReA's. The official read comes from the GPU evaluation (eval/r7_195_r6_ffl).
+- Because the subset has only 4 sca_v2 copies, the iteration r7_fg also runs on the 21 people/animal prompts outside
+  the subset where sca_v2 has a detector-flagged copy (r7/copyprone21.jsonl; a7_b800..b802, same out dir and tree, no
+  metric evaluation): a paired count of copies removed, with r6_ffl's images from Track A as the reference. r7_hs20o
+  parked (dose 0.15, lowest value); r7_op2bw re-queued after Track A as item (4) (op2 is the only no-loss point among
+  items 1 to 3). SCA26 budget: fg 46 and 21, Track A 23 tasks plus the 195 evaluation, then op2bw.
 
