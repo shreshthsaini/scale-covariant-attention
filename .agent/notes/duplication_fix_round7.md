@@ -9,7 +9,7 @@ the strongest; promote a passing variant to 95 and 195 and stage (not enqueue) t
 Bar (unchanged): human-corrected people/animal duplication at or below AReA's on the same prompts, no significant paired
 loss versus sca_v2 on any metric, all 10 wins over AReA kept, time at most +25%. Round 6: duplication_fix_round6.md.
 
-## Operator options added in round 7 (commit 30b3e8f, frozen tree /scratch/09032/saini_2/sca/code/11b08d2)
+## Operator options added in round 7 (commits 30b3e8f, 80396bd; frozen tree /scratch/09032/saini_2/sca/code/80396bd)
 All default off; sca_v2 and r6_ffl paths are unchanged (tests/test_textgate.py, 28 tests; the full suite passes except
 tests/test_review_round.py::test_generated_tasks, which already fails on the clean tree before these changes).
 - --ffl-near bridge: the near part of ffl is sca_v2's own window plus bridge (layout prefix R) instead of the window
@@ -22,7 +22,11 @@ tests/test_review_round.py::test_generated_tasks, which already fails on the cle
   0.68 (0.2) and 0.60 (0.4) at the 128 window vs 0.40 / 0.36 for the rest, but their local branch carries only pi of
   the output: the mean pi x far of the selected heads is 0.197 (0.2) vs 0.306 for the others, so the 20% set receives
   about 14% of the ffl dose and the 40% set about 36%.
-- --ffl-fade-lo LO: far share x clip((sigma - LO) / (0.89 - LO), 0, 1), with --text-mode-lo LO (sca_v2 below).
+- Head set and fade enter as one per-head far weight w = [head in set] x fade(sigma) (textgate lat_w): the image part
+  is (1 - w f) near + w f far, and the lattice keys enter the window's partition (the text-to-image balance) with
+  weight w (logits + log w). So w = 0 is the near part with its own partition, exactly sca_v2 for near "bridge", and
+  w = 1 is round-6 ffl; a fading variant ends continuously in sca_v2.
+- --ffl-fade-lo LO: fade(sigma) = clip((sigma - LO) / (0.89 - LO), 0, 1), with --text-mode-lo LO (sca_v2 below).
   Mean far share of layer 10 at LO 0.6: 0.70 (sigma 0.888), 0.54 (0.83), 0.37 (0.76), 0.23 (0.703), 0.08 (0.637).
 - --ffl-outside: lattice keys inside the query's own window are left out of the far field (BlockMask over queries x
   4,096 lattice keys). Reason: the lattice samples the near field too (every 4th token inside the window), so in r6_ffl
@@ -34,7 +38,7 @@ tests/test_review_round.py::test_generated_tasks, which already fails on the cle
   bridge only at sigma > 0.84). ffl+bw needs --ffl-near bridge.
 
 ## Tasks (round7_tasks.py; smoke releases taskq/hold_r7; evaluations self-release from taskq/hold_dup_eval)
-- a7_a000_smoke: r7_id0 (ffl near bridge, empty head set; must match sca_v2, PSNR >= 24 dB on 2 prompts) plus one
+- a7_a000_smoke (tree 80396bd): r7_id0 (ffl near bridge, empty head set; must match sca_v2, PSNR >= 24 dB on 2 prompts) plus one
   prompt each of r7_op2, r7_fd60, r7_hs40, r7_fo, r7_fd60bw.
 - Track B wave 1 (46 prompts, chunk 8, eval/r7_46_<label>; order of the spool): r7_op2 (b1), r7_fd60 (b2), r7_hs40 (b3),
   r7_fd70 (b4), r7_hs20 (b5), r7_op2bw (b6: op2 plus the hand-off bridge 0.25 log(N/R), sigma > 0.84; run in wave 1

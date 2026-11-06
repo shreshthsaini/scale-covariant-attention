@@ -838,7 +838,7 @@ keep running first and the review items follow in the same queue; no submissions
 
 ## 28. 2026-11-06: round 7 duplication work (method owner; full log .agent/notes/duplication_fix_round7.md)
 State 06:55 CST (this session's node i615-133 ends 23:31; a new lead continues from here).
-- Code (commit 30b3e8f, frozen /scratch/09032/saini_2/sca/code/11b08d2): ffl options behind default-off flags
+- Code (commits 30b3e8f and 80396bd, frozen /scratch/09032/saini_2/sca/code/80396bd): ffl options behind default-off flags
   (--ffl-near bridge, --ffl-head-frac, --ffl-fade-lo, --ffl-outside, --text-bw-lo) and --open-pool/--open-pool-hi
   (finer global grid on the last opening steps); slurm/round7_tasks.py (smoke, abl46, gen195, eval195).
 - Queued: a7_a000_smoke (pending; on PASS it releases the 36 Track B generation tasks in taskq/hold_r7), Track B wave 1
