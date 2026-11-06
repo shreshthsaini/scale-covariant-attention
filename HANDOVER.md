@@ -866,6 +866,6 @@ where the review release loop and the two CPU workers (PIDs 1692172 to 1692174) 
   first; then a7_t014..t029 and a7_a1_eval195_r6_ffl (eval/r7_195_r6_ffl); then the CPU bootstrap
   r7/cpuboot/r6_ffl.sh. Human check: 8 of 8 flags so far confirmed; stratified unflagged sample, stratum A done (19:
   5 yes, r7/label/trackA_strata_A.json), stratum B (11 more, from the 34 people prompts still to generate) to do.
-- GPU: SCA25 ran 08:31 to 10:31. SCA26 (job 1126265, gh-dev 4 nodes 2 h; estimated start 13:50) is the second and
+- GPU: SCA25 ran 08:31 to 10:31. SCA26 (job 1126265, gh-dev 4 nodes 2 h) started 16:28 (until 18:28) and is the second and
   last short job of the lead's allowance. Parked tasks: taskq/hold_r7_parked (op2bw's first copy, the full-lattice
   hs40/hs20/fd70, hs20o, and hs40o's GPU evaluation, which ran on CPU instead).
