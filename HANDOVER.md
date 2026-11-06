@@ -837,17 +837,15 @@ keep running first and the review items follow in the same queue; no submissions
   Deferred tasks in taskq/hold_r6_ctw (traces of candidate c), superseded copies in taskq/hold_r6/superseded_20261105.
 
 ## 28. 2026-11-06: round 7 duplication work (method owner; full log .agent/notes/duplication_fix_round7.md)
-State 10:50 CST (this session's node i615-133 ends 23:31; a new lead continues from here).
+State 11:50 CST (this session's node i615-133 ends 23:31; a new lead continues from here).
 - Code (frozen trees /scratch/09032/saini_2/sca/code/80396bd and 764f337): ffl options behind default-off flags
   (--ffl-near bridge, --ffl-head-frac, --ffl-fade-lo, --ffl-outside, --ffl-coarse, --text-bw-lo), --open-pool and
   --open-pool-hi; slurm/round7_tasks.py; scripts/r7_decide.py (bar plus fixed/clean/new split), r7_label_prep.py,
   r7_label_collect.py, r7_crops.py, r7_grid_index.py.
-- Track B results on the 46 prompts (results/dup_audit_20261027/round7_frontier_46.csv; human labels
-  human_labels_r7.csv; 26 people/animal prompts, sca_v2 4 flags, AReA 1 false flag): finer opening op2 4 flags (3 yes),
-  no loss; op4 (AReA's 4-step pool) 6 flags (4 yes), 3 losses; fade fd60 3 (3 yes), 9 losses; outside-window far field
-  fo 2 (1 yes, 1 borderline), 10 losses; hs40o 3 flags (metrics on CPU, pending). None passes. Finding: the far field
-  removes copies but costs quality whenever it is read at true positions (in-window lattice keys alias into a token
-  checkerboard on flat illustrations; outside-window keys sit at offsets up to 255, 4x the native range).
+- Track B on the 46 prompts (results/dup_audit_20261027/round7_frontier_46.csv, labels human_labels_r7.csv; 26
+  people/animal prompts; sca_v2 17.0% human-corrected, AReA 2.2%): op2 18.1%, 0 losses; op4 17.9%, 3 losses; fd60
+  21.9%, 9 losses; fo 9.1%, 10 losses (PickScore -0.61), x1.13; hs40o 14.3%, 8 losses; r6_ffl recomputed 13.6%, 9
+  losses. None passes. Finer opening refuted; far fields read at true positions cost quality.
 - KEY FINDING (11:30): the detector misses most copies of far-field variants. Blind labels of a random sample of
   r6_ffl's unflagged images: 5 of 19 are duplicates (sca_v2 and AReA: 1 of 30). Of 6 sampled prompts where the detector
   says ffl removed sca_v2's copy, 4 still have one (extra figures packed around the main subject, merged by the
