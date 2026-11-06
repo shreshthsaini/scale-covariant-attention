@@ -797,6 +797,7 @@ class SCAContext:
                                         # pi table at gate_sigma) take the far field; the others keep their near part
     ffl_fade_lo: float = 0.0            # >0: far share x clip((sigma - lo) / (gate_sigma - lo), 0, 1)
     ffl_outside: bool = False           # lattice keys inside the query's own window are left out of the far field
+    ffl_coarse: bool = False            # far field at the global branch's coarse ids (offsets within n0) instead of true ids
     text_bw_lo: float | None = None     # bw applies while sigma > text_bw_lo (None: while text_mode applies)
     open_pool: int = 0                  # >0: global-only steps with sigma < open_pool_hi pool by this factor (finer
     open_pool_hi: float = 0.0           # coarse layout before the hand-off, e.g. 2 at 4096^2 = a 128 x 128 grid)
@@ -873,8 +874,9 @@ class SCAContext:
             parts = parse_mode(self.text_mode)
         if self.ffl_near not in ("window", "bridge"):
             raise ValueError(f"ffl_near must be window or bridge, got {self.ffl_near}")
-        if (self.ffl_near != "window" or self.ffl_head_frac or self.ffl_fade_lo or self.ffl_outside) and "ffl" not in parts:
-            raise ValueError("ffl_near, ffl_head_frac, ffl_fade_lo and ffl_outside need text_mode ffl")
+        if (self.ffl_near != "window" or self.ffl_head_frac or self.ffl_fade_lo or self.ffl_outside
+                or self.ffl_coarse) and "ffl" not in parts:
+            raise ValueError("ffl_near, ffl_head_frac, ffl_fade_lo, ffl_outside and ffl_coarse need text_mode ffl")
         if not 0 <= self.ffl_head_frac <= 1:
             raise ValueError("ffl_head_frac must lie in [0, 1]")
         if self.ffl_fade_lo and not 0 < self.ffl_fade_lo < self.gate_sigma:
@@ -1361,7 +1363,8 @@ class SCAProcessor:
                 w[torch.as_tensor(idx, device=q.device)] = 1.0
         return sca_text_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, layout,
                                      cells, per, modes, beta, float(ctx.text_gamma), float(ctx.text_clip), far,
-                                     float(ctx.text_bw_scale), w, ctx.ffl_near, lat_w, lat)
+                                     float(ctx.text_bw_scale), w, ctx.ffl_near, lat_w, lat,
+                                     "coarse" if ctx.ffl_coarse else "true")
 
     def scale_sched(self, q, k, v, image_rotary_emb, f, tile):
         """Per-head apparent scale (SCAContext.scale_sched), below the gate: heads at a = 1 take O_glob, each group of

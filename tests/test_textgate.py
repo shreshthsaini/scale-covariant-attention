@@ -500,3 +500,43 @@ def test_sample_info_lists_round7_options_only_when_set():
     assert info["ffl_near"] == "bridge" and info["ffl_head_frac"] == 0.2 and info["ffl_fade_lo"] == 0.6
     assert info["ffl_outside"] is True and info["text_bw_lo"] == 0.84 and info["open_pool"] == 2
     assert kw["ffl_near"] == "bridge" and kw["open_pool_hi"] == 0.93 and kw["text_bw_lo"] == 0.84
+
+
+def test_ffl_coarse_far_field_uses_the_global_branch_ids():
+    """far_pos coarse: the far field is the outside-window lattice attended with the global branch's RoPE (queries at
+    floor(p / f), block keys at block ids); near part and merge as before."""
+    q, k, v = _qkv(H, W, L, seed=31)
+    _, _, rot, rq, rk = _setup(H, W, L, F)
+    cells, per, idx = _bridge(k)
+    R = len(idx)
+    layR = flex_layout(R, (H, W), TILE, WIN, "cpu", (2, 2), (2, 2))
+    lat = tg.lattice_layout((H, W), TILE, WIN, F, "cpu")
+    pi = torch.ones(1, 1, 2, 1, dtype=torch.float64)
+    far = torch.tensor([0.4, 0.7], dtype=torch.float64)
+    out = tg.sca_text_forward(q, k, v, rot, rq, rk, pi, L, (H, W), F, "center", layR, cells, per, ("ffl",), far=far,
+                              near="bridge", lat=lat, far_pos="coarse")
+    qr, kr = rope(q, rot), rope(k, rot)
+    qi = qr[0, L:]
+    d = q.shape[-1] ** -0.5
+    cen = _lattice()
+    keys_n = torch.cat([kr[0, L + idx], kr[0, L:]], 0)
+    vals_n = torch.cat([v[0, L + idx], v[0, L:]], 0)
+    sn = (torch.einsum("nhd,mhd->hnm", qi, keys_n) * d).masked_fill(~_window_mask(R)[None], float("-inf"))
+    qc = rope(q[:, L:], rq)[0]                                                     # coarse query ids
+    kc = rope(k[:, L:][:, cen], rk)[0]                                             # block keys at block ids
+    sf = (torch.einsum("nhd,mhd->hnm", qc, kc) * d).masked_fill(_window_mask(0)[:, cen][None], float("-inf"))
+    st = torch.einsum("nhd,lhd->hnl", qi, kr[0, :L]) * d
+    o_n = torch.einsum("hnm,mhd->nhd", sn.softmax(-1), vals_n)
+    o_f = torch.einsum("hnm,mhd->nhd", sf.softmax(-1), v[0, L + cen])
+    o_t = torch.einsum("hnl,lhd->nhd", st.softmax(-1), v[0, :L])
+    fr = far.view(1, -1, 1)
+    o_img = (1 - fr) * o_n + fr * o_f
+    zi = torch.logaddexp(sn.logsumexp(-1), sf.logsumexp(-1)).transpose(0, 1)[..., None]
+    a = torch.sigmoid(st.logsumexp(-1).transpose(0, 1)[..., None] - zi)
+    assert (out[0, L:] - (a * o_t + (1 - a) * o_img)).abs().max() < 1e-9
+    # true positions differ
+    out_t = tg.sca_text_forward(q, k, v, rot, rq, rk, pi, L, (H, W), F, "center", layR, cells, per, ("ffl",), far=far,
+                                near="bridge", lat=lat)
+    assert (out_t - out).abs().max() > 1e-6
+    with pytest.raises(ValueError):
+        SCAContext(mode="sca", gate_sigma=0.89, ffl_coarse=True)

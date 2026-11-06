@@ -68,6 +68,8 @@ def add_args(p):
                    "linearly from its calibrated value at --gate-sigma to 0 at SIGMA (0 = no fade)")
     p.add_argument("--ffl-outside", action="store_true", help="Round 7, ffl: leave lattice keys inside the query's own "
                    "window out of the far field")
+    p.add_argument("--ffl-coarse", action="store_true", help="Round 7, ffl: far field at the global branch's coarse ids "
+                   "(query-key offsets within the native grid) instead of true positions")
     p.add_argument("--text-bw-lo", type=float, default=None, metavar="SIGMA", help="Round 7: text mode bw applies only "
                    "while sigma > SIGMA (default: while --text-mode applies)")
     p.add_argument("--open-pool", type=int, default=0, metavar="P", help="Round 7: global-only steps with sigma < "
@@ -98,6 +100,7 @@ def context_kwargs(args):
                 text_mode=args.text_mode, text_mode_lo=args.text_mode_lo, text_gamma=args.text_gamma,
                 text_clip=args.text_clip, text_bw_scale=args.text_bw_scale, ffl_near=args.ffl_near,
                 ffl_head_frac=args.ffl_head_frac, ffl_fade_lo=args.ffl_fade_lo, ffl_outside=args.ffl_outside,
+                ffl_coarse=args.ffl_coarse,
                 text_bw_lo=args.text_bw_lo, open_pool=args.open_pool, open_pool_hi=args.open_pool_hi)
 
 
@@ -144,7 +147,7 @@ def info(args):
             out["text_bw_scale"] = args.text_bw_scale
         if args.subject_words:
             out["subject_words"] = args.subject_words
-        for key in ("ffl_head_frac", "ffl_fade_lo", "ffl_outside"):
+        for key in ("ffl_head_frac", "ffl_fade_lo", "ffl_outside", "ffl_coarse"):
             if getattr(args, key):
                 out[key] = getattr(args, key)
         if args.ffl_near != "window":

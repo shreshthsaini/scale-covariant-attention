@@ -39,6 +39,9 @@ Round-7 options of ffl (sca_text_forward keywords; SCAContext.ffl_*, .agent/note
                  is the near part alone, partition included, and lat_w = 1 is round-6 ffl.
   lat            BlockMask from lattice_layout(): lattice keys inside the query's own window are left out of the far
                  field, which then holds only what the window cannot see.
+  far_pos        "true": lattice keys and queries at their true positions (round 6); "coarse": at the global branch's
+                 coarse ids (queries floor(p / f), keys their block ids), so every query-key offset stays within the
+                 native grid (at most n0), as in the global branch, instead of reaching max(H, W).
 Off by default; the published and sca_v2 paths (sca.attn.sca_flex_forward, sca_dedup_forward) are untouched.
 """
 
@@ -236,7 +239,7 @@ def subject_bridge(q_txt, k, lse_txt, w_subj, L, grid, f, pool, rope_k, R):
 
 def sca_text_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, cells=None, per_cell=0, mode=(),
                      beta=None, gamma=1.0, clip=6.0, far=None, bwscale=1.0, w_subj=None, near="window", lat_w=None,
-                     lat=None):
+                     lat=None, far_pos="true"):
     """SCA with the bridge (cells, per_cell; layout built for prefix R = cells_h * cells_w * per_cell, the bridge
     only) and the text modes of this module. q, k, v pre-RoPE [B, L + N, h, D]; returns [B, L + N, h, D].
     ffl round-7 keywords (module docstring): near "window" | "bridge" (ffc and ffl near "window" need a layout for
@@ -270,7 +273,10 @@ def sca_text_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout,
         lse_w = lse_w.index_select(2, layout.q_inv)
         if "ffl" in mode:   # block-centre lattice at true positions (pool "center" ids)
             cen = lattice_index(grid, f, k.device)
-            o_b, lse_b = lattice_part(qi, kimg[:, cen], vimg[:, cen], lat)
+            if far_pos == "coarse":   # the global branch's view: queries at floor(p / f), block keys at block ids
+                o_b, lse_b = lattice_part(rope(q[:, L:], rope_q), rope(k[:, L:][:, cen], rope_k), vimg[:, cen], lat)
+            else:
+                o_b, lse_b = lattice_part(qi, kimg[:, cen], vimg[:, cen], lat)
         else:
             o_b, lse_b = text_part(qi, kl[:, :R], vl[:, :R])
         fr = far.to(o_w.device).view(1, 1, -1, 1)
