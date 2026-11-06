@@ -859,6 +859,11 @@ where the review release loop and the two CPU workers (PIDs 1692172 to 1692174) 
   report when sca_area20's 46-prompt result is in. Details: round-7 notes, "Lead directive 13:40". sca_area20's
   promotion to 195 is staged (held) in taskq/hold_r7_promote_area20 (26 tasks a0_p*, the 128 prompts outside the
   subset and copyprone21, people first; evaluation a7_e1_eval195_sca_area20 in hold_dup_eval self-releases).
+- sca_area20 on the 46 (17:15): every person/animal image hand-labeled: 3 duplicates of 26 (11.5%); AReA, now fully
+  hand-labeled on the same prompts, 1 of 26 (3.8%); sca_v2 17.0%. 8 significant losses vs sca_v2 incl. PickScore -0.19,
+  IR -0.060, HPSv2.1 -0.0079 (also on clean prompts); 7/10 wins over AReA kept; 103 s (AReA 220 s). Relaxed bar FAIL;
+  not promoted (staged tasks stay held). r7_area8/area12 and the copyprone21 runs continue on SCA26 (ends 18:28): label
+  every person/animal image (r7/label_people.sh PACKET SEED label=DIR[:prompts]) and run scripts/r7_decide.py.
 - Iteration queued: r7_fg (far field read at the global branch's coarse ids, outside the window, near bridge, through
   0.5; tree 764f337): a7_b500..b505 (46 prompts, evaluation a7_a0_eval_r7_fg) and a7_b800..b802 (the 21 people
   prompts outside the subset where sca_v2 has a copy, r7/copyprone21.jsonl; label every image by hand). Its 195

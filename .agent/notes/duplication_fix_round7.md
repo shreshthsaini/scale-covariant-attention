@@ -232,3 +232,20 @@ Queued at the head of the spool (prefix a0_, tree f479459 = the review's, so sca
 - copyprone21 runs of all three: a0_t1* (sca_area20), a0_t2* (area8), a0_t3* (area12).
 - scripts/r7_decide.py prints the relaxed-bar verdict next to the original bar (columns relaxed_pass, relaxed_fail).
 
+## sca_area20 result on the 46 prompts (17:15; SCA26 since 16:28; eval/r7_46_sca_area20)
+- Every one of its 26 person/animal images labeled blind (packets pS1 to pS3): 3 duplicates (345747 kimono scene: two
+  pedestrians and three extra bears; 979216 canoe: four people in the canoe; minus2679953061215100202 dancer: a fused
+  second dancer), 1 borderline (394876, a figure fragment in a mirror), 22 clean: 11.5%. The detector flagged 1.
+- AReA's 17 previously unlabeled person/animal images on the same prompts labeled blind too (packet pR1): 1 duplicate
+  (979216 canoe, an extra rower in a second boat), 3 borderline: AReA's fully hand-counted rate is 3.8% (was 2.2%
+  estimated). sca_v2 17.0%.
+- 8 significant losses vs sca_v2: PickScore -0.19 [-0.27, -0.11], IR -0.060 [-0.101, -0.015], HPSv2.1 -0.0079
+  [-0.0104, -0.0055], HPSv2 -0.0041, CLIP -0.48, aesthetic -0.057, ARNIQA -0.0056, MUSIQ crop -1.67; on the 27 prompts
+  clean in both: IR -0.066, PickScore -0.12, HPSv2.1 -0.0063, HPSv2 -0.0033, MUSIQ crop -1.28 (softening and weaker
+  prompt adherence, not only on prompts whose copy was removed). Wins over AReA kept 7/10 (aesthetic, ARNIQA, CLIP-IQA
+  lost). Time 103.4 s median (x1.34 sca_v2, AReA 219.6 s on these prompts).
+- Relaxed bar: FAIL (rate 11.5% vs AReA 3.8%; core losses on IR, HPSv2.1 and PickScore). Not promoted; the staged
+  195 tasks stay in taskq/hold_r7_promote_area20.
+- Still running on SCA26 (until 18:28): r7_area8, r7_area12 (46), then the copyprone21 runs of all three; their
+  evaluations self-release (a0_e_eval_r7_area8/12); label every person/animal image with r7/label_people.sh.
+

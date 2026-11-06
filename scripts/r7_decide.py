@@ -85,7 +85,7 @@ def split(E, label, people, anyf, per):
 def decide(E, label, labels, miss, cand):
     people, anyf = flags(E, "people"), flags(E, "any")
     lab_all = dict(labels)
-    lab_all.update({(l, p): v for (l, p), v in cand.items() if l == label})
+    lab_all.update(cand)   # round-7 labels of any method (candidate, and AReA / sca_v2 images labeled in round 7)
     res = {}
     for m in ("sca_v2", label, "area"):
         res[m] = r6.human_rate(people.get(m, {}), m, lab_all, miss.get("sca_v2" if m == label else m, 0.0))
