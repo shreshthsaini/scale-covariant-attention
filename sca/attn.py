@@ -812,7 +812,7 @@ class SCAContext:
         self._rope_cache, self._pi_now, self._img_ids = {}, None, None
         self._flex_cache = {}
         self._scale_now, self._headwin_now, self._tables_at = None, None, {}
-        self._ctw_now = None
+        self._ctw_now = self._ffc_now = None
         if self.local_impl not in ("flex", "gather"):
             raise ValueError(f"local_impl must be flex or gather, got {self.local_impl}")
         if (self.bridge_cells or self.lse_tau) and (self.local_impl != "flex" or self.band):
@@ -878,7 +878,7 @@ class SCAContext:
             self.sigma = float(sigma)
         self._pi_now = None
         self._scale_now = self._headwin_now = None
-        self._ctw_now = None
+        self._ctw_now = self._ffc_now = None
 
     def pi_now(self, layer, heads, device):
         if self._pi_now is None:
@@ -1061,6 +1061,18 @@ class SCAContext:
         t = self._ctw_now
         return t[layer if t.shape[0] > 1 else 0]
 
+    def ffc_far_now(self, layer, heads, device):
+        """[heads] far-field share (1 - near share) of this layer for the current window and sigma (text mode ffc)."""
+        if self._ffc_now is None:
+            from sca.textgate import ffc_far
+            path = getattr(self.pi, "path", None)
+            if path is None:
+                raise ValueError("text_mode ffc needs a pi table loaded from a calibration npz")
+            b = np.atleast_2d(ffc_far(path, float(self.sigma), self.window_now(), self.grid, self.n0))
+            self._ffc_now = torch.as_tensor(b, dtype=torch.float32, device=device)
+        t = self._ffc_now
+        return t[layer if t.shape[0] > 1 else 0]
+
     def bridge_now(self):
         """(cells, tokens per cell) of the AReA bridge at the current sigma, (None, 0) when off (rule of SCAProcessor.sca)."""
         if not (self.bridge_cells and (self.sigma is None or float(self.sigma) > self.bridge_lo)):
@@ -1239,10 +1251,14 @@ class SCAProcessor:
         L, _ = self._split(q, image_rotary_emb)
         rq, rk = ctx.coarse_rope(f, q.device)
         cells, per = ctx.bridge_now()
-        layout = ctx.flex_layout(cells[0] * cells[1] * per if per else 0, tile, win, q.device)
+        if "ffc" in modes and not per:
+            raise ValueError("text mode ffc needs the bridge (bridge_cells > 0)")
+        prefix = 0 if "ffc" in modes else (cells[0] * cells[1] * per if per else 0)
+        layout = ctx.flex_layout(prefix, tile, win, q.device)
         beta = ctx.ctw_beta_now(self.layer, q.shape[2], q.device) if "ctw" in modes else None
+        far = ctx.ffc_far_now(self.layer, q.shape[2], q.device) if "ffc" in modes else None
         return sca_text_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, layout,
-                                     cells, per, modes, beta, float(ctx.text_gamma), float(ctx.text_clip))
+                                     cells, per, modes, beta, float(ctx.text_gamma), float(ctx.text_clip), far)
 
     def scale_sched(self, q, k, v, image_rotary_emb, f, tile):
         """Per-head apparent scale (SCAContext.scale_sched), below the gate: heads at a = 1 take O_glob, each group of

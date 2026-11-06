@@ -18,6 +18,10 @@ Modes (SCAContext.text_mode; several may be joined with "+"):
        position: where the global layout puts no subject, the window cannot read the subject's words at full strength.
   gtx  global text read-out. The window's text part is the global branch's (coarse ids, global text mass a_g); the
        window only re-weights image context: O_loc = a_g O_T(coarse) + (1 - a_g) O_I.
+  ffc  far-field calibrated bridge (image side). The window's image part is split into its window keys and its bridge
+       keys (the far-field sample); their outputs are mixed so the far field carries the share of the image mass that
+       full attention gives it, 1 - share_lh(sigma, r), from the same calibration masses as ctw; the text part and the
+       text-to-image balance stay those of sca_v2 (raw partition of window plus bridge). Needs the bridge.
   bw   weighted bridge (image side, combines with the others). Each bridge key gets the logit offset log(N / R), the
        number of image tokens it stands for, so the far field enters the window softmax with the mass full attention
        would give it rather than as R single tokens.
@@ -34,7 +38,7 @@ import torch
 from sca.attn import _FLEX, _envfix, _raise_recompile_limit, bridge_index, flex_fn, global_branch_lse, \
     local_branch_flex, rope
 
-MODES = ("ctw", "gtg", "gtx", "bw")
+MODES = ("ctw", "gtg", "gtx", "bw", "ffc")
 
 
 def parse_mode(text):
@@ -43,6 +47,8 @@ def parse_mode(text):
     bad = [p for p in parts if p not in MODES]
     if bad:
         raise ValueError(f"unknown text mode(s) {bad}; choose from {MODES}")
+    if "ffc" in parts and ("bw" in parts or "gtx" in parts):
+        raise ValueError("text mode ffc sets the bridge's share itself; it does not combine with bw or gtx")
     if "gtx" in parts and ("ctw" in parts or "gtg" in parts):
         raise ValueError("text mode gtx replaces the window's text part and does not combine with ctw or gtg")
     return parts
@@ -91,6 +97,11 @@ def ctw_beta(path, sigma, window, grid, n0=64, floor=-6.0):
         return beta[..., -1]
     a = (sigma - c[j - 1]) / (c[j] - c[j - 1])
     return (1 - a) * beta[..., j - 1] + a * beta[..., j]
+
+
+def ffc_far(path, sigma, window, grid, n0=64, cap=0.95):
+    """[layers, heads] share of full attention's image mass outside the emulated window (1 - near share), capped."""
+    return np.minimum(1.0 - np.exp(ctw_beta(path, sigma, window, grid, n0, floor=-30.0)), cap)
 
 
 # ----------------------------------------------------------------------------- exact split of the window softmax
@@ -145,7 +156,7 @@ def gate_bias(m, gamma, clip):
 
 
 def sca_text_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, cells=None, per_cell=0, mode=(),
-                     beta=None, gamma=1.0, clip=6.0):
+                     beta=None, gamma=1.0, clip=6.0, far=None):
     """SCA with the bridge (cells, per_cell; layout built for prefix R = cells_h * cells_w * per_cell, the bridge
     only) and the text modes of this module. q, k, v pre-RoPE [B, L + N, h, D]; returns [B, L + N, h, D]."""
     cos, sin = rot
@@ -164,10 +175,20 @@ def sca_text_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout,
         R = idx.shape[1]
     else:
         kl, vl, R = kimg, vimg, 0
-    bw = math.log(kimg.shape[1] / R) if ("bw" in mode and R) else 0.0              # bridge keys stand for N / R tokens
-    o_i, lse_i = local_branch_flex(qi, kl, vl, R, layout, True, bw, None, return_lse=True)
-    o_i = o_i.transpose(1, 2).index_select(1, layout.q_inv)                       # [B, N, h, D]
-    lse_i = lse_i.index_select(2, layout.q_inv)                                    # [B, h, N]
+    if "ffc" in mode:   # layout built for prefix 0: window keys only; the bridge is attended densely
+        o_w, lse_w = local_branch_flex(qi, kimg, vimg, 0, layout, True, 0.0, None, return_lse=True)
+        o_w = o_w.transpose(1, 2).index_select(1, layout.q_inv)
+        lse_w = lse_w.index_select(2, layout.q_inv)
+        o_b, lse_b = text_part(qi, kl[:, :R], vl[:, :R])
+        fr = far.to(o_w.device).view(1, 1, -1, 1)
+        fr = fr if o_w.dtype == torch.float64 else fr.float()
+        o_i = (1 - fr) * _hi(o_w) + fr * _hi(o_b)
+        lse_i = torch.logaddexp(_hi(lse_w), _hi(lse_b))
+    else:
+        bw = math.log(kimg.shape[1] / R) if ("bw" in mode and R) else 0.0          # bridge keys stand for N / R tokens
+        o_i, lse_i = local_branch_flex(qi, kl, vl, R, layout, True, bw, None, return_lse=True)
+        o_i = o_i.transpose(1, 2).index_select(1, layout.q_inv)                   # [B, N, h, D]
+        lse_i = lse_i.index_select(2, layout.q_inv)                                # [B, h, N]
     if "gtx" in mode:
         o_t, lse_t = text_part(rope(q[:, L:], rope_q), kt, vt)
         a = torch.exp(_hi(lse_t) - _hi(lse_gi)).clamp(max=1.0).transpose(1, 2)[..., None]   # [B, N, h, 1]

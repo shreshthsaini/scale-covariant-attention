@@ -266,3 +266,42 @@ def test_native_open_flag_in_info_only_when_set():
     assert "native_open" not in dedup.info(parser().parse_args(base))
     assert dedup.info(parser().parse_args(base + ["--native-open", "8"]))["native_open"] == 8
     assert "native_open" not in dedup.context_kwargs(parser().parse_args(base + ["--native-open", "8"]))
+
+
+def test_ffc_mixes_near_and_far_at_the_given_share():
+    """ffc: image part = (1 - f) window output + f bridge output; text balance from the raw window-plus-bridge partition."""
+    q, k, v = _qkv(H, W, L, seed=13)
+    _, _, rot, rq, rk = _setup(H, W, L, F)
+    cells, per, idx = _bridge(k)
+    pi = torch.ones(1, 1, 2, 1, dtype=torch.float64)
+    far = torch.tensor([0.2, 0.7], dtype=torch.float64)
+    lay0 = flex_layout(0, (H, W), TILE, WIN, "cpu", (2, 2), (2, 2))
+    out = tg.sca_text_forward(q, k, v, rot, rq, rk, pi, L, (H, W), F, "center", lay0, cells, per, ("ffc",), far=far)
+    qr, kr = rope(q, rot), rope(k, rot)
+    qi = qr[0, L:]
+    d = q.shape[-1] ** -0.5
+    mask = _window_mask(0)
+    sw = (torch.einsum("nhd,mhd->hnm", qi, kr[0, L:]) * d).masked_fill(~mask[None], float("-inf"))
+    sb = torch.einsum("nhd,mhd->hnm", qi, kr[0, L + idx]) * d
+    st = torch.einsum("nhd,lhd->hnl", qi, kr[0, :L]) * d
+    o_w = torch.einsum("hnm,mhd->nhd", sw.softmax(-1), v[0, L:])
+    o_b = torch.einsum("hnm,mhd->nhd", sb.softmax(-1), v[0, L + idx])
+    o_t = torch.einsum("hnl,lhd->nhd", st.softmax(-1), v[0, :L])
+    o_img = (1 - far.view(1, -1, 1)) * o_w + far.view(1, -1, 1) * o_b
+    zi = torch.logaddexp(sw.logsumexp(-1), sb.logsumexp(-1)).transpose(0, 1)[..., None]
+    zt = st.logsumexp(-1).transpose(0, 1)[..., None]
+    a = torch.sigmoid(zt - zi)
+    assert (out[0, L:] - (a * o_t + (1 - a) * o_img)).abs().max() < 1e-9
+    with pytest.raises(ValueError):
+        tg.parse_mode("ffc+bw")
+    if TABLE.exists():
+        fr = tg.ffc_far(TABLE, 0.7, 64, (256, 256))
+        assert fr.shape == (57, 24) and (fr >= 0).all() and (fr <= 0.95).all()
+
+
+def test_processor_ffc_runs_and_needs_bridge():
+    m = model()
+    base = attn_outputs(m, _ctx(bridge_cells=2, bridge_k=2), H, W)
+    with pytest.raises(ValueError):            # ffc reads its far share from a calibration npz behind pi
+        attn_outputs(m, _ctx(bridge_cells=2, bridge_k=2, text_mode="ffc"), H, W)
+    assert torch.isfinite(flat(base)).all()
