@@ -131,3 +131,14 @@ and merged as one softmax; a gamma-0 split run is the GPU identity check (a6_a00
   0.5, 0.75 only for sigma in (0.84, 0.89] (steps 8 to 10, the seeding steps), plain sca_v2 elsewhere (r6_bwh25/50/75);
   subject bridge (bridge tokens = block centres most attended by the subject words in the global branch, gamma 0.5,
   same steps; r6_sbh50; subject words r6/subject_words.json). Then r6_ffl (lattice far field).
+- Round 2 results (46 prompts; detector flags on the 26 people/animal prompts, sca_v2 4, AReA 1):
+  - r6_bwh25 (bridge + 0.25 log(N/R) at sigma 0.888, 0.870, 0.850 only): 3 flags (a subset of sca_v2's; fixes the canoe
+    prompt), no significant loss, 10/10 wins over AReA kept, no clean-prompt softening, time x1.004. Quality-neutral,
+    duplication reduction not significant (4 -> 3).
+  - r6_bwh50 / r6_bwh75: still 3 flags; 10 / 11 significant losses (IR -0.16 / -0.43, PickScore -0.69 / -1.51, patch
+    FID +20.5 / +51.3), 4/10 and 2/10 wins kept. Duplication saturates at 3 of 26 while quality collapses.
+  - r6_sbh50 (subject-attended bridge, gamma 0.5, hand-off steps): 4 flags (one prompt swapped), 10 significant losses,
+    6/10 wins kept. Steering the bridge onto the subject's tokens does not stop copies.
+  - r6_nop12 (native opening K=12): 4 flags, 2 human-confirmed (10.1% human-corrected), 0.62x time, but softer and a
+    different composition: MUSIQ -9.9, CLIP-IQA -0.096, ARNIQA -0.033, patch FID +9.1, PickScore -0.18 (6/10 wins kept).
+    r6_nop8: 7 flags (worse), 0.80x time, 4 losses. r6_gtx: 8 flags (worse), only CLIP -0.60.
