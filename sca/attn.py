@@ -791,6 +791,15 @@ class SCAContext:
     text_clip: float = 6.0              # gtg: floor of the gate's log ratio
     text_bw_scale: float = 1.0          # bw: scale of the bridge offset log(N / R)
     subject_tokens: tuple = ()          # sb: T5 token indices of the prompt's subject words (set per prompt by the sampler)
+    # round 7 (ffl options, sca/textgate.py; .agent/notes/duplication_fix_round7.md); defaults = round-6 ffl
+    ffl_near: str = "window"            # ffl near part: window (round 6) | bridge (sca_v2's window plus bridge)
+    ffl_head_frac: float = 0.0          # >0: only this fraction of heads (smallest calibrated pi at the hand-off, the
+                                        # pi table at gate_sigma) take the far field; the others keep their near part
+    ffl_fade_lo: float = 0.0            # >0: far share x clip((sigma - lo) / (gate_sigma - lo), 0, 1)
+    ffl_outside: bool = False           # lattice keys inside the query's own window are left out of the far field
+    text_bw_lo: float | None = None     # bw applies while sigma > text_bw_lo (None: while text_mode applies)
+    open_pool: int = 0                  # >0: global-only steps with sigma < open_pool_hi pool by this factor (finer
+    open_pool_hi: float = 0.0           # coarse layout before the hand-off, e.g. 2 at 4096^2 = a 128 x 128 grid)
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -815,6 +824,7 @@ class SCAContext:
         self._flex_cache = {}
         self._scale_now, self._headwin_now, self._tables_at = None, None, {}
         self._ctw_now = self._ffc_now = None
+        self._ffl_sel = None
         if self.local_impl not in ("flex", "gather"):
             raise ValueError(f"local_impl must be flex or gather, got {self.local_impl}")
         if (self.bridge_cells or self.lse_tau) and (self.local_impl != "flex" or self.band):
@@ -857,6 +867,25 @@ class SCAContext:
                                  "win_heads_below, routing or text_local")
             if self.text_gamma < 0 or self.text_clip <= 0:
                 raise ValueError("text_mode needs text_gamma >= 0 and text_clip > 0")
+        parts = ()
+        if self.text_mode:
+            from sca.textgate import parse_mode
+            parts = parse_mode(self.text_mode)
+        if self.ffl_near not in ("window", "bridge"):
+            raise ValueError(f"ffl_near must be window or bridge, got {self.ffl_near}")
+        if (self.ffl_near != "window" or self.ffl_head_frac or self.ffl_fade_lo or self.ffl_outside) and "ffl" not in parts:
+            raise ValueError("ffl_near, ffl_head_frac, ffl_fade_lo and ffl_outside need text_mode ffl")
+        if not 0 <= self.ffl_head_frac <= 1:
+            raise ValueError("ffl_head_frac must lie in [0, 1]")
+        if self.ffl_fade_lo and not 0 < self.ffl_fade_lo < self.gate_sigma:
+            raise ValueError("ffl_fade_lo needs 0 < ffl_fade_lo < gate_sigma")
+        if "ffl" in parts and "bw" in parts and (self.ffl_near != "bridge" or not self.bridge_cells):
+            raise ValueError("text_mode ffl+bw weights the bridge of ffl's near part: needs ffl_near bridge and the bridge")
+        if self.text_bw_lo is not None and "bw" not in parts:
+            raise ValueError("text_bw_lo needs text_mode bw")
+        if self.open_pool:
+            if self.open_pool < 1 or self.gate_sigma <= 0 or self.open_pool_hi <= self.gate_sigma:
+                raise ValueError("open_pool needs a factor >= 1, gate_sigma > 0 and open_pool_hi > gate_sigma")
 
     def flex_layout(self, L, tile, win, device):
         """BlockMask and permutations, cached per (text length, grid, tile, window, device)."""
@@ -1043,11 +1072,67 @@ class SCAContext:
         return lambda sigma: (1 - t) * np.asarray(a(sigma), dtype=np.float64) + t * np.asarray(b(sigma), dtype=np.float64)
 
     def text_mode_now(self):
-        """Round-6 text modes active at the current sigma (sca/textgate.py), () when off."""
+        """Round-6 text modes active at the current sigma (sca/textgate.py), () when off; bw drops out at or below
+        text_bw_lo when that is set."""
         if not self.text_mode or (self.sigma is not None and float(self.sigma) <= self.text_mode_lo):
             return ()
         from sca.textgate import parse_mode
-        return parse_mode(self.text_mode)
+        parts = parse_mode(self.text_mode)
+        if self.text_bw_lo is not None and self.sigma is not None and float(self.sigma) <= self.text_bw_lo:
+            parts = tuple(x for x in parts if x != "bw")
+        return parts
+
+    def ffl_sel(self, heads):
+        """[layers, heads] bool: the round(ffl_head_frac * layers * heads) heads with the smallest calibrated pi at the
+        hand-off (target-scale pi table at gate_sigma; ties by index), the long-range heads that take the far field."""
+        if self._ffl_sel is None:
+            n = max(self.n_layers, 1)
+            p = self._rows_at(self.pi, n, heads, float(self.gate_sigma))
+            k = int(round(self.ffl_head_frac * p.size))
+            sel = np.zeros(p.size, dtype=bool)
+            sel[np.argsort(p.ravel(), kind="stable")[:k]] = True
+            self._ffl_sel = sel.reshape(p.shape)
+            self.log.append(f"ffl heads: {k} of {p.size} with pi(gate) < {np.sort(p.ravel())[min(k, p.size - 1)]:.4f}")
+        return self._ffl_sel
+
+    def _rows_at(self, table, n, heads, sigma):
+        p = np.atleast_2d(np.asarray(table(sigma), dtype=np.float64))
+        if p.shape[0] not in (1, n) or p.shape[1] not in (1, heads):
+            raise ValueError(f"pi table shape {p.shape} does not match {n} layers x {heads} heads")
+        return np.array(np.broadcast_to(p, (n, heads)))
+
+    def ffl_sel_now(self, layer, heads, device):
+        """[heads] bool tensor of ffl_sel() for this layer, None when every head takes the far field."""
+        if not self.ffl_head_frac:
+            return None
+        sel = self.ffl_sel(heads)
+        return torch.as_tensor(sel[layer if sel.shape[0] > 1 else 0], device=device)
+
+    def ffl_fade(self):
+        """Far-share factor of the sigma fade (1 without ffl_fade_lo)."""
+        if not self.ffl_fade_lo or self.sigma is None:
+            return 1.0
+        lo, g = float(self.ffl_fade_lo), float(self.gate_sigma)
+        return float(np.clip((float(self.sigma) - lo) / (g - lo), 0.0, 1.0))
+
+    def lattice_layout(self, tile, win, f, device):
+        """textgate.lattice_layout for ffl_outside, cached per (grid, tile, window, f, device)."""
+        key = ("lattice", self.grid, tuple(tile), tuple(win), tuple(f), str(device))
+        if key not in self._flex_cache:
+            from sca.textgate import lattice_layout
+            self._flex_cache[key] = lattice_layout(self.grid, tile, win, f, device)
+        return self._flex_cache[key]
+
+    def open_pool_now(self, f):
+        """Pool factor of a global-only step: open_pool (fitted to the grid) while gate_sigma < sigma < open_pool_hi,
+        else f."""
+        if not self.open_pool or self.sigma is None:
+            return f
+        s = float(self.sigma)
+        if not (self.gate_sigma < s < self.open_pool_hi):
+            return f
+        H, W = self.grid
+        return (fit_divisor(H, self.open_pool, self.log, "open pool"), fit_divisor(W, self.open_pool, self.log, "open pool"))
 
     def ctw_beta_now(self, layer, heads, device):
         """[heads] calibrated text-logit offset of this layer for the current window and sigma (one table per step)."""
@@ -1071,6 +1156,9 @@ class SCAContext:
             if path is None:
                 raise ValueError("text_mode ffc needs a pi table loaded from a calibration npz")
             b = np.atleast_2d(ffc_far(path, float(self.sigma), self.window_now(), self.grid, self.n0))
+            if self.ffl_head_frac:
+                b = b * self.ffl_sel(heads)
+            b = b * self.ffl_fade()
             self._ffc_now = torch.as_tensor(b, dtype=torch.float32, device=device)
         t = self._ffc_now
         return t[layer if t.shape[0] > 1 else 0]
@@ -1197,6 +1285,8 @@ class SCAProcessor:
         ctx = self.ctx
         f, tile, win = ctx.geometry()
         if ctx.force_global or (ctx.gate_sigma > 0 and ctx.sigma is not None and float(ctx.sigma) > ctx.gate_sigma):
+            if not ctx.force_global:
+                f = ctx.open_pool_now(f)
             L, rope_txt = self._split(q, image_rotary_emb)
             cos, sin = image_rotary_emb
             rq, rk = ctx.coarse_rope(f, q.device)
@@ -1255,10 +1345,13 @@ class SCAProcessor:
         cells, per = ctx.bridge_now()
         if "ffc" in modes and not per:
             raise ValueError("text mode ffc needs the bridge (bridge_cells > 0)")
-        prefix = 0 if ("ffc" in modes or "ffl" in modes) else (cells[0] * cells[1] * per if per else 0)
+        windowed = "ffc" in modes or ("ffl" in modes and ctx.ffl_near == "window")
+        prefix = 0 if windowed else (cells[0] * cells[1] * per if per else 0)
         layout = ctx.flex_layout(prefix, tile, win, q.device)
         beta = ctx.ctw_beta_now(self.layer, q.shape[2], q.device) if "ctw" in modes else None
         far = ctx.ffc_far_now(self.layer, q.shape[2], q.device) if ("ffc" in modes or "ffl" in modes) else None
+        sel = ctx.ffl_sel_now(self.layer, q.shape[2], q.device) if "ffl" in modes else None
+        lat = ctx.lattice_layout(tile, win, f, q.device) if ("ffl" in modes and ctx.ffl_outside) else None
         w = None
         if "sb" in modes:
             w = torch.zeros(L, dtype=torch.float32, device=q.device)
@@ -1267,7 +1360,7 @@ class SCAProcessor:
                 w[torch.as_tensor(idx, device=q.device)] = 1.0
         return sca_text_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, layout,
                                      cells, per, modes, beta, float(ctx.text_gamma), float(ctx.text_clip), far,
-                                     float(ctx.text_bw_scale), w)
+                                     float(ctx.text_bw_scale), w, ctx.ffl_near, sel, lat)
 
     def scale_sched(self, q, k, v, image_rotary_emb, f, tile):
         """Per-head apparent scale (SCAContext.scale_sched), below the gate: heads at a = 1 take O_glob, each group of

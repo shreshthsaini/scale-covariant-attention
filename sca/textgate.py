@@ -31,6 +31,12 @@ Modes (SCAContext.text_mode; several may be joined with "+"):
   bw   weighted bridge (image side, combines with the others); SCAContext.text_bw_scale scales its log(N / R). Each bridge key gets the logit offset log(N / R), the
        number of image tokens it stands for, so the far field enters the window softmax with the mass full attention
        would give it rather than as R single tokens.
+Round-7 options of ffl (sca_text_forward keywords; SCAContext.ffl_*, .agent/notes/duplication_fix_round7.md):
+  near="bridge"  the near part is sca_v2's window plus bridge (bw weights its bridge keys) instead of the window alone,
+                 so a head or step whose far weight is 0 is exactly sca_v2.
+  far_sel        [h] bool: heads outside the set keep their near part and its partition (far weight 0 there).
+  lat            BlockMask from lattice_layout(): lattice keys inside the query's own window are left out of the far
+                 field, which then holds only what the window cannot see.
 Off by default; the published and sca_v2 paths (sca.attn.sca_flex_forward, sca_dedup_forward) are untouched.
 """
 
@@ -48,14 +54,15 @@ MODES = ("ctw", "gtg", "gtx", "bw", "ffc", "ffl", "sb")
 
 
 def parse_mode(text):
-    """'ctw+gtg' -> ('ctw', 'gtg'); '' -> (). gtx replaces the window's text part, so it combines only with bw."""
+    """'ctw+gtg' -> ('ctw', 'gtg'); '' -> (). gtx replaces the window's text part, so it combines only with bw. ffl+bw
+    weights the bridge of ffl's near part and needs near "bridge" (checked by SCAContext)."""
     parts = tuple(p for p in str(text or "").split("+") if p)
     bad = [p for p in parts if p not in MODES]
     if bad:
         raise ValueError(f"unknown text mode(s) {bad}; choose from {MODES}")
     if "ffc" in parts and "ffl" in parts:
         raise ValueError("text modes ffc and ffl are alternatives")
-    if ("ffc" in parts or "ffl" in parts) and ("bw" in parts or "gtx" in parts):
+    if ("ffc" in parts and "bw" in parts) or (("ffc" in parts or "ffl" in parts) and "gtx" in parts):
         raise ValueError("text mode ffc sets the bridge's share itself; it does not combine with bw or gtx")
     if "gtx" in parts and ("ctw" in parts or "gtg" in parts):
         raise ValueError("text mode gtx replaces the window's text part and does not combine with ctw or gtg")
@@ -145,6 +152,53 @@ def merge_lse(o1, l1, o2, l2):
     return (wa * _hi(o1) + wb * _hi(o2)) / (wa + wb)
 
 
+def lattice_index(grid, f, device=None):
+    """Row-major image index of the block-centre token of every f[0] x f[1] block (pool "center" positions)."""
+    H, W = grid
+    return torch.arange(H * W, device=device).view(H, W)[f[0] // 2::f[0], f[1] // 2::f[1]].reshape(-1)
+
+
+def lattice_layout(grid, tile, window, f, device, block=(128, 128)):
+    """(BlockMask, kernel_options) over image queries (row-major) x block-centre lattice keys (row-major): a lattice key
+    is visible to a query iff it lies outside the query's local window (the window of its query tile, the same start
+    rule as sca.attn.flex_layout). With it the lattice far field holds only what the window does not see."""
+    from torch.nn.attention.flex_attention import create_block_mask
+    from torch._dynamo import config as dynamo_config
+    _envfix()
+    _raise_recompile_limit()
+    (H, W), (th, tw), (Wh, Ww) = grid, tile, window
+    i32 = torch.int32
+    rs = (torch.arange(H, device=device) // th * th + th // 2 - Wh // 2).clamp(0, H - Wh).to(i32)
+    cs = (torch.arange(W, device=device) // tw * tw + tw // 2 - Ww // 2).clamp(0, W - Ww).to(i32)
+    cen = lattice_index(grid, f, device)
+    kr, kc = (cen // W).to(i32), (cen % W).to(i32)
+
+    def mask_mod(b, h, q, kv):
+        r0, c0, r, c = rs[q // W], cs[q % W], kr[kv], kc[kv]
+        return ~((r >= r0) & (r < r0 + Wh) & (c >= c0) & (c < c0 + Ww))
+
+    N, Nb = H * W, cen.numel()
+    bs = (math.gcd(N, block[0]), math.gcd(Nb, block[1]))
+    cuda = torch.device(device).type == "cuda"
+    with dynamo_config.patch(automatic_dynamic_shapes=False):
+        bm = create_block_mask(mask_mod, None, None, N, Nb, device=device, BLOCK_SIZE=bs, _compile=cuda)
+    ko = {"BLOCK_M": math.gcd(bs[0], 128), "BLOCK_N": math.gcd(bs[1], 64), "USE_TMA": True} if cuda else None
+    return bm, ko
+
+
+def lattice_part(qi, kc, vc, lat=None):
+    """Attention of image queries qi [B, N, h, D] (RoPE'd, row-major) over the lattice keys kc / values vc
+    [B, Nb, h, D] at their true positions, dense or under lattice_layout's (BlockMask, kernel_options). Returns
+    o [B, N, h, D], lse [B, h, N]; a query that sees no lattice key gets o = 0 and lse = -inf."""
+    if lat is None:
+        return text_part(qi, kc, vc)
+    bm, ko = lat
+    kw = {"kernel_options": ko} if ko else {}
+    o, lse = flex_fn(qi.device)(qi.transpose(1, 2), kc.transpose(1, 2), vc.transpose(1, 2), block_mask=bm,
+                                return_lse=True, **kw)
+    return o.transpose(1, 2), lse
+
+
 def text_map(qg, kt, lse_img, chunk=8192):
     """Head-mean probability [B, N, L] that the global branch puts on each text key: mean_h exp(s_hij - lse_hi),
     s = coarse-RoPE'd image query . text key / sqrt(D) (fp32), lse_img [B, h, N] the global branch's log-sum-exp."""
@@ -179,9 +233,12 @@ def subject_bridge(q_txt, k, lse_txt, w_subj, L, grid, f, pool, rope_k, R):
 
 
 def sca_text_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, cells=None, per_cell=0, mode=(),
-                     beta=None, gamma=1.0, clip=6.0, far=None, bwscale=1.0, w_subj=None):
+                     beta=None, gamma=1.0, clip=6.0, far=None, bwscale=1.0, w_subj=None, near="window", far_sel=None,
+                     lat=None):
     """SCA with the bridge (cells, per_cell; layout built for prefix R = cells_h * cells_w * per_cell, the bridge
-    only) and the text modes of this module. q, k, v pre-RoPE [B, L + N, h, D]; returns [B, L + N, h, D]."""
+    only) and the text modes of this module. q, k, v pre-RoPE [B, L + N, h, D]; returns [B, L + N, h, D].
+    ffl round-7 keywords (module docstring): near "window" | "bridge" (ffc and ffl near "window" need a layout for
+    prefix 0, ffl near "bridge" one for prefix R), far_sel [h] bool, lat = lattice_layout() or None."""
     cos, sin = rot
     kr = rope(k, rot)
     qi = rope(q[:, L:], (cos[L:], sin[L:]))
@@ -201,20 +258,29 @@ def sca_text_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout,
         R = idx.shape[1]
     else:
         kl, vl, R = kimg, vimg, 0
-    if "ffc" in mode or "ffl" in mode:   # layout for prefix 0: window keys only; the far field is attended densely
-        o_w, lse_w = local_branch_flex(qi, kimg, vimg, 0, layout, True, 0.0, None, return_lse=True)
+    if "ffc" in mode or "ffl" in mode:   # the far field is attended densely (or outside each window, lat)
+        if "ffl" in mode and near == "bridge" and R:   # near part = sca_v2's window plus bridge (layout prefix R)
+            bw = bwscale * math.log(kimg.shape[1] / R) if "bw" in mode else 0.0
+            o_w, lse_w = local_branch_flex(qi, kl, vl, R, layout, True, bw, None, return_lse=True)
+        else:                                          # layout for prefix 0: window keys only
+            o_w, lse_w = local_branch_flex(qi, kimg, vimg, 0, layout, True, 0.0, None, return_lse=True)
         o_w = o_w.transpose(1, 2).index_select(1, layout.q_inv)
         lse_w = lse_w.index_select(2, layout.q_inv)
         if "ffl" in mode:   # block-centre lattice at true positions (pool "center" ids)
-            H, W = grid
-            cen = torch.arange(H * W, device=k.device).view(H, W)[f[0] // 2::f[0], f[1] // 2::f[1]].reshape(-1)
-            o_b, lse_b = text_part(qi, kimg[:, cen], vimg[:, cen])
+            cen = lattice_index(grid, f, k.device)
+            o_b, lse_b = lattice_part(qi, kimg[:, cen], vimg[:, cen], lat)
         else:
             o_b, lse_b = text_part(qi, kl[:, :R], vl[:, :R])
         fr = far.to(o_w.device).view(1, 1, -1, 1)
         fr = fr if o_w.dtype == torch.float64 else fr.float()
+        if far_sel is not None:
+            fr = fr * far_sel.to(o_w.device).view(1, 1, -1, 1).to(fr.dtype)
+        if lat is not None:   # a query whose window covers the whole lattice has no far field
+            fr = fr * torch.isfinite(lse_b).transpose(1, 2)[..., None].to(fr.dtype)
         o_i = (1 - fr) * _hi(o_w) + fr * _hi(o_b)
         lse_i = torch.logaddexp(_hi(lse_w), _hi(lse_b))
+        if far_sel is not None:   # heads outside the far set keep their near part's partition
+            lse_i = torch.where(far_sel.to(o_w.device).view(1, -1, 1), lse_i, _hi(lse_w))
     else:
         bw = bwscale * math.log(kimg.shape[1] / R) if ("bw" in mode and R) else 0.0   # bridge keys stand for N / R
         o_i, lse_i = local_branch_flex(qi, kl, vl, R, layout, True, bw, None, return_lse=True)

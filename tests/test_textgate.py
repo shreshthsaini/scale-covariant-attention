@@ -363,3 +363,136 @@ def test_subject_bridge_and_bw_scale():
     ref0 = tg.sca_text_forward(q, k, v, rot, rq, rk, pi, L, (H, W), F, "center", lay, cells, per, ("ctw",),
                                torch.zeros(2, dtype=torch.float64))
     assert (out0 - ref0).abs().max() < 1e-9                                       # no subject words: AReA's selection
+
+
+# ----------------------------------------------------------------------------- round 7 (ffl options)
+
+def _lattice():
+    return torch.tensor([(a * 2 + 1) * W + b * 2 + 1 for a in range(H // 2) for b in range(W // 2)])
+
+
+@pytest.mark.parametrize("bw", [False, True])
+def test_ffl_near_bridge_head_set_and_outside_match_bruteforce(bw):
+    """Round 7: near part = sca_v2's window plus bridge (bw weights the bridge keys), far field = lattice keys outside
+    each query's window, mixed only in the heads of far_sel; the other heads keep the near part and its partition."""
+    q, k, v = _qkv(H, W, L, seed=23)
+    _, _, rot, rq, rk = _setup(H, W, L, F)
+    cells, per, idx = _bridge(k)
+    R = len(idx)
+    layR = flex_layout(R, (H, W), TILE, WIN, "cpu", (2, 2), (2, 2))
+    lat = tg.lattice_layout((H, W), TILE, WIN, F, "cpu")
+    pi = torch.ones(1, 1, 2, 1, dtype=torch.float64)
+    far = torch.tensor([0.3, 0.6], dtype=torch.float64)
+    sel = torch.tensor([True, False])
+    mode = ("ffl", "bw") if bw else ("ffl",)
+    out = tg.sca_text_forward(q, k, v, rot, rq, rk, pi, L, (H, W), F, "center", layR, cells, per, mode, far=far,
+                              bwscale=0.25, near="bridge", far_sel=sel, lat=lat)
+    qr, kr = rope(q, rot), rope(k, rot)
+    qi = qr[0, L:]
+    d = q.shape[-1] ** -0.5
+    cen = _lattice()
+    off = 0.25 * math.log(H * W / R) if bw else 0.0
+    keys_n = torch.cat([kr[0, L + idx], kr[0, L:]], 0)
+    vals_n = torch.cat([v[0, L + idx], v[0, L:]], 0)
+    sn = torch.einsum("nhd,mhd->hnm", qi, keys_n) * d
+    sn[..., :R] += off
+    sn = sn.masked_fill(~_window_mask(R)[None], float("-inf"))
+    inside = _window_mask(0)[:, cen]                                              # [N, Nb] lattice key in window
+    sf = (torch.einsum("nhd,mhd->hnm", qi, kr[0, L + cen]) * d).masked_fill(inside[None], float("-inf"))
+    st = torch.einsum("nhd,lhd->hnl", qi, kr[0, :L]) * d
+    o_n = torch.einsum("hnm,mhd->nhd", sn.softmax(-1), vals_n)
+    o_f = torch.einsum("hnm,mhd->nhd", sf.softmax(-1), v[0, L + cen])
+    o_t = torch.einsum("hnl,lhd->nhd", st.softmax(-1), v[0, :L])
+    fr = (far * sel).view(1, -1, 1)
+    o_img = (1 - fr) * o_n + fr * o_f
+    zn, zf = sn.logsumexp(-1), sf.logsumexp(-1)
+    zi = torch.where(sel.view(-1, 1), torch.logaddexp(zn, zf), zn).transpose(0, 1)[..., None]
+    a = torch.sigmoid(st.logsumexp(-1).transpose(0, 1)[..., None] - zi)
+    assert (out[0, L:] - (a * o_t + (1 - a) * o_img)).abs().max() < 1e-9
+
+
+def test_ffl_near_bridge_with_no_far_heads_is_sca_v2():
+    """near "bridge" with an empty head set is sca_v2's bridge forward (sca_dedup_forward), exactly."""
+    from sca.attn import sca_dedup_forward
+    q, k, v = _qkv(H, W, L, seed=29)
+    _, _, rot, rq, rk = _setup(H, W, L, F)
+    cells, per, idx = _bridge(k)
+    R = len(idx)
+    pi = torch.tensor([0.4, 0.8], dtype=torch.float64).view(1, 1, 2, 1)
+    layR = flex_layout(R, (H, W), TILE, WIN, "cpu", (2, 2), (2, 2))
+    layLR = flex_layout(L + R, (H, W), TILE, WIN, "cpu", (2, 2), (2, 2))
+    far = torch.tensor([0.5, 0.5], dtype=torch.float64)
+    for lat in (None, tg.lattice_layout((H, W), TILE, WIN, F, "cpu")):
+        out = tg.sca_text_forward(q, k, v, rot, rq, rk, pi, L, (H, W), F, "center", layR, cells, per, ("ffl",),
+                                  far=far, near="bridge", far_sel=torch.tensor([False, False]), lat=lat)
+        ref = sca_dedup_forward(q, k, v, rot, rq, rk, pi, L, (H, W), F, "center", layLR, 0.0, cells, per)
+        assert (out - ref).abs().max() < 1e-6     # the reference mixes in fp32 (mix_branches)
+
+
+def test_lattice_layout_masks_each_window():
+    bm, ko = tg.lattice_layout((H, W), TILE, WIN, F, "cpu")
+    dense = bm.to_dense() if hasattr(bm, "to_dense") else None
+    assert ko is None
+    cen = _lattice()
+    q = torch.arange(H * W)
+    vis = torch.stack([bm.mask_mod(0, 0, q, torch.full_like(q, j)) for j in range(len(cen))], 1)
+    assert torch.equal(vis, ~_window_mask(0)[:, cen])
+    assert dense is None or dense.numel() > 0
+
+
+def test_ffl_context_options():
+    import numpy as np
+    from sca.attn import PiTable
+    c = np.array([0.5, 0.95])
+    table = np.stack([np.array([[0.9, 0.2, 0.5], [0.1, 0.7, 0.4]])] * 2, -1)            # [layers, heads, bins]
+    pt = PiTable("head", table=table, centers=c)
+    ctx = SCAContext(mode="sca", gate_sigma=0.89, pi=pt, n_layers=2, text_mode="ffl", ffl_head_frac=0.5,
+                     ffl_fade_lo=0.6)
+    sel = ctx.ffl_sel(3)
+    assert sel.sum() == 3 and sel[1, 0] and sel[0, 1] and sel[1, 2] and not sel[0, 0]
+    assert ctx.ffl_sel_now(0, 3, "cpu").tolist() == [False, True, False]
+    for s, want in ((0.89, 1.0), (0.745, 0.5), (0.6, 0.0), (0.5, 0.0), (0.95, 1.0)):
+        ctx.sigma = s
+        assert abs(ctx.ffl_fade() - want) < 1e-9
+    c2 = SCAContext(mode="sca", gate_sigma=0.89, bridge_cells=2, text_mode="ffl+bw", ffl_near="bridge",
+                    text_mode_lo=0.5, text_bw_lo=0.84)
+    for s, want in ((0.888, ("ffl", "bw")), (0.84, ("ffl",)), (0.7, ("ffl",)), (0.5, ())):
+        c2.sigma = s
+        assert c2.text_mode_now() == want
+    c3 = SCAContext(mode="sca", gate_sigma=0.89, open_pool=2, open_pool_hi=0.93)
+    c3.grid = (16, 16)
+    for s, want in ((0.921, (2, 2)), (0.905, (2, 2)), (0.95, (4, 4)), (0.888, (4, 4))):
+        c3.sigma = s
+        assert c3.open_pool_now((4, 4)) == want
+    bad = [dict(ffl_head_frac=0.2), dict(text_mode="ffl", ffl_near="both"), dict(text_mode="ffl", ffl_head_frac=1.5),
+           dict(text_mode="ffl", ffl_fade_lo=0.95), dict(text_mode="ffl+bw", bridge_cells=2),
+           dict(text_mode="ffl+bw", ffl_near="bridge"), dict(text_mode="ffl", text_bw_lo=0.8),
+           dict(open_pool=2, open_pool_hi=0.85), dict(ffl_outside=True)]
+    for kw in bad:
+        with pytest.raises(ValueError):
+            SCAContext(mode="sca", gate_sigma=0.89, **kw)
+
+
+def test_open_pool_global_step_at_factor_one_is_full_attention():
+    """A global-only step pooled by 1 attends every token at its own position: full attention."""
+    m = model()
+    full = attn_outputs(m, SCAContext(mode="full"), H, W)
+    op = attn_outputs(m, _ctx(gate_sigma=0.4, open_pool=1, open_pool_hi=0.6), H, W)   # sigma .5: global only
+    glob = attn_outputs(m, _ctx(gate_sigma=0.4), H, W)
+    assert torch.allclose(flat(op), flat(full), atol=1e-5)
+    assert not torch.allclose(flat(glob), flat(full), atol=1e-4)
+
+
+def test_sample_info_lists_round7_options_only_when_set():
+    from scripts.sample import parser
+    from sca import dedup
+    base = ["--method", "sca", "--res", "64x64", "--prompts", "x.jsonl", "--out", "o"]
+    info = dedup.info(parser().parse_args(base + ["--text-mode", "ffl"]))
+    assert not any(k.startswith(("ffl_", "open_pool", "text_bw_lo")) for k in info)
+    a = parser().parse_args(base + ["--text-mode", "ffl+bw", "--ffl-near", "bridge", "--ffl-head-frac", "0.2",
+                                    "--ffl-fade-lo", "0.6", "--ffl-outside", "--text-bw-lo", "0.84", "--open-pool", "2",
+                                    "--open-pool-hi", "0.93"])
+    info, kw = dedup.info(a), dedup.context_kwargs(a)
+    assert info["ffl_near"] == "bridge" and info["ffl_head_frac"] == 0.2 and info["ffl_fade_lo"] == 0.6
+    assert info["ffl_outside"] is True and info["text_bw_lo"] == 0.84 and info["open_pool"] == 2
+    assert kw["ffl_near"] == "bridge" and kw["open_pool_hi"] == 0.93 and kw["text_bw_lo"] == 0.84

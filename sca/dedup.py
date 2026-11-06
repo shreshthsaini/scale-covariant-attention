@@ -60,6 +60,19 @@ def add_args(p):
     p.add_argument("--text-clip", type=float, default=6.0, help="gtg: floor of the gate's log ratio")
     p.add_argument("--text-bw-scale", type=float, default=1.0, help="bw: scale of the bridge offset log(N / R)")
     p.add_argument("--subject-words", default="", metavar="JSON", help="sb: JSON {prompt_id: [words]} (subject words)")
+    p.add_argument("--ffl-near", choices=("window", "bridge"), default="window", help="Round 7, text mode ffl: near "
+                   "part = the window alone (round 6) or sca_v2's window plus bridge")
+    p.add_argument("--ffl-head-frac", type=float, default=0.0, metavar="F", help="Round 7, ffl: only the fraction F of "
+                   "heads with the smallest calibrated pi at the hand-off take the far field (0 = all heads)")
+    p.add_argument("--ffl-fade-lo", type=float, default=0.0, metavar="SIGMA", help="Round 7, ffl: far share fades "
+                   "linearly from its calibrated value at --gate-sigma to 0 at SIGMA (0 = no fade)")
+    p.add_argument("--ffl-outside", action="store_true", help="Round 7, ffl: leave lattice keys inside the query's own "
+                   "window out of the far field")
+    p.add_argument("--text-bw-lo", type=float, default=None, metavar="SIGMA", help="Round 7: text mode bw applies only "
+                   "while sigma > SIGMA (default: while --text-mode applies)")
+    p.add_argument("--open-pool", type=int, default=0, metavar="P", help="Round 7: global-only steps with sigma < "
+                   "--open-pool-hi pool by P (finer coarse layout before the hand-off; 0 = off)")
+    p.add_argument("--open-pool-hi", type=float, default=0.0, metavar="SIGMA")
     p.add_argument("--native-open", type=int, default=0, metavar="K", help="Round 6 candidate d: first K steps at 1024^2 "
                    "with full attention, then upsample, renoise at the next sigma and continue at the target (0 = off)")
     p.add_argument("--anchor-lo", type=float, default=0.0, metavar="SIGMA", help="Latent low-band anchor "
@@ -83,7 +96,9 @@ def context_kwargs(args):
                 lse_tau=args.lse_tau, scale_sched=args.scale_sched, scale_lo=args.scale_lo,
                 scale_fixed=args.scale_fixed, win_pi_match=args.win_pi_match, win_pi_interp=args.win_pi_interp, win_heads_below=args.win_heads_below,
                 text_mode=args.text_mode, text_mode_lo=args.text_mode_lo, text_gamma=args.text_gamma,
-                text_clip=args.text_clip, text_bw_scale=args.text_bw_scale)
+                text_clip=args.text_clip, text_bw_scale=args.text_bw_scale, ffl_near=args.ffl_near,
+                ffl_head_frac=args.ffl_head_frac, ffl_fade_lo=args.ffl_fade_lo, ffl_outside=args.ffl_outside,
+                text_bw_lo=args.text_bw_lo, open_pool=args.open_pool, open_pool_hi=args.open_pool_hi)
 
 
 def anchor(args, ctx):
@@ -129,6 +144,15 @@ def info(args):
             out["text_bw_scale"] = args.text_bw_scale
         if args.subject_words:
             out["subject_words"] = args.subject_words
+        for key in ("ffl_head_frac", "ffl_fade_lo", "ffl_outside"):
+            if getattr(args, key):
+                out[key] = getattr(args, key)
+        if args.ffl_near != "window":
+            out["ffl_near"] = args.ffl_near
+        if args.text_bw_lo is not None:
+            out["text_bw_lo"] = args.text_bw_lo
+    if args.open_pool:
+        out.update(open_pool=args.open_pool, open_pool_hi=args.open_pool_hi)
     if getattr(args, "native_open", 0):
         out["native_open"] = args.native_open
     if args.anchor_lo:
