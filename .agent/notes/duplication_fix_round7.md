@@ -60,4 +60,9 @@ the dose can be lowered instead.
   (QOSMaxSubmitJobPerUserLimit: held BL23 and V2P1 gh-dev jobs occupy the slots). One short job left in the allowance.
 
 ## Results
-(pending)
+- 08:31 fleet SCA25 started (c642-[002,082,091-092], until 10:31). 08:48 smoke PASS (tree 80396bd): ffl near bridge
+  with an empty head set reproduces sca_v2 at 34.36 / 32.02 dB on the two identity prompts (round 6's split: 34.4 /
+  32.0 dB); one prompt each of r7_op2, r7_fd60, r7_hs40, r7_fo and r7_fd60bw ran (first-image times with compilation
+  100.5, 95.1, 97.3, 145.8, 104.9 s; the identity's second image, with the lattice computed at weight 0, 85.4 s). Visual
+  check (r7/smoke/sheet.jpg): all intact; op2 and fo change the composition, fd60, hs40 and fd60bw stay close to
+  sca_v2. 48 generation tasks released.
