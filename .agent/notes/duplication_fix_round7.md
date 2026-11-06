@@ -111,4 +111,15 @@ the dose can be lowered instead.
   church borderline (a cut-off figure at the doorway). Human-corrected on the 26: fd60 14.5%, fo 7.0% (AReA 2.2%).
 - 10:33 SCA25 ended (r7_hs40o generation complete, its evaluation pending); fleet SCA26 submitted (job 1126265,
   gh-dev 4 nodes 2 h; balance 9,957 SU), the second and last short job of the allowance.
+- Correction to the aliasing finding (10:45): the pattern is a token-period checkerboard (16 px, one latent token;
+  results/round7_mechanism/zoom_sca_v2_vs_ffl_800687.png), not a 4-token lattice grid. Spectral index
+  (scripts/r7_grid_index.py: log10 power at the 16 px period over its neighbourhood, central 2048 px; per image in
+  token_checkerboard_index_46.csv): median over the 46 images sca_v2 1.67, r6_ffl 1.85, fd60 1.81, fo 1.59, hs40o 1.70,
+  op2 1.67, AReA 2.00; on the illustration 800687 sca_v2 1.79 vs r6_ffl 3.58. So the checkerboard is strong on flat
+  illustrated surfaces (anime fabric, stained glass) but not prevalent, and fo, without it, loses more: the measured
+  cost of the far field is the mixing of a true-position far field at the calibrated share, with the checkerboard as
+  a visible local symptom of its sparse, phase-sensitive keys. fg (coarse ids, offsets within 63, shared position per
+  4 x 4 block) tests the in-range far field.
+- r7_hs40o (40% head set, outside far field, true positions; evaluated on CPU on the operator node because no GPU was
+  free, detector included): 3 of 26 flags (metrics pending).
 
