@@ -171,4 +171,10 @@ counted duplication. On the 46-subset at least 3 of 26 r6_ffl images are human-c
 sample), not the detector rate; (b) detector counts of far-field variants (fo, fd60, hs40o, fg) understate their
 duplication; a candidate needs all its people/animal images labeled before any claim; (c) the round-6 frontier's
 "lowest duplication" point does not hold.
+- Spool reordered (11:30): Track A's people tasks (renamed a7_a9_t007..t013; their markers keep the original names, so
+  the evaluation's gate is unchanged) run first on SCA26, then r7_fg (46 and 21), then Track A's other 80 prompts
+  and its 195 evaluation, then op2bw. The 95-prompt human-corrected rate is the decisive Track A number.
+- Packet p4 (7 images): every image where a wave-1 variant's detector says it removed one of sca_v2's 4 copies on the
+  subset (op2 979216; fd60 979216, 684465; fo 979216, 345747, 684465; hs40o 684465), to test whether any variant
+  removes copies rather than hiding them from the detector.
 
