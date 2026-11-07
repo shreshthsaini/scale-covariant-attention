@@ -1109,5 +1109,23 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   eval and csga3 in hold_r7_parked; pQ28 packet built, unlabeled). New code 2497cae: growth and z-score detectors,
   smoothed anchor target, coarse bridge only while sigma > lo with block-averaged values. Screen r7_bce (coarse bridge,
   4096 tokens, steps 8 to 10, value pool 4; a0_K0a60*).
+- 12:12: r7_bce by preview (2 of 21): no speckle, copies stay (seabed diver, black-hole figures): FAIL; last task
+  parked. Queued r7_hyb0 on the 46 with eval (code/17dcf9e, a0_K0b26*, eval a0_K0b27_eval_r7_hyb0 in hold_dup_eval).
+
+### State at 12:15 (round 7 method owner hand-back)
+- Verdicts on the relaxed bar so far: none passes. On the 46: saAs (copies 3.3%, 8 losses), saAs75 (10.7%, 9 losses),
+  tv0m (copies removed, adherence lost), sca_area20 (11.5%, 8 losses), op4 (17.9%, PickScore loss).
+- Mechanism (evidence in .agent/notes/duplication_fix_round7.md): copies are made by the first window steps (8 to 9,
+  probe) acting on the coarse opening latent; with the layout held (op4 vs AReA) SCA's window phase adds them, AReA's
+  Phase II does not; SCA's global mix is not the source (area_scaMix 5 vs AReA 4) but removing it breaks the image
+  (scaD, hyb: low-pi heads depend on it); guidance does not matter (g30 19, g35 20, gm15 17). Every change that
+  removes copies so far also costs quality or adherence (f13 blocks, tv0m, saAs, bc64 speckle); copy-site detection by
+  subject-word attention finds 12 to 20 of 61 labeled copies at the hand-off.
+- Spool order (4 GPUs on SCA21 until about 17:20; SCA22 pending): op4 copyprone21 (a0_K0b21/22), r7_s1 seed-1
+  control (a0_K0b23..25), hyb0 on the 46 + eval, area_scaOpen, area_scaText, q13i, q13nw/nd/wg/d5/s, eval q13n, the
+  rest of the ladder (scaE, scaC, area_fixed, scaB's last task), then the review round (r1_*) and later items.
+- Next actions: blind-label op4 (copyprone21), s1, area_scaOpen, area_scaText as they land (r7/label_people.sh, now
+  seed-agnostic); r7_decide on hyb0's 46 eval; label q13i if its preview is clean. Parked (taskq/hold_r7_parked):
+  tvG 46, bc64, hyb, ohyb, csg 46 + eval, csga, csga2 46 + eval, csga3, bce. Unlabeled packets: pQ28 (csga2).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
