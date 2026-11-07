@@ -1394,3 +1394,13 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   all within their intervals. Against sca_v2, prog is worse on patch FID (-6.5 [-10.5, -3.4]), patch KID and KID.
   So AReA's patch-FID lead over progressive SCA is significant at seed 0 (4.8) but not at seed 1. sca_v2's lead is
   significant at both.
+- 17:10 item (2), seed 2 landed (eval/prog195_s2, results/prog195_s2).
+  - Against AReA at seed 2, sca_v2_prog wins all 10 per-image metrics: IR +0.354, PickScore +0.995, HPSv2.1
+    +0.036, MUSIQ +3.8, MUSIQ crop +5.9.
+  - Against sca_v2 it gains IR +0.090, PickScore +0.256, HPSv2.1 +0.011, HPSv2, aesthetic, CLIP-IQA and ARNIQA,
+    and loses MUSIQ -2.5 and MUSIQ crop -5.1.
+  - Corrected set-level points: FID 144.4 (AReA 146.5, sca_v2 141.1), patch FID 107.7 (AReA 102.3, sca_v2 97.6),
+    patch KID 0.0141 (AReA 0.0111). The intervals are on CPU (PID 3435715), written to
+    results/prog195_s2/corrected_fidp_ci.
+  - Detector: 10/95 against AReA's 4/95 (p = 0.07). Median 49.4 s.
+  - Across seeds 0, 1 and 2 the per-image picture is the same; the patch FID gap to AReA ranges from 1.5 to 5.4.
