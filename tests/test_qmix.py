@@ -89,6 +89,24 @@ def test_f13_matches_bruteforce(gamma, far_all):
     assert (out[0, L:] - ref).abs().max() < 1e-9
 
 
+def test_f13_dose_interpolates_to_sca_v2():
+    """dose 0 gives sca_v2's own image output (pi O_loc + (1 - pi) O_glob), dose 0.5 the midpoint."""
+    from sca.attn import sca_dedup_forward
+    p = _pieces(43)
+    pi = torch.tensor([0.6, 0.3], dtype=torch.float64).view(1, 1, 2, 1)
+    lat_out = tg.lattice_layout((H, W), TILE, WIN, F, "cpu")
+    a = (p["q"], p["k"], p["v"], p["rot"], p["rq"], p["rk"], pi, L, (H, W), F, "center", p["layR"], p["cells"],
+         p["per"], None, lat_out, 1.0, True, 0.0, False)
+    o1 = qm.sca_qmix_forward(*a, 1.0)
+    o0 = qm.sca_qmix_forward(*a, 0.0)
+    oh = qm.sca_qmix_forward(*a, 0.5)
+    layout = flex_layout(L + p["cells"][0] * p["cells"][1] * p["per"], (H, W), TILE, WIN, "cpu", (2, 2), (2, 2))
+    ref = sca_dedup_forward(p["q"], p["k"], p["v"], p["rot"], p["rq"], p["rk"], pi, L, (H, W), F, "center", layout,
+                            0.0, p["cells"], p["per"], 0.0)
+    assert (o0[0, L:] - ref[0, L:]).abs().max() < 1e-6          # sca_dedup_forward mixes in float32
+    assert (oh[0, L:] - 0.5 * (o0[0, L:] + o1[0, L:])).abs().max() < 1e-9
+
+
 def test_processor_qmix_gates_and_runs():
     m = model()
     c = dict(mode="sca", n0=4, tile=2, window=4, local_impl="flex", bridge_cells=2, bridge_k=2)

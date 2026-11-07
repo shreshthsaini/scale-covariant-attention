@@ -88,6 +88,7 @@ def add_args(p):
                    "the text part; 1 = one plain softmax, < 1 raises the text share")
     p.add_argument("--qmix-far", default="out", choices=("out", "all"), help="f13 far part: block centres outside the "
                    "window (out) or every block centre (all)")
+    p.add_argument("--qmix-dose", type=float, default=1.0, help="f13: dose * f13 + (1 - dose) * sca_v2's image output")
     p.add_argument("--pi-blend", type=float, default=0.0, metavar="LAMBDA", help="Audit Fix 2: pi' = (1 - LAMBDA) pi "
                    "+ LAMBDA m_h while sigma > --pi-blend-lo, m_h = full attention's image-key share inside the step's "
                    "window (calibration mass_mean at the emulated radius; 0 = off)")
@@ -120,7 +121,7 @@ def context_kwargs(args):
                 ffl_coarse=args.ffl_coarse,
                 text_bw_lo=args.text_bw_lo, open_pool=args.open_pool, open_pool_hi=args.open_pool_hi,
                 morph_local=args.morph_local, morph_text=args.morph_text, qmix=args.qmix, qmix_lo=args.qmix_lo,
-                qmix_tau=args.qmix_tau, qmix_gamma=getattr(args, "qmix_gamma", 1.0), qmix_far=getattr(args, "qmix_far", "out"), pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8))
+                qmix_tau=args.qmix_tau, qmix_gamma=getattr(args, "qmix_gamma", 1.0), qmix_far=getattr(args, "qmix_far", "out"), qmix_dose=getattr(args, "qmix_dose", 1.0), pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8))
 
 
 def anchor(args, ctx):
@@ -185,6 +186,8 @@ def info(args):
             out["qmix_gamma"] = args.qmix_gamma
         if getattr(args, "qmix_far", "out") != "out":
             out["qmix_far"] = args.qmix_far
+        if getattr(args, "qmix_dose", 1.0) != 1.0:
+            out["qmix_dose"] = args.qmix_dose
     if getattr(args, "pi_blend", 0.0):
         out.update(pi_blend=args.pi_blend, pi_blend_lo=args.pi_blend_lo)
     if getattr(args, "native_open", 0):
