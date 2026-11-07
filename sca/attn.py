@@ -831,6 +831,7 @@ class SCAContext:
     sa_dump: str = ""                   # directory: save each image's raw map and gate (sa_map_<tag>.npz)
     sa_smooth: int = 0                  # average the raw map over sa_smooth x sa_smooth tokens first (0 = off)
     sa_rel: tuple = ()                  # (a, b): ramp from med + a (max - med) to med + b (max - med) instead of quantiles
+    sa_edge: int = 0                    # keep full prompt content on a border band of this many tokens
     morph_text: str = ""                # "" | window_mean: text queries = mean over windows (AReA) instead of global
                                         # | all_coarse: text queries attend every image key at its coarse id (Fix 4)
     # per-query mix (sca/qmix.py; root-cause audit 2026-11-06 Fix 1 / Fix 1+3); defaults = SCA
@@ -1055,7 +1056,8 @@ class SCAContext:
                 return None
             from sca.subjgate import finalize_map
             self._sa_map = finalize_map(acc, self.grid, q_lo=self.sa_qlo, q_hi=self.sa_qhi, dilate=self.sa_dilate,
-                                        smooth=self.sa_smooth, rel=tuple(self.sa_rel) if self.sa_rel else None)
+                                        smooth=self.sa_smooth, rel=tuple(self.sa_rel) if self.sa_rel else None,
+                                        edge=self.sa_edge)
             if self.sa_dump:
                 import os
                 os.makedirs(self.sa_dump, exist_ok=True)

@@ -50,11 +50,13 @@ def subject_part(qr, kt, vt, idx, valid, lse):
     return w.transpose(1, 2)[..., None] * o, w
 
 
-def finalize_map(m, grid, q_lo=0.5, q_hi=0.95, dilate=2, smooth=0, rel=None):
+def finalize_map(m, grid, q_lo=0.5, q_hi=0.95, dilate=2, smooth=0, rel=None, edge=0):
     """[N] accumulated subject share -> [N] map in [0, 1]. smooth > 0 first averages m over smooth x smooth tokens (the
     raw map is speckled: single background tokens with high subject attention). Ramp from lo to hi: quantiles q_lo,
     q_hi of m, or with rel = (a, b) lo = med + a (max - med), hi = med + b (max - med), so only regions near the
-    strongest subject response get g = 1. Then max-dilated by `dilate` tokens."""
+    strongest subject response get g = 1. Then max-dilated by `dilate` tokens. edge > 0 keeps g = 1 on a border band
+    of that many tokens (the last token columns lose stability when they lose the prompt's content, as with round 6's
+    ctw and r7_tv0m)."""
     m = m.float()
     H, W = grid
     if smooth and smooth > 1:
@@ -68,6 +70,13 @@ def finalize_map(m, grid, q_lo=0.5, q_hi=0.95, dilate=2, smooth=0, rel=None):
     g = ((m - lo) / (hi - lo).clamp_min(1e-12)).clamp(0, 1)
     if dilate > 0:
         g = F.max_pool2d(g.view(1, 1, H, W), 2 * dilate + 1, stride=1, padding=dilate).view(-1)
+    if edge > 0:
+        g = g.view(H, W).clone()
+        g[:edge, :] = 1.0
+        g[-edge:, :] = 1.0
+        g[:, :edge] = 1.0
+        g[:, -edge:] = 1.0
+        g = g.view(-1)
     return g
 
 

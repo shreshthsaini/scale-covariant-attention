@@ -255,6 +255,8 @@ def test_subject_part_share_and_map():
     m2[60] = 0.5                    # a weaker speckle elsewhere
     g2 = sg.finalize_map(m2, (8, 8), dilate=0, smooth=3, rel=(0.3, 0.6))
     assert g2.view(8, 8)[3, 3] == 1 and g2.view(8, 8)[7, 4] == 0
+    g3 = sg.finalize_map(m2, (8, 8), dilate=0, smooth=3, rel=(0.3, 0.6), edge=1)
+    assert g3.view(8, 8)[7, 4] == 1 and g3.view(8, 8)[0, 0] == 1 and g3.view(8, 8)[5, 5] == 0
 
 
 def test_processor_subject_anchor_records_map_then_gates():
