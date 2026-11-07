@@ -1254,3 +1254,12 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
 - 13:25 r7_hyb0g (one extra global step at pool 2 on step 8, then hyb0's windows), detector triage: 11 of 21
   flagged (hyb0 12). A finer layout for one more step before the wide windows changes nothing. FAIL by triage, no
   labels.
+- 13:40 decision, r7_tcg (qmix tc plus glob-count 1, sigma > 0.55): detector 6 of 21, the lowest of any variant
+  with intact compositions. Time 82 s (x1.07). But the native-resolution crops (r7/preview/r7_tcg/detail.jpg) show
+  q13n's failure. The camp tent is drawn as a cloud of dash strokes, the scuba diver loses mask and regulator (a man
+  in a hoodie), the astronaut's armour gets a bubbly droplet texture, and the anime prompt's two background figures
+  become faceless dashed ghosts. FAIL on sight, no labels. Reading: halving the window branch's prompt content (A_i is
+  about 0.4 to 0.5 even at the subject) breaks the subjects' prompted details and leaves dash-stroke texture, as
+  tv5 and q13n did. The window's prompt read is not a clean lever; the global branch's is (gc1: clean, about half
+  the copies). r7_tc (tc alone) and r7_gctv (window values x 0.5) are parked in hold_r7_parked. The clean global-only
+  family continues: gc1a, gch and gc2 screens, and gc1's 46-prompt run.
