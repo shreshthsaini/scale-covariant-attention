@@ -312,3 +312,6 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   removed (788875264758341041, 8995582008874513707), none added (exact McNemar p = 0.5). 77.3 s. Lowering the head
   mean by 0.11 to 0.31 at the hand-off barely moves the copies: neither the per-query distribution (f1) nor the head
   mean (Fix 2) of the window weight is the main lever on copyprone21.
+- r7_q12 (f1 on every step plus Fix 2): pQ4, 20 yes, 1 borderline of 21; 84.5 s. Fails. Weight changes on the
+  window branch, per query or per head, do not reach the copies (round 5's txtmid and round 6's ctw, which lowered
+  the window's text weight, also moved copies little), while wider windows (sca_area20) halved them.

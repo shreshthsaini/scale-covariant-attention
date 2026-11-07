@@ -934,5 +934,6 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
 - r7_q2 (Fix 2 alone), pQ3: 17 yes, 1 borderline, 3 no of 21 (paired vs sca_v2: 2 removed, 0 added, p = 0.5); 77.3 s.
   Fails. Spool 04:03: r7_q12 running, r7_q12x, r7_q13a, then the ladder (a0_L*). r7_q13s held in
   taskq/hold_r7_screen_wait until r7_q13a shows an effect; f13's 46-prompt runs held in taskq/hold_r7_fix13_46.
+- r7_q12 (f1 on every step plus Fix 2), pQ4: 20 yes, 1 borderline of 21; 84.5 s. Fails.
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
