@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sca.attn import PiTable, SCAContext, flex_layout, local_branch, local_branch_flex, rope  # noqa: E402
 from test_sca import HEADS, L_TXT, attn_outputs, inputs, model  # noqa: E402
+H_T, W_T = 8, 8
 
 TABLE = Path("/scratch/09032/saini_2/sca/calib/k1_1024.npz")
 
@@ -290,3 +291,49 @@ def test_processor_bridge_and_lse_run_and_gate():
     assert not torch.allclose(flat(lse), flat(base), atol=1e-4) and torch.isfinite(flat(lse)).all()
     with pytest.raises(ValueError):
         SCAContext(mode="sca", bridge_cells=8, local_impl="gather")
+
+
+def test_bridge_coarse_matches_bruteforce():
+    """bridge_coarse: text and window keys at true ids, bridge keys scored at coarse ids, one softmax per query."""
+    from sca.attn import bridge_index, global_branch, sca_dedup_forward
+    H, W, L, f, tile, win = 8, 8, 4, (2, 2), (2, 2), (4, 4)
+    q, k, v = _qkv(H, W, L, seed=5)
+    _, _, rot, rq, rk = _setup(H, W, L, f)
+    cells, per = (2, 2), 2
+    idx = bridge_index(k[:, L:], (H, W), cells, per)[0]
+    lay = flex_layout(L, (H, W), tile, win, "cpu", (2, 2), (2, 2))
+    pi = torch.tensor([0.6, 1.0], dtype=torch.float64).view(1, 1, -1, 1)
+    out = sca_dedup_forward(q, k, v, rot, rq, rk, pi, L, (H, W), f, "center", lay, 0.0, cells, per, 0.0, None, 0, True)
+    qr, kr = rope(q, rot), rope(k, rot)
+    d = q.shape[-1] ** -0.5
+    qc = rope(q[:, L:], rq)[0]
+    kb = rope(k[:, L:][:, idx], (rq[0][idx], rq[1][idx]))[0]
+    s_t = torch.einsum("nhd,lhd->hnl", qr[0, L:], kr[0, :L]) * d
+    s_w = torch.einsum("nhd,mhd->hnm", qr[0, L:], kr[0, L:]) * d
+    s_b = torch.einsum("nhd,rhd->hnr", qc, kb) * d
+    mask = torch.zeros(H * W, H * W, dtype=torch.bool)
+    for r in range(H):
+        for c in range(W):
+            r0 = min(max((r // 2) * 2 + 1 - 2, 0), H - 4)
+            c0 = min(max((c // 2) * 2 + 1 - 2, 0), W - 4)
+            for a in range(r0, r0 + 4):
+                for b in range(c0, c0 + 4):
+                    mask[r * W + c, a * W + b] = True
+    s_w = s_w.masked_fill(~mask[None], float("-inf"))
+    w = torch.cat([s_t, s_w, s_b], -1).softmax(-1)
+    vals = torch.cat([v[0, :L], v[0, L:], v[0, L:][idx]], 0)
+    o_loc = torch.einsum("hnm,mhd->nhd", w, vals)
+    o_glob = global_branch(q, k, v, L, (H, W), f, "center", (rot[0][:L], rot[1][:L]), rq, rk)
+    ref = pi[0, 0, :, 0].view(1, -1, 1) * o_loc + (1 - pi[0, 0, :, 0].view(1, -1, 1)) * o_glob[0, L:]
+    assert (out[0, L:] - ref).abs().max() < 1e-6
+    assert torch.equal(out[:, :L], o_glob[:, :L].to(out.dtype))
+
+
+def test_bridge_coarse_validates_and_runs_in_processor():
+    with pytest.raises(ValueError):
+        SCAContext(mode="sca", bridge_coarse=True)                       # needs the bridge
+    m = model()
+    c = dict(mode="sca", n0=4, tile=2, window=4, local_impl="flex", bridge_cells=2, bridge_k=2)
+    base = attn_outputs(m, SCAContext(**c), H_T, W_T)
+    co = attn_outputs(m, SCAContext(**c, bridge_coarse=True), H_T, W_T)
+    assert torch.isfinite(flat(co)).all() and not torch.allclose(flat(co), flat(base), atol=1e-5)

@@ -421,14 +421,18 @@ def mix_lse(o_glob, lse_glob, o_loc, lse_loc, pi, L, tau, inv):
 
 
 def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, text_bias=0.0,
-                      cells=None, per_cell=0, tau=0.0, text_value=None, branch=0):
+                      cells=None, per_cell=0, tau=0.0, text_value=None, branch=0, bridge_coarse=False):
     """SCA with the late-duplication options: AReA-style bridge tokens (cells, per_cell) prepended to the
     local keys at their true positions, per-query LSE mixing (tau > 0), and the local text bias. layout
     must be built for the prefix length L + R, R = cells_h * cells_w * per_cell. text_value (None or a [L] tensor of
     per-token scales s_j) scales the text VALUES that image queries read in both branches (their attention weights, so
     the prompt's role as a sink, are unchanged); text queries are untouched. Global branch, exact by linearity:
     O' = O - t O_T[(1 - s) v], t = the text share, O_T[u] = the text-only attention output with values u.
-    branch: 0 = both branches, 1 = the local (window) branch only, 2 = the global branch only."""
+    branch: 0 = both branches, 1 = the local (window) branch only, 2 = the global branch only.
+    bridge_coarse=True (scale-covariant bridge): the bridge part is scored with the image queries and the bridge keys at
+    their coarse ids (rope_q, as in the global branch), so far bridge keys sit at offsets below n0 instead of up to the
+    full grid; it joins the window softmax (text + window keys at true ids) by log-sum-exp. layout is then built for the
+    prefix L only."""
     cos, sin = rot
     kr = rope(k, rot)
     qi = rope(q[:, L:], (cos[L:], sin[L:]))
@@ -448,6 +452,18 @@ def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout
     if text_value is not None and branch != 2:
         v = torch.cat([v[:, :L] * text_value.to(v.dtype).view(1, -1, 1, 1), v[:, L:]], 1)   # local: image queries
     kl, vl, Lp = kr, v, L
+    if per_cell and bridge_coarse and not tau:
+        from sca.textgate import merge_lse
+        idx = bridge_index(k[:, L:], grid, cells, per_cell)                          # [B, R]
+        g = idx[:, :, None, None].expand(-1, -1, k.shape[2], k.shape[3])
+        kb = rope(torch.gather(k[:, L:], 1, g), (rope_q[0][idx[0]], rope_q[1][idx[0]]))
+        vb = torch.gather(v[:, L:], 1, g)
+        qc = rope(q[:, L:], rope_q)
+        o_b, lse_b = flex_fn(q.device)(qc.transpose(1, 2), kb.transpose(1, 2), vb.transpose(1, 2), return_lse=True)
+        o_w, lse_w = local_branch_flex(qi, kr, v, L, layout, True, text_bias, L, return_lse=True)
+        o_w = o_w.transpose(1, 2).index_select(1, layout.q_inv)
+        o_loc = merge_lse(o_w, lse_w.index_select(2, layout.q_inv), o_b.transpose(1, 2), lse_b)
+        return mix_branches(o_glob, o_loc, pi, L)
     if per_cell:
         idx = bridge_index(k[:, L:], grid, cells, per_cell)                          # [B, R]
         g = idx[:, :, None, None].expand(-1, -1, k.shape[2], k.shape[3])
@@ -855,6 +871,7 @@ class SCAContext:
                                         # time at this guidance on window steps and blends v_low + g (v_high - v_low) by
                                         # the opening's subject map g (needs subject_tokens); 0 = off
     gm_lo: float = 0.58                 # gm applies on window steps while sigma > gm_lo (0.58: steps 8 to 19 of 28)
+    bridge_coarse: bool = False         # score the bridge at coarse ids (scale-covariant bridge); needs bridge_cells
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -948,6 +965,8 @@ class SCAContext:
                                      or self.text_mode or self.morph_local or self.morph_text or self.band
                                      or self.local_impl != "flex"):
             raise ValueError("subject anchor combines only with the sca_v2 operator (flex, bridge)")
+        if self.bridge_coarse and (not self.bridge_cells or self.lse_tau or self.sa_value != 1.0):
+            raise ValueError("bridge_coarse needs the bridge (bridge_cells) and no lse_tau or subject anchor")
         if self.gm_low < 0 or (self.gm_low > 0 and self.gate_sigma <= 0):
             raise ValueError("gm_low must be >= 0 and needs gate_sigma > 0 (the opening builds the subject map)")
         if self.text_branch not in ("both", "loc", "glob"):
@@ -1500,7 +1519,8 @@ class SCAProcessor:
             cells = (fit_divisor(H, ctx.bridge_cells, ctx.log, "bridge cells"),
                      fit_divisor(W, ctx.bridge_cells, ctx.log, "bridge cells")) if on else None
             per = min(ctx.bridge_k_now(cells[0] * cells[1]), (H // cells[0]) * (W // cells[1])) if on else 0
-            layout = ctx.flex_layout(L + (cells[0] * cells[1] * per if on else 0), tile, win, q.device)
+            coarse = bool(on and ctx.bridge_coarse and not ctx.lse_tau)
+            layout = ctx.flex_layout(L + (cells[0] * cells[1] * per if on and not coarse else 0), tile, win, q.device)
             s_img = ctx.sa_scale(H * W, q.device)
             if s_img is not None:
                 from sca.subjgate import sca_subject_fn, subject_index
@@ -1510,7 +1530,7 @@ class SCAProcessor:
                                                 ("both", "loc", "glob").index(ctx.text_branch))
             return sca_dedup_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
                                           layout, tb, cells, per, float(ctx.lse_tau), ctx.text_value_vec(L, q.device),
-                                          ("both", "loc", "glob").index(ctx.text_branch))
+                                          ("both", "loc", "glob").index(ctx.text_branch), coarse)
         if band > 1:
             L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True, text_bias=tb)
             if inv is not None:
