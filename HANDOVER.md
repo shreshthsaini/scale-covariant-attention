@@ -877,3 +877,16 @@ where the review release loop and the two CPU workers (PIDs 1692172 to 1692174) 
 - GPU: SCA25 ran 08:31 to 10:31. SCA26 (job 1126265, gh-dev 4 nodes 2 h) started 16:28 (until 18:28) and is the second and
   last short job of the lead's allowance. Parked tasks: taskq/hold_r7_parked (op2bw's first copy, the full-lattice
   hs40/hs20/fd70, hs20o, and hs40o's GPU evaluation, which ran on CPU instead).
+
+## 29. 2026-11-06 evening: morph ladder between AReA and sca_v2 (method owner; log .agent/notes/duplication_fix_round7.md, "Morph ladder")
+User directive (via lead, 19:30): keep going until the repeats are removed; no publication before. Localize the cause by
+single-component swaps between AReA (3.8% by hand on the 26) and sca_v2 (17%): sca+A (AReA's opening pool 4,4,4,4,2,2,2,2),
+sca+B (AReA's jittered tiles, Halo, DWT splits, raised-cosine merge), sca+C (text queries = mean over windows), sca+D (no
+global branch after the opening, pi = 1), sca+E (bridge round(0.5 w)^2); area+SCA opening (factor 4 for 8 steps), area+SCA
+global mix with calibrated pi, area+SCA text rule (text queries read the global branch), area+SCA sliding windows. Main
+readout: blind hand labels of every image on copyprone21 (sca_v2 19 yes of 21); metrics on the 46 for the decisive swaps.
+State 19:40: sca+A (label r7_op4), sca+D (r7_scaD, --pi-const 1), sca+E (r7_scaE, --bridge-ratio 0.5) queued on copyprone21
+(a0_L1..L3, tree 80396bd). Fleet SCA27 (job 1127223, gh 1 node 3 h) pending; a gh-dev job is refused while the other
+project's JLDD job holds the gh-dev submit slot; one more short job allowed. Labeling of AReA's 12 unlabeled and
+sca_area20's 21 copy-prone images running (packet r7/label/pL1). Next: implement C and B in SCA and the four AReA-side swaps
+in scripts/run_area.py (processor wrapper), then queue them.
