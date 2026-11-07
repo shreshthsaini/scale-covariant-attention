@@ -1389,3 +1389,8 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   - Corrected set-level points: FID 144.7 (AReA 147.3, sca_v2 141.2) and patch FID 104.7 (AReA 103.2, sca_v2
     98.1). The 1000-draw intervals are on CPU (eval/prog195_s1/cpu_ci.sh).
   - Detector: 9/95 against AReA's 4/95 (p = 0.23). Campaign median 49.4 s.
+- 17:05 seed-1 set-level intervals (results/prog195_s1/corrected_fidp_ci, 1000 draws; baseline minus prog).
+  Against AReA nothing is significant: FID +2.6 [-5.4, +7.3], KID, patch FID -1.45 [-6.9, +2.7] and patch KID are
+  all within their intervals. Against sca_v2, prog is worse on patch FID (-6.5 [-10.5, -3.4]), patch KID and KID.
+  So AReA's patch-FID lead over progressive SCA is significant at seed 0 (4.8) but not at seed 1. sca_v2's lead is
+  significant at both.
