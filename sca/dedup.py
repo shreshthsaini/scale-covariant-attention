@@ -100,6 +100,8 @@ def add_args(p):
                    "med + A (max - med) to med + B (max - med) instead of the quantiles")
     p.add_argument("--subject-anchor-edge", type=int, default=0, metavar="T", help="Keep full prompt content on a "
                    "border band of T tokens")
+    p.add_argument("--guide-map", type=float, default=0.0, metavar="G", help="Spatially varying guidance (sca/guidemap.py): on window steps a second pass at guidance G, blended with the main pass by the opening's subject map (--subject-anchor-* map flags; needs --subject-words); 0 = off")
+    p.add_argument("--guide-map-lo", type=float, default=0.58, metavar="SIGMA", help="--guide-map applies while sigma > SIGMA (0.58: steps 8 to 19 of 28)")
     p.add_argument("--text-branch", default="both", choices=("both", "loc", "glob"), help="Where --text-value and "
                    "--subject-anchor act: both branches, the window branch only, or the global branch only")
     p.add_argument("--text-value-subject", action="store_true", help="--text-value scales only the subject-word tokens "
@@ -157,7 +159,8 @@ def context_kwargs(args):
                 sa_qhi=float(getattr(args, "subject_anchor_q", (0.5, 0.95))[1]),
                 sa_dump=getattr(args, "subject_anchor_dump", ""), sa_smooth=getattr(args, "subject_anchor_smooth", 0),
                 sa_rel=tuple(getattr(args, "subject_anchor_rel", None) or ()),
-                sa_edge=getattr(args, "subject_anchor_edge", 0), pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8))
+                sa_edge=getattr(args, "subject_anchor_edge", 0), pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8),
+                gm_low=getattr(args, "guide_map", 0.0), gm_lo=getattr(args, "guide_map_lo", 0.58))
 
 
 def anchor(args, ctx):
@@ -228,7 +231,9 @@ def info(args):
             out["qmix_anchor"] = args.qmix_anchor
     if getattr(args, "text_branch", "both") != "both":
         out["text_branch"] = args.text_branch
-    if getattr(args, "subject_anchor", 1.0) != 1.0:
+    if getattr(args, "guide_map", 0.0):
+        out.update(guide_map=args.guide_map, guide_map_lo=args.guide_map_lo)
+    if getattr(args, "subject_anchor", 1.0) != 1.0 or getattr(args, "guide_map", 0.0):
         out.update(subject_anchor=args.subject_anchor, subject_anchor_lo=args.subject_anchor_lo,
                    subject_anchor_dilate=args.subject_anchor_dilate)
         if getattr(args, "subject_anchor_all", False):

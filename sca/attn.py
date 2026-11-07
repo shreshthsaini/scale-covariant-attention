@@ -850,6 +850,10 @@ class SCAContext:
     pi_blend: float = 0.0               # audit Fix 2: pi' = (1 - pi_blend) pi + pi_blend m_h, m_h = full attention's
                                         # image-key share inside the step's window (calibration mass_mean); 0 = off
     pi_blend_lo: float = 0.8            # pi_blend applies while sigma > pi_blend_lo (the hand-off steps 8 to 12)
+    gm_low: float = 0.0                 # spatially varying guidance (sca/guidemap.py): > 0 runs the transformer a second
+                                        # time at this guidance on window steps and blends v_low + g (v_high - v_low) by
+                                        # the opening's subject map g (needs subject_tokens); 0 = off
+    gm_lo: float = 0.58                 # gm applies on window steps while sigma > gm_lo (0.58: steps 8 to 19 of 28)
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -943,6 +947,8 @@ class SCAContext:
                                      or self.text_mode or self.morph_local or self.morph_text or self.band
                                      or self.local_impl != "flex"):
             raise ValueError("subject anchor combines only with the sca_v2 operator (flex, bridge)")
+        if self.gm_low < 0 or (self.gm_low > 0 and self.gate_sigma <= 0):
+            raise ValueError("gm_low must be >= 0 and needs gate_sigma > 0 (the opening builds the subject map)")
         if self.text_branch not in ("both", "loc", "glob"):
             raise ValueError("text_branch must be both, loc or glob")
         if self.qmix_anchor not in ("text", "near"):
@@ -1039,7 +1045,8 @@ class SCAContext:
         return 1.0
 
     def sa_on(self):
-        return self.sa_value != 1.0 and bool(self.subject_tokens)
+        """The opening records the subject map (subject anchor or spatially varying guidance)."""
+        return (self.sa_value != 1.0 or self.gm_low > 0) and bool(self.subject_tokens)
 
     def sa_accumulate(self, share):
         """Add one block's [B, N] subject-word share (global branch, head mean) to the current opening step's map; a
@@ -1049,10 +1056,10 @@ class SCAContext:
             self._sa_sig, self._sa_acc, self._sa_map = sig, torch.zeros_like(share[0], dtype=torch.float32), None
         self._sa_acc = self._sa_acc + share[0].float()
 
-    def sa_scale(self, N, device):
-        """[1, N] per-query scale of the subject-word content on this window step, or None (off, out of range, or no
-        opening map yet)."""
-        if not self.sa_on() or self.sigma is None or float(self.sigma) <= self.sa_lo:
+    def sa_map(self, N, device):
+        """[N] subject map in [0, 1] from the last opening step (finalized once per image), or None (off, or no opening
+        map of N tokens yet)."""
+        if not self.sa_on():
             return None
         if getattr(self, "_sa_map", None) is None:
             acc = getattr(self, "_sa_acc", None)
@@ -1070,7 +1077,17 @@ class SCAContext:
                 tag = getattr(self, "sa_tag", "") or f"{os.getpid()}_{n:03d}"
                 np.savez(os.path.join(self.sa_dump, f"sa_map_{tag}.npz"), m=acc.float().cpu().numpy(),
                          g=self._sa_map.float().cpu().numpy(), grid=np.asarray(self.grid))
-        return (self.sa_value + (1.0 - self.sa_value) * self._sa_map.to(device)).view(1, -1)
+        return self._sa_map.to(device)
+
+    def sa_scale(self, N, device):
+        """[1, N] per-query scale of the subject-word content on this window step, or None (off, out of range, or no
+        opening map yet)."""
+        if self.sa_value == 1.0 or not self.sa_on() or self.sigma is None or float(self.sigma) <= self.sa_lo:
+            return None
+        g = self.sa_map(N, device)
+        if g is None:
+            return None
+        return (self.sa_value + (1.0 - self.sa_value) * g).view(1, -1)
 
     def text_value_vec(self, L, device):
         """None when text values are not scaled at this step, else the [L] per-token scale: text_value on every text

@@ -105,6 +105,13 @@ def main(argv=None):
             _undo_tiles()
             _undo_sca()
     remove_anchor = anchor.install(pipe.transformer) if anchor is not None else None
+    if ctx.gm_low > 0:   # spatially varying guidance (sca/guidemap.py): second pass at low guidance, blended by map
+        from sca import guidemap
+        _undo_gm, _undo_rest = guidemap.install(pipe.transformer, ctx), uninstall
+
+        def uninstall():
+            _undo_gm()
+            _undo_rest()
     ctx.scheduler = pipe.scheduler
     if h * w >= 2048 * 4096:
         pipe.vae.enable_tiling()
