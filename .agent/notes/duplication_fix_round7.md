@@ -350,3 +350,8 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   weights are unchanged, so the prompt keeps its sink mass while its content drive is attenuated; text queries are
   untouched. Global branch: O' = O - (1 - A) t O_T, exact by linearity (tests/test_qmix.py). Screens: r7_tv0m (A = 0
   while sigma > 0.55), r7_tv5 (A = 0.5 every post-gate step).
+- r7_tv0m (A = 0 while sigma > 0.55; 17 of 21 labeled): 0 copies, but the subjects lose their prompted look (astronauts
+  without suit, the diver a clothed man, a horse-human hiker), details go missing, and two images get the right-edge
+  colour column seen with round 6's ctw. Copies are driven by the prompt content that image tokens read on steps 8 to
+  19, and that content also draws the main subject. Next: per-token scaling of the subject-word tokens only (9ef4ee4,
+  r7/subject_words_r7.json), a narrower sigma range (> 0.75) and a partial scale (0.25).

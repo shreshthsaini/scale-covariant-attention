@@ -973,5 +973,12 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   New --text-value A (commit a70efc6, frozen code/a70efc6): image queries read the text VALUES scaled by A in both
   branches, weights unchanged (sink kept), text queries untouched; global branch corrected exactly by linearity.
   Queued at the head: r7_tv0m (A = 0 while sigma > 0.55, a0_K2938*), r7_tv5 (A = 0.5 every step, a0_K2939*).
+- 07:47: r7_tv0m, pQ11 (17 of 21 labeled): 0 copies, but subjects drawn wrong (astronauts without suit or helmet, the
+  diver a clothed man, a horse-human chimera hiker, 4 of 6 men), missing details, right-edge colour column in two images,
+  ringing outlines. 80.0 s (+4%). Its 46-prompt run is generating (a0_K29395*; eval self-releases). Reading: the prompt
+  content image tokens read on steps 8 to 19 draws both the copies and the main subject's own look. Per-token version
+  (commit 9ef4ee4, frozen code/9ef4ee4): --text-value-subject scales only subject-word tokens (--subject-words
+  /scratch/09032/saini_2/sca/r7/subject_words_r7.json, person/animal nouns of each prompt). Queued: r7_ts0m (subject
+  words 0 while sigma > 0.55), r7_ts0a (every step), r7_tv0n (A = 0 while sigma > 0.75), r7_tv25m (A = 0.25, > 0.55).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
