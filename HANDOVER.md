@@ -1081,5 +1081,11 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   token; sites outside the opening's subject region (dilated 3) at 0.5 to 1.0 of the main subject's level lose all
   prompt values on the next step (while sigma > 0.6); clean prompts untouched. copyprone21 screen with map dumps
   (r7/sa_maps/r7_csg, a0_K0a20*), then the 46 with eval (a0_K0a30*, a0_K0_eval_r7_csg).
+- 11:45: r7_csg first look (map overlay on sca_v2, scratch script csg_vis.py): the detector marks the medieval
+  square's extra pedestrians exactly; misses a seabed copy; fires weakly on the surfer's hand. Gating the prompt at the
+  sites from step 9 does not stop the figures (they form, shifted). csg's 46-prompt run parked (hold_r7_parked).
+  New: copy-site anchor (commit 7ab46a3, frozen code/7ab46a3, --copy-gate-anchor): at copy sites x0' = x0_hat + C
+  (L - x0_hat), L the opening's x0 estimate (sca/anchor.py local mode, full band). Screen r7_csga on copyprone21 with
+  dumps (r7/sa_maps/r7_csga, a0_K0a25*). saAs75 previews look like saAs (background dissolve on the anime prompt).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
