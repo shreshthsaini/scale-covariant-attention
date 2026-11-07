@@ -1094,5 +1094,13 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   15, 19 on 3 copy prompts (r7/probe3.jsonl) into r7/probe_x0/sca_v2, to see whether a copy is already in the opening.
   Spool sort quirk: LANG collation ignores "_", so a0_K0_eval_* runs after every a0_K0a/b task; use eval tag 0a0
   (saAs75's eval renamed a0_K0a0eval_r7_saAs75 at 11:46).
+- 11:52: r7_saAs75 on the 46: FAIL (human-corrected 10.7%, 9 losses incl. IR -0.18, PickScore -0.38, HPSv2.1 -0.013,
+  also on clean prompts). Static anchor line closed.
+- 11:54: timing probe (black-hole prompt): x0_hat at step 7 shows no copy; at step 9 a blob sits at the copy site; by
+  11 it is a figure; a second, lower copy appears at 11 to 13. Copies are made by the first window steps.
+- 11:56: r7_csga2 by preview (4 of 21, full-res crops): the seated second astronaut and the flying astronaut are gone
+  (clean rock and clouds, one faint crescent smudge); one square pedestrian and the black hole's late ground figure
+  remain; no visible quality change; about 85 s. Queued r7_csga2 on the 46 with eval (code/9b4b34c, a0_K0a40*, eval
+  a0_K0a0_eval_r7_csga2 in hold_dup_eval).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
