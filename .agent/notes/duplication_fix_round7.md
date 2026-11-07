@@ -429,3 +429,16 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   AReA's Phase II has no global branch; the branch split points at SCA's global branch. Ladder steps moved to the
   spool head: L2 r7_scaD (pi = 1), L7 area_scaMix (AReA + SCA's global branch), L1 r7_op4 on copyprone21.
 - Guidance: r7_g30 (sca_v2 at guidance 3.0) 16 yes of 17 labeled so far: global guidance barely moves copies.
+- Guidance closed: r7_g35 20/21, r7_g30 19/21 (sca_v2 4.5: 19); r7_gm15 (guidance map, low 1.5) 17 yes, 1 borderline,
+  haze and dissolve streaks, 124 s; r7_gm10 by preview: copies remain, more haze.
+- L2 r7_scaD (pi = 1 on every window step): glyph confetti on every image, copies remain (preview of 6). Small
+  windows without the global branch neither cohere nor stop copies.
+- Scale-covariant bridge (b36ef9a): bridge keys scored with the window queries at coarse ids (as the global branch),
+  LSE-joined to the window softmax (brute-force tested). r7_bc16 by preview (12 of 21): sca_v2-like quality at 77 s,
+  copies stay or move (polar bear's child and second bear, extra divers, the square's pedestrians).
+- sca_area20 on the 46 (r7_decide): detector 1 flag, human-corrected 11.5% (AReA 3.8%, sca_v2 17.0%), 8 losses incl.
+  IR -0.060, PickScore -0.19, HPSv2.1 -0.008, also on clean prompts; 103 s.
+- L1 r7_op4 on copyprone21 (7 of 21 previewed): layouts match AReA's; op4 adds copies on 3 of 7 where AReA has none.
+- Hybrid (17dcf9e, --pi-one-lo): AReA's window sizes only on steps 8 to 13 (180 to 137, bridge ratio 0.5), then 96,
+  80 and sca_v2. r7_hyb (+ pi = 1 while sigma > 0.76), r7_hyb0 (sca_v2's pi), r7_ohyb (hyb with op4's opening, the
+  layout-matched comparison to AReA's 4).
