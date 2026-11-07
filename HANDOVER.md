@@ -1062,5 +1062,11 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   brute force): --bridge-coarse scores the bridge keys with the window queries at coarse ids (as the global branch)
   and joins them to the window softmax by log-sum-exp; window keys stay at true ids. Screens r7_bc16 (k 16) and
   r7_bc64 (k 64), a0_K0b15* / a0_K0b16*, after area_scaMix.
+- 10:55: r7_bc16 by preview (12 of 21): sca_v2-like images at 77 s, copies stay or move: FAIL, unlabeled. L1 r7_op4 on
+  copyprone21 (7 of 21 previewed): AReA's layouts, copies added on 3 of 7 where AReA has none. op4 on the 46 loses
+  PickScore (-0.12), aesthetic, MUSIQ crop, so AReA's layouts themselves cost a core metric. Hybrid (commit 17dcf9e,
+  frozen code/17dcf9e, --pi-one-lo): AReA's window sizes on steps 8 to 13 (180 to 137, bridge ratio 0.5), then 96,
+  80 and sca_v2: r7_hyb (+ pi = 1 while sigma > 0.76, a0_K0b25*), r7_hyb0 (sca_v2 pi, a0_K0b26*), r7_ohyb (hyb with
+  op4's opening, a0_K0b27*), all on copyprone21 ahead of area_scaOpen / area_scaText / s1 / q13i.
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
