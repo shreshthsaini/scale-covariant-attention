@@ -57,6 +57,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+from decimal import ROUND_HALF_UP, Decimal
 import statistics
 import sys
 import textwrap
@@ -222,9 +223,9 @@ COLS = [("clean", 1, 1, True), ("seconds", 1, 1, True), ("ir", 1, 2, False), ("h
 QUALITY = ("ir", "hpsv21", "pickscore", "clip", "musiq_crop1024", "fid", "patch_fid")
 PER_IMAGE_COLS = ("ir", "hpsv21", "pickscore", "clip", "musiq_crop1024")
 DIST_COLS = ("fid", "patch_fid")
-SCA_LABEL = r"\sca{} (ours)"
+SCA_LABEL = r"Single-pass \sca{} (ours)"
 PROG_LABEL = r"\textbf{Progressive \sca{} (ours)}"
-PANEL_SCA_LABEL = r"\sca{}, single pass"
+PANEL_SCA_LABEL = r"Single-pass \sca{}"
 # (group heading, [(kind, run, method, label, steps)]); "sca" and "prog" rows show the final operator once its run
 # lands (run and method here are the published placeholders); "ctl" rows exist only for the published operator.
 TAB_MAIN = [
@@ -279,7 +280,10 @@ def clean_seconds():
     # idle GH200, three timed prompts after an excluded warm-up. It replaces HRDiT's cold-start median above and gives
     # the matched AReA time for progressive SCA's speed ratio (AReA agrees with sweep 1 to 0.1 s).
     if (RES / PROG_LAT).exists():
-        s3 = {r["method"]: float(r["median_s"]) for r in rows(PROG_LAT) if r["res"] == RES4K}
+        # median_s is stored at two decimals (49.15 for a raw median of 49.153 s); round half up to the printed
+        # one decimal here, since binary floats would print 49.15 as 49.1
+        s3 = {r["method"]: float(Decimal(r["median_s"]).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
+              for r in rows(PROG_LAT) if r["res"] == RES4K}
         for r in rows(PROG_LAT):
             assert r["n_timed"] == "3", r
         out[PROG], out["hrdit_dev_author"], out["area_s3"] = s3[PROG], s3["hrdit_dev_author"], s3["area"]
@@ -498,7 +502,7 @@ def table_ablation():
                                             f"gives {err[key]:.3f}")
     S46 = V.summary46(DEFAULT46)
     sca = [num(sc * S46[k], d) for k, sc, d in ABL_COLS]
-    body = [SHADE + r"\sca{}, single pass & " + " & ".join(sca) + r" \\", r"\midrule",
+    body = [SHADE + r"Single-pass \sca{} & " + " & ".join(sca) + r" \\", r"\midrule",
             rf"\multicolumn{{5}}{{@{{}}l}}{{\emph{{{ABL_HEAD_SCHED}}}}} \\"]
     p = V.pair46(DEFAULT46)
     sched = [("without the schedule", REF, {k: (-v, -hi, -lo) for k, (v, lo, hi) in p.items()})]
@@ -578,7 +582,7 @@ def table_generality():
             continue
         dd, n = V.paired_csv(rel, PROG, "area")
         body += table3_rows(label, ncell, dd, n)
-    body.append(rf"\multicolumn{{{NCOL3}}}{{@{{}}l}}{{\emph{{\sca{{}}, single pass, minus AReA}}}} \\")
+    body.append(rf"\multicolumn{{{NCOL3}}}{{@{{}}l}}{{\emph{{Single-pass \sca{{}} minus AReA}}}} \\")
     for label, ncell, run in GEN_AREA:
         dd, n, _ = gen_area_pair(run)
         if label in KEY_AREA_ROWS:
@@ -598,13 +602,13 @@ def table_generality():
 
 # ---------------------------------------------------------------- appendix Table prog_all -----------------------
 PROG_ALL_REFS = [("area", "AReA"), ("hrdit_dev_author", "HRDiT"), ("ultraimage", "UltraImage"), ("dype", "DyPE"),
-                 ("sega_official", "SEGA"), ("full", "Full attn."), ("sca_v2", r"\sca{}, 1 pass")]
+                 ("sega_official", "SEGA"), ("full", "Full attn."), ("sca_v2", r"Single-pass")]
 PROG_ALL_METRICS = [("ir", "ImageReward", 1, 3), ("aesthetic", "Aesthetic", 1, 2), ("clip", "CLIP score", 1, 2),
                     ("pickscore", "PickScore", 1, 2), ("hpsv2", r"HPSv2 ($\times100$)", 100, 2),
                     ("hpsv21", r"HPSv2.1 ($\times100$)", 100, 2), ("musiq", "MUSIQ", 1, 1),
                     ("musiq_crop1024", r"MUSIQ$_\text{c}$", 1, 1), ("clipiqa", r"CLIP-IQA ($\times100$)", 100, 1),
-                    ("arniqa", r"ARNIQA ($\times100$)", 100, 1), ("fid", "FID", 1, 1), ("kid", r"KID ($\times100$)", 100, 3),
-                    ("patch_fid", r"FID$_\text{p}^{\dagger}$", 1, 1), ("patch_kid", r"KID$_\text{p}$ ($\times100$)", 100, 3)]
+                    ("arniqa", r"ARNIQA ($\times100$)", 100, 1), ("fid", "FID", 1, 1), ("kid", r"KID ($\times10^3$)", 1000, 2),
+                    ("patch_fid", "Patch FID", 1, 1), ("patch_kid", r"Patch KID ($\times10^3$)", 1000, 2)]
 
 
 def interval(lo, hi, d):
@@ -636,6 +640,16 @@ def table_prog_all():
     lines[-1] = lines[-1].replace(r" \\[0.5pt]", r" \\")
     head = " & ".join(["Metric"] + [name for _, name in PROG_ALL_REFS]) + r" \\"
     note = (" Set-level intervals against " + ", ".join(pending_refs) + " are pending." if pending_refs else "")
+    # key result, checked against the cells
+    wins = {m: sum(pi[k][1] > 0 for k in PER_IMAGE10) for (m, _), (pi, _) in zip(PROG_ALL_REFS, cols)}
+    sl_of = {m: sl for (m, _), (_, sl) in zip(PROG_ALL_REFS, cols)}
+    check(all(wins[m] == 10 for m in ("area", "dype", "sega_official", "full")) and wins["ultraimage"] == 9,
+          f"prog_all key result: per-image wins {wins}")
+    worse_pfid = [m for m in ("area", "hrdit_dev_author", "sca_v2") if sl_of[m] and sl_of[m]["patch_fid"][1] > 0]
+    check(worse_pfid == ["area", "hrdit_dev_author", "sca_v2"], f"prog_all key result: patch FID worse vs {worse_pfid}")
+    key = (r" Key result: progressive \sca{} is significantly better than AReA, DyPE, SEGA, and full attention on every "
+           r"per-image metric and than UltraImage on nine, matches HRDiT on ImageReward, HPSv2.1, and PickScore, and "
+           r"has higher patch FID than AReA, HRDiT, and single-pass \sca{}." if not pending_refs else "")
     if outside:  # a percentile interval of a biased statistic need not contain the point estimate
         note += (" The point estimate lies outside its percentile interval for " + ", ".join(outside) +
                  ", as it can for a biased statistic.")
@@ -643,9 +657,9 @@ def table_prog_all():
     cap = (r"\caption{\textbf{Progressive \sca{} against every $4096^2$ baseline.} FLUX.1-dev, \nmain{} Aesthetic-4K "
            r"prompts, seed label 0. Each cell is progressive \sca{} minus the column's method, with its 95\% paired "
            r"interval below it. Per-image metrics use 2000 prompt draws; FID, KID and their patch versions use 1000 "
-           r"draws that also resample the 168 reference identities. \up{Blue} / \dn{orange}: the interval excludes zero "
+           r"draws that also resample the 168 reference-image clusters. Single-pass: single-pass \sca{}. \up{Blue} / \dn{orange}: the interval excludes zero "
            r"in favour of / against progressive \sca{}; lower is better for FID and KID, so their signs read the other "
-           r"way. Inception score has no paired interval (Table~\ref{tab:all_metrics})." + note + "}")
+           r"way. Inception score has no paired interval (Table~\ref{tab:all_metrics})." + note + key + "}")
     text = "\n".join([
         HEADER.replace("% Generated", "% Generated (app_tables/prog_all.tex)"),
         r"\begin{table}[!htbp]", cap, r"\label{tab:prog_all}",
@@ -810,6 +824,17 @@ def prog_macros(clean):
           "text: progressive SCA trails single-pass SCA on MUSIQ_c and patch FID")
     check(all(sig(ps[k], False) == "up" for k in ("ir", "pickscore", "hpsv21")),
           "text: progressive SCA beats single-pass SCA on IR, PickScore, HPSv2.1")
+    # progressive SCA on other seeds against AReA (Table 3's progressive rows), once their paired files land
+    for label, nm, _, cands in [(g[0], {"Seed 1": "SeedOne", "Seed 2": "SeedTwo", "HRGen-1K": "Hrgen"}.get(g[0]), g[1], g[2])
+                                for g in GEN_PROG if g[0] != "Seed 0"]:
+        rel = next((c for c in cands if (RES / c).exists()), None)
+        if rel:
+            dd, n = V.paired_csv(rel, PROG, "area")
+            w = sum(dd[k][1] > 0 for k in PER_IMAGE10)
+            out += [(f"hlProg{nm}WinsArea", str(w), f"results/{rel}: per-image metrics (of 10) with ci_low > 0", False),
+                    (f"hlProg{nm}WinsAreaWord", word(w), "the same count as a word", False)]
+            triple(out, f"hlProg{nm}AreaIr", dd["ir"], 1, 2, f"results/{rel}, metric ir")
+            triple(out, f"hlProg{nm}AreaPick", dd["pickscore"], 1, 2, f"results/{rel}, metric pickscore")
     # absolute values and times
     SG = data(PROG_V2)[0]
     SA, SP = data(MAIN_RUN)[0], data(PANEL_RUN)[0]
