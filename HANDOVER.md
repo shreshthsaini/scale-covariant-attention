@@ -1342,3 +1342,12 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   sca_v2 at seed 1. Removing the prompt drive on steps 8 to 10 alone changes nothing; gc1 needed it through sigma 0.55.
   Copies are seeded early but are drawn only if the drive lasts through mid noise, as round 6's fflh showed for the
   far field.
+- 15:40 ladder rungs, blind labels on copyprone21: area_scaOpen (AReA with SCA's pool-4 opening, pQ35) 4 yes and 2
+  borderline; area_scaText (AReA with SCA's text-query rule, pQ36, 20 of 21 returned) 5 yes and 1 borderline; AReA 4,
+  area_scaMix 5. Neither SCA's opening, nor its text rule, nor its global mix adds copies inside AReA. The copies
+  belong to SCA's window phase itself, its native-canvas sliding windows reading the prompt on an open layout (op4
+  18 with AReA's opening). Triage: r7_fg (joint far field at coarse ids) 8 of 21 by detector; its 46-prompt
+  generation finished but the eval is paused.
+- 15:40 lead relay of the user's decision: progressive SCA (sca_v2_prog) is the headline and the project is finishing
+  for submission. 51 not-yet-started duplication tasks and their parked evals went to taskq/hold_paused_20261107
+  (README). Running tasks were allowed to finish and no job was cancelled.
