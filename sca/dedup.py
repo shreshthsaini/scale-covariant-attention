@@ -149,6 +149,9 @@ def add_args(p):
                    "centre counted as the fh fw tokens it stands for; 0 = off)")
     p.add_argument("--glob-count-lo", type=float, default=0.0, metavar="SIGMA", help="--glob-count applies while "
                    "sigma > SIGMA")
+    p.add_argument("--glob-count-map", action="store_true", help="--glob-count only away from the prompt's subject "
+                   "(weight 1 + (W - 1)(1 - g), g the opening's subject map; needs --subject-words and the "
+                   "--subject-anchor-* map settings)")
     p.add_argument("--native-open", type=int, default=0, metavar="K", help="Round 6 candidate d: first K steps at 1024^2 "
                    "with full attention, then upsample, renoise at the next sigma and continue at the target (0 = off)")
     p.add_argument("--anchor-lo", type=float, default=0.0, metavar="SIGMA", help="Latent low-band anchor "
@@ -191,6 +194,7 @@ def context_kwargs(args):
                 gm_low=getattr(args, "guide_map", 0.0), gm_lo=getattr(args, "guide_map_lo", 0.58),
                 bridge_coarse=getattr(args, "bridge_coarse", False), pi_one_lo=getattr(args, "pi_one_lo", 0.0),
                 glob_count=getattr(args, "glob_count", 0.0), glob_count_lo=getattr(args, "glob_count_lo", 0.0),
+                glob_count_map=getattr(args, "glob_count_map", False),
                 bridge_coarse_lo=getattr(args, "bridge_coarse_lo", 0.0), bridge_vpool=getattr(args, "bridge_vpool", 0),
                 csg_value=getattr(args, "copy_gate", 1.0), csg_lo=getattr(args, "copy_gate_lo", 0.6),
                 csg_rel=tuple(getattr(args, "copy_gate_rel", (0.5, 1.0))), csg_excl=getattr(args, "copy_gate_excl", 3),
@@ -289,6 +293,8 @@ def info(args):
         out["glob_count"] = args.glob_count
         if getattr(args, "glob_count_lo", 0.0):
             out["glob_count_lo"] = args.glob_count_lo
+        if getattr(args, "glob_count_map", False):
+            out["glob_count_map"] = True
     if getattr(args, "bridge_coarse", False):
         out["bridge_coarse"] = True
         if getattr(args, "bridge_coarse_lo", 0.0):

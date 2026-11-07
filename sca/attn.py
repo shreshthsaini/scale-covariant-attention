@@ -422,7 +422,7 @@ def mix_lse(o_glob, lse_glob, o_loc, lse_loc, pi, L, tau, inv):
 
 def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, text_bias=0.0,
                       cells=None, per_cell=0, tau=0.0, text_value=None, branch=0, bridge_coarse=False, vpool=0,
-                      glob_gamma=0.0):
+                      glob_gamma=0.0, glob_w=None):
     """SCA with the late-duplication options: AReA-style bridge tokens (cells, per_cell) prepended to the
     local keys at their true positions, per-query LSE mixing (tau > 0), and the local text bias. layout
     must be built for the prefix length L + R, R = cells_h * cells_w * per_cell. text_value (None or a [L] tensor of
@@ -437,6 +437,7 @@ def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout
     glob_gamma > 0 (count-corrected global branch): for image queries the global branch's block-centre keys carry the
     weight w = (fh fw)^glob_gamma against the text keys, i.e. logits + glob_gamma log(fh fw); exact by linearity from
     the branch's text share t: O' = r O + (t' - t r) O_T, t' = t / (t + w (1 - t)), r = (1 - t') / (1 - t).
+    glob_w ([1, N, 1, 1] or None) replaces w per image query (glob_count_map).
     Text queries are untouched."""
     cos, sin = rot
     kr = rope(k, rot)
@@ -457,7 +458,7 @@ def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout
         o_glob, lse_glob = global_branch_lse(q, k, v, L, grid, f, pool, rope_q, rope_k, q_txt, kr[:, :L])
         o_t, lse_t = text_part(rope(q[:, L:], rope_q), kr[:, :L], v[:, :L])
         t = torch.exp(lse_t.float() - lse_glob[:, :, L:].float()).transpose(1, 2)[..., None].clamp(0.0, 1.0 - 1e-6)
-        w = float(f[0] * f[1]) ** float(glob_gamma)
+        w = glob_w.float() if glob_w is not None else float(f[0] * f[1]) ** float(glob_gamma)
         t2 = t / (t + w * (1 - t))
         r = (1 - t2) / (1 - t)
         img = r * o_glob[:, L:].float() + (t2 - t * r) * o_t.float()
@@ -902,6 +903,9 @@ class SCAContext:
                                         # fh fw tokens, so 1 gives the text the share full attention would give it against
                                         # that mass (audit cause 3, the prompt read at native strength); 0 = off
     glob_count_lo: float = 0.0          # glob_count applies while sigma > glob_count_lo
+    glob_count_map: bool = False        # glob_count only away from the prompt's subject: per query the count weight is
+                                        # 1 + (W - 1)(1 - g_i), g the opening's subject map (sa_* map settings, needs
+                                        # subject_tokens); no subject named or no map: no correction
     csg_value: float = 1.0              # dynamic copy-site gate (sca/subjgate.copy_map): < 1 scales every text value that
                                         # image queries read at copy sites (subject-word attention outside the opening's
                                         # subject map, from the previous window step); 1 = off
@@ -1019,6 +1023,8 @@ class SCAContext:
                                                        or self.band or self.local_impl != "flex")):
             raise ValueError("glob_count must be >= 0 and combines only with the plain sca_v2 operator (flex, bridge); "
                              "text_value only on the window branch (text_branch loc)")
+        if self.glob_count_map and (not self.glob_count or self.qmix):
+            raise ValueError("glob_count_map needs glob_count > 0 and the plain sca_v2 path (no qmix)")
         if self.bridge_coarse and (not self.bridge_cells or self.lse_tau or self.sa_value != 1.0):
             raise ValueError("bridge_coarse needs the bridge (bridge_cells) and no lse_tau or subject anchor")
         if self.gm_low < 0 or (self.gm_low > 0 and self.gate_sigma <= 0):
@@ -1121,6 +1127,19 @@ class SCAContext:
             return float(self.glob_count)
         return 0.0
 
+    def glob_count_args(self, f, N, device):
+        """(gamma, per-query weights or None) for the global branch's count correction at this step. Without
+        glob_count_map: (glob_count_now(), None). With it: the weight 1 + (W - 1)(1 - g_i) per image query from the
+        opening's subject map g (W = (fh fw)^gamma), or (0, None) when the prompt names no subject or no map exists."""
+        g = self.glob_count_now()
+        if not g or not self.glob_count_map:
+            return g, None
+        m = self.sa_map(N, device) if self.sa_on() else None
+        if m is None:
+            return 0.0, None
+        w = float(f[0] * f[1]) ** g
+        return g, (1.0 + (w - 1.0) * (1.0 - m.float().clamp(0, 1))).view(1, -1, 1, 1)
+
     def text_value_now(self):
         """Scale of the text values image queries read (text_value while sigma > text_value_lo, else 1)."""
         if self.text_value != 1.0 and (self.sigma is None or float(self.sigma) > self.text_value_lo):
@@ -1129,7 +1148,8 @@ class SCAContext:
 
     def sa_on(self):
         """The opening records the subject map (subject anchor or spatially varying guidance)."""
-        return (self.sa_value != 1.0 or self.gm_low > 0 or self.csg_value != 1.0) and bool(self.subject_tokens)
+        return (self.sa_value != 1.0 or self.gm_low > 0 or self.csg_value != 1.0
+                or (self.glob_count_map and self.glob_count > 0)) and bool(self.subject_tokens)
 
     def sa_accumulate(self, share):
         """Add one block's [B, N] subject-word share (global branch, head mean) to the current opening step's map; a
@@ -1649,7 +1669,7 @@ class SCAProcessor:
             return sca_dedup_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
                                           layout, tb, cells, per, float(ctx.lse_tau), ctx.text_value_vec(L, q.device),
                                           ("both", "loc", "glob").index(ctx.text_branch), coarse,
-                                          int(ctx.bridge_vpool) if coarse else 0, ctx.glob_count_now())
+                                          int(ctx.bridge_vpool) if coarse else 0, *ctx.glob_count_args(f, H * W, q.device))
         if band > 1:
             L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True, text_bias=tb)
             if inv is not None:

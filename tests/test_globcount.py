@@ -142,3 +142,42 @@ def test_processor_text_count_runs_and_validates():
     assert torch.allclose(flat(off), flat(base), atol=1e-6)
     with pytest.raises(ValueError):
         SCAContext(**c, qmix="f1", glob_count=1.0)
+
+
+def test_glob_count_per_query_weights_match_bruteforce():
+    """glob_w (glob_count_map): per image query the centre weight w_i; w_i = 1 rows equal the plain branch, rows with
+    w_i = s^2 equal the uniform count correction."""
+    p = _pieces(55)
+    pi = torch.zeros(1, 1, 2, 1, dtype=torch.float64)
+    n = H * W
+    g = torch.zeros(n, dtype=torch.float64)
+    g[: n // 2] = 1.0                                             # first half: subject (no correction)
+    s2 = F[0] * F[1]
+    w = (1.0 + (s2 - 1.0) * (1.0 - g)).view(1, -1, 1, 1)
+    out = sca_dedup_forward(*_args(p, pi), 1.0, w)
+    plain = sca_dedup_forward(*_args(p, pi))
+    full = sca_dedup_forward(*_args(p, pi), 1.0)
+    assert (out[0, L: L + n // 2] - plain[0, L: L + n // 2]).abs().max() < 1e-9
+    assert (out[0, L + n // 2:] - full[0, L + n // 2:]).abs().max() < 1e-9
+    sg = torch.cat([p["sgt"], p["sgb"] + torch.log(w.view(1, -1, 1).expand(1, n, 1))], -1)  # [h, N, L + C]
+    ref = torch.einsum("hnm,mhd->nhd", sg.softmax(-1), torch.cat([p["vt"], p["vb"]], 0))
+    assert (out[0, L:] - ref).abs().max() < 1e-6      # the correction runs in float32
+
+
+def test_glob_count_args_follow_the_subject_map():
+    c = SCAContext(mode="sca", n0=4, tile=2, window=4, local_impl="flex", bridge_cells=2, bridge_k=2,
+                   pi=PiTable("const", value=0.5), glob_count=1.0, glob_count_map=True, subject_tokens=(1, 2))
+    c.sigma = 0.7
+    assert c.sa_on()
+    n = 16
+    c._sa_map = torch.tensor([1.0] * 4 + [0.0] * 12)
+    c._sa_acc = torch.zeros(n)
+    gam, w = c.glob_count_args((2, 2), n, "cpu")
+    assert gam == 1.0 and w.shape == (1, n, 1, 1)
+    assert torch.allclose(w.view(-1)[:4], torch.ones(4)) and torch.allclose(w.view(-1)[4:], torch.full((12,), 4.0))
+    c2 = SCAContext(mode="sca", n0=4, tile=2, window=4, local_impl="flex", bridge_cells=2, bridge_k=2,
+                    pi=PiTable("const", value=0.5), glob_count=1.0, glob_count_map=True)   # no subject named
+    c2.sigma = 0.7
+    assert c2.glob_count_args((2, 2), n, "cpu") == (0.0, None)
+    with pytest.raises(ValueError):
+        SCAContext(mode="sca", bridge_cells=2, glob_count_map=True)
