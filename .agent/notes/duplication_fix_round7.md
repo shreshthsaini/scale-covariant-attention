@@ -467,3 +467,28 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
 - r7_bce (2497cae): the coarse-id bridge only at the birth steps (sigma > 0.83, steps 8 to 10) at 4096 tokens, values
   averaged over each token's 4 x 4 block (bc64's speckle came from scattered single-token values on every step);
   sca_v2's bridge after.
+
+## Afternoon (11-07, method owner after the 12:15 hand-back)
+- Progressive SCA vs AReA at 195 (CPU, cached metrics; scratch eval/prog195_pairs, results/prog195_pairs). Every
+  per-image metric beats AReA (IR +0.399 [0.317, 0.486], PickScore +1.053, HPSv2.1 +0.0386, aesthetic +0.232, MUSIQ
+  +2.25 [0.53, 3.92], MUSIQ crop +3.70). Against sca_v2: IR +0.072 [0.010, 0.134], HPSv2.1 +0.0129, PickScore +0.288,
+  aesthetic +0.087, ARNIQA +0.037, CLIP-IQA +0.026, HPSv2 +0.0048; CLIP +0.25 is not significant; MUSIQ -3.36
+  [-5.10, -1.61] and MUSIQ crop -5.99 [-7.30, -4.62]. Corrected set-level points: patch FID 107.7 against AReA 102.9
+  and sca_v2 98.4, patch KID 0.0148 against 0.0114 and 0.0089; FID 141.9 is better than AReA's 145.8. Detector rate
+  6/95 against AReA's 4/95 (p = 0.75). Time 50.7 s against 78.4 s (sca_v2) and 264 s (AReA). Only the per-image
+  metrics are paired; set-level 1000-draw intervals are on CPU (cpu_setlevel.sh).
+- hyb0 copyprone21, pQ29: 17 yes, 4 no; detector 12. Wide early windows on steps 8 to 13 do not stop copies. hyb3 and
+  hyb4 are parked.
+- Seed-1 control r7_s1: 15 of 21 flagged; labels pQ31 running.
+- Detector triage script r7/cpu_det_c21.sh; preview sheets r7/preview/make_preview.py LABEL [--pair].
+- --glob-count (d440b71): count-corrected global branch. For image queries the block centres get the weight (fh fw)^G
+  against the text, exact by linearity from the branch's text share t, as O' = r O + (t' - t r) O_T with
+  t' = t / (t + w (1 - t)) and r = (1 - t') / (1 - t). Screens gc1, gc1a and gch are queued.
+- Extended pool-2 opening: g2x2 (steps 8 and 9), g2x4 (8 to 11) and g2x8 (8 to 15) on copyprone21, plus g2x2's
+  46-prompt run. This is the single-pass analogue of progressive SCA's committed layout. The extra steps run at pool 2
+  rather than pool 4: round 2's gate 0.85 with pool 4 halved the detector rate but cost aesthetic -0.19 and MUSIQ -1.9.
+- Localization: ohyb0 (AReA's opening plus hyb0's windows) and hyb0g (one pool-2 global step on step 8, then hyb0).
+- fg (the joint far field at coarse ids, queued since 11-06 and never run) moved up: copyprone21 a0_K0b390*, the 46
+  a0_K0b440* with its eval a0_K0b4490eval_r7_fg.
+- Staged and not enqueued: taskq/hold_prog_headline, progressive SCA seeds 1 and 2 on the 195 prompts (26 tasks,
+  about 5.4 GPU-h).
