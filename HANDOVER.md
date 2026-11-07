@@ -1328,3 +1328,7 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   copyprone21: frac removes the long streaks but keeps the mottled armour and the dashed tent edges
   (r7/preview/g2x8f_detail.jpg). The family trades copies for texture artifacts in proportion to the global
   phase's length, and stops above AReA's rate even at 8 steps.
+- 15:00 decision, r7_g2x8 on the 46: relaxed bar FAIL. Its rate is 7.7% by census, and it has 10 significant losses:
+  PickScore -0.261, HPSv2.1 -0.0076, aesthetic -0.134, CLIP -0.91, MUSIQ -3.3, MUSIQ crop -2.8, plus ARNIQA,
+  CLIP-IQA and patch KID worse than AReA. 5/10 wins over AReA are kept. Eight pool-2 global steps at mid noise cost
+  as much as AReA's windows.
