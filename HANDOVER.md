@@ -1207,3 +1207,17 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   other-metric rule on patch FID and patch KID (above). As a headline it would therefore need the bar changed, or a
   fix to its 4K stage. Queued a cheap probe of the latter: a0_K0b48*0 r7_prog14 (--highres-steps 17,14, so the 4K
   stage gets 14 steps instead of 10) on the 46, with eval a0_K0b4890eval_r7_prog14.
+- 13:15 decision, r7_q13i (f13 with the img anchor: the plain three-part softmax's text share, offset only on the
+  near/far split; code cc62f52), from a preview of the first 6 images against sca_v2 (r7/preview/r7_q13i/sheet.jpg).
+  The copies are gone where sca_v2 has them (the square's pedestrians, the second astronaut by the rock, the lake's
+  extra hikers, the black hole's flier). But the f13 glitches remain: dotted colour lines along the top and bottom
+  borders, coloured confetti over the black-hole sky, and a speckled texture on the astronaut's suit. FAIL on sight,
+  no label packet. The third task had already started on SCA22 and finishes. The f13 family is closed: every
+  anchor (text, near, img) either keeps the glitches or brings the copies back.
+- 13:15 progressive SCA, full relaxed-bar verdict (r7_decide on eval/prog195_pairs, results/prog195_pairs/decide.txt).
+  FAIL on one rule: other losses not better than AReA, namely patch FID (+9.2 against sca_v2, and +4.8 [+0.1,
+  +10.6] against AReA, significantly worse) and patch KID (+0.0034 [+0.00005, +0.0066] against AReA). There is no core
+  loss: IR, HPSv2.1 and PickScore all gain. Time is 49.4 s. Duplication by hand is 10.5% against AReA's 5.3%
+  (census).
+- SCA22 started about 13:10 (c620-082, c621-151, c622-132, c634-152): 8 GPUs until about 16:58, then 4 until about
+  23:10.
