@@ -401,3 +401,16 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   saAs (3.3%, 8 losses), the scene words carry both the copy drive and the adherence. r7_tvL (window branch gated)
   first look: copies stay, adherence intact; the global branch's coarse prompt read is the suspect. Running: r7_tvG,
   r7_saAsG (the all-text anchor on the global branch only).
+- Branch split (copyprone21, blind labels): r7_tvL (window text values 0, sigma > 0.55) pQ20 14 yes, 7 no;
+  r7_tvG (global only) pQ21 8 yes, 1 borderline, 12 no; r7_saAsG (all-text anchor, global only) pQ22 6 yes, 3
+  borderline, 12 no. Both branches carry the drive (window 14, global 8, both 1 with tv0m). Gating the global
+  branch adds its own artifacts (comb and drip streaks over figures, dashed halos, a bodiless hand); gating the
+  window branch keeps the copies. No branch-local prompt gate separates copies from adherence.
+- Lead levers (2026-11-07 10:00). (2) Guidance dependence: sca_v2 at guidance 3.5 (r7_g35) and 3.0 (r7_g30) on
+  copyprone21 (all r7 runs use 4.5). (1) Spatially varying guidance, sca/guidemap.py (96c211e): FLUX.1-dev is
+  guidance-distilled, so on window steps with sigma > 0.58 (steps 8 to 19) a second transformer pass at low
+  guidance G runs and the velocities blend as v_low + g (v_high - v_low), g the opening's subject map (saAs map
+  flags: rel 0.25/0.5, dilate 3, smooth 9). Attention untouched. The forward hook calls module.forward, so the
+  sigma pre-hook runs once per step. Cost: 12 of 28 steps run twice. Screens r7_gm15 (G 1.5), r7_gm10 (G 1.0).
+  Map check (saAs maps over 8 images): tight around the subject; on the anime prompt it covers the two background
+  figures and the animal but not the main pair, so parts of a subject can fall in the low-guidance region.
