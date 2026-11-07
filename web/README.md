@@ -2,27 +2,34 @@
 
 A static page for the paper. No build step at view time and no framework: open `web/index.html` directly
 (file:// works) or serve the folder, for example `python -m http.server -d web 8000 --bind 127.0.0.1`.
-Images are WebP, videos H.264 MP4. Everything under `web/` stays under about 65 MB (62 MB on 2026-10-30, 48 MB of
+Images are WebP, videos H.264 MP4. Everything under `web/` stays under about 70 MB (68 MB on 2026-11-07, 48 MB of
 it video); bulky intermediates live on scratch under `/scratch/09032/saini_2/sca/web_assets/`.
 
-**Operator.** Since 2026-10-30 the page describes the final operator, label `sca_v2`: the calibrated per-head mix,
-a global-only opening for sigma > 0.89, then four steps whose local windows shrink 128, 112, 96, 80 tokens before
-the native 64 (each head's weight read from the calibration table at the matching window-to-image ratio,
-log-linear between the scale-2 and scale-4 tables), and 1,024 bridge tokens (16 per cell of an 8 x 8 partition) in
-every local softmax (`.agent/notes/duplication_fix_20261027.md`, "ADOPTED operator"). Every SCA number and image is
-the final operator's where its run exists. What exists only for the operator without the schedule (`sca_nb`) is
-labelled "previous operator" on the page: 6144^2, FLUX.2-dev, the Moai development prompt, the four curated local failures, and any trace video not yet re-rendered.
+**Configurations (paper rewrite of 2026-11-07).** The headline is **progressive SCA** (method `sca_v2_prog`, run
+`results/prog195_sca_v2`): HRDiT's released three-stage schedule (30 steps at 1024^2 with the model's own attention,
+then the last 17 steps at 2048^2 and the last 10 at 4096^2) with SCA attention at the two upper stages, reading
+ratio 2 and ratio 4 from one calibration table. **Single-pass SCA** (`sca_v2`, the final operator: 28 steps, global
+opening for 8, windows of 128, 112, 96, 80 tokens before the native 64, 1,024 bridge tokens, calibrated per-head
+mix) is the fast mode. What exists only for the operator without the schedule (`sca_nb`) is labelled "previous
+operator": 6144^2, FLUX.2-dev and the four curated local errors. FLUX.1-Krea-dev is single-pass only (the
+progressive sampler does not run it). Most images on the page are single-pass SCA and say so; progressive SCA
+images are in the side-by-side viewer.
+
+**What the page leaves out.** The page does not discuss repeated subjects: the duplication section, its charts,
+before/after pairs, flagged failures, the Moai comparison and every duplication rate were removed on 2026-11-07,
+and the method video was re-rendered without its Moai scenes.
 
 ## Layout
 
-- `index.html`: the page. Numbers sit in elements with `data-num="<key>"` and are filled from the CSVs. The Paper
-  button links to `../paper/main.pdf`, the committed delivery PDF; when hosting `web/` on its own, copy the PDF
-  next to the page and change that link.
+- `index.html`: the page. Numbers sit in elements with `data-num="<key>"` and are filled from the CSVs; Table 1's
+  bold, underline and significance colours come from the `<key>.cls` entries. The Paper button links to
+  `../paper/main.pdf`, the committed delivery PDF; when hosting `web/` on its own, copy the PDF next to the page and
+  change that link.
 - `assets/css/site.css`, `assets/js/site.js`: styles (one accent, light and dark) and the vanilla JS for the
-  teaser magnifier, the before/after sliders, the charts and the data-driven galleries.
-- `assets/js/images.js`, `numbers.js`, `traces.js`, `ideogram_manifest.js`: generated data files (do not edit).
-- `assets/img/`: teaser, comparison, scale strip, failure and method images (WebP); `assets/img/dup/`: the
-  before/after pairs and the final operator's flagged failures.
+  teaser magnifier, the before/after sliders, the concept chart, the other charts and the data-driven galleries.
+- `assets/js/images.js`, `numbers.js`, `traces.js`, `concept.js`, `ideogram_manifest.js`: generated data files (do
+  not edit).
+- `assets/img/`: teaser, comparison, scale strip, local-error and method images (WebP).
 - `assets/video/method/`: the method video, its poster and subtitles. `assets/video/trace/`: per-sample videos.
 - `assets/ideogram/`: drop folder for the Ideogram 4.0 images (empty until they are added).
 - `build/`: every script that produces the assets, plus the selection files they read.
@@ -36,66 +43,78 @@ marked; run with `nice -n 19` on shared nodes and keep ffmpeg at `-threads 4`.
    `build/compare_selection.json`: the 8 curated prompts (from `.agent/notes/figure_curation_20261020.md`), 3 random
    draws (seed 20261027 over the other 195 Aesthetic-4K prompts minus the 4 development prompts) and one shared
    512 x 512 crop per prompt (largest mean edge response over SCA, AReA and full attention, inside the central
-   60 percent of each axis). `select_compare.py --add-final` then adds, without moving any window, the final
-   operator's image of each prompt and seed (`paths.sca_v2`, checked by `paper/figures/src/imgsel.final_png`);
-   the windows were chosen on the previous operator's images, before the final operator's existed.
+   60 percent of each axis). `select_compare.py --add-final` then adds, without moving any window, the single-pass
+   operator's image of each prompt and seed (`paths.sca_v2`); `--add-prog` adds progressive SCA (`paths.prog`,
+   `out/dupfix_prog/sca_v2_prog`) and HRDiT (`paths.hrdit`, the image `eval/prog195_sca_v2` scored) with their
+   SHA-256 sums. The windows were chosen on the previous operator's images, before the other images existed.
 2. **Images**: `$PY web/build/build_images.py all` converts the generated PNGs on scratch into WebP (1600 px views,
-   native 1:1 crops, the 6144 px native panorama for the teaser magnifier) and writes `assets/js/images.js`.
-   Teaser, scale-strip and failure picks and their crop windows are listed in `build/page_images.json`
+   native 1:1 crops, the 6144 px native panorama for the teaser magnifier) and writes `assets/js/images.js`. The
+   comparison viewer gets five methods per prompt (single-pass SCA, AReA, full attention, progressive SCA, HRDiT).
+   Teaser, scale-strip and local-error picks and their crop windows are listed in `build/page_images.json`
    (`"final": true` takes the final operator's image of the same prompt and seed; the scale strip reads the
-   second timing sweep `out/latency_curve_v2/<size>/sca_v2`). The job `dup` builds the uncurated before/after pairs
-   and the final operator's flagged failures with the rule of `paper/figures/src/fig_dup.py`: from the ice-climber
-   prompt, walk the 95 people/animal prompt ids in id order and take the next prompts the detector flags (six for
-   the old operator, the paper's figure shows the first three; four for the final operator, detections from
-   `/scratch/09032/saini_2/sca/eval/a4k195_main_sca_v2/det`), cropped at the square holding the most extra
-   detections. The method figures are rasterised from `paper/figures/method.pdf` and `method_zoom.pdf` with PyMuPDF
+   second timing sweep `out/latency_curve_v2/<size>/sca_v2`). The method figures are rasterised from
+   `paper/figures/method.pdf` (with lane (d), progressive SCA), `method_zoom.pdf` and `pi_heads.pdf` with PyMuPDF
    (set `SCA_PDF_PY` to any env that has it). Decoding the 4096^2 PNGs is CPU work: run it on a compute node that
-   is not the operator host.
+   is not the operator host. `write_js` drops the retired `dup_pairs` and `failures_v2` records.
 3. **Numbers**: `$PY web/build/build_numbers.py --fill web/index.html` reads `results/` and writes
    `build/numbers.json` (value, display string, source CSV and row filter for every key) and
-   `assets/js/numbers.js`, then rewrites every `data-num` element in the page. It prints each value next to the
-   value the paper quotes and flags mismatches (292 of 292 agree with delivery `delivery_tj1oh6am`). Two inputs of
-   the final operator live outside `results/`, exactly as in the paper's own generator
-   (`paper/figures/src/scav2_runs.py`): the eval.py paired deltas of the `*_sca_v2` runs (1000 prompt draws,
-   `/scratch/09032/saini_2/sca/eval/<run>/{base/paired_deltas,extra/extra_paired_deltas}.csv`, which the evaluation
-   tasks do not copy) and the `sca_v2` generation sidecars (`out/dupfix/sca_v2/4096x4096`) for the configuration
-   constants and the schedule. Duplication rates come from `results/dup_audit_20261027` and each run's
-   `dup_rates_people.csv`. HRGen-1K reads the final operator's run (`results/hrgen1k_dev_sca_v2/sca_v2_vs_area.csv`,
-   landed 2026-10-30); the values without the schedule stay in `numbers.json` as `general.hrgen_prev.*`.
-   Never type a number into the page by hand.
-4. **Method video**: `nice -n 19 $PY web/build/render_method_video.py` (matplotlib frames piped to the vendored ffmpeg
-   at `/work/09032/saini_2/vista/library/ffmpeg-7.1-shared`, `-threads 4`; about 3 min on a GH200 node) writes
-   `assets/video/method/sca_method.mp4` (79.5 s, 1920 x 1080, 30 fps, H.264, silent, captions drawn in the frame),
-   `sca_method.srt`, `sca_method.vtt` and the poster. Six scenes: the two failures of full attention and early
-   windows at 4096^2, the two views of a head, calibration by emulation with the real scale-4 table filling in,
-   the opening phase with the schedule's shrinking windows (the Moai pair is the previous operator: that
-   development prompt has no final-operator image), the schedule at 4096^2 (per-step weights from the scale-4
-   table and, on the four wide-window steps, the log-linear mix of the scale-2 and scale-4 tables, checked
-   against the final image's `pi_trace`; window side per step; the final operator's image with a 1:1 crop), and
-   an end card whose speed figures come from `build/numbers.json`. The tables and images are real; token grids
-   are schematic. Image cache and check frames: `/scratch/09032/saini_2/sca/web_assets/method_video/`.
-5. **Per-sample trajectory videos** (GPU): see below.
-6. **Ideogram images**: `$PY web/build/build_ideogram.py` (see the next section).
-7. **Check**: `PLAYWRIGHT_BROWSERS_PATH=/scratch/09032/saini_2/tmp/ms-playwright
-   /work/09032/saini_2/vista/library/uv-envs/pwqa/bin/python web/build/check_page.py --sections` loads the page in
-   headless Chromium (desktop and phone, light and dark), reports missing files, broken images, console errors
-   and horizontal overflow, and saves screenshots to `/scratch/09032/saini_2/sca/web_assets/check/`.
+   `assets/js/numbers.js`, then rewrites every `data-num` element in the page and its managed classes. It prints
+   each value next to the value the paper quotes and flags mismatches (on 2026-11-07: 331 quoted, 330 agree, one
+   explained label difference). Inputs beyond the evaluation CSVs:
+   - progressive SCA: `results/prog195_sca_v2` (Table 1 row; FID and patch FID from `corrected_fidp`),
+     `results/prog195_vs_baselines/sca_v2_prog_vs_<baseline>.csv` (per-image pairs, 2000 draws, keys
+     `prog.vs.<b>.*`), `results/prog195_vs_baselines/cfid/paired_deltas.csv` (set-level pairs against every
+     baseline, 1000 draws, 168 reference identities, keys `prog.set.<b>.*`; before it existed,
+     `results/prog195_pairs/cfid_vs_{area,sca_v2}`), `results/prog_latency/latency_summary.csv` (clean sweep 3:
+     progressive SCA, HRDiT and AReA back to back; Table 1's clean column for HRDiT and progressive SCA, keys
+     `prog.clean.*`), the 195 progressive sidecars (`out/dupfix_prog/sca_v2_prog/4096x4096`, stage schedule, keys
+     `prog.cfg.*`) and the sidecars of the HRDiT images `eval/prog195_sca_v2` scored (`main.hrdit.steps`);
+   - the paper's paired-difference figure: `chart.pa.{prog,single}.*`, built as
+     `paper/figures/src/fig_paired_prog.py` does (14 metrics, percent of AReA's mean);
+   - the head-versus-noise variance split: `results/heads_view/variance_split.csv` (keys `heads.var.*`);
+   - Table 1 classes: `main.<row>.<column>.cls` ("best"/"second" within a group, "sig-up"/"sig-dn" against
+     progressive SCA, as `paper/figures/src/gen_main_tables.py` colours the paper's table);
+   - two scratch inputs of the single-pass runs, as in `paper/figures/src/scav2_runs.py`: the eval.py paired deltas
+     of the `*_sca_v2` runs (`/scratch/09032/saini_2/sca/eval/<run>/{base/paired_deltas,extra/extra_paired_deltas}.csv`)
+     and the `sca_v2` generation sidecars (`out/dupfix/sca_v2/4096x4096`).
+   Results the paper lists as pending print "pending" until their files exist: progressive SCA on seed label 2
+   (`results/prog195_s2`) and on HRGen-1K (`prog.later.*.status`); seed label 1 (`results/prog195_s1`) landed on
+   2026-11-07 and its keys (`prog.later.seed1.*`) are on the page. When one of the others lands, its keys appear in
+   `numbers.json` and the page sentence that prints "pending" needs its numbers added. Never type a number into
+   the page by hand.
+4. **Concept chart data**: `$PY web/build/build_concept.py` turns `results/heads_view/concept_curves.csv` (the data
+   of the paper's concept figure: each of the 1,368 heads' ratio-4 window weight on 80 noise levels) into
+   `assets/js/concept.js`. Curves are stored as bytes for drawing only; the median and each head's mean are exact.
+5. **Method video**: `nice -n 19 $PY web/build/render_method_video.py` (matplotlib frames piped to the vendored ffmpeg
+   at `/work/09032/saini_2/vista/library/ffmpeg-7.1-shared`, `-threads 4`; a few minutes on one CPU) writes
+   `assets/video/method/sca_method.mp4` (67.6 s, 1920 x 1080, 30 fps, H.264, silent, captions drawn in the frame),
+   `sca_method.srt`, `sca_method.vtt` and the poster. Five scenes: full attention's failure at 4096^2, the two
+   views of a head, calibration by emulation with the real scale-4 table filling in, the single-pass schedule at
+   4096^2 (per-step weights from the scale-4 table and, on the four wide-window steps, the log-linear mix of the
+   scale-2 and scale-4 tables, checked against the final image's `pi_trace`), and an end card whose speed lines
+   (single pass; progressive SCA) come from `build/numbers.json`. The tables and images are real; token grids are
+   schematic. Image cache: `/scratch/09032/saini_2/sca/web_assets/method_video/cache/`.
+6. **Per-sample trajectory videos** (GPU): see below.
+7. **Ideogram images**: `$PY web/build/build_ideogram.py` (see the next section).
+8. **Check**: `PLAYWRIGHT_BROWSERS_PATH=/scratch/09032/saini_2/tmp/ms-playwright
+   /work/09032/saini_2/vista/library/uv-envs/pwqa/bin/python web/build/check_page.py --http --sections --out DIR`
+   loads the page in headless Chromium (desktop and phone, light and dark; `--http` serves on 127.0.0.1 only),
+   reports missing files, broken images, console errors and horizontal overflow, and saves screenshots to `DIR`
+   (default `/scratch/09032/saini_2/sca/web_assets/check/`).
 
 ## Per-sample trajectory videos (needs a GPU)
 
-Status (2026-10-30): 16 of the 16 videos on the page show the final operator (traces of the
-`zw2_trace_*` tasks); any other video is the previous operator's and the page labels it "previous operator". The final operator's eight traces are queued as
-`taskq/pending/zw2_trace_01..08_sca_v2_<sid>.sh` (prefix `zw2_` because the workers take tasks in plain sorted
-order: `w2_` would run before the `x_` reruns, `zw2_` runs after them and after the `z98x` evaluations). They run
-`scripts/sample_trace.py --method sca_v2` in the frozen copy `/scratch/09032/saini_2/sca/code/web_trace2_7bd64c0`
-(git 7bd64c0, the code of the `sca_v2` campaign, plus this `sample_trace.py` and `compare_selection.json`) and
-write `/scratch/09032/saini_2/sca/web_assets/trace/sca_v2/<sid>/`; the CPU dry run matched the campaign's
-config, sigmas and per-step pi trace for all eight prompts. Then
+Status (2026-10-30): 16 of the 16 videos on the page show the single-pass final operator (traces of the
+`zw2_trace_*` tasks); any other video is the previous operator's and the page labels it "previous operator". The
+traces ran `scripts/sample_trace.py --method sca_v2` in the frozen copy
+`/scratch/09032/saini_2/sca/code/web_trace2_7bd64c0` (git 7bd64c0, the code of the `sca_v2` campaign, plus this
+`sample_trace.py` and `compare_selection.json`) and wrote `/scratch/09032/saini_2/sca/web_assets/trace/sca_v2/<sid>/`.
 `nice -n 19 $PY web/build/render_trace_videos.py` (default `--sca-method sca_v2`) re-renders `<sid>_sca.mp4` and
-`<sid>_vs_area.mp4` for every prompt whose final trace is complete (AReA traces unchanged), records the operator
-in `assets/video/trace/operators.json` and rewrites `assets/js/traces.js`; the page drops the label by itself.
+`<sid>_vs_area.mp4` for every prompt whose trace is complete (AReA traces unchanged), records the operator in
+`assets/video/trace/operators.json` and rewrites `assets/js/traces.js`; the page drops the label by itself.
 Tasks: `$PY web/build/make_trace_tasks.py --code-tag web_trace2_7bd64c0 --methods sca_v2 --prefix zw2_trace --pending`
 (add `--freeze --commit 7bd64c0 --campaign-code /scratch/09032/saini_2/sca/code/7bd64c0` for a new frozen copy).
+No progressive-SCA traces exist yet.
 
 Original notes (previous operator):
 
@@ -106,26 +125,18 @@ Original notes (previous operator):
   57 x 24 weights the attention processor actually used. It also records whether the final image matches the
   campaign PNG (hash, pixel identity, PSNR). `--dry-run` checks prompts, seeds, boxes and paths without the model.
   Outputs: `/scratch/09032/saini_2/sca/web_assets/trace/<method>/<prompt_id>/`.
-- `web/build/make_trace_tasks.py` writes the 16 spool tasks `w_trace_01..08` (SCA) and `w_trace_09..16` (AReA) for the
-  8 prompts, plus a README, into `/scratch/09032/saini_2/sca/taskq/hold_web/`; `--freeze` rebuilds the frozen code
-  copy `/scratch/09032/saini_2/sca/code/web_trace_75baaa8` (git archive of commit 75baaa8 plus `sample_trace.py`;
-  its `sca/attn.py` and `calib.py` are byte-identical to the campaign's code tag `2d11740`).
-- The tasks wait in `hold_web/` because `taskq/STOP` was set under the SU freeze. Estimated cost: about 10 GPU-minutes
-  per SCA task and 13 per AReA task, about 184 GPU-minutes in total, mostly the 28 tiled 4096^2 VAE decodes. Release
-  them only when GPU work is allowed again:
-  `mv /scratch/09032/saini_2/sca/taskq/hold_web/w_trace_*.sh /scratch/09032/saini_2/sca/taskq/pending/`
-  (the spool workers also need `taskq/STOP` removed by whoever owns the freeze).
+- `web/build/make_trace_tasks.py` writes the spool tasks for the 8 prompts, plus a README; `--freeze` rebuilds a
+  frozen code copy (git archive of a commit plus `sample_trace.py`).
 - When the traces exist: `nice -n 19 $PY web/build/render_trace_videos.py` renders `assets/video/trace/<id>_sca.mp4`
   (decoded preview, phase, sigma timeline, the 57 x 24 weight strip and the 1:1 crop, about 15 s) and
   `<id>_vs_area.mp4` (SCA and AReA side by side), each under 3 MB with a WebP poster, and rewrites
-  `assets/js/traces.js`. The page then swaps its placeholders for the videos with no other change. The renderer
-  refuses to write synthetic test traces into `web/`.
+  `assets/js/traces.js`. The renderer refuses to write synthetic test traces into `web/`.
 
 ## Against a commercial model: adding the Ideogram 4.0 images
 
-The page compares SCA (FLUX.1-dev, 4096^2, one GPU, no training) with Ideogram 4.0 on six prompts. Until the images
-exist the section shows labelled placeholders; nothing is fabricated, and Ideogram's own published samples are not
-used because their pages grant no permission to reuse them.
+The page compares single-pass SCA (FLUX.1-dev, 4096^2, one GPU, no training) with Ideogram 4.0 on six prompts.
+Until the images exist the section shows labelled placeholders; nothing is fabricated, and Ideogram's own published
+samples are not used because their pages grant no permission to reuse them.
 
 **How to obtain the images.** In the Ideogram app (ideogram.ai) or through the Ideogram API, select the Ideogram 4.0
 model, paste each prompt below exactly as written (no "magic prompt" or prompt expansion, no style preset, no
@@ -140,7 +151,7 @@ one-line `verdict` per prompt in `build/ideogram_manifest.json` (what each image
 and in the crop), and rerun the script. The crop is 512 x 512 native pixels of each image, centred on the same
 relative point as the SCA crop; set `crop_center` (`[x, y]` as fractions of width and height) when the two
 compositions differ. Ideogram's terms of service (ideogram.ai/legal/tos) assign the rights in your own outputs to
-you; keep the licence note in the manifest accurate.
+you; keep the rights note in the manifest accurate.
 
 | prompt_id | prompt (use verbatim) |
 |---|---|
@@ -154,8 +165,9 @@ you; keep the licence note in the manifest accurate.
 ## Rules the page follows
 
 - Curated images are labelled curated and were checked at native resolution; random draws are labelled random.
-- Every number comes from `results/` through `build_numbers.py` (plus the two scratch inputs named above); the
-  failure rate is the detector's duplication rate (`results/dup_audit_20261027`, `results/*_sca_v2/dup_rates_people.csv`).
-- An SCA image or video that is not the final operator's carries a "previous operator" label.
+- Every number comes from `results/` through `build_numbers.py` (plus the scratch inputs named above). Results that
+  have not landed print "pending".
+- Every SCA image names its configuration: single-pass SCA, progressive SCA, or previous operator (SCA without the
+  schedule).
 - Placeholders stay placeholders until the real asset exists: no forward-noised or synthetic stand-ins.
-- No em dashes or section symbols in the copy.
+- No em dashes or section symbols in the copy; sentences stay under 36 words.

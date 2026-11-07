@@ -93,9 +93,13 @@ def main():
                 print("   broken:", u)
             if over > 0 or broken or errs:
                 problems.append(name)
-            if a.sections and name in ("desktop", "phone"):
-                for sid in ["top", "method", "duplication", "compare", "traces", "results", "scale", "commercial", "failures"]:
-                    loc = pg.locator("#" + sid).first
+            if a.sections and name in ("desktop", "phone", "desktop_dark"):
+                for sid, sel in [("hero", ".hero"), ("abstract", "#abstract"), ("heads", "#heads"), ("method", "#method"),
+                                 ("compare", "#compare"), ("traces", "#traces"), ("results", "#results"),
+                                 ("scale", "#scale"), ("commercial", "#commercial"), ("limits", "#limits")]:
+                    if name == "desktop_dark" and sid not in ("hero", "heads", "results"):
+                        continue
+                    loc = pg.locator(sel).first
                     if loc.count():
                         loc.screenshot(path=os.path.join(a.out, f"{name}_sec_{sid}.png"))
             ctx.close()

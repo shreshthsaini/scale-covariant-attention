@@ -1,5 +1,5 @@
 /* SCA project page. Vanilla JS, no dependencies. Data comes from the generated files
-   images.js (SCA_IMAGES), numbers.js (SCA_NUMBERS), traces.js (SCA_TRACES) and
+   images.js (SCA_IMAGES), numbers.js (SCA_NUMBERS), traces.js (SCA_TRACES), concept.js (SCA_CONCEPT) and
    ideogram_manifest.js (SCA_IDEOGRAM); see web/README.md. */
 (function () {
   "use strict";
@@ -34,6 +34,12 @@
     get: function (k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
     set: function (k, v) { try { window.localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
   };
+  function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function isDark() {
+    var t = document.documentElement.getAttribute("data-theme");
+    return t ? t === "dark" : !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  var themeHooks = [];   /* redraw functions of the canvas charts */
 
   /* Theme */
   (function theme() {
@@ -42,16 +48,30 @@
     if (saved === "light" || saved === "dark") root.setAttribute("data-theme", saved);
     if (!btn) return;
     btn.addEventListener("click", function () {
-      var dark = root.getAttribute("data-theme") ? root.getAttribute("data-theme") === "dark"
-        : window.matchMedia("(prefers-color-scheme: dark)").matches;
-      var next = dark ? "light" : "dark";
+      var next = isDark() ? "light" : "dark";
       root.setAttribute("data-theme", next);
       store.set("sca-theme", next);
+      themeHooks.forEach(function (f) { f(); });
     });
+    if (window.matchMedia) {
+      var mq = window.matchMedia("(prefers-color-scheme: dark)");
+      var on = function () { if (!root.getAttribute("data-theme")) themeHooks.forEach(function (f) { f(); }); };
+      if (mq.addEventListener) mq.addEventListener("change", on); else if (mq.addListener) mq.addListener(on);
+    }
   })();
 
-  /* Numbers already filled into the HTML by build_numbers.py --fill; refresh from numbers.js in case it is newer */
-  $$("[data-num]").forEach(function (e) { var v = num(e.getAttribute("data-num")); if (v !== null) e.textContent = v; });
+  /* Numbers already filled into the HTML by build_numbers.py --fill; refresh from numbers.js in case it is newer.
+     "<key>.cls" entries carry Table 1's rank and significance classes; "pending" values are greyed. */
+  var MANAGED = ["best", "second", "sig-up", "sig-dn"];
+  $$("[data-num]").forEach(function (e) {
+    var k = e.getAttribute("data-num"), v = num(k), c = num(k + ".cls");
+    if (v !== null) e.textContent = v;
+    if (c !== null) {
+      MANAGED.forEach(function (x) { e.classList.remove(x); });
+      String(c).split(/\s+/).forEach(function (x) { if (x) e.classList.add(x); });
+    }
+    e.classList.toggle("pend", String(e.textContent).trim() === "pending");
+  });
 
   /* Nav highlight */
   (function nav() {
@@ -139,18 +159,24 @@
     var knob = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6"/></svg>';
     var d = el("div", { class: "slider " + (cls || "") });
     d.innerHTML = '<img class="base" alt=""><img class="top" alt=""><div class="bar"></div><div class="knob">' + knob + '</div>' +
-      '<span class="tag l sca">SCA (ours)</span><span class="tag r"></span>' +
+      '<span class="tag l sca"></span><span class="tag r"></span>' +
       '<input type="range" min="0" max="100" step="0.5" value="50" aria-label="' + label + '">';
     return d;
   }
 
-  /* Comparison section */
+  /* Comparison section: progressive or single-pass SCA against AReA, HRDiT, full attention or the other SCA mode */
   (function compare() {
     var host = $("#cmp"); var data = IM.compare; if (!host || !data) return;
-    var items = data.items, NAMES = { area: "AReA", full: "Full attention" };
-    var state = { i: 0, base: "area" };
-    var main = sliderMarkup("", "Divider between SCA and the baseline, full image");
-    var side = sliderMarkup("", "Divider between SCA and the baseline, 1:1 crop");
+    var items = data.items;
+    var NAMES = { prog: "Progressive SCA", sca: "Single-pass SCA", area: "AReA", hrdit: "HRDiT", full: "Full attention" };
+    function have(m) { return items.every(function (it) { return it.img && it.img[m]; }); }
+    var state = { i: 0, sca: have("prog") ? "prog" : "sca", base: "area" };
+    if (!have("prog")) {
+      [$("#cmp-sca"), $("#cmp-sca-label"), $('#cmp-base [data-base="other"]')].forEach(function (x) { if (x) x.hidden = true; });
+    }
+    if (!have("hrdit")) { var hb = $('#cmp-base [data-base="hrdit"]'); if (hb) hb.hidden = true; }
+    var main = sliderMarkup("", "Divider between SCA and the compared method, full image");
+    var side = sliderMarkup("", "Divider between SCA and the compared method, 1:1 crop");
     var boxEl = el("div", { class: "box", "aria-hidden": "true" }); main.appendChild(boxEl);
     var group = []; var s1 = new Slider(main, group), s2 = new Slider(side, group); group.push(s1, s2);
     var thumbs = $("#cmp-thumbs"), meta = $("#cmp-meta");
@@ -161,14 +187,19 @@
       b.addEventListener("click", function () { state.i = i; render(); });
       thumbs.appendChild(b);
     });
-    $$("#cmp-base button").forEach(function (b) {
-      b.addEventListener("click", function () {
-        state.base = b.getAttribute("data-base");
-        $$("#cmp-base button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
-        render();
-      });
+    function right() { return state.base === "other" ? (state.sca === "prog" ? "sca" : "prog") : state.base; }
+    function sync() {
+      $$("#cmp-sca button").forEach(function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-sca") === state.sca ? "true" : "false"); });
+      $$("#cmp-base button").forEach(function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-base") === state.base ? "true" : "false"); });
+      var ob = $('#cmp-base [data-base="other"]'); if (ob) ob.textContent = state.sca === "prog" ? NAMES.sca : NAMES.prog;
+    }
+    $$("#cmp-sca button").forEach(function (b) {
+      b.addEventListener("click", function () { state.sca = b.getAttribute("data-sca"); sync(); render(); });
     });
-    function swap(sl, topSrc, baseSrc, alt) {
+    $$("#cmp-base button").forEach(function (b) {
+      b.addEventListener("click", function () { state.base = b.getAttribute("data-base"); sync(); render(); });
+    });
+    function swap(sl, topSrc, baseSrc, alt, lname, rname) {
       var t = $(".top", sl), b = $(".base", sl), left = 2;
       sl.classList.add("loading");
       function done() { if (--left === 0) sl.classList.remove("loading"); }
@@ -176,13 +207,13 @@
         if (im.getAttribute("src") === src && im.complete) { done(); return; }
         im.onload = im.onerror = done; im.src = src;
       }
-      setSrc(t, topSrc); setSrc(b, baseSrc); t.alt = "SCA: " + alt; b.alt = NAMES[state.base] + ": " + alt;
-      $(".tag.r", sl).textContent = NAMES[state.base];
+      setSrc(t, topSrc); setSrc(b, baseSrc); t.alt = lname + ": " + alt; b.alt = rname + ": " + alt;
+      $(".tag.l", sl).textContent = lname; $(".tag.r", sl).textContent = rname;
     }
     function render() {
-      var it = items[state.i], m = it.img;
-      swap(main, m.sca.full, m[state.base].full, it.prompt);
-      swap(side, m.sca.crop, m[state.base].crop, it.prompt + " (1:1 crop)");
+      var it = items[state.i], m = it.img, L = state.sca, R = right();
+      swap(main, m[L].full, m[R].full, it.prompt, NAMES[L], NAMES[R]);
+      swap(side, m[L].crop, m[R].crop, it.prompt + " (1:1 crop)", NAMES[L], NAMES[R]);
       var W = it.size[0], H = it.size[1], x = it.box[0], y = it.box[1], s = it.box[2];
       boxEl.style.left = (x / W * 100) + "%"; boxEl.style.top = (y / H * 100) + "%";
       boxEl.style.width = (s / W * 100) + "%"; boxEl.style.height = (s / H * 100) + "%";
@@ -191,12 +222,13 @@
       meta.appendChild(el("p", { class: "prompt" }, [
         el("span", { class: "chip " + (it.label === "random" ? "" : "curated"), text: it.label === "random" ? "random draw" : "curated" }),
         el("q", { text: it.prompt })]));
-      meta.appendChild(el("p", { class: "small muted", text: "FLUX.1-dev, " + sizeLabel(it.size) + ", seed label 0 for every method. SCA: " + (it.operator === "final" ? "final operator (window schedule and bridge)" : "previous operator, without the schedule") + ". Crop: " + s + " × " + s + " pixels at (" + x + ", " + y + "), shown at native resolution; the window was fixed on the previous operator's image." }));
+      var steps = num("config.steps") || "28", prog = num("main.prog.steps") || "30+17+10";
+      meta.appendChild(el("p", { class: "small muted", text: "FLUX.1-dev, " + sizeLabel(it.size) + ", seed label 0 for every method. Progressive SCA runs HRDiT's " + prog + "-step schedule with SCA attention; single-pass SCA is the final operator, " + steps + " steps at the target. Crop: " + s + " × " + s + " pixels at (" + x + ", " + y + "), shown at native resolution; the window was fixed on the previous operator's image." }));
       /* warm the next prompt */
       var nx = items[(state.i + 1) % items.length];
-      [nx.img.sca.full, nx.img[state.base].full].forEach(function (u) { var p = new Image(); p.src = u; });
+      [nx.img[L].full, nx.img[R].full].forEach(function (u) { var p = new Image(); p.src = u; });
     }
-    render();
+    sync(); render();
   })();
 
   /* Traces: real videos when rendered, labelled placeholders otherwise */
@@ -209,7 +241,7 @@
     var status = $("#trace-status");
     var nPrev = (TR.available || []).filter(function (v) { return v.operator !== "final"; }).length;
     if (status) status.textContent = nRendered ? (nRendered + " of " + expected.length + " prompts rendered." +
-      (nPrev ? " Videos marked \u201cprevious operator\u201d show SCA without the window schedule; the final operator's traces replace them once their GPU runs finish." : "")) :
+      (nPrev ? " Videos marked “previous operator” show SCA without the window schedule; the final operator's traces replace them once their GPU runs finish." : "")) :
       "None rendered yet: the 16 GPU runs these videos need are queued but have not run (see web/README.md).";
     var io = ("IntersectionObserver" in window) ? new IntersectionObserver(function (es) {
       es.forEach(function (en) { var v = en.target; if (en.isIntersecting) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } else v.pause(); });
@@ -227,7 +259,7 @@
             el("span", { text: "Placeholder. The run that decodes every step at 4096² is queued for a GPU." })])]));
           return;
         }
-        var v = a[kind], vid = el("video", { muted: "", loop: "", playsinline: "", preload: "none", controls: "", poster: v.poster, "aria-label": "Denoising trajectory: " + ex.prompt });
+        var v = a[kind], vid = el("video", { muted: "", loop: "", playsinline: "", preload: "none", controls: "", poster: v.poster, "aria-label": "Denoising trajectory of single-pass SCA: " + ex.prompt });
         vid.muted = true; vid.appendChild(el("source", { src: v.mp4, type: "video/mp4" }));
         media.appendChild(vid); if (io) io.observe(vid);
       }
@@ -239,7 +271,7 @@
       if (kinds.length > 1) {
         var seg = el("div", { class: "seg", role: "group", "aria-label": "Video" });
         kinds.forEach(function (k, i) {
-          var b = el("button", { type: "button", "aria-pressed": i === 0 ? "true" : "false", text: k === "sca" ? "SCA" : "SCA vs AReA" });
+          var b = el("button", { type: "button", "aria-pressed": i === 0 ? "true" : "false", text: k === "sca" ? "Single-pass SCA" : "Beside AReA" });
           b.addEventListener("click", function () { $$("button", seg).forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); }); show(k); });
           seg.appendChild(b);
         });
@@ -256,7 +288,7 @@
     data.filter(function (d) { return d.group === "sizes"; }).forEach(function (d) {
       var side = d.size[0], t = num("latency.sca." + side + "x" + side) || num("latency.sca." + side);
       sizes.appendChild(el("figure", { class: "cell" }, [
-        el("div", { class: "img" }, [img(d.full, "SCA at " + sizeLabel(d.size) + ": " + d.prompt), el("span", { class: "size-tag", text: sizeLabel(d.size) })]),
+        el("div", { class: "img" }, [img(d.full, "Single-pass SCA at " + sizeLabel(d.size) + ": " + d.prompt), el("span", { class: "size-tag", text: sizeLabel(d.size) })]),
         el("div", { class: "crop" }, [img(d.crop_files[0], "1:1 crop at " + sizeLabel(d.size))]),
         el("figcaption", { class: "meta", html: "<b>" + sizeLabel(d.size) + "</b>" + (t ? " · " + t + " s" : "") + (side >= 8192 ? "<br>exploratory size; blur and blocks remain" : "") })]));
     });
@@ -268,23 +300,14 @@
     });
   })();
 
-  /* Failure cases */
+  /* Local errors of the previous operator: SCA and AReA crops in the same window */
   (function failures() {
-    var data = IM.failures || []; var late = $("#fail-late"), gate = $("#fail-gate"), local = $("#fail-local"); if (!late) return;
-    (IM.failures_v2 || []).forEach(function (d) {
-      late.appendChild(el("figure", {}, [
-        el("div", { class: "img" }, [img(d.full, "SCA, final operator, uncurated: " + d.prompt)]),
-        el("div", { class: "crops" }, d.crop_files.map(function (c) { return img(c, "1:1 crop: " + d.note); })),
-        el("figcaption", { class: "meta", html: "<b>" + d.note.charAt(0).toUpperCase() + d.note.slice(1) + "</b> (detector). " + short(d.prompt, 80) })]));
-    });
-    var gl = { gate_v0: "Mix from step 1", gate_w16: "Mix from step 1, 16-token windows", gate_sca: "Global-only opening, no schedule" };
-    data.filter(function (d) { return d.group === "gate"; }).forEach(function (d) {
-      gate.appendChild(el("figure", {}, [el("div", { class: "img" }, [img(d.full, gl[d.id] + ": " + d.prompt)]), el("figcaption", { class: "meta", text: gl[d.id] })]));
-    });
+    var data = IM.failures || []; var local = $("#fail-local"); if (!local) return;
     var byNote = {};
     data.filter(function (d) { return d.group === "local"; }).forEach(function (d) { var k = d.sid; (byNote[k] = byNote[k] || {})[d.src] = d; });
     Object.keys(byNote).forEach(function (k) {
       var p = byNote[k];
+      if (!p.sca || !p.area) return;
       local.appendChild(el("figure", {}, [el("div", { class: "two" }, [img(p.sca.crop_files[0], "SCA 1:1 crop: " + p.sca.note), img(p.area.crop_files[0], "AReA 1:1 crop, same window")]),
         el("figcaption", { class: "meta", html: "<b>" + p.sca.note.charAt(0).toUpperCase() + p.sca.note.slice(1) + "</b> (SCA, left); AReA right" })]));
     });
@@ -293,33 +316,76 @@
   /* Charts drawn as inline SVG from SCA_NUMBERS */
   var SVGNS = "http://www.w3.org/2000/svg";
   function s(tag, attrs, text) { var e = document.createElementNS(SVGNS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (text !== undefined) e.textContent = text; return e; }
+  function signed(v, d) { var t = Math.abs(v).toFixed(d); return (v > 0 ? "+" : v < 0 ? "−" : "") + t; }
+
+  /* Both configurations minus AReA, the paper's paired-difference figure: circles progressive, diamonds single pass */
   (function pairedChart() {
     var host = $("#chart-paired"); if (!host) return;
-    var spec = window.SCA_CHART_PAIRED || []; /* [[key, label], ...] set in index.html */
-    var rows = spec.map(function (r) {
-      return { label: r[1], v: val("paired." + r[0] + ".pct"), lo: val("paired." + r[0] + ".pct_lo"), hi: val("paired." + r[0] + ".pct_hi"), sig: String(num("paired." + r[0] + ".sig")) === "true" || String(num("paired." + r[0] + ".sig")) === "yes" };
-    }).filter(function (r) { return !isNaN(r.v); });
-    if (!rows.length) { host.textContent = "Numbers not built yet."; return; }
-    var W = 520, rh = 22, top = 8, left = 112, right = 46, H = top + rows.length * rh + 30;
-    var lo = Math.min(0, Math.min.apply(null, rows.map(function (r) { return r.lo; }))), hi = Math.max.apply(null, rows.map(function (r) { return r.hi; }));
-    var pad = (hi - lo) * .06; lo -= pad; hi += pad;
-    function X(v) { return left + (v - lo) / (hi - lo) * (W - left - right); }
-    var svg = s("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Paired differences of SCA minus AReA at 4096 squared, percent of AReA's mean, 95 percent intervals" });
-    var step = (hi - lo) > 60 ? 20 : (hi - lo) > 30 ? 10 : 5;
-    for (var t = Math.ceil(lo / step) * step; t <= hi; t += step) {
-      svg.appendChild(s("line", { x1: X(t), x2: X(t), y1: top - 4, y2: H - 26, stroke: t === 0 ? "var(--chart-base)" : "var(--chart-grid)", "stroke-width": t === 0 ? 1 : 1 }));
-      svg.appendChild(s("text", { x: X(t), y: H - 12, "text-anchor": "middle" }, (t > 0 ? "+" : "") + t + "%"));
-    }
-    rows.forEach(function (r, i) {
-      var y = top + i * rh + rh / 2, c = r.sig ? "var(--accent)" : "var(--chart-light)";
-      svg.appendChild(s("text", { x: left - 8, y: y + 4, "text-anchor": "end", class: "lbl" }, r.label));
-      svg.appendChild(s("line", { x1: X(r.lo), x2: X(r.hi), y1: y, y2: y, stroke: c, "stroke-width": 2, "stroke-linecap": "round" }));
-      svg.appendChild(s("circle", { cx: X(r.v), cy: y, r: 4.2, fill: c }));
-      svg.appendChild(s("text", { x: X(r.hi) + 6, y: y + 4, class: r.sig ? "acc" : "" }, (r.v > 0 ? "+" : "") + r.v.toFixed(1) + "%"));
+    var spec = window.SCA_CHART_PAIRED || []; /* [[key, label] or null for a group gap, ...] set in index.html */
+    var SER = [["prog", "Progressive SCA", "circle"], ["single", "Single-pass SCA", "diamond"]];
+    var rows = [], gap = 0;
+    spec.forEach(function (r) {
+      if (!r) { gap += 1; return; }
+      var row = { key: r[0], label: r[1], gap: gap, s: {} }; gap = 0;
+      SER.forEach(function (se) {
+        var p = "chart.pa." + se[0] + "." + r[0];
+        var v = val(p + ".pct");
+        if (!isNaN(v)) row.s[se[0]] = { v: v, lo: val(p + ".pct_lo"), hi: val(p + ".pct_hi"), vd: String(num(p + ".verdict") || "") };
+      });
+      if (Object.keys(row.s).length) rows.push(row);
     });
-    svg.appendChild(s("text", { x: W - right, y: H - 1, "text-anchor": "end" }, "SCA better →"));
+    if (!rows.length) { host.textContent = "Numbers not built yet."; return; }
+    var W = 520, rh = 24, gh = 10, top = 34, left = 104, right = 18;
+    var H = top + rows.length * rh + rows.reduce(function (a, r) { return a + r.gap * gh; }, 0) + 40;
+    var ends = []; rows.forEach(function (r) { Object.keys(r.s).forEach(function (k) { ends.push(r.s[k].lo, r.s[k].hi); }); });
+    var lo = Math.min(0, Math.min.apply(null, ends)), hi = Math.max(0, Math.max.apply(null, ends));
+    var pad = (hi - lo) * .04; lo -= pad; hi += pad;
+    function X(v) { return left + (v - lo) / (hi - lo) * (W - left - right); }
+    var svg = s("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Progressive and single-pass SCA minus AReA at 4096 squared, percent of AReA's mean, 95 percent paired intervals; right is better" });
+    var step = (hi - lo) > 120 ? 50 : (hi - lo) > 60 ? 25 : (hi - lo) > 30 ? 10 : 5;
+    for (var t = Math.ceil(lo / step) * step; t <= hi; t += step) {
+      svg.appendChild(s("line", { x1: X(t), x2: X(t), y1: top - 6, y2: H - 30, stroke: t === 0 ? "var(--chart-base)" : "var(--chart-grid)", "stroke-width": t === 0 ? 1.2 : 1 }));
+      svg.appendChild(s("text", { x: X(t), y: H - 16, "text-anchor": "middle" }, t === 0 ? "0" : signed(t, 0) + "%"));
+    }
+    function marker(kind, x, y, fill, stroke) {
+      if (kind === "circle") return s("circle", { cx: x, cy: y, r: 3.9, fill: fill, stroke: stroke, "stroke-width": 1.4 });
+      var d = 4.4;
+      return s("polygon", { points: [x, y - d, x + d, y, x, y + d, x - d, y].join(" "), fill: fill, stroke: stroke, "stroke-width": 1.4 });
+    }
+    /* legend */
+    var lx = left;
+    SER.forEach(function (se) {
+      svg.appendChild(marker(se[2], lx + 5, 12, "var(--accent)", "var(--accent)"));
+      svg.appendChild(s("text", { x: lx + 15, y: 16, class: "lbl" }, se[1]));
+      lx += 140;
+    });
+    var y = top;
+    rows.forEach(function (r) {
+      y += r.gap * gh;
+      var yc = y + rh / 2;
+      svg.appendChild(s("text", { x: left - 10, y: yc + 4, "text-anchor": "end", class: "lbl" }, r.label));
+      SER.forEach(function (se, j) {
+        var p = r.s[se[0]]; if (!p) return;
+        var yy = yc + (j ? 4.6 : -4.6);
+        var col = p.vd === "better" ? "var(--accent)" : p.vd === "worse" ? "var(--loss)" : "var(--chart-light)";
+        var filled = p.vd === "better" || p.vd === "worse";
+        var g = s("g", {});
+        g.appendChild(s("title", {}, se[1] + ", " + r.label + ": " + signed(p.v, 1) + "% [" + signed(p.lo, 1) + "%, " + signed(p.hi, 1) + "%] of AReA's mean (" + (p.vd || "no verdict") + ")"));
+        g.appendChild(s("line", { x1: X(p.lo), x2: X(p.hi), y1: yy, y2: yy, stroke: col, "stroke-width": 1.7 }));
+        g.appendChild(marker(se[2], X(p.v), yy, filled ? col : "var(--surface)", col));
+        svg.appendChild(g);
+      });
+      y += rh;
+    });
+    svg.appendChild(s("text", { x: (left + W - right) / 2, y: H - 2, "text-anchor": "middle" }, "gain over AReA (% of AReA's mean) →"));
     host.appendChild(svg);
   })();
+
+  /* Step bars: single-pass SCA (global opening, shrinking windows, native windows) and progressive SCA (HRDiT's stages) */
+  function legend(host, items) {
+    var leg = el("div", { class: "sched-legend" }, items.map(function (i) { return el("span", { class: "k " + i[0], text: i[1] }); }));
+    host.parentNode.insertBefore(leg, host.nextSibling);
+  }
   (function schedBar() {
     var host = $("#sched-bar"); if (!host) return;
     var open = val("config.opening_steps"), nat = val("config.native_steps"), wins = String(num("config.win_sched") || "").split(",").map(function (x) { return parseInt(x, 10); }).filter(function (x) { return !isNaN(x); });
@@ -329,71 +395,34 @@
     wins.forEach(function (w) { cells.push(["wide", String(w)]); });
     for (var j = 0; j < nat; j++) cells.push(["nat", j === 0 ? String(w0) : ""]);
     cells.forEach(function (c) { host.appendChild(el("span", { class: "c " + c[0], text: c[1] })); });
-    var leg = el("div", { class: "sched-legend" }, [
-      el("span", { class: "k glob", text: "global view only (" + open + " steps)" }),
-      el("span", { class: "k wide", text: "shrinking windows (" + wins.length + ")" }),
-      el("span", { class: "k nat", text: "native " + w0 + "-token windows (" + nat + ")" })]);
-    host.parentNode.insertBefore(leg, host.nextSibling);
+    legend(host, [["glob", "global view only (" + open + " steps)"], ["wide", "shrinking windows (" + wins.length + ")"], ["nat", "native " + w0 + "-token windows (" + nat + ")"]]);
   })();
-  function hbarChart(hostSel, rows, opts) {
-    var host = $(hostSel); if (!host) return;
-    rows = rows.filter(function (r) { return !isNaN(r.v); });
-    if (!rows.length) { host.textContent = "Numbers not built yet."; return; }
-    var W = 520, rh = 24, top = 6, left = opts.left || 150, right = 64, H = top + rows.length * rh + 30;
-    var hi = opts.max || 100;
-    function X(v) { return left + v / hi * (W - left - right); }
-    var svg = s("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": opts.aria });
-    for (var t = 0; t <= hi; t += opts.step || 20) {
-      svg.appendChild(s("line", { x1: X(t), x2: X(t), y1: top - 2, y2: H - 26, stroke: t === 0 ? "var(--chart-base)" : "var(--chart-grid)", "stroke-width": 1 }));
-      svg.appendChild(s("text", { x: X(t), y: H - 12, "text-anchor": "middle" }, t + "%"));
-    }
-    rows.forEach(function (r, i) {
-      var y = top + i * rh + rh / 2, c = r.ours ? "var(--accent)" : (r.old ? "var(--warn)" : "var(--chart-light)");
-      svg.appendChild(s("text", { x: left - 8, y: y + 4, "text-anchor": "end", class: r.ours ? "acc" : "lbl" }, r.label));
-      svg.appendChild(s("rect", { x: X(0), y: y - 7, width: Math.max(1.5, X(r.v) - X(0)), height: 14, rx: 2, fill: c, opacity: r.ours || r.old ? 1 : .85 }));
-      if (!isNaN(r.lo) && !isNaN(r.hi)) svg.appendChild(s("line", { x1: X(r.lo), x2: X(r.hi), y1: y, y2: y, stroke: "var(--ink)", "stroke-width": 1.2, opacity: .55 }));
-      svg.appendChild(s("text", { x: X(isNaN(r.hi) ? r.v : Math.max(r.v, r.hi)) + 6, y: y + 4, class: r.ours ? "acc" : "" }, r.text));
-    });
-    host.appendChild(svg);
-  }
-  (function gateChart() {
-    var spec = [["a46_sca_g93", "Gate σ = 0.93", 0, 1], ["a46_sca_nb", "Gate σ = " + (num("config.gate_sigma") || "0.89") + " (old SCA)", 0, 1], ["a46_sca_g85", "Gate σ = 0.85", 0, 0], ["a46_abl_globalonly", "Global view only", 0, 0], ["a46_dup_i_shrink", "SCA, final operator", 1, 0]];
-    hbarChart("#chart-gate", spec.map(function (r) {
-      var k = val("dup." + r[0] + ".k"), n = val("dup." + r[0] + ".n");
-      return { label: r[1], v: 100 * k / n, lo: NaN, hi: NaN, ours: r[2] === 1, old: r[3] === 1, text: k + " of " + n };
-    }), { aria: "Prompts with a repeated person or animal on a 46-prompt subset, by gate", left: 160 });
+  (function progBar() {
+    var host = $("#sched-prog"); if (!host) return;
+    var b = val("prog.cfg.base_steps"), n2 = val("prog.cfg.steps_2048"), n4 = val("prog.cfg.steps_4096");
+    var r2 = num("prog.cfg.ratio_2048"), r4 = num("prog.cfg.ratio_4096");
+    if (isNaN(b) || isNaN(n2) || isNaN(n4)) return;
+    var i;
+    for (i = 0; i < b; i++) host.appendChild(el("span", { class: "c full", text: "" }));
+    for (i = 0; i < n2; i++) host.appendChild(el("span", { class: "c r2", text: "" }));
+    for (i = 0; i < n4; i++) host.appendChild(el("span", { class: "c r4", text: "" }));
+    legend(host, [["full", "full attention at 1024² (" + b + " steps)"], ["r2", "SCA at 2048², ratio " + r2 + " (" + n2 + ")"], ["r4", "SCA at 4096², ratio " + r4 + " (" + n4 + ")"]]);
   })();
-  (function dupChart() {
-    var spec = [["sca_v2", "SCA (ours)", 1, 0], ["sca_nb", "SCA, no schedule", 0, 1], ["sigma", "SigMa", 0, 0], ["dype", "DyPE", 0, 0], ["sega", "SEGA", 0, 0], ["hrdit", "HRDiT", 0, 0], ["full", "Full attention", 0, 0], ["sca_v2_prog", "Progressive SCA", 0, 0], ["ultraimage", "UltraImage", 0, 0], ["area", "AReA", 0, 0]];
-    hbarChart("#chart-dup", spec.map(function (r) {
-      var v = val("dup." + r[0] + ".rate");
-      return { label: r[1], v: v, lo: val("dup." + r[0] + ".lo"), hi: val("dup." + r[0] + ".hi"), ours: r[2] === 1, old: r[3] === 1, text: Math.round(v) + "%" };
-    }), { aria: "Share of people or animal prompts with a repeated subject at 4096 squared, all methods, Wilson 95 percent intervals", left: 120 });
-  })();
-  (function dupPairs() {
-    var host = $("#dup-pairs"); if (!host) return;
-    var cap = function (c) { return String(c || "").split(";").map(function (t) { var a = t.split(":"), b = (a[1] || "").split("/"); return a[0] + " " + b[0] + " of " + b[1]; }).join(", "); };
-    (IM.dup_pairs || []).forEach(function (d) {
-      host.appendChild(el("figure", {}, [
-        el("div", { class: "two" }, [
-          el("div", { class: "pi" }, [img(d.old, "Old operator, 1:1 crop: " + d.prompt), el("span", { class: "tag", text: "old" })]),
-          el("div", { class: "pi" }, [img(d["new"], "Final operator, same prompt, seed and window: " + d.prompt), el("span", { class: "tag new", text: "final" })])]),
-        el("figcaption", { class: "meta", html: "<b>Detector:</b> " + cap(d.counts_old) + " &rarr; " + cap(d.counts_new) + ". <span class=\"q\">" + short(d.prompt, 80) + "</span>" })]));
-    });
-  })();
+
+  /* Seconds per image against size, single pass */
   (function latencyChart() {
     var host = $("#chart-latency"); if (!host) return;
-    var sizes = [2048, 3072, 4096, 6144, 8192], methods = [["full", "Full attention", "var(--chart-light)"], ["area", "AReA", "var(--chart-base)"], ["sca", "SCA (ours)", "var(--accent)"]];
+    var sizes = [2048, 3072, 4096, 6144, 8192], methods = [["full", "Full attention", "var(--chart-light)"], ["area", "AReA", "var(--chart-base)"], ["sca", "Single-pass SCA", "var(--accent)"]];
     function get(m, z) { var k = "latency." + m + "." + z + "x" + z; var v = val(k); return isNaN(v) ? val("latency." + m + "." + z) : v; }
     var series = methods.map(function (m) { return { m: m, pts: sizes.map(function (z) { return [z, get(m[0], z)]; }).filter(function (p) { return !isNaN(p[1]); }) }; }).filter(function (sr) { return sr.pts.length; });
     if (!series.length) { host.textContent = "Numbers not built yet."; return; }
-    var W = 520, H = 300, L = 46, R = 92, T = 12, B = 34;
+    var W = 520, H = 300, L = 46, R = 110, T = 12, B = 34;
     var ys = [].concat.apply([], series.map(function (sr) { return sr.pts.map(function (p) { return p[1]; }); }));
     var y0 = Math.log10(Math.min.apply(null, ys) * .8), y1 = Math.log10(Math.max.apply(null, ys) * 1.15);
     var x0 = Math.log10(2048 * 2048), x1 = Math.log10(8192 * 8192);
     function X(z) { return L + (Math.log10(z * z) - x0) / (x1 - x0) * (W - L - R); }
     function Y(v) { return T + (1 - (Math.log10(v) - y0) / (y1 - y0)) * (H - T - B); }
-    var svg = s("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Seconds per image against image size, batch 1, one GH200" });
+    var svg = s("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Seconds per image against image size, batch 1, one GH200, single pass" });
     [10, 20, 50, 100, 200, 500, 1000, 2000].forEach(function (v) {
       if (Math.log10(v) < y0 || Math.log10(v) > y1) return;
       svg.appendChild(s("line", { x1: L, x2: W - R, y1: Y(v), y2: Y(v), stroke: "var(--chart-grid)" }));
@@ -410,7 +439,112 @@
     host.appendChild(svg);
   })();
 
-  /* Against a commercial model: SCA beside Ideogram 4.0 when the files exist */
+  /* Concept chart: every head's calibrated window weight against noise level, beside AReA's one switch (canvas for
+     the 1,368 curves, SVG for axes, median, AReA and the picked head) */
+  (function conceptChart() {
+    var box = $("#concept"), D = window.SCA_CONCEPT; if (!box || !D) return;
+    var nH = D.n_heads, nS = D.n_sigma, sig = D.sigma, gate = D.gate, med = D.median, mean = D.mean;
+    var raw = atob(D.pi_b64), PI = new Uint8Array(raw.length);
+    for (var q = 0; q < raw.length; q++) PI[q] = raw.charCodeAt(q);
+    var order = []; for (var h0 = 0; h0 < nH; h0++) order.push(h0);
+    order.sort(function (a, b) { return Math.abs(mean[b] - .5) - Math.abs(mean[a] - .5); });  /* extreme heads first */
+    var canvas = el("canvas", { "aria-hidden": "true" }), svg = s("svg", { "aria-hidden": "true" });
+    box.appendChild(canvas); box.appendChild(svg);
+    var readout = $("#concept-readout"), hint = readout ? readout.innerHTML : "";
+    var M = { l: 50, r: 14, t: 24, b: 42 }, X0 = 1.0, X1 = 0.08, Y0 = -0.04, Y1 = 1.16;
+    var G = { w: 0, h: 0 }, colors = [], selEl = null;
+    function px(x) { return M.l + (X0 - x) / (X0 - X1) * (G.w - M.l - M.r); }
+    function py(y) { return M.t + (Y1 - y) / (Y1 - Y0) * (G.h - M.t - M.b); }
+    function rgb(hex) { hex = hex.replace("#", ""); if (hex.length === 3) hex = hex.replace(/(.)/g, "$1$1"); return [0, 2, 4].map(function (i) { return parseInt(hex.substr(i, 2), 16); }); }
+    function piColor(v, stops) {
+      for (var i = 1; i < stops.length; i++) {
+        if (v <= stops[i][0]) {
+          var u = (v - stops[i - 1][0]) / (stops[i][0] - stops[i - 1][0]), a = stops[i - 1][1], b = stops[i][1];
+          return "rgb(" + [0, 1, 2].map(function (k) { return Math.round(a[k] + u * (b[k] - a[k])); }).join(",") + ")";
+        }
+      }
+      var e = stops[stops.length - 1][1]; return "rgb(" + e.join(",") + ")";
+    }
+    function curve(k, ys) {
+      var pts = [[px(1), py(0)], [px(gate), py(0)]];
+      for (var j = 0; j < nS; j++) pts.push([px(sig[j]), py(ys ? ys[j] : PI[k * nS + j] / 255)]);
+      return pts;
+    }
+    function pathD(pts) { return pts.map(function (p, i) { return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" "); }
+    function draw() {
+      var w = box.clientWidth; if (!w) return;
+      var h = Math.round(Math.max(250, Math.min(430, w * .68)));
+      box.style.height = h + "px"; G.w = w; G.h = h;
+      var dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+      var ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+      var stops = [[0, rgb(cssVar("--pi-0"))], [.22, rgb(cssVar("--pi-g"))], [.5, rgb(cssVar("--pi-mid"))],
+                   [.78, rgb(cssVar("--pi-l"))], [1, rgb(cssVar("--pi-1"))]];   /* the paper's pi colour map */
+      colors = mean.map(function (m) { return piColor(m, stops); });
+      ctx.fillStyle = cssVar("--surface-2");
+      ctx.fillRect(px(1), py(Y1), px(gate) - px(1), py(Y0) - py(Y1));
+      ctx.globalAlpha = isDark() ? .22 : .16; ctx.lineWidth = .9; ctx.lineJoin = "round";
+      order.forEach(function (k) {
+        var pts = curve(k);
+        ctx.strokeStyle = colors[k]; ctx.beginPath();
+        pts.forEach(function (p, i) { if (i) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]); });
+        ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
+      svg.setAttribute("viewBox", "0 0 " + w + " " + h); svg.innerHTML = "";
+      [0, .5, 1].forEach(function (v) {
+        svg.appendChild(s("line", { x1: px(X0), x2: px(X1), y1: py(v), y2: py(v), stroke: "var(--chart-grid)", "stroke-width": 1 }));
+        svg.appendChild(s("text", { x: M.l - 8, y: py(v) + 4, "text-anchor": "end" }, String(v)));
+      });
+      [[1, "1"], [gate, String(num("config.gate_sigma") || gate)], [.6, "0.6"], [.3, "0.3"], [.1, "0.1"]].forEach(function (t) {
+        svg.appendChild(s("line", { x1: px(t[0]), x2: px(t[0]), y1: py(Y0), y2: py(Y0) + 4, stroke: "var(--chart-base)" }));
+        svg.appendChild(s("text", { x: px(t[0]), y: py(Y0) + 17, "text-anchor": "middle" }, t[1]));
+      });
+      svg.appendChild(s("line", { x1: px(X0), x2: px(X1), y1: py(Y0), y2: py(Y0), stroke: "var(--chart-base)" }));
+      svg.appendChild(s("line", { x1: px(X0), x2: px(X0), y1: py(Y1), y2: py(Y0), stroke: "var(--chart-base)" }));
+      var gx = (px(1) + px(gate)) / 2, gy = (py(Y1) + py(Y0)) / 2;
+      svg.appendChild(s("text", { x: gx, y: gy, "text-anchor": "middle", class: "lbl-glob", transform: "rotate(-90 " + gx + " " + gy + ")" }, "global view"));
+      svg.appendChild(s("text", { x: (px(X0) + px(X1)) / 2, y: h - 6, "text-anchor": "middle" }, "noise level σ  (sampling runs left to right)"));
+      var ay = (py(Y1) + py(Y0)) / 2;
+      var yt = s("text", { x: 13, y: ay, "text-anchor": "middle", transform: "rotate(-90 13 " + ay + ")" }, "weight on the window, π");
+      yt.appendChild(s("tspan", { "baseline-shift": "sub", "font-size": "9" }, "h"));
+      svg.appendChild(yt);
+      svg.appendChild(s("path", { d: pathD(curve(-1, med)), fill: "none", stroke: "var(--accent)", "stroke-width": 2.6, "stroke-linejoin": "round" }));
+      svg.appendChild(s("path", { d: pathD([[px(1), py(0)], [px(gate), py(0)], [px(gate), py(1)], [px(.1), py(1)]]), fill: "none", stroke: "var(--area)", "stroke-width": 2.2, "stroke-dasharray": "7 4" }));
+      var halo = "paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round;";
+      svg.appendChild(s("text", { x: px(.1), y: py(1) - 9, "text-anchor": "end", class: "lbl-area", style: halo }, "AReA: one switch for every head"));
+      svg.appendChild(s("text", { x: px(.1), y: py(.36), "text-anchor": "end", class: "lbl-sca", style: halo }, "SCA: one mix per head"));
+      svg.appendChild(s("text", { x: px(.1), y: py(.36) + 15, "text-anchor": "end", class: "lbl-sca", style: halo + "font-weight:500" }, "green: median of " + nH + " heads"));
+      selEl = s("g", {}); svg.appendChild(selEl);
+    }
+    function pick(clientX, clientY) {
+      var r = box.getBoundingClientRect(), x = clientX - r.left, y = clientY - r.top;
+      var sx = X0 - (x - M.l) / (G.w - M.l - M.r) * (X0 - X1), sy = Y1 - (y - M.t) / (G.h - M.t - M.b) * (Y1 - Y0);
+      if (sx > gate + .005 || sx < sig[nS - 1] - .02 || sy < Y0 || sy > Y1) { clear(); return; }
+      var j = Math.max(0, Math.min(nS - 1, Math.round((sig[0] - sx) / (sig[0] - sig[nS - 1]) * (nS - 1))));
+      var best = -1, bd = 1e9;
+      for (var k = 0; k < nH; k++) { var dd = Math.abs(PI[k * nS + j] / 255 - sy); if (dd < bd) { bd = dd; best = k; } }
+      if (best < 0 || bd > .06) { clear(); return; }
+      selEl.innerHTML = "";
+      var pts = curve(best);
+      selEl.appendChild(s("path", { d: pathD(pts), fill: "none", stroke: "var(--surface)", "stroke-width": 5, "stroke-linejoin": "round" }));
+      selEl.appendChild(s("path", { d: pathD(pts), fill: "none", stroke: colors[best], "stroke-width": 2.4, "stroke-linejoin": "round" }));
+      selEl.appendChild(s("circle", { cx: px(sig[j]), cy: py(PI[best * nS + j] / 255), r: 4, fill: colors[best], stroke: "var(--ink)", "stroke-width": 1.2 }));
+      var b = Math.floor(best / D.heads_per_block), hh = best % D.heads_per_block;
+      if (readout) readout.innerHTML = "<b>Block " + b + ", head " + hh + "</b> (counting from 0): mean weight " + mean[best].toFixed(2) + " on the window after the gate.";
+    }
+    function clear() { if (selEl) selEl.innerHTML = ""; if (readout) readout.innerHTML = hint; }
+    box.addEventListener("pointermove", function (e) { pick(e.clientX, e.clientY); });
+    box.addEventListener("pointerdown", function (e) { pick(e.clientX, e.clientY); });
+    box.addEventListener("pointerleave", clear);
+    var raf = 0;
+    window.addEventListener("resize", function () { cancelAnimationFrame(raf); raf = requestAnimationFrame(function () { if (box.clientWidth !== G.w) draw(); }); });
+    themeHooks.push(draw);
+    draw();
+  })();
+
+  /* Against a commercial model: single-pass SCA beside Ideogram 4.0 when the files exist */
   (function ideogram() {
     var host = $("#vs-grid"); if (!host) return;
     function build(man) {
@@ -420,14 +554,14 @@
         var it = byId[e.prompt_id]; if (!it) return;
         var file = e.file || ("assets/ideogram/" + e.prompt_id + ".webp");
         var right = el("div", { class: "col" }), left = el("div", { class: "col" });
-        left.appendChild(el("div", {}, [img(it.img.sca.full, "SCA on FLUX.1-dev: " + it.prompt)]));
-        left.appendChild(el("div", { class: "crop1" }, [img(it.img.sca.crop, "SCA 1:1 crop")]));
+        left.appendChild(el("div", {}, [img(it.img.sca.full, "Single-pass SCA on FLUX.1-dev: " + it.prompt)]));
+        left.appendChild(el("div", { class: "crop1" }, [img(it.img.sca.crop, "Single-pass SCA 1:1 crop")]));
         var main = el("div", {}, [el("div", { class: "placeholder" }, [el("div", {}, [el("strong", { text: "Placeholder: Ideogram 4.0 image not added yet" }), el("code", { text: file })])])]);
         var crop = el("div", { class: "crop1" }, [el("div", { class: "placeholder", text: "1:1 crop appears here" })]);
         right.appendChild(main); right.appendChild(crop);
         var rName = el("span", { text: "Ideogram 4.0" });
         var card = el("article", { class: "vs-card" }, [
-          el("p", { class: "name" }, [el("b", { text: "SCA, FLUX.1-dev · 4096²" }), rName]),
+          el("p", { class: "name" }, [el("b", { text: "Single-pass SCA, FLUX.1-dev · 4096²" }), rName]),
           el("div", { class: "vs-pair" }, [left, right]),
           el("p", { class: "prompt small" }, [el("q", { text: it.prompt })]),
           el("p", { class: "verdict muted", text: e.verdict ? e.verdict : "Verdict pending: written after the Ideogram image is added." })]);
@@ -460,9 +594,9 @@
     } else build(fallback);
   })();
 
-  /* Method video: caption track text size and a note if the file is missing */
+  /* Method video: a note if the file is missing */
   (function methodVideo() {
-    var v = $("#method-video"); if (!v) return;
+    var v = $("#method-video-el"); if (!v) return;
     v.addEventListener("error", function () { var p = $("#method-video-missing"); if (p) p.hidden = false; }, true);
   })();
 

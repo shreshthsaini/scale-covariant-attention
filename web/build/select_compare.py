@@ -13,7 +13,12 @@ Writes web/build/compare_selection.json. Run with the sca env python (PIL, numpy
 image of the same prompt and seed (paths["sca_v2"], out/dupfix/sca_v2, found and checked by
 paper/figures/src/imgsel.final_png) with its SHA-256. The windows stay the ones chosen on the previous operator's
 image, so they were fixed before the final operator's images existed.
+
+--add-prog likewise adds progressive SCA (paths["prog"]: out/dupfix_prog/sca_v2_prog, method sca_v2_prog, the
+headline configuration) and HRDiT (paths["hrdit"]: the image of the same prompt and seed that
+eval/prog195_sca_v2 scored, read from its base/per_image.csv) with their SHA-256 sums. Prompts and windows unchanged.
 """
+import csv
 import json
 import os
 import random
@@ -82,9 +87,43 @@ def add_final():
         json.dump(sel, fh, indent=1)
 
 
+PROG_ROOT = "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/" + RES
+PROG_EVAL = "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/base/per_image.csv"
+
+
+def add_prog():
+    path = os.path.join(HERE, "compare_selection.json")
+    sel = json.load(open(path))
+    hrdit = {}
+    with open(PROG_EVAL, newline="") as fh:
+        for r in csv.DictReader(fh):
+            if r["method"] == "hrdit_dev_author":
+                hrdit[r["prompt_id"]] = r["path"]
+    for it in sel["items"]:
+        name = os.path.basename(it["paths"]["sca"])
+        pid = name.rsplit("_", 2)[0]   # a4k_eval_4096_<id>
+        prog = os.path.join(PROG_ROOT, name)
+        with open(prog[:-4] + ".json") as fh:
+            cfg = json.load(fh)
+        assert cfg.get("complete") and cfg["config"]["method"] == "sca_v2_prog" and cfg["config"]["seed"] == 0, prog
+        assert cfg["config"]["prompt"] == it["prompt"], (prog, "prompt differs")
+        h = hrdit[pid]
+        assert os.path.basename(h) == name and imgsel.prompt(h) == it["prompt"], (h, name)
+        it["paths"]["prog"], it["prog_sha256"] = prog, imgsel.sha256(prog)
+        it["paths"]["hrdit"], it["hrdit_sha256"] = h, imgsel.sha256(h)
+        print(it["sid"], prog, h)
+    sel["progressive"] = ("paths.prog: progressive SCA (sca_v2_prog, HRDiT's three-stage schedule with SCA attention) at "
+                          "the same prompt and seed, out/dupfix_prog; paths.hrdit: the HRDiT image eval/prog195_sca_v2 "
+                          "scored; crop windows unchanged (chosen on the previous operator's image, label sca)")
+    with open(path, "w") as fh:
+        json.dump(sel, fh, indent=1)
+
+
 def main():
     if "--add-final" in sys.argv[1:]:
         return add_final()
+    if "--add-prog" in sys.argv[1:]:
+        return add_prog()
     idx = {m: imgsel.index(m, RES) for m in METHODS}
     common = sorted(set.intersection(*(set(v) for v in idx.values())))
     dev = imgsel.dev4_ids()

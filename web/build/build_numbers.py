@@ -1,21 +1,36 @@
 #!/usr/bin/env python3
 """Every number the SCA project page prints, computed from the archived results.
 
-SCA is the final operator (sca_v2: the window schedule after the opening and 1,024 bridge tokens) wherever its run
-exists; rows that exist only for the operator without the schedule (sca_nb: 6144^2, FLUX.2-dev) keep sca_nb and
-the page labels them. HRGen-1K reads the final operator's run (results/hrgen1k_dev_sca_v2, landed 2026-10-30). Two inputs live outside results/, as in the paper's own
-generator (paper/figures/src/scav2_runs.py): the eval.py paired deltas of the sca_v2 runs (1000 prompt draws,
+Configurations (paper rewrite of 2026-11-07). The headline is progressive SCA (method sca_v2_prog, run
+results/prog195_sca_v2): HRDiT's released three-stage schedule (30 steps at 1024^2 with the model's own attention,
+then the last 17 steps at 2048^2 and the last 10 at 4096^2) with SCA attention at the two upper stages. Single-pass
+SCA (sca_v2: 28 steps, global opening, shrinking windows, 1,024 bridge tokens) is the fast mode. Rows that exist only
+for the operator without the schedule (sca_nb: 6144^2, FLUX.2-dev) keep sca_nb and the page labels them. HRGen-1K
+reads the single-pass run (results/hrgen1k_dev_sca_v2). Progressive SCA's pairs against every baseline come from
+results/prog195_vs_baselines (per-image, 2000 prompt draws) and results/prog195_pairs/cfid_vs_{area,sca_v2}
+(set-level, 1000 draws, 168 reference identities); its clean latency from results/prog_latency (sweep 3, timed back
+to back with HRDiT and AReA). Results the paper lists as pending (seeds 1 and 2, HRGen-1K, set-level intervals
+against the other baselines) are emitted as "pending" until their files exist. The head-versus-noise variance split
+comes from results/heads_view/variance_split.csv.
+
+Inputs outside results/, as in the paper's own generators (paper/figures/src/scav2_runs.py, gen_main_tables.py):
+the eval.py paired deltas of the sca_v2 runs (1000 prompt draws,
 /scratch/09032/saini_2/sca/eval/<run>/{base/paired_deltas,extra/extra_paired_deltas}.csv; the evaluation tasks do
-not copy them) and the sca_v2 generation sidecars (out/dupfix/sca_v2/4096x4096) for its configuration constants.
+not copy them), the sca_v2 generation sidecars (out/dupfix/sca_v2/4096x4096) for its configuration constants, the
+progressive sidecars (out/dupfix_prog/sca_v2_prog/4096x4096) for its stage schedule, and the HRDiT sidecars of the
+images eval/prog195_sca_v2 scored (paths from its base/per_image.csv) for HRDiT's stage steps.
 
 Inputs are otherwise files under results/ only: the evaluation CSVs, the calibration JSONs (plus the calibration
-table's .npz, read for its block x head shape and its cell fractions), the visual-audit CSV, the compute
-summary, and the generation sidecars (results/evidence/generation_sidecars.jsonl.gz) for configuration
-constants. No number on the page is typed by hand.
+table's .npz, read for its block x head shape and its cell fractions), the compute summary, and the generation
+sidecars (results/evidence/generation_sidecars.jsonl.gz) for configuration constants. No number on the page is
+typed by hand.
 
 Outputs (repository-relative):
   web/build/numbers.json    {key: {"value", "display", "src", "how"}}
   web/assets/js/numbers.js  window.SCA_NUMBERS = {key: display};
+A key that ends in ".cls" holds CSS classes for the element of the key without that suffix (Table 1: "best" and
+"second" rank a cell within its group, "sig-up" and "sig-dn" mark a row significantly better or worse than
+progressive SCA); --fill writes them into that element's class attribute.
 
 Usage, with the sca env python (a few CSV reads; light enough for any node):
   build_numbers.py                      build both outputs and print the check table against the paper
@@ -53,6 +68,8 @@ OUT_JS = REPO / "web" / "assets" / "js" / "numbers.js"
 
 MINUS = "−"  # U+2212 MINUS SIGN in every negative display (page request); "-" gives ASCII
 TIMES = "×"   # multiplication sign printed after speed ratios
+WORDS = ["none", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
+         "thirteen", "fourteen", "fifteen"]
 
 # short key -> (CSV metric, label in metric lists, scale, decimals of the paper's tables, lower is better);
 # Table app_4k order
@@ -84,7 +101,9 @@ MAIN_V2 = "a4k195_main_sca_v2"
 TABLE1 = [("full", "full", "a4k195_main"), ("dype", "dype", "a4k195_main"),
           ("sega", "sega_official", "a4k195_main"), ("area", "area", "a4k195_main"),
           ("sca", "sca_v2", MAIN_V2), ("ultraimage", "ultraimage", "a4k195_main"),
-          ("hrdit", "hrdit_dev_author", "a4k195_panel")]
+          ("hrdit", "hrdit_dev_author", "a4k195_panel"), ("prog", "sca_v2_prog", "prog195_sca_v2")]
+# Table 1 groups as the paper ranks them (bold best, underline second within a group); campaign time is not ranked
+TABLE1_GROUPS = [["full", "dype", "sega", "area", "sca"], ["ultraimage", "hrdit", "prog"]]
 # the final operator's 195-prompt runs; their eval.py paired deltas (1000 prompt draws) are not copied to results/
 # by the evaluation tasks, so they are read from the run's evaluation directory on scratch, exactly as
 # paper/figures/src/scav2_runs.py does
@@ -94,10 +113,35 @@ EVAL = Path("/scratch/09032/saini_2/sca/eval")
 V2_SIDECARS = Path("/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096")  # generation sidecars of sca_v2
 LAT_V2_SAMPLES = RES / "latency_curve_v2" / "samples.csv"   # second clean sweep: sca_v2 and re-timed sca_nb
 LAT_V2_SUMMARY = RES / "latency_curve_v2" / "summary.csv"
-DUPDIR = RES / "dup_audit_20261027"
-# Table tab:main method -> label in the duplication tables
-DUP_LABEL = {"sega_official": "sega", "hrdit_dev_author": "hrdit"}
 TABLE1_METRICS = [("ir", 2), ("hps21", 2), ("pick", 2), ("clip", 2), ("musiqc", 1), ("fid", 1), ("fidp", 1)]
+
+# Progressive SCA (the headline): HRDiT's three-stage schedule with SCA attention at 2048^2 and 4096^2
+PROG = "sca_v2_prog"
+PROG_RUN = "prog195_sca_v2"
+PROG_SIDECARS = Path("/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096")
+PROG_EVAL_PER_IMAGE = EVAL / PROG_RUN / "base" / "per_image.csv"   # image paths of the HRDiT run scored beside it
+PROG_LAT = RES / "prog_latency" / "latency_summary.csv"   # sweep 3: progressive SCA, HRDiT and AReA back to back
+PROG_PAIRS = RES / "prog195_vs_baselines"                  # sca_v2_prog_vs_<baseline>.csv, per-image, 2000 draws
+PROG_CFID = {"area": RES / "prog195_pairs" / "cfid_vs_area" / "paired_deltas.csv",
+             "sca_v2": RES / "prog195_pairs" / "cfid_vs_sca_v2" / "paired_deltas.csv"}
+PROG_CFID_ALL = PROG_PAIRS / "cfid" / "paired_deltas.csv"  # every baseline, reference sca_v2_prog (pending)
+# (page key, CSV method) of every baseline progressive SCA is paired with
+PROG_VS = [("area", "area"), ("dype", "dype"), ("sega", "sega_official"), ("full", "full"),
+           ("ultraimage", "ultraimage"), ("hrdit", "hrdit_dev_author"), ("sca", "sca_v2")]
+# results the paper lists as pending, with the file names paper/figures/src/gen_main_tables.py accepts
+PROG_LATER = {"seed1": (195, ["prog195_s1/sca_v2_prog_vs_area.csv", "prog195_seed1/sca_v2_prog_vs_area.csv"]),
+              "seed2": (195, ["prog195_s2/sca_v2_prog_vs_area.csv", "prog195_seed2/sca_v2_prog_vs_area.csv"]),
+              "hrgen": (1000, ["prog_hrgen1k/sca_v2_prog_vs_area.csv", "hrgen1k_prog/sca_v2_prog_vs_area.csv"])}
+# decimals of paired differences in the paper's running text (scale as in METRICS)
+TEXT_DEC = {"ir": 2, "aesthetic": 2, "clip": 2, "pick": 2, "hps2": 2, "hps21": 2, "musiq": 1, "musiqc": 1,
+            "clipiqa": 1, "arniqa": 1, "is": 2, "fid": 1, "kid": 2, "fidp": 1, "kidp": 2}
+SETLEVEL = ["fid", "kid", "fidp", "kidp"]
+# Figure paired_area (paper/figures/src/fig_paired_prog.py): both configurations minus AReA, 14 metrics (no IS)
+CHART_PA = [k for k in METRICS if k != "is"]
+CHART_PA_SERIES = [("prog", PROG, PROG_PAIRS / "sca_v2_prog_vs_area.csv"),
+                   ("single", "sca_v2", RES / "prog195_pairs" / "sca_v2_vs_area.csv")]
+CHART_PA_SET = RES / "prog195_pairs" / "cfid_vs_area"
+HEADS_VAR = RES / "heads_view" / "variance_split.csv"
 
 LAT_CURVE = RES / "latency_curve.csv"            # audited clean batch-1 sweep, full precision, no warm-up rows
 LAT_BATCH1 = RES / "latency_curve_batch1.csv"    # same sweep at 0.01 s with warm-up rows, plus full at 6144^2, HRDiT
@@ -263,13 +307,59 @@ PAPER_QUOTES.update({
     "config.native_steps": "16", "config.bridge_cells": "8", "config.bridge_k": "16",
 })
 PAPER_QUOTES.pop("latency.at6144.vs_area")  # the rewritten paper no longer prints the 6144^2 AReA ratio
+# 2026-11-07: the paper's headline is progressive SCA (paper/main.tex and figures/snippets/main_tables of that day,
+# clean latency of sweep 3 included). The page no longer shows duplication rates, so their quotes are dropped, as are
+# the quotes of the earlier progressive-versus-HRDiT keys (general.prog.*), now prog.vs.hrdit.*.
+for _k in [k for k in PAPER_QUOTES if k.startswith(("dup.", "failures.", "general.prog.")) or k.endswith(".dup")]:
+    PAPER_QUOTES.pop(_k)
+PAPER_QUOTES.update({
+    "main.hrdit.steps": "30+17+10", "main.hrdit.time_clean": "107.0", "speed.hrdit_s": "107.0",
+    **{f"main.prog.{k}": v for k, v in zip(("steps", "time_clean", "time_camp", "ir", "hps21", "pick", "clip", "musiqc",
+                                            "fid", "fidp"), ("30+17+10", "49.1", "50.7", "1.32", "31.02", "23.41",
+                                                             "29.39", "54.1", "141.9", "107.7"))},
+    # abstract, introduction, Section 4.1 and 4.3 (headline.tex macros hlProg*, hlSecProg, hlSpeedProg*)
+    "prog.clean.prog": "49.1", "prog.clean.hrdit": "107.0", "prog.clean.area": "202.4", "prog.clean.area_x": "4.1×",
+    "prog.clean.hrdit_x": "2.2×", "prog.clean.hrdit_pct": "46%",
+    "prog.camp.prog": "50.7", "prog.camp.hrdit": "110.4", "prog.camp.area": "264.4", "prog.camp.area_x": "5.2×",
+    "prog.camp.hrdit_pct": "46%",
+    **{f"prog.vs.area.{k}.ci": v for k, v in {
+        "ir": "+0.40 [0.32, 0.49]", "pick": "+1.05 [0.93, 1.19]", "hps21": "+3.86 [3.41, 4.30]",
+        "musiqc": "+3.7 [2.0, 5.4]", "musiq": "+2.3 [0.5, 3.9]", "clip": "+1.70 [1.33, 2.07]"}.items()},
+    "prog.set.area.fid.ci": "-3.9 [-8.5, 3.1]", "prog.set.area.fidp.ci": "+4.8 [0.1, 10.6]",
+    **{f"prog.vs.hrdit.{k}.ci": v for k, v in {
+        "ir": "-0.02 [-0.09, 0.03]", "hps21": "+0.10 [-0.14, 0.35]", "pick": "-0.05 [-0.14, 0.04]",
+        "hps2": "+0.38 [0.24, 0.51]", "arniqa": "+2.9 [2.3, 3.4]", "musiq": "+1.3 [0.2, 2.4]",
+        "clipiqa": "-0.9 [-1.8, -0.1]", "musiqc": "+0.6 [-0.7, 1.8]"}.items()},
+    **{f"prog.vs.sca.{k}.ci": v for k, v in {
+        "ir": "+0.07 [0.01, 0.13]", "pick": "+0.29 [0.20, 0.38]", "hps21": "+1.29 [0.99, 1.59]",
+        "musiq": "-3.4 [-5.1, -1.6]", "musiqc": "-6.0 [-7.3, -4.6]"}.items()},
+    "prog.set.sca.fid.ci": "+1.6 [-2.3, 7.3]", "prog.set.sca.fidp.ci": "+9.2 [5.1, 13.2]",
+    # 16:38 regeneration: set-level intervals against every baseline (prog195_vs_baselines/cfid)
+    "prog.set.hrdit.fid.ci": "+3.4 [-1.8, 7.2]", "prog.set.hrdit.fidp.ci": "+4.6 [0.6, 7.7]",
+    # 16:48 regeneration: progressive SCA on seed label 1 (Table generality)
+    "prog.later.seed1.ir_ci2": "+0.37 [0.29, 0.46]", "prog.later.seed1.hps21_ci": "+3.67 [3.26, 4.06]",
+    "prog.later.seed1.pick_ci": "+1.00 [0.88, 1.12]",
+    **{f"prog.vs.{k}.n_better": v for k, v in (("area", "10"), ("dype", "10"), ("sega", "10"), ("full", "10"),
+                                                ("ultraimage", "9"))},
+    "prog.vs.ultraimage.unresolved_metrics": "aesthetic",
+    "prog.vs.hrdit.better_metrics": "HPSv2, MUSIQ, ARNIQA", "prog.vs.hrdit.worse_metrics": "CLIP-IQA",
+    "prog.cfg.base_steps": "30", "prog.cfg.steps_2048": "17", "prog.cfg.steps_4096": "10",
+    "prog.cfg.sigma_2048": "0.81", "prog.cfg.sigma_4096": "0.61",
+    # Section 3 and Table variance_split (hlVar*)
+    "heads.var.head": "97.5", "heads.var.noise": "2.5", "heads.var.avg": "0.7", "heads.var.krea_head": "97.6",
+    "heads.var.flux2_head": "99.1", "heads.var.curve_lo": "0.57", "heads.var.curve_hi": "0.62",
+    "heads.var.min_head": "96.9",
+    "prog.vs.area.all_word": "all ten", "config.cost_x_4096": "256", "config.first_wide_step": "9",
+    "config.last_wide_step": "12", "config.grid_side_4096": "256", "calib.key_ratio": "16", "abl.n_prompts": "46",
+    "abl.v0.ir_drop": "1.33", "calib.n_prompts_krea": "16", "calib.n_prompts_flux2": "16",
+})
 # key -> reason, for quotes that legitimately differ from the display (rounding source etc.)
-EXPLAINED: dict[str, str] = {}
-# numbers the paper prints that no results file holds; reported, never emitted
-PAPER_ONLY = {
-    "main.hrdit.steps": ("30+17+10", "HRDiT's stage schedule lives in scripts/sample_progressive.py; no HRDiT "
-                                     "sidecar or config is archived under results/"),
+EXPLAINED: dict[str, str] = {
+    "prog.vs.ultraimage.unresolved_metrics": "same metric: the page names it 'aesthetic score', the paper's sentence "
+                                             "'aesthetic'",
 }
+# numbers the paper prints that no results file holds; reported, never emitted
+PAPER_ONLY: dict[str, tuple] = {}
 
 # ---------------------------------------------------------------------------------------------------------
 NUM: dict[str, dict] = {}
@@ -433,7 +523,7 @@ def tally(prefix: str, verdicts: dict, src, how: str) -> None:
     for name, ks in (("n_better", better), ("n_worse", worse), ("n_unresolved", unres)):
         put(f"{prefix}.{name}", len(ks), str(len(ks)), src, f"{how}: count {name[2:]}{rule}")
     put(f"{prefix}.n_total", len(verdicts), str(len(verdicts)), src, f"{how}: number of metrics compared")
-    for name, ks in (("better_metrics", better), ("worse_metrics", worse)):
+    for name, ks in (("better_metrics", better), ("worse_metrics", worse), ("unresolved_metrics", unres)):
         label = ", ".join(METRICS[k][1] for k in ks) or "none"
         put(f"{prefix}.{name}", label, label, src, f"{how}: metrics {name.split('_')[0]}, Table app_4k order")
 
@@ -497,32 +587,62 @@ def load_v2_sidecars() -> list:
     return out
 
 
-def load_dup() -> dict:
-    """label -> duplication rate of prompts naming a person or animal (results/dup_audit_20261027 tables and the
-    sca_v2 runs' dup_rates_people.csv); a46_<method> rows are the 46-prompt subset."""
-    out = {}
-
-    def add(path, rename=None, prefix=""):
-        for r in rows(path):
-            label = prefix + (rename or {}).get(r["method"], r["method"])
-            d = dict(method=r["method"], n=int(r["n"]), dup=int(r["dup"]), rate=float(r["rate"]),
-                     lo=float(r["lo95"]), hi=float(r["hi95"]), src=path)
-            d["pct"] = int(round(100.0 * d["dup"] / d["n"]))
-            if label in out and (out[label]["dup"], out[label]["n"]) != (d["dup"], d["n"]):
-                raise ValueError(f"duplication rate {label} differs between {out[label]['src']} and {path}")
-            out.setdefault(label, d)
-
-    add(DUPDIR / "rates_a4k195_people.csv")
-    for sz in ("2048x4096", "2048x6144"):
-        add(DUPDIR / f"rates_{sz}_people.csv")
-    add(DUPDIR / "rates_46_all_people.csv", prefix="a46_")
-    add(DUPDIR / "rates_abl46_people.csv", prefix="a46_")
-    for run, label in (("a4k195_main_sca_v2", "sca_v2"), ("a4k195_seed1_sca_v2", "sca_v2_seed1"),
-                       ("a4k195_seed2_sca_v2", "sca_v2_seed2"), ("a4k195_2048x4096_sca_v2", "sca_v2_2048x4096"),
-                       ("a4k195_2048x6144_sca_v2", "sca_v2_2048x6144"), ("prog195_sca_v2", "sca_v2_prog"),
-                       ("krea195_sca_v2", "sca_v2_krea")):
-        add(RES / run / "dup_rates_people.csv", rename={"sca_v2": label, "sca_v2_prog": label, "sca_v2_krea": label})
+def load_prog_sidecars() -> list:
+    """config of every complete sca_v2_prog 4096x4096 generation sidecar (195 images, out/dupfix_prog), with the
+    first sigma of each stage and the number of steps on which the gate was active."""
+    out = []
+    for path in sorted(PROG_SIDECARS.glob("*.json")):
+        sc = json.loads(path.read_text())
+        if sc.get("complete") and sc["config"].get("method") == PROG:
+            out.append(dict(sc["config"], _stage_sigma0=[s[0] for s in sc["stage_sigmas"]],
+                            _stage_n=[len(s) for s in sc["stage_sigmas"]], _gate_active=sc["gate_active_steps"]))
+    if len(out) != 195:
+        raise ValueError(f"{PROG_SIDECARS}: {len(out)} complete {PROG} sidecars, expected 195")
     return out
+
+
+def load_hrdit_steps() -> tuple:
+    """(stage steps, stage guidance, n images) from the sidecars of the HRDiT images eval/prog195_sca_v2 scored."""
+    pngs = sorted({r["path"] for r in rows(PROG_EVAL_PER_IMAGE) if r["method"] == "hrdit_dev_author"})
+    if len(pngs) != 195:
+        raise ValueError(f"{PROG_EVAL_PER_IMAGE}: {len(pngs)} HRDiT images, expected 195")
+    prof = [json.loads(Path(p[:-4] + ".json").read_text())["config"]["profile"] for p in pngs]
+    steps = unique((tuple(p["steps"]) for p in prof), "HRDiT stage steps")
+    guid = unique((tuple(p["guidance"]) for p in prof), "HRDiT stage guidance")
+    return steps, guid, len(pngs)
+
+
+def load_prog_latency() -> dict:
+    """method -> (median seconds, n timed) of the 4096x4096 rows of results/prog_latency (sweep 3), or {}."""
+    if not PROG_LAT.exists():
+        return {}
+    out = {}
+    for r in rows(PROG_LAT):
+        if r["res"] == "4096x4096":
+            out[r["method"]] = (float(r["median_s"]), int(r["n_timed"]))
+    return out
+
+
+def prog_setlevel(base: str):
+    """({metric: dict(v, lo, hi)} of progressive SCA minus `base` for FID, KID and their patch versions, sources) from
+    the corrected bank with 1000 draws over prompts and 168 reference identities, exactly as gen_main_tables.py's
+    prog_setlevel; (None, reason) while no such file holds the pair."""
+    out = {}
+    if PROG_CFID_ALL.exists():
+        for r in rows(PROG_CFID_ALL):
+            if r["method"] == base and r["reference_method"] == PROG and r["metric"] in DIST:
+                assert r["bootstrap_valid"] == "1000" and r["n_reference_prompts"] == "168", r
+                v, lo, hi = float(r["value"]), float(r["ci_low"]), float(r["ci_high"])
+                out[r["metric"]] = dict(v=-v, lo=-hi, hi=-lo)
+        if out:
+            return out, [PROG_CFID_ALL]
+    if base in PROG_CFID:
+        for r in rows(PROG_CFID[base]):
+            if r["method"] == PROG and r["reference_method"] == base and r["metric"] in DIST:
+                assert r["bootstrap_valid"] == "1000" and r["n_reference_prompts"] == "168", r
+                out[r["metric"]] = dict(v=float(r["value"]), lo=float(r["ci_low"]), hi=float(r["ci_high"]))
+        return out, [PROG_CFID[base]]
+    return None, [PROG_CFID_ALL]
 
 
 def load_sidecars() -> dict:
@@ -572,7 +692,23 @@ def build() -> None:
     put("main.ultraimage.steps", f"{s1}+{s2}", f"{s1}+{s2}", sc_src,
         "config.ultraimage.call.num_inference_steps1 + num_inference_steps2 of every method=ultraimage, "
         "res=4096x4096 sidecar")
-    dup = load_dup()
+    hsteps, hguid, n_h = load_hrdit_steps()
+    txt = "+".join(str(x) for x in hsteps)
+    put("main.hrdit.steps", txt, txt, PROG_EVAL_PER_IMAGE,
+        f"config.profile.steps of the sidecars of the {n_h} HRDiT images listed in eval/{PROG_RUN}/base/per_image.csv "
+        "(identical), joined with +")
+    pcars = load_prog_sidecars()
+    pst = unique((tuple([c["progressive"]["base_steps"]] + list(c["progressive"]["highres_steps"])) for c in pcars),
+                 "progressive stage steps")
+    if unique((tuple(c["_stage_n"]) for c in pcars), "progressive stage sigmas") != pst:
+        raise ValueError("progressive sidecars: stage_sigmas lengths differ from base_steps + highres_steps")
+    txt = "+".join(str(x) for x in pst)
+    put("main.prog.steps", txt, txt, PROG_SIDECARS,
+        f"config.progressive.base_steps + highres_steps of all {len(pcars)} {PROG} 4096x4096 sidecars (identical; "
+        "equal to the lengths of stage_sigmas)")
+    if pst != hsteps:
+        raise ValueError(f"progressive SCA stage steps {pst} differ from HRDiT's {hsteps}")
+    plat = load_prog_latency()
     for key, method, run_name in TABLE1:
         run = runs[run_name]
         for mk, dec in TABLE1_METRICS:
@@ -588,7 +724,16 @@ def build() -> None:
             f"value of method={method}, metric=seconds (campaign mean per image on shared nodes), "
             f"res=4096x4096; 1 decimal")
         cell = (lat2 if method == "sca_v2" else lat).get(("4096x4096", method))
-        if cell:
+        if method in (PROG, "hrdit_dev_author") and method in plat:
+            # Table 1 takes HRDiT and progressive SCA from sweep 3, timed back to back (paper, 2026-11-07)
+            med, n_t = plat[method]
+            put(f"main.{key}.time_clean", med, num(med, 1), PROG_LAT,
+                f"median_s of res=4096x4096, method={method} in results/prog_latency (sweep 3, {n_t} timed prompts "
+                "after a warm-up); 1 decimal")
+        elif method == PROG:
+            put(f"main.{key}.time_clean", "pending", "pending", PROG_LAT,
+                "results/prog_latency/latency_summary.csv absent: progressive SCA's clean latency has not landed")
+        elif cell:
             med = statistics.median(cell["vals"])
             put(f"main.{key}.time_clean", med, num(med, 1), cell["src"],
                 f"median of the {len(cell['vals'])} timed rows res=4096x4096, method={method} (warm-up rows "
@@ -596,10 +741,6 @@ def build() -> None:
         else:
             put(f"main.{key}.time_clean", "n/m", "n/m", [LAT_CURVE, LAT_BATCH1],
                 f"no clean batch-1 row for method={method} at 4096x4096 in either latency CSV: not measured")
-        d = dup[DUP_LABEL.get(method, method)]
-        put(f"main.{key}.dup", d["pct"], str(d["pct"]), d["src"],
-            f"Dup.: 100 * dup / n of method={DUP_LABEL.get(method, method)} (people or animals, {d['n']} prompts), "
-            "rounded to an integer as Table tab:main prints it")
 
     # 2. SCA minus AReA at 4096^2, the 15 metrics of Table app_4k (final operator) ---------------------------
     verdicts = {}
@@ -656,6 +797,10 @@ def build() -> None:
     SCA = "sca_v2@v2"
     for key, m in (("sca_s", SCA), ("sca_nb_s", "sca_nb@v2"), ("area_s", "area"), ("full_s", "full"),
                    ("hrdit_s", "hrdit_dev_author")):
+        if m == "hrdit_dev_author" and m in plat:   # the paper's HRDiT clean time is sweep 3's once it exists
+            put(f"speed.{key}", plat[m][0], num(plat[m][0], 1), PROG_LAT,
+                f"median_s of res=4096x4096, method={m} in results/prog_latency (sweep 3); 1 decimal")
+            continue
         put(f"speed.{key}", med[(k4, m)], num(med[(k4, m)], 1), srcs[(k4, m)],
             f"median clean batch-1 seconds, res=4096x4096, method={m.replace('@v2', ' (second sweep)')}; 1 decimal")
     r = med[(k4, "area")] / med[(k4, SCA)]
@@ -823,26 +968,14 @@ def build() -> None:
     put("general.krea.speedup", r, times(r, 1), krea.dir / "base_summary.csv",
         "AReA / SCA campaign mean seconds, FLUX.1-Krea-dev, 195 prompts; 1 decimal")
 
-    panel, prog2 = runs["a4k195_panel"], runs["prog195_sca_v2"]
-    src = prog2.dir / "sca_v2_prog_vs_hrdit_dev_author.csv"
-    P = pair_file(src, "sca_v2_prog", "hrdit_dev_author")
-    assert {P[METRICS[k][0]]["n"] for k in PER_IMAGE} == {195}
-    put("general.prog.n", 195, "195", src, "n_prompts of the sca_v2_prog minus hrdit_dev_author rows")
-    tally("general.prog", {k: verdict(P[METRICS[k][0]]["v"], P[METRICS[k][0]]["lo"], P[METRICS[k][0]]["hi"],
-                                      METRICS[k][4]) for k in PER_IMAGE}, src,
-          "progressive SCA (sca_v2_prog) minus HRDiT, ten per-image metrics, 2000 prompt draws")
-    for key in ("ir", "hps21", "pick"):
-        metric, _, scale, _, _ = METRICS[key]
-        p_ = P[metric]
-        t = ci_text(p_["v"] * scale, p_["lo"] * scale, p_["hi"] * scale, 2)
-        put(f"general.prog.{key}", t, t, src, f"metric={metric} delta [ci_low, ci_high]{UNITS[scale]}; 2 decimals")
-    for key, run_, m in (("time_prog", prog2, "sca_v2_prog"), ("time_hrdit", panel, "hrdit_dev_author")):
-        e = run_.S[(m, "seconds")]
-        put(f"general.prog.{key}", e["value"], num(e["value"], 1), e["src"],
-            f"campaign mean seconds, method={m}, results/{run_.name}; 1 decimal")
-    fr = prog2.S[("sca_v2_prog", "seconds")]["value"] / panel.S[("hrdit_dev_author", "seconds")]["value"]
-    put("general.prog.time_frac", fr, num(fr, 2), [prog2.dir / "base_summary.csv", panel.dir / "base_summary.csv"],
-        "progressive SCA (sca_v2_prog) / HRDiT campaign mean seconds; 2 decimals")
+    # 6b. progressive SCA, the headline configuration (pairs, set level, times, schedule, pending results) -------
+    build_prog(runs, pcars, hguid, plat, per_image_block)
+    # 6c. Figure paired_area: both configurations minus AReA, the paper's construction --------------------------
+    build_chart_pa(main)
+    # 6d. reach is set by the head: variance of the attention share near the query, head against noise level -----
+    build_heads()
+    # 6e. Table 1 cell classes: rank within each group, significance against progressive SCA ------------------
+    build_table1_classes()
 
     # 7. calibration -----------------------------------------------------------------------------------------
     j = json.loads((CALIB / "k1_1024.json").read_text())
@@ -910,35 +1043,6 @@ def build() -> None:
         put(f"calib.pi.{key}", 100 * frac, num(100 * frac, 1) + "%", npz_path,
             f"percent of s2_pi_head cells {rule} over populated sigma bins; 1 decimal")
 
-    # 8. duplication (results/dup_audit_20261027 and the sca_v2 runs' dup_rates_people.csv) -----------------------
-    for label, d in dup.items():
-        k = f"dup.{label}"
-        how = f"method={d['method']}: {d['dup']} of {d['n']} prompts naming a person or animal with a duplicated one"
-        put(f"{k}.pct", d["pct"], f"{d['pct']}%", d["src"], how + "; 100 * dup / n rounded to an integer")
-        put(f"{k}.k", d["dup"], str(d["dup"]), d["src"], how)
-        put(f"{k}.n", d["n"], str(d["n"]), d["src"], how)
-        put(f"{k}.rate", 100 * d["rate"], num(100 * d["rate"], 1), d["src"], how + "; percent, 1 decimal")
-        put(f"{k}.lo", 100 * d["lo"], num(100 * d["lo"], 1), d["src"], how + "; Wilson 95% lower end, percent")
-        put(f"{k}.hi", 100 * d["hi"], num(100 * d["hi"], 1), d["src"], how + "; Wilson 95% upper end, percent")
-    seeds = [dup[x]["pct"] for x in ("sca_v2", "sca_v2_seed1", "sca_v2_seed2")]
-    t = f"{min(seeds)} to {max(seeds)}%"
-    put("dup.sca_v2.seed_range", t, t, [dup[x]["src"] for x in ("sca_v2", "sca_v2_seed1", "sca_v2_seed2")],
-        "min to max of the sca_v2 rate over seed labels 0, 1, 2 (integer percent)")
-    seeds = [dup[x]["pct"] for x in ("sca_nb", "sca_nb_seed1", "sca_nb_seed2")]
-    t = f"{min(seeds)} to {max(seeds)}%"
-    put("dup.sca_nb.seed_range", t, t, dup["sca_nb"]["src"],
-        "min to max of the sca_nb rate over seed labels 0, 1, 2 (integer percent)")
-
-    # failures in the previous operator's uncurated galleries (visual audit, 2026-10-20) ---------------------------
-    va = RES / "visual_audit_20261020" / "random_galleries_sca.csv"
-    sel = [r for r in rows(va) if r["model"] == "FLUX.1-dev" and r["size"] == "4096x4096"]
-    flag = lambda x: x.strip() != "" and x.strip().lower() != "no"  # noqa: E731
-    dups = [r for r in sel if flag(r["extra_people_or_animals"]) or flag(r["repeated_or_extra_objects"])]
-    put("failures.dup_n", len(dups), str(len(dups)), va,
-        "rows model=FLUX.1-dev, size=4096x4096 with extra_people_or_animals or repeated_or_extra_objects set "
-        "(non-empty and not 'no'); the operator without the schedule")
-    put("failures.dup_total", len(sel), str(len(sel)), va, "rows model=FLUX.1-dev, size=4096x4096")
-
     # configuration constants from the sca_v2 4096^2 generation sidecars (out/dupfix/sca_v2) ----------------------
     for key, get, dec in (("steps", lambda c, s: c["steps"], None), ("guidance", lambda c, s: c["guidance"], 1),
                           ("gate_sigma", lambda c, s: c["sca"]["gate_sigma"], 2),
@@ -979,6 +1083,37 @@ def build() -> None:
     wide = unique((sum(1 for x in s[: c["steps"]] if lo < x <= c["sca"]["gate_sigma"]) for c, s in v2cars if s),
                   "wide steps")
     put("config.wide_steps", wide, str(wide), V2_SIDECARS, "number of step sigmas in (last win_sched bound, gate]")
+    op = NUM["config.opening_steps"]["value"]
+    put("config.first_wide_step", op + 1, str(op + 1), V2_SIDECARS, "config.opening_steps + 1 (1-based step number)")
+    put("config.last_wide_step", op + wide, str(op + wide), V2_SIDECARS,
+        "config.opening_steps + config.wide_steps (1-based step number)")
+    put("config.grid_side_4096", side, str(side), V2_SIDECARS, "max(config.grid) of the sca_v2 4096x4096 sidecars")
+    n_nat = unique((c["sca"]["window"] for c, _ in v2cars), "native window") ** 2
+    cx = (side * side / n_nat) ** 2
+    put("config.cost_x_4096", cx, f"{cx:.0f}", V2_SIDECARS,
+        f"(N / N0)^2: image tokens at 4096x4096 ({side}^2) over the native grid's (window^2 = {n_nat}), squared, the "
+        "growth of full attention's query-key pairs")
+    kr = unique((c["sca"]["pi_scale"] for c, _ in v2cars), "pi_scale") ** 2
+    put("calib.key_ratio", kr, str(kr), V2_SIDECARS,
+        "pi_scale^2: at emulated ratio 4 each branch sees r^2 times fewer keys than at the target")
+    for key, name in (("krea", "krea_1024.json"), ("flux2", "flux2_1024.json")):
+        jj = json.loads((CALIB / name).read_text())
+        put(f"calib.n_prompts_{key}", jj["n_prompts"], str(jj["n_prompts"]), CALIB / name, f"n_prompts at {jj['res']}")
+    e8 = RES / "e2_8192_base_summary.csv"
+    n8 = unique((int(r["n_prompts"]) for r in rows(e8)), "8192^2 prompts")
+    put("sizes.8192.n", n8, str(n8), e8, "n_prompts of every row of the 8192x8192 summary (exploratory, sca_nb and area)")
+    ab = RES / "abl_base_summary.csv"
+    n46 = unique((int(r["n_prompts"]) for r in rows(ab)), "ablation subset prompts")
+    put("abl.n_prompts", n46, str(n46), ab, "n_prompts of every row of the ablation summary (the fixed subset)")
+    v0 = pair_file(RES / "ablnb_abl_v0_deltas.csv", "abl_v0", "sca_nb")["ir"]
+    assert v0["n"] == n46, v0
+    put("abl.v0.ir", ci_text(v0["v"], v0["lo"], v0["hi"], 2), ci_text(v0["v"], v0["lo"], v0["hi"], 2), v0["src"],
+        "metric=ir, abl_v0 (per-head mix from step 1, no opening) minus sca_nb; 2 decimals")
+    put("abl.v0.ir_drop", -v0["v"], num(-v0["v"], 2), v0["src"], "minus the ir delta of abl_v0 minus sca_nb; 2 decimals")
+    nb, nt = NUM["prog.vs.area.n_better"]["value"], NUM["prog.vs.area.n_total"]["value"]
+    txt = f"all {WORDS[nt]}" if nb == nt else f"{WORDS[nb]} of {WORDS[nt]}"
+    put("prog.vs.area.all_word", txt, txt, NUM["prog.vs.area.n_better"]["src"].split(" + ")[0],
+        "prog.vs.area.n_better of n_total as words ('all ten' when equal), as the abstract prints it")
     shifts = [c.get("scheduler", {}).get("max_shift") for c, _ in sidecars[("full", "4096x4096")]]
     v = unique(shifts, "max_shift")
     put("config.shift", v, num(v, 2), sc_src,
@@ -988,6 +1123,272 @@ def build() -> None:
     cs = RES / "compute" / "summary.json"
     v = json.loads(cs.read_text())["attributable_resource_hours_lower_bound"]
     put("compute.gh200_hours", v, num(v, 1), cs, "attributable_resource_hours_lower_bound; 1 decimal")
+
+
+# ---------------------------------------------------------------------------------------------------------
+def prog_pairs(base: str) -> tuple:
+    """({CSV metric: dict(v, lo, hi, n, seed, src)}, source) of progressive SCA minus `base`, per-image, 2000 draws."""
+    src = PROG_PAIRS / f"{PROG}_vs_{base}.csv"
+    P = pair_file(src, PROG, base)
+    if {P[METRICS[k][0]]["n"] for k in PER_IMAGE} != {195}:
+        raise ValueError(f"{src}: expected 195 prompts on every per-image metric")
+    return P, src
+
+
+def build_prog(runs: dict, pcars: list, hguid: tuple, plat: dict, per_image_block) -> None:
+    """Progressive SCA: paired differences against every baseline, set-level intervals where they exist, campaign
+    and clean times, the stage schedule from its sidecars, and the results the paper still lists as pending."""
+    prog_run, panel, main = runs[PROG_RUN], runs["a4k195_panel"], runs["a4k195_main"]
+    # per-image pairs (results/prog195_vs_baselines/sca_v2_prog_vs_<baseline>.csv)
+    for key, base in PROG_VS:
+        P, src = prog_pairs(base)
+        verdicts = {}
+        for mk in PER_IMAGE:
+            metric, _, scale, _, lower = METRICS[mk]
+            p = P[metric]
+            v, lo, hi = (x * scale for x in (p["v"], p["lo"], p["hi"]))
+            d = TEXT_DEC[mk]
+            how = (f"{metric}: progressive SCA ({PROG}) minus {base}, per-image paired bootstrap over prompts (2000 "
+                   f"draws, seed {p['seed']}){UNITS[scale]}")
+            put(f"prog.vs.{key}.{mk}.delta", v, sgn(v, d), src, f"{how}; point; {dp(d)}")
+            put(f"prog.vs.{key}.{mk}.ci", ci_text(v, lo, hi, d), ci_text(v, lo, hi, d), src,
+                f"{how}; point [lo, hi]; {dp(d)}")
+            verdicts[mk] = verdict(p["v"], p["lo"], p["hi"], lower)
+            put(f"prog.vs.{key}.{mk}.verdict", verdicts[mk], verdicts[mk], src,
+                f"{how}; better / worse / unresolved for progressive SCA")
+        tally(f"prog.vs.{key}", verdicts, src,
+              f"progressive SCA minus {base} over the ten per-image metrics (2000 prompt draws)")
+    # set-level pairs: corrected FID, KID and their patch versions, 1000 draws, 168 reference identities
+    for key, base in PROG_VS:
+        sl, srcs = prog_setlevel(base)
+        if sl is None:
+            put(f"prog.set.{key}.status", "pending", "pending", srcs,
+                f"no corrected set-level interval of {PROG} against {base} yet: {rel(PROG_CFID_ALL)} has not landed")
+            continue
+        put(f"prog.set.{key}.status", "landed", "landed", srcs, f"corrected set-level pairs of {PROG} against {base}")
+        verdicts = {}
+        for mk in SETLEVEL:
+            metric, _, scale, _, lower = METRICS[mk]
+            r = sl[metric]
+            v, lo, hi = (x * scale for x in (r["v"], r["lo"], r["hi"]))
+            d = TEXT_DEC[mk]
+            how = (f"{metric}: progressive SCA minus {base}, corrected bank, 1000 draws over prompts and the 168 "
+                   f"reference identities{UNITS[scale]}")
+            put(f"prog.set.{key}.{mk}.delta", v, sgn(v, d), srcs, f"{how}; point; {dp(d)}")
+            put(f"prog.set.{key}.{mk}.ci", ci_text(v, lo, hi, d), ci_text(v, lo, hi, d), srcs,
+                f"{how}; point [lo, hi]; {dp(d)}")
+            verdicts[mk] = verdict(r["v"], r["lo"], r["hi"], lower)
+            put(f"prog.set.{key}.{mk}.verdict", verdicts[mk], verdicts[mk], srcs,
+                f"{how}; better / worse / unresolved for progressive SCA (lower is better)")
+        tally(f"prog.set.{key}", verdicts, srcs, f"progressive SCA minus {base} over FID, KID, patch FID, patch KID")
+    # campaign means on shared nodes (Table 1 camp. column)
+    camp = {"prog": prog_run.S[(PROG, "seconds")], "hrdit": panel.S[("hrdit_dev_author", "seconds")],
+            "area": main.S[("area", "seconds")]}
+    for k, m, run_ in (("prog", PROG, prog_run), ("hrdit", "hrdit_dev_author", panel), ("area", "area", main)):
+        e = camp[k]
+        put(f"prog.camp.{k}", e["value"], num(e["value"], 1), e["src"],
+            f"campaign mean seconds per image, method={m}, results/{run_.name}; 1 decimal")
+    x = camp["area"]["value"] / camp["prog"]["value"]
+    put("prog.camp.area_x", x, times(x, 1), [camp["area"]["src"], camp["prog"]["src"]],
+        "AReA / progressive SCA campaign mean seconds at 4096x4096; 1 decimal")
+    x = 100.0 * camp["prog"]["value"] / camp["hrdit"]["value"]
+    put("prog.camp.hrdit_pct", x, f"{x:.0f}%", [camp["prog"]["src"], camp["hrdit"]["src"]],
+        "100 * progressive SCA / HRDiT campaign mean seconds at 4096x4096; 0 decimals")
+    # clean batch-1 latency, sweep 3 (progressive SCA, HRDiT and AReA timed back to back on one GPU)
+    names = (("prog", PROG), ("hrdit", "hrdit_dev_author"), ("area", "area"))
+    if all(m in plat for _, m in names):
+        gpus = {r["gpu"].split(",")[1].strip() for r in rows(PROG_LAT) if r["res"] == "4096x4096"}
+        if len(gpus) != 1 or "GH200" not in rows(PROG_LAT)[0]["gpu"]:
+            raise ValueError(f"{PROG_LAT}: expected one GH200 for all rows, found {gpus}")
+        for k, m in names:
+            med, n_t = plat[m]
+            put(f"prog.clean.{k}", med, num(med, 1), PROG_LAT,
+                f"median_s of res=4096x4096, method={m} (sweep 3: {n_t} timed prompts after a warm-up, one GH200, "
+                "all three methods back to back); 1 decimal")
+        put("prog.clean.n_timed", unique((plat[m][1] for _, m in names), "n_timed"),
+            str(unique((plat[m][1] for _, m in names), "n_timed")), PROG_LAT, "n_timed of every 4096x4096 row")
+        P_, H_, A_ = (plat[m][0] for _, m in names)
+        put("prog.clean.area_x", A_ / P_, times(A_ / P_, 1), PROG_LAT, "AReA / progressive SCA median_s, sweep 3; 1 decimal")
+        put("prog.clean.hrdit_x", H_ / P_, times(H_ / P_, 1), PROG_LAT, "HRDiT / progressive SCA median_s, sweep 3; 1 decimal")
+        put("prog.clean.hrdit_pct", 100 * P_ / H_, f"{100 * P_ / H_:.0f}%", PROG_LAT,
+            "100 * progressive SCA / HRDiT median_s, sweep 3; 0 decimals")
+        put("prog.clean.status", "landed", "landed", PROG_LAT, "results/prog_latency/latency_summary.csv exists")
+    else:
+        for k in ("prog", "hrdit", "area", "n_timed", "area_x", "hrdit_x", "hrdit_pct", "status"):
+            put(f"prog.clean.{k}", "pending", "pending", PROG_LAT,
+                "results/prog_latency/latency_summary.csv absent: the clean latency of progressive SCA has not landed")
+    # the stage schedule (HRDiT's, kept as released) from the 195 progressive sidecars
+    pg = lambda f, what: unique((f(c) for c in pcars), what)  # noqa: E731
+    base_steps = pg(lambda c: c["progressive"]["base_steps"], "base_steps")
+    hi_steps = pg(lambda c: tuple(c["progressive"]["highres_steps"]), "highres_steps")
+    stages = pg(lambda c: tuple(c["progressive"]["stages"]), "stages")
+    guid = pg(lambda c: tuple(c["progressive"]["guidance"]), "guidance")
+    if guid != hguid:
+        raise ValueError(f"progressive guidance {guid} differs from HRDiT's {hguid}")
+    ratios = pg(lambda c: tuple(s["pi_scale"] for s in c["sca"]["stages"]), "pi_scale per stage")
+    sca_res = pg(lambda c: tuple(s["res"] for s in c["sca"]["stages"]), "SCA stage sizes")
+    sig0 = pg(lambda c: tuple(round(x, 2) for x in c["_stage_sigma0"]), "first sigma of each stage")
+    gate = pg(lambda c: tuple(c["_gate_active"]), "gate-active steps per SCA stage")
+    win = pg(lambda c: tuple(s["window"] for s in c["sca"]["stages"]), "SCA windows")
+    bridge = pg(lambda c: tuple(s["bridge_cells"] ** 2 * s["bridge_k"] for s in c["sca"]["stages"]), "bridge tokens")
+    attn = pg(lambda c: c["attention"], "attention")
+    total = pg(lambda c: c["steps"], "steps")
+    if stages != ("1024x1024", "2048x2048", "4096x4096") or sca_res != stages[1:] or attn != "stock@native+sca@highres":
+        raise ValueError(f"unexpected progressive stages {stages}, SCA stages {sca_res}, attention {attn}")
+    how = f"of all {len(pcars)} complete {PROG} 4096x4096 sidecars (identical), out/dupfix_prog"
+    put("prog.cfg.base_steps", base_steps, str(base_steps), PROG_SIDECARS, f"config.progressive.base_steps {how}")
+    for k, n in (("steps_2048", hi_steps[0]), ("steps_4096", hi_steps[1])):
+        put(f"prog.cfg.{k}", n, str(n), PROG_SIDECARS, f"config.progressive.highres_steps {how}")
+    put("prog.cfg.total_steps", total, str(total), PROG_SIDECARS, f"config.steps {how}")
+    for k, g in zip(("g1024", "g2048", "g4096"), guid):
+        put(f"prog.cfg.{k}", g, num(g, 1), PROG_SIDECARS, f"config.progressive.guidance {how}; 1 decimal")
+    txt = ", ".join(num(g, 1) for g in guid[:-1]) + " and " + num(guid[-1], 1)
+    put("prog.cfg.guidance", txt, txt, PROG_SIDECARS, f"config.progressive.guidance {how}")
+    for k, r_ in zip(("ratio_2048", "ratio_4096"), ratios):
+        put(f"prog.cfg.{k}", r_, str(r_), PROG_SIDECARS, f"config.sca.stages[].pi_scale {how} (calibrated ratio read)")
+    for k, s_ in zip(("sigma_2048", "sigma_4096"), sig0[1:]):
+        put(f"prog.cfg.{k}", s_, num(s_, 2), PROG_SIDECARS, f"first entry of stage_sigmas of that stage {how}; 2 decimals")
+    put("prog.cfg.gate_steps", sum(gate), str(sum(gate)), PROG_SIDECARS,
+        f"sum of gate_active_steps over the two SCA stages {how}: steps run on the global view alone")
+    put("prog.cfg.window", unique(win, "window"), str(unique(win, "window")), PROG_SIDECARS,
+        f"config.sca.stages[].window {how}")
+    b = unique(bridge, "bridge")
+    put("prog.cfg.bridge_tokens", b, f"{b:,}", PROG_SIDECARS, f"bridge_cells^2 * bridge_k of config.sca.stages[] {how}")
+    # results the paper lists as pending: progressive SCA on seeds 1 and 2 and on HRGen-1K
+    for k, (n_exp, cands) in PROG_LATER.items():
+        hit = next((RES / c for c in cands if (RES / c).exists()), None)
+        if hit is None:
+            put(f"prog.later.{k}.status", "pending", "pending", [RES / c for c in cands],
+                "none of these files exists yet: the run has not landed")
+            continue
+        put(f"prog.later.{k}.status", "landed", "landed", hit, f"{rel(hit)} exists")
+        P = pair_file(hit, PROG, "area")
+        if k.startswith("seed") and {p["seed"] for p in P.values()} != {k[-1]}:
+            raise ValueError(f"{hit}: seed column {sorted({p['seed'] for p in P.values()})}, expected {k[-1]}")
+        per_image_block(f"prog.later.{k}", P, n_exp)
+        for key, mk in (("ir_ci2", "ir"), ("hps21_ci", "hps21"), ("pick_ci", "pick")):   # Table generality's cells
+            metric, _, scale, _, _ = METRICS[mk]
+            p = P[metric]
+            txt = ci_text(p["v"] * scale, p["lo"] * scale, p["hi"] * scale, 2)
+            put(f"prog.later.{k}.{key}", txt, txt, hit, f"metric={metric} delta [ci_low, ci_high]{UNITS[scale]}; "
+                                                        "2 decimals, as Table generality prints it")
+
+
+def build_chart_pa(main) -> None:
+    """Figure paired_area as paper/figures/src/fig_paired_prog.py draws it: progressive and single-pass SCA minus
+    AReA, x = 100 * sign * delta / AReA's mean (sign -1 when lower is better), 14 metrics without IS."""
+    area = {}
+    for name in ("base_summary.csv", "extra_summary.csv"):
+        for r in rows(RES / "a4k195_main" / name):
+            if r["method"] == "area":
+                area[r["metric"]] = (float(r["value"]), RES / "a4k195_main" / name)
+    for r in rows(CHART_PA_SET / "summary.csv"):
+        if r["method"] == "area":   # corrected set-level means
+            area[r["metric"]] = (float(r["value"]), CHART_PA_SET / "summary.csv")
+    for s, method, path in CHART_PA_SERIES:
+        P = pair_file(path, method, "area")
+        D = {m: (d["v"], d["lo"], d["hi"], path) for m, d in P.items()}
+        for r in rows(CHART_PA_SET / "paired_deltas.csv"):
+            if r["reference_method"] == "area" and r["method"] == method and r["metric"] in DIST:
+                assert r["bootstrap_valid"] == "1000" and r["n_reference_prompts"] == "168", r
+                D[r["metric"]] = (float(r["value"]), float(r["ci_low"]), float(r["ci_high"]),
+                                  CHART_PA_SET / "paired_deltas.csv")
+        verdicts, files = {}, set()
+        for mk in CHART_PA:
+            metric, label, scale, dec, lower = METRICS[mk]
+            v, lo, hi, src = D[metric]
+            a, asrc = area[metric]
+            files.update((src, asrc))
+            sign = -1.0 if lower else 1.0
+            x = [100.0 * sign * t / a for t in (v, lo, hi)]
+            xl, xh = min(x[1:]), max(x[1:])
+            vd = "better" if xl > 0 else ("worse" if xh < 0 else "unresolved")
+            how = (f"{metric}: {method} minus AReA as percent of AReA's mean ({a:.6g}), sign -1 when lower is better "
+                   "(fig_paired_prog.py)")
+            put(f"chart.pa.{s}.{mk}.pct", x[0], sgn(x[0], 1) + "%", [src, asrc], f"{how}; point; 1 decimal")
+            put(f"chart.pa.{s}.{mk}.pct_lo", xl, num(xl, 1) + "%", [src, asrc], f"{how}; lower end; 1 decimal")
+            put(f"chart.pa.{s}.{mk}.pct_hi", xh, num(xh, 1) + "%", [src, asrc], f"{how}; upper end; 1 decimal")
+            put(f"chart.pa.{s}.{mk}.verdict", vd, vd, [src, asrc], f"{how}; better / worse / unresolved")
+            verdicts[mk] = vd
+        tally(f"chart.pa.{s}", verdicts, sorted(files, key=str),
+              f"{method} minus AReA over the 14 metrics of Figure paired_area")
+
+
+def build_heads() -> None:
+    """Reach is set by the head: variance of the share of each head's image attention within r tokens of the query
+    over (block, head, noise bin) cells, split into head and noise level (results/heads_view/variance_split.csv)."""
+    R = {(r["checkpoint"], r["res"], r["sigma_range"], r["quantity"], r["radius"]): r for r in rows(HEADS_VAR)}
+
+    def row(ckpt, res="1024x1024", radius="16"):
+        return R[(ckpt, res, "post_gate", "image_share", radius)]
+
+    sel = "res=1024x1024, sigma_range=post_gate (after the first 8 steps), quantity=image_share, radius=16"
+    r = row("flux1_dev")
+    for key, val, d, what in (
+            ("head", 100 * (1 - float(r["noise_within_head"])), 1, "100 * (1 - noise_within_head): the head's share"),
+            ("noise", 100 * float(r["noise_within_head"]), 1, "100 * noise_within_head: the noise level's share"),
+            ("avg", 100 * float(r["head_avg_curve"]), 1, "100 * head_avg_curve: the head-averaged curve's share"),
+            ("within_block", 100 * float(r["head_within_layer"]), 1, "100 * head_within_layer"),
+            ("between_blocks", 100 * float(r["layer"]), 1, "100 * layer"),
+            ("curve_lo", float(r["curve_min"]), 2, "curve_min of the head-averaged curve"),
+            ("curve_hi", float(r["curve_max"]), 2, "curve_max of the head-averaged curve")):
+        put(f"heads.var.{key}", val, num(val, d), HEADS_VAR, f"checkpoint=flux1_dev, {sel}: {what}; {dp(d)}")
+    put("heads.var.radius", int(r["radius"]), r["radius"], HEADS_VAR, f"checkpoint=flux1_dev, {sel}: radius")
+    put("heads.var.n_heads", int(r["n_heads"]), r["n_heads"], HEADS_VAR, f"checkpoint=flux1_dev, {sel}: n_heads")
+    for key, ckpt in (("krea_head", "flux1_krea_dev"), ("flux2_head", "flux2_dev")):
+        v = 100 * (1 - float(row(ckpt)["noise_within_head"]))
+        put(f"heads.var.{key}", v, num(v, 1), HEADS_VAR, f"checkpoint={ckpt}, {sel}: 100 * (1 - noise_within_head)")
+    put("heads.var.flux2_n_heads", int(row("flux2_dev")["n_heads"]), row("flux2_dev")["n_heads"], HEADS_VAR,
+        f"checkpoint=flux2_dev, {sel}: n_heads")
+    cells = [(c, s, rad) for c, s in (("flux1_dev", "1024x1024"), ("flux1_dev", "1280x1280"),
+                                      ("flux1_krea_dev", "1024x1024"), ("flux2_dev", "1024x1024")) for rad in ("8", "16")]
+    v = min(100 * (1 - float(row(c, s, rad)["noise_within_head"])) for c, s, rad in cells)
+    put("heads.var.min_head", v, num(math.floor(v * 10) / 10, 1), HEADS_VAR,
+        "minimum over the rows of Table variance_split (FLUX.1-dev at 1024^2 and 1280^2, FLUX.1-Krea-dev, FLUX.2-dev; "
+        "radius 8 and 16; post_gate) of 100 * (1 - noise_within_head); rounded down to 1 decimal, since the text "
+        "reads 'at least'")
+
+
+def build_table1_classes() -> None:
+    """main.<row>.<column>.cls: "best" / "second" within the row's group (Table 1's bold and underline) and "sig-up" /
+    "sig-dn" where the row is significantly better / worse than progressive SCA (its 95% paired interval)."""
+    cols = [("time_clean", True, True), ("time_camp", True, False), ("ir", False, True), ("hps21", False, True),
+            ("pick", False, True), ("clip", False, True), ("musiqc", False, True), ("fid", True, True),
+            ("fidp", True, True)]
+    rank = {}
+    for group in TABLE1_GROUPS:
+        for col, lower, ranked in cols:
+            if not ranked:
+                continue
+            vals = [(NUM[f"main.{r}.{col}"]["value"], r) for r in group
+                    if isinstance(NUM[f"main.{r}.{col}"]["value"], (int, float))]
+            vals.sort(key=lambda t: t[0] if lower else -t[0])
+            for (_, r), name in zip(vals, ("best", "second")):
+                rank[(r, col)] = name
+    for key, method, _ in TABLE1:
+        for col, lower, ranked in cols:
+            cls, why = [], []
+            src = NUM[f"main.{key}.{col}"]["src"].split(" + ")
+            if (key, col) in rank:
+                cls.append(rank[(key, col)])
+                why.append(f"{rank[(key, col)]} of its group on main.*.{col}")
+            vk = None
+            if key != "prog" and col in ("ir", "hps21", "pick", "clip", "musiqc"):
+                vk = f"prog.vs.{key}.{col}.verdict"
+            elif key != "prog" and col in ("fid", "fidp") and NUM[f"prog.set.{key}.status"]["value"] == "landed":
+                vk = f"prog.set.{key}.{col}.verdict"
+            vd = NUM[vk]["value"] if vk else None
+            if vk:
+                src += NUM[vk]["src"].split(" + ")
+            if vd == "better":
+                cls.append("sig-dn")
+                why.append(f"progressive SCA is significantly better than this row ({vk})")
+            elif vd == "worse":
+                cls.append("sig-up")
+                why.append(f"this row is significantly better than progressive SCA ({vk})")
+            txt = " ".join(cls)
+            put(f"main.{key}.{col}.cls", txt, txt, [REPO / s for s in src],
+                "; ".join(why) or "no rank and no significant difference from progressive SCA")
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1043,10 +1444,25 @@ def write_outputs() -> None:
 ATTR = r"""\sdata-num\s*=\s*(?P<q>["'])(?P<key>[^"']*)(?P=q)"""
 TAG = re.compile(r"<(?P<tag>[A-Za-z][\w:-]*)(?P<attrs>[^<>]*?" + ATTR + r"[^<>]*)>(?P<text>[^<]*)</(?P=tag)\s*>")
 ANY = re.compile(ATTR)
+CLASS = re.compile(r"""\sclass\s*=\s*(["'])(.*?)\1""")
+MANAGED = {"best", "second", "sig-up", "sig-dn"}   # classes owned by the "<key>.cls" entries
+
+
+def with_classes(attrs: str, key: str) -> str:
+    """attrs with the managed classes replaced by NUM[key + '.cls'] (other classes kept); unchanged without one."""
+    if key + ".cls" not in NUM:
+        return attrs
+    want = NUM[key + ".cls"]["display"].split()
+    m = CLASS.search(attrs)
+    keep = [c for c in (m.group(2).split() if m else []) if c not in MANAGED]
+    new = " ".join(keep + want)
+    rest = attrs[:m.start()] + attrs[m.end():] if m else attrs
+    return rest + (f' class="{new}"' if new else "")
 
 
 def fill(path: str) -> None:
-    """Rewrite the text of every inline <tag ... data-num="key" ...>TEXT</tag> with NUM[key]['display']."""
+    """Rewrite the text of every inline <tag ... data-num="key" ...>TEXT</tag> with NUM[key]['display'], and its
+    managed classes with NUM[key + '.cls'] where that key exists."""
     p = Path(path)
     with open(p, encoding="utf-8", newline="") as fh:
         text = fh.read()
@@ -1059,7 +1475,8 @@ def fill(path: str) -> None:
     def sub(m):
         nonlocal count
         count += 1
-        return f"<{m['tag']}{m['attrs']}>{html.escape(NUM[m['key']]['display'], quote=False)}</{m['tag']}>"
+        attrs = with_classes(m["attrs"], m["key"])
+        return f"<{m['tag']}{attrs}>{html.escape(NUM[m['key']]['display'], quote=False)}</{m['tag']}>"
 
     new = TAG.sub(sub, text)
     if count != len(keys):

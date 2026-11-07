@@ -27,6 +27,14 @@ window.SCA_IMAGES = {
      "full": {
       "full": "assets/img/compare/m8343371271909676658_full.webp",
       "crop": "assets/img/compare/m8343371271909676658_full_crop.webp"
+     },
+     "prog": {
+      "full": "assets/img/compare/m8343371271909676658_prog.webp",
+      "crop": "assets/img/compare/m8343371271909676658_prog_crop.webp"
+     },
+     "hrdit": {
+      "full": "assets/img/compare/m8343371271909676658_hrdit.webp",
+      "crop": "assets/img/compare/m8343371271909676658_hrdit_crop.webp"
      }
     },
     "operator": "final",
@@ -57,6 +65,14 @@ window.SCA_IMAGES = {
      "full": {
       "full": "assets/img/compare/5849277588805396896_full.webp",
       "crop": "assets/img/compare/5849277588805396896_full_crop.webp"
+     },
+     "prog": {
+      "full": "assets/img/compare/5849277588805396896_prog.webp",
+      "crop": "assets/img/compare/5849277588805396896_prog_crop.webp"
+     },
+     "hrdit": {
+      "full": "assets/img/compare/5849277588805396896_hrdit.webp",
+      "crop": "assets/img/compare/5849277588805396896_hrdit_crop.webp"
      }
     },
     "operator": "final",
@@ -87,6 +103,14 @@ window.SCA_IMAGES = {
      "full": {
       "full": "assets/img/compare/7109958488611222679_full.webp",
       "crop": "assets/img/compare/7109958488611222679_full_crop.webp"
+     },
+     "prog": {
+      "full": "assets/img/compare/7109958488611222679_prog.webp",
+      "crop": "assets/img/compare/7109958488611222679_prog_crop.webp"
+     },
+     "hrdit": {
+      "full": "assets/img/compare/7109958488611222679_hrdit.webp",
+      "crop": "assets/img/compare/7109958488611222679_hrdit_crop.webp"
      }
     },
     "operator": "final",
@@ -117,6 +141,14 @@ window.SCA_IMAGES = {
      "full": {
       "full": "assets/img/compare/2232973817337527860_full.webp",
       "crop": "assets/img/compare/2232973817337527860_full_crop.webp"
+     },
+     "prog": {
+      "full": "assets/img/compare/2232973817337527860_prog.webp",
+      "crop": "assets/img/compare/2232973817337527860_prog_crop.webp"
+     },
+     "hrdit": {
+      "full": "assets/img/compare/2232973817337527860_hrdit.webp",
+      "crop": "assets/img/compare/2232973817337527860_hrdit_crop.webp"
      }
     },
     "operator": "final",
@@ -147,6 +179,14 @@ window.SCA_IMAGES = {
      "full": {
       "full": "assets/img/compare/m548913239957610051_full.webp",
       "crop": "assets/img/compare/m548913239957610051_full_crop.webp"
+     },
+     "prog": {
+      "full": "assets/img/compare/m548913239957610051_prog.webp",
+      "crop": "assets/img/compare/m548913239957610051_prog_crop.webp"
+     },
+     "hrdit": {
+      "full": "assets/img/compare/m548913239957610051_hrdit.webp",
+      "crop": "assets/img/compare/m548913239957610051_hrdit_crop.webp"
      }
     },
     "operator": "final",
@@ -177,6 +217,14 @@ window.SCA_IMAGES = {
      "full": {
       "full": "assets/img/compare/m8737279395568207187_full.webp",
       "crop": "assets/img/compare/m8737279395568207187_full_crop.webp"
+     },
+     "prog": {
+      "full": "assets/img/compare/m8737279395568207187_prog.webp",
+      "crop": "assets/img/compare/m8737279395568207187_prog_crop.webp"
+     },
+     "hrdit": {
+      "full": "assets/img/compare/m8737279395568207187_hrdit.webp",
+      "crop": "assets/img/compare/m8737279395568207187_hrdit_crop.webp"
      }
     },
     "operator": "final",
@@ -207,6 +255,14 @@ window.SCA_IMAGES = {
      "full": {
       "full": "assets/img/compare/m8919475713516982506_full.webp",
       "crop": "assets/img/compare/m8919475713516982506_full_crop.webp"
+     },
+     "prog": {
+      "full": "assets/img/compare/m8919475713516982506_prog.webp",
+      "crop": "assets/img/compare/m8919475713516982506_prog_crop.webp"
+     },
+     "hrdit": {
+      "full": "assets/img/compare/m8919475713516982506_hrdit.webp",
+      "crop": "assets/img/compare/m8919475713516982506_hrdit_crop.webp"
      }
     },
     "operator": "final",
@@ -237,6 +293,14 @@ window.SCA_IMAGES = {
      "full": {
       "full": "assets/img/compare/997293625843621481_full.webp",
       "crop": "assets/img/compare/997293625843621481_full_crop.webp"
+     },
+     "prog": {
+      "full": "assets/img/compare/997293625843621481_prog.webp",
+      "crop": "assets/img/compare/997293625843621481_prog_crop.webp"
+     },
+     "hrdit": {
+      "full": "assets/img/compare/997293625843621481_hrdit.webp",
+      "crop": "assets/img/compare/997293625843621481_hrdit_crop.webp"
      }
     },
     "operator": "final",
@@ -267,6 +331,14 @@ window.SCA_IMAGES = {
      "full": {
       "full": "assets/img/compare/4537479891260587671_full.webp",
       "crop": "assets/img/compare/4537479891260587671_full_crop.webp"
+     },
+     "prog": {
+      "full": "assets/img/compare/4537479891260587671_prog.webp",
+      "crop": "assets/img/compare/4537479891260587671_prog_crop.webp"
+     },
+     "hrdit": {
+      "full": "assets/img/compare/4537479891260587671_hrdit.webp",
+      "crop": "assets/img/compare/4537479891260587671_hrdit_crop.webp"
      }
     },
     "operator": "final",
@@ -297,6 +369,14 @@ window.SCA_IMAGES = {
      "full": {
       "full": "assets/img/compare/1516768667427572324_full.webp",
       "crop": "assets/img/compare/1516768667427572324_full_crop.webp"
+     },
+     "prog": {
+      "full": "assets/img/compare/1516768667427572324_prog.webp",
+      "crop": "assets/img/compare/1516768667427572324_prog_crop.webp"
+     },
+     "hrdit": {
+      "full": "assets/img/compare/1516768667427572324_hrdit.webp",
+      "crop": "assets/img/compare/1516768667427572324_hrdit_crop.webp"
      }
     },
     "operator": "final",
@@ -327,11 +407,26 @@ window.SCA_IMAGES = {
      "full": {
       "full": "assets/img/compare/3943607367684487957_full.webp",
       "crop": "assets/img/compare/3943607367684487957_full_crop.webp"
+     },
+     "prog": {
+      "full": "assets/img/compare/3943607367684487957_prog.webp",
+      "crop": "assets/img/compare/3943607367684487957_prog_crop.webp"
+     },
+     "hrdit": {
+      "full": "assets/img/compare/3943607367684487957_hrdit.webp",
+      "crop": "assets/img/compare/3943607367684487957_hrdit_crop.webp"
      }
     },
     "operator": "final",
     "thumb": "assets/img/compare/3943607367684487957_thumb.webp"
    }
+  ],
+  "methods": [
+   "sca",
+   "area",
+   "full",
+   "prog",
+   "hrdit"
   ],
   "crop_rule": "512x512 native window with the largest mean FIND_EDGES response averaged over SCA, AReA and full attention, searched on a 64 px grid inside the central 60 percent of each axis",
   "random_draw": {
@@ -652,63 +747,6 @@ window.SCA_IMAGES = {
  ],
  "failures": [
   {
-   "id": "gate_v0",
-   "group": "gate",
-   "src": "abl_v0",
-   "res": "4096x4096",
-   "sid": "3614061571823823193",
-   "label": "development prompt",
-   "note": "mix from step 1",
-   "operator": "previous",
-   "source_png": "/scratch/09032/saini_2/sca/out/abl/abl_v0/4096x4096/a4k_eval_4096_3614061571823823193_68ec961735_seed0.png",
-   "crops": [],
-   "size": [
-    4096,
-    4096
-   ],
-   "prompt": "A Moai statue gazes upward against a starry night sky, with a colorful sunset illuminating the horizon.",
-   "full": "assets/img/failures/gate_v0.webp",
-   "crop_files": []
-  },
-  {
-   "id": "gate_w16",
-   "group": "gate",
-   "src": "dev_w16",
-   "res": "4096x4096",
-   "sid": "3614061571823823193",
-   "label": "development prompt",
-   "note": "16-token windows",
-   "operator": "previous",
-   "source_png": "/scratch/09032/saini_2/sca/out/dev/sca_w16/4096x4096/a4k_eval_4096_3614061571823823193_68ec961735_seed0.png",
-   "crops": [],
-   "size": [
-    4096,
-    4096
-   ],
-   "prompt": "A Moai statue gazes upward against a starry night sky, with a colorful sunset illuminating the horizon.",
-   "full": "assets/img/failures/gate_w16.webp",
-   "crop_files": []
-  },
-  {
-   "id": "gate_sca",
-   "group": "gate",
-   "src": "sca",
-   "res": "4096x4096",
-   "sid": "3614061571823823193",
-   "label": "development prompt",
-   "note": "SCA",
-   "operator": "previous",
-   "source_png": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_3614061571823823193_68ec961735_seed0.png",
-   "crops": [],
-   "size": [
-    4096,
-    4096
-   ],
-   "prompt": "A Moai statue gazes upward against a starry night sky, with a colorful sunset illuminating the horizon.",
-   "full": "assets/img/failures/gate_sca.webp",
-   "crop_files": []
-  },
-  {
    "id": "local_sword_sca",
    "group": "local",
    "src": "sca",
@@ -938,7 +976,7 @@ window.SCA_IMAGES = {
    "file": "assets/img/method/method.webp",
    "size": [
     2400,
-    739
+    991
    ],
    "source": "paper/figures/method.pdf"
   },
@@ -946,7 +984,7 @@ window.SCA_IMAGES = {
    "file": "assets/img/method/method_zoom.webp",
    "size": [
     2400,
-    1615
+    1510
    ],
    "source": "paper/figures/method_zoom.pdf"
   },
@@ -958,253 +996,5 @@ window.SCA_IMAGES = {
    ],
    "source": "paper/figures/pi_heads.pdf"
   }
- },
- "dup_pairs": [
-  {
-   "id": "dup_pair_0",
-   "prompt_id": "a4k_eval_4096_997293625843621481",
-   "prompt": "A climber, wearing a helmet and blue clothing, ascends through a narrow, icy crevice, using an ice axe for support amidst glacial blue ice formations.",
-   "seed": 0,
-   "box": [
-    2470,
-    0,
-    2982,
-    512
-   ],
-   "subject": "person",
-   "implied": 1,
-   "counts_old": "person:5/1",
-   "counts_new": "person:1/1",
-   "flag_new": 0,
-   "label": "uncurated",
-   "old": "assets/img/dup/pair0_old.webp",
-   "old_png": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_997293625843621481_a9f7355211_seed0.png",
-   "new": "assets/img/dup/pair0_new.webp",
-   "new_png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_997293625843621481_a9f7355211_seed0.png"
-  },
-  {
-   "id": "dup_pair_1",
-   "prompt_id": "a4k_eval_4096_minus1071233499893339092",
-   "prompt": "A solitary astronaut in a white spacesuit sits on a rock, surrounded by tall, rocky formations under a blue sky with soft clouds. The landscape is barren and dusty, with some sparse vegetation scattered across the ground.",
-   "seed": 0,
-   "box": [
-    112,
-    3559,
-    624,
-    4071
-   ],
-   "subject": "person",
-   "implied": 1,
-   "counts_old": "person:7/1;astronaut:3/1",
-   "counts_new": "person:2/1;astronaut:1/1",
-   "flag_new": 1,
-   "label": "uncurated",
-   "old": "assets/img/dup/pair1_old.webp",
-   "old_png": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus1071233499893339092_fbd1fdeeac_seed0.png",
-   "new": "assets/img/dup/pair1_new.webp",
-   "new_png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus1071233499893339092_fbd1fdeeac_seed0.png"
-  },
-  {
-   "id": "dup_pair_2",
-   "prompt_id": "a4k_eval_4096_minus2447481760626661988",
-   "prompt": "A towering brown bear stands on its hind legs in a misty forest, surrounded by tall trees and moss-covered rocks, with sunlight filtering through the foliage.",
-   "seed": 0,
-   "box": [
-    722,
-    2785,
-    1234,
-    3297
-   ],
-   "subject": "bear",
-   "implied": 1,
-   "counts_old": "bear:3/1",
-   "counts_new": "bear:1/1",
-   "flag_new": 0,
-   "label": "uncurated",
-   "old": "assets/img/dup/pair2_old.webp",
-   "old_png": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.png",
-   "new": "assets/img/dup/pair2_new.webp",
-   "new_png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus2447481760626661988_f8d54b20c0_seed0.png"
-  },
-  {
-   "id": "dup_pair_3",
-   "prompt_id": "a4k_eval_4096_minus2679953061215100202",
-   "prompt": "A dancer in mid-pose creates a dynamic splash of water, set against a black background, illuminated to highlight their silhouette.",
-   "seed": 0,
-   "box": [
-    398,
-    2976,
-    910,
-    3488
-   ],
-   "subject": "person",
-   "implied": 1,
-   "counts_old": "person:3/1",
-   "counts_new": "person:1/1",
-   "flag_new": 0,
-   "label": "uncurated",
-   "old": "assets/img/dup/pair3_old.webp",
-   "old_png": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png",
-   "new": "assets/img/dup/pair3_new.webp",
-   "new_png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus2679953061215100202_fa151bbb1e_seed0.png"
-  },
-  {
-   "id": "dup_pair_4",
-   "prompt_id": "a4k_eval_4096_minus2712631331773394876",
-   "prompt": "A woman in a light blue dress with puffed sleeves poses thoughtfully, adorned with a red flower in her hair, beside a table decorated with various items and a reflection of her image in a mirror.",
-   "seed": 0,
-   "box": [
-    1194,
-    973,
-    1706,
-    1485
-   ],
-   "subject": "person",
-   "implied": 2,
-   "counts_old": "person:4/2",
-   "counts_new": "person:2/2",
-   "flag_new": 0,
-   "label": "uncurated",
-   "old": "assets/img/dup/pair4_old.webp",
-   "old_png": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2712631331773394876_9142f070f1_seed0.png",
-   "new": "assets/img/dup/pair4_new.webp",
-   "new_png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus2712631331773394876_9142f070f1_seed0.png"
-  },
-  {
-   "id": "dup_pair_5",
-   "prompt_id": "a4k_eval_4096_minus2714724190150744968",
-   "prompt": "A person in a red jacket walks across undulating blue sand dunes under a soft, twilight sky with distant mountains.",
-   "seed": 0,
-   "box": [
-    619,
-    1514,
-    1131,
-    2026
-   ],
-   "subject": "person",
-   "implied": 1,
-   "counts_old": "person:6/1",
-   "counts_new": "person:1/1",
-   "flag_new": 0,
-   "label": "uncurated",
-   "old": "assets/img/dup/pair5_old.webp",
-   "old_png": "/scratch/09032/saini_2/sca/out/main/sca_nb/4096x4096/a4k_eval_4096_minus2714724190150744968_54f3f8f51a_seed0.png",
-   "new": "assets/img/dup/pair5_new.webp",
-   "new_png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus2714724190150744968_54f3f8f51a_seed0.png"
-  }
- ],
- "failures_v2": [
-  {
-   "id": "fail_v2_0",
-   "group": "late",
-   "prompt_id": "a4k_eval_4096_minus1071233499893339092",
-   "prompt": "A solitary astronaut in a white spacesuit sits on a rock, surrounded by tall, rocky formations under a blue sky with soft clouds. The landscape is barren and dusty, with some sparse vegetation scattered across the ground.",
-   "size": [
-    4096,
-    4096
-   ],
-   "crops": [
-    [
-     2526,
-     3020,
-     512
-    ]
-   ],
-   "counts": "person:2/1;astronaut:1/1",
-   "subject": "person",
-   "implied": 1,
-   "label": "uncurated",
-   "operator": "final",
-   "source_png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus1071233499893339092_fbd1fdeeac_seed0.png",
-   "note": "person: 2 found, 1 asked for",
-   "full": "assets/img/dup/fail_v2_0.webp",
-   "crop_files": [
-    "assets/img/dup/fail_v2_0_crop0.webp"
-   ]
-  },
-  {
-   "id": "fail_v2_1",
-   "group": "late",
-   "prompt_id": "a4k_eval_4096_minus3268147817845827695",
-   "prompt": "A lone figure walks through a medieval square, framed by ancient stone buildings and an arched entrance, with a church prominently featured in the background.",
-   "size": [
-    4096,
-    4096
-   ],
-   "crops": [
-    [
-     2252,
-     2648,
-     512
-    ]
-   ],
-   "counts": "person:4/1",
-   "subject": "person",
-   "implied": 1,
-   "label": "uncurated",
-   "operator": "final",
-   "source_png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus3268147817845827695_ef2d785157_seed0.png",
-   "note": "person: 4 found, 1 asked for",
-   "full": "assets/img/dup/fail_v2_1.webp",
-   "crop_files": [
-    "assets/img/dup/fail_v2_1_crop0.webp"
-   ]
-  },
-  {
-   "id": "fail_v2_2",
-   "group": "late",
-   "prompt_id": "a4k_eval_4096_minus3514666929034129151",
-   "prompt": "A scuba diver hovers over rocky underwater terrain, with a clear blue sky and mountains visible above the water's surface.",
-   "size": [
-    4096,
-    4096
-   ],
-   "crops": [
-    [
-     2095,
-     2324,
-     512
-    ]
-   ],
-   "counts": "person:2/1;diver:1/1",
-   "subject": "person",
-   "implied": 1,
-   "label": "uncurated",
-   "operator": "final",
-   "source_png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus3514666929034129151_4c5693fcb7_seed0.png",
-   "note": "person: 2 found, 1 asked for",
-   "full": "assets/img/dup/fail_v2_2.webp",
-   "crop_files": [
-    "assets/img/dup/fail_v2_2_crop0.webp"
-   ]
-  },
-  {
-   "id": "fail_v2_3",
-   "group": "late",
-   "prompt_id": "a4k_eval_4096_minus3645125026227080560",
-   "prompt": "A lone figure stands on a rocky outcrop, overlooking a dramatic landscape of snow-covered mountains and a tranquil fjord, with colorful clouds stretching across the twilight sky.",
-   "size": [
-    4096,
-    4096
-   ],
-   "crops": [
-    [
-     2369,
-     3006,
-     512
-    ]
-   ],
-   "counts": "person:3/1",
-   "subject": "person",
-   "implied": 1,
-   "label": "uncurated",
-   "operator": "final",
-   "source_png": "/scratch/09032/saini_2/sca/out/dupfix/sca_v2/4096x4096/a4k_eval_4096_minus3645125026227080560_f28cca297c_seed0.png",
-   "note": "person: 3 found, 1 asked for",
-   "full": "assets/img/dup/fail_v2_3.webp",
-   "crop_files": [
-    "assets/img/dup/fail_v2_3_crop0.webp"
-   ]
-  }
- ]
+ }
 };

@@ -6,9 +6,8 @@ copies of those captions, and a 1280 px WebP poster frame. Every frame is drawn 
 and piped as raw RGB into the vendored ffmpeg (libx264, yuv420p, BT.709 tags, -threads 4).
 
 Scenes
-  1 Two ways to fail at 4096^2. FLUX.1-dev with full attention (stripes, flat field) beside the
-    per-head mix with native-size windows from step 1 (five Moai), then a slow push-in to a 1:1 crop of
-    the stripes.
+  1 Full attention fails at 4096^2. FLUX.1-dev with full attention (stripes, flat field), then a slow
+    push-in to a 1:1 crop of the stripes.
   2 What a head wants. One query token, its native-size local window (amber) and the block-centre
     global keys (blue, one per 4x4 block) on a real SCA 4096^2 image (schematic grid, s = 4), then the
     per-head weight pi on a slider.
@@ -16,23 +15,21 @@ Scenes
     64x64 -> 16x16 keys); one head's output error against full attention as a function of pi, from the
     real sufficient statistics; then the real scale-4 pi table (57 blocks x 24 heads, the 13 populated
     noise bins; heads sorted within each block as in the paper) filling in bin by bin.
-  4 The opening phase. The 28-step sigma schedule (sigma-linear axis) for windows-from-step-1 and for
-    SCA (8 steps global only, 4 shrinking-window steps, then native windows), with the Moai pair (the
-    right image is SCA without the schedule: the dev prompt has no final-operator image; the opening it
-    shows is the same); the small second Moai is framed, not hidden.
-  5 The schedule at 4096^2 (final operator, sca_v2). A step counter 1..28 with the 57x24 pi map at each
+  4 The schedule at 4096^2 (final operator, sca_v2). A step counter 1..28 with the 57x24 pi map at each
     step's sigma: the scale-4 table on native steps and, on the four wide-window steps, the log-linear mix
     of the scale-2 and scale-4 tables at ratio max(grid) / w (sca/attn.py table_interp), all checked
     against the sampler's pi_trace in the final image's sidecar; the window side per step; the final SCA
-    image with a 1:1 crop, then an end card with the speed line from --numbers. No intermediate sampler
-    states are shown.
+    image with a 1:1 crop, then an end card with the speed lines from --numbers (single pass; progressive SCA
+    when its keys exist). No intermediate sampler states are shown. (2026-11-07: the scene comparing windows
+    from step 1 with the opening on a development prompt was removed; the page does not show that comparison.)
 
 Inputs (read only)
-  /scratch/09032/saini_2/sca/out/{main/full,abl/abl_v0,main/sca_nb}/4096x4096/a4k_eval_4096_<id>_*_seed0.png
+  /scratch/09032/saini_2/sca/out/{main/full,dupfix/sca_v2}/4096x4096/a4k_eval_4096_<id>_*_seed0.png
       and the JSON sidecar of the final image (28 sigmas, gate, pi_trace); ids in SOURCES below.
   /scratch/09032/saini_2/sca/calib/k1_1024.npz: s4_pi_head [57, 24, 14], sigma_centers, populated, stats
       (falls back to the identical compact copy paper/figures/src/data/k1_1024_pi.npz).
-  paper/figures/src/scafig.py: palette and PI_CMAP.  --numbers JSON: speed.sca_s, speed.area_s, speed.ratio.
+  paper/figures/src/scafig.py: palette and PI_CMAP.  --numbers JSON: speed.sca_s, speed.area_s, speed.ratio,
+      and prog.clean.prog, prog.clean.area_x for the progressive line of the end card when present.
 Outputs
   <out>/sca_method.mp4, sca_method.srt, sca_method.vtt, sca_method_poster.webp (default out:
   web/assets/video/method). <work>/cache holds the downscaled images and native crops, made once from
@@ -81,14 +78,11 @@ METHOD_DIRS = {"full": "main/full", "abl_v0": "abl/abl_v0", "sca": "main/sca_nb"
 SOURCES = {  # name -> (method, prompt id); every image is FLUX.1-dev, 4096^2, seed 0
     "stripes": ("full", "6648013380537069782"),      # full attention: vertical stripes
     "flat": ("full", "1638867997226496674"),         # full attention: flat field
-    "moai_v0": ("abl_v0", "3614061571823823193"),    # per-head mix from step 1: five Moai
-    "moai_sca": ("sca", "3614061571823823193"),      # SCA without the schedule: one large Moai, a small one far off
     "sheep": ("sca_v2", "minus8343371271909676658"),  # backdrop of the schematic (scenes 2 and 3), final operator
     "guitar": ("sca_v2", "5849277588805396896"),     # final image (final operator); its sidecar gives sigmas, schedule
 }
 STRIPES_C = (1480, 2048)            # native centre of the 1:1 crop that ends the push-in
 GUITAR_CROP = (1540, 880, 600)      # native x0, y0, side of the 1:1 inset
-MOAI_SMALL = (1200, 3450, 340, 400)  # native box around the small second Moai in SCA's image
 MID_BIN = 7                         # heads are sorted within each block by pi at this bin (paper)
 
 # ----------------------------------------------------------------------------- style
@@ -336,7 +330,11 @@ def read_speed(path):
     if abs(area / sca - ratio) > 0.01:
         print(f"warning: speed.ratio {ratio} differs from area_s / sca_s = {area / sca:.3f}")
     print(f"numbers: {path}: SCA {sca_d} s, AReA {area_d} s, ratio {ratio_d}", flush=True)
-    return sca_d, area_d, ratio_d
+    prog = None
+    if "prog.clean.prog" in d and "prog.clean.area_x" in d and d["prog.clean.prog"]["display"] != "pending":
+        prog = (d["prog.clean.prog"]["display"], d["prog.clean.area_x"]["display"])
+        print(f"numbers: progressive SCA {prog[0]} s, {prog[1]} faster than AReA", flush=True)
+    return sca_d, area_d, ratio_d, prog
 
 
 class Zoomer:
@@ -453,22 +451,19 @@ def label_row(c, x, y, main, sub, color, marker="square"):
 
 # ----------------------------------------------------------------------------- scene 1
 class SceneFail(Scene):
-    title = "Two ways to fail at 4096²"
+    title = "Full attention fails at 4096²"
     dur = 13.5
-    S, Y, X = 560, 160, (80, 680, 1280)
+    S, Y, X = 560, 160, (380, 980)
     Z0, Z1 = 7.6, 12.4
-    cues = [(0.5, 4.8, "At 4096², FLUX.1-dev with full attention", "returns stripes or a flat field."),
-            (5.0, 8.3, "Native-size windows from step 1", "draw five Moai instead of one."),
-            (8.5, 12.8, "Up close, the stripes hold no detail.")]
+    cues = [(0.5, 7.0, "At 4096², FLUX.1-dev with full attention", "returns stripes or a flat field."),
+            (7.4, 12.8, "Up close, the stripes hold no detail.")]
 
     def build(self):
         c, d, S = self.c, self.d, self.S
         self.zoom = Zoomer(d, S)
         self.ims = [c.image(self.zoom.view(2048, 2048, 4096), self.X[0], self.Y),
-                    c.image(d.fit("flat", S), self.X[1], self.Y),
-                    c.image(d.fit("moai_v0", S), self.X[2], self.Y)]
-        rows = [("Full attention", "stripes", FULL), ("Full attention", "flat field", FULL),
-                ("Windows from step 1", "five Moai", LOCAL)]
+                    c.image(d.fit("flat", S), self.X[1], self.Y)]
+        rows = [("Full attention", "stripes", FULL), ("Full attention", "flat field", FULL)]
         self.labels = [label_row(c, x, self.Y + S + 50, *r) for x, r in zip(self.X, rows)]
         self.frame = c.rect(0, 0, 1, 1, ec=ZOOM, lw=4, z=5)
         x, y = self.X[0] + 14, self.Y + 14
@@ -476,7 +471,7 @@ class SceneFail(Scene):
 
     def update(self, t):
         S, X, Y = self.S, self.X, self.Y
-        for im, labs, a in zip(self.ims, self.labels, (ramp(t, 0.3, 1.1), ramp(t, 0.6, 1.4), ramp(t, 4.9, 5.7))):
+        for im, labs, a in zip(self.ims, self.labels, (ramp(t, 0.3, 1.1), ramp(t, 0.6, 1.4))):
             im.set_alpha(a)
             set_alpha(labs, a)
         u = ramp(t, self.Z0, self.Z1)
@@ -715,64 +710,6 @@ class SceneCalib(Scene):
 
 
 # ----------------------------------------------------------------------------- scene 4
-class SceneOpen(Scene):
-    title = "The opening phase"
-    dur = 12.5
-    X0, X1, R1, R2 = 560, 1760, 172, 228
-    IMG, IY, IXL, IXR = 480, 410, 450, 990
-    cues = [(0.5, 4.2, "Mixing windows in from step 1", "draws five Moai."),
-            (4.4, 8.2, "SCA runs 8 of 28 steps globally,", "then shrinks its windows over 4 steps."),
-            (8.4, 11.9, "The opening keeps one large statue;", "a small second Moai remains far off.")]
-
-    def build(self):
-        c, d = self.c, self.d
-        xs = self.X0 + (1 - d.sigmas) * (self.X1 - self.X0)
-        self.ticks = []
-        for row, ry in enumerate((self.R1, self.R2)):
-            arts = []
-            for k, x in enumerate(xs):
-                col = GLOBAL if (row == 1 and k < d.n_open) else (
-                    WIDE if (row == 1 and k < d.n_open + d.n_wide) else LOCAL)
-                arts.append(c.rect(x - 3, ry - 18, 6, 36, fc=col, z=3))
-            self.ticks.append(arts)
-        self.rowlab = [c.text(self.X0 - 34, self.R1 + 10, "Windows from step 1", 28, ha="right"),
-                       c.text(self.X0 - 34, self.R2 + 10, "SCA", 28, ha="right", weight="bold")]
-        ya = self.R2 + 40
-        self.axis = [c.line([self.X0, self.X1], [ya, ya], color=RULE, lw=2),
-                     c.text(self.X0, ya + 32, "1", 24, color=MID, ha="center"),
-                     c.text((self.X0 + self.X1) / 2, ya + 32, "σ", 26, color=MID, ha="center"),
-                     c.text(self.X1, ya + 32, "0", 24, color=MID, ha="center")]
-        xo = (xs[0] + xs[d.n_open - 1]) / 2
-        self.lab_open = c.text(xo, ya + 66, "global only", 24, color=GLOBAL_DARK, ha="center")
-        self.lab_mix = c.text((xs[d.n_open + d.n_wide] + xs[-1]) / 2, ya + 66, "per-head mix, native windows", 24,
-                              color=LOCAL_DARK, ha="center")
-        self.lab_wide = c.text((xs[d.n_open] + xs[d.n_open + d.n_wide - 1]) / 2, ya + 98, "shrinking windows", 22,
-                               color=LOCAL_DARK, ha="center")
-        self.imL = [c.image(d.fit("moai_v0", self.IMG), self.IXL, self.IY),
-                    c.text(self.IXL, self.IY - 18, "Windows from step 1", 28)]
-        self.imR = [c.image(d.fit("moai_sca", self.IMG), self.IXR, self.IY),
-                    c.text(self.IXR, self.IY - 18, "Global-only opening", 28, weight="bold")]
-        s = self.IMG / 4096
-        x, y, w, h = MOAI_SMALL
-        self.small = c.rect(self.IXR + x * s, self.IY + y * s, w * s, h * s, ec=ZOOM, lw=3.5, z=5)
-
-    def update(self, t):
-        set_alpha(self.axis, ramp(t, 0.2, 0.8))
-        self.rowlab[0].set_alpha(ramp(t, 0.4, 1.0))
-        for k, r in enumerate(self.ticks[0]):
-            r.set_alpha(ramp(t, 0.6 + 0.045 * k, 0.9 + 0.045 * k))
-        self.lab_mix.set_alpha(ramp(t, 1.4, 2.0))
-        set_alpha(self.imL, ramp(t, 1.6, 2.4))
-        self.rowlab[1].set_alpha(ramp(t, 4.3, 4.9))
-        for k, r in enumerate(self.ticks[1]):
-            r.set_alpha(ramp(t, 4.5 + 0.045 * k, 4.8 + 0.045 * k))
-        self.lab_open.set_alpha(ramp(t, 4.8, 5.4))
-        self.lab_wide.set_alpha(ramp(t, 5.2, 5.8))
-        set_alpha(self.imR, ramp(t, 5.4, 6.2))
-        self.small.set_alpha(ramp(t, 8.6, 9.2))
-
-
-# ----------------------------------------------------------------------------- scene 5
 class SceneMixed(Scene):
     title = "The schedule at 4096²"
     dur = 16.0
@@ -884,8 +821,11 @@ class SceneEnd(Scene):
         self.arts = [c.text(W / 2, y - 112, "Scale-Covariant Attention", 32, color=SCA, weight="bold", ha="center"),
                      c.text(W / 2, y, "Fitted once at 1024². No training.", 64, weight="bold", ha="center")]
         if sp:
-            line = f"{sp[0]} s per 4096² image, {sp[2]} faster than AReA ({sp[1]} s)"
+            line = f"Single pass: {sp[0]} s per 4096² image, {sp[2]} faster than AReA ({sp[1]} s)"
             self.arts.append(c.text(W / 2, y + 84, line, 36, color=MID, ha="center"))
+            if len(sp) > 3 and sp[3]:
+                line = f"Inside HRDiT's schedule: {sp[3][0]} s per image, {sp[3][1]} faster than AReA"
+                self.arts.append(c.text(W / 2, y + 140, line, 36, color=MID, ha="center"))
 
     def update(self, t):
         for i, a in enumerate(self.arts):
@@ -1011,7 +951,7 @@ def main():
     work = Path(a.work)
     build_cache(work, a.rebuild_cache)
     d = Data(work, a.numbers)
-    tl = Timeline([SceneFail(d), SceneHead(d), SceneCalib(d), SceneOpen(d), SceneMixed(d), SceneEnd(d)])
+    tl = Timeline([SceneFail(d), SceneHead(d), SceneCalib(d), SceneMixed(d), SceneEnd(d)])
     print(f"font {family}; total {tl.total:.2f} s; scene starts " + ", ".join(f"{s:.1f}" for s in tl.starts))
     if a.preview:
         pdir = work / "preview"
