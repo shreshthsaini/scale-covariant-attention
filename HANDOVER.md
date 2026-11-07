@@ -1303,3 +1303,9 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   give every 2 x 2 query block one shared coarse position. Queued: the 46-prompt runs of g2x8 (a0_K0b29614*, eval
   a0_K0b29619_eval_r7_g2x8) and g2x4 (a0_K0b29616*, eval a0_K0b29618_eval_r7_g2x4) for the metric verdict, and
   g2x8f (g2x8 with fractional coarse ids, --glob-pos frac, against the shared-position streaks) on copyprone21.
+- 14:35 decision, r7_gcm on the 46: relaxed bar FAIL. The core losses are smaller than gc1's but still significant:
+  PickScore -0.130 [-0.215, -0.059], IR -0.067 and HPSv2.1 -0.0048, all three also on clean prompts. Detector flags
+  are back to 2 (the canoe and the kimono scene), where gc1 had 0. Keeping the native prompt read at the subject buys
+  back about 40% of the PickScore loss and gives back part of the copy removal. Together with the artifacts above,
+  the glob-count family is closed. Queued as a last two-lever combination of the mild forms: r7_g4gh (g2x4 plus
+  glob-count 0.5) on copyprone21.
