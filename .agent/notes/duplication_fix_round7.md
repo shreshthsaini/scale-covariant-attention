@@ -442,3 +442,9 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
 - Hybrid (17dcf9e, --pi-one-lo): AReA's window sizes only on steps 8 to 13 (180 to 137, bridge ratio 0.5), then 96,
   80 and sca_v2. r7_hyb (+ pi = 1 while sigma > 0.76), r7_hyb0 (sca_v2's pi), r7_ohyb (hyb with op4's opening, the
   layout-matched comparison to AReA's 4).
+- Spool gotcha (11:46): workers pick `ls pending | sort | head -1` under LANG=en_US.UTF-8, whose collation ignores
+  underscores, so a0_K0_eval_X sorts as "a0K0evalX" (after every a0_K0a* and a0_K0b* task). Use --eval-tag 0a0
+  (a0_K0a0_eval_X) or rename the released eval to a0_K0a0eval_X. r7_saAs75's eval was renamed at 11:46.
+- r7_csg detector check (6 copyprone21 images, map overlay on sca_v2): fires at sca_v2's copy sites in 5 of 6
+  (right-peak figure, left astronaut, rock astronaut, square pedestrians; surfer: weak on the hand, seabed copy
+  missed). Gating the prompt there from step 9 lets the copies form a few tokens away. Copy-site anchor next (csga).
