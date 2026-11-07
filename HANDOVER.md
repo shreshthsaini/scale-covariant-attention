@@ -1183,3 +1183,8 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   text values (tvG had 8 of 21 copies plus streak artifacts). Screens: a0_K0b296* r7_gc1 (G 1, sigma > 0.55),
   a0_K0b297* r7_gc1a (G 1, every window step), a0_K0b298* r7_gch (G 0.5, sigma > 0.55). Also queued:
   a0_K0b385* r7_g2x8 (global at pool 2 through step 15, gate 0.72, then 96, 80, 64).
+- 12:50 ladder rung L1, r7_op4 on copyprone21 (pQ30, 6 blind labelers): 18 yes and 3 no of 21; detector 15. This is
+  SCA's window phase after AReA's own opening pools 4,4,4,4,2,2,2,2, and AReA's layouts are reproduced. AReA itself
+  has 4. With the layout held, SCA's window phase draws the copies on copyprone21 as on the 46 (op4 17.9% against
+  AReA's 3.8%). So the opening does not decide the copies. The rungs that remain are area_scaOpen (AReA with SCA's
+  opening, the converse) and ohyb0 (AReA's opening plus hyb0's wide early windows inside SCA).
