@@ -1,0 +1,25 @@
+% Generated (app_tables/variance_split.tex) by paper/figures/src/gen_main_tables.py from results/; do not edit by hand.
+\begin{table}[!htbp]
+\caption{\textbf{Reach is set by the head.} Variance of the share of each head's image attention within $r$ tokens of the query (Chebyshev distance), over all (block, head, noise bin) cells, split into the head (between blocks plus between heads of one block) and the noise level within a head; the two sum to 100\%. Avg.\ is the variance of the head-averaged curve over noise levels, the part one schedule shared by all heads could follow. 256 random queries per block and step, full attention at the calibration size. AReA's statistic is the distance to dominant keys; ours is the mass share, which sets the output by Lemma~\ref{lem:split}. Key result: after the gate the head carries at least 96.9\% of the variance in every model and size.}
+\label{tab:variance_split}
+\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lr rrr rrr@{}}
+\toprule
+ & & \multicolumn{3}{c}{$r=8$ tokens (\%)} & \multicolumn{3}{c}{$r=16$ tokens (\%)} \\
+\cmidrule(lr){3-5}\cmidrule(l){6-8}
+Model and size & Prompts & Head & Noise & Avg. & Head & Noise & Avg. \\
+\midrule
+\multicolumn{8}{@{}l}{\emph{After the gate ($\sigma<0.89$)}} \\
+FLUX.1-dev, $1024^2$ & 32 & 97.0 & 3.0 & 1.02 & 97.5 & 2.5 & 0.65 \\
+FLUX.1-dev, $1280^2$ & 16 & 97.4 & 2.6 & 0.75 & 97.8 & 2.2 & 0.46 \\
+FLUX.1-Krea-dev, $1024^2$ & 16 & 97.2 & 2.8 & 1.03 & 97.6 & 2.4 & 0.79 \\
+FLUX.2-dev, $1024^2$ & 16 & 99.0 & 1.0 & 0.10 & 99.1 & 0.9 & 0.04 \\
+\midrule
+\multicolumn{8}{@{}l}{\emph{All noise levels}} \\
+FLUX.1-dev, $1024^2$ & 32 & 92.2 & 7.8 & 4.02 & 93.3 & 6.7 & 3.29 \\
+FLUX.1-dev, $1280^2$ & 16 & 93.3 & 6.7 & 3.09 & 94.3 & 5.7 & 2.44 \\
+FLUX.1-Krea-dev, $1024^2$ & 16 & 93.8 & 6.2 & 3.03 & 94.7 & 5.3 & 2.55 \\
+FLUX.2-dev, $1024^2$ & 16 & 96.3 & 3.7 & 1.29 & 97.0 & 3.0 & 0.76 \\
+\bottomrule
+\end{tabular}
+\end{table}

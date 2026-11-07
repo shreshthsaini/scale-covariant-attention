@@ -16,6 +16,8 @@
 \newcommand{\hlSecSca}{77.1}
 % results/latency_curve_summary.csv, column median_seconds, res 4096x4096, method area
 \newcommand{\hlSecArea}{202.4}
+% results/latency_curve_batch1.csv, hrdit_dev_author, median of 3 (cold first run included)
+\newcommand{\hlSecHrdit}{108.6}
 % /scratch/09032/saini_2/sca/eval/a4k195_main_sca_v2/{base/paired_deltas,extra/extra_paired_deltas}.csv (1000
 % prompt draws) and results/a4k195_main_sca_v2/corrected_fidp_ci/paired_deltas.csv, method area against sca_v2,
 % negated to sca_v2 minus AReA (columns value, ci_high, ci_low), over the 15 metrics of Table app_4k (no interval,
@@ -66,6 +68,8 @@
 \newcommand{\hlIrScaAbs}{1.25}
 % results/a4k195_main_sca_v2/corrected_fidp_ci/summary.csv, method sca_v2, metric fid, column value
 \newcommand{\hlFidScaAbs}{140.2}
+% results/a4k195_main_sca_v2/base_summary.csv, metric seconds, column value, method sca_v2
+\newcommand{\hlCampSca}{78.4}
 % /scratch/09032/saini_2/sca/eval/a4k195_2048x6144_sca_v2/{base/paired_deltas,extra/extra_paired_deltas}.csv (1000
 % prompt draws) and results/a4k195_2048x6144_sca_v2/corrected_fidp_ci/paired_deltas.csv, method area against
 % sca_v2, negated to sca_v2 minus AReA (columns value, ci_high, ci_low), over the 15 metrics (no interval: none):
@@ -102,87 +106,241 @@
 \newcommand{\hlProgHrditPickLo}{-0.14}
 % results/prog195_sca_v2/sca_v2_prog_vs_hrdit_dev_author.csv, metric pickscore, column ci_high
 \newcommand{\hlProgHrditPickHi}{0.04}
-% results/a4k195_main_sca_v2/dup_rates_people.csv, method sca_v2, columns dup and n, 100 dup / n rounded
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv: per-image metrics (of 10) with ci_low > 0
+\newcommand{\hlProgWinsArea}{10}
+% the same count as a word
+\newcommand{\hlProgWinsAreaWord}{ten}
+% results/prog195_vs_baselines/sca_v2_prog_vs_dype.csv: per-image metrics (of 10) with ci_low > 0
+\newcommand{\hlProgWinsDype}{10}
+% the same count as a word
+\newcommand{\hlProgWinsDypeWord}{ten}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sega_official.csv: per-image metrics (of 10) with ci_low > 0
+\newcommand{\hlProgWinsSega}{10}
+% the same count as a word
+\newcommand{\hlProgWinsSegaWord}{ten}
+% results/prog195_vs_baselines/sca_v2_prog_vs_full.csv: per-image metrics (of 10) with ci_low > 0
+\newcommand{\hlProgWinsFull}{10}
+% the same count as a word
+\newcommand{\hlProgWinsFullWord}{ten}
+% results/prog195_vs_baselines/sca_v2_prog_vs_ultraimage.csv: per-image metrics (of 10) with ci_low > 0
+\newcommand{\hlProgWinsUltra}{9}
+% the same count as a word
+\newcommand{\hlProgWinsUltraWord}{nine}
+% results/prog195_vs_baselines/sca_v2_prog_vs_ultraimage.csv: per-image metrics without a significant win
+\newcommand{\hlProgUltraOpen}{aesthetic}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric ir, delta x 1
+\newcommand{\hlProgAreaIr}{+0.40}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric ir, lower end x 1
+\newcommand{\hlProgAreaIrLo}{0.32}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric ir, upper end x 1
+\newcommand{\hlProgAreaIrHi}{0.49}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric pickscore, delta x 1
+\newcommand{\hlProgAreaPick}{+1.05}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric pickscore, lower end x 1
+\newcommand{\hlProgAreaPickLo}{0.93}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric pickscore, upper end x 1
+\newcommand{\hlProgAreaPickHi}{1.19}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric hpsv21, delta x 100
+\newcommand{\hlProgAreaHps}{+3.86}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric hpsv21, lower end x 100
+\newcommand{\hlProgAreaHpsLo}{3.41}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric hpsv21, upper end x 100
+\newcommand{\hlProgAreaHpsHi}{4.30}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric musiq_crop1024, delta x 1
+\newcommand{\hlProgAreaMusiqc}{+3.7}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric musiq_crop1024, lower end x 1
+\newcommand{\hlProgAreaMusiqcLo}{2.0}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric musiq_crop1024, upper end x 1
+\newcommand{\hlProgAreaMusiqcHi}{5.4}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric musiq, delta x 1
+\newcommand{\hlProgAreaMusiq}{+2.3}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric musiq, lower end x 1
+\newcommand{\hlProgAreaMusiqLo}{0.5}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric musiq, upper end x 1
+\newcommand{\hlProgAreaMusiqHi}{3.9}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric clip, delta x 1
+\newcommand{\hlProgAreaClip}{+1.70}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric clip, lower end x 1
+\newcommand{\hlProgAreaClipLo}{1.33}
+% results/prog195_vs_baselines/sca_v2_prog_vs_area.csv, metric clip, upper end x 1
+\newcommand{\hlProgAreaClipHi}{2.07}
+% results/prog195_pairs/cfid_vs_area/paired_deltas.csv (method sca_v2_prog, reference area), metric fid, delta x 1
+\newcommand{\hlProgAreaFid}{-3.9}
+% results/prog195_pairs/cfid_vs_area/paired_deltas.csv (method sca_v2_prog, reference area), metric fid, lower end
+% x 1
+\newcommand{\hlProgAreaFidLo}{-8.5}
+% results/prog195_pairs/cfid_vs_area/paired_deltas.csv (method sca_v2_prog, reference area), metric fid, upper end
+% x 1
+\newcommand{\hlProgAreaFidHi}{3.1}
+% results/prog195_pairs/cfid_vs_area/paired_deltas.csv (method sca_v2_prog, reference area), metric patch_fid,
+% delta x 1
+\newcommand{\hlProgAreaFidP}{+4.8}
+% results/prog195_pairs/cfid_vs_area/paired_deltas.csv (method sca_v2_prog, reference area), metric patch_fid,
+% lower end x 1
+\newcommand{\hlProgAreaFidPLo}{0.1}
+% results/prog195_pairs/cfid_vs_area/paired_deltas.csv (method sca_v2_prog, reference area), metric patch_fid,
+% upper end x 1
+\newcommand{\hlProgAreaFidPHi}{10.6}
+% results/prog195_pairs/cfid_vs_area/paired_deltas.csv (method sca_v2_prog, reference area), metric kid, delta x
+% 100
+\newcommand{\hlProgAreaKid}{-0.009}
+% results/prog195_pairs/cfid_vs_area/paired_deltas.csv (method sca_v2_prog, reference area), metric kid, lower end
+% x 100
+\newcommand{\hlProgAreaKidLo}{-0.275}
+% results/prog195_pairs/cfid_vs_area/paired_deltas.csv (method sca_v2_prog, reference area), metric kid, upper end
+% x 100
+\newcommand{\hlProgAreaKidHi}{0.250}
+% results/prog195_pairs/cfid_vs_area/paired_deltas.csv (method sca_v2_prog, reference area), metric patch_kid,
+% delta x 100
+\newcommand{\hlProgAreaKidP}{+0.335}
+% results/prog195_pairs/cfid_vs_area/paired_deltas.csv (method sca_v2_prog, reference area), metric patch_kid,
+% lower end x 100
+\newcommand{\hlProgAreaKidPLo}{0.005}
+% results/prog195_pairs/cfid_vs_area/paired_deltas.csv (method sca_v2_prog, reference area), metric patch_kid,
+% upper end x 100
+\newcommand{\hlProgAreaKidPHi}{0.661}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric hpsv2, delta x 100
+\newcommand{\hlProgHrditHpsTwo}{+0.38}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric hpsv2, lower end x 100
+\newcommand{\hlProgHrditHpsTwoLo}{0.24}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric hpsv2, upper end x 100
+\newcommand{\hlProgHrditHpsTwoHi}{0.51}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric arniqa, delta x 100
+\newcommand{\hlProgHrditArniqa}{+2.9}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric arniqa, lower end x 100
+\newcommand{\hlProgHrditArniqaLo}{2.3}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric arniqa, upper end x 100
+\newcommand{\hlProgHrditArniqaHi}{3.4}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric musiq, delta x 1
+\newcommand{\hlProgHrditMusiq}{+1.3}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric musiq, lower end x 1
+\newcommand{\hlProgHrditMusiqLo}{0.2}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric musiq, upper end x 1
+\newcommand{\hlProgHrditMusiqHi}{2.4}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric clipiqa, delta x 100
+\newcommand{\hlProgHrditClipiqa}{-0.9}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric clipiqa, lower end x 100
+\newcommand{\hlProgHrditClipiqaLo}{-1.8}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric clipiqa, upper end x 100
+\newcommand{\hlProgHrditClipiqaHi}{-0.1}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric musiq_crop1024, delta x 1
+\newcommand{\hlProgHrditMusiqc}{+0.6}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric musiq_crop1024, lower end x 1
+\newcommand{\hlProgHrditMusiqcLo}{-0.7}
+% results/prog195_vs_baselines/sca_v2_prog_vs_hrdit_dev_author.csv, metric musiq_crop1024, upper end x 1
+\newcommand{\hlProgHrditMusiqcHi}{1.8}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric ir, delta x 1
+\newcommand{\hlProgScaIr}{+0.07}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric ir, lower end x 1
+\newcommand{\hlProgScaIrLo}{0.01}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric ir, upper end x 1
+\newcommand{\hlProgScaIrHi}{0.13}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric pickscore, delta x 1
+\newcommand{\hlProgScaPick}{+0.29}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric pickscore, lower end x 1
+\newcommand{\hlProgScaPickLo}{0.20}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric pickscore, upper end x 1
+\newcommand{\hlProgScaPickHi}{0.38}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric hpsv21, delta x 100
+\newcommand{\hlProgScaHps}{+1.29}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric hpsv21, lower end x 100
+\newcommand{\hlProgScaHpsLo}{0.99}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric hpsv21, upper end x 100
+\newcommand{\hlProgScaHpsHi}{1.59}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric musiq, delta x 1
+\newcommand{\hlProgScaMusiq}{-3.4}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric musiq, lower end x 1
+\newcommand{\hlProgScaMusiqLo}{-5.1}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric musiq, upper end x 1
+\newcommand{\hlProgScaMusiqHi}{-1.6}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric musiq_crop1024, delta x 1
+\newcommand{\hlProgScaMusiqc}{-6.0}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric musiq_crop1024, lower end x 1
+\newcommand{\hlProgScaMusiqcLo}{-7.3}
+% results/prog195_vs_baselines/sca_v2_prog_vs_sca_v2.csv, metric musiq_crop1024, upper end x 1
+\newcommand{\hlProgScaMusiqcHi}{-4.6}
+% results/prog195_pairs/cfid_vs_sca_v2/paired_deltas.csv (method sca_v2_prog, reference sca_v2), metric fid, delta
+% x 1
+\newcommand{\hlProgScaFid}{+1.6}
+% results/prog195_pairs/cfid_vs_sca_v2/paired_deltas.csv (method sca_v2_prog, reference sca_v2), metric fid, lower
+% end x 1
+\newcommand{\hlProgScaFidLo}{-2.3}
+% results/prog195_pairs/cfid_vs_sca_v2/paired_deltas.csv (method sca_v2_prog, reference sca_v2), metric fid, upper
+% end x 1
+\newcommand{\hlProgScaFidHi}{7.3}
+% results/prog195_pairs/cfid_vs_sca_v2/paired_deltas.csv (method sca_v2_prog, reference sca_v2), metric patch_fid,
+% delta x 1
+\newcommand{\hlProgScaFidP}{+9.2}
+% results/prog195_pairs/cfid_vs_sca_v2/paired_deltas.csv (method sca_v2_prog, reference sca_v2), metric patch_fid,
+% lower end x 1
+\newcommand{\hlProgScaFidPLo}{5.1}
+% results/prog195_pairs/cfid_vs_sca_v2/paired_deltas.csv (method sca_v2_prog, reference sca_v2), metric patch_fid,
+% upper end x 1
+\newcommand{\hlProgScaFidPHi}{13.2}
+% results/prog195_pairs/cfid_vs_sca_v2/paired_deltas.csv (method sca_v2_prog, reference sca_v2), metric kid, delta
+% x 100
+\newcommand{\hlProgScaKid}{+0.125}
+% results/prog195_pairs/cfid_vs_sca_v2/paired_deltas.csv (method sca_v2_prog, reference sca_v2), metric kid, lower
+% end x 100
+\newcommand{\hlProgScaKidLo}{-0.048}
+% results/prog195_pairs/cfid_vs_sca_v2/paired_deltas.csv (method sca_v2_prog, reference sca_v2), metric kid, upper
+% end x 100
+\newcommand{\hlProgScaKidHi}{0.310}
+% results/prog195_pairs/cfid_vs_sca_v2/paired_deltas.csv (method sca_v2_prog, reference sca_v2), metric patch_kid,
+% delta x 100
+\newcommand{\hlProgScaKidP}{+0.588}
+% results/prog195_pairs/cfid_vs_sca_v2/paired_deltas.csv (method sca_v2_prog, reference sca_v2), metric patch_kid,
+% lower end x 100
+\newcommand{\hlProgScaKidPLo}{0.355}
+% results/prog195_pairs/cfid_vs_sca_v2/paired_deltas.csv (method sca_v2_prog, reference sca_v2), metric patch_kid,
+% upper end x 100
+\newcommand{\hlProgScaKidPHi}{0.825}
+% results/prog195_sca_v2/extra_summary.csv, sca_v2_prog, ir
+\newcommand{\hlProgIrAbs}{1.32}
+% results/a4k195_main/extra_summary.csv, area, ir
+\newcommand{\hlAreaIrAbs}{0.92}
+% results/a4k195_main/base_summary.csv, metric seconds, column value, area
+\newcommand{\hlCampArea}{264.4}
+% results/a4k195_main/base_summary.csv, metric seconds, column value area divided by
+% results/prog195_sca_v2/base_summary.csv, metric seconds, column value sca_v2_prog
+\newcommand{\hlCampProgAreaX}{5.2}
+% results/prog195_sca_v2/base_summary.csv, metric seconds, column value sca_v2_prog divided by
+% results/a4k195_panel/base_summary.csv, metric seconds, column value hrdit, percent
+\newcommand{\hlCampProgHrditPct}{46}
+% results/heads_view/variance_split.csv: flux1_dev, 1024x1024, post_gate, image_share, radius 16, head
+\newcommand{\hlVarHead}{97.5}
+% results/heads_view/variance_split.csv: flux1_dev, 1024x1024, post_gate, image_share, radius 16, noise
+\newcommand{\hlVarStep}{2.5}
+% results/heads_view/variance_split.csv: flux1_dev, 1024x1024, post_gate, image_share, radius 16, avg
+\newcommand{\hlVarAvg}{0.7}
+% results/heads_view/variance_split.csv: flux1_krea_dev, 1024x1024, post_gate, image_share, radius 16, head
+\newcommand{\hlVarHeadKrea}{97.6}
+% results/heads_view/variance_split.csv: flux2_dev, 1024x1024, post_gate, image_share, radius 16, head
+\newcommand{\hlVarHeadFluxTwo}{99.1}
+% results/heads_view/variance_split.csv: flux1_dev post_gate r16 curve_min
+\newcommand{\hlVarCurveLo}{0.57}
+% results/heads_view/variance_split.csv: flux1_dev post_gate r16 curve_max
+\newcommand{\hlVarCurveHi}{0.62}
+% legacy
 \newcommand{\hlDupV}{26}
-% results/dup_audit_20261027/rates_a4k195_people.csv, columns dup and n, 100 dup / n rounded, method sca_nb
+% legacy
 \newcommand{\hlDupPub}{57}
-% results/dup_audit_20261027/rates_a4k195_people.csv, columns dup and n, 100 dup / n rounded, method area
+% legacy
 \newcommand{\hlDupArea}{4}
-% results/dup_audit_20261027/rates_a4k195_people.csv, columns dup and n, 100 dup / n rounded, method full
+% legacy
 \newcommand{\hlDupFullAttn}{7}
-% results/dup_audit_20261027/rates_a4k195_people.csv, column n (prompts naming a person or animal, of 195)
+% legacy
 \newcommand{\hlDupN}{95}
-% results/dup_audit_20261027/rates_46_all_people.csv, columns dup, n, method sca_nb: prompts with a duplicated
-% person or animal, of 26
+% legacy
 \newcommand{\hlDupFsPub}{15}
-% results/dup_audit_20261027/rates_46_all_people.csv, columns dup, n, method dup_i_shrink: prompts with a
-% duplicated person or animal, of 26
+% legacy
 \newcommand{\hlDupFsV}{4}
-% results/dup_audit_20261027/rates_46_all_people.csv, columns dup, n, method area: prompts with a duplicated
-% person or animal, of 26
+% legacy
 \newcommand{\hlDupFsArea}{1}
-% results/dup_audit_20261027/rates_abl46_people.csv, columns dup, n, method sca_g93: prompts with a duplicated
-% person or animal, of 26
-\newcommand{\hlDupGateNinetyThree}{20}
-% results/dup_audit_20261027/rates_46_all_people.csv, columns dup, n, method sca_nb: prompts with a duplicated
-% person or animal, of 26
-\newcommand{\hlDupGateEightyNine}{15}
-% results/dup_audit_20261027/rates_abl46_people.csv, columns dup, n, method sca_g85: prompts with a duplicated
-% person or animal, of 26
-\newcommand{\hlDupGateEightyFive}{7}
-% results/dup_audit_20261027/rates_abl46_people.csv, columns dup, n, method abl_globalonly: prompts with a
-% duplicated person or animal, of 26
-\newcommand{\hlDupGlobalOnly}{1}
-% results/dup_audit_20261027/rates_46_all_people.csv, column n (prompts of the 46 naming a person or animal)
+% legacy
 \newcommand{\hlDupFsN}{26}
-% /scratch/09032/saini_2/sca/eval/dup46_dup_i_shrink/base/per_image.csv, column seconds, median over 46, method
-% dup_i_shrink (the final operator)
-\newcommand{\hlTimeV}{77.1}
-% /scratch/09032/saini_2/sca/eval/dup46_dup_i_shrink/base/per_image.csv, column seconds, median over 46, method
-% sca_nb
-\newcommand{\hlTimePub}{70.8}
 % results/latency_curve_v2/summary.csv (collect_latency_v2.py), column median_seconds, res 4096x4096: sca_v2 /
 % sca_nb - 1, in percent (timed back to back on one GPU)
 \newcommand{\hlTimeOverhead}{8\%}
-% /scratch/09032/saini_2/sca/eval/dup46_dup_i_shrink/paired/dup_i_shrink_vs_sca_nb.csv (2000 draws), metric
-% arniqa, column delta
-\newcommand{\hlFsArniqa}{-0.0074}
-% /scratch/09032/saini_2/sca/eval/dup46_dup_i_shrink/paired/dup_i_shrink_vs_sca_nb.csv (2000 draws), metric
-% arniqa, column ci_low
-\newcommand{\hlFsArniqaLo}{-0.0123}
-% /scratch/09032/saini_2/sca/eval/dup46_dup_i_shrink/paired/dup_i_shrink_vs_sca_nb.csv (2000 draws), metric
-% arniqa, column ci_high
-\newcommand{\hlFsArniqaHi}{-0.0026}
-% /scratch/09032/saini_2/sca/eval/dup46_dup_i_shrink/paired/dup_i_shrink_vs_sca_nb.csv (2000 draws), metric
-% musiq_crop1024, column delta
-\newcommand{\hlFsMusiqc}{-1.73}
-% /scratch/09032/saini_2/sca/eval/dup46_dup_i_shrink/paired/dup_i_shrink_vs_sca_nb.csv (2000 draws), metric
-% musiq_crop1024, column ci_low
-\newcommand{\hlFsMusiqcLo}{-2.58}
-% /scratch/09032/saini_2/sca/eval/dup46_dup_i_shrink/paired/dup_i_shrink_vs_sca_nb.csv (2000 draws), metric
-% musiq_crop1024, column ci_high
-\newcommand{\hlFsMusiqcHi}{-1.01}
-% recomputed from eval/a4k195_main and eval/dup46_sca_nb per-image ir (dup_vs_area.py protocol: 4000 draws,
-% Random(0)); equals results/dup_audit_20261027/dup46_20261029/vs_area_46.txt at its printed precision; sca_nb
-% minus AReA, delta
-\newcommand{\hlFsIrAreaPub}{+0.29}
-% recomputed from eval/a4k195_main and eval/dup46_sca_nb per-image ir (dup_vs_area.py protocol: 4000 draws,
-% Random(0)); equals results/dup_audit_20261027/dup46_20261029/vs_area_46.txt at its printed precision; sca_nb
-% minus AReA, lower end
-\newcommand{\hlFsIrAreaPubLo}{0.15}
-% recomputed from eval/a4k195_main and eval/dup46_sca_nb per-image ir (dup_vs_area.py protocol: 4000 draws,
-% Random(0)); equals results/dup_audit_20261027/dup46_20261029/vs_area_46.txt at its printed precision; sca_nb
-% minus AReA, upper end
-\newcommand{\hlFsIrAreaPubHi}{0.43}
-% recomputed from eval/a4k195_main and eval/dup46_dup_i_shrink per-image ir (dup_vs_area.py protocol: 4000 draws,
-% Random(0)); equals results/dup_audit_20261027/dup46_20261029/vs_area_46.txt at its printed precision;
-% dup_i_shrink minus AReA, delta
-\newcommand{\hlFsIrAreaV}{+0.34}
-% recomputed from eval/a4k195_main and eval/dup46_dup_i_shrink per-image ir (dup_vs_area.py protocol: 4000 draws,
-% Random(0)); equals results/dup_audit_20261027/dup46_20261029/vs_area_46.txt at its printed precision;
-% dup_i_shrink minus AReA, lower end
-\newcommand{\hlFsIrAreaVLo}{0.20}
-% recomputed from eval/a4k195_main and eval/dup46_dup_i_shrink per-image ir (dup_vs_area.py protocol: 4000 draws,
-% Random(0)); equals results/dup_audit_20261027/dup46_20261029/vs_area_46.txt at its printed precision;
-% dup_i_shrink minus AReA, upper end
-\newcommand{\hlFsIrAreaVHi}{0.48}
+% results/latency_curve_v2/summary.csv, 4096x4096, sca_nb
+\newcommand{\hlSecScaNoSched}{71.1}

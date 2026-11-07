@@ -1,54 +1,55 @@
-"""Main-text Tables 1 to 4 and the headline numbers of the prose, generated from results/ (nothing typed by hand).
+"""Main-text Tables 1 to 3, two appendix tables and the headline numbers of the prose, generated from results/
+(nothing typed by hand).
 
-One command, run from the repository root, regenerates all five files:
+One command, run from the repository root, regenerates every file:
 
     PATH=$HOME/.local/bin:$PATH UV_CACHE_DIR=/work/09032/saini_2/vista/library/uv-cache uv run --no-project \\
         --python /work/09032/saini_2/vista/library/uv-envs/sca/bin/python python paper/figures/src/gen_main_tables.py
 
-Outputs, in paper/figures/snippets/main_tables/:
-  tab_main.tex, tab_panel46.tex, tab_ablation.tex, tab_generality.tex
-      the \\setlength{\\tabcolsep} line and the tabular of Tables tab:main, tab:panel46, tab:ablation and
+Outputs, in paper/figures/snippets/:
+  main_tables/tab_main.tex, tab_ablation.tex, tab_generality.tex
+      the \\setlength{\\tabcolsep} line and the tabular of main-text Tables tab:main, tab:ablation and
       tab:generality. The float, caption, label and font line stay in main.tex, which \\input's the file in place
       of the tabular. Each file ends in "\\end{tabular}%" so the \\input adds no extra space.
-  headline.tex
-      \\newcommand{\\hl...} macros for the numbers that the abstract, introduction, Sections 4 and 5 and the
-      conclusion repeat, and the caption notes \\pendTabMain, \\pendTabPanel, \\pendTabAbl, \\pendTabGen; \\input it
-      once in the preamble. A comment above each macro names its file and column.
+  main_tables/tab_panel46.tex
+      the tabular of appendix Table tab:panel46 (SigMa and the sampling budgets of the operator without the
+      schedule); its float and caption live in appendix.tex.
+  app_tables/prog_all.tex
+      the complete float of appendix Table tab:prog_all: progressive SCA minus every 4096^2 baseline on every metric.
+  main_tables/headline.tex
+      \\newcommand{\\hl...} macros for the numbers the prose repeats, and the caption notes \\pendTabMain,
+      \\pendTabPanel, \\pendTabAbl, \\pendTabGen; \\input it once in the preamble. A comment above each macro names
+      its file and column.
 
-The final operator. "SCA (ours)" is sca_v2: published SCA (sca_nb) plus the window schedule after the opening and
-1,024 bridge tokens (scav2_runs.py). Its runs land one at a time; the script prints one status line per run. Until
-a run lands, every cell and prose number it will replace shows the published operator's value as \\pend{value}
-(grey; main.tex defines \\pend, headline.tex only provides a fallback), significance marks that will be recomputed
-against it are grey, and the caption note of each table with a grey entry expands to scav2_runs.NOTE (empty once all
-of that table's inputs have landed). Published SCA appears only in Table 3, as "without the schedule", and in the
-rows that exist only for it (Table 2's other budgets, Table 4's FLUX.2-dev row), which are labelled so.
-SCA_V2_PENDING=1 renders every queued run as pending.
+Configurations (2026-11-07 rewrite, user decision): the headline is progressive SCA (sca_v2_prog: HRDiT's three-stage
+schedule with the final operator sca_v2 at its 2048^2 and 4096^2 stages); single-pass SCA (sca_v2, 28 steps) is the
+fast mode; SCA without the schedule (sca_nb) appears only in the ablation and generality rows that exist for it.
+The paper does not report duplication: no table has a Dup. column (the duplication macros are still written at the
+end of headline.tex until no source uses them; see duplication_macros).
 
-Inputs: results/*.csv (the a4k195_* runs through data195.py, the sca_v2 runs through scav2_runs.py), the sca_v2
-runs' eval directories on scratch for what their tasks do not copy (eval.py paired deltas, per-image CSVs), the
-46-prompt runs' eval directories (eval/dup46_<label>), and one archived JSON for Table 3's Err. column, which no CSV
-holds: results/evidence/calib/k1_1024.json, scales/4/rel_err.
+Inputs: results/*.csv (the a4k195_* runs through data195.py, the sca_v2 runs through scav2_runs.py), the paired files
+of progressive SCA against every baseline (results/prog195_vs_baselines/sca_v2_prog_vs_<baseline>.csv, per-image,
+2000 prompt draws; set-level intervals from results/prog195_pairs/cfid_vs_{area,sca_v2}/paired_deltas.csv and, once
+it lands, results/prog195_vs_baselines/cfid/paired_deltas.csv, 1000 draws over prompts and 168 reference
+identities), the sca_v2 runs' eval directories on scratch for what their tasks do not copy (eval.py paired deltas,
+per-image CSVs), the 46-prompt runs' eval directories (eval/dup46_<label>), and one archived JSON:
+results/evidence/calib/k1_1024.json, scales/4/rel_err (checked against Table K.5 and Section 3).
 
 Rules, all set below rather than typed into the cells:
   * numbers use Python's format() at each column's precision; a negative value is set in math mode;
-  * Dup. (Tables 1 and 2): percent of the 95 prompts naming a person or animal with a duplicated one, rounded to an
-    integer; Table 3: count of the 26 such prompts among the 46; Table 4: percent for SCA / percent for the
-    reference (detector rates, uncorrected; n/m where the detector was not run);
-  * Table 1: bold = best and underline = second best of each column within the single-pass group, ranked on the
-    printed values (ties share the mark; multi-stage rows grey and unranked); Table 2: bold = best within each
-    group, no underline;
-  * clean seconds: median of the batch-1 timings at 4096^2 where a method was timed, otherwise "n/m"; the final
-    operator's from results/latency_curve_v2/summary.csv (collect_latency_v2.py);
-  * one significance convention for Tables 1 to 4 (review round 1), defined once in main.tex (Section 4, Metrics):
-    a cell is set in \\up{} (blue) when the 95% paired interval of the row's method minus its reference excludes
-    zero in the row's favour, in \\dn{} (orange) when it excludes zero against it, and plain when the interval
-    includes zero or none exists. Table 1: SCA row only (TABLE1_MARKS), against AReA, from the same deltas as the
-    headline count of wins (eval.py deltas, FID and patch FID corrected as data195.py describes); Table 2: every
-    other row against SCA at 28 steps (per-image metrics through scav2_runs.derived_pairs; no FID interval exists,
-    so those cells stay plain and the caption says so), except the budget rows, which are marked against the
-    published operator from results/a4k195_panel; Table 3: change against the group's reference; Table 4: SCA
-    minus the reference, with the interval printed under each difference;
-  * shading: SCA in Tables 1 to 3 and progressive SCA in Table 2.
+  * Table 1: bold = best and underline = second best of each column within its group (single pass; multi-stage),
+    ranked on the printed values (ties share the mark); the campaign-time column is not ranked;
+  * Table 1 colours: every row except progressive SCA is coloured against progressive SCA, the headline: \\up{}
+    (blue) where the row's 95% paired interval against progressive SCA excludes zero in the row's favour, \\dn{}
+    (orange) where it excludes zero against the row, plain where it includes zero or no interval exists (the caption
+    names those cells). This is the paper's one significance convention (main.tex, Section 4, Metrics);
+  * clean seconds: median of the batch-1 timings at 4096^2 where a method was timed, otherwise "n/m";
+  * Table tab:panel46 (appendix): bold = best within each group; colours against single-pass SCA at 28 steps
+    (per-image metrics through scav2_runs.derived_pairs; no FID interval exists, so those cells stay plain), except
+    the budget rows, which are coloured against the published operator from results/a4k195_panel;
+  * Table 2 (ablations): change against the group's reference; Table 3: SCA minus the reference with the interval
+    printed under each difference; rows of runs not yet landed print "pending";
+  * shading: both of our rows in Table 1, the default row of Table 2.
 After writing, the script checks the prompt counts and the qualitative claims printed next to these numbers;
 if one fails it lists it and exits with status 1 (the files are still written).
 """
@@ -70,19 +71,23 @@ import scav2_runs as V  # noqa: E402  (sca_v2 runs: landed or pending, loaders; 
 ROOT = HERE.parents[2]
 RES = ROOT / "results"
 OUT = ROOT / "paper" / "figures" / "snippets" / "main_tables"
+OUT_APP = ROOT / "paper" / "figures" / "snippets" / "app_tables"
 CALIB_JSON = "evidence/calib/k1_1024.json"
 RES4K = "4096x4096"
 MAIN_RUN, PANEL_RUN, REF = "a4k195_main", "a4k195_panel", "sca_nb"
 MAIN_V2, PROG_V2, WIDE_V2, KREA_V2 = "a4k195_main_sca_v2", "prog195_sca_v2", "a4k195_2048x6144_sca_v2", "krea195_sca_v2"
+PROG = "sca_v2_prog"  # progressive SCA's method label in every progressive file
+PROG_PAIRS = "prog195_vs_baselines"  # results/<dir>/sca_v2_prog_vs_<baseline>.csv
+PROG_CFID = {"area": "prog195_pairs/cfid_vs_area/paired_deltas.csv",
+             "sca_v2": "prog195_pairs/cfid_vs_sca_v2/paired_deltas.csv"}
+PROG_CFID_ALL = "prog195_vs_baselines/cfid/paired_deltas.csv"  # reference sca_v2_prog; lands after the CPU job
 DEFAULT46 = "dup_i_shrink"  # the final operator on the 46-prompt subset
 SHADE = r"\rowcolor[HTML]{EAF4F1}"
-PLUS, CIRC, AST = r"\rlap{$^{+}$}", r"\rlap{$^{\circ}$}", r"\rlap{$^{\ast}$}"
-TABLE1_MARKS = True  # colour Table 1's SCA row against AReA (the convention is defined once in Section 4)
 HEADER = "% Generated by paper/figures/src/gen_main_tables.py from results/; do not edit by hand."
 FAILS: list[str] = []
 NOTES: list[str] = []
 PENDING: dict[str, bool] = {}
-AST_USED: dict[str, int] = {}
+NO_CI: dict[str, list[str]] = {}
 _DATA: dict = {}
 
 
@@ -150,6 +155,8 @@ def tabular(setlength, colspec, head, body, indent):
 def sig(v, lower):
     """Significance colour of a (delta, lo, hi) of the row's method minus its reference: 'up' if the 95% interval
     excludes zero in the row's favour, 'dn' if against it, '' if it includes zero, None if no interval exists."""
+    if v is None:
+        return None
     _, lo, hi = v
     if lo is None or hi is None:
         return None
@@ -163,39 +170,63 @@ def paint(cell, s):
     return rf"\{s}{{{cell}}}" if s else cell
 
 
-def mark(v, lower):
-    """+ significantly better, circ interval includes zero, none significantly worse, ast no interval."""
-    _, lo, hi = v
-    if lo is None or hi is None:
-        return AST
-    if lower:
-        return PLUS if hi < 0 else ("" if lo > 0 else CIRC)
-    return PLUS if lo > 0 else (CIRC if hi >= 0 else "")
+def neg(v):
+    """(delta, lo, hi) of a minus b -> b minus a."""
+    return None if v is None else (-v[0], -v[2], -v[1])
+
+
+# ---------------------------------------------------------------- progressive SCA's pairs -------------------------
+def prog_pairs(m):
+    """({metric: (delta, lo, hi)}, n, source): progressive SCA minus method m, per-image metrics, 2000 draws."""
+    rel = f"{PROG_PAIRS}/{PROG}_vs_{m}.csv"
+    dd, n = V.paired_csv(rel, PROG, m)
+    check(n == 195, f"{rel}: {n} prompts, not 195")
+    return dd, n, f"results/{rel}"
+
+
+def prog_setlevel(m):
+    """({metric: (delta, lo, hi)} for fid, kid, patch_fid, patch_kid of progressive SCA minus m, source) or
+    (None, reason) while no corrected interval with 168 reference identities exists for the pair."""
+    out = {}
+    if (RES / PROG_CFID_ALL).exists():
+        for r in rows(PROG_CFID_ALL):
+            if r["method"] == m and r["reference_method"] == PROG and r["metric"] in data195.DIST:
+                assert r["bootstrap_valid"] == "1000" and r["n_reference_prompts"] == "168", r
+                out[r["metric"]] = neg((float(r["value"]), float(r["ci_low"]), float(r["ci_high"])))
+        if out:
+            return out, f"results/{PROG_CFID_ALL} (method {m}, reference {PROG}, negated)"
+    if m in PROG_CFID:
+        for r in rows(PROG_CFID[m]):
+            if r["method"] == PROG and r["reference_method"] == m and r["metric"] in data195.DIST:
+                assert r["bootstrap_valid"] == "1000" and r["n_reference_prompts"] == "168", r
+                out[r["metric"]] = (float(r["value"]), float(r["ci_low"]), float(r["ci_high"]))
+        return out, f"results/{PROG_CFID[m]} (method {PROG}, reference {m})"
+    return None, f"no corrected interval for {PROG} against {m} yet ({PROG_CFID_ALL} pending)"
 
 
 # ---------------------------------------------------------------- who is shown -----------------------------------
 def sca_shown(run_published):
-    """(run, method, pending) of the SCA row: the final operator once a4k195_main_sca_v2 lands, else the published
-    operator in `run_published` (a4k195_main for Table 1 and the headline, a4k195_panel for Table 2)."""
+    """(run, method, pending) of the single-pass SCA row: the final operator once a4k195_main_sca_v2 lands."""
     return (MAIN_V2, "sca_v2", False) if V.landed(MAIN_V2) else (run_published, REF, True)
 
 
 def prog_shown():
-    return (PROG_V2, "sca_v2_prog", False) if V.landed(PROG_V2) else (PANEL_RUN, "sca_prog", True)
+    return (PROG_V2, PROG, False) if V.landed(PROG_V2) else (PANEL_RUN, "sca_prog", True)
 
 
-# ---------------------------------------------------------------- Tables 1 and 2 (4096^2, 195 prompts) ----------
+# ---------------------------------------------------------------- Table 1 and Table panel46 (4096^2, 195) --------
 # (column key, scale, decimals, lower is better); "clean" is the batch-1 latency, "seconds" the campaign mean
 COLS = [("clean", 1, 1, True), ("seconds", 1, 1, True), ("ir", 1, 2, False), ("hpsv21", 100, 2, False),
         ("pickscore", 1, 2, False), ("clip", 1, 2, False), ("musiq_crop1024", 1, 1, False),
-        ("fid", 1, 1, True), ("patch_fid", 1, 1, True), ("dup", 1, 0, True)]
+        ("fid", 1, 1, True), ("patch_fid", 1, 1, True)]
 QUALITY = ("ir", "hpsv21", "pickscore", "clip", "musiq_crop1024", "fid", "patch_fid")
 PER_IMAGE_COLS = ("ir", "hpsv21", "pickscore", "clip", "musiq_crop1024")
 DIST_COLS = ("fid", "patch_fid")
-SCA_LABEL = r"\textbf{\sca{} (ours)}"
-PROG_LABEL = r"\textbf{Prog.\ \sca{}}"  # "Progressive SCA" would widen Table 2 by 16 pt
-# (group heading, [(kind, run, method, label, steps)]); kind "sca" and "prog" rows show the final operator once its
-# run lands (run and method here are the published placeholders); "ctl" rows exist only for the published operator.
+SCA_LABEL = r"\sca{} (ours)"
+PROG_LABEL = r"\textbf{Progressive \sca{} (ours)}"
+PANEL_SCA_LABEL = r"\sca{}, single pass"
+# (group heading, [(kind, run, method, label, steps)]); "sca" and "prog" rows show the final operator once its run
+# lands (run and method here are the published placeholders); "ctl" rows exist only for the published operator.
 TAB_MAIN = [
     ("Single pass, shared sampler (28 steps, guidance 4.5)",
      [("pub", MAIN_RUN, "full", "Full attention", "28"), ("pub", MAIN_RUN, "dype", "DyPE", "28"),
@@ -203,25 +234,22 @@ TAB_MAIN = [
       ("sca", MAIN_RUN, REF, SCA_LABEL, "28")]),
     ("Multi-stage, own recipe and budget",
      [("pub", MAIN_RUN, "ultraimage", "UltraImage", "30+30"),
-      ("pub", PANEL_RUN, "hrdit_dev_author", "HRDiT", "30+17+10")]),
+      ("pub", PANEL_RUN, "hrdit_dev_author", "HRDiT", "30+17+10"),
+      ("prog", PANEL_RUN, "sca_prog", PROG_LABEL, "30+17+10")]),
 ]
 TAB_PANEL = [
     (r"Single pass, shared sampler (28 steps, guidance 4.5; other rows in Table~\ref{tab:main})",
-     [("pub", PANEL_RUN, "sigma_dev_matched", "SigMa", "28"), ("sca", PANEL_RUN, REF, SCA_LABEL, "28")]),
-    ("Multi-stage, own recipe and budget",
-     [("pub", PANEL_RUN, "ultraimage", "UltraImage", "30+30"),
-      ("pub", PANEL_RUN, "hrdit_dev_author", "HRDiT", "30+17+10"),
-      ("prog", PANEL_RUN, "sca_prog", PROG_LABEL, "30+17+10")]),
+     [("pub", PANEL_RUN, "sigma_dev_matched", "SigMa", "28"), ("sca", PANEL_RUN, REF, PANEL_SCA_LABEL, "28")]),
     (r"\sca{} without the schedule, other budgets",
      [("ctl", PANEL_RUN, "sca_s56", r"\quad 56 steps", "56"), ("ctl", PANEL_RUN, "sca_g7", r"\quad guidance 7", "28"),
       ("ctl", PANEL_RUN, "sca_s42", r"\quad 42 steps", "42")]),
 ]
-HEAD12 = [r"\toprule",
-          r" & & \multicolumn{2}{c}{Time (s)} & & & & & & & & \\",
+HEAD11 = [r"\toprule",
+          r" & & \multicolumn{2}{c}{Time (s)} & & & & & & & \\",
           r"\cmidrule(lr){3-4}",
           r"Method & Steps & clean$\downarrow$ & camp. & IR$\uparrow$ & HPS$\uparrow$ & Pick$\uparrow$ & CLIP$\uparrow$ & "
-          r"M$_\text{c}\!\uparrow$ & FID$\downarrow$ & FID$_\text{p}^{\dagger}\!\downarrow$ & Dup.\,\%$\downarrow$ \\"]
-NCOL12 = 12
+          r"M$_\text{c}\!\uparrow$ & FID$\downarrow$ & FID$_\text{p}^{\dagger}\!\downarrow$ \\"]
+NCOL11 = 11
 
 
 def clean_seconds():
@@ -231,8 +259,7 @@ def clean_seconds():
     prompts after a warm-up image), checked against its per-image rows in results/latency_curve.csv. HRDiT, which
     the sweep lacks: median of its hrdit_dev_author rows in results/latency_curve_batch1.csv, which has no HRDiT
     warm-up row, so its cold first run is included (as the Table 1 caption says). The final operator (sca_v2) and
-    published SCA re-timed beside it: results/latency_curve_v2/summary.csv, once collect_latency_v2.py has written
-    the 4096x4096 rows (key "sca_nb_v2" for the re-timed published operator)."""
+    published SCA re-timed beside it: results/latency_curve_v2/summary.csv (collect_latency_v2.py)."""
     per = {}
     for r in rows("latency_curve.csv"):
         if r["res"] == RES4K:
@@ -277,10 +304,17 @@ def check_runs():
                 a, b = S2[(m, k)], Sp[(m, k)]
                 check(abs(a - b) <= 1e-3 * max(1.0, abs(b)), f"results/{MAIN_V2}: {m} {k} = {a:.6g}, results/"
                                                               f"{MAIN_RUN} has {b:.6g}; the evaluations differ")
+    if V.landed(PROG_V2):
+        # HRDiT is scored in both the panel run and the progressive run: the printed values must agree
+        S2, Sp = data(PROG_V2)[0], data(PANEL_RUN)[0]
+        for k in QUALITY:
+            a, b = S2[("hrdit_dev_author", k)], Sp[("hrdit_dev_author", k)]
+            check(abs(a - b) <= 2e-3 * max(1.0, abs(b)), f"HRDiT {k}: {a:.6g} in results/{PROG_V2}, {b:.6g} in "
+                                                          f"results/{PANEL_RUN}")
 
 
-def table12_rows(spec, clean):
-    """Flat rows (kind, run, method, label, steps, pending, cells, cell_pending) of Table 1 or 2, unmarked."""
+def table_rows(spec, clean):
+    """Flat rows (kind, run, method, label, steps, pending, cells, cell_pending) of Table 1 or panel46, unmarked."""
     out = []
     for _, group in spec:
         for kind, run, m, label, steps in group:
@@ -297,14 +331,12 @@ def table12_rows(spec, clean):
                         lat = V.landed(V.LATENCY)
                         cells.append(num(clean["sca_v2" if lat else REF], d))
                         cp.append(not lat)
+                    elif kind == "prog":
+                        cells.append(num(clean[PROG], d) if PROG in clean else "n/m")
+                        cp.append(False)
                     else:
                         cells.append(num(clean[m], d) if (kind == "pub" and m in clean) else "n/m")
                         cp.append(False)
-                elif k == "dup":
-                    kk, n = V.dup195(run, m)
-                    check(n == 95, f"duplication rate of {m} in {run} over {n} prompts, not 95")
-                    cells.append(f"{100 * kk / n:.0f}")
-                    cp.append(pending)
                 else:
                     cells.append(num(sc * S[(m, k)], d))
                     cp.append(pending)
@@ -312,18 +344,23 @@ def table12_rows(spec, clean):
     return out
 
 
-def sca_vs_area(run, m):
-    """{metric: (delta, lo, hi)}: m minus AReA in `run` over AREA_METRICS, as the headline counts wins (the run's
-    eval.py deltas negated, FID, KID and patch versions corrected as data195.load describes)."""
-    S, D, ref, _, _ = data(run)
-    vs = data195.versus(S, D, ref, run, "area", AREA_METRICS, RES)
-    return {k: vs[(m, k)] for k in AREA_METRICS}
+def table1_marks(row):
+    """{column: colour} of a Table 1 row against progressive SCA (row minus progressive SCA)."""
+    m = row[2]
+    pi, _, _ = prog_pairs(m)
+    sl, src = prog_setlevel(m)
+    out = {k: sig(neg(pi[k]), lower=False) for k in PER_IMAGE_COLS}
+    for k in DIST_COLS:
+        out[k] = sig(neg(sl[k]), lower=True) if sl else None
+        if out[k] is None:
+            NO_CI.setdefault("tab_main", []).append(f"{m}:{k}")
+    return out
 
 
 def table2_marks(row, sca_row):
-    """{column: (colour, grey)} for a Table 2 row other than SCA (colour as sig(): 'up', 'dn', '' or None for no
-    interval): against SCA at 28 steps (the shown operator), or, for the budget rows, against the published
-    operator. grey: the colour will be recomputed when SCA's run lands."""
+    """{column: (colour, grey)} for a panel46 row other than SCA: against single-pass SCA at 28 steps (the shown
+    operator), or, for the budget rows, against the published operator. grey: the colour will be recomputed when
+    SCA's run lands."""
     kind, run, m = row[0], row[1], row[2]
     ref_run, ref_m, ref_pending = (PANEL_RUN, REF, False) if kind == "ctl" else (sca_row[1], sca_row[2], sca_row[5])
     published_pair = run == PANEL_RUN and (ref_run, ref_m) == (PANEL_RUN, REF)
@@ -331,7 +368,7 @@ def table2_marks(row, sca_row):
         P = data195.pairs(PANEL_RUN, m, REF, RES)
     else:
         P, n = V.derived_pairs(run, m, ref_run, ref_m)
-        check(n == 195, f"Table 2 marks {m} vs {ref_m}: {n} paired prompts")
+        check(n == 195, f"Table panel46 marks {m} vs {ref_m}: {n} paired prompts")
     out = {}
     for k in PER_IMAGE_COLS:
         out[k] = (sig(P[k], lower=False), ref_pending)
@@ -339,83 +376,92 @@ def table2_marks(row, sca_row):
         v = data(PANEL_RUN)[1][(m, k)] if published_pair else (None, None, None)
         assert v[1] is not None or not published_pair, (m, k)
         out[k] = (sig(v, lower=True), ref_pending)
+        if out[k][0] is None:
+            NO_CI.setdefault("tab_panel46", []).append(f"{m}:{k}")
     return out
 
 
-def table12(name, spec, clean, underline):
-    flat = table12_rows(spec, clean)
-    cells = [list(r[6]) for r in flat]
-    # Review round 1: rank within each group (Table 1: single-pass rows only; its multi-stage rows are grey
-    # context), never across groups; the campaign-time column ("seconds") is not ranked in Table 1.
+def rank_groups(name, spec, cells, underline):
     starts, k0 = [], 0
     for _, group in spec:
         starts.append((k0, k0 + len(group)))
         k0 += len(group)
-    groups = starts[:1] if name == "tab_main" else starts
-    for a, b in groups:
+    for a, b in starts:
         for j, (key, _, _, lower) in enumerate(COLS):
-            # campaign time (Table 1) and Dup. (both tables) are not ranked: Dup. is a detector rate whose precision
-            # and recall differ by method (results/dup_audit_20261027/validation_by_method.csv)
-            if (name == "tab_main" and key == "seconds") or key == "dup":
+            if name == "tab_main" and key == "seconds":  # campaign time is not ranked in Table 1
                 continue
             for i, r in ranks([c[j] for c in cells[a:b]], lower).items():
                 if r == "best":
                     cells[a + i][j] = rf"\textbf{{{cells[a + i][j]}}}"
                 elif underline:
                     cells[a + i][j] = rf"\underline{{{cells[a + i][j]}}}"
-    sca_row = next(r for r in flat if r[0] == "sca")
+    return starts
+
+
+def table_main(clean):
+    flat = table_rows(TAB_MAIN, clean)
+    cells = [list(r[6]) for r in flat]
+    rank_groups("tab_main", TAB_MAIN, cells, underline=True)
     for i, row in enumerate(flat):
-        marks = {}
-        if name == "tab_main" and row[0] == "sca" and TABLE1_MARKS:
-            vs = sca_vs_area(row[1], row[2])
-            marks = {k: (sig(vs[k], lower=k in DIST_COLS), False) for k in QUALITY}
-            NOTES.append("Table 1 SCA row against AReA: " + ", ".join(f"{k} {marks[k][0] or 'unresolved'}"
-                                                                      for k in QUALITY))
-        elif name == "tab_panel46" and row[0] != "sca":
-            marks = table2_marks(row, sca_row)
+        marks = {} if row[0] == "prog" else table1_marks(row)
         for j, (k, *_) in enumerate(COLS):
-            colour, grey = marks.get(k, ("", False))
-            if colour is None:  # no interval exists: the cell stays plain; the caption says which cells
-                AST_USED[name] = AST_USED.get(name, 0) + 1
-                NOTES.append(f"{name}: no interval for {row[2]} {k}")
-            painted = cells[i][j] if (grey or row[7][j]) else paint(cells[i][j], colour)
+            painted = cells[i][j] if row[7][j] else paint(cells[i][j], marks.get(k) or "")
             cells[i][j] = pend(painted, row[7][j])
-    PENDING[name] = any(any(r[7]) for r in flat) or any(r"\pend" in c for c in sum(cells, []))
+        if marks:
+            NOTES.append(f"Table 1 {row[2]} against progressive SCA: " +
+                         ", ".join(f"{k} {marks[k] if marks.get(k) is not None else 'no interval'}"
+                                   for k in QUALITY))
+    PENDING["tab_main"] = any(any(r[7]) for r in flat)
     body, i = [], 0
-    for g, (heading, group) in enumerate(spec):
-        body += ([r"\midrule"] if g else []) + [rf"\multicolumn{{{NCOL12}}}{{@{{}}l}}{{\emph{{{heading}}}}} \\"]
+    for g, (heading, group) in enumerate(TAB_MAIN):
+        body += ([r"\midrule"] if g else []) + [rf"\multicolumn{{{NCOL11}}}{{@{{}}l}}{{\emph{{{heading}}}}} \\"]
         for _ in group:
             shade = SHADE if flat[i][0] in ("sca", "prog") else ""
-            row_cells = [flat[i][3], flat[i][4]] + cells[i]
-            if name == "tab_main" and g > 0:  # multi-stage rows: grey context, unranked
-                row_cells = [rf"\ctxrow{{{c}}}" for c in row_cells]
-            body.append(shade + " & ".join(row_cells) + r" \\")
+            body.append(shade + " & ".join([flat[i][3], flat[i][4]] + cells[i]) + r" \\")
             i += 1
-    if name == "tab_main":
-        # Table 1 caption: among the single-pass rows (first group), SCA prints the best value of every column but Dup.
-        single = flat[:len(spec[0][1])]
-        i = [r[0] for r in single].index("sca")
-        lost = [COLS[j][0] for j in range(len(COLS)) if COLS[j][0] != "dup" and
-                ranks([r[6][j] for r in single], COLS[j][3]).get(i) != "best"]
-        check(not lost, f"Table 1 caption: SCA is not best among single-pass methods on {lost}")
-    # colour marks take no room, so the 2.5 pt mark gutter of the superscript convention is gone
-    return tabular(r"\setlength{\tabcolsep}{3.1pt}", r"@{}lcrr*{8}{r}@{}", HEAD12 + [r"\midrule"], body, "  ")
+    # caption claims: single-pass SCA prints the best value of every ranked column among single-pass rows
+    single = flat[:len(TAB_MAIN[0][1])]
+    i = [r[0] for r in single].index("sca")
+    lost = [COLS[j][0] for j in range(len(COLS)) if COLS[j][0] != "seconds" and
+            ranks([r[6][j] for r in single], COLS[j][3]).get(i) != "best"]
+    check(not lost, f"Table 1 caption: single-pass SCA is not best among single-pass rows on {lost}")
+    return tabular(r"\setlength{\tabcolsep}{3.1pt}", r"@{}lcrr*{7}{r}@{}", HEAD11 + [r"\midrule"], body, "  ")
 
 
-# ---------------------------------------------------------------- Table 3 (ablations, 46 prompts) ----------------
+def table_panel(clean):
+    flat = table_rows(TAB_PANEL, clean)
+    cells = [list(r[6]) for r in flat]
+    rank_groups("tab_panel46", TAB_PANEL, cells, underline=False)
+    sca_row = next(r for r in flat if r[0] == "sca")
+    for i, row in enumerate(flat):
+        marks = table2_marks(row, sca_row) if row[0] != "sca" else {}
+        for j, (k, *_) in enumerate(COLS):
+            colour, grey = marks.get(k, ("", False))
+            painted = cells[i][j] if (grey or row[7][j]) else paint(cells[i][j], colour or "")
+            cells[i][j] = pend(painted, row[7][j])
+    PENDING["tab_panel46"] = any(any(r[7]) for r in flat) or any(r"\pend" in c for c in sum(cells, []))
+    body, i = [], 0
+    for g, (heading, group) in enumerate(TAB_PANEL):
+        body += ([r"\midrule"] if g else []) + [rf"\multicolumn{{{NCOL11}}}{{@{{}}l}}{{\emph{{{heading}}}}} \\"]
+        for _ in group:
+            shade = SHADE if flat[i][0] == "sca" else ""
+            body.append(shade + " & ".join([flat[i][3], flat[i][4]] + cells[i]) + r" \\")
+            i += 1
+    return tabular(r"\setlength{\tabcolsep}{3.1pt}", r"@{}lcrr*{7}{r}@{}", HEAD11 + [r"\midrule"], body, "  ")
+
+
+# ---------------------------------------------------------------- Table 2 (ablations, 46 prompts) ----------------
 ABL_COLS = [("ir", 1, 2), ("hpsv21", 100, 2), ("pickscore", 1, 2), ("musiq_crop1024", 1, 1)]
-# Schedule block: paired change against the final operator (dup_i_shrink) on the same 46 prompts. Its variants of
+# Schedule block: paired change against single-pass SCA (dup_i_shrink) on the same 46 prompts; its variants of
 # the queued 46-prompt runs appear once they land (no placeholder rows).
 VARIANT_LABELS = {"dup_i_160": "first window 160", "dup_i_bridge32": "2,048 bridge tokens",
                   "dup_i_ext75": "five-step schedule"}
 # Base-operator block: (label, method in results/ablnb_<method>_deltas.csv, k1_1024.json scales/4/rel_err key),
-# paired change against the published operator (SCA without the schedule). Err. is the output error of the weight
-# rule used after the opening phase: v0 keeps the per-head table and only drops the opening phase; the calibration
-# report evaluates centre pooling only, so mean pooling has none (n/a). The schedule rows keep the per-head table.
+# paired change against the published operator (SCA without the schedule).
 ABL_ROWS = [("no opening (v0)", "abl_v0", "per_head"), ("local only", "abl_localonly_nb", "loc"),
             ("global only", "abl_globalonly", "glob"), (r"shared $\pi(\sigma)$", "abl_uniform_nb", "uniform"),
             (r"per-layer $\pi_\ell(\sigma)$", "abl_layer_nb", "per_layer"), ("mean pooling", "abl_mean_nb", None)]
-ABL_HEAD_SCHED = "Schedule"
+ABL_HEAD_SCHED = "Schedule and bridge"
 ABL_HEAD_BASE = r"Base operator, against \sca{} without the schedule"
 
 
@@ -428,19 +474,12 @@ def ablation_deltas(method):
 
 
 def delta_cells(dd):
-    return [paint(sgn(sc * dd[k][0], d), sig(dd[k], lower=False)) for k, sc, d in ABL_COLS]
+    return [paint(sgn(sc * dd[k][0], d), sig(dd[k], lower=False) or "") for k, sc, d in ABL_COLS]
 
 
-def dup_cell(method):
-    k, n, _ = V.dup46(method)
-    check(n == 26, f"Table 3 Dup.: {method} over {n} people/animal prompts, not 26")
-    return str(k)
-
-
-def table3():
-    # Review round 1: the Err. column (relative output error at scale 4, results/evidence/calib/k1_1024.json) moved
-    # to Table K.5 (main.tex, tab:app_abl), so the table sets at \footnotesize and no n/a cell remains. The checks
-    # below still read it so the K.5 row and Section 3 stay tied to the archive.
+def table_ablation():
+    # The Err. column (relative output error at scale 4, results/evidence/calib/k1_1024.json) lives in Table K.5;
+    # the checks below keep the K.5 row and Section 3 tied to the archive.
     calib = json.load(open(RES / CALIB_JSON))
     assert calib["settings"]["pool"] == "center", calib["settings"]["pool"]
     err = calib["scales"]["4"]["rel_err"]
@@ -449,111 +488,204 @@ def table3():
         check(f"{err[key]:.3f}" == printed, f"Table K.5 output-error row prints {printed} for {key}, the archive "
                                             f"gives {err[key]:.3f}")
     S46 = V.summary46(DEFAULT46)
-    sca = [num(sc * S46[k], d) for k, sc, d in ABL_COLS] + [dup_cell(DEFAULT46)]
-    body = [SHADE + r"\sca{} (ours) & " + " & ".join(sca) + r" \\", r"\midrule",
-            rf"\multicolumn{{6}}{{@{{}}l}}{{\emph{{{ABL_HEAD_SCHED}}}}} \\"]
+    sca = [num(sc * S46[k], d) for k, sc, d in ABL_COLS]
+    body = [SHADE + r"\sca{}, single pass & " + " & ".join(sca) + r" \\", r"\midrule",
+            rf"\multicolumn{{5}}{{@{{}}l}}{{\emph{{{ABL_HEAD_SCHED}}}}} \\"]
     p = V.pair46(DEFAULT46)
     sched = [("without the schedule", REF, {k: (-v, -hi, -lo) for k, (v, lo, hi) in p.items()})]
     for label, method, eval_dir in [("bridge only", "dup_bridge", "dup46_dup_bridge")] + \
             [(VARIANT_LABELS[v], v, f"dup46_{v}") for v in V.VARIANTS46 if V.landed(v)]:
         dd, n = V.derived_pairs(eval_dir, method, f"dup46_{DEFAULT46}", DEFAULT46)
-        check(n == 46, f"Table 3 '{label}': {n} paired prompts, \\nabl is 46")
+        check(n == 46, f"Table 2 '{label}': {n} paired prompts, \\nabl is 46")
         sched.append((label, method, dd))
     for label, method, dd in sched:
-        cells = delta_cells(dd) + [dup_cell(method)]
-        body.append(" & ".join([label] + cells) + r" \\")
+        body.append(" & ".join([label] + delta_cells(dd)) + r" \\")
         better = [k for k, _, _ in ABL_COLS if dd[k][1] > 0]
         worse = [k for k, _, _ in ABL_COLS if dd[k][2] < 0]
-        NOTES.append(f"Table 3 schedule row '{label}' against SCA: significantly better on {better or 'none'}, "
-                     f"worse on {worse or 'none'}")
-    body.append(rf"\multicolumn{{6}}{{@{{}}l}}{{\emph{{{ABL_HEAD_BASE}}}}} \\")
+        NOTES.append(f"Table 2 schedule row '{label}' against single-pass SCA: significantly better on "
+                     f"{better or 'none'}, worse on {worse or 'none'}; deltas " +
+                     ", ".join(f"{k} {sc * dd[k][0]:+.3f}" for k, sc, _ in ABL_COLS))
+    body.append(rf"\multicolumn{{5}}{{@{{}}l}}{{\emph{{{ABL_HEAD_BASE}}}}} \\")
     for label, method, key in ABL_ROWS:
         dd = ablation_deltas(method)
-        cells = delta_cells(dd) + [dup_cell(method)]
         for k, _, _ in ABL_COLS:
-            check(dd[k][1] <= 0, f"Table 3: base-operator row '{label}' is significantly better on {k}")
+            check(dd[k][1] <= 0, f"Table 2: base-operator row '{label}' is significantly better on {k}")
         check(dd["hpsv21"][2] < 0 and dd["pickscore"][2] < 0,
-              f"Table 3 caption: '{label}' does not significantly lower both HPSv2.1 and PickScore")
-        body.append(" & ".join([label] + cells) + r" \\")
+              f"Table 2 caption: '{label}' does not significantly lower both HPSv2.1 and PickScore")
+        body.append(" & ".join([label] + delta_cells(dd)) + r" \\")
     PENDING["tab_ablation"] = False  # rows of runs not yet landed are left out, never shown grey
-    # without the Err. column the table fits its minipage at main.tex's \footnotesize
-    return tabular(r"\setlength{\tabcolsep}{1.6pt}", "@{}lrrrrr@{}",
-                   [r"\toprule", r"Variant & IR & HPS & Pick & M$_\text{c}$ & Dup. \\", r"\midrule"], body,
-                   "  ")
+    return tabular(r"\setlength{\tabcolsep}{2.4pt}", "@{}lrrrr@{}",
+                   [r"\toprule", r"Variant & IR & HPS & Pick & M$_\text{c}$ \\", r"\midrule"], body, "  ")
 
 
-# ---------------------------------------------------------------- Table 4 (generality) ---------------------------
-# Review round 1: every difference carries its 95% interval (printed under it) and a Dup. column was added; the
-# sensitivity rows (calibration budget and gate, operator without the schedule) moved to Table L.4
-# (tab:phase2_sensitivity), which holds them with intervals, so the table fits beside Table 3.
-GEN_COLS = [("ir", 1, 3), ("hpsv21", 100, 2)]
-N_MACROS = {r"\nhrgen": 1000, r"\nseed": 195, r"\nabl": 46, r"\nkrea": 195}  # their values in main.tex
-PEOPLE = "dup_audit_20261027/rates_a4k195_people.csv"
-# Against AReA (final operator): (label, n cell, run, Dup. sources ((csv, method) of SCA, (csv, method) of AReA) or
-# None where the detector was not run).
-GEN_AREA = [("HRGen-1K", r"\nhrgen", "hrgen1k_dev_sca_v2", None),
-            ("Seed 1", r"\nseed", "a4k195_seed1_sca_v2",
-             (("a4k195_seed1_sca_v2/dup_rates_people.csv", "sca_v2"), (PEOPLE, "area_seed1"))),
-            ("Seed 2", r"\nseed", "a4k195_seed2_sca_v2",
-             (("a4k195_seed2_sca_v2/dup_rates_people.csv", "sca_v2"), (PEOPLE, "area_seed2"))),
-            ("FLUX.1-Krea", r"\nkrea", KREA_V2,
-             (("krea195_sca_v2/dup_rates_people.csv", "sca_v2_krea"),
-              ("dup_audit_20261027/review_round1_cpu/rates_krea195_people.csv", "area_krea")))]
-# FLUX.2-dev: the operator without the schedule against full attention (no duplication run).
+# ---------------------------------------------------------------- Table 3 (generality) ---------------------------
+# Every difference carries its 95% interval (printed under it). Progressive rows whose runs have not landed print
+# "pending" in one line; they fill in when their paired CSVs appear under results/.
+GEN_COLS = [("ir", 1, 2), ("hpsv21", 100, 2), ("pickscore", 1, 2)]
+N_MACROS = {r"\nhrgen": 1000, r"\nseed": 195, r"\nabl": 46, r"\nkrea": 195, r"\nmain": 195}  # their values in main.tex
+# Progressive SCA minus AReA: (label, n macro, candidate CSVs under results/ with method sca_v2_prog and reference
+# area; the first that exists is used).
+GEN_PROG = [("Seed 0", r"\nmain", [f"{PROG_PAIRS}/{PROG}_vs_area.csv"]),
+            ("Seed 1", r"\nseed", ["prog195_s1/sca_v2_prog_vs_area.csv", "prog195_seed1/sca_v2_prog_vs_area.csv"]),
+            ("Seed 2", r"\nseed", ["prog195_s2/sca_v2_prog_vs_area.csv", "prog195_seed2/sca_v2_prog_vs_area.csv"]),
+            ("HRGen-1K", r"\nhrgen", ["prog_hrgen1k/sca_v2_prog_vs_area.csv", "hrgen1k_prog/sca_v2_prog_vs_area.csv"])]
+# Single-pass SCA minus AReA (final operator).
+GEN_AREA = [("HRGen-1K", r"\nhrgen", "hrgen1k_dev_sca_v2"), ("Seed 1", r"\nseed", "a4k195_seed1_sca_v2"),
+            ("Seed 2", r"\nseed", "a4k195_seed2_sca_v2"), ("FLUX.1-Krea", r"\nkrea", KREA_V2)]
+# FLUX.2-dev: the operator without the schedule against full attention.
 GEN_FLUX2 = ("FLUX.2-dev", None, "e8_flux2_sca_vs_full.csv", "flux2_sca", "flux2_full")
 KEY_AREA_ROWS = ("HRGen-1K", "Seed 1", "Seed 2")  # the caption's key result: gains over AReA hold on these
-NCOL4 = 4
-
-
-def dup_rate(rel, method):
-    """Percent (rounded) of the 95 people/animal prompts with a duplicated one, from a dup_rate.py CSV."""
-    for r in rows(rel):
-        if r["method"] == method:
-            k, n = int(r["dup"]), int(r["n"])
-            check(n == 95, f"Table 4 Dup.: {rel} {method} over {n} prompts, not 95")
-            return f"{100 * k / n:.0f}"
-    raise KeyError(f"results/{rel}: no row for {method}")
+NCOL3 = 4
 
 
 def gen_area_pair(run):
-    """(deltas, n, source) of an 'Against AReA' row: the final operator's paired CSV."""
-    assert V.landed(run), f"Table 4: {run} has not landed"
+    """(deltas, n, source) of a single-pass 'minus AReA' row: the final operator's paired CSV."""
+    assert V.landed(run), f"Table 3: {run} has not landed"
     rel = f"{run}/{V.RUNS[run].final}_vs_area.csv"
     dd, n = V.paired_csv(rel, V.RUNS[run].final, "area")
     return dd, n, rel
 
 
-def table4_rows(label, ncell, dd, n, dup):
-    """Two lines per setting: the differences (coloured by the convention) and Dup., then n and the intervals."""
-    check(ncell is None or N_MACROS[ncell] == n, f"Table 4 '{label}': {n} prompts, {ncell} is "
+def table3_rows(label, ncell, dd, n):
+    """Two lines per setting: the differences (coloured by the convention), then n and the intervals."""
+    check(ncell is None or N_MACROS[ncell] == n, f"Table 3 '{label}': {n} prompts, {ncell} is "
                                                  f"{N_MACROS.get(ncell)} in main.tex")
     top, low = [label], [rf"\scriptsize $n={ncell or n}$"]
     for k, sc, d in GEN_COLS:
         v, lo, hi = dd[k]
-        top.append(paint(sgn(sc * v, d), sig(dd[k], lower=False)))
+        top.append(paint(sgn(sc * v, d), sig(dd[k], lower=False) or ""))
         low.append(rf"\scriptsize $[{sc * lo:.{d}f}, {sc * hi:.{d}f}]$".replace("[-", "[{-}").replace(", -", ", {-}"))
-    top.append(dup)
-    low.append("")
     return [" & ".join(top) + r" \\", " & ".join(low) + r" \\[1.5pt]"]
 
 
-def table4():
-    body = [rf"\multicolumn{{{NCOL4}}}{{@{{}}l}}{{\emph{{\sca{{}} minus AReA}}}} \\"]
-    for label, ncell, run, dup_src in GEN_AREA:
+def table_generality():
+    body = [rf"\multicolumn{{{NCOL3}}}{{@{{}}l}}{{\emph{{Progressive \sca{{}} minus AReA}}}} \\"]
+    pending = []
+    for label, ncell, candidates in GEN_PROG:
+        rel = next((c for c in candidates if (RES / c).exists()), None)
+        if rel is None:
+            body.append(rf"{label} & \multicolumn{{3}}{{c}}{{\color{{pendgrey}}pending}} \\[1.5pt]")
+            pending.append(label)
+            continue
+        dd, n = V.paired_csv(rel, PROG, "area")
+        body += table3_rows(label, ncell, dd, n)
+    body.append(rf"\multicolumn{{{NCOL3}}}{{@{{}}l}}{{\emph{{\sca{{}}, single pass, minus AReA}}}} \\")
+    for label, ncell, run in GEN_AREA:
         dd, n, _ = gen_area_pair(run)
         if label in KEY_AREA_ROWS:
             check(all(dd[k][1] > 0 for k, _, _ in GEN_COLS),
-                  f"Table 4 caption: '{label}' is not significantly better than AReA on every column")
-        dup = "n/m" if dup_src is None else rf"{dup_rate(*dup_src[0])}\,/\,{dup_rate(*dup_src[1])}"
-        body += table4_rows(label, ncell, dd, n, dup)
-    body.append(rf"\multicolumn{{{NCOL4}}}{{@{{}}l}}{{\emph{{Without the schedule, minus full attention}}}} \\")
+                  f"Table 3 caption: single-pass '{label}' is not significantly better than AReA on every column")
+        body += table3_rows(label, ncell, dd, n)
+    body.append(rf"\multicolumn{{{NCOL3}}}{{@{{}}l}}{{\emph{{Without the schedule, minus full attention}}}} \\")
     label, ncell, rel, method, reference = GEN_FLUX2
     dd, n = V.paired_csv(rel, method, reference)
-    body += table4_rows(label, ncell, dd, n, "n/m")
+    body += table3_rows(label, ncell, dd, n)
     body[-1] = body[-1].replace(r" \\[1.5pt]", r" \\")
-    PENDING["tab_generality"] = False
-    return tabular(r"\setlength{\tabcolsep}{2.2pt}", "@{}lrrr@{}",
-                   [r"\toprule", r"Setting & $\Delta$IR & $\Delta$HPS & Dup.\,\% \\", r"\midrule"], body, "  ")
+    PENDING["tab_generality"] = bool(pending)
+    NOTES.append(f"Table 3 progressive rows pending: {pending or 'none'}")
+    return tabular(r"\setlength{\tabcolsep}{2.0pt}", "@{}lrrr@{}",
+                   [r"\toprule", r"Setting & $\Delta$IR & $\Delta$HPS & $\Delta$Pick \\", r"\midrule"], body, "  ")
+
+
+# ---------------------------------------------------------------- appendix Table prog_all -----------------------
+PROG_ALL_REFS = [("area", "AReA"), ("hrdit_dev_author", "HRDiT"), ("ultraimage", "UltraImage"), ("dype", "DyPE"),
+                 ("sega_official", "SEGA"), ("full", "Full attn."), ("sca_v2", r"\sca{}, 1 pass")]
+PROG_ALL_METRICS = [("ir", "ImageReward", 1, 3), ("aesthetic", "Aesthetic", 1, 2), ("clip", "CLIP score", 1, 2),
+                    ("pickscore", "PickScore", 1, 2), ("hpsv2", r"HPSv2 ($\times100$)", 100, 2),
+                    ("hpsv21", r"HPSv2.1 ($\times100$)", 100, 2), ("musiq", "MUSIQ", 1, 1),
+                    ("musiq_crop1024", r"MUSIQ$_\text{c}$", 1, 1), ("clipiqa", r"CLIP-IQA ($\times100$)", 100, 1),
+                    ("arniqa", r"ARNIQA ($\times100$)", 100, 1), ("fid", "FID", 1, 1), ("kid", r"KID ($\times100$)", 100, 3),
+                    ("patch_fid", r"FID$_\text{p}^{\dagger}$", 1, 1), ("patch_kid", r"KID$_\text{p}$ ($\times100$)", 100, 3)]
+
+
+def interval(lo, hi, d):
+    return rf"$[{lo:.{d}f}, {hi:.{d}f}]$".replace("[-", "[{-}").replace(", -", ", {-}")
+
+
+def table_prog_all():
+    cols = []
+    for m, _ in PROG_ALL_REFS:
+        pi, n, _ = prog_pairs(m)
+        sl, _ = prog_setlevel(m)
+        cols.append((pi, sl))
+    lines = []
+    pending_refs = [name for (m, name), (_, sl) in zip(PROG_ALL_REFS, cols) if sl is None]
+    for key, label, sc, d in PROG_ALL_METRICS:
+        top, low = [label], [""]
+        for (m, _), (pi, sl) in zip(PROG_ALL_REFS, cols):
+            src = pi if key in pi else (sl or {})
+            if key not in src:
+                top.append(r"{\color{pendgrey}pending}")
+                low.append("")
+                continue
+            v, lo, hi = src[key]
+            top.append(paint(sgn(sc * v, d, "{-}"), sig(src[key], lower=key in data195.DIST) or ""))
+            low.append(interval(sc * lo, sc * hi, d))
+        lines += [" & ".join(top) + r" \\", " & ".join(low) + r" \\[0.5pt]"]
+    lines[-1] = lines[-1].replace(r" \\[0.5pt]", r" \\")
+    head = " & ".join(["Metric"] + [name for _, name in PROG_ALL_REFS]) + r" \\"
+    note = (" Set-level intervals against " + ", ".join(pending_refs) + " are pending." if pending_refs else "")
+    cap = (r"\caption{\textbf{Progressive \sca{} against every $4096^2$ baseline.} FLUX.1-dev, \nmain{} Aesthetic-4K "
+           r"prompts, seed label 0. Each cell is progressive \sca{} minus the column's method with its 95\% paired "
+           r"interval below it: per-image metrics over 2000 prompt draws, FID, KID and their patch versions over 1000 "
+           r"draws that also resample the 168 reference identities. \up{Blue} / \dn{orange}: the interval excludes zero "
+           r"in favour of / against progressive \sca{}; lower is better for FID and KID, so their signs read the other "
+           r"way. Inception score has no paired interval (Table~\ref{tab:all_metrics})." + note + "}")
+    text = "\n".join([
+        HEADER.replace("% Generated", "% Generated (app_tables/prog_all.tex)"),
+        r"\begin{table}[!htbp]", cap, r"\label{tab:prog_all}",
+        r"\centering\scriptsize\setlength{\tabcolsep}{2.6pt}",
+        r"\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%",
+        r"\begin{tabular}{@{}l" + "r" * len(PROG_ALL_REFS) + "@{}}", r"\toprule", head, r"\midrule"]
+        + lines + [r"\bottomrule", r"\end{tabular}}", r"\end{table}"]) + "\n"
+    NOTES.append(f"prog_all: set-level pending against {pending_refs or 'none'}")
+    return text
+
+
+# ---------------------------------------------------------------- appendix Table variance_split ------------------
+VS_ROWS = [("flux1_dev", "1024x1024", r"FLUX.1-dev, $1024^2$", 32), ("flux1_dev", "1280x1280", r"FLUX.1-dev, $1280^2$", 16),
+           ("flux1_krea_dev", "1024x1024", r"FLUX.1-Krea-dev, $1024^2$", 16), ("flux2_dev", "1024x1024",
+                                                                             r"FLUX.2-dev, $1024^2$", 16)]
+
+
+def table_variance_split():
+    """Appendix table: variance of each head's image attention within r tokens, split into head and noise level."""
+    rel = "heads_view/variance_split.csv"
+    R = {(r["checkpoint"], r["res"], r["sigma_range"], r["quantity"], r["radius"]): r for r in rows(rel)}
+    body = []
+    for rng, heading in (("post_gate", r"After the gate ($\sigma<0.89$)"), ("all", "All noise levels")):
+        body.append(rf"\multicolumn{{8}}{{@{{}}l}}{{\emph{{{heading}}}}} \\")
+        for ckpt, res, label, n in VS_ROWS:
+            cells = [label, str(n)]
+            for radius in ("8", "16"):
+                r = R[(ckpt, res, rng, "image_share", radius)]
+                head = 1 - float(r["noise_within_head"])
+                cells += [f"{100 * head:.1f}", f"{100 * float(r['noise_within_head']):.1f}",
+                          f"{100 * float(r['head_avg_curve']):.2f}"]
+            body.append(" & ".join(cells) + r" \\")
+        body.append(r"\midrule" if rng == "post_gate" else "")
+    body = [b for b in body if b]
+    cap = (r"\caption{\textbf{Reach is set by the head.} Variance of the share of each head's image attention within "
+           r"$r$ tokens of the query (Chebyshev distance), over all (block, head, noise bin) cells, split into the "
+           r"head (between blocks plus between heads of one block) and the noise level within a head; the two sum to "
+           r"100\%. Avg.\ is the variance of the head-averaged curve over noise levels, the part one schedule shared "
+           r"by all heads could follow. 256 random queries per block and step, full attention at the calibration "
+           r"size. AReA's statistic is the distance to dominant keys; ours is the mass share, which sets the output "
+           r"by Lemma~\ref{lem:split}. Key result: after the gate the head carries at least 96.9\% of the variance in "
+           r"every model and size.}")
+    text = "\n".join([
+        HEADER.replace("% Generated", "% Generated (app_tables/variance_split.tex)"),
+        r"\begin{table}[!htbp]", cap, r"\label{tab:variance_split}",
+        r"\centering\footnotesize\setlength{\tabcolsep}{4pt}",
+        r"\begin{tabular}{@{}lr rrr rrr@{}}", r"\toprule",
+        r" & & \multicolumn{3}{c}{$r=8$ tokens (\%)} & \multicolumn{3}{c}{$r=16$ tokens (\%)} \\",
+        r"\cmidrule(lr){3-5}\cmidrule(l){6-8}",
+        r"Model and size & Prompts & Head & Noise & Avg. & Head & Noise & Avg. \\", r"\midrule"]
+        + body + [r"\bottomrule", r"\end{tabular}", r"\end{table}"]) + "\n"
+    post = [1 - float(R[(c, s, "post_gate", "image_share", rr)]["noise_within_head"])
+            for c, s, _, _ in VS_ROWS for rr in ("8", "16")]
+    check(min(post) >= 0.969, f"variance_split caption: minimum post-gate head share {min(post):.4f} < 0.969")
+    return text
 
 
 # ---------------------------------------------------------------- headline macros ---------------------------------
@@ -566,11 +698,19 @@ PER_IMAGE10 = AREA_METRICS[:10]
 
 def area_counts(vs):
     """(wins, losses, significant, better, no-interval metrics) of SCA minus AReA over AREA_METRICS."""
-    sig = {m: vs[m][1] is not None and (vs[m][1] > 0 or vs[m][2] < 0) for m in AREA_METRICS}
+    sg = {m: vs[m][1] is not None and (vs[m][1] > 0 or vs[m][2] < 0) for m in AREA_METRICS}
     better = {m: (vs[m][0] < 0) == (m in LOWER) for m in AREA_METRICS}
-    wins = sum(sig[m] and better[m] for m in AREA_METRICS)
-    losses = sum(sig[m] and not better[m] for m in AREA_METRICS)
-    return wins, losses, sig, better, [m for m in AREA_METRICS if vs[m][1] is None]
+    wins = sum(sg[m] and better[m] for m in AREA_METRICS)
+    losses = sum(sg[m] and not better[m] for m in AREA_METRICS)
+    return wins, losses, sg, better, [m for m in AREA_METRICS if vs[m][1] is None]
+
+
+def sca_vs_area(run, m):
+    """{metric: (delta, lo, hi)}: m minus AReA in `run` over AREA_METRICS, as the headline counts wins (the run's
+    eval.py deltas negated, FID, KID and patch versions corrected as data195.load describes)."""
+    S, D, ref, _, _ = data(run)
+    vs = data195.versus(S, D, ref, run, "area", AREA_METRICS, RES)
+    return {k: vs[(m, k)] for k in AREA_METRICS}
 
 
 def deltas_source(run, m, metric_desc):
@@ -584,6 +724,98 @@ def deltas_source(run, m, metric_desc):
     return f"{src} (1000 prompt draws) and {fid}, {how}, {metric_desc}"
 
 
+def triple(out, name, v, sc, d, src, signed=True):
+    """Append name, nameLo, nameHi for a (delta, lo, hi) scaled by sc at d decimals."""
+    out += [(name, (f"{sc * v[0]:+.{d}f}" if signed else f"{sc * v[0]:.{d}f}"), f"{src}, delta x {sc}", False),
+            (f"{name}Lo", f"{sc * v[1]:.{d}f}", f"{src}, lower end x {sc}", False),
+            (f"{name}Hi", f"{sc * v[2]:.{d}f}", f"{src}, upper end x {sc}", False)]
+
+
+def prog_macros(clean):
+    """Numbers of the progressive headline: against AReA, HRDiT, UltraImage, DyPE, SEGA, full attention and
+    single-pass SCA (per-image pairs and corrected set-level intervals), and campaign times."""
+    out = []
+    names = {"clipiqa": "CLIP-IQA", "arniqa": "ARNIQA", "musiq": "MUSIQ", "musiq_crop1024": "MUSIQ_c",
+             "ir": "ImageReward", "aesthetic": "aesthetic", "clip": "CLIP", "pickscore": "PickScore",
+             "hpsv2": "HPSv2", "hpsv21": "HPSv2.1"}
+    wins = {}
+    for m in ("area", "dype", "sega_official", "full", "ultraimage", "hrdit_dev_author", "sca_v2"):
+        pi, _, src = prog_pairs(m)
+        wins[m] = [k for k in PER_IMAGE10 if pi[k][1] > 0]
+        losses = [k for k in PER_IMAGE10 if pi[k][2] < 0]
+        NOTES.append(f"progressive minus {m}: wins {len(wins[m])}/10 {wins[m]}; losses {losses}")
+    for m, nm in (("area", "Area"), ("dype", "Dype"), ("sega_official", "Sega"), ("full", "Full"),
+                  ("ultraimage", "Ultra")):
+        out.append((f"hlProgWins{nm}", str(len(wins[m])), f"results/{PROG_PAIRS}/{PROG}_vs_{m}.csv: per-image "
+                                                           "metrics (of 10) with ci_low > 0", False))
+        out.append((f"hlProgWins{nm}Word", word(len(wins[m])), "the same count as a word", False))
+    ultra_open = [names[k] for k in PER_IMAGE10 if k not in wins["ultraimage"]]
+    out.append(("hlProgUltraOpen", ", ".join(ultra_open), f"results/{PROG_PAIRS}/{PROG}_vs_ultraimage.csv: "
+                                                         "per-image metrics without a significant win", False))
+    # against AReA
+    pa, _, srca = prog_pairs("area")
+    for k, nm, sc, d in (("ir", "Ir", 1, 2), ("pickscore", "Pick", 1, 2), ("hpsv21", "Hps", 100, 2),
+                         ("musiq_crop1024", "Musiqc", 1, 1), ("musiq", "Musiq", 1, 1), ("clip", "Clip", 1, 2)):
+        triple(out, f"hlProgArea{nm}", pa[k], sc, d, f"{srca}, metric {k}")
+    sla, srcsla = prog_setlevel("area")
+    for k, nm, sc, d in (("fid", "Fid", 1, 1), ("patch_fid", "FidP", 1, 1), ("kid", "Kid", 100, 3),
+                         ("patch_kid", "KidP", 100, 3)):
+        triple(out, f"hlProgArea{nm}", sla[k], sc, d, f"{srcsla}, metric {k}")
+    check(sig(sla["patch_fid"], True) == "dn" and sig(sla["patch_kid"], True) == "dn",
+          "text: progressive SCA significantly worse than AReA on patch FID and patch KID")
+    check(sig(sla["fid"], True) == "" and sig(sla["kid"], True) == "",
+          "text: progressive SCA against AReA unresolved on FID and KID")
+    # against HRDiT
+    ph, _, srch = prog_pairs("hrdit_dev_author")
+    for k, nm, sc, d in (("ir", "Ir", 1, 2), ("hpsv21", "Hps", 100, 2), ("pickscore", "Pick", 1, 2),
+                         ("hpsv2", "HpsTwo", 100, 2), ("arniqa", "Arniqa", 100, 1), ("musiq", "Musiq", 1, 1),
+                         ("clipiqa", "Clipiqa", 100, 1), ("musiq_crop1024", "Musiqc", 1, 1)):
+        triple(out, f"hlProgHrdit{nm}", ph[k], sc, d, f"{srch}, metric {k}")
+    hr_better = [k for k in PER_IMAGE10 if ph[k][1] > 0]
+    hr_worse = [k for k in PER_IMAGE10 if ph[k][2] < 0]
+    check(sorted(hr_better) == ["arniqa", "hpsv2", "musiq"] and hr_worse == ["clipiqa"],
+          f"text: progressive vs HRDiT better on {hr_better}, worse on {hr_worse} (text names HPSv2, ARNIQA, MUSIQ; "
+          "CLIP-IQA)")
+    check(all(ph[k][1] <= 0 <= ph[k][2] for k in ("ir", "hpsv21", "pickscore")),
+          "text: progressive vs HRDiT intervals on IR, HPSv2.1, PickScore include zero")
+    slh, srcslh = prog_setlevel("hrdit_dev_author")
+    if slh:
+        for k, nm, sc, d in (("fid", "Fid", 1, 1), ("patch_fid", "FidP", 1, 1)):
+            triple(out, f"hlProgHrdit{nm}", slh[k], sc, d, f"{srcslh}, metric {k}")
+    # against single-pass SCA
+    ps, _, srcs = prog_pairs("sca_v2")
+    for k, nm, sc, d in (("ir", "Ir", 1, 2), ("pickscore", "Pick", 1, 2), ("hpsv21", "Hps", 100, 2),
+                         ("musiq", "Musiq", 1, 1), ("musiq_crop1024", "Musiqc", 1, 1)):
+        triple(out, f"hlProgSca{nm}", ps[k], sc, d, f"{srcs}, metric {k}")
+    sls, srcsls = prog_setlevel("sca_v2")
+    for k, nm, sc, d in (("fid", "Fid", 1, 1), ("patch_fid", "FidP", 1, 1), ("kid", "Kid", 100, 3),
+                         ("patch_kid", "KidP", 100, 3)):
+        triple(out, f"hlProgSca{nm}", sls[k], sc, d, f"{srcsls}, metric {k}")
+    check(sig(ps["musiq_crop1024"], False) == "dn" and sig(sls["patch_fid"], True) == "dn",
+          "text: progressive SCA trails single-pass SCA on MUSIQ_c and patch FID")
+    check(all(sig(ps[k], False) == "up" for k in ("ir", "pickscore", "hpsv21")),
+          "text: progressive SCA beats single-pass SCA on IR, PickScore, HPSv2.1")
+    # absolute values and times
+    SG = data(PROG_V2)[0]
+    SA, SP = data(MAIN_RUN)[0], data(PANEL_RUN)[0]
+    camp = "base_summary.csv, metric seconds, column value"
+    out += [("hlProgIrAbs", f"{SG[(PROG, 'ir')]:.2f}", f"results/{PROG_V2}/extra_summary.csv, {PROG}, ir", False),
+            ("hlAreaIrAbs", f"{SA[('area', 'ir')]:.2f}", f"results/{MAIN_RUN}/extra_summary.csv, area, ir", False),
+            ("hlCampArea", f"{SA[('area', 'seconds')]:.1f}", f"results/{MAIN_RUN}/{camp}, area", False),
+            ("hlCampProgAreaX", f"{SA[('area', 'seconds')] / SG[(PROG, 'seconds')]:.1f}",
+             f"results/{MAIN_RUN}/{camp} area divided by results/{PROG_V2}/{camp} {PROG}", False),
+            ("hlCampProgHrditPct", f"{100 * SG[(PROG, 'seconds')] / SP[('hrdit_dev_author', 'seconds')]:.0f}",
+             f"results/{PROG_V2}/{camp} {PROG} divided by results/{PANEL_RUN}/{camp} hrdit, percent", False)]
+    if PROG in clean:
+        out += [("hlSecProg", f"{clean[PROG]:.1f}", "progressive clean latency", False),
+                ("hlSpeedProgArea", f"{clean['area'] / clean[PROG]:.1f}", "AReA clean / progressive clean", False)]
+    ratio = SG[(PROG, "seconds")] / SP[("hrdit_dev_author", "seconds")]
+    check(ratio < 0.5, f"'less than half HRDiT's time': progressive / HRDiT campaign time {ratio:.3f}")
+    for m in ("area", "dype", "sega_official", "full"):
+        check(len(wins[m]) == 10, f"text: progressive SCA beats {m} on all ten per-image metrics ({len(wins[m])})")
+    return out
+
+
 def headline(clean):
     out = []  # (name, value, source, pending)
     lat = V.landed(V.LATENCY)
@@ -592,7 +824,7 @@ def headline(clean):
     SP = data(PANEL_RUN)[0]
     SM = data(MAIN_RUN)[0]
     vs = sca_vs_area(sca_run, sca_m)
-    wins, losses, sig, better, no_ci = area_counts(vs)
+    wins, losses, sgf, better, no_ci = area_counts(vs)
     vs15 = deltas_source(sca_run, sca_m, f"over the 15 metrics of Table app_4k "
                                   f"(no interval, counted unresolved: {', '.join(no_ci) or 'none'}):")
     lat_src = ("results/latency_curve_v2/summary.csv (collect_latency_v2.py), column median_seconds, res 4096x4096, "
@@ -608,6 +840,8 @@ def headline(clean):
         ("hlSpeedArea", f"{clean['area'] / sca_clean:.2f}", f"{area_src} divided by {lat_src}", not lat),
         ("hlSecSca", f"{sca_clean:.1f}", lat_src, not lat),
         ("hlSecArea", f"{clean['area']:.1f}", area_src, False),
+        ("hlSecHrdit", f"{clean['hrdit_dev_author']:.1f}", "results/latency_curve_batch1.csv, hrdit_dev_author, "
+                                                          "median of 3 (cold first run included)", False),
         ("hlWinsArea", str(wins), f"{vs15} count whose 95% interval excludes zero in SCA's favour", sca_pend),
         ("hlWinsAreaWord", word(wins, capital=True), f"{vs15} the same count as a capitalised word", sca_pend),
         ("hlMetricsArea", str(len(AREA_METRICS)), "the number of metrics of Table app_4k (fixed)", False),
@@ -631,6 +865,7 @@ def headline(clean):
         ("hlFidScaAbs", f"{S[(sca_m, 'fid')]:.1f}",
          f"results/{sca_run}/{'corrected_fidp_ci' if data(sca_run)[3] else 'corrected_fidp'}/summary.csv, method "
          f"{sca_m}, metric fid, column value", sca_pend),
+        ("hlCampSca", f"{S[(sca_m, 'seconds')]:.1f}", f"results/{sca_run}/{camp} method {sca_m}", sca_pend),
     ]
     # 2048 x 6144: wins against AReA over the same 15 metrics
     wide_run, wide_m, wide_pend = ((WIDE_V2, "sca_v2", False) if V.landed(WIDE_V2) else
@@ -657,14 +892,14 @@ def headline(clean):
          f"floor of results/{MAIN_RUN}/{camp} ultraimage, divided by results/{sca_run}/{camp} {sca_m}, printed as "
          "'over N times'", sca_pend),
     ]
-    # Krea: per-image wins against AReA
+    # Krea: per-image wins against AReA (single-pass SCA; the progressive sampler does not support Krea)
     krea_run, krea_m, krea_pend = ((KREA_V2, "sca_v2_krea", False) if V.landed(KREA_V2) else
                                    ("krea195", "sca_krea", True))
     krea, _ = V.paired_csv(f"{krea_run}/{krea_m}_vs_area.csv", krea_m, "area")
     out.append(("hlKreaWinsWord", word(sum(krea[m][1] > 0 for m in PER_IMAGE10)),
                 f"results/{krea_run}/{krea_m}_vs_area.csv, column ci_low: count of the 10 per-image metrics with "
                 "ci_low > 0, as a word", krea_pend))
-    # progressive SCA against HRDiT
+    # progressive SCA against HRDiT (kept names), from the progressive run's own paired file
     prog_rel = f"{prog_run}/{prog_m}_vs_hrdit_dev_author.csv"
     pairs, _ = V.paired_csv(prog_rel, prog_m, "hrdit_dev_author")
     for key, name, sc in (("ir", "Ir", 1), ("hpsv21", "Hps", 100), ("pickscore", "Pick", 1)):
@@ -675,81 +910,65 @@ def headline(clean):
                  prog_pend),
                 (f"hlProgHrdit{name}Hi", f"{hi:.2f}", f"results/{prog_rel}, metric {key}, column ci_high{times}",
                  prog_pend)]
-    out += duplication_macros()
-    # qualitative claims printed next to these numbers (for whichever operator is shown)
+    out += [x for x in prog_macros(clean) if x[0] not in {o[0] for o in out}]
+    # variance split (Section 3 and the introduction), results/heads_view/variance_split.csv (scripts/variance_split.py)
+    out += variance_macros()
+    out += duplication_macros()  # still written until no source uses them; the paper prints none of them
+    # qualitative claims printed next to these numbers
     check(losses == 0, f"'loses none': {sca_m} significantly worse than AReA on {losses} metrics")
-    check(all(sig[m] and better[m] for m in PER_IMAGE10), f"'every per-image metric': {sca_m} does not significantly "
-          f"beat AReA on {[m for m in PER_IMAGE10 if not (sig[m] and better[m])]}")
-    ratio = SG[(prog_m, "seconds")] / SP[("hrdit_dev_author", "seconds")]
-    check(ratio < 0.5, f"'less than half the time': progressive / HRDiT campaign time {ratio:.3f}")
+    check(all(sgf[m] and better[m] for m in PER_IMAGE10), f"'every per-image metric': {sca_m} does not significantly "
+          f"beat AReA on {[m for m in PER_IMAGE10 if not (sgf[m] and better[m])]}")
     third = sca_clean / clean["area"]
-    check(abs(third - 1 / 3) <= 0.05, f"conclusion 'about a third of AReA's time': {third:.3f}")
-    worse = [m for m in PER_IMAGE10 if pairs[m][2] < 0]
-    # main.tex may state the losses: the progressive paragraph must then name each one ("Only CLIP-IQA ...").
-    names = {"clipiqa": "CLIP-IQA", "arniqa": "ARNIQA", "musiq": "MUSIQ", "musiq_crop1024": "MUSIQ$_\\text{c}$",
-             "ir": "ImageReward", "aesthetic": "aesthetic", "clip": "CLIP", "pickscore": "PickScore",
-             "hpsv2": "HPSv2", "hpsv21": "HPSv2.1"}
-    tex = (Path(__file__).resolve().parents[2] / "main.tex").read_text()
-    para = tex.split(r"\paragraph{Progressive \sca{} matches HRDiT", 1)[-1].split(r"\paragraph", 1)[0]
-    check(all(f"Only {names[m]}" in para or f"only on {names[m]}" in para for m in worse),
-          f"progressive SCA significantly worse than HRDiT on {worse}, not named in main.tex's progressive paragraph")
+    check(abs(third - 1 / 3) <= 0.05, f"'about a third of AReA's time': {third:.3f}")
+    return out
+
+
+def variance_macros():
+    """\\hlVarHead = 100 (1 - noise_within_head), \\hlVarStep = 100 noise_within_head, \\hlVarAvg = 100 head_avg_curve
+    (FLUX.1-dev, 1024^2, post-gate bins, image share within 16 tokens), and the head shares of Krea and FLUX.2."""
+    rel = "heads_view/variance_split.csv"
+    R = {(r["checkpoint"], r["res"], r["sigma_range"], r["quantity"], r["radius"]): r for r in rows(rel)}
+    out = []
+    for name, ckpt, field in (("hlVarHead", "flux1_dev", "head"), ("hlVarStep", "flux1_dev", "noise"),
+                              ("hlVarAvg", "flux1_dev", "avg"), ("hlVarHeadKrea", "flux1_krea_dev", "head"),
+                              ("hlVarHeadFluxTwo", "flux2_dev", "head")):
+        r = R[(ckpt, "1024x1024", "post_gate", "image_share", "16")]
+        x = {"head": 1 - float(r["noise_within_head"]), "noise": float(r["noise_within_head"]),
+             "avg": float(r["head_avg_curve"])}[field]
+        out.append((name, f"{100 * x:.1f}", f"results/{rel}: {ckpt}, 1024x1024, post_gate, image_share, radius 16, "
+                                             f"{field}", False))
+    r = R[("flux1_dev", "1024x1024", "post_gate", "image_share", "16")]
+    out += [("hlVarCurveLo", f"{float(r['curve_min']):.2f}", f"results/{rel}: flux1_dev post_gate r16 curve_min", False),
+            ("hlVarCurveHi", f"{float(r['curve_max']):.2f}", f"results/{rel}: flux1_dev post_gate r16 curve_max", False)]
     return out
 
 
 def duplication_macros():
-    """People/animal duplication (scripts/dup_detect.py and dup_rate.py at threshold 0.35) and the 46-prompt
-    comparison of the final operator (dup_i_shrink) with published SCA (sca_nb) and AReA."""
+    """Legacy macros of the duplication analysis (the paper no longer reports duplication). Kept only while an old
+    snippet may still reference them; hlTimeOverhead (the time the schedule and bridge add) is a latency number."""
     out = []
-    rates = "results/dup_audit_20261027/rates_a4k195_people.csv, columns dup and n, 100 dup / n rounded,"
     run, m, grey = (MAIN_V2, "sca_v2", False) if V.landed(MAIN_V2) else (MAIN_RUN, REF, True)
     k, n = V.dup195(run, m)
-    src = (f"results/{MAIN_V2}/dup_rates_people.csv, method sca_v2, columns dup and n, 100 dup / n rounded"
-           if not grey else f"{rates} method sca_nb")
-    out.append(("hlDupV", f"{100 * k / n:.0f}", src, grey))
+    out.append(("hlDupV", f"{100 * k / n:.0f}", "legacy", grey))
     for name, method in (("hlDupPub", REF), ("hlDupArea", "area"), ("hlDupFullAttn", "full")):
         k, n = V.dup195(MAIN_RUN, method)
-        out.append((name, f"{100 * k / n:.0f}", f"{rates} method {method}", False))
-    out.append(("hlDupN", str(n), "results/dup_audit_20261027/rates_a4k195_people.csv, column n (prompts naming a "
-                                  "person or animal, of 195)", False))
-    for name, method in (("hlDupFsPub", REF), ("hlDupFsV", DEFAULT46), ("hlDupFsArea", "area"),
-                         ("hlDupGateNinetyThree", "sca_g93"), ("hlDupGateEightyNine", REF),
-                         ("hlDupGateEightyFive", "sca_g85"), ("hlDupGlobalOnly", "abl_globalonly")):
+        out.append((name, f"{100 * k / n:.0f}", "legacy", False))
+    out.append(("hlDupN", str(n), "legacy", False))
+    for name, method in (("hlDupFsPub", REF), ("hlDupFsV", DEFAULT46), ("hlDupFsArea", "area")):
         k, n46, src = V.dup46(method)
-        check(n46 == 26, f"{name}: {n46} people/animal prompts of the 46, not 26")
-        out.append((name, str(k), f"{src}, method {method}: prompts with a duplicated person or animal, of {n46}",
-                    False))
-    out.append(("hlDupFsN", str(n46), "results/dup_audit_20261027/rates_46_all_people.csv, column n (prompts of the 46 "
-                                      "naming a person or animal)", False))
+        out.append((name, str(k), "legacy", False))
+    out.append(("hlDupFsN", str(n46), "legacy", False))
     sec = V.seconds46(DEFAULT46)
     (tv, nv), (tp, np_) = sec[DEFAULT46], sec[REF]
-    check(nv == np_ == 46, f"46-prompt seconds over {nv} and {np_} images")
-    tsrc = f"/scratch/09032/saini_2/sca/eval/dup46_{DEFAULT46}/base/per_image.csv, column seconds, median over 46"
-    out += [("hlTimeV", f"{tv:.1f}", f"{tsrc}, method {DEFAULT46} (the final operator)", False),
-            ("hlTimePub", f"{tp:.1f}", f"{tsrc}, method sca_nb", False)]
-    # The time the schedule and bridge add: the matched pair of the latency_curve_v2 sweep (sca_v2 and sca_nb timed
-    # back to back on one idle GPU, three prompts after a warm-up) once it has landed; until then the 46-prompt
-    # campaign medians above, whose two methods were generated in different campaigns.
     lat = V.latency_v2() if V.landed(V.LATENCY) else {}
     if (RES4K, "sca_v2") in lat and (RES4K, "sca_nb") in lat:
         lv, lp = lat[(RES4K, "sca_v2")][0], lat[(RES4K, "sca_nb")][0]
         out.append(("hlTimeOverhead", f"{100 * (lv / lp - 1):.0f}\\%",
                     "results/latency_curve_v2/summary.csv (collect_latency_v2.py), column median_seconds, res "
                     "4096x4096: sca_v2 / sca_nb - 1, in percent (timed back to back on one GPU)", False))
+        out.append(("hlSecScaNoSched", f"{lp:.1f}", "results/latency_curve_v2/summary.csv, 4096x4096, sca_nb", False))
     else:
-        out.append(("hlTimeOverhead", f"{100 * (tv / tp - 1):.0f}\\%", f"{tsrc}: {DEFAULT46} / sca_nb - 1, in percent",
-                    False))
-    p = V.pair46(DEFAULT46)
-    psrc = f"/scratch/09032/saini_2/sca/eval/dup46_{DEFAULT46}/paired/{DEFAULT46}_vs_sca_nb.csv (2000 draws),"
-    for name, key, d in (("hlFsArniqa", "arniqa", 4), ("hlFsMusiqc", "musiq_crop1024", 2)):
-        v, lo, hi = p[key]
-        out += [(name, f"{v:+.{d}f}", f"{psrc} metric {key}, column delta", False),
-                (f"{name}Lo", f"{lo:.{d}f}", f"{psrc} metric {key}, column ci_low", False),
-                (f"{name}Hi", f"{hi:.{d}f}", f"{psrc} metric {key}, column ci_high", False)]
-    for name, label in (("hlFsIrAreaPub", REF), ("hlFsIrAreaV", DEFAULT46)):
-        v, lo, hi, src = V.vs_area46(label, "ir")
-        out += [(name, f"{v:+.2f}", f"{src}; {label} minus AReA, delta", False),
-                (f"{name}Lo", f"{lo:.2f}", f"{src}; {label} minus AReA, lower end", False),
-                (f"{name}Hi", f"{hi:.2f}", f"{src}; {label} minus AReA, upper end", False)]
+        out.append(("hlTimeOverhead", f"{100 * (tv / tp - 1):.0f}\\%", "46-prompt campaign medians", False))
     return out
 
 
@@ -760,9 +979,9 @@ def main():
     check_runs()
     clean = clean_seconds()
     OUT.mkdir(parents=True, exist_ok=True)
-    files = {"tab_main.tex": table12("tab_main", TAB_MAIN, clean, underline=True),
-             "tab_panel46.tex": table12("tab_panel46", TAB_PANEL, clean, underline=False),
-             "tab_ablation.tex": table3(), "tab_generality.tex": table4()}
+    files = {OUT / "tab_main.tex": table_main(clean), OUT / "tab_panel46.tex": table_panel(clean),
+             OUT / "tab_ablation.tex": table_ablation(), OUT / "tab_generality.tex": table_generality(),
+             OUT_APP / "prog_all.tex": table_prog_all(), OUT_APP / "variance_split.tex": table_variance_split()}
     macros = headline(clean)
     lines = [HEADER, "% Headline numbers the prose repeats; each prints exactly the literal used in the text.",
              "% Fallback grey for values of runs that have not landed; main.tex defines \\pend after this file.",
@@ -770,26 +989,27 @@ def main():
              "% Caption notes: expand to the note while a table shows a grey value, to nothing once its runs land."]
     for name, key in (("pendTabMain", "tab_main"), ("pendTabPanel", "tab_panel46"),
                       ("pendTabAbl", "tab_ablation"), ("pendTabGen", "tab_generality")):
-        lines.append(rf"\newcommand{{\{name}}}{{{V.NOTE if PENDING[key] else ''}}}")
+        lines.append(rf"\newcommand{{\{name}}}{{{V.NOTE if PENDING[key] and key != 'tab_generality' else ''}}}")
+    seen = set()
     for name, value, source, grey in macros:
+        assert name not in seen, name
+        seen.add(name)
         lines += [f"% {c}" for c in textwrap.wrap(source + (" [grey: run pending]" if grey else ""), 112)]
         lines.append(rf"\newcommand{{\{name}}}{{{pend(value, grey)}}}")
-    files["headline.tex"] = "\n".join(lines) + "\n"
-    for name, text in files.items():
-        (OUT / name).write_text(text)
-        print(f"wrote {OUT / name}")
+    files[OUT / "headline.tex"] = "\n".join(lines) + "\n"
+    for path, text in files.items():
+        path.write_text(text)
+        print(f"wrote {path}")
     print("caption notes: " + ", ".join(f"{k} {'pending' if v else 'empty'}" for k, v in PENDING.items()))
-    if AST_USED:
-        print("ast (no interval) marks: " + ", ".join(f"{k} {v}" for k, v in AST_USED.items()) +
-              "; the captions must say so")
+    for k, v in NO_CI.items():
+        print(f"no interval ({k}): {', '.join(v)}; the caption must say so")
     print("headline: " + ", ".join(f"\\{n}={v}{' (grey)' if g else ''}" for n, v, _, g in macros))
     for note in NOTES:
         print("note: " + note)
     if FAILS:
         print("CHECKS FAILED (files written; update main.tex text or captions):", *FAILS, sep="\n  ")
         sys.exit(1)
-    print("checks passed: prompt counts, Table 1, 3 and 4 captions, 'loses none', 'every per-image metric', "
-          "'less than half the time', 'about a third', progressive not worse than HRDiT")
+    print("checks passed")
 
 
 if __name__ == "__main__":
