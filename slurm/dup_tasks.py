@@ -19,7 +19,8 @@ PYM = "/work/09032/saini_2/vista/library/uv-envs/sca-metrics/bin/python"
 CR = "/work/09032/saini_2/vista/Projects/Exploration/constancy_rope"
 ENV = (f"export HF_HOME={S}/../tmp/hf TORCH_HOME=/scratch/09032/saini_2/tmp/torch HF_HUB_OFFLINE=1 "
        "TRANSFORMERS_OFFLINE=1 XDG_CACHE_HOME=/scratch/09032/saini_2/tmp/cache "
-       "TRITON_CACHE_DIR=/scratch/09032/saini_2/tmp/triton OMP_NUM_THREADS=8\nunset CROPE_TRANSFORMER CROPE_ROPE\n")
+       "TRITON_CACHE_DIR=/scratch/09032/saini_2/tmp/triton OMP_NUM_THREADS=8\nunset CROPE_TRANSFORMER CROPE_ROPE\n"
+       "export CC=/usr/bin/gcc CXX=/usr/bin/g++\n")  # Triton rejects the account's CC=nvc (-Wno-psabi)
 ENV = ENV.replace(f"{S}/../tmp/hf", "/scratch/09032/saini_2/tmp/hf")
 BASE = ["--method", "sca", "--seed", "0", "--guidance", "4.5", "--pi-table", f"{S}/calib/k1_1024.npz",
         "--gate-sigma", "0.89", "--res", "4096x4096"]
