@@ -373,3 +373,7 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   significant losses vs sca_v2 (core IR, HPSv2.1, PickScore; aesthetic, ARNIQA, CLIP, CLIP-IQA, HPSv2 not better than
   AReA); on the 4 fixed prompts IR -0.90 and PickScore -1.76. Relaxed bar FAIL. Duplication at AReA's level is
   reachable by removing prompt content on window steps; the open problem is keeping it where the subject is.
+- Subject anchor over all text tokens: r7_saA0m (map quantiles 0.5/0.95) 14 yes, 1 borderline, 6 no; r7_saAq (0.5/0.995)
+  7 yes, 4 borderline, 10 no; subjects keep their prompted look in both (labelers report the prompted elements present).
+  Copies fall as the gate narrows to the subject; saAq's remaining ones are mostly figures on far ridges and shores
+  and the crowd prompts. r7_saAs (9 x 9 smoothing, ramp med + 0.25..0.5 of max - med, dilate 3) is labeling.

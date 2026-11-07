@@ -1003,5 +1003,8 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   first 7 copy-prone images: no extras, prompted subjects intact (suits, helmets), no colour artifacts; gate > 0.5 on
   3-27% of the image (leaky versions 17-57%). Its 46-prompt run queued at the head (a0_K2939545*, eval a0_Ke_eval_r7_saAs
   self-releases into eval/r7_46_r7_saAs). Labeling: pQ14 r7_saA0m (broad map; 12 yes of 17 so far), pQ15 r7_saAq.
+- 08:48: r7_saA0m (all text, quantiles 0.5/0.95), pQ14: 14 yes, 1 borderline, 6 no; r7_saAq (quantiles 0.5/0.995),
+  pQ15: 7 yes, 4 borderline, 10 no; subjects intact in both. Copies fall as the map sharpens. r7_saAs (smoothed,
+  relative ramp) labeling as pQ16; 85.2 s per image (+10%).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
