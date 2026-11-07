@@ -1,0 +1,188 @@
+Census human labels, 95 person/animal prompts at 4096^2, every image of each method labeled blind (protocol human_labels_95_protocol.md; scripts/human_rates_prog95.py; per-image rows human_labels_prog95.csv).
+Rate = final yes / prompts, 95% Wilson interval. with_borderline counts borderline as yes. Detector: dup_rate.py, thr 0.35, person/animal queries.
+
+sca_v2_prog primary         human 10/95 =  10.5% [ 5.8, 18.3] | detector  6/95 =  6.3%, flags confirmed 4/6, detector misses 6 | subject missing 0
+area        primary         human  5/95 =   5.3% [ 2.3, 11.7] | detector  4/95 =  4.2%, flags confirmed 1/4, detector misses 4 | subject missing 0
+hrdit       primary         human 12/95 =  12.6% [ 7.4, 20.8] | detector 10/95 = 10.5%, flags confirmed 6/10, detector misses 6 | subject missing 0
+
+sca_v2_prog with_borderline human 14/95 =  14.7% [ 9.0, 23.2] | detector  6/95 =  6.3%, flags confirmed 4/6, detector misses 10 | subject missing 0
+area        with_borderline human 11/95 =  11.6% [ 6.6, 19.6] | detector  4/95 =  4.2%, flags confirmed 1/4, detector misses 10 | subject missing 0
+hrdit       with_borderline human 16/95 =  16.8% [10.6, 25.6] | detector 10/95 = 10.5%, flags confirmed 6/10, detector misses 10 | subject missing 0
+
+Paired exact McNemar test over the 95 prompts (two-sided binomial on discordant prompts; b = sca_v2_prog yes and baseline not, c = the reverse):
+  sca_v2_prog vs area  primary         10/95 vs 5/95, difference  +5.3 points, b = 8, c = 3, p = 0.2266
+  sca_v2_prog vs hrdit primary         10/95 vs 12/95, difference  -2.1 points, b = 6, c = 8, p = 0.7905
+  sca_v2_prog vs area  with_borderline 14/95 vs 11/95, difference  +3.2 points, b = 11, c = 8, p = 0.6476
+  sca_v2_prog vs hrdit with_borderline 14/95 vs 16/95, difference  -2.1 points, b = 9, c = 11, p = 0.8238
+
+Copies found, sca_v2_prog (final yes; extra figures as reported by the blind labeler, xy in full-image pixels; the adjudication note, when present, is the decision):
+  a4k_eval_4096_1118979843958125111 [pP95 img132] counts {"person": 3} implied {"person": 2} detector person:3/2
+      person at (2120, 400), 820 px, copy_like True: large gilt-framed wall painting above the mantel showing a standing dark-haired man in a black tuxedo, white shirt and bow tie (spans r0c1 and r0c2), a depiction that repeats the prompted man in a formal black suit and is not asked for by the prompt
+      adjudicated yes: unprompted gilt-framed portrait of a man in a black tuxedo above the mantel repeats the prompted man in a formal black suit (depiction rule, as round 6 img039); detector agrees
+  a4k_eval_4096_1516768667427572324 [pP95 img066] counts {"person": 3} implied {"person": 1} detector person:3/1
+      person at (2383, 2868), 190 px, copy_like True: small framed bust portrait on the desk of a curly-haired mustached man in dark suit, white shirt and tie, repeating the portrait-of-a-suited-man subject (no glasses)
+      person at (895, 1219), 180 px, copy_like False: framed print on the upper-left wall showing a man in a green jacket seated among palm fronds, in a frame the prompt wants empty
+      person at (1909, 3013), 50 px, copy_like False: ambiguous: pink face-like oval with dark hair in a small picture lying flat on the desk, mostly cut off; not counted
+      person at (1544, 3182), 120 px, copy_like False: ambiguous: painterly picture on the desk with dark blobs and a pinkish face-like oval, could be a figure or flowers; not counted
+  a4k_eval_4096_3826098298648979216 [pP95 img010] counts {"person": 5} implied {"person": 4} detector person:2/4
+      person at (499, 2711), 34 px, copy_like True: tiny seated paddler with dark hair, red top and a dark paddle in a small blue boat at the rocky far-left shoreline
+      person at (475, 2723), 12 px, copy_like False: borderline: pale head-like blob at the bow of the same small boat, possibly a second occupant or gear
+      person at (521, 2726), 12 px, copy_like False: borderline: pinkish rounded blob at the stern of the same small boat, possibly a crouched occupant or a buoy
+      adjudicated yes: tiny seated paddler in a red top in a second small boat at the far-left shore (about 34 px), copy-like, besides the two canoeists and their reflections; detector miss
+  a4k_eval_4096_4820545723762191815 [pP95 img052] counts {"bear": 1, "bird": 20, "person": 2} implied {"bear": 2, "bird": null, "person": 1} detector bear:1/2;person:1/1
+      person at (3853, 3028), 49 px, copy_like False: second small standing person in a dark jacket and trousers on the pale rock at the far right, seen from behind facing the sea, with its own reflection below
+      person at (3826, 2542), 11 px, copy_like False: borderline: tiny dark upright speck on the horizon, possibly a distant figure in a small boat or a buoy
+      person at (3157, 2926), 14 px, copy_like False: borderline: small dark upright shape perched on low rocks in the water, could be a seated figure or a perched bird
+      bear at (1969, 3482), 30 px, copy_like False: borderline: pale dome rising from the water with a mirrored reflection, most likely an ice chunk, only faintly suggests an animal head
+      person at (3621, 3074), 7 px, copy_like False: borderline: tiny dark blob floating in the water at the r2c3/r3c3 seam, likely a floating bird or rock
+      person at (3716, 3093), 6 px, copy_like False: borderline: tiny dark blob with a pale glint floating in the water, likely a floating bird or rock
+      adjudicated yes: second standing person with its own reflection (about 49 px) on the pale rock at far right, besides the cloaked figure by the bear; the detector boxed it as a bird; other specks not counted
+  a4k_eval_4096_6068056094592774588 [pP95 img110] counts {"person": 5} implied {"person": 4} detector person:4/4
+      person at (180, 1690), 420 px, copy_like False: fifth person cut off by the left frame edge: a hand draped over the gold-mask man's far shoulder with a dark navy sleeve at the edge, plus a skin-toned ear sliver at head height (x 0-8, y 1364-1464); both of the gold-mask man's hands rest on his lap and the blue-velvet man's hands hold the cane and his knee, so none of the four owns it
+      adjudicated yes: fifth person cut by the left frame edge: a hand on the gold-mask man's shoulder that none of the four men owns, its navy sleeve and an ear sliver at the border; detector miss
+  a4k_eval_4096_924453187493270635 [pP95 img044] counts {"astronaut": 1, "person": 2} implied {"astronaut": 1, "person": 1} detector person:1/1;astronaut:1/1
+      person at (1061, 3122), 40 px, copy_like False: tiny dark standing human silhouette (head, neck, torso, two legs, rim-lit right shoulder) on the plateau just left of the astronaut's boots
+      adjudicated yes: tiny standing person (head, torso, legs; about 40 px) on the plateau beside the astronaut's boot; detector miss
+  a4k_eval_4096_minus1071233499893339092 [pP95 img026] counts {"astronaut": 2, "person": 2} implied {"astronaut": 1, "person": 1} detector person:1/1;astronaut:1/1
+      person at (277, 2483), 83 px, copy_like True: small standing figure in a white spacesuit and helmet at the foot of the left cliff, beside a boulder
+      astronaut at (277, 2483), 83 px, copy_like True: same figure as the person entry: second astronaut, white suit and helmet like the main one but standing
+      adjudicated yes: second white-suited astronaut with helmet (about 83 px) at the foot of the left cliff, copy of the seated astronaut; detector miss
+  a4k_eval_4096_minus2714724190150744968 [pP95 img086] counts {"person": 2} implied {"person": 1} detector person:1/1
+      person at (3899, 1592), 55 px, copy_like False: tiny dark standing human silhouette with head, torso and legs on a far dune ridge right of centre
+      adjudicated yes: second standing person (head, torso, legs; about 55 px) on a far dune ridge right of the red-jacketed walker; detector miss
+  a4k_eval_4096_minus3268147817845827695 [pP95 img161] counts {"person": 4} implied {"person": 1} detector person:3/1
+      person at (1552, 2718), 110 px, copy_like False: man in navy top and trousers walking at the base of the church tower, mid-ground
+      person at (1706, 1524), 130 px, copy_like False: man in blue shirt and dark trousers standing in the right arch of the lower belfry
+      person at (1616, 1549), 90 px, copy_like False: dark-clothed figure partly hidden by the column in the left arch of the lower belfry
+      person at (1656, 1174), 115 px, copy_like False: borderline: grey standing figure in the upper belfry niche, could be a person or a statue
+      person at (1409, 2698), 40 px, copy_like False: borderline: dark shapes at the far end of the left alley, most likely parked scooters, possibly a seated rider
+  a4k_eval_4096_minus7000000382587116439 [pP95 img070] counts {"person": 5} implied {"person": 1} detector person:3/1
+      person at (2831, 3440), 105 px, copy_like True: second person in a red jacket and dark trousers standing on a large boulder above the water, same look as the red-hooded figure by the hut
+      person at (3460, 3637), 35 px, copy_like True: tiny person in red standing among rocks near the shoreline on the right
+      person at (148, 2588), 60 px, copy_like True: small hiker in a red jacket with light trousers on the dark boulder slope at the far left
+      person at (90, 2733), 50 px, copy_like True: small figure in red standing lower on the same left boulder slope
+  borderline, sca_v2_prog:
+  a4k_eval_4096_4136654375773102327 [pP95 img058] counts {"person": 1} implied {"person": 1} detector person:0/1
+      person at (2158, 1584), 320 px, copy_like False: possible reflected head and face at the outer edge of the right mirrored sunglass lens (dark rounded head shape against the reflected sky, face-like form below); could instead be the wearer's own eye seen through the lens; the other lens reflections are only sky, a horizon and small sign-like specks
+      adjudicated borderline: dim dark face-like form at the outer edge of the mirrored right lens; not clearly a reflected person, could be the wearer's eye through the lens
+  a4k_eval_4096_788875264758341041 [pP95 img126] counts {"person": 1} implied {"person": 1} detector person:1/1
+      person at (2213, 1264), 180 px, copy_like True: possible partial second body inside the breaking wave above and left of the surfer: two disconnected tan limb-like shapes (one diagonal with a pale foot/palm-like tip, one horizontal with a foot-like end) with a bright blue shorts-like patch between them, no torso or head visible; colouring matches the surfer's skin and blue shorts but could also be debris
+      adjudicated borderline: two disconnected limb-like shapes with a blue patch in the wave lip, no head or torso; fragmentary
+  a4k_eval_4096_8308343334897494229 [pP95 img174] counts {"person": 1} implied {"person": 1} detector person:1/1
+      person at (2240, 2730), 450 px, copy_like True: nose-like face fragment (bridge and two nostrils, same red/blue lighting as the real nose) rendered on the man's throat below the goatee, fused into his neck rather than a separate figure
+      adjudicated borderline: nose fragment (bridge and nostrils) fused into the man's throat; a feature artifact, not a separate figure (as img152)
+  a4k_eval_4096_8612805720316271716 [pP95 img141] counts {"person": 10} implied {"person": 1} detector person:1/1
+      person at (617, 1944), 100 px, copy_like False: defocused standing figure in beige on the far-left embankment
+      person at (677, 1949), 95 px, copy_like False: second defocused beige standing figure beside the first
+      person at (770, 2063), 50 px, copy_like False: red-clad blurred figure at the far-bank railing, with matching reflection
+      person at (910, 2078), 70 px, copy_like False: blue-clad blurred figure at the far-bank railing, with matching reflection
+      person at (990, 2088), 60 px, copy_like False: pink/red blurred figure at the far-bank railing, with matching reflection
+      person at (2658, 2318), 70 px, copy_like False: light-blue blurred figure under the cafe umbrellas on the right bank
+      person at (2828, 2338), 50 px, copy_like False: red blurred cafe patron under the umbrellas
+      person at (3517, 2403), 75 px, copy_like False: dark upright pedestrian at the right promenade railing
+      person at (3742, 2413), 80 px, copy_like False: grey upright pedestrian at the right promenade railing
+      person at (130, 1905), 40 px, copy_like False: borderline: small coloured shapes on the far-left bridge, possibly more pedestrians
+      person at (2930, 2330), 60 px, copy_like False: borderline: further grey/white blobs under the cafe umbrellas, possibly seated patrons
+      adjudicated borderline: defocused colour blobs along the far embankment and cafe (possible pedestrians, umbrellas, cars); none is clearly a figure
+
+Copies found, area (final yes; extra figures as reported by the blind labeler, xy in full-image pixels; the adjudication note, when present, is the decision):
+  a4k_eval_4096_3826098298648979216 [human_labels_r7:pR1 img012] counts {"person": 5} implied {"person": 4} detector person:2/4
+      person at (1958, 2896), 48 px, copy_like True: seated paddler with short dark hair seen from behind in a second small white-and-blue boat just behind the woman, holding an oar under a white round parasol; echoes the main man's hair, back-view paddling pose and blue-purple top, though in a tank top
+      person at (1991, 2901), 39 px, copy_like False: pink block with a pointed top beside that paddler in the second boat; no head, hair or limbs visible, could be a second passenger in pink or a cushion or bag
+  a4k_eval_4096_minus3268147817845827695 [human_labels_95 img011] counts {"person": 3} implied {"person": 1} detector person:1/1
+      person at (2450, 1974), 50 px, copy_like False: tiny person in white top with visible head, standing just above the roofline at the base of the church tower
+      person at (2475, 1986), 35 px, copy_like False: second tiny person in dark top beside the first, at the tower base above the roof
+      adjudicated yes: two tiny people (35 to 50 px) above the roofline at the tower base; detector miss
+  a4k_eval_4096_minus3514666929034129151 [human_labels_r7:pL1 img007] counts {"diver": 2, "person": 2} implied {"diver": 1, "person": 1} detector person:1/1;diver:1/1
+      diver at (1679, 2318), 210 px, copy_like False: smaller green-tinted hooded diver hovering upright in open water left of the main diver, arms out, holding a large flat ring at waist height (echoes the main diver's yellow ring but different colouring and no visible tank); counts under both diver and person
+  a4k_eval_4096_minus4844341235185759356 [human_labels_r7:pL1 img001] counts {"person": 2} implied {"person": 1} detector person:1/1
+      person at (677, 820), 126 px, copy_like False: small standing man in a dark red sleeveless top over a white shirt and dark trousers, no backpack, on the summit of the left cliff
+  a4k_eval_4096_minus5795767365495583614 [human_labels_95 img053] counts {"bear": 2, "person": 2} implied {"bear": 2, "bird": null, "person": 1} detector bear:1/2;person:2/1
+      person at (1507, 1412), 95 px, copy_like False: tiny long-haired woman in a white dress standing on top of the polar bear's head
+  borderline, area:
+  a4k_eval_4096_4820545723762191815 [human_labels_95 img144] counts {"bear": 2, "person": 1} implied {"bear": 2, "bird": null, "person": 1} detector bear:1/2;person:1/1
+      bear at (3751, 2628), 26 px, copy_like False: tiny dark upright silhouette sitting on the water at the horizon with two ear-like points and a curled appendage; could be a small sitting animal but may be a bird or a rock
+      adjudicated borderline: dark shape on the water among the birds
+  a4k_eval_4096_820801809737345747 [human_labels_r7:pR1 img004] counts {"bear": 1, "person": 3} implied {"bear": 1, "person": 4} detector person:4/4;bear:0/1
+      bear at (3200, 1260), 400 px, copy_like True: borderline: shoulder tattoo on the muscular man showing a stylized round-eared cartoon creature head (bear- or teddy-like, with a cap of swirls and a bow-like emblem at the neck) above a small body; at high zoom it dissolves into ornamental spirals and could be a lion-dog motif, so it is not clearly a bear
+  a4k_eval_4096_minus3145908358244441177 [human_labels_r7:pR1 img011] counts {"person": 1} implied {"person": 1} detector person:1/1
+      person at (1419, 1464), 24 px, copy_like False: dark head-and-shoulders silhouette inside the window catchlight of her left-hand (image-left) eye; sits exactly at the iris centre so it may just be the pupil
+      person at (1999, 1358), 25 px, copy_like False: same reflected scene in the image-right eye catchlight: a tall dark rounded silhouette with a smaller one beside it, again at the pupil position
+  a4k_eval_4096_minus4460699761507361961 [pP95 img139] counts {"person": 5} implied {"person": 5} detector person:4/5
+      person at (1809, 515), 215 px, copy_like False: lone child-sized hand gripping the pump's upper flange from behind, well above all heads, with no visible arm or body and not reachable by any of the five children's visible arms
+      adjudicated borderline: a hand gripping the pump flange from behind, above all five children, with no visible body (possible hidden sixth child; limb only, as round 6 img026)
+  a4k_eval_4096_minus680414676224257344 [human_labels_r7:pR1 img016] counts {"person": 1} implied {"person": 1} detector person:1/1
+      person at (3180, 1837), 37 px, copy_like False: tiny dark upright silhouette with a head-like top standing on the ledge where the stone tower's upper section meets its wider lower section
+      person at (3194, 1846), 20 px, copy_like False: shorter dark rounded blob right beside it on the same ledge (child, seated figure, or a pot or lantern)
+  a4k_eval_4096_minus8314017227778408466 [pP95 img075] counts {"person": 1} implied {"person": 1} detector person:1/1
+      person at (2860, 2850), 400 px, copy_like False: grey-brown fist-like hand shape wedged between the man's hip and the railing, with no arm or body attached; could be a stray third hand or a crumpled glove
+      adjudicated borderline: disembodied fist-like hand by the man's hip, separate from his two hands, no body (limb artifact, as round 6 img026)
+
+Copies found, hrdit (final yes; extra figures as reported by the blind labeler, xy in full-image pixels; the adjudication note, when present, is the decision):
+  a4k_eval_4096_1516768667427572324 [human_labels_95 img039] counts {"person": 2} implied {"person": 1} detector person:2/1
+      person at (3512, 1314), 395 px, copy_like False: second framed portrait on the right wall: younger dark-haired bearded man in suit and blue tie, no glasses, with a speech bubble, head-and-shoulders like the main painting but a different man (prompt calls the other frames empty)
+      person at (945, 3622), 65 px, copy_like False: borderline, not counted: tiny photo-like image inside the small frame lying on the table that may show one or two figures; ordinary decor
+      person at (3137, 3592), 45 px, copy_like False: borderline, not counted: tent card on the table with round person-avatar icons; ordinary decor
+      adjudicated yes: second framed portrait of a man in a frame the prompt leaves empty (counted as a copy, as in the earlier SCA validation)
+  a4k_eval_4096_2922388873318712541 [pP95 img143] counts {"person": 4} implied {"person": 2} detector person:2/2
+      person at (2198, 3902), 235 px, copy_like True: long-haired person in a dark hooded jacket seated among the foreground rocks, back to viewer, gazing at the view like the main pair
+      person at (2248, 3817), 110 px, copy_like True: second seated person in a blue knit beanie beside the long-haired one, mostly hidden behind them and a boulder; with the long-haired figure forms a second seated gazing pair
+      adjudicated yes: second seated pair (long-haired person in a dark hood, one in a blue beanie) among the dark foreground rocks, repeating the prompted pair; detector miss
+  a4k_eval_4096_4820545723762191815 [human_labels_95 img165] counts {"bear": 1, "person": 2} implied {"bear": 2, "bird": null, "person": 1} detector bear:1/2;person:3/1
+      person at (532, 2160), 100 px, copy_like False: dark grey upright humanoid figure standing on the crest of the rock pile left of the bear, head in profile facing the bear; a second small observing figure besides the red-coated person on the right islet at (3016, 3334)
+      person at (3020, 3650), 70 px, copy_like False: ambiguous small dark object with white patches and a green pointed tip floating in the water directly below the islet person, with its own reflection; could be a buoy, a creature or a garbled reflection; not counted
+      adjudicated yes: extra upright figure (person or bear cub) on the rock pile
+  a4k_eval_4096_7202527118696509246 [human_labels_95 img114] counts {"person": 2} implied {"person": 1} detector person:3/1
+      person at (1904, 1466), 105 px, copy_like True: second climber in a red jacket and dark trousers standing on the upper ridge crest, same look as the main climber
+      person at (2034, 311), 22 px, copy_like False: ambiguous thin vertical mark on the far summit tip, more likely a summit pole or cross than a figure; not counted
+  a4k_eval_4096_8612805720316271716 [human_labels_95 img010] counts {"person": 120} implied {"person": 1} detector person:5/1
+      person at (235, 1814), 120 px, copy_like False: pedestrian in magenta top walking on the left embankment walkway
+      person at (355, 1814), 90 px, copy_like False: pedestrian in light grey top on the left embankment
+      person at (395, 1789), 110 px, copy_like False: pedestrian in white top with dark trousers on the left embankment
+      person at (525, 1779), 100 px, copy_like False: pedestrian in black top on the left embankment
+      person at (603, 1749), 100 px, copy_like False: pedestrian in grey top on the left embankment
+      person at (825, 1724), 80 px, copy_like False: group of about 12 people (blue, red, white, yellow clothing) along the left embankment railing
+      person at (1174, 1664), 40 px, copy_like False: crowd of about 15 to 20 tiny people at the far end of the left embankment near the bridge
+      person at (2698, 1624), 35 px, copy_like False: dense crowd of about 40 to 50 tiny people lining the far right embankment
+      person at (3502, 1744), 60 px, copy_like False: crowd of about 35 to 40 people on the right bridge and embankment, one under a pink umbrella at about (3162, 1649)
+  a4k_eval_4096_997293625843621481 [pP95 img024] counts {"person": 2} implied {"person": 1} detector person:1/1
+      person at (1962, 4050), 40 px, copy_like False: tiny dark head-and-shoulders figure in dark maroon clothing peeking over a snow lip on the crevice floor at the bottom edge, scale-inconsistent with its foreground position
+      adjudicated yes: tiny head-and-shoulders person (face, dark hair, dark clothing, about 40 px) peeking over the snow at the bottom edge of the crevice, besides the blue climber; detector miss
+  a4k_eval_4096_minus3268147817845827695 [human_labels_95 img062] counts {"person": 3} implied {"person": 1} detector person:2/1
+      person at (2367, 2922), 96 px, copy_like False: small person in a blue t-shirt, khaki shorts and red cap standing on the far sidewalk left of the lamp post
+      person at (1576, 2911), 96 px, copy_like False: small person with dark hair, pinkish-white top and dark trousers standing at the end corner of the left building row, partly merged with the pilaster
+  a4k_eval_4096_minus3514666929034129151 [pP95 img144] counts {"diver": 2, "person": 2} implied {"diver": 1, "person": 1} detector person:1/1;diver:1/1
+      diver at (1519, 1910), 200 px, copy_like True: smaller second scuba diver with white hood and mask and a regulator hose loop, facing the camera inside the main diver's bubble column (also the extra person)
+      person at (2010, 1672), 25 px, copy_like False: borderline: white board or small boat at the waterline carrying a dark prone shape, possibly a paddler or snorkeler
+      person at (2983, 1516), 18 px, copy_like False: borderline: tiny dark figure beside a rock on the far beach near a small camp
+      person at (2910, 1516), 12 px, copy_like False: borderline: tiny upright dark speck on the far beach
+      adjudicated yes: second scuba diver (white hood, mask, regulator hose; about 200 px) in the main diver's bubble column, copy-like; detector miss
+  a4k_eval_4096_minus4844341235185759356 [pP95 img125] counts {"person": 2} implied {"person": 1} detector person:1/1
+      person at (2386, 2943), 70 px, copy_like False: tiny dark silhouette of a person standing upright on the lower rock ledge at the cliff edge left of and below the main hiker, backlit against the orange lake; standing pose similar to the hiker but no red jacket or blue pack visible
+      adjudicated yes: second standing person silhouette (about 70 px) on the lower ledge left of and below the hiker; detector miss
+  a4k_eval_4096_minus5795767365495583614 [human_labels_95 img097] counts {"bear": 2, "person": 2} implied {"bear": 2, "bird": null, "person": 1} detector bear:1/2;person:2/1
+      person at (2468, 2493), 110 px, copy_like False: small child-like figure in light shirt and blue trousers standing on the lower rock slope, separate from the hooded figure on the cliff top
+  a4k_eval_4096_minus6127054465263660958 [pP95 img054] counts {"person": 3} implied {"person": 2} detector person:2/2
+      person at (1620, 1819), 75 px, copy_like True: tiny person seen from behind (round dark head, dark jacket shoulders) poking up above the tent apex, matching the seated man in the dark jacket
+      adjudicated yes: back-view head and dark-jacket shoulders of a third person standing behind the tent apex (75 px); detector miss
+  a4k_eval_4096_minus7000000382587116439 [pP95 img004] counts {"person": 2} implied {"person": 1} detector person:1/1
+      person at (2515, 3872), 55 px, copy_like True: small standing figure in a red jacket and red scarf with a blue knit hat and dark trousers among the boulders down-slope to the right of the hut, repeating the red-clad main figure
+      person at (2518, 3722), 15 px, copy_like False: borderline, not counted: saturated red glow on the left face of a boulder on the slope crest; reads as a red light but could be a red-clad figure mostly hidden by the rock
+      adjudicated yes: second small person in a red scarf and blue hat (about 55 px) among the boulders right of the hut, copy-like; the red glow above it is a lit rock, not counted; detector miss
+  borderline, hrdit:
+  a4k_eval_4096_4783241696049918576 [pP95 img002] counts {"person": 1} implied {"person": 1} detector person:1/1
+      person at (2274, 2981), 50 px, copy_like False: tiny self-lit blue cone with a diffuse light orb above it on the horizon at the base of the steam; reads more like a lantern or blue flame than a figure, but could be a distant person holding a light
+      adjudicated borderline: glowing blue cone with a light orb above it on the horizon at the steam base; reads as a lantern or flame, not clearly a person
+  a4k_eval_4096_7354534197758042049 [human_labels_95 img070] counts {"bear": 1, "person": 1} implied {"bear": 1, "person": 1} detector person:1/1;bear:1/1
+      bear at (620, 840), 155 px, copy_like False: borderline: round sunburst knot on the left birch trunk shaped like a dark fanged animal or gargoyle face, part of the bark texture
+      bear at (425, 1149), 200 px, copy_like False: borderline: bark knot on the same trunk forming a pug or bear-cub-like face with eyes, nostrils and mouth
+      bear at (435, 1974), 160 px, copy_like False: borderline: lower bark knot on the same trunk shaped like an animal snout with nostrils
+      bear at (590, 80), 150 px, copy_like False: borderline: knot at the top of the same trunk with a snout-like central ridge, weakly face-like
+      adjudicated borderline: bark knots rendered as animal-like faces
+  a4k_eval_4096_minus5606822722792416000 [pP95 img072] counts {"person": 1} implied {"person": 1} detector person:1/1
+      person at (3210, 3814), 30 px, copy_like False: defocused small red vertical blob on the sand near the waterline, possibly a distant beachgoer in red but could be a flag or buoy
+      person at (2653, 3627), 20 px, copy_like False: defocused small dark horizontal blob on the beach, possibly a person lying down but could be a bag, towel or rock
+      adjudicated borderline: two defocused blobs on the distant beach (red vertical, dark horizontal), no readable human shape
+  a4k_eval_4096_minus7264311869050248176 [pP95 img152] counts {"owl": 1, "person": 1} implied {"owl": 1, "person": 1} detector person:1/1;owl:1/1
+      person at (2238, 3462), 120 px, copy_like True: small face-like fragment with red lips (matching the woman's lipstick) fused onto her wrist just below the lace cuff; a facial-feature artifact, not a full figure
+      adjudicated borderline: face fragment (nose and red lips) fused onto the woman's wrist under the lace cuff; a feature artifact, not a separate figure (as round 6 img054)

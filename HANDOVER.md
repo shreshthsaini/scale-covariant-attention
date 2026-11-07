@@ -1144,6 +1144,17 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   (0.0114, 0.0089). So patch FID and patch KID are worse than AReA's. Their 1000-draw intervals are running on CPU
   (prog195_pairs/cpu_setlevel.sh, PID 2345099). Detector rate 6/95 against AReA's 4/95 (McNemar p = 0.75). Median time
   50.7 s per image (sca_v2 78.4 s, AReA 264 s on this set). No GPU evaluation is needed.
+- 12:45 human-labeled census of the same 95 prompts (subagent of the lead, CPU only; results/dup_audit_20261027/
+  human_rates_prog95.txt, rows human_labels_prog95.csv, scripts/human_rates_prog95.py): every sca_v2_prog, AReA and
+  HRDiT image labeled blind with the round-6 protocol (packet r7/label/pP95: prog's 95 plus the 55 HRDiT and 32 AReA
+  images no earlier round had labeled, 46 Opus labelers; the other 103 keep their round 6/7 labels). 25 disagreements
+  and borderlines were adjudicated method-blind from full-resolution crops. Human rates: sca_v2_prog 10/95 = 10.5% [5.8,
+  18.3], AReA 5/95 = 5.3% [2.3, 11.7], HRDiT 12/95 = 12.6% [7.4, 20.8]. HRDiT's round-6 sampled estimate (6.3%) was
+  low: its 55 previously unlabeled images held 6 detector misses. McNemar sca_v2_prog vs AReA p = 0.23 (8 vs 3
+  discordant), vs HRDiT p = 0.79. The detector caught 4 of prog's 10 (6 flags, 2 false: a prompted portrait and
+  reflections). The 6 misses are one small extra figure each (a second paddler, a second astronaut, a 40 px person by
+  the astronaut's boot, a walker on a far dune, a person on a rock boxed as a bird, a fifth man cut by the frame), and 2
+  of the 10 are unprompted portraits of the prompted man. sca_v2 for reference: 26.7% (round 6).
 - hyb0 on copyprone21 is complete (21 images, 92 s each) and is being labeled blind as packet pQ29.
 - Queued, all on code/17dcf9e. The copyprone21 screens are a0_K0b28* r7_ohyb0 (AReA's opening pools 4,4,4,4,2,2,2,2 plus
   hyb0's windows, sca_v2's pi), a0_K0b29* r7_hyb0g (one extra global step at pool 2 on step 8, gate 0.87, then hyb0's
