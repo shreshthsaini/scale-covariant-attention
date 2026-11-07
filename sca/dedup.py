@@ -77,8 +77,9 @@ def add_args(p):
     p.add_argument("--open-pool-hi", type=float, default=0.0, metavar="SIGMA")
     p.add_argument("--morph-local", default="", choices=("", "area_tiles"), help="Morph ladder (sca/morph.py): "
                    "area_tiles = AReA's jittered tiles, Halo, DWT splits and merge as SCA's local branch")
-    p.add_argument("--morph-text", default="", choices=("", "window_mean"), help="Morph ladder: window_mean = text "
-                   "queries read the mean over windows (AReA) instead of the global branch")
+    p.add_argument("--morph-text", default="", choices=("", "window_mean", "all_coarse"), help="Morph ladder: "
+                   "window_mean = text queries read the mean over windows (AReA) instead of the global branch; "
+                   "all_coarse = audit Fix 4, text queries attend every image key at its coarse id")
     p.add_argument("--qmix", default="", choices=("", "f1", "f13"), help="Per-query mix (sca/qmix.py): f1 = weight "
                    "from count-corrected image partitions; f13 = plus one three-part softmax over text, near, far")
     p.add_argument("--qmix-lo", type=float, default=0.0, metavar="SIGMA", help="--qmix applies while sigma > SIGMA")

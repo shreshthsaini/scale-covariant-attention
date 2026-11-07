@@ -804,6 +804,7 @@ class SCAContext:
     # morph ladder (sca/morph.py): single AReA components inside SCA; defaults = SCA
     morph_local: str = ""               # "" | area_tiles: local branch = AReA's jittered tiles, Halo, DWT splits, merge
     morph_text: str = ""                # "" | window_mean: text queries = mean over windows (AReA) instead of global
+                                        # | all_coarse: text queries attend every image key at its coarse id (Fix 4)
     # per-query mix (sca/qmix.py; root-cause audit 2026-11-06 Fix 1 / Fix 1+3); defaults = SCA
     qmix: str = ""                      # "" | f1 (per-query weight from count-corrected image partitions) | f13 (+ one
                                         # three-part softmax over text, near, far)
@@ -907,8 +908,8 @@ class SCAContext:
                           or self.lse_tau or self.scale_sched or self.scale_fixed or self.win_heads_below is not None
                           or self.route or self.pool != "center"):
             raise ValueError("qmix combines only with the sca_v2 operator (flex, pool center, bridge, win_sched)")
-        if self.morph_local not in ("", "area_tiles") or self.morph_text not in ("", "window_mean"):
-            raise ValueError("morph_local must be '' or area_tiles, morph_text '' or window_mean")
+        if self.morph_local not in ("", "area_tiles") or self.morph_text not in ("", "window_mean", "all_coarse"):
+            raise ValueError("morph_local must be '' or area_tiles, morph_text '', window_mean or all_coarse")
         if (self.morph_local or self.morph_text) and (self.text_mode or self.local_impl != "flex" or self.band
                                                       or self.lse_tau or self.scale_sched or self.scale_fixed
                                                       or self.win_heads_below is not None or self.route):

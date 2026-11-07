@@ -96,3 +96,34 @@ def test_pi_at_window_interpolates_between_scales():
     assert np.allclose(morph.pi_at_window(T(0.2), T(0.6), 0.5, 180, 256), 0.2)    # clamped
     mid = morph.pi_at_window(T(0.2), T(0.6), 0.5, 256 / 2 ** 1.5, 256)
     assert np.allclose(mid, 0.4)
+
+
+def test_text_all_coarse_is_full_text_attention_at_scale_one_and_pools_ids_at_four():
+    """Audit Fix 4: with f = 1 the coarse ids are the true ids, so the rule is the text rows of full attention; with
+    f = 2 every image key sits at floor(p / 2) and all of them (not only block centres) are attended."""
+    from sca.attn import rope
+    from test_dedup import _qkv, _setup
+    L = 3
+    q, k, v = _qkv(H, W, L, seed=4)
+    _, _, rot, rq1, _ = _setup(H, W, L, (1, 1))
+    cos, sin = rot
+    qt, kt = rope(q[:, :L], (cos[:L], sin[:L])), rope(k[:, :L], (cos[:L], sin[:L]))
+    full = torch.cat([kt, rope(k[:, L:], (cos[L:], sin[L:]))], 1)
+    s = torch.einsum("blhd,bmhd->bhlm", qt, full) / q.shape[-1] ** 0.5
+    ref = torch.einsum("bhlm,bmhd->blhd", s.softmax(-1), v)
+    assert torch.allclose(morph.text_all_coarse(qt, kt, k[:, L:], v, rq1), ref, atol=1e-10)
+    _, _, _, rq2, _ = _setup(H, W, L, (2, 2))
+    kc = rope(k[:, L:], rq2)
+    s2 = torch.einsum("blhd,bmhd->bhlm", qt, torch.cat([kt, kc], 1)) / q.shape[-1] ** 0.5
+    ref2 = torch.einsum("bhlm,bmhd->blhd", s2.softmax(-1), v)
+    out2 = morph.text_all_coarse(qt, kt, k[:, L:], v, rq2)
+    assert torch.allclose(out2, ref2, atol=1e-10) and not torch.allclose(out2, ref, atol=1e-6)
+
+
+def test_processor_all_coarse_changes_only_text_rows():
+    m = model()
+    base = attn_outputs(m, _ctx(), H, W)
+    mt = attn_outputs(m, _ctx(morph_text="all_coarse"), H, W)
+    assert torch.isfinite(flat(mt)).all()
+    assert not torch.allclose(mt[0][1], base[0][1], atol=1e-4)                # text output changed
+    assert torch.allclose(mt[0][0], base[0][0], atol=1e-5)                    # image output of the first block unchanged

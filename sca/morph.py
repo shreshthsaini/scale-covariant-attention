@@ -10,6 +10,9 @@ SCA side (SCAContext.morph_local / morph_text, both off by default; AReA's own c
   morph_text "window_mean"   sca+C: the text queries' output is AReA's rule, the mean over a partition of the image into
                              windows of SCA's current side (text keys, window keys and SCA's bridge), instead of SCA's
                              rule (text queries read only the global branch). Image outputs are sca_v2's.
+  morph_text "all_coarse"    root-cause audit Fix 4: the text queries attend the text keys and every image key at its
+                             coarse id floor(p / f) (the global branch's query ids), instead of only the 4,096 block
+                             centres; offsets stay inside the native range. Image outputs are sca_v2's.
 AReA side (scripts/run_area.py): patch_phase1() (SCA's opening, one pooling factor for every Phase I step),
 patch_processors() (SCA's global branch mixed into AReA's image output with SCA's calibrated per-head pi, and/or SCA's
 text rule), patch_fixed_tiles() (no jitter, no Halo, no DWT splits: a fixed partition, the closest AReA analogue of
@@ -74,6 +77,14 @@ def text_window_mean(qr_txt, kr_txt, v_txt, kr_img, v_img, grid, window, bridge=
     return (out / float(len(rows) * len(cols))).to(qr_txt.dtype)
 
 
+def text_all_coarse(qr_txt, kr_txt, k_img, v, rope_q):
+    """Audit Fix 4: the text queries' attention to [text keys, every image key rotated at its coarse id]. qr_txt/kr_txt
+    [B, L, h, D] rotated text queries/keys; k_img [B, N, h, D] pre-RoPE image keys; v [B, L + N, h, D] (text first);
+    rope_q the coarse-id tables of every image token (SCAContext.coarse_rope). Returns [B, L, h, D]."""
+    from sca.attn import rope, sdpa
+    return sdpa(qr_txt, torch.cat([kr_txt, rope(k_img, rope_q)], 1), v)
+
+
 def install_area_tiles(transformer, ctx, halo=8, seed=0):
     """sca+B: per step after the gate, build AReA's Phase II layout for SCA's current window side from the embedded
     image tokens (x_embedder output, as AReA's FluxBackbone does) and keep it in ctx._area_layout. Returns uninstall."""
@@ -131,6 +142,9 @@ def morph_forward(proc, q, k, v, image_rotary_emb, f, tile, win, pi):
         layout = ctx.flex_layout(L + (cells[0] * cells[1] * per if per else 0), tile, win, q.device)
         out = sca_dedup_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, layout,
                                      ctx.text_bias_now(), cells, per, float(ctx.lse_tau))
+    if ctx.morph_text == "all_coarse":
+        out = torch.cat([text_all_coarse(rope(q[:, :L], rope_txt), rope(k[:, :L], rope_txt), k[:, L:], v,
+                                         rq).to(out.dtype), out[:, L:]], 1)
     if ctx.morph_text == "window_mean":
         qr, kr = rope(q, image_rotary_emb), rope(k, image_rotary_emb)
         bridge = bridge_index(k[:, L:], ctx.grid, cells, per) if per else None
