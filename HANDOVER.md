@@ -1336,3 +1336,5 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   -0.0028; patch KID is worse than AReA; 2 detector flags (10.7% est.). Across the pool-2 family the trade-off is
   monotone: g2x2 (no core loss, 15.4% census), g2x4 (PickScore -0.09, about 10.7%), g2x8 (PickScore -0.26, 7.7%
   census). AReA is at 3.8%.
+- 15:05 r7_g4gh (g2x4 plus glob-count 0.5) on copyprone21: detector 9 of 21 (g2x4 11, gch 14). The two levers add,
+  but each alone already loses PickScore on the 46 (-0.094 and -0.125), so no 46-prompt run.
