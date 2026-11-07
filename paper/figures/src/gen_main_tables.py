@@ -837,6 +837,30 @@ def prog_macros(clean):
                     (f"hlProg{nm}WinsAreaWord", word(w), "the same count as a word", False)]
             triple(out, f"hlProg{nm}AreaIr", dd["ir"], 1, 2, f"results/{rel}, metric ir")
             triple(out, f"hlProg{nm}AreaPick", dd["pickscore"], 1, 2, f"results/{rel}, metric pickscore")
+            check(w == 10, f"text 'all ten per-image metrics for each of three seeds': {label} wins {w}")
+            # patch FID against AReA at this seed (files hold AReA minus progressive): interval if the 1000-draw
+            # cluster bootstrap has landed (corrected_fidp_ci), else the point and the word "pending"
+            run_dir = rel.split("/")[0]
+            for sub in ("corrected_fidp_ci", "corrected_fidp"):
+                pfile = RES / run_dir / sub / "paired_deltas.csv"
+                if not pfile.exists():
+                    continue
+                r = next(r for r in rows(f"{run_dir}/{sub}/paired_deltas.csv")
+                         if r["method"] == "area" and r["reference_method"] == PROG and r["metric"] == "patch_fid")
+                src = f"results/{run_dir}/{sub}/paired_deltas.csv, area minus {PROG}, patch_fid, negated"
+                if r["ci_low"] and r["ci_high"] and r["bootstrap_valid"] == "1000":
+                    v = neg((float(r["value"]), float(r["ci_low"]), float(r["ci_high"])))
+                    triple(out, f"hlProg{nm}AreaFidP", v, 1, 1, src)
+                    sg = sig(v, lower=True)
+                    out.append((f"hlProg{nm}AreaFidPText",
+                                f"${v[0]:+.1f}$ $[{v[1]:.1f},{v[2]:.1f}]$".replace("[-", "[{-}").replace(",-", ",{-}"),
+                                src, False))
+                    out.append((f"hlProg{nm}AreaFidPSig", {"dn": "significantly higher", "up": "significantly lower",
+                                                         "": "not significantly different"}[sg], src, False))
+                else:
+                    out.append((f"hlProg{nm}AreaFidPText", f"${-float(r['value']):+.1f}$ (interval pending)", src,
+                                False))
+                break
     # absolute values and times
     SG = data(PROG_V2)[0]
     SA, SP = data(MAIN_RUN)[0], data(PANEL_RUN)[0]
