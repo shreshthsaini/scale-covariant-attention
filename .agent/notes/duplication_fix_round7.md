@@ -458,3 +458,12 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   grow 3, all prompt values gated at the sites, x0 pulled to the opening's estimate there): by preview it removes the
   step-8 copies (seated astronaut, flier) with a clean fill (one faint crescent smudge); misses late or weak ones (a
   ground figure born at step 11 to 13, one pedestrian). 46-prompt run with eval queued.
+- Copy-site route closed (12:10). csga2's gate covers 10 to 26% of the image on 4 of 11 dumped prompts (portrait face
+  and planet, polar-bear sky) and the pull to the blocky opening estimate pixelates them. Offline calibration on the
+  61 human-labeled copy positions of sca_v2's copyprone21 images (human_labels_95 xy, step-8 shares from the csga2
+  dumps): the subject-word share at a copy site is often within the image's own background spread at the hand-off
+  (ratio to the main subject 0.16 to 1.08, background p95 0.13 to 0.72); recall 12 to 20 of 61 for relative or
+  z-score detectors over steps 8 to 12. Detection by attention to the subject words cannot carry the fix.
+- r7_bce (2497cae): the coarse-id bridge only at the birth steps (sigma > 0.83, steps 8 to 10) at 4096 tokens, values
+  averaged over each token's 4 x 4 block (bc64's speckle came from scattered single-token values on every step);
+  sca_v2's bridge after.
