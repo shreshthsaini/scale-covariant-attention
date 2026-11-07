@@ -272,8 +272,8 @@ def krea_6144():
     caption = (rf"\caption{{\textbf{{At $6144^2$ \sca{{}} without the schedule beats AReA on {wins6144} of {len(spec)} "
                rf"metrics; {claim}.}} Method minus AReA with 95\% paired intervals over "
                + (r"100 prompts at $6144^2$ and for DyPE and SEGA, which ran only those, and all 195 for \sca{} on "
-                  r"FLUX.1-Krea-dev; first column " if late.KREA195 else "100 prompts each; first column ")
-               + r"FLUX.1-dev at $6144^2$, others FLUX.1-Krea-dev at $4096^2$ with a Krea-calibrated \sca{} table. "
+                  r"FLUX.1-Krea-dev. The first column is " if late.KREA195 else "100 prompts each. The first column is ")
+               + r"FLUX.1-dev at $6144^2$, the others FLUX.1-Krea-dev at $4096^2$ with a Krea-calibrated \sca{} table. "
                + intervals + r". Lower is better for FID, KID, their patch versions, and time. \up{Blue} / \dn{orange}: "
                r"significantly better / worse than AReA. Time is the campaign mean on shared GH200 nodes." + "\\" + note
                + "}")
@@ -493,8 +493,10 @@ def prog_deltas():
                r"label 0. Per-image differences (first-named setting minus "
                rf"second) with 95\% paired intervals over {prog.DRAWS} prompt draws; \up{{blue}} / \dn{{orange}}: the "
                r"interval excludes zero in favour of / against the first-named setting. Progressive: HRDiT's schedule "
-               r"with \sca{} attention (Section~\ref{sec:progressive}); 42 steps: single-pass \sca{} without the "
-               r"schedule, sized to HRDiT's campaign time. Intervals that include zero do not establish equivalence."
+               r"with \sca{} attention (Section~\ref{sec:progressive}); \sca{}: 28 steps, single-pass \sca{} in the "
+               r"second column and \sca{} without the schedule in the third; 42 steps: single-pass \sca{} without "
+               r"the schedule, sized to HRDiT's campaign time. Intervals that include zero do not establish "
+               r"equivalence."
                + "\\" + note + "}")
     lines = [v2swap.PEND_FALLBACK, header(sources), r"\begin{table}[!htbp]", caption, r"\label{tab:prog_deltas}",
              r"\centering\scriptsize\setlength{\tabcolsep}{2.4pt}\let\tiny\scriptsize",

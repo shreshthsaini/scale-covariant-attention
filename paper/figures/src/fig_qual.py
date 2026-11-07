@@ -714,8 +714,9 @@ def fig_ablation(a):
             full += ([G_GROUP] if k else []) + [t_full(t[f"{s}_{m}"]["full"], b, res)]
             crop += ([G_GROUP] if k else []) + [t_crop(t[f"{s}_{m}"]["crop"])]
         rows += [(g_row(full), G_PAIR), (g_row(crop), G_SECTION)]
-    cap = (r"\textbf{Without the opening the subject repeats; global only leaves the pooled branch's coarse grid; "
-           r"mean pooling loses the layout.} Four curated prompts at $4096^2$, variants of SCA without the schedule "
+    cap = (r"\textbf{Without the opening phase subjects shrink to a small scale; global only leaves the pooled "
+           r"branch's coarse grid; mean pooling loses the layout.} Four curated prompts at $4096^2$, variants of SCA "
+           r"without the schedule "
            r"(Table~\ref{tab:ablation}); 1:1 crops below.")
     grid_snippet("ablation", geo, rows, cap, "fig:ablation_grid",
                  comments=prompt_comments([("sca", res, s) for s in ABL]))
@@ -723,62 +724,61 @@ def fig_ablation(a):
 
 
 def fig_failures(a):
+    """fig:failures: four local errors of SCA without the schedule (FAIL_SCA), AReA's same window above.
+
+    Until 2026-11-07 the figure also had a top block of two development prompts (FAIL_DUP) under three ungated or
+    gated settings; it was dropped from the paper, and its entries leave the frozen record here (their tiles stay on
+    disk, unreferenced). The remaining entries, windows and source hashes are unchanged.
+    """
     out = os.path.join(imgsel.FIGDIR, "failures")
     res = "4096x4096"
-    dup_methods = ["abl_v0", "dev_w16", "sca"]
 
     def compute():
-        return dict(resolution=res, methods=dup_methods + ["area"],
-                    selection="Hand-picked: two development prompts (FAIL_DUP) and four SCA errors with "
-                              "hand-placed windows (FAIL_SCA) in fig_qual.py",
+        return dict(resolution=res, methods=["sca", "area"],
+                    selection="Hand-picked: four errors of SCA without the schedule with hand-placed windows "
+                              "(FAIL_SCA) in fig_qual.py",
                     crop_rule="Hand-placed windows; the AReA crop uses the same window",
-                    prompts=[dict(short_id=s, res=res, crop_xy_size=None, methods=dup_methods) for s in FAIL_DUP]
-                    + [dict(short_id=s, res=res, crop_xy_size=list(b), methods=["sca", "area"]) for s, b in FAIL_SCA])
+                    prompts=[dict(short_id=s, res=res, crop_xy_size=list(b), methods=["sca", "area"])
+                             for s, b in FAIL_SCA])
 
     man = frozen("failures", compute, a.workers)
+    shown = {s for s, _ in FAIL_SCA}
+    if any(e["short_id"] not in shown for e in man["prompts"]):  # the retired top block (FAIL_DUP)
+        man["prompts"] = [e for e in man["prompts"] if e["short_id"] in shown]
+        man["methods"] = ["sca", "area"]
+        man["selection"] = compute()["selection"]
+        man["retired"] = ("2026-11-07: the top block of two development prompts (FAIL_DUP: "
+                          + ", ".join(FAIL_DUP) + ") was dropped from the figure")
     box = {e["short_id"]: tuple(e["crop_xy_size"]) for e in man["prompts"] if e["crop_xy_size"]}
-    # Top block: six tiles of height \scaU, grouped by setting (window 64, window 16, with gate), two
-    # development prompts per group, so each setting is named once. Bottom block: one row per method
-    # (AReA, then SCA), eight tiles of height \scaT: for each of the four errors the full image with the
-    # shared window, then its 1:1 crop. Method names appear once, as the two row labels.
-    n_dup, n_err = len(FAIL_DUP) * len(dup_methods), 2 * len(FAIL_SCA)
+    if set(box) != shown:
+        raise ValueError(f"failures: frozen windows {sorted(box)} differ from FAIL_SCA")
+    # One row per method (AReA, then SCA without the schedule), eight tiles of height \scaT: for each of the four
+    # errors the full image with the shared window, then its 1:1 crop. Method names appear once, as row labels.
+    n_err = 2 * len(FAIL_SCA)
     geo = Geo(n_err, len(FAIL_SCA) * G_PAIR + (len(FAIL_SCA) - 1) * G_GROUP, label=True)
-    dup_gaps = len(dup_methods) * (len(FAIL_DUP) - 1) * G_PAIR + (len(dup_methods) - 1) * G_GROUP
-    dup_in = (TEXT_PT - dup_gaps) / n_dup / 72.27
-    pre = [r"\setlength{\scaU}{\dimexpr(\linewidth-%gpt)*1000/%d\relax}%%" % (dup_gaps, n_dup * 1000)]
-    jobs = [dict(out=out, name=f"dup_{s}_{m}", label=m, res=res, sid=s, px=round(dup_in * GRID_DPI))
-            for s in FAIL_DUP for m in dup_methods]
+    jobs = []
     for s, _ in FAIL_SCA:
         for m in ("sca", "area"):
             jobs.append(dict(out=out, name=f"err_{s}_{m}", label=m, res=res, sid=s, px=geo.px(),
                              crops=[(box[s], "crop")]))
     t = run_grid(jobs, a.workers)
-    dup_names = {"abl_v0": "No gate, window 64", "dev_w16": "No gate, window 16", "sca": "With gate"}
-    head1, row1 = [], []
-    for k, m in enumerate(dup_methods):
-        head1 += ([G_GROUP] if k else []) + [head_cell(dup_names[m], len(FAIL_DUP), (len(FAIL_DUP) - 1) * G_PAIR,
-                                                       unit=r"\scaU")]
-        for j, s in enumerate(FAIL_DUP):
-            row1 += ([G_GROUP if j == 0 and k else G_PAIR] if (j or k) else []) + \
-                [t_img(t[f"dup_{s}_{m}"]["full"], unit=r"\scaU")]
-    rows = [(g_row(head1), G_ROW), (g_row(row1), G_SECTION)]
-    # Published SCA's errors, AReA's same window above. "SCA w/o sched." (about 70 pt) is longer than a row (about
-    # 46 pt), so the SCA row label takes two lines in a wider, centred label column (FAIL_LABEL_PRE).
+    rows = []
+    # "SCA w/o sched." (about 70 pt) is longer than a row (about 46 pt), so the SCA row label takes two lines in a
+    # wider, centred label column (FAIL_LABEL_PRE).
     for m, lab in (("area", "AReA"), ("sca", r"\scaOurs{\shortstack{SCA w/o\\schedule}}")):
         cells = []
         for j, (s, _) in enumerate(FAIL_SCA):
             cells += ([G_GROUP] if j else []) + [t_full(t[f"err_{s}_{m}"]["full"], box[s], res), G_PAIR,
                                                  t_crop(t[f"err_{s}_{m}"]["crop"])]
         rows.append((g_row(cells, label=lab), G_ROW))
-    # Audited 2026-10-20 at 1:1: the gated images keep small duplicates (an extra face beside the bear, a
-    # small second Moai); the dancer window holds an extra raised foot, not a foot replacing an arm; none of
+    # Audited 2026-10-20 at 1:1: the dancer window holds an extra raised foot, not a foot replacing an arm; none of
     # the four named errors appears in AReA's windows.
-    cap = (r"\textbf{Curated failures: ungated windows duplicate subjects; SCA without the schedule makes local "
-           r"errors.} Top: development prompts, all without the schedule; the gate leaves small duplicates. 1:1 crops: staircase sword, "
-           r"blocky patch, extra foot, border speckle, none in AReA.")
+    cap = (r"\textbf{Local errors of \sca{} without the schedule.} Four curated prompts at $4096^2$, each full image "
+           r"with its window, then the window at 1:1: a staircase sword, a blocky patch, an extra foot, and border "
+           r"speckle. AReA's same windows (top row) show none of them.")
     # below the section text (a top float after \clearpage would sit above the section heading)
-    grid_snippet("failures", geo, rows, cap, "fig:failures", pre=pre, env="figure", placement="!hb", pre_geo=FAIL_LABEL_PRE,
-                 comments=prompt_comments([("sca", res, s) for s in FAIL_DUP] + [("sca", res, s) for s, _ in FAIL_SCA]))
+    grid_snippet("failures", geo, rows, cap, "fig:failures", env="figure", placement="!hb", pre_geo=FAIL_LABEL_PRE,
+                 comments=prompt_comments([("sca", res, s) for s, _ in FAIL_SCA]))
     record_outputs("failures", man, t)
 
 

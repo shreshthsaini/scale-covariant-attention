@@ -11,6 +11,11 @@ final operator (sca_v2) as its runs land; nothing is typed by hand.
   published_compare  tab:published_compare  float    krea195_sca_v2, a4k195_main_sca_v2, hrgen1k_krea_sca_v2
   published_hrgen    tab:published_hrgen    float    hrgen1k_krea_sca_v2, hrgen1k_dev_sca_v2
 
+Since 2026-11-07 (progressive SCA is the paper's headline): the final operator's rows of all_metrics read "Single-pass
+\\sca{}" (app_4k heads its column the same way), and the 4096^2 block of all_metrics adds HRDiT and progressive SCA
+from results/prog195_sca_v2 (prog_rows: clean latency from the third sweep, results/prog_latency; progressive SCA
+marked against AReA from results/prog195_pairs; HRDiT unmarked like the other baselines).
+
 Published rendering (every run pending; gen_app_tables.py --check compares it with today's tables):
   all_metrics  values as printed; bold = best printed value of each column within a size block, ties share.
                \\up / \\dn (blue / orange, the paper's one significance convention): the 95% paired interval
@@ -36,10 +41,9 @@ results are recomputed. The z98x runs have no corrected_fidp_ci, so FID and KID 
 rows resampled, not reference-image clusters) and the patch versions print the point alone, without interval or
 mark. Pending: the published cell wrapped in \\pend (the published tables also grey the key-result clauses about a
 pending \\sca{} row). Each table switches cell by cell, so a partly landed table mixes both.
-Values that never get an sca_v2 counterpart stay and say so (the subs): the band-guard row of all_metrics is
-"\\sca{} band w/o sched." (no wider than "AReA (released code)", so the \\resizebox factor is unchanged), its 6144^2
-row "\\sca{} w/o schedule"; the band column header of app_4k stays as it is, so the table keeps its height, and
-its caption must say the band run is without the schedule.
+Values that never get an sca_v2 counterpart stay and say so (the subs): the 6144^2 row of all_metrics is
+"\\sca{} w/o schedule". The band-guard row of all_metrics and the band column of app_4k were removed on 2026-11-07
+(the paper no longer describes the band guard); band() and band_clean_seconds() stay only as readers.
 AReA keeps its published values everywhere; each landed run's own AReA values are compared with them at printed
 precision and any difference is a warning (the Delta columns pair against the landed run's AReA). Caption warnings
 re-read the caption in main.tex and stop once it no longer carries the phrase they flag.
@@ -197,9 +201,75 @@ AM_BLOCKS = {"4096x4096": r"\emph{$4096\times4096$}, scale factors (4, 4)",
              "2048x4096": r"\emph{$2048\times4096$}, scale factors (2, 4)",
              "2048x6144": r"\emph{$2048\times6144$}, scale factors (2, 6)",
              "6144x6144": r"\emph{$6144\times6144$}, scale factors (6, 6), 100 prompts"}
-SCA_FINAL = r"\sca{} (final)"
+SCA_FINAL = r"Single-pass \sca{}"  # the final operator (sca_v2), 28 steps at the target size
+SCA_FINAL_OLD = r"\sca{} (final)"   # its label before the paper made progressive SCA the headline (2026-11-07)
 BAND_LABEL, BAND_OLD = r"\sca{} band w/o sched.", r"\sca{} + band guard"  # no wider than "AReA (released code)"
 E2_LABEL = r"\sca{} w/o schedule"
+# Multi-stage rows of Table tab:main (2026-11-07): HRDiT and progressive SCA (HRDiT's three-stage schedule with the
+# final operator), both evaluated in results/prog195_sca_v2 (base and extra summaries; FID, KID and patch versions
+# from its corrected_fidp, 168 reference identities). Progressive SCA's marks against AReA: per-image
+# results/prog195_pairs/sca_v2_prog_vs_area.csv (paired_bootstrap.py, 2000 prompt draws, seed 0) and set-level
+# results/prog195_pairs/cfid_vs_area/paired_deltas.csv (1000 draws over prompts and reference-image clusters).
+# HRDiT stays unmarked, like the other baselines that are not full attention. Both rows take their clean latency from
+# the third batch-1 sweep (results/prog_latency/latency_summary.csv: progressive SCA, HRDiT and AReA back to back on
+# one GH200, median of three timed images after an excluded warm-up), as Table tab:main does.
+PROG_RUN, PROG, PROG_PAIRS = "prog195_sca_v2", "sca_v2_prog", "prog195_pairs"
+PROG_LATENCY = RESULTS / "prog_latency" / "latency_summary.csv"
+
+
+def sweep3(method):
+    """Clean batch-1 median of `method` at 4096^2 in the third latency sweep."""
+    rows = [r for r in csv.DictReader(open(PROG_LATENCY)) if r["res"] == "4096x4096" and r["method"] == method]
+    if len(rows) != 1 or int(rows[0]["n_timed"]) != 3:
+        raise ValueError(f"{PROG_LATENCY}: expected one 4096x4096 row with three timed images for {method}")
+    return float(rows[0]["median_s"])
+PROG_LABEL = r"Progressive \sca{}"
+
+
+def cluster_deltas(path, method, ref):
+    """{metric: (delta, lo, hi)} of `method` minus `ref` for FID, KID and their patch versions from a
+    repro/evaluate_corrected.py paired_deltas.csv (1000 draws over prompt ids and the 168 reference identities)."""
+    out = {}
+    for r in csv.DictReader(open(path)):
+        if r["method"] != method or r["metric"] not in data195.DIST:
+            continue
+        if (r["reference_method"], int(r["n_prompts"]), int(r["n_reference_prompts"]), int(r["bootstrap_valid"])) \
+                != (ref, N_MAIN, 168, 1000):
+            raise ValueError(f"{path}: unexpected row {r}")
+        out[r["metric"]] = (float(r["value"]), float(r["ci_low"]), float(r["ci_high"]))
+    if set(out) != set(data195.DIST):
+        raise ValueError(f"{path}: {method} minus {ref} lacks {sorted(set(data195.DIST) - set(out))}")
+    return out
+
+
+def prog_rows(S_area):
+    """(HRDiT row, progressive SCA row, warnings) for the 4096^2 block of tab:all_metrics."""
+    warn = prompt_check(PROG_RUN)
+    P = v2swap.load(PROG_RUN)[0]
+    keys = [k for k, _, _, _ in AM_COLS]
+    hrdit = am_row("HRDiT", dict({k: P[("hrdit_dev_author", k)] for k in keys[1:]}, seconds=sweep3("hrdit_dev_author")))
+    if am_show("seconds", sweep3("area")) != am_show("seconds", S_area["seconds"]):
+        warn.append(f"{PROG_LATENCY}: AReA {sweep3('area'):.2f} s prints differently from the AReA row")
+    per_image = RESULTS / PROG_PAIRS / f"{PROG}_vs_area.csv"
+    if {int(r["n_prompts"]) for r in csv.DictReader(open(per_image))} != {N_MAIN}:
+        raise ValueError(f"{per_image}: not {N_MAIN} prompts")
+    marks = data195.pairs(PROG_PAIRS, PROG, "area")
+    cfid = RESULTS / PROG_PAIRS / "cfid_vs_area"
+    marks.update(cluster_deltas(cfid / "paired_deltas.csv", PROG, "area"))
+    for r in csv.DictReader(open(cfid / "summary.csv")):  # the cluster run must score the same images
+        if r["metric"] in ("fid", "patch_fid"):
+            if r["method"] == PROG and abs(float(r["value"]) - P[(PROG, r["metric"])]) > 1e-6:
+                raise ValueError(f"{cfid}/summary.csv: {PROG} {r['metric']} differs from {PROG_RUN}/corrected_fidp")
+            if r["method"] == "area" and am_show(r["metric"], float(r["value"])) != \
+                    am_show(r["metric"], S_area[r["metric"]]):
+                warn.append(f"{cfid}: AReA {r['metric']} {float(r['value']):.2f} prints differently from the "
+                            "published AReA row")
+    prog = am_row(PROG_LABEL, dict({k: P[(PROG, k)] for k in keys[1:]}, seconds=sweep3(PROG)),
+                  {k: marks.get(k) for k in keys[1:]})
+    missing = [k for k in keys[1:] if marks.get(k) is None]
+    if missing:
+        warn.append(f"tab:all_metrics progressive row: no interval against AReA for {', '.join(missing)}")
+    return hrdit, prog, warn
 
 
 def num(x, d):
@@ -255,9 +325,6 @@ def am_block(rows):
 def all_metrics(g):
     import gen_late_tables as late  # read-only use of its two readers (its writers are never called)
     warn, keys, cap = [], [k for k, _, _, _ in AM_COLS], caption("tab:all_metrics")
-    if says(cap, BAND_OLD + ":"):
-        warn.append(f"tab:all_metrics caption names the band-guard row '{BAND_OLD}', now labelled '{BAND_LABEL}' "
-                    "(it has no schedule); the 6144^2 row is now '" + E2_LABEL + "'")
     lat = v2swap.latency(v2=False)
     lat_landed = v2swap.landed(v2swap.LATENCY)
     blocks = {}
@@ -265,15 +332,15 @@ def all_metrics(g):
     # 4096^2
     S, vs = published(MAIN)
     P_full = data195.pairs(MAIN, "full", "area")
-    s_b, d_b = band(g)
     clean = {m: lat[("4096x4096", m)][0] for m in ("full", "area", "sca_nb")}
     rows = [am_row("Full attention", dict({k: S[("full", k)] for k in keys[1:]}, seconds=clean["full"]),
                    {k: P_full[k] for k in keys if k in P_full and k in PER_IMAGE})]
     for m, label in (("dype", "DyPE"), ("sega_official", "SEGA"), ("ultraimage", r"UltraImage$^{\circ}$")):
         rows.append(am_row(label, {k: S[(m, k)] for k in keys}, campaign=True))
+    hrdit_row, prog_row, prog_warn = prog_rows(dict({k: S[("area", k)] for k in keys[1:]}, seconds=clean["area"]))
+    warn += prog_warn
+    rows.append(hrdit_row)
     rows.append(am_row("AReA (released code)", dict({k: S[("area", k)] for k in keys[1:]}, seconds=clean["area"])))
-    rows.append(am_row(BAND_LABEL, dict({k: s_b[("sca", k)] for k in keys[1:]}, seconds=band_clean_seconds()),
-                       {k: d_b.get(("sca", k)) for k in keys[1:]}))
     landed, unclustered = v2swap.landed(V2_MAIN), []
     if landed:
         S2, vs2, clustered = final(V2_MAIN)
@@ -298,6 +365,7 @@ def all_metrics(g):
     pend = {k: not landed for k in keys[1:]}
     pend["seconds"] = not lat_landed
     rows.append(am_row(SCA_FINAL, dict(vals, seconds=sca_lat), marks, pend=pend))
+    rows.append(prog_row)
     blocks["4096x4096"] = rows
     if landed:
         failing = [k for k in PER_IMAGE if sig_mark(marks[k], False) != r"\sg"]
@@ -347,18 +415,17 @@ def all_metrics(g):
              r"  \resizebox{\linewidth}{!}{%", r"  \begin{tabular}{lccccccccccccc}"]
     lines += ["    " + x for x in AM_HEAD + body + [r"\bottomrule"]] + [r"  \end{tabular}}"]
     return dict(name="all_metrics", kind="tabular", label="tab:all_metrics",
-                runs=[V2_MAIN] + [r2 for _, r2 in WIDE.values()] + [v2swap.LATENCY], note="pendAppAllMetrics",
-                tex="\n".join(lines) + "\n", subs=[(BAND_LABEL, BAND_OLD), (E2_LABEL, SCA_FINAL)], warnings=warn)
+                runs=[V2_MAIN] + [r2 for _, r2 in WIDE.values()] + [v2swap.LATENCY, PROG_RUN],
+                note="pendAppAllMetrics", tex="\n".join(lines) + "\n",
+                subs=[(E2_LABEL, SCA_FINAL_OLD), (SCA_FINAL, SCA_FINAL_OLD)], warnings=warn)
 
 
 # tab:app_4k and tab:app_wide ========================================================================================
-BAND_HEAD = r"\shortstack{\sca{} + band\\w/o sched.}"  # review round 1: the operator is named in the head
 
 
 def app_4k(g):
     dcell, vcell, METD = g["dcell"], g["vcell"], g["METD"]
     S, vs = published(MAIN)
-    s_b, d_b = band(g)
     landed, warn = v2swap.landed(V2_MAIN), []
     if landed:
         S2, vs2, clustered = final(V2_MAIN)
@@ -378,14 +445,13 @@ def app_4k(g):
         else:
             sca = [PEND(vcell(S, ("sca_nb", m), m), True), PEND(dcell(vs.get(("sca_nb", m)), m), True)]
         cells = [METD[m][1], vcell(S, ("area", m), m)] + sca + [
-            vcell(s_b, ("sca", m), m), dcell(d_b.get(("sca", m)), m),
             vcell(S, ("full", m), m), dcell(vs.get(("full", m)), m)]
         body.append("    " + " & ".join(cells) + r" \\")
     lines = [v2swap.PEND_FALLBACK, HEADER, r"  \centering\scriptsize\setlength{\tabcolsep}{1.8pt}",
              r"  \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%",
-             r"  \begin{tabular}{lccY{57.5pt}cY{57.5pt}cY{65.5pt}}", r"    \toprule",
-             r"    Metric & AReA & \sca{} final & $\Delta$ [95\% CI] & " + BAND_HEAD +
-             r" & $\Delta$ [95\% CI] & Full attention & $\Delta$ [95\% CI] \\", r"    \midrule"]
+             r"  \begin{tabular}{lccY{57.5pt}cY{65.5pt}}", r"    \toprule",
+             r"    Metric & AReA & \shortstack{Single-pass\\\sca{}} & $\Delta$ [95\% CI] & Full attention & "
+             r"$\Delta$ [95\% CI] \\", r"    \midrule"]
     lines += body + [r"    \bottomrule", r"  \end{tabular}}"]
     return dict(name="app_4k", kind="tabular", label="tab:app_4k", runs=[V2_MAIN], note="pendAppFourK",
                 tex="\n".join(lines) + "\n", subs=[], warnings=warn)
@@ -634,9 +700,9 @@ def key_result(B, rows, hrows):
         if hk[3] != 1000:
             txt += f" ({hk[3]} of 1000 prompts)"
         parts.append((txt, hk[6]))
-    if parts:
-        parts[0] = (parts[0][0][0].upper() + parts[0][0][1:], parts[0][1])
-    return "; ".join(PEND(t, p) for t, p in parts) + "."
+    # one sentence per clause (the paper caps sentences at 35 words), each capitalized
+    parts = [(t[0].upper() + t[1:], p) for t, p in parts]
+    return ". ".join(PEND(t, p) for t, p in parts) + "."
 
 
 def published_compare(B, pub, ours, pending):

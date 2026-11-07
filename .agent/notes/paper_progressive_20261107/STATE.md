@@ -8,28 +8,26 @@ duplication content anywhere except the one limitations sentence the user dictat
 web rebuilt, commits after each stage.
 
 ## Status and next action
-- Done: read HANDOVER 24-30, recommendation, meta-review, results; split paper/main.tex -> main.tex + appendix.tex
-  (builds 54 pp, 0 overfull, 0 undefined).
-- In progress: stage 0 data (variance_split.csv, concept curves), Table 1 redesign in gen_main_tables.py, main text.
-- Delegated: appendix agent (appendix.tex + appendix generators), figure agent (hero, prog gallery, zoom figure),
-  web agent (after abstract is fixed).
+- DONE (commits 39b9000, 067afd0, pushed): main.tex/appendix.tex split; main text rewritten (title, abstract, intro,
+  bullets, method incl. progressive subsection + Algorithm 3, Section 3 variance-split lead, experiments, related
+  work, limitations with the dictated sentence, conclusion); gen_main_tables.py restructured (Table 1 progressive
+  headline, colours vs progressive, no Dup., generality with pending progressive rows + PickScore, appendix tables
+  prog_all, variance_split, tab_panel46 without multi-stage rows); figures concept.pdf, paired_area.pdf (both modes vs
+  AReA), method.pdf lane (d); clean latency sweep 3 folded in. Build: 55 pp, main text ends p10, 0 overfull.
+- WAITING: appendix agent (appendix.tex: remove duplication, app:prog, tab:panel46/fig:teaser floats,
+  variance_split + prog_all inputs, all_metrics prog row); figure agent (hero_prog.pdf, zoom4k with prog column,
+  gallery_prog snippet); web agent (web/). Undefined refs until appendix lands: fig:dup, sec:dup, sec:rootcause,
+  fig:teaser, tab:panel46, tab:prog_all, tab:variance_split.
+- NEXT: integrate agents; switch hero fallback off; point hero caption to fig:gallery_prog; update zoom caption;
+  render-review cycle 1 (main by me, appendix by 2 reviewer subagents), fixes, cycle 2; delivery build; notes;
+  HANDOVER 31; web commit; remove legacy hlDup* macros once no source uses them.
 
-## Results status (fold in as they land; watcher script in scratchpad watch_results.sh)
-- LANDED: results/prog195_vs_baselines/sca_v2_prog_vs_{area,dype,full,hrdit_dev_author,sca_v2,sega_official,
-  ultraimage}.csv (per-image, 2000 draws); results/prog195_pairs/cfid_vs_{area,sca_v2} (set-level, 1000 draws).
-- PENDING: prog195_vs_baselines/cfid/ (set-level vs all), results/prog195_s1, prog195_s2 (seeds), HRGen-1K prog,
-  results/prog_latency (clean latency). Krea: not supported by the progressive sampler (single-pass row only).
+## Results status (watcher: scratchpad watch_results.sh, background)
+- LANDED: prog195_vs_baselines per-image pairs; prog195_pairs/cfid_vs_{area,sca_v2}; prog_latency (sweep 3).
+- PENDING: prog195_vs_baselines/cfid (set-level vs other baselines: Table 1 FID colours, prog_all), prog195_s1/s2
+  (Table 3 seeds), HRGen-1K prog (Table 3), Krea: unsupported (single-pass only).
 
 ## Decisions
-- Table 1: all methods, groups single-pass / multi-stage, ranks within group, Prog. SCA headline row (shaded); colours
-  of every other row against Prog. SCA (blue = row significantly better, orange = worse). No Dup. anywhere.
-- Old Table 2 (SigMa, budgets) moves to the appendix (tab:panel46 kept as label, multi-stage rows dropped).
-- Old teaser (six methods, single-pass) moves to the appendix; page-1 hero becomes progressive SCA mosaic.
-- Speed claims: use matched clean latency when results/prog_latency lands; until then campaign means, said so.
-
-## Map
-| file | what |
-|---|---|
-| paper/main.tex | preamble + main text (mine) |
-| paper/appendix.tex | appendix (appendix agent) |
-| paper/figures/src/gen_main_tables.py | Tables 1-4 + headline.tex (mine) |
+- Table 1 colours every row against progressive SCA; ranks within group; HRDiT and progressive clean times from sweep 3.
+- Speed claims use clean sweep 3 (4.1x AReA, 46% of HRDiT); campaign means only in Table 1's camp. column.
+- Commit only my files while agents work; no autostash pulls (agents edit the shared tree).

@@ -20,7 +20,7 @@ Selection (recorded in figures/progressive/provenance.json and stated in the cap
   greyscale image) averaged over the three methods of the row, at least 256 px from every border.
 
 Every source PNG must have a complete sidecar whose png_sha256 matches the file, config res 4096x4096,
-seed 0 and the expected prompt id. Header times (not drawn; the caption points to Table tab:panel46) are
+seed 0 and the expected prompt id. Header times (not drawn; the caption points to Table tab:main) are
 the campaign mean seconds per image that the table prints over all 195 prompts, from
 results/<run>/base_summary.csv (TIMES; HRDiT cross-checked against the second run that holds it).
 
@@ -61,7 +61,7 @@ ROOT195 = Path("/scratch/09032/saini_2/sca/eval/prog195_sca_v2/root")  # <method
 PUBLISHED_PROG = Path(imgsel.OUT) / "prog" / "sca_prog" / "4096x4096"  # the published progressive operator
 RESULTS = REPO / "results"
 N_TIMES = 195
-# run whose results/<run>/base_summary.csv gives each method's campaign time as Table tab:panel46 prints it, and a
+# run whose results/<run>/base_summary.csv gives each method's campaign time as Table tab:main prints it, and a
 # second run holding the same method's time, which must agree
 TIMES = {"hrdit_dev_author": "a4k195_panel", "sca_v2_prog": "prog195_sca_v2", "sca_v2": "a4k195_main_sca_v2"}
 CHECK = {"hrdit_dev_author": "prog195_sca_v2"}
@@ -107,7 +107,7 @@ def seconds_row(run: str, method: str) -> dict:
 
 
 def campaign_seconds() -> dict:
-    """Campaign mean seconds per image as Table tab:panel46 prints them (results/<run>/base_summary.csv, TIMES),
+    """Campaign mean seconds per image as Table tab:main prints them (results/<run>/base_summary.csv, TIMES),
     each over the same 195 prompts at RES, cross-checked against a second run where one holds the method."""
     out = {}
     for m in METHODS:
@@ -272,9 +272,9 @@ def main() -> None:
                    env={**os.environ, "SOURCE_DATE_EPOCH": "0"})  # byte-identical PDF on rerun
     n_camp = secs["sca_v2_prog"]["n"]
     caption = (
-        r"\textbf{Progressive \sca{} keeps one large subject, as HRDiT does; single-pass \sca{} can shrink or "
-        r"repeat it.} Two prompts drawn at random from the original %d-prompt panel; same 1:1 ${%d\times%d}$ "
-        r"crop per row; times in Table~\ref{tab:panel46}."
+        r"\textbf{Progressive \sca{} keeps a large subject, as HRDiT does; single-pass \sca{} draws it smaller.} "
+        r"Two prompts drawn at random from the original %d-prompt panel; same 1:1 ${%d\times%d}$ crop per row; "
+        r"times in Table~\ref{tab:main}."
         % (n_panel, CROP, CROP))
     # the table's campaign means cover all 195 prompts, of which the original panel is a part
     assert n_panel < n_camp == N_TIMES, (n_panel, n_camp)
@@ -304,7 +304,7 @@ def main() -> None:
                               for run in sorted(set(TIMES.values()) | set(CHECK.values()))},
                      cross_check={m: f"results/{run}/base_summary.csv" for m, run in CHECK.items()},
                      statistic=f"campaign mean seconds per image on shared GH200 nodes over all {N_TIMES} "
-                               "prompts (Table tab:panel46), one decimal; not drawn in the figure",
+                               "prompts (Table tab:main), one decimal; not drawn in the figure",
                      methods=secs),
         protocols={"hrdit_dev_author": "HRDiT (FLUX.1-dev), stages 1024^2, 2048^2, 4096^2 with 30, 17, 10 steps",
                    "sca_v2_prog": "progressive SCA, final operator: HRDiT's stage schedule with SCA attention and "

@@ -44,8 +44,8 @@ SPECS = {
         # The frozen draw (2026-10-17) was over the main set without the four development prompts. The paper now
         # evaluates all 195 prompts, so the caption names that pool; both counts come from the frozen manifest.
         "caption": lambda manifest: (
-            r"\textbf{At $4096^2$ DyPE and SEGA leave speckle, UltraImage softens the planet, and SCA with the "
-            r"schedule is sharp but adds people in two prompts.} "
+            r"\textbf{At $4096^2$ DyPE and SEGA leave speckle, UltraImage softens the planet, and single-pass "
+            r"SCA is sharp.} "
             rf"{count_word(len(manifest['prompts']))} of {manifest['eligible_count']} prompts drawn at random; "
             r"1:1 crops below."
         ),
@@ -54,9 +54,8 @@ SPECS = {
         "res": "4096x4096", "n": 4,
         "methods": ["flux2_full", "flux2_sca"],
         "caption": (  # laid out by fig_gallery_large.py (display record); kept equal to its caption
-            r"\textbf{FLUX.2-dev, $4096^2$: full attention blurs and repeats; SCA without the schedule is sharp "
-            r"but duplicates subjects in three rows and distorts the portrait.} Four of 50 prompts drawn at "
-            r"random; 1:1 crops follow each image."
+            r"\textbf{FLUX.2-dev, $4096^2$: full attention blurs; SCA without the schedule is sharp but distorts "
+            r"the portrait.} Four of 50 prompts drawn at random; 1:1 crops follow each image."
         ),
     },
     "6144": {"res": "6144x6144", "n": 4, "methods": ["area", "sca"]},
@@ -74,7 +73,7 @@ SPECS = {
         "expected": 100, "prompt_manifest": EVAL100,
         "caption": (
             r"\textbf{At $6144^2$ AReA's crops dissolve into speckle or streaks; SCA without the schedule keeps "
-            r"layouts but shows stripes, block speckle, or extra figures.} Four of 100 prompts drawn at random; "
+            r"layouts but shows stripes or block speckle.} Four of 100 prompts drawn at random; "
             r"1:1 crops follow each image."
         ),
     },
@@ -88,8 +87,8 @@ SPECS = {
         "caption": (
             # Audited 2026-10-30 at 1:1 (sca_v2_krea): the portrait is clean; the lone figure's legs melt into
             # hanging strands and a second person stands on the left rocks. DyPE ghosts the face in both versions.
-            r"\textbf{On FLUX.1-Krea-dev at $4096^2$ DyPE ghosts the face; SCA melts the lone figure's legs and "
-            r"adds a second person.} Two of 100 prompts drawn at random; SCA with the schedule; 1:1 crops below."
+            r"\textbf{On FLUX.1-Krea-dev at $4096^2$ DyPE smears the face; single-pass SCA melts the lone "
+            r"figure's legs.} Two of 100 prompts drawn at random; 1:1 crops below."
         ),
     },
 }

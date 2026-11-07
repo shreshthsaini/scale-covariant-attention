@@ -24,8 +24,7 @@ Outputs, in paper/figures/snippets/:
 Configurations (2026-11-07 rewrite, user decision): the headline is progressive SCA (sca_v2_prog: HRDiT's three-stage
 schedule with the final operator sca_v2 at its 2048^2 and 4096^2 stages); single-pass SCA (sca_v2, 28 steps) is the
 fast mode; SCA without the schedule (sca_nb) appears only in the ablation and generality rows that exist for it.
-The paper does not report duplication: no table has a Dup. column (the duplication macros are still written at the
-end of headline.tex until no source uses them; see duplication_macros).
+The paper does not report duplication: no table has a Dup. column and headline.tex has no duplication macro.
 
 Inputs: results/*.csv (the a4k195_* runs through data195.py, the sca_v2 runs through scav2_runs.py), the paired files
 of progressive SCA against every baseline (results/prog195_vs_baselines/sca_v2_prog_vs_<baseline>.csv, per-image,
@@ -636,8 +635,8 @@ def table_prog_all():
     head = " & ".join(["Metric"] + [name for _, name in PROG_ALL_REFS]) + r" \\"
     note = (" Set-level intervals against " + ", ".join(pending_refs) + " are pending." if pending_refs else "")
     cap = (r"\caption{\textbf{Progressive \sca{} against every $4096^2$ baseline.} FLUX.1-dev, \nmain{} Aesthetic-4K "
-           r"prompts, seed label 0. Each cell is progressive \sca{} minus the column's method with its 95\% paired "
-           r"interval below it: per-image metrics over 2000 prompt draws, FID, KID and their patch versions over 1000 "
+           r"prompts, seed label 0. Each cell is progressive \sca{} minus the column's method, with its 95\% paired "
+           r"interval below it. Per-image metrics use 2000 prompt draws; FID, KID and their patch versions use 1000 "
            r"draws that also resample the 168 reference identities. \up{Blue} / \dn{orange}: the interval excludes zero "
            r"in favour of / against progressive \sca{}; lower is better for FID and KID, so their signs read the other "
            r"way. Inception score has no paired interval (Table~\ref{tab:all_metrics})." + note + "}")
@@ -676,9 +675,9 @@ def table_variance_split():
         body.append(r"\midrule" if rng == "post_gate" else "")
     body = [b for b in body if b]
     cap = (r"\caption{\textbf{Reach is set by the head.} Variance of the share of each head's image attention within "
-           r"$r$ tokens of the query (Chebyshev distance), over all (block, head, noise bin) cells, split into the "
-           r"head (between blocks plus between heads of one block) and the noise level within a head; the two sum to "
-           r"100\%. Avg.\ is the variance of the head-averaged curve over noise levels, the part one schedule shared "
+           r"$r$ tokens of the query (Chebyshev distance), over all (block, head, noise bin) cells. It is split into "
+           r"the head (between blocks plus between heads of one block) and the noise level within a head; the two "
+           r"sum to 100\%. Avg.\ is the variance of the head-averaged curve over noise levels, the part one schedule shared "
            r"by all heads could follow. 256 random queries per block and step, full attention at the calibration "
            r"size. AReA's statistic is the distance to dominant keys; ours is the mass share, which sets the output "
            r"by Lemma~\ref{lem:split}. Key result: after the gate the head carries at least 96.9\% of the variance in "
@@ -932,7 +931,7 @@ def headline(clean):
     out += [x for x in prog_macros(clean) if x[0] not in {o[0] for o in out}]
     # variance split (Section 3 and the introduction), results/heads_view/variance_split.csv (scripts/variance_split.py)
     out += variance_macros()
-    out += duplication_macros()  # still written until no source uses them; the paper prints none of them
+    out += overhead_macros()
     # qualitative claims printed next to these numbers
     check(losses == 0, f"'loses none': {sca_m} significantly worse than AReA on {losses} metrics")
     check(all(sgf[m] and better[m] for m in PER_IMAGE10), f"'every per-image metric': {sca_m} does not significantly "
@@ -962,33 +961,14 @@ def variance_macros():
     return out
 
 
-def duplication_macros():
-    """Legacy macros of the duplication analysis (the paper no longer reports duplication). Kept only while an old
-    snippet may still reference them; hlTimeOverhead (the time the schedule and bridge add) is a latency number."""
-    out = []
-    run, m, grey = (MAIN_V2, "sca_v2", False) if V.landed(MAIN_V2) else (MAIN_RUN, REF, True)
-    k, n = V.dup195(run, m)
-    out.append(("hlDupV", f"{100 * k / n:.0f}", "legacy", grey))
-    for name, method in (("hlDupPub", REF), ("hlDupArea", "area"), ("hlDupFullAttn", "full")):
-        k, n = V.dup195(MAIN_RUN, method)
-        out.append((name, f"{100 * k / n:.0f}", "legacy", False))
-    out.append(("hlDupN", str(n), "legacy", False))
-    for name, method in (("hlDupFsPub", REF), ("hlDupFsV", DEFAULT46), ("hlDupFsArea", "area")):
-        k, n46, src = V.dup46(method)
-        out.append((name, str(k), "legacy", False))
-    out.append(("hlDupFsN", str(n46), "legacy", False))
-    sec = V.seconds46(DEFAULT46)
-    (tv, nv), (tp, np_) = sec[DEFAULT46], sec[REF]
-    lat = V.latency_v2() if V.landed(V.LATENCY) else {}
-    if (RES4K, "sca_v2") in lat and (RES4K, "sca_nb") in lat:
-        lv, lp = lat[(RES4K, "sca_v2")][0], lat[(RES4K, "sca_nb")][0]
-        out.append(("hlTimeOverhead", f"{100 * (lv / lp - 1):.0f}\\%",
-                    "results/latency_curve_v2/summary.csv (collect_latency_v2.py), column median_seconds, res "
-                    "4096x4096: sca_v2 / sca_nb - 1, in percent (timed back to back on one GPU)", False))
-        out.append(("hlSecScaNoSched", f"{lp:.1f}", "results/latency_curve_v2/summary.csv, 4096x4096, sca_nb", False))
-    else:
-        out.append(("hlTimeOverhead", f"{100 * (tv / tp - 1):.0f}\\%", "46-prompt campaign medians", False))
-    return out
+def overhead_macros():
+    """The time the schedule and the bridge add to single-pass SCA at 4096^2: sca_v2 against sca_nb timed back to back
+    on one GPU (latency_curve_v2), and the operator without them in seconds."""
+    lat = V.latency_v2()
+    lv, lp = lat[(RES4K, "sca_v2")][0], lat[(RES4K, "sca_nb")][0]
+    src = "results/latency_curve_v2/summary.csv (collect_latency_v2.py), column median_seconds, res 4096x4096"
+    return [("hlTimeOverhead", f"{100 * (lv / lp - 1):.0f}\\%", f"{src}: sca_v2 / sca_nb - 1, in percent", False),
+            ("hlSecScaNoSched", f"{lp:.1f}", f"{src}, method sca_nb", False)]
 
 
 def main():

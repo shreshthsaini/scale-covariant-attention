@@ -5,9 +5,13 @@ Every plotted value is read through data195.py (load(run), and its summary rows 
   results/a4k195_main/base_summary.csv    seconds  full, dype, sega_official, area, sca_nb (SCA, 28 steps),
   results/a4k195_main/extra_summary.csv   ir       ultraimage
   results/a4k195_panel/base_summary.csv   seconds  sigma_dev_matched, hrdit_dev_author, sca_s56 (56 steps),
-  results/a4k195_panel/extra_summary.csv  ir       sca_g7 (guidance 7), sca_s42 (42 steps), sca_prog (progressive)
+  results/a4k195_panel/extra_summary.csv  ir       sca_g7 (guidance 7), sca_s42 (42 steps)
+  results/prog195_sca_v2/{base,extra}_summary.csv  seconds, ir  sca_v2_prog (progressive SCA, the final operator
+                                          inside HRDiT's schedule; read through v2swap.load, since that run has no
+                                          eval.py paired deltas in results/). Until 2026-11-07 the star showed
+                                          sca_prog (the same schedule with SCA without the schedule).
 The paired ImageReward difference progressive minus HRDiT behind the caption's claim comes from
-results/a4k195_panel/sca_prog_vs_hrdit_dev_author.csv (data195.pairs). The script stops without plotting
+results/prog195_sca_v2/sca_v2_prog_vs_hrdit_dev_author.csv (data195.pairs). The script stops without plotting
 unless every value rounds to the number printed in the paper (PRINTED: seconds to 0.1, ImageReward
 to 0.01), every row covers the same 195 prompts at 4096^2, and the caption's claims still hold.
 
@@ -45,6 +49,7 @@ from matplotlib.ticker import FixedLocator, NullLocator
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import data195  # noqa: E402  (results/a4k195_* loader)
+import v2swap  # noqa: E402  (results/prog195_sca_v2 loader)
 import scafig as sf  # noqa: E402
 from k1data import FIGDIR  # noqa: E402
 
@@ -53,20 +58,21 @@ SNIPPET = os.path.join(FIGDIR, "snippets", "quality_time.tex")
 RES, N_PROMPTS = "4096x4096", 195
 SOURCES = {  # run under results/ -> methods whose seconds and ImageReward are read from it (data195.load)
     "a4k195_main": ["full", "dype", "sega_official", "area", "sca_nb", "ultraimage"],
-    "a4k195_panel": ["sigma_dev_matched", "hrdit_dev_author", "sca_s56", "sca_g7", "sca_s42", "sca_prog"],
+    "a4k195_panel": ["sigma_dev_matched", "hrdit_dev_author", "sca_s56", "sca_g7", "sca_s42"],
+    "prog195_sca_v2": ["sca_v2_prog"],
 }
 SUMMARIES = ("base_summary.csv", "extra_summary.csv")  # each run's summaries: seconds in base, ir in extra
-PAIRED_RUN, PAIRED_PAIR = "a4k195_panel", ("sca_prog", "hrdit_dev_author")
+PAIRED_RUN, PAIRED_PAIR = "prog195_sca_v2", ("sca_v2_prog", "hrdit_dev_author")
 PAIRED = f"results/{PAIRED_RUN}/{PAIRED_PAIR[0]}_vs_{PAIRED_PAIR[1]}.csv"
 # The numbers printed in the paper (Table panel46 and the text) under the 195-prompt protocol: a check on the
 # CSVs, never plotted. Formatted from the CSVs above (seconds to 0.1, ImageReward to 0.01), not typed.
 PRINTED = {"full": (196.2, -2.18), "dype": (195.9, -0.10), "sigma_dev_matched": (192.5, -0.52),
            "sega_official": (190.4, 0.56), "area": (264.4, 0.92), "sca_nb": (71.5, 1.23),
            "ultraimage": (308.5, 1.28), "hrdit_dev_author": (110.4, 1.34), "sca_s56": (139.9, 1.26),
-           "sca_g7": (71.9, 1.16), "sca_s42": (106.8, 1.26), "sca_prog": (49.5, 1.32)}
+           "sca_g7": (71.9, 1.16), "sca_s42": (106.8, 1.26), "sca_v2_prog": (50.7, 1.32)}
 NAME = {"full": "full attention", "dype": "DyPE", "sigma_dev_matched": "SigMa", "sega_official": "SEGA",
         "area": "AReA", "sca_nb": "SCA", "ultraimage": "UltraImage", "hrdit_dev_author": "HRDiT",
-        "sca_s56": "56 steps", "sca_g7": "guidance 7", "sca_s42": "42 steps", "sca_prog": "Progressive SCA"}
+        "sca_s56": "56 steps", "sca_g7": "guidance 7", "sca_s42": "42 steps", "sca_v2_prog": "Progressive SCA"}
 OFF_AXIS = {"full", "dype", "sigma_dev_matched"}  # below YLIM; the caption names them
 
 W, H = 3.6, 1.8  # 2:1, included at natural size; the height must not grow
@@ -100,7 +106,7 @@ PLOT = {
     "sca_g7": ("budget", None, "left", "bottom"),     # budget variants: markers only, the
     "sca_s42": ("budget", None, "center", "top"),     # caption names them (house rule 9)
     "sca_s56": ("budget", None, "left", "center"),
-    "sca_prog": ("prog", (-9, 15), "left", "bottom"),
+    "sca_v2_prog": ("prog", (-9, 15), "left", "bottom"),
 }
 
 # Main-text wrap version: 166 x 112 pt (0.42 of the 396 pt text width), included at natural size.
@@ -119,7 +125,7 @@ WRAP_PLOT = {  # as PLOT, offsets re-placed for the smaller canvas
     "sca_g7": ("budget", None, "left", "bottom"),
     "sca_s42": ("budget", None, "center", "top"),
     "sca_s56": ("budget", None, "left", "center"),
-    "sca_prog": ("prog", (-8, 13.5), "left", "bottom"),  # -12 touched the y-axis spine (review 2026-10-31)
+    "sca_v2_prog": ("prog", (-8, 13.5), "left", "bottom"),  # -12 touched the y-axis spine (review 2026-10-31)
 }
 
 
@@ -158,7 +164,7 @@ def load():
     for run, methods in SOURCES.items():
         if data195.n_prompts(run) != {N_PROMPTS}:
             raise ValueError(f"results/{run}: prompt counts {sorted(data195.n_prompts(run))}, not {N_PROMPTS}")
-        S = data195.load(run)[0]
+        S = (v2swap.load(run) if run in v2swap.RUNS else data195.load(run))[0]
         (sec, sec_csv), (ir, ir_csv) = read_metric(run, S, "seconds", methods), read_metric(run, S, "ir", methods)
         csvs[run] = (sec_csv, ir_csv)
         for m in methods:
@@ -201,7 +207,7 @@ def figure(values, speedup):
     ax.set_ylabel("ImageReward")
 
     # guide: HRDiT to progressive SCA, labelled with the ratio of campaign times
-    h, p = values["hrdit_dev_author"], values["sca_prog"]
+    h, p = values["hrdit_dev_author"], values["sca_v2_prog"]
     ax.plot([h["seconds"], p["seconds"]], [h["ir"], p["ir"]], ls=(0, (2.5, 2)), lw=0.7, color=sf.MID, zorder=1)
     t = GUIDE_T
     xm = h["seconds"] ** t * p["seconds"] ** (1 - t)
@@ -240,7 +246,7 @@ def figure_wrap(values, speedup):
     ax.set_ylabel("ImageReward")
     sf.value_grid(ax, "y")
 
-    h, p = values["hrdit_dev_author"], values["sca_prog"]
+    h, p = values["hrdit_dev_author"], values["sca_v2_prog"]
     ax.plot([h["seconds"], p["seconds"]], [h["ir"], p["ir"]], ls=(0, (2.5, 2)), lw=0.7, color=sf.MID, zorder=1)
     t = WRAP_GUIDE_T
     xm = h["seconds"] ** t * p["seconds"] ** (1 - t)
@@ -293,7 +299,7 @@ def main():
     for m, v in sorted(values.items(), key=lambda kv: kv[1]["seconds"]):
         print(f"  {m:<18} {v['seconds']:7.1f} s  IR {v['ir']:+.2f}  ({v['campaign']})")
     # claims the caption makes, re-checked on every run
-    h, p = values["hrdit_dev_author"], values["sca_prog"]
+    h, p = values["hrdit_dev_author"], values["sca_v2_prog"]
     speedup = h["seconds"] / p["seconds"]
     below = {m for m, v in values.items() if v["ir"] < YLIM[0]}
     if below != OFF_AXIS or any(not (YLIM[0] <= v["ir"] <= YLIM[1] and XLIM[0] <= v["seconds"] <= XLIM[1])
@@ -335,7 +341,7 @@ def main():
             "figure_size_in": [W, H],
             "axes": dict(xlim=XLIM, xscale="log", ylim=YLIM, xticks=XTICKS, yticks=YTICKS),
             "encoding": {m: dict(kind=k, label=NAME[m]) for m, (k, *_rest) in PLOT.items()},
-            "guide": dict(from_method="hrdit_dev_author", to_method="sca_prog", speedup=round(speedup, 4),
+            "guide": dict(from_method="hrdit_dev_author", to_method="sca_v2_prog", speedup=round(speedup, 4),
                           label=f"{speedup:.1f}x faster", note="a visual guide between two measured points, "
                                                                 "not an interpolation"),
             "paired_ir_prog_minus_hrdit": dict(source=PAIRED, sha256=sha256(os.path.join(REPO, PAIRED)), **paired,

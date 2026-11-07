@@ -14,7 +14,8 @@ yet (the queued dup_i_160, dup_i_bridge32 and dup_i_ext75, once eval/dup46_<labe
 running scripts/dup_decide.py on its eval directory, the same code that wrote the decision files. The table
 prints only what these sources say; descriptions of the schedule runs are built from their image sidecars.
 
-Writes paper/figures/snippets/dupfix_variants.tex.
+Retired 2026-11-07: the paper no longer has Table tab:dupfix (its appendix section was removed), so the script no
+longer writes into paper/. It writes results/dup_audit_20261027/dupfix_variants.tex instead, for the record.
 Regenerate: <sca env python> paper/figures/src/gen_dupfix_table.py
 """
 from __future__ import annotations
@@ -38,7 +39,7 @@ DECIDE = ROOT / "scripts/dup_decide.py"
 PY = "/work/09032/saini_2/vista/library/uv-envs/sca/bin/python"
 EVAL = Path("/scratch/09032/saini_2/sca/eval")
 OUTIMG = Path("/scratch/09032/saini_2/sca/out/dup46")
-OUT = ROOT / "paper/figures/snippets/dupfix_variants.tex"
+OUT = ROOT / "results/dup_audit_20261027/dupfix_variants.tex"  # retired from the paper (2026-11-07)
 QUEUED = ["dup_i_160", "dup_i_bridge32", "dup_i_ext75"]  # rows appear once their eval directory has DONE
 OURS = "dup_i_shrink"
 
