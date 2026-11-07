@@ -895,4 +895,4 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   label=DIR:/scratch/09032/saini_2/sca/r7/copyprone21.jsonl, collect with scripts/r7_label_collect.py.
 - GPU: SCA27 (1127223) and SCA28 (1127231), gh 1 node 3 h each (the two allowed short jobs; gh-dev is blocked by other
   projects' gh-dev jobs), plus SCA24 x2; estimated starts 19:44. SCA21 est. 2026-11-07 22:00.
-- Helper on i615-091: r7/requeue_stale.py (PID 1886414) requeues stale-handle failures until 20:35.
+- Helper on i615-091: r7/requeue_stale.py (wrapper PID 4136005, started 19:46) requeues stale-handle failures until 05:46.
