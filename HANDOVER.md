@@ -1263,3 +1263,12 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   tv5 and q13n did. The window's prompt read is not a clean lever; the global branch's is (gc1: clean, about half
   the copies). r7_tc (tc alone) and r7_gctv (window values x 0.5) are parked in hold_r7_parked. The clean global-only
   family continues: gc1a, gch and gc2 screens, and gc1's 46-prompt run.
+- 13:50 decision, r7_gc1 on the 46 (r7_decide on eval/r7_46_r7_gc1): relaxed bar FAIL. Copies drop: 0 detector flags
+  on the 26 person/animal prompts (sca_v2 4, AReA 1), human-corrected estimate 3.3% against AReA's 3.8%. But there are
+  core losses: PickScore -0.215 [-0.283, -0.146], IR -0.081, HPSv2.1 -0.0081, and on the 26 clean prompts too
+  (PickScore -0.19, IR -0.063). In all there are 8 significant losses, 7/10 wins over AReA are kept, ARNIQA ends below
+  AReA, and time is 80.0 s (x1.04). The global branch's native-strength prompt read is part of SCA's adherence
+  advantage (PickScore +0.76 over AReA), not only a copy driver. Lowering it to full attention's balance trades
+  the one for the other, as every earlier prompt lever did. Stronger forms (gc2 running, gc1pb and gc1pb55) are
+  parked or left to finish. gch (G 0.5, the weaker form) is the family's last point; if it keeps the core metrics it
+  goes to its 46.
