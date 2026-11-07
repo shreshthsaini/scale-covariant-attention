@@ -422,7 +422,7 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
 \subsection{Main results}
 \label{sec:main}
 
-\paragraph{Progressive \sca{} beats AReA on all ten per-image metrics.} ImageReward rises by $\hlProgAreaIr$ $[\hlProgAreaIrLo,\hlProgAreaIrHi]$, PickScore by $\hlProgAreaPick$ $[\hlProgAreaPickLo,\hlProgAreaPickHi]$, and HPSv2.1 by $\hlProgAreaHps$ $[\hlProgAreaHpsLo,\hlProgAreaHpsHi]$, $\times100$ (Table~\ref{tab:main}; Figure~\ref{fig:paired_area}). Seeds 1 and 2 give the same result on all ten, with ImageReward $\hlProgSeedOneAreaIr$ $[\hlProgSeedOneAreaIrLo,\hlProgSeedOneAreaIrHi]$ and $\hlProgSeedTwoAreaIr$ $[\hlProgSeedTwoAreaIrLo,\hlProgSeedTwoAreaIrHi]$ and PickScore $\hlProgSeedOneAreaPick$ and $\hlProgSeedTwoAreaPick$ (Table~\ref{tab:generality}). On set-level scores at seed 0, FID ($\hlProgAreaFid$ $[\hlProgAreaFidLo,\hlProgAreaFidHi]$) and KID are unresolved, while patch FID ($\hlProgAreaFidP$ $[\hlProgAreaFidPLo,\hlProgAreaFidPHi]$) and patch KID are worse. The patch FID gap is significant at seeds 0 and 2 (seed 2: \hlProgSeedTwoAreaFidPText) but not at seed 1 (\hlProgSeedOneAreaFidPText). Progressive \sca{} also beats DyPE, SEGA, and full attention on all ten per-image metrics and UltraImage on \hlProgWinsUltraWord, with the \hlProgUltraOpen{} score unresolved (Table~\ref{tab:prog_all}). Timed back to back on one GPU, it takes \hlSecProg\,s per image against AReA's \hlSecAreaThree\,s, $\hlSpeedProgArea\times$ faster.
+\paragraph{Progressive \sca{} beats AReA on all ten per-image metrics.} ImageReward rises by $\hlProgAreaIr$ $[\hlProgAreaIrLo,\hlProgAreaIrHi]$, PickScore by $\hlProgAreaPick$ $[\hlProgAreaPickLo,\hlProgAreaPickHi]$, and HPSv2.1 by $\hlProgAreaHps$ $[\hlProgAreaHpsLo,\hlProgAreaHpsHi]$, $\times100$ (Table~\ref{tab:main}; Figures~\ref{fig:paired_area} and~\ref{fig:qual_prog}). Seeds 1 and 2 give the same result on all ten, with ImageReward $\hlProgSeedOneAreaIr$ $[\hlProgSeedOneAreaIrLo,\hlProgSeedOneAreaIrHi]$ and $\hlProgSeedTwoAreaIr$ $[\hlProgSeedTwoAreaIrLo,\hlProgSeedTwoAreaIrHi]$ and PickScore $\hlProgSeedOneAreaPick$ and $\hlProgSeedTwoAreaPick$ (Table~\ref{tab:generality}). On set-level scores at seed 0, FID ($\hlProgAreaFid$ $[\hlProgAreaFidLo,\hlProgAreaFidHi]$) and KID are unresolved, while patch FID ($\hlProgAreaFidP$ $[\hlProgAreaFidPLo,\hlProgAreaFidPHi]$) and patch KID are worse. The patch FID gap is significant at seeds 0 and 2 (seed 2: \hlProgSeedTwoAreaFidPText) but not at seed 1 (\hlProgSeedOneAreaFidPText). Progressive \sca{} also beats DyPE, SEGA, and full attention on all ten per-image metrics and UltraImage on \hlProgWinsUltraWord, with the \hlProgUltraOpen{} score unresolved (Table~\ref{tab:prog_all}). Timed back to back on one GPU, it takes \hlSecProg\,s per image against AReA's \hlSecAreaThree\,s, $\hlSpeedProgArea\times$ faster.
 
 \paragraph{Progressive \sca{} matches HRDiT in less than half the time.} Both runs follow HRDiT's schedule, guidance, and seeds and differ in the attention. ImageReward differs by $\hlProgHrditIr$ $[\hlProgHrditIrLo,\hlProgHrditIrHi]$, HPSv2.1 by $\hlProgHrditHps$ $[\hlProgHrditHpsLo,\hlProgHrditHpsHi]$, and PickScore by $\hlProgHrditPick$ $[\hlProgHrditPickLo,\hlProgHrditPickHi]$; intervals that include zero do not establish equivalence. Progressive \sca{} is better on HPSv2, ARNIQA, and MUSIQ ($\hlProgHrditMusiq$ $[\hlProgHrditMusiqLo,\hlProgHrditMusiqHi]$) and worse on CLIP-IQA ($\hlProgHrditClipiqa$ $[\hlProgHrditClipiqaLo,\hlProgHrditClipiqaHi]$, $\times100$). On set-level scores FID is unresolved, and HRDiT has lower KID, patch FID ($\hlProgHrditFidP$ $[\hlProgHrditFidPLo,\hlProgHrditFidPHi]$ for progressive \sca{}), and patch KID. In the same timing it takes \hlSecProg\,s per image against HRDiT's \hlSecHrditThree\,s.
 
@@ -430,9 +430,9 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures/zoom4k.pdf}
-  \caption{\textbf{Single-pass \sca{} keeps the most native detail.} Three prompts curated earlier on single-pass \sca{} (seed~0): progressive \sca{}'s image with a red window, then that window at 1:1 from each method under its image's MUSIQ$_\text{c}$ (best bold). Progressive \sca{} is softer than single-pass \sca{} in every crop; Figure~\ref{fig:gallery_prog} shows uncurated samples.}
-  \label{fig:qual_main}
+  \includegraphics[width=\linewidth]{figures/qual_prog.pdf}
+  \caption{\textbf{Progressive \sca{} against AReA, UltraImage, and HRDiT at $4096^2$.} Four prompts at seed~0, curated where the difference is clearest after viewing every candidate at native resolution; every baseline image is at or above its own 10th percentile of ImageReward. Each image is followed by a 1:1 crop of the outlined window, and UltraImage's layouts match progressive \sca{}'s. Figures~\ref{fig:gallery_prog_curated} and~\ref{fig:gallery_prog} show more curated and uncurated samples.}
+  \label{fig:qual_prog}
 \end{figure}
 
 \paragraph{Single-pass \sca{} beats AReA on \hlWinsArea{} of \hlMetricsArea{} metrics at \textbf{$\hlSpeedArea\times$} the speed.} The wins cover all ten per-image metrics and two of five set-level ones, among them ImageReward (\hlAreaIrAbs{} to \hlIrScaAbs, $\hlIrDelta$ $[\hlIrLo,\hlIrHi]$) and FID (145.8 to \hlFidScaAbs, $\hlFidDelta$ $[\hlFidLo,\hlFidHi]$). KID, patch FID, and IS are unresolved (Table~\ref{tab:app_4k}). It runs in \hlSecSca\,s against AReA's \hlSecArea\,s (clean batch-1 latency). DyPE and SEGA trail it on all ten per-image metrics (Table~\ref{tab:phase2_baselines}), and SigMa on every per-image column of Table~\ref{tab:panel46}. Our AReA run reproduces AReA's published FLUX.1-Krea-dev scores within 0.3 (Table~\ref{tab:published_compare}).
@@ -440,17 +440,9 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
 \subsection{Other sizes and latency}
 \label{sec:sizes}
 
-\begin{wrapfigure}[15]{l}{0.47\linewidth}
-  \wraptop
-  \centering
-  \includegraphics[width=\linewidth]{figures/latency_wrap.pdf}
-  \caption{\textbf{Latency against size, single pass.} Batch 1, one GH200, median of three prompts; grey: speedup over AReA.\pendFigLatency}
-  \label{fig:latency}
-  \wrapbot
-\end{wrapfigure}
 \paragraph{Single-pass \sca{} is faster than every baseline we timed at every size; quality depends on the aspect ratio.} At $2048\times6144$ it beats AReA on \hlWideSixWins{} metrics and loses on the aesthetic score and patch FID; at $2048\times4096$ it wins three and loses three (Table~\ref{tab:app_wide}). Without the schedule it also wins 14 of 15 metrics at $6144^2$ (Table~\ref{tab:krea_6144}). At $8192^2$, 12 exploratory prompts favour it on six of ten scores, with grid artifacts (Appendix~\ref{app:8k}).
 
-\paragraph{Single-pass time grows nearly linearly with pixel count.} Fitting clean seconds $\propto N^b$ over the $N$ image tokens gives $b=\hlLatExpSca$ for single-pass \sca{} and 1.12 for AReA (Table~\ref{tab:latency}; Figure~\ref{fig:latency}). The schedule and the bridge add \hlTimeOverhead\ at $4096^2$ (\hlSecSca{} against \hlSecScaNoSched\,s without them), timed back to back on one GPU. At $8192^2$ single-pass \sca{} takes \hlLatEightSca\,s against AReA's 952.0\,s, $\hlLatEightRatio\times$ faster.
+\paragraph{Single-pass time grows nearly linearly with pixel count.} Fitting clean seconds $\propto N^b$ over the $N$ image tokens gives $b=\hlLatExpSca$ for single-pass \sca{} and 1.12 for AReA (Table~\ref{tab:latency}; Figure~\ref{fig:latency_full}). The schedule and the bridge add \hlTimeOverhead\ at $4096^2$ (\hlSecSca{} against \hlSecScaNoSched\,s without them), timed back to back on one GPU. At $8192^2$ single-pass \sca{} takes \hlLatEightSca\,s against AReA's 952.0\,s, $\hlLatEightRatio\times$ faster.
 
 \begin{table}[t]
   \centering
