@@ -492,3 +492,22 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   a0_K0b440* with its eval a0_K0b4490eval_r7_fg.
 - Staged and not enqueued: taskq/hold_prog_headline, progressive SCA seeds 1 and 2 on the 195 prompts (26 tasks,
   about 5.4 GPU-h).
+- Screens and decisions (copyprone21; detector triage, then hand counts where labeled):
+  | label | what | detector | hand | verdict |
+  |---|---|---|---|---|
+  | r7_s1 | sca_v2, seed 1 (bias control) | 15 | 18 | the screen's bias is about 1 of 21 |
+  | r7_op4 | AReA's opening pools, SCA windows | 15 | 18 | the opening does not decide the copies |
+  | r7_hyb0 | AReA's 6 widest windows on steps 8 to 13 | 12 | 17 | FAIL; on the 46: IR, HPSv2.1, PickScore losses |
+  | r7_hyb0g | hyb0 plus a pool-2 global step at step 8 | 11 | | FAIL by triage |
+  | r7_ohyb0 | AReA's opening plus hyb0 | 10 | | localization |
+  | r7_oarea20 | AReA's opening plus all 19 AReA windows | 9 | | localization: still about 3x AReA |
+  | r7_q13i | f13, img anchor | | | FAIL on sight (border dots, confetti, suit speckle) |
+  | r7_gc1 | glob-count 1, sigma > 0.55 | 11 | 13 (+1 b) | FAIL on the 46: PickScore -0.215, IR -0.081 |
+  | r7_gc1a | glob-count 1, every window step | 11 | | no gain over gc1 |
+  | r7_gch | glob-count 0.5, sigma > 0.55 | 14 | | weaker |
+  | r7_tcg | qmix tc plus glob-count 1 | 6 | | FAIL on sight (dash-stroke tent, lost diver gear) |
+  AReA: detector 3, hand 4; sca_v2 seed 0: 21 / 19.
+- Reading: the global branch's prompt read at native strength carries both SCA's adherence and the copy drive.
+  Count-correcting it halves the copies on the same layouts but costs PickScore 0.2 on the 46 (clean prompts too).
+  The window's prompt content cannot be cut without dash-stroke artifacts and lost subject details. gcm
+  (glob-count-map) keeps the native read only at the opening's subject, to test whether adherence lives there.
