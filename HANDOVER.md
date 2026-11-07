@@ -1381,3 +1381,11 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   - Patch KID: prog is worse than AReA, HRDiT and sca_v2, and better than UltraImage, DyPE, SEGA and full.
   - KID: only HRDiT is significantly better.
   - IS (results/prog195_vs_baselines/is_summary.csv): prog 7.18, highest after UltraImage's 7.38.
+- 16:45 item (2), seed 1 landed (eval/prog195_s1, results/prog195_s1).
+  - Against AReA at seed 1, sca_v2_prog wins all 10 per-image metrics: IR +0.372, PickScore +0.999, HPSv2.1
+    +0.037, MUSIQ +3.0, MUSIQ crop +4.1.
+  - Against sca_v2 at seed 1 it gains IR +0.065, PickScore +0.224, HPSv2.1 +0.012, HPSv2, aesthetic, CLIP-IQA and
+    ARNIQA, and loses MUSIQ -2.4 and MUSIQ crop -6.1. This is the same pattern as seed 0.
+  - Corrected set-level points: FID 144.7 (AReA 147.3, sca_v2 141.2) and patch FID 104.7 (AReA 103.2, sca_v2
+    98.1). The 1000-draw intervals are on CPU (eval/prog195_s1/cpu_ci.sh).
+  - Detector: 9/95 against AReA's 4/95 (p = 0.23). Campaign median 49.4 s.
