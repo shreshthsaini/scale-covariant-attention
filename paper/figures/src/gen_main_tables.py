@@ -619,6 +619,8 @@ def table_prog_all():
         cols.append((pi, sl))
     lines = []
     pending_refs = [name for (m, name), (_, sl) in zip(PROG_ALL_REFS, cols) if sl is None]
+    outside = [f"{name} {key.replace('_', ' ')}" for (m, name), (pi, sl) in zip(PROG_ALL_REFS, cols)
+               for key in data195.DIST if sl and key in sl and not (sl[key][1] <= sl[key][0] <= sl[key][2])]
     for key, label, sc, d in PROG_ALL_METRICS:
         top, low = [label], [""]
         for (m, _), (pi, sl) in zip(PROG_ALL_REFS, cols):
@@ -634,6 +636,10 @@ def table_prog_all():
     lines[-1] = lines[-1].replace(r" \\[0.5pt]", r" \\")
     head = " & ".join(["Metric"] + [name for _, name in PROG_ALL_REFS]) + r" \\"
     note = (" Set-level intervals against " + ", ".join(pending_refs) + " are pending." if pending_refs else "")
+    if outside:  # a percentile interval of a biased statistic need not contain the point estimate
+        note += (" The point estimate lies outside its percentile interval for " + ", ".join(outside) +
+                 ", as it can for a biased statistic.")
+    NOTES.append(f"prog_all: points outside their interval: {outside or 'none'}")
     cap = (r"\caption{\textbf{Progressive \sca{} against every $4096^2$ baseline.} FLUX.1-dev, \nmain{} Aesthetic-4K "
            r"prompts, seed label 0. Each cell is progressive \sca{} minus the column's method, with its 95\% paired "
            r"interval below it. Per-image metrics use 2000 prompt draws; FID, KID and their patch versions use 1000 "
