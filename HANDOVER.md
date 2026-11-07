@@ -1150,3 +1150,12 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   windows from step 9), a0_K0b35* r7_g2x2 (steps 8 and 9 global at pool 2, gate 0.86, then sca_v2's windows) and
   a0_K0b45* r7_hyb3 / a0_K0b46* r7_hyb4 (AReA's sizes on steps 8 to 10 or 8 to 11, then 96 and 80). The 46-prompt run
   of r7_g2x2 is a0_K0b36*, with its eval a0_K0b37_eval_r7_g2x2 self-releasing from hold_dup_eval.
+- 12:40 decision, r7_hyb0 on copyprone21 (pQ29, 6 blind labelers): 17 yes and 4 no of 21. The references are
+  AReA 4, sca_v2 19, area8 16, area12 12 and sca_area20 12. AReA's six widest windows on the birth steps 8 to 13
+  therefore do not stop the copies. This matches round 6 (r6_fflh: a far field on the three hand-off steps removed
+  nothing) and area8 (16). Wide context has to last through mid noise, and that is what costs quality. So
+  shortening the widening to steps 8 to 10 or 8 to 11, as the lead suggested, cannot do better than hyb0.
+  r7_hyb3 and r7_hyb4 are parked in taskq/hold_r7_parked. The hyb0 46-prompt run continues for its metric verdict.
+  q13i (the joint three-part softmax, the only family that has cut copies below AReA's count) moved ahead of the
+  ladder rungs as a0_K0b295*. The r7_fg screens moved up as a0_K0b390* (copyprone21) and a0_K0b440* (the 46,
+  whose eval is released as a0_K0b4490eval_r7_fg). fg is the joint far field at coarse ids, never run before.
