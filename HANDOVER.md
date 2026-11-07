@@ -1351,3 +1351,19 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
 - 15:40 lead relay of the user's decision: progressive SCA (sca_v2_prog) is the headline and the project is finishing
   for submission. 51 not-yet-started duplication tasks and their parked evals went to taskq/hold_paused_20261107
   (README). Running tasks were allowed to finish and no job was cancelled.
+- 15:50 submission items for progressive SCA (lead relay). Queued at the spool head (slurm/prog_headline_tasks.py,
+  all gated, evaluation tags in the 0a0 style):
+  - (4) 0a0_latency_prog_hrdit_area: one batch-1 sweep on one GPU, 3 timed prompts after a warm-up, median, about
+    0.4 GPU-h, into results/prog_latency.
+  - (2) 0a1_pgs1/pgs2_*: seeds 1 and 2 on the 195 prompts, 26 tasks, about 5.4 GPU-h, with evaluations
+    0a0_eval_prog195_s1/s2 against AReA and sca_v2 at the same seed. These cover all 15 metrics plus corrected
+    FID/patch FID and the detector, caches from a4k195_seed*_sca_v2, about 0.7 GPU-h each, into
+    results/prog195_s{1,2}.
+  - (3) 0a2_pghk_*: HRGen-1K, 1000 prompts, 40 tasks, about 14 GPU-h, with evaluation 0a0_eval_prog_hrgen1k
+    against AReA and sca_v2, about 2 GPU-h, into results/prog_hrgen1k. Krea is not possible:
+    sample_progressive.py has --model dev only.
+  - (1) done on CPU from cached metrics (results/prog195_vs_baselines). Against AReA, DyPE, SEGA and full
+    attention all 10 per-image metrics are significant wins, and against UltraImage 9 of 10. Against HRDiT
+    (same pipeline, full attention at 2K/4K) it is level on IR, PickScore and HPSv2.1, ahead on HPSv2, ARNIQA
+    and MUSIQ, and behind on CLIP-IQA (-0.009), at 50 s against 110 s. Set-level corrected FID/KID intervals are
+    running on CPU (PID 3125365).
