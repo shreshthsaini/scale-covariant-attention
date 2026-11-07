@@ -952,5 +952,12 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   part excludes the in-window block centres. New --qmix-far all (commit 92c8dff, frozen code/92c8dff): far part over
   every centre. Queued at the head: r7_q13w (far all, gamma 1, a0_K295*), r7_q13wg (far all, gamma 0.25, a0_K296*).
   46-prompt runs of q13m/q13g staged in taskq/hold_r7_fix13_46 (a0_K94*, a0_K95*).
+- 05:51: r7_q13g (gamma 0.25), pQ8: 8 yes (one adjudicated: a second real bear, no reflection), 1 borderline, 12 no;
+  glitches persist; r7_q13w's first images glitch too. Copy removal in f13 is partly text dilution (3 -> 8 when the text
+  share is restored). Glitch hypothesis: f13 puts its head offset beta = logit pi - mean(lse_near - log_far) on the near
+  logits, e^beta (up to about 50x) above the text keys, so prompt-sink tokens (flat background, borders) lose the sink.
+  --qmix-anchor near (commit 1b8f855, frozen code/1b8f855): offset on the far part (lse_T, lse_near, log_far - beta), same
+  near/far balance, window's own text/near balance. Spool head: r7_q13n (a0_K294*), q13w remainder, q13wg (a0_K296*),
+  q13d5 (dose 0.5, a0_K297*, code/ddda216), q13s (a0_K30*), then the ladder (a0_L*). SCA24 ended 05:55.
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).

@@ -332,3 +332,13 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   near/far weights are exactly f1's (sigmoid(beta + lse_n - log_far), same centring); the parts differ: f13's far part
   excludes the in-window centres, so a query whose far weight dominates gets an update that ignores its neighbourhood.
   Test: --qmix-far all (92c8dff), screens r7_q13w (gamma 1) and r7_q13wg (gamma 0.25), a 2 x 2 with q13a and q13g.
+- r7_q13g (gamma 0.25): pQ8, 8 yes (img013 adjudicated yes: a second real bear and no reflection, so the bound of 2
+  reserved for a reflection is exceeded), 1 borderline, 12 no; glitches persist. r7_q13w (far part over every centre):
+  first images glitch too. So the glitches are neither the text share nor the in-window exclusion.
+- Hypothesis: f13's head offset beta = logit pi_h - mean_i(lse_near - log_far) sits on the near logits, so near keys
+  outweigh the text keys by e^beta (beta up to about 4 when the far mass dominates); tokens that sink their mass into
+  the prompt in the window softmax (flat background, borders, where the blocks appear) lose the sink. --qmix-anchor near
+  (1b8f855) moves the offset to the far part: logits (lse_T, lse_near, log_far - beta); near/far balance unchanged,
+  text/near balance as in the window softmax. Also new: --qmix-dose (ddda216), dose * f13 + (1 - dose) * sca_v2.
+- Label rule (all packets): a second real animal of the prompted kind counts as an extra even when the note's bound
+  reserves a slot for a reflection that is not drawn.
