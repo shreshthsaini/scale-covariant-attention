@@ -1102,5 +1102,12 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   (clean rock and clouds, one faint crescent smudge); one square pedestrian and the black hole's late ground figure
   remain; no visible quality change; about 85 s. Queued r7_csga2 on the 46 with eval (code/9b4b34c, a0_K0a40*, eval
   a0_K0a0_eval_r7_csga2 in hold_dup_eval).
+- 12:10: r7_csga2 false positives: on 4 of 11 dumped prompts the gate covers 10 to 26% of the image (portrait face and
+  planet, polar-bear sky), and the pull to the blocky opening estimate pixelates them. Offline calibration of the
+  detector on the 61 human-labeled copy sites of sca_v2's copyprone21 images (human_labels_95 xy): step-8 shares find
+  12 to 20 of 61 (relative or background z-score, steps 8 to 12). Copy-site route parked (csga2 46-prompt run, its
+  eval and csga3 in hold_r7_parked; pQ28 packet built, unlabeled). New code 2497cae: growth and z-score detectors,
+  smoothed anchor target, coarse bridge only while sigma > lo with block-averaged values. Screen r7_bce (coarse bridge,
+  4096 tokens, steps 8 to 10, value pool 4; a0_K0a60*).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
