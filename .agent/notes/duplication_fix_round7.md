@@ -414,3 +414,18 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   sigma pre-hook runs once per step. Cost: 12 of 28 steps run twice. Screens r7_gm15 (G 1.5), r7_gm10 (G 1.0).
   Map check (saAs maps over 8 images): tight around the subject; on the anime prompt it covers the two background
   figures and the animal but not the main pair, so parts of a subject can fall in the low-guidance region.
+- r7_saAsL (all-text anchor, window branch only), pQ23: 12 yes, 9 no. Anchor family: both 7, global 6, window 12.
+  Text-value family: both 1, global 8, window 14. The global branch's prompt read carries most of the drive. sca_v2
+  itself draws the comb/drip streaks on the man-and-child aurora prompt (results checked by crop); gating makes them
+  stronger. Labelers split on a bodiless hand gripping the door (tvL yes, saAsL yes, tvG and saAsG borderline);
+  no decision depends on it.
+- Screen bias (10:27). copyprone21 was selected because sca_v2 at seed 0 drew a copy, so sca_v2's 19 is inflated by
+  selection; a variant that changes the composition is a fresh draw and regresses toward sca_v2's true rate on these
+  prompts. Control queued: r7_s1 (sca_v2, seed 1). AReA's 4 is unselected.
+- Composition (10:29, results by eye on the 46): r7_op4 (SCA with AReA's Phase I pools 4,4,4,4,2,2,2,2) reproduces
+  AReA's layouts almost exactly (same seeds), while sca_v2's opening gives other layouts. With the layout matched,
+  op4 still has sca_v2-level copies on the 46 (17.9% vs AReA 2.2%), so SCA's window phase adds copies that AReA's
+  Phase II does not. sca+B (AReA tiles as the local branch, sca_v2 opening, 14 of 21 images) keeps sca_v2's copies.
+  AReA's Phase II has no global branch; the branch split points at SCA's global branch. Ladder steps moved to the
+  spool head: L2 r7_scaD (pi = 1), L7 area_scaMix (AReA + SCA's global branch), L1 r7_op4 on copyprone21.
+- Guidance: r7_g30 (sca_v2 at guidance 3.0) 16 yes of 17 labeled so far: global guidance barely moves copies.
