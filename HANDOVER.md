@@ -909,3 +909,5 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   pending to run; evaluations a0_Me_eval_* self-release into eval/r7_46_<label>). r7_op4 already has its 46 result.
 - GPU 21:25: nothing running since 18:28 (SCA21 est. 2026-11-07 13:14); my gh jobs (SCA24 x2, SCA27, SCA28) have priority ~1530 with ~430 gh jobs ahead (fairshare
   11); gh-dev submission is blocked by other projects' gh-dev jobs (JLDD pending, BL23 and V2P1 held).
+
+Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
