@@ -1011,12 +1011,14 @@ class SCAContext:
             raise ValueError("the copy-site gate needs sca_v2's bridge path and an opening, without other gates")
         if not 0.0 <= self.pi_one_lo < 1.0 or (self.pi_one_lo and self.pi_blend):
             raise ValueError("pi_one_lo must be in [0, 1) and does not combine with pi_blend")
-        if self.glob_count < 0 or (self.glob_count and (not self.bridge_cells or self.lse_tau or self.text_value != 1.0
+        if self.glob_count < 0 or (self.glob_count and (not self.bridge_cells or self.lse_tau
+                                                       or (self.text_value != 1.0 and self.text_branch != "loc")
                                                        or self.qmix or self.text_mode or self.morph_local
                                                        or self.morph_text or self.sa_value != 1.0
                                                        or self.csg_value != 1.0 or self.bridge_coarse
                                                        or self.band or self.local_impl != "flex")):
-            raise ValueError("glob_count must be >= 0 and combines only with the plain sca_v2 operator (flex, bridge)")
+            raise ValueError("glob_count must be >= 0 and combines only with the plain sca_v2 operator (flex, bridge); "
+                             "text_value only on the window branch (text_branch loc)")
         if self.bridge_coarse and (not self.bridge_cells or self.lse_tau or self.sa_value != 1.0):
             raise ValueError("bridge_coarse needs the bridge (bridge_cells) and no lse_tau or subject anchor")
         if self.gm_low < 0 or (self.gm_low > 0 and self.gate_sigma <= 0):

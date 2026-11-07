@@ -76,3 +76,26 @@ def test_glob_count_cli_and_sidecar():
     kw, info = dedup.context_kwargs(a), dedup.info(a)
     assert kw["glob_count"] == 1.0 and kw["glob_count_lo"] == 0.55
     assert info["glob_count"] == 1.0 and info["glob_count_lo"] == 0.55
+
+
+def test_glob_count_combines_with_window_text_value():
+    """glob_count + text_value on the window branch only: the window part equals the text_value (branch loc) run, the
+    global part equals the glob_count run (the two corrections act on disjoint branches and add up)."""
+    p = _pieces(53)
+    pi = torch.tensor([0.6, 0.3], dtype=torch.float64).view(1, 1, 2, 1)
+    a = list(_args(p, pi))
+    base = sca_dedup_forward(*a)
+    sv = torch.full((L,), 0.5, dtype=torch.float64)
+    a_tv = a[:16] + [sv, 1] + a[18:]
+    tv = sca_dedup_forward(*a_tv)                      # window text values x 0.5
+    gc = sca_dedup_forward(*a, 1.0)                    # count-corrected global branch
+    both = sca_dedup_forward(*a_tv, 1.0)
+    assert ((both - base) - ((tv - base) + (gc - base))).abs().max() < 1e-9
+    m = model()
+    c = dict(mode="sca", n0=4, tile=2, window=4, local_impl="flex", bridge_cells=2, bridge_k=2,
+             pi=PiTable("const", value=0.5))
+    SCAContext(**c, glob_count=1.0, text_value=0.5, text_branch="loc")
+    with pytest.raises(ValueError):
+        SCAContext(**c, glob_count=1.0, text_value=0.5, text_branch="both")
+    out = attn_outputs(m, SCAContext(**c, glob_count=1.0, text_value=0.5, text_branch="loc"), H, W)
+    assert torch.isfinite(flat(out)).all()
