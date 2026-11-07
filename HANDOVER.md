@@ -988,5 +988,12 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   attention map (global branch, head mean, block sum; quantiles 0.5..0.95, dilated 2 tokens) keeps full subject
   content at the subject and scales it by A elsewhere on window steps, exact per-query linearity in both branches.
   Queued first: r7_sa0m (A 0 while sigma > 0.55, a0_K293954*), r7_sa0a (A 0 every window step, a0_K2939541*).
+- 08:28: r7_sa0m, pQ13: 19 yes, 2 no; prompted subjects intact, no colour artifacts. The map leaks: the raw
+  subject map lights the main subject but is speckled, and after a 5x5 max dilation g > 0.5 covers 17-21% and g > 0.1
+  52-57% of the image (dumps r7/sa_maps/r7_saAq). --subject-anchor-all (f9f4bc1) gates every text token;
+  --subject-anchor-q, -dump (9ffe974); -smooth K and -rel A B (be13ac6: average K x K, ramp from med + A (max - med) to
+  med + B (max - med); dumps tagged by prompt id). Screens: r7_saA0m (all text, broad map; 21 images, labeling),
+  r7_saAq (q 0.5/0.995, running), r7_saAs (smooth 9, rel 0.25/0.5, dilate 3; queued first). tv0m 46-prompt
+  evaluation running (a0_K0eval_r7_tv0m, renamed to run first).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).

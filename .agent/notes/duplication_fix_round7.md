@@ -365,3 +365,7 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   (head mean, summed over blocks) of the last opening step. Map: quantile-normalized (0.5, 0.95), dilated 2 tokens.
   Window steps while sigma > lo: query i reads the subject-word values scaled by A + (1 - A) map_i in both branches,
   O_i' = O_i - (1 - s_i) w_i Os_i (exact). Screens: r7_sa0m (A 0, sigma > 0.55), r7_sa0a (A 0, every window step).
+- r7_sa0m (subject anchor, subject words, A 0 while sigma > 0.55): pQ13, 19 yes, 2 no, subjects intact. The anchor map
+  leaks: speckled raw map (single background tokens with high subject attention), and the quantile ramp plus a 5 x 5
+  max dilation leave g > 0.1 on half the image. Fix (be13ac6): 9 x 9 average first, ramp relative to the maximum
+  (med + 0.25 .. 0.5 of max - med), dilation 3. Screen r7_saAs gates every text token with that map.
