@@ -980,5 +980,13 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   (commit 9ef4ee4, frozen code/9ef4ee4): --text-value-subject scales only subject-word tokens (--subject-words
   /scratch/09032/saini_2/sca/r7/subject_words_r7.json, person/animal nouns of each prompt). Queued: r7_ts0m (subject
   words 0 while sigma > 0.55), r7_ts0a (every step), r7_tv0n (A = 0 while sigma > 0.75), r7_tv25m (A = 0.25, > 0.55).
+- 07:59: r7_tv0m final, pQ11: 1 yes, 1 borderline, 19 no (below AReA's 4) but subjects drawn wrong; r7_tv5 (A = 0.5
+  every step), pQ12: 11 yes, 1 borderline, 9 no, already losing helmets and diver gear. Probe (r6/probe, 6 copies): at
+  the end of the opening (step 6) the future copy sites read the subject words at background level (global 0.0018 vs
+  background 0.0016, main subject 0.0085) and overtake the main subject only at steps 11 to 14. New
+  sca/subjgate.py --subject-anchor A (commit 7270551, frozen code/7270551): the last opening step's subject-word
+  attention map (global branch, head mean, block sum; quantiles 0.5..0.95, dilated 2 tokens) keeps full subject
+  content at the subject and scales it by A elsewhere on window steps, exact per-query linearity in both branches.
+  Queued first: r7_sa0m (A 0 while sigma > 0.55, a0_K293954*), r7_sa0a (A 0 every window step, a0_K2939541*).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).

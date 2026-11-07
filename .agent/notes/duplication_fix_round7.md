@@ -355,3 +355,13 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   colour column seen with round 6's ctw. Copies are driven by the prompt content that image tokens read on steps 8 to
   19, and that content also draws the main subject. Next: per-token scaling of the subject-word tokens only (9ef4ee4,
   r7/subject_words_r7.json), a narrower sigma range (> 0.75) and a partial scale (0.25).
+- r7_tv0m final: 1 yes, 1 borderline, 19 no; r7_tv5 (0.5 every step): 11 yes, 1 borderline, 9 no with adherence losses.
+  Uniform attenuation has no middle ground: copies fall only when the subject breaks.
+- Probe (r6/probe/sca_v2, 6 copies; subject-word mass by region and step): at step 6 (end of the opening) copy sites read
+  the subject words at background level (global 0.0018, background 0.0016, main subject 0.0085; window 0.0005 vs
+  0.0012 at the main subject); they overtake the main subject at steps 11 to 14 (global 0.0089 vs 0.0065). So the
+  opening's subject-word map separates the main subject from the future copy sites.
+- sca/subjgate.py (7270551): --subject-anchor A. Opening: per image token the subject-word share of the global branch
+  (head mean, summed over blocks) of the last opening step. Map: quantile-normalized (0.5, 0.95), dilated 2 tokens.
+  Window steps while sigma > lo: query i reads the subject-word values scaled by A + (1 - A) map_i in both branches,
+  O_i' = O_i - (1 - s_i) w_i Os_i (exact). Screens: r7_sa0m (A 0, sigma > 0.55), r7_sa0a (A 0, every window step).
