@@ -75,6 +75,10 @@ def add_args(p):
     p.add_argument("--open-pool", type=int, default=0, metavar="P", help="Round 7: global-only steps with sigma < "
                    "--open-pool-hi pool by P (finer coarse layout before the hand-off; 0 = off)")
     p.add_argument("--open-pool-hi", type=float, default=0.0, metavar="SIGMA")
+    p.add_argument("--morph-local", default="", choices=("", "area_tiles"), help="Morph ladder (sca/morph.py): "
+                   "area_tiles = AReA's jittered tiles, Halo, DWT splits and merge as SCA's local branch")
+    p.add_argument("--morph-text", default="", choices=("", "window_mean"), help="Morph ladder: window_mean = text "
+                   "queries read the mean over windows (AReA) instead of the global branch")
     p.add_argument("--native-open", type=int, default=0, metavar="K", help="Round 6 candidate d: first K steps at 1024^2 "
                    "with full attention, then upsample, renoise at the next sigma and continue at the target (0 = off)")
     p.add_argument("--anchor-lo", type=float, default=0.0, metavar="SIGMA", help="Latent low-band anchor "
@@ -101,7 +105,8 @@ def context_kwargs(args):
                 text_clip=args.text_clip, text_bw_scale=args.text_bw_scale, ffl_near=args.ffl_near,
                 ffl_head_frac=args.ffl_head_frac, ffl_fade_lo=args.ffl_fade_lo, ffl_outside=args.ffl_outside,
                 ffl_coarse=args.ffl_coarse,
-                text_bw_lo=args.text_bw_lo, open_pool=args.open_pool, open_pool_hi=args.open_pool_hi)
+                text_bw_lo=args.text_bw_lo, open_pool=args.open_pool, open_pool_hi=args.open_pool_hi,
+                morph_local=args.morph_local, morph_text=args.morph_text)
 
 
 def anchor(args, ctx):
@@ -156,6 +161,10 @@ def info(args):
             out["text_bw_lo"] = args.text_bw_lo
     if args.open_pool:
         out.update(open_pool=args.open_pool, open_pool_hi=args.open_pool_hi)
+    if getattr(args, "morph_local", ""):
+        out["morph_local"] = args.morph_local
+    if getattr(args, "morph_text", ""):
+        out["morph_text"] = args.morph_text
     if getattr(args, "native_open", 0):
         out["native_open"] = args.native_open
     if args.anchor_lo:

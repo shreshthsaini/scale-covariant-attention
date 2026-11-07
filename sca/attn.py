@@ -801,6 +801,9 @@ class SCAContext:
     text_bw_lo: float | None = None     # bw applies while sigma > text_bw_lo (None: while text_mode applies)
     open_pool: int = 0                  # >0: global-only steps with sigma < open_pool_hi pool by this factor (finer
     open_pool_hi: float = 0.0           # coarse layout before the hand-off, e.g. 2 at 4096^2 = a 128 x 128 grid)
+    # morph ladder (sca/morph.py): single AReA components inside SCA; defaults = SCA
+    morph_local: str = ""               # "" | area_tiles: local branch = AReA's jittered tiles, Halo, DWT splits, merge
+    morph_text: str = ""                # "" | window_mean: text queries = mean over windows (AReA) instead of global
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -888,6 +891,12 @@ class SCAContext:
         if self.open_pool:
             if self.open_pool < 1 or self.gate_sigma <= 0 or self.open_pool_hi <= self.gate_sigma:
                 raise ValueError("open_pool needs a factor >= 1, gate_sigma > 0 and open_pool_hi > gate_sigma")
+        if self.morph_local not in ("", "area_tiles") or self.morph_text not in ("", "window_mean"):
+            raise ValueError("morph_local must be '' or area_tiles, morph_text '' or window_mean")
+        if (self.morph_local or self.morph_text) and (self.text_mode or self.local_impl != "flex" or self.band
+                                                      or self.lse_tau or self.scale_sched or self.scale_fixed
+                                                      or self.win_heads_below is not None or self.route):
+            raise ValueError("morph options combine only with the sca_v2 operator (flex, bridge, win_sched)")
 
     def flex_layout(self, L, tile, win, device):
         """BlockMask and permutations, cached per (text length, grid, tile, window, device)."""
@@ -1311,6 +1320,9 @@ class SCAProcessor:
             band = int(round(-band * sg / max(1e-3, 1 - sg)))
             band = min(band, min(ctx.grid))
         tb = ctx.text_bias_now()
+        if ctx.morph_local or ctx.morph_text:
+            from sca.morph import morph_forward
+            return morph_forward(self, q, k, v, image_rotary_emb, f, tile, win, pi)
         modes = ctx.text_mode_now()
         if modes:
             return self.text_forward(q, k, v, image_rotary_emb, f, tile, win, pi, modes)

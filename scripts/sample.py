@@ -97,6 +97,13 @@ def main(argv=None):
     anchor = dedup.anchor(args, ctx)  # latent low-band anchor (--anchor-lo > 0), else None
     pipe = load_pipeline(args.device, args.model)
     uninstall = install(pipe.transformer, ctx)
+    if getattr(args, "morph_local", "") == "area_tiles":   # morph ladder sca+B: AReA's Phase II layout per step
+        from sca.morph import install_area_tiles
+        _undo_tiles, _undo_sca = install_area_tiles(pipe.transformer, ctx, seed=args.seed), uninstall
+
+        def uninstall():
+            _undo_tiles()
+            _undo_sca()
     remove_anchor = anchor.install(pipe.transformer) if anchor is not None else None
     ctx.scheduler = pipe.scheduler
     if h * w >= 2048 * 4096:

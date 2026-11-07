@@ -107,6 +107,15 @@ def parser():
     p.add_argument("--phase2-windows", type=window_list, default=None, metavar="W1,W2,...",
                    help="Phase II window sizes for the first steps, AReA's smallest window after them "
                         "(default: AReA's own schedule)")
+    p.add_argument("--phase1-factors", type=window_list, default=None, metavar="F1,...",
+                   help="Morph ladder: Phase I pooling factors (e.g. SCA's opening 4,4,4,4,4,4,4,4); default AReA's ramp")
+    p.add_argument("--sca-pi-mix", type=Path, default=None, metavar="NPZ",
+                   help="Morph ladder: Phase II image output = pi * AReA + (1 - pi) * SCA's global branch (pool 4, block "
+                        "centre, coarse ids), pi = SCA's calibrated per-head weight at the window's emulated scale")
+    p.add_argument("--sca-text-rule", action="store_true",
+                   help="Morph ladder: Phase II text queries read SCA's global branch instead of the window mean")
+    p.add_argument("--fixed-tiles", action="store_true",
+                   help="Morph ladder: Phase II on even base tiles, no jitter, no DWT splits (use with --halo 0)")
     p.add_argument("--label", default="area", help="Method name written to the sidecar (default area)")
     p.add_argument("--area-seed", type=int, default=None,
                    help="AReA jitter/Halo seed; default --seed, as in AReA generate.py")
@@ -210,6 +219,15 @@ class AReARunner:
         self.area = AReA(self.pipe, config=self.cfg)
         if args.phase2_windows:
             patch_schedule(self.area.backbone, args.phase2_windows)
+        if args.phase1_factors or args.sca_pi_mix or args.sca_text_rule or args.fixed_tiles:   # morph ladder
+            sys.path.insert(0, str(ROOT))
+            from sca import morph
+            if args.phase1_factors:
+                morph.patch_phase1(self.area.backbone, args.phase1_factors)
+            if args.sca_pi_mix or args.sca_text_rule:
+                morph.patch_processors(self.area.backbone, args.sca_pi_mix, args.sca_text_rule)
+            if args.fixed_tiles:
+                morph.patch_fixed_tiles(self.area.backbone)
         self.scheduler_config = {k: v for k, v in dict(self.pipe.scheduler.config).items()}
 
     def load(self, source):
@@ -251,7 +269,12 @@ class AReARunner:
                 **self.versions, **self.base, "grid": [n // 16 for n in self.res],
                 "area": {"pooling": self.cfg.pooling, "phase1_steps": self.schedule.get("phase1_steps"),
                          "halo": self.cfg.halo, "bridge_ratio": self.cfg.bridge_ratio, "seed": self.cfg.seed,
-                         "schedule": self.schedule, "repo": "https://github.com/KooroshRH/AReA"},
+                         "schedule": self.schedule, "repo": "https://github.com/KooroshRH/AReA",
+                         **({"morph": {k: v for k, v in (("phase1_factors", list(a.phase1_factors or ())),
+                                                          ("sca_pi_mix", str(a.sca_pi_mix or "")),
+                                                          ("sca_text_rule", bool(a.sca_text_rule)),
+                                                          ("fixed_tiles", bool(a.fixed_tiles))) if v}}
+                            if (a.phase1_factors or a.sca_pi_mix or a.sca_text_rule or a.fixed_tiles) else {})},
                 "vae_tiling": True, "max_sequence_length": TXT_LEN, "generator": "cpu, derived_seed",
                 "cpu_offload": self.offload, "scheduler": self.scheduler_config}
 
