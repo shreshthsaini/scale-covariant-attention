@@ -1232,3 +1232,9 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   are gone: the horned figure's twin on the right peak, the hiker on the far summit, the small astronaut by the rock.
   Others remain: the square's pedestrians, the black hole's fliers, the shore figures. Detector triage and labels
   follow when the screen completes.
+- 13:35 r7_gc1 on copyprone21, detector triage: 11 of 21 flagged (sca_v2 seed 0: 21, seed 1: 15, hyb0: 12 by detector
+  and 17 by hand, AReA: 3). gc1 keeps sca_v2's compositions, so this is a paired drop from the same layouts
+  (McNemar p = 0.002), at no extra time (75 s) and with no visible artifacts. On sca_v2-like images the detector is
+  close to the hand count (sca_v2 precision 23/25, miss rate 1/30). The 46-prompt run is released (a0_K0b2965*, eval
+  a0_K0b2969_eval_r7_gc1) for the quality verdict. gc1a (every window step) and gch (G 0.5) screens follow.
+  This is the first operator change that removes about half the copies without moving the layout.
