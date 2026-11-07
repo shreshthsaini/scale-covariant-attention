@@ -318,3 +318,10 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
 - r7_q12x (lead: f1 on every step plus pi = near share through sigma 0.75, steps 8 to 14): pQ5, 19 yes, 2 no. Fails.
   Summary of the weight fixes on copyprone21 (yes of 21): q1s 20, q1a 20, q2 17, q12 20, q12x 19; sca_v2 19,
   sca_area20 12, AReA 4. Only window geometry (AReA's wide windows held to about step 19) has moved the count.
+- r7_q13a (f13 on every step): pQ6, 3 yes, 4 borderline, 14 no: the first variant below AReA (4). But glitches on
+  every image (colour-block bands one to two tokens wide along the left, right and top borders; scattered blocks in
+  dark regions) and missing prompted content (4 of 6 men, no birds, no spacecraft); 91.8 s (+19%). f13 is the only
+  variant that lowers the text share of the global branch: in one softmax the prompt competes with the near keys and
+  the s^2-weighted far lattice (about 65K effective keys), so its share falls to about full attention's. Next:
+  --qmix-gamma (8ace484) scales the image part against the text with the near/far balance fixed; gamma 0.25 puts the
+  text share near sca_v2's mix. Screens queued: q13m (f13 while sigma > 0.55), q13g (gamma 0.25, every step), q13s.

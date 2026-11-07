@@ -938,5 +938,12 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
 - r7_q12x (f1 on every step plus pi = near share through sigma 0.75), pQ5: 19 yes, 2 no of 21; 84.6 s. Fails.
 - Ladder order (04:23): sca+B (renamed a0_L04*) and area+fixed (a0_L09*) first, then L1 op4, L2 scaD, L3 scaE, L5 scaC,
   L6 to L8. r7_q13a (f13 every step) runs at 91.7 s per image (+19%).
+- r7_q13a (f13 on every step), pQ6: 3 yes, 4 borderline, 14 no of 21 (below AReA's 4), but every image carries
+  colour-block glitches along the borders and in dark areas, and prompted content goes missing (4 of 6 men, no birds,
+  no spacecraft). Reading: f13 is the only variant that lowers the global branch's text share (text normalized once
+  against about 65K effective image keys); copies fall with it, and the border tokens lose the text sink (round 6's
+  ctw showed the same right-edge garbage). New knob --qmix-gamma (commit 8ace484, frozen code/8ace484): scales the image
+  part against the text, near/far balance unchanged. Queued at the head: r7_q13m (f13 while sigma > 0.55, a0_K28*),
+  r7_q13g (f13 every step, gamma 0.25, text share near sca_v2's, a0_K29*), r7_q13s (seeding steps, a0_K30*).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
