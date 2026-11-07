@@ -1238,3 +1238,16 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   close to the hand count (sca_v2 precision 23/25, miss rate 1/30). The 46-prompt run is released (a0_K0b2965*, eval
   a0_K0b2969_eval_r7_gc1) for the quality verdict. gc1a (every window step) and gch (G 0.5) screens follow.
   This is the first operator change that removes about half the copies without moving the layout.
+- 13:20 localization by detector triage on copyprone21 (no hand labels; the detector undercounts wide-window variants
+  by about 5, as hyb0 shows with 12 flagged and 17 by hand). r7_ohyb0 (AReA's opening plus hyb0's windows): 10
+  flagged. r7_oarea20 (AReA's opening plus all 19 AReA windows and its bridge inside SCA, the closest SCA analogue of
+  AReA): 9 flagged. AReA itself: 3 flagged, 4 by hand. AReA's opening plus AReA's window sizes inside SCA still
+  leaves about three times AReA's count. The remaining difference lies in what SCA's window phase does with the same
+  keys: the global mix (area_scaMix says no), sliding per-tile windows versus AReA's few large shared windows
+  (area_fixed and sca+B at AReA sizes), or the text-query rule (area_scaText, queued).
+- New mode (commit 86a4f2f, frozen code/86a4f2f, tests/test_globcount.py brute force; suite 285 pass): --qmix tc.
+  The window reads the prompt's content at full attention's per-query strength. Its text values are scaled by
+  A_i = (Z_T + Z_near) / (Z_T + Z_near + Z_far), with Z_far the s^2-corrected global far field as in f1, and its
+  weights are unchanged, so the prompt stays a sink, unlike f13. Combined with --glob-count 1, both branches read the
+  prompt as full attention would. Queued at the spool head: a0_K0b2964* r7_tcg (tc plus glob-count 1, sigma > 0.55),
+  and after gch a0_K0b2984* r7_tc (tc alone). gctv is the crude form: uniform window text values x 0.5.
