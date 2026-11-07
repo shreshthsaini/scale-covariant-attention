@@ -252,3 +252,21 @@ Queued at the head of the spool (prefix a0_, tree f479459 = the review's, so sca
   vs sca_v2 incl. PickScore -0.13, IR -0.056, HPSv2.1 -0.0067 (core three again); 7/10 wins over AReA; 96.1 s (x1.25).
   Relaxed bar fails on the core losses whatever its hand count. r7_area12 and the copyprone21 runs still on SCA26.
 
+## Morph ladder (user directive via lead, 19:30): localize the cause by single-component swaps
+Readout: blind hand labels of every image on copyprone21 (r7/copyprone21.jsonl, the 21 person/animal prompts outside the
+subset where sca_v2 has a detector-flagged copy); metrics on the 46 only for the decisive swaps. Baselines, every image
+hand-labeled: sca_v2 19 yes of 21 (Step 1 labels), AReA 4 of 21 (9 Step-1 labels plus 12 new, packet pL1), sca_area20
+12 of 21 (pL1). So AReA's Phase II windows and bridge inside SCA close about half of the gap; the rest lies elsewhere.
+Rungs (code 71b31b6 = sca/morph.py, flags in scripts/sample.py and scripts/run_area.py; tests/test_morph.py):
+| rung | from | swap | how |
+|---|---|---|---|
+| sca+A | sca_v2 | AReA's opening pool 4,4,4,4,2,2,2,2 | --open-pool 2 --open-pool-hi 0.96 (label r7_op4) |
+| sca+B | sca_v2 | AReA's Phase II tiling: jittered base tiles of SCA's window side, DWT splits, jagged Halo 8, raised-cosine merge, per-window bridge of SCA's 1024 tokens | --morph-local area_tiles (AReA's windowed_attention) |
+| sca+C | sca_v2 | text queries = mean over an even window partition (text, window, bridge keys) | --morph-text window_mean |
+| sca+D | sca_v2 | no global branch after the opening | --pi-const 1.0 |
+| sca+E | sca_v2 | bridge round(0.5 w)^2 | --bridge-ratio 0.5 |
+| area+open | AReA | SCA's opening: factor 4 on all 8 steps | run_area.py --phase1-factors 4,4,4,4,4,4,4,4 |
+| area+mix | AReA | SCA's global branch (pool 4, block centre, coarse ids) mixed into the image output with SCA's calibrated per-head pi at the window's emulated scale | --sca-pi-mix calib/k1_1024.npz |
+| area+text | AReA | text queries read SCA's global branch | --sca-text-rule |
+| area+fixed | AReA | no jitter, no Halo, no DWT splits (fixed partition; the closest AReA analogue of SCA's deterministic windows) | --fixed-tiles --halo 0 |
+
