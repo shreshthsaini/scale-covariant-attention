@@ -1309,3 +1309,7 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   back about 40% of the PickScore loss and gives back part of the copy removal. Together with the artifacts above,
   the glob-count family is closed. Queued as a last two-lever combination of the mild forms: r7_g4gh (g2x4 plus
   glob-count 0.5) on copyprone21.
+- 14:50 decision, r7_gch (glob-count 0.5, visually almost clean) on the 46: relaxed bar FAIL. Core losses PickScore
+  -0.125 [-0.173, -0.080], IR -0.059 and HPSv2.1 -0.0038, with 2 detector flags. Even the mild count correction costs
+  PickScore about 0.12. On the 46 the global-prompt lever gives gch -0.125 at 2 flags, gcm -0.130 at 2 flags and gc1
+  -0.215 at 0 flags (sca_v2 4 flags). There is no setting with PickScore inside its interval.
