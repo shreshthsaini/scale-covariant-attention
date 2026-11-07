@@ -84,6 +84,8 @@ def add_args(p):
                    "scaled by A in both branches (attention weights unchanged, so the prompt still acts as a sink)")
     p.add_argument("--text-value-lo", type=float, default=0.0, metavar="SIGMA", help="--text-value applies while "
                    "sigma > SIGMA")
+    p.add_argument("--text-value-subject", action="store_true", help="--text-value scales only the subject-word tokens "
+                   "(needs --subject-words)")
     p.add_argument("--qmix", default="", choices=("", "f1", "f13"), help="Per-query mix (sca/qmix.py): f1 = weight "
                    "from count-corrected image partitions; f13 = plus one three-part softmax over text, near, far")
     p.add_argument("--qmix-lo", type=float, default=0.0, metavar="SIGMA", help="--qmix applies while sigma > SIGMA")
@@ -128,7 +130,8 @@ def context_kwargs(args):
                 text_bw_lo=args.text_bw_lo, open_pool=args.open_pool, open_pool_hi=args.open_pool_hi,
                 morph_local=args.morph_local, morph_text=args.morph_text, qmix=args.qmix, qmix_lo=args.qmix_lo,
                 qmix_tau=args.qmix_tau, qmix_gamma=getattr(args, "qmix_gamma", 1.0), qmix_far=getattr(args, "qmix_far", "out"), qmix_dose=getattr(args, "qmix_dose", 1.0), qmix_anchor=getattr(args, "qmix_anchor", "text"), text_value=getattr(args, "text_value", 1.0),
-                text_value_lo=getattr(args, "text_value_lo", 0.0), pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8))
+                text_value_lo=getattr(args, "text_value_lo", 0.0),
+                text_value_subject=getattr(args, "text_value_subject", False), pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8))
 
 
 def anchor(args, ctx):
@@ -199,6 +202,8 @@ def info(args):
             out["qmix_anchor"] = args.qmix_anchor
     if getattr(args, "text_value", 1.0) != 1.0:
         out.update(text_value=args.text_value, text_value_lo=args.text_value_lo)
+        if getattr(args, "text_value_subject", False):
+            out["text_value_subject"] = True
     if getattr(args, "pi_blend", 0.0):
         out.update(pi_blend=args.pi_blend, pi_blend_lo=args.pi_blend_lo)
     if getattr(args, "native_open", 0):

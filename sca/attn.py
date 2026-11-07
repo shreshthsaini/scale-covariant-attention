@@ -421,30 +421,31 @@ def mix_lse(o_glob, lse_glob, o_loc, lse_loc, pi, L, tau, inv):
 
 
 def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, text_bias=0.0,
-                      cells=None, per_cell=0, tau=0.0, text_value=1.0):
+                      cells=None, per_cell=0, tau=0.0, text_value=None):
     """SCA with the late-duplication options: AReA-style bridge tokens (cells, per_cell) prepended to the
     local keys at their true positions, per-query LSE mixing (tau > 0), and the local text bias. layout
-    must be built for the prefix length L + R, R = cells_h * cells_w * per_cell. text_value < 1 scales the text
-    VALUES that image queries read in both branches (their attention weights, so the prompt's role as a sink, are
-    unchanged); text queries are untouched. Global branch: O' = O - (1 - a) t O_T (t = text share, O_T = text-only
-    output at the same coarse query ids), exact by linearity."""
+    must be built for the prefix length L + R, R = cells_h * cells_w * per_cell. text_value (None or a [L] tensor of
+    per-token scales s_j) scales the text VALUES that image queries read in both branches (their attention weights, so
+    the prompt's role as a sink, are unchanged); text queries are untouched. Global branch, exact by linearity:
+    O' = O - t O_T[(1 - s) v], t = the text share, O_T[u] = the text-only attention output with values u."""
     cos, sin = rot
     kr = rope(k, rot)
     qi = rope(q[:, L:], (cos[L:], sin[L:]))
     q_txt = rope(q[:, :L], (cos[:L], sin[:L]))
     if tau:
         o_glob, lse_glob = global_branch_lse(q, k, v, L, grid, f, pool, rope_q, rope_k, q_txt, kr[:, :L])
-    elif text_value != 1.0:
+    elif text_value is not None:
         from sca.textgate import text_part
+        sv = text_value.to(v.dtype).view(1, -1, 1, 1)                                # [1, L, 1, 1]
         o_glob, lse_glob = global_branch_lse(q, k, v, L, grid, f, pool, rope_q, rope_k, q_txt, kr[:, :L])
-        o_tg, lse_tg = text_part(rope(q[:, L:], rope_q), kr[:, :L], v[:, :L])
+        o_tu, lse_tg = text_part(rope(q[:, L:], rope_q), kr[:, :L], (1 - sv) * v[:, :L])
         t = torch.exp(lse_tg.float() - lse_glob[:, :, L:].float()).transpose(1, 2)[..., None]       # [B, N, h, 1]
-        img = o_glob[:, L:].float() - (1.0 - text_value) * t * o_tg.float()
+        img = o_glob[:, L:].float() - t * o_tu.float()
         o_glob = torch.cat([o_glob[:, :L], img.to(o_glob.dtype)], 1)
     else:
         o_glob = global_branch(q, k, v, L, grid, f, pool, (cos[:L], sin[:L]), rope_q, rope_k, q_txt, kr[:, :L])
-    if text_value != 1.0:
-        v = torch.cat([v[:, :L] * text_value, v[:, L:]], 1)                       # local branch: image queries only
+    if text_value is not None:
+        v = torch.cat([v[:, :L] * text_value.to(v.dtype).view(1, -1, 1, 1), v[:, L:]], 1)   # local: image queries
     kl, vl, Lp = kr, v, L
     if per_cell:
         idx = bridge_index(k[:, L:], grid, cells, per_cell)                          # [B, R]
@@ -819,6 +820,7 @@ class SCAContext:
                                         # attention weights (the prompt as a sink) are unchanged (sink-preserving prompt
                                         # attenuation, round 7); text queries untouched
     text_value_lo: float = 0.0          # text_value applies while sigma > text_value_lo
+    text_value_subject: bool = False    # text_value only on the prompt's subject-word tokens (subject_tokens)
     morph_text: str = ""                # "" | window_mean: text queries = mean over windows (AReA) instead of global
                                         # | all_coarse: text queries attend every image key at its coarse id (Fix 4)
     # per-query mix (sca/qmix.py; root-cause audit 2026-11-06 Fix 1 / Fix 1+3); defaults = SCA
@@ -1016,6 +1018,22 @@ class SCAContext:
         if self.text_value != 1.0 and (self.sigma is None or float(self.sigma) > self.text_value_lo):
             return float(self.text_value)
         return 1.0
+
+    def text_value_vec(self, L, device):
+        """None when text values are not scaled at this step, else the [L] per-token scale: text_value on every text
+        token, or with text_value_subject only on the prompt's subject-word tokens (subject_tokens, set per prompt by
+        the sampler from --subject-words); None if that leaves nothing to scale."""
+        a = self.text_value_now()
+        if a == 1.0:
+            return None
+        if not self.text_value_subject:
+            return torch.full((L,), a, dtype=torch.float32, device=device)
+        idx = [int(t) for t in self.subject_tokens if 0 <= int(t) < L]
+        if not idx:
+            return None
+        s = torch.ones(L, dtype=torch.float32, device=device)
+        s[idx] = a
+        return s
 
     def text_bias_now(self):
         if self.text_local and (self.sigma is None or float(self.sigma) > self.text_local_lo):
@@ -1406,7 +1424,7 @@ class SCAProcessor:
             per = min(ctx.bridge_k_now(cells[0] * cells[1]), (H // cells[0]) * (W // cells[1])) if on else 0
             layout = ctx.flex_layout(L + (cells[0] * cells[1] * per if on else 0), tile, win, q.device)
             return sca_dedup_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
-                                          layout, tb, cells, per, float(ctx.lse_tau), float(ctx.text_value_now()))
+                                          layout, tb, cells, per, float(ctx.lse_tau), ctx.text_value_vec(L, q.device))
         if band > 1:
             L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True, text_bias=tb)
             if inv is not None:

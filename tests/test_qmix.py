@@ -175,15 +175,16 @@ def test_text_value_scales_only_what_image_queries_read():
     p = _pieces(45)
     pi = torch.tensor([0.6, 0.3], dtype=torch.float64).view(1, 1, 2, 1)
     layout = flex_layout(L + p["cells"][0] * p["cells"][1] * p["per"], (H, W), TILE, WIN, "cpu", (2, 2), (2, 2))
-    a = 0.4
     args = (p["rot"], p["rq"], p["rk"], pi, L, (H, W), F, "center", layout, 0.0, p["cells"], p["per"], 0.0)
-    out = sca_dedup_forward(p["q"], p["k"], p["v"], *args, a)
-    base = sca_dedup_forward(p["q"], p["k"], p["v"], *args, 1.0)
-    v_s = torch.cat([p["v"][:, :L] * a, p["v"][:, L:]], 1)
-    ref = sca_dedup_forward(p["q"], p["k"], v_s, *args, 1.0)
-    assert (out[0, L:] - ref[0, L:]).abs().max() < 1e-6
-    assert (out[0, :L] - base[0, :L]).abs().max() < 1e-12
-    assert (out[0, L:] - base[0, L:]).abs().max() > 1e-4
+    base = sca_dedup_forward(p["q"], p["k"], p["v"], *args, None)
+    for sv in (torch.full((L,), 0.4, dtype=torch.float64), torch.tensor([1.0, 0.0, 1.0, 0.25, 1.0, 1.0][:L] +
+                                                                         [1.0] * max(0, L - 6), dtype=torch.float64)):
+        out = sca_dedup_forward(p["q"], p["k"], p["v"], *args, sv)
+        v_s = torch.cat([p["v"][:, :L] * sv.view(1, -1, 1, 1), p["v"][:, L:]], 1)
+        ref = sca_dedup_forward(p["q"], p["k"], v_s, *args, None)
+        assert (out[0, L:] - ref[0, L:]).abs().max() < 1e-6
+        assert (out[0, :L] - base[0, :L]).abs().max() < 1e-12
+        assert (out[0, L:] - base[0, L:]).abs().max() > 1e-4
 
 
 def test_processor_text_value_gates_by_sigma():
@@ -194,3 +195,7 @@ def test_processor_text_value_gates_by_sigma():
     on = attn_outputs(m, SCAContext(**c, text_value=0.5), H, W)
     assert torch.allclose(flat(off), flat(base), atol=1e-6)
     assert torch.isfinite(flat(on)).all() and not torch.allclose(flat(on), flat(base), atol=1e-4)
+    none = attn_outputs(m, SCAContext(**c, text_value=0.0, text_value_subject=True), H, W)   # no subject tokens set
+    assert torch.allclose(flat(none), flat(base), atol=1e-6)
+    sub = attn_outputs(m, SCAContext(**c, text_value=0.0, text_value_subject=True, subject_tokens=(1, 2)), H, W)
+    assert torch.isfinite(flat(sub)).all() and not torch.allclose(flat(sub), flat(base), atol=1e-4)
