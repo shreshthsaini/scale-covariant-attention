@@ -1281,3 +1281,12 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   Hypothesis: gc1's PickScore loss comes from the subject's prompt read, and its copy removal from the read
   elsewhere. Queued at the spool head: r7_gcm on copyprone21 (a0_K0b2962*) and on the 46 (a0_K0b29625*, eval
   a0_K0b29629_eval_r7_gcm). Map settings are saAs's (smooth 9, rel 0.25/0.5, dilate 3).
+- 14:05 glob-count family, native-resolution crops of the tent, diver and anime prompts
+  (r7/preview/gc_detail.jpg; gc2 sheet r7/preview/r7_gc2/sheet.jpg). gc1 (G 1) has the same dash-stroke tent,
+  lost diver gear and dashed figure outlines as tcg; the first gc1 preview covered only 9 prompts and missed them.
+  gc2 (G 2, detector 7 of 21) is worse. gch (G 0.5, detector 14) is mostly clean: a normal tent, the diver's mask
+  and regulator, faint dashes around the anime figures. gcm (G 1 off the subject map) keeps the diver, the subject,
+  intact but draws the tent as concentric stripes. Reading: the global branch's native-strength prompt read is what
+  keeps prompted objects coherent at the coarse scale. Without it the windows draw prompted objects (tent, figures)
+  as fragmented stroke texture, which is also what tv5, q13n and tcg showed. It is also the copy drive, so no
+  setting of this lever separates the two. gcm2 is parked. gcm's 46-prompt run finishes for the record.
