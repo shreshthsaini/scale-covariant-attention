@@ -1011,5 +1011,10 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   prompt) or in the bear scenes. --subject-anchor-edge T (3be1ea6, frozen code/3be1ea6) keeps a T-token border at full
   prompt. Queued at the head: r7_saAt (rel 0.35/0.6, lo 0.45, dilate 2, edge 2), r7_saAw (saAs + edge 2 + sca_area20
   windows and bridge ratio 0.5). saAs 46-prompt run generating (a0_K2939545*).
+- 09:14: r7_saAs on the 46 (eval/r7_46_r7_saAs): human-corrected 3.3% (AReA 3.8%, sca_v2 17.0%; 0 detector flags),
+  8 significant losses (IR -0.20, PickScore -0.50, HPSv2.1 -0.015, HPSv2, CLIP -1.2, aesthetic, CLIP-IQA, MUSIQ crop),
+  also on clean prompts (IR -0.20, PickScore -0.49); 85.0 s. Relaxed bar FAIL (core losses). Gating every text token
+  outside the subject removes scene words too. Queued at the head: r7_saSs (subject-word tokens only, same sharp map,
+  edge 2; copy-prone a0_K2939548*, 46 a0_K2939549*, eval self-releases).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).

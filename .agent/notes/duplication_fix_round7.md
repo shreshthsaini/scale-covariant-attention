@@ -382,3 +382,7 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   chibi group), where the anchor keeps the whole prompt, plus bear scenes. Background prompt details weaken (coral,
   asteroids); two images show the right-edge block column, so the border gets a guard (--subject-anchor-edge, 3be1ea6).
   Next: tighter ramp and longer range (saAt), and saAs combined with sca_area20's wide windows (saAw).
+- r7_saAs on the 46: human-corrected 3.3% (AReA 3.8%), but 8 significant losses (IR -0.20, PickScore -0.50,
+  HPSv2.1 -0.015, HPSv2, CLIP -1.2, aesthetic, CLIP-IQA, MUSIQ crop), clean prompts included. Relaxed bar FAIL. The
+  duplication target is met; the adherence cost comes from removing the scene words outside the subject. Next:
+  r7_saSs gates only the subject-word tokens with the same sharp map (copy-prone and 46 together).
