@@ -143,6 +143,11 @@ def add_args(p):
                    "estimate (sca/anchor.py, local mode, full band), weight = the copy-site map")
     p.add_argument("--copy-gate-grow", type=int, default=2, metavar="T", help="Dilation of the copy-site map")
     p.add_argument("--pi-one-lo", type=float, default=0.0, metavar="SIGMA", help="pi = 1 (window branch only) while sigma > SIGMA on window steps; 0 = off")
+    p.add_argument("--glob-count", type=float, default=0.0, metavar="G", help="Round 7: on window steps the global "
+                   "branch weights its image keys by (fh fw)^G against the text for image queries (1 = each block "
+                   "centre counted as the fh fw tokens it stands for; 0 = off)")
+    p.add_argument("--glob-count-lo", type=float, default=0.0, metavar="SIGMA", help="--glob-count applies while "
+                   "sigma > SIGMA")
     p.add_argument("--native-open", type=int, default=0, metavar="K", help="Round 6 candidate d: first K steps at 1024^2 "
                    "with full attention, then upsample, renoise at the next sigma and continue at the target (0 = off)")
     p.add_argument("--anchor-lo", type=float, default=0.0, metavar="SIGMA", help="Latent low-band anchor "
@@ -184,6 +189,7 @@ def context_kwargs(args):
                 sa_edge=getattr(args, "subject_anchor_edge", 0), pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8),
                 gm_low=getattr(args, "guide_map", 0.0), gm_lo=getattr(args, "guide_map_lo", 0.58),
                 bridge_coarse=getattr(args, "bridge_coarse", False), pi_one_lo=getattr(args, "pi_one_lo", 0.0),
+                glob_count=getattr(args, "glob_count", 0.0), glob_count_lo=getattr(args, "glob_count_lo", 0.0),
                 bridge_coarse_lo=getattr(args, "bridge_coarse_lo", 0.0), bridge_vpool=getattr(args, "bridge_vpool", 0),
                 csg_value=getattr(args, "copy_gate", 1.0), csg_lo=getattr(args, "copy_gate_lo", 0.6),
                 csg_rel=tuple(getattr(args, "copy_gate_rel", (0.5, 1.0))), csg_excl=getattr(args, "copy_gate_excl", 3),
@@ -278,6 +284,10 @@ def info(args):
             out["copy_gate_z"] = list(args.copy_gate_z)
     if getattr(args, "pi_one_lo", 0.0):
         out["pi_one_lo"] = args.pi_one_lo
+    if getattr(args, "glob_count", 0.0):
+        out["glob_count"] = args.glob_count
+        if getattr(args, "glob_count_lo", 0.0):
+            out["glob_count_lo"] = args.glob_count_lo
     if getattr(args, "bridge_coarse", False):
         out["bridge_coarse"] = True
         if getattr(args, "bridge_coarse_lo", 0.0):

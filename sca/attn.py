@@ -421,7 +421,8 @@ def mix_lse(o_glob, lse_glob, o_loc, lse_loc, pi, L, tau, inv):
 
 
 def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, text_bias=0.0,
-                      cells=None, per_cell=0, tau=0.0, text_value=None, branch=0, bridge_coarse=False, vpool=0):
+                      cells=None, per_cell=0, tau=0.0, text_value=None, branch=0, bridge_coarse=False, vpool=0,
+                      glob_gamma=0.0):
     """SCA with the late-duplication options: AReA-style bridge tokens (cells, per_cell) prepended to the
     local keys at their true positions, per-query LSE mixing (tau > 0), and the local text bias. layout
     must be built for the prefix length L + R, R = cells_h * cells_w * per_cell. text_value (None or a [L] tensor of
@@ -432,7 +433,11 @@ def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout
     bridge_coarse=True (scale-covariant bridge): the bridge part is scored with the image queries and the bridge keys at
     their coarse ids (rope_q, as in the global branch), so far bridge keys sit at offsets below n0 instead of up to the
     full grid; it joins the window softmax (text + window keys at true ids) by log-sum-exp. layout is then built for the
-    prefix L only."""
+    prefix L only.
+    glob_gamma > 0 (count-corrected global branch): for image queries the global branch's block-centre keys carry the
+    weight w = (fh fw)^glob_gamma against the text keys, i.e. logits + glob_gamma log(fh fw); exact by linearity from
+    the branch's text share t: O' = r O + (t' - t r) O_T, t' = t / (t + w (1 - t)), r = (1 - t') / (1 - t).
+    Text queries are untouched."""
     cos, sin = rot
     kr = rope(k, rot)
     qi = rope(q[:, L:], (cos[L:], sin[L:]))
@@ -446,6 +451,16 @@ def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout
         o_tu, lse_tg = text_part(rope(q[:, L:], rope_q), kr[:, :L], (1 - sv) * v[:, :L])
         t = torch.exp(lse_tg.float() - lse_glob[:, :, L:].float()).transpose(1, 2)[..., None]       # [B, N, h, 1]
         img = o_glob[:, L:].float() - t * o_tu.float()
+        o_glob = torch.cat([o_glob[:, :L], img.to(o_glob.dtype)], 1)
+    elif glob_gamma:
+        from sca.textgate import text_part
+        o_glob, lse_glob = global_branch_lse(q, k, v, L, grid, f, pool, rope_q, rope_k, q_txt, kr[:, :L])
+        o_t, lse_t = text_part(rope(q[:, L:], rope_q), kr[:, :L], v[:, :L])
+        t = torch.exp(lse_t.float() - lse_glob[:, :, L:].float()).transpose(1, 2)[..., None].clamp(0.0, 1.0 - 1e-6)
+        w = float(f[0] * f[1]) ** float(glob_gamma)
+        t2 = t / (t + w * (1 - t))
+        r = (1 - t2) / (1 - t)
+        img = r * o_glob[:, L:].float() + (t2 - t * r) * o_t.float()
         o_glob = torch.cat([o_glob[:, :L], img.to(o_glob.dtype)], 1)
     else:
         o_glob = global_branch(q, k, v, L, grid, f, pool, (cos[:L], sin[:L]), rope_q, rope_k, q_txt, kr[:, :L])
@@ -882,6 +897,11 @@ class SCAContext:
     bridge_coarse_lo: float = 0.0       # the coarse bridge acts while sigma > bridge_coarse_lo (true-id bridge below)
     bridge_vpool: int = 0               # coarse bridge values: mean over the p x p block around each bridge token
     pi_one_lo: float = 0.0              # > 0: pi = 1 (window branch only, no global mix) while sigma > pi_one_lo
+    glob_count: float = 0.0             # > 0: on window steps the global branch weights its image keys (block centres) by
+                                        # (fh fw)^glob_count against the text for image queries: each centre stands for
+                                        # fh fw tokens, so 1 gives the text the share full attention would give it against
+                                        # that mass (audit cause 3, the prompt read at native strength); 0 = off
+    glob_count_lo: float = 0.0          # glob_count applies while sigma > glob_count_lo
     csg_value: float = 1.0              # dynamic copy-site gate (sca/subjgate.copy_map): < 1 scales every text value that
                                         # image queries read at copy sites (subject-word attention outside the opening's
                                         # subject map, from the previous window step); 1 = off
@@ -991,6 +1011,12 @@ class SCAContext:
             raise ValueError("the copy-site gate needs sca_v2's bridge path and an opening, without other gates")
         if not 0.0 <= self.pi_one_lo < 1.0 or (self.pi_one_lo and self.pi_blend):
             raise ValueError("pi_one_lo must be in [0, 1) and does not combine with pi_blend")
+        if self.glob_count < 0 or (self.glob_count and (not self.bridge_cells or self.lse_tau or self.text_value != 1.0
+                                                       or self.qmix or self.text_mode or self.morph_local
+                                                       or self.morph_text or self.sa_value != 1.0
+                                                       or self.csg_value != 1.0 or self.bridge_coarse
+                                                       or self.band or self.local_impl != "flex")):
+            raise ValueError("glob_count must be >= 0 and combines only with the plain sca_v2 operator (flex, bridge)")
         if self.bridge_coarse and (not self.bridge_cells or self.lse_tau or self.sa_value != 1.0):
             raise ValueError("bridge_coarse needs the bridge (bridge_cells) and no lse_tau or subject anchor")
         if self.gm_low < 0 or (self.gm_low > 0 and self.gate_sigma <= 0):
@@ -1085,6 +1111,13 @@ class SCAContext:
             if self.sigma is not None and float(self.sigma) > s:
                 return w
         return self.window or self.n0
+
+    def glob_count_now(self):
+        """Exponent of the global branch's image-key count weight at the current sigma (glob_count while sigma >
+        glob_count_lo, else 0)."""
+        if self.glob_count and (self.sigma is None or float(self.sigma) > self.glob_count_lo):
+            return float(self.glob_count)
+        return 0.0
 
     def text_value_now(self):
         """Scale of the text values image queries read (text_value while sigma > text_value_lo, else 1)."""
@@ -1614,7 +1647,7 @@ class SCAProcessor:
             return sca_dedup_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
                                           layout, tb, cells, per, float(ctx.lse_tau), ctx.text_value_vec(L, q.device),
                                           ("both", "loc", "glob").index(ctx.text_branch), coarse,
-                                          int(ctx.bridge_vpool) if coarse else 0)
+                                          int(ctx.bridge_vpool) if coarse else 0, ctx.glob_count_now())
         if band > 1:
             L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True, text_bias=tb)
             if inv is not None:
