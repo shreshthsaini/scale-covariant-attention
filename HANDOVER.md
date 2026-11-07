@@ -896,3 +896,8 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
 - GPU: SCA27 (1127223) and SCA28 (1127231), gh 1 node 3 h each (the two allowed short jobs; gh-dev is blocked by other
   projects' gh-dev jobs), plus SCA24 x2; estimated starts 19:44. SCA21 est. 2026-11-07 22:00.
 - Helper on i615-091: r7/requeue_stale.py (wrapper PID 4136005, started 19:46) requeues stale-handle failures until 05:46.
+- Copy-prone hand counts so far (yes of 21): sca_v2 19, AReA 4, sca_area20 12, r7_area12 12, r7_area8 16.
+- Staged (held) for the decisive rungs: 46-prompt metric runs of r7_scaD/E/B/C in taskq/hold_ladder46 (a0_M*; move to
+  pending to run; evaluations a0_Me_eval_* self-release into eval/r7_46_<label>). r7_op4 already has its 46 result.
+- GPU 20:45: nothing running; my gh jobs (SCA24 x2, SCA27, SCA28) have priority ~1530 with ~430 gh jobs ahead (fairshare
+  11); gh-dev submission is blocked by other projects' gh-dev jobs (JLDD pending, BL23 and V2P1 held).
