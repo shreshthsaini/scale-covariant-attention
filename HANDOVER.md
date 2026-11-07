@@ -1221,3 +1221,14 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   (census).
 - SCA22 started about 13:10 (c620-082, c621-151, c622-132, c634-152): 8 GPUs until about 16:58, then 4 until about
   23:10.
+- 13:25 decision, r7_hyb0 on the 46 (r7_decide on eval/r7_46_r7_hyb0): relaxed bar FAIL on core losses IR -0.064
+  [-0.113, -0.015], HPSv2.1 -0.0060 and PickScore -0.107 [-0.173, -0.041]. IR and HPSv2.1 also fall on the 27
+  clean prompts. In all there are 8 significant losses, 7/10 wins over AReA are kept, and time is 92.7 s (x1.20).
+  AReA's widest six windows cost the core metrics even when they act only on steps 8 to 13, the same pattern as area8
+  (8 steps) and area12 (12 steps), and on copyprone21 they leave 17 of 21. The wide-window family is closed on both
+  counts.
+- 13:25 first look at r7_gc1 (count-corrected global branch, sigma > 0.55; 9 of 21 previewed against sca_v2,
+  r7/preview/r7_gc1/sheet.jpg). Compositions match sca_v2 and there are no artifacts; time 75 s, no cost. Some copies
+  are gone: the horned figure's twin on the right peak, the hiker on the far summit, the small astronaut by the rock.
+  Others remain: the square's pedestrians, the black hole's fliers, the shore figures. Detector triage and labels
+  follow when the screen completes.
