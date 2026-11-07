@@ -231,6 +231,36 @@
     sync(); render();
   })();
 
+  /* Against the multi-stage baselines: the paper's comparison grid (qual_prog), one curated prompt at a time */
+  (function qualGrid() {
+    var Q = IM.qual, grid = $("#qual-grid"), thumbs = $("#qual-thumbs"), meta = $("#qual-meta");
+    if (!Q || !grid || !thumbs) return;
+    var NAMES = { area: "AReA", ultra: "UltraImage", hrdit: "HRDiT", prog: "Progressive SCA" };
+    var cur = 0;
+    Q.rows.forEach(function (r, i) {
+      var b = el("button", { type: "button", "aria-pressed": i === 0 ? "true" : "false", "aria-label": "Curated: " + r.prompt }, [img(r.img.prog.full, "")]);
+      b.addEventListener("click", function () { cur = i; render(); });
+      thumbs.appendChild(b);
+    });
+    function render() {
+      var r = Q.rows[cur], W = r.size[0], x = r.box[0], y = r.box[1], s = r.box[2];
+      grid.innerHTML = "";
+      Q.methods.forEach(function (m) {
+        var win = el("span", { class: "win", "aria-hidden": "true", style: "left:" + (x / W * 100) + "%;top:" + (y / W * 100) + "%;width:" + (s / W * 100) + "%;height:" + (s / W * 100) + "%" });
+        grid.appendChild(el("figure", { class: "qcol" + (m === "prog" ? " ours" : "") }, [
+          el("figcaption", { class: "qname", text: NAMES[m] || m }),
+          el("div", { class: "qfull" }, [img(r.img[m].full, (NAMES[m] || m) + ": " + r.prompt), win]),
+          el("div", { class: "qcrop" }, [img(r.img[m].crop, (NAMES[m] || m) + ", native 1:1 crop of the framed window")])]));
+      });
+      $$("button", thumbs).forEach(function (b, i) { b.setAttribute("aria-pressed", i === cur ? "true" : "false"); });
+      if (!meta) return;
+      meta.innerHTML = "";
+      meta.appendChild(el("p", { class: "prompt" }, [el("span", { class: "chip curated", text: "curated" }), el("q", { text: r.prompt })]));
+      meta.appendChild(el("p", { class: "small muted", text: "FLUX.1-dev, " + sizeLabel(r.size) + ", seed label 0 for every method. Crop: " + s + " × " + s + " pixels at (" + x + ", " + y + "), at native resolution, in a window shared by the four methods." }));
+    }
+    render();
+  })();
+
   /* Traces: real videos when rendered, labelled placeholders otherwise */
   (function traces() {
     var host = $("#trace-grid"); if (!host) return;

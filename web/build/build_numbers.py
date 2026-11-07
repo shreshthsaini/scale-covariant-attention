@@ -57,6 +57,7 @@ import re
 import statistics
 import sys
 from collections import defaultdict
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 import numpy as np
@@ -339,6 +340,13 @@ PAPER_QUOTES.update({
     # 16:48 regeneration: progressive SCA on seed label 1 (Table generality)
     "prog.later.seed1.ir_ci2": "+0.37 [0.29, 0.46]", "prog.later.seed1.hps21_ci": "+3.67 [3.26, 4.06]",
     "prog.later.seed1.pick_ci": "+1.00 [0.88, 1.12]",
+    # 17:31 regeneration: half-up rounding of sweep 3, three seeds, per-seed patch FID (hlProgSeed*)
+    "main.prog.time_clean": "49.2", "prog.clean.prog": "49.2",
+    "prog.seed0.ir": "+0.40 [0.32, 0.49]", "prog.seed1.ir": "+0.37 [0.29, 0.46]", "prog.seed2.ir": "+0.35 [0.27, 0.45]",
+    "prog.seed1.pick": "+1.00", "prog.seed2.pick": "+0.99", "prog.seed2.pick_ci": "+0.99 [0.87, 1.12]",
+    "prog.seed0.fidp": "+4.8 [0.1, 10.6]", "prog.seed1.fidp": "+1.5 [-2.7, 6.9]", "prog.seed2.fidp": "+5.4 [0.8, 10.8]",
+    "prog.seed1.n_better": "10", "prog.seed2.n_better": "10", "prog.seeds.n_word": "three",
+    "prog.seeds.all_word": "all ten", "prog.seeds.fidp_n_worse_word": "two", "calib.n_heads_c": "1,368",
     **{f"prog.vs.{k}.n_better": v for k, v in (("area", "10"), ("dype", "10"), ("sega", "10"), ("full", "10"),
                                                 ("ultraimage", "9"))},
     "prog.vs.ultraimage.unresolved_metrics": "aesthetic",
@@ -613,13 +621,18 @@ def load_hrdit_steps() -> tuple:
 
 
 def load_prog_latency() -> dict:
-    """method -> (median seconds, n timed) of the 4096x4096 rows of results/prog_latency (sweep 3), or {}."""
+    """method -> (median seconds rounded half up to 0.1 s, n timed, the CSV string) of the 4096x4096 rows of
+    results/prog_latency (sweep 3), or {}. The CSV stores medians to 0.01 s (49.15); a binary float of 49.15 prints
+    as 49.1, so every value is rounded half up from its decimal string, as the paper prints it (49.2), and ratios are
+    taken from the rounded values."""
     if not PROG_LAT.exists():
         return {}
     out = {}
     for r in rows(PROG_LAT):
         if r["res"] == "4096x4096":
-            out[r["method"]] = (float(r["median_s"]), int(r["n_timed"]))
+            s = r["median_s"].strip()
+            v = Decimal(s).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+            out[r["method"]] = (float(v), int(r["n_timed"]), s)
     return out
 
 
@@ -726,10 +739,10 @@ def build() -> None:
         cell = (lat2 if method == "sca_v2" else lat).get(("4096x4096", method))
         if method in (PROG, "hrdit_dev_author") and method in plat:
             # Table 1 takes HRDiT and progressive SCA from sweep 3, timed back to back (paper, 2026-11-07)
-            med, n_t = plat[method]
+            med, n_t, raw = plat[method]
             put(f"main.{key}.time_clean", med, num(med, 1), PROG_LAT,
-                f"median_s of res=4096x4096, method={method} in results/prog_latency (sweep 3, {n_t} timed prompts "
-                "after a warm-up); 1 decimal")
+                f"median_s '{raw}' of res=4096x4096, method={method} in results/prog_latency (sweep 3, {n_t} timed "
+                "prompts after a warm-up), rounded half up to 1 decimal from the decimal string")
         elif method == PROG:
             put(f"main.{key}.time_clean", "pending", "pending", PROG_LAT,
                 "results/prog_latency/latency_summary.csv absent: progressive SCA's clean latency has not landed")
@@ -799,7 +812,8 @@ def build() -> None:
                    ("hrdit_s", "hrdit_dev_author")):
         if m == "hrdit_dev_author" and m in plat:   # the paper's HRDiT clean time is sweep 3's once it exists
             put(f"speed.{key}", plat[m][0], num(plat[m][0], 1), PROG_LAT,
-                f"median_s of res=4096x4096, method={m} in results/prog_latency (sweep 3); 1 decimal")
+                f"median_s '{plat[m][2]}' of res=4096x4096, method={m} in results/prog_latency (sweep 3), rounded half "
+                "up to 1 decimal")
             continue
         put(f"speed.{key}", med[(k4, m)], num(med[(k4, m)], 1), srcs[(k4, m)],
             f"median clean batch-1 seconds, res=4096x4096, method={m.replace('@v2', ' (second sweep)')}; 1 decimal")
@@ -990,6 +1004,8 @@ def build() -> None:
     put("config.heads_per_block", heads, str(heads), npz_path, "axis 1 of s4_pi_head")
     put("config.sigma_bins", bins, str(bins), npz_path, "axis 2 of s4_pi_head")
     put("calib.n_heads", blocks * heads, str(blocks * heads), npz_path, "blocks x heads of the s4_pi_head table")
+    put("calib.n_heads_c", blocks * heads, f"{blocks * heads:,}", npz_path,
+        "blocks x heads of the s4_pi_head table, with a thousands separator as the paper's captions print it")
     put("calib.n_prompts", j["n_prompts"], str(j["n_prompts"]), jp, "n_prompts")
     side = int(j["res"].split("x")[0])
     put("calib.res", side, str(side), jp, f"res = {j['res']}; side length")
@@ -1201,17 +1217,19 @@ def build_prog(runs: dict, pcars: list, hguid: tuple, plat: dict, per_image_bloc
         if len(gpus) != 1 or "GH200" not in rows(PROG_LAT)[0]["gpu"]:
             raise ValueError(f"{PROG_LAT}: expected one GH200 for all rows, found {gpus}")
         for k, m in names:
-            med, n_t = plat[m]
+            med, n_t, raw = plat[m]
             put(f"prog.clean.{k}", med, num(med, 1), PROG_LAT,
-                f"median_s of res=4096x4096, method={m} (sweep 3: {n_t} timed prompts after a warm-up, one GH200, "
-                "all three methods back to back); 1 decimal")
+                f"median_s '{raw}' of res=4096x4096, method={m} (sweep 3: {n_t} timed prompts after a warm-up, one "
+                "GH200, all three methods back to back), rounded half up to 1 decimal from the decimal string")
         put("prog.clean.n_timed", unique((plat[m][1] for _, m in names), "n_timed"),
             str(unique((plat[m][1] for _, m in names), "n_timed")), PROG_LAT, "n_timed of every 4096x4096 row")
         P_, H_, A_ = (plat[m][0] for _, m in names)
-        put("prog.clean.area_x", A_ / P_, times(A_ / P_, 1), PROG_LAT, "AReA / progressive SCA median_s, sweep 3; 1 decimal")
-        put("prog.clean.hrdit_x", H_ / P_, times(H_ / P_, 1), PROG_LAT, "HRDiT / progressive SCA median_s, sweep 3; 1 decimal")
+        put("prog.clean.area_x", A_ / P_, times(A_ / P_, 1), PROG_LAT,
+            "AReA / progressive SCA, sweep 3 medians each rounded half up to 0.1 s; 1 decimal")
+        put("prog.clean.hrdit_x", H_ / P_, times(H_ / P_, 1), PROG_LAT,
+            "HRDiT / progressive SCA, sweep 3 medians each rounded half up to 0.1 s; 1 decimal")
         put("prog.clean.hrdit_pct", 100 * P_ / H_, f"{100 * P_ / H_:.0f}%", PROG_LAT,
-            "100 * progressive SCA / HRDiT median_s, sweep 3; 0 decimals")
+            "100 * progressive SCA / HRDiT, sweep 3 medians each rounded half up to 0.1 s; 0 decimals")
         put("prog.clean.status", "landed", "landed", PROG_LAT, "results/prog_latency/latency_summary.csv exists")
     else:
         for k in ("prog", "hrdit", "area", "n_timed", "area_x", "hrdit_x", "hrdit_pct", "status"):
@@ -1272,6 +1290,68 @@ def build_prog(runs: dict, pcars: list, hguid: tuple, plat: dict, per_image_bloc
             txt = ci_text(p["v"] * scale, p["lo"] * scale, p["hi"] * scale, 2)
             put(f"prog.later.{k}.{key}", txt, txt, hit, f"metric={metric} delta [ci_low, ci_high]{UNITS[scale]}; "
                                                         "2 decimals, as Table generality prints it")
+    build_prog_seeds()
+
+
+def build_prog_seeds() -> None:
+    """Progressive SCA minus AReA at every seed label that has landed: the ten per-image metrics (2000 draws) and
+    patch FID from the corrected bank (1000 draws, 168 reference identities). Seed 0 reads
+    results/prog195_vs_baselines; seeds 1 and 2 read results/prog195_s<k>, whose corrected_fidp_ci files hold AReA
+    minus progressive SCA (negated here)."""
+    seeds = [(0, PROG_PAIRS / f"{PROG}_vs_area.csv", None)]
+    for k in (1, 2):
+        d = RES / f"prog195_s{k}"
+        if (d / f"{PROG}_vs_area.csv").exists():
+            seeds.append((k, d / f"{PROG}_vs_area.csv", d / "corrected_fidp_ci" / "paired_deltas.csv"))
+    worse, unres, all_ten = [], [], True
+    for k, pair, cfid in seeds:
+        P = pair_file(pair, PROG, "area")
+        if {p["seed"] for p in P.values()} != {str(k)}:
+            raise ValueError(f"{pair}: seed column {sorted({p['seed'] for p in P.values()})}, expected {k}")
+        v = {mk: verdict(P[METRICS[mk][0]]["v"], P[METRICS[mk][0]]["lo"], P[METRICS[mk][0]]["hi"], METRICS[mk][4])
+             for mk in PER_IMAGE}
+        nb = sum(1 for x in v.values() if x == "better")
+        all_ten &= nb == len(PER_IMAGE)
+        put(f"prog.seed{k}.n_better", nb, str(nb), pair, f"per-image metrics (of {len(PER_IMAGE)}) whose 95% interval "
+                                                         f"favours progressive SCA, seed label {k}")
+        for key, mk in (("ir", "ir"), ("pick_ci", "pick")):
+            metric, _, scale, _, _ = METRICS[mk]
+            p = P[metric]
+            txt = ci_text(p["v"] * scale, p["lo"] * scale, p["hi"] * scale, 2)
+            put(f"prog.seed{k}.{key}", txt, txt, pair, f"metric={metric}, progressive SCA minus AReA, seed label {k}, "
+                                                         "delta [ci_low, ci_high]; 2 decimals")
+        p = P["pickscore"]
+        put(f"prog.seed{k}.pick", p["v"], sgn(p["v"], 2), pair, f"metric=pickscore delta, seed label {k}; 2 decimals")
+        if cfid is None:
+            sl, src = prog_setlevel("area")
+            r = sl["patch_fid"]
+            src = src[0]
+        else:
+            row = [r for r in rows(cfid) if r["method"] == "area" and r["reference_method"] == PROG
+                   and r["metric"] == "patch_fid"]
+            assert len(row) == 1 and row[0]["bootstrap_valid"] == "1000" and row[0]["n_reference_prompts"] == "168", row
+            a = row[0]
+            r = dict(v=-float(a["value"]), lo=-float(a["ci_high"]), hi=-float(a["ci_low"]))
+            src = cfid
+        txt = ci_text(r["v"], r["lo"], r["hi"], 1)
+        vd = verdict(r["v"], r["lo"], r["hi"], True)
+        put(f"prog.seed{k}.fidp", txt, txt, src, f"patch FID, progressive SCA minus AReA, seed label {k}, corrected bank "
+                                                 "(1000 draws, 168 reference identities); 1 decimal")
+        put(f"prog.seed{k}.fidp_verdict", vd, vd, src, f"patch FID verdict for progressive SCA, seed label {k}")
+        (worse if vd == "worse" else unres if vd == "unresolved" else []).append(str(k))
+    n = len(seeds)
+    srcs = [s[1] for s in seeds]
+    put("prog.seeds.n", n, str(n), srcs, "seed labels with progressive SCA minus AReA pairs on all 195 prompts")
+    put("prog.seeds.n_word", WORDS[n], WORDS[n], srcs, "the same count as a word")
+    txt = f"all {WORDS[len(PER_IMAGE)]}" if all_ten else "not all ten"
+    put("prog.seeds.all_word", txt, txt, srcs, "'all ten' when progressive SCA beats AReA on every per-image metric "
+                                               "at every landed seed label")
+    join = lambda xs: " and ".join(xs) if len(xs) < 3 else ", ".join(xs[:-1]) + " and " + xs[-1]  # noqa: E731
+    for key, xs in (("fidp_worse", worse), ("fidp_unresolved", unres)):
+        t = join(xs) or "none"
+        put(f"prog.seeds.{key}", t, t, srcs, f"seed labels whose patch FID verdict is {key.split('_')[1]}")
+    put("prog.seeds.fidp_n_worse_word", WORDS[len(worse)], WORDS[len(worse)], srcs,
+        "number of seed labels with a significantly higher patch FID than AReA, as a word")
 
 
 def build_chart_pa(main) -> None:

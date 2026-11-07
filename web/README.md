@@ -2,7 +2,7 @@
 
 A static page for the paper. No build step at view time and no framework: open `web/index.html` directly
 (file:// works) or serve the folder, for example `python -m http.server -d web 8000 --bind 127.0.0.1`.
-Images are WebP, videos H.264 MP4. Everything under `web/` stays under about 70 MB (68 MB on 2026-11-07, 48 MB of
+Images are WebP, videos H.264 MP4. Everything under `web/` stays under about 70 MB (68 MB on 2026-11-07, 49 MB of
 it video); bulky intermediates live on scratch under `/scratch/09032/saini_2/sca/web_assets/`.
 
 **Configurations (paper rewrite of 2026-11-07).** The headline is **progressive SCA** (method `sca_v2_prog`, run
@@ -12,8 +12,10 @@ ratio 2 and ratio 4 from one calibration table. **Single-pass SCA** (`sca_v2`, t
 opening for 8, windows of 128, 112, 96, 80 tokens before the native 64, 1,024 bridge tokens, calibrated per-head
 mix) is the fast mode. What exists only for the operator without the schedule (`sca_nb`) is labelled "previous
 operator": 6144^2, FLUX.2-dev and the four curated local errors. FLUX.1-Krea-dev is single-pass only (the
-progressive sampler does not run it). Most images on the page are single-pass SCA and say so; progressive SCA
-images are in the side-by-side viewer.
+progressive sampler does not run it). The hero shows the paper's curated progressive SCA images
+(`paper/figures/hero_prog/provenance.json`); the side-by-side viewer and the comparison grid show progressive SCA
+beside the baselines; the single-pass showcase (the former hero) sits in the 2K-to-8K section, labelled single-pass.
+Every other SCA image names its configuration.
 
 **What the page leaves out.** The page does not discuss repeated subjects: the duplication section, its charts,
 before/after pairs, flagged failures, the Moai comparison and every duplication rate were removed on 2026-11-07,
@@ -29,7 +31,8 @@ and the method video was re-rendered without its Moai scenes.
   teaser magnifier, the before/after sliders, the concept chart, the other charts and the data-driven galleries.
 - `assets/js/images.js`, `numbers.js`, `traces.js`, `concept.js`, `ideogram_manifest.js`: generated data files (do
   not edit).
-- `assets/img/`: teaser, comparison, scale strip, local-error and method images (WebP).
+- `assets/img/`: hero (progressive SCA, with one native-pixel image for the magnifier), teaser (the single-pass
+  showcase), comparison, qual (the comparison grid), scale strip, local-error and method images (WebP).
 - `assets/video/method/`: the method video, its poster and subtitles. `assets/video/trace/`: per-sample videos.
 - `assets/ideogram/`: drop folder for the Ideogram 4.0 images (empty until they are added).
 - `build/`: every script that produces the assets, plus the selection files they read.
@@ -50,10 +53,17 @@ marked; run with `nice -n 19` on shared nodes and keep ffmpeg at `-threads 4`.
 2. **Images**: `$PY web/build/build_images.py all` converts the generated PNGs on scratch into WebP (1600 px views,
    native 1:1 crops, the 6144 px native panorama for the teaser magnifier) and writes `assets/js/images.js`. The
    comparison viewer gets five methods per prompt (single-pass SCA, AReA, full attention, progressive SCA, HRDiT).
+   `hero` re-encodes the paper's curated progressive hero (`paper/figures/hero_prog/provenance.json`, sources checked
+   by SHA-256): the large image at 1600 px plus a full native WebP for the magnifier, six tiles at 800 px and the two
+   native inset crops. `qual` re-encodes the paper's comparison grid (`paper/figures/qual_prog/provenance.json`: AReA,
+   UltraImage, HRDiT and progressive SCA on four curated prompts, each image at 720 px plus a native crop of the
+   row's shared window). The single-pass showcase (`teaser` job) has no native magnifier file, to keep `web/` under
+   the size budget (`"native": false` in `page_images.json`).
    Teaser, scale-strip and local-error picks and their crop windows are listed in `build/page_images.json`
    (`"final": true` takes the final operator's image of the same prompt and seed; the scale strip reads the
-   second timing sweep `out/latency_curve_v2/<size>/sca_v2`). The method figures are rasterised from
-   `paper/figures/method.pdf` (with lane (d), progressive SCA), `method_zoom.pdf` and `pi_heads.pdf` with PyMuPDF
+   second timing sweep `out/latency_curve_v2/<size>/sca_v2`). The method figures are rasterised at 2400 px (twice the
+   display width) from `paper/figures/method_v2.pdf` (the paper's method figure since 2026-11-07), `method_zoom.pdf`
+   and `pi_heads.pdf` with PyMuPDF
    (set `SCA_PDF_PY` to any env that has it). Decoding the 4096^2 PNGs is CPU work: run it on a compute node that
    is not the operator host. `write_js` drops the retired `dup_pairs` and `failures_v2` records.
 3. **Numbers**: `$PY web/build/build_numbers.py --fill web/index.html` reads `results/` and writes
@@ -67,7 +77,8 @@ marked; run with `nice -n 19` on shared nodes and keep ffmpeg at `-threads 4`.
      baseline, 1000 draws, 168 reference identities, keys `prog.set.<b>.*`; before it existed,
      `results/prog195_pairs/cfid_vs_{area,sca_v2}`), `results/prog_latency/latency_summary.csv` (clean sweep 3:
      progressive SCA, HRDiT and AReA back to back; Table 1's clean column for HRDiT and progressive SCA, keys
-     `prog.clean.*`), the 195 progressive sidecars (`out/dupfix_prog/sca_v2_prog/4096x4096`, stage schedule, keys
+     `prog.clean.*`; each median is rounded half up from its decimal string, 49.15 to 49.2 as the paper prints it,
+     and the ratios use the rounded values), the 195 progressive sidecars (`out/dupfix_prog/sca_v2_prog/4096x4096`, stage schedule, keys
      `prog.cfg.*`) and the sidecars of the HRDiT images `eval/prog195_sca_v2` scored (`main.hrdit.steps`);
    - the paper's paired-difference figure: `chart.pa.{prog,single}.*`, built as
      `paper/figures/src/fig_paired_prog.py` does (14 metrics, percent of AReA's mean);
@@ -77,11 +88,12 @@ marked; run with `nice -n 19` on shared nodes and keep ffmpeg at `-threads 4`.
    - two scratch inputs of the single-pass runs, as in `paper/figures/src/scav2_runs.py`: the eval.py paired deltas
      of the `*_sca_v2` runs (`/scratch/09032/saini_2/sca/eval/<run>/{base/paired_deltas,extra/extra_paired_deltas}.csv`)
      and the `sca_v2` generation sidecars (`out/dupfix/sca_v2/4096x4096`).
-   Results the paper lists as pending print "pending" until their files exist: progressive SCA on seed label 2
-   (`results/prog195_s2`) and on HRGen-1K (`prog.later.*.status`); seed label 1 (`results/prog195_s1`) landed on
-   2026-11-07 and its keys (`prog.later.seed1.*`) are on the page. When one of the others lands, its keys appear in
-   `numbers.json` and the page sentence that prints "pending" needs its numbers added. Never type a number into
-   the page by hand.
+   - progressive SCA at seed labels 1 and 2 (`results/prog195_s1`, `prog195_s2`): per-image pairs and the patch FID
+     gap from each run's `corrected_fidp_ci/paired_deltas.csv` (AReA minus progressive SCA, negated), keys
+     `prog.seed<k>.*` and `prog.seeds.*`.
+   Results the paper lists as pending print "pending" until their files exist: progressive SCA on HRGen-1K
+   (`prog.later.hrgen.status`). When it lands, its keys appear in `numbers.json` and the page sentence that prints
+   "pending" needs its numbers added. Never type a number into the page by hand.
 4. **Concept chart data**: `$PY web/build/build_concept.py` turns `results/heads_view/concept_curves.csv` (the data
    of the paper's concept figure: each of the 1,368 heads' ratio-4 window weight on 80 noise levels) into
    `assets/js/concept.js`. Curves are stored as bytes for drawing only; the median and each head's mean are exact.

@@ -1,7 +1,7 @@
 """Build every WebP image the page uses from the original PNGs on scratch.
 
 Usage (sca env python, from the repo root):
-    nice -n 19 python web/build/build_images.py compare|teaser|scale|failures|method|all
+    nice -n 19 python web/build/build_images.py compare|teaser|scale|failures|method|hero|qual|all
 
 SCA images are the final single-pass operator's (sca_v2: out/dupfix/sca_v2, out/dupfix_krea/sca_v2_krea and the
 second timing sweep out/latency_curve_v2) wherever that image exists for the same prompt and seed, checked by
@@ -173,10 +173,71 @@ def pdf_to_webp(pdf, out_id, width_px=2400):
     return save_webp(im, os.path.join(IMG, "method", out_id + ".webp"), 90), list(im.size)
 
 
+PAPER_FIGS = os.path.join(REPO, "paper", "figures")
+
+
+def hero():
+    """The page hero: the paper's curated progressive SCA images (paper/figures/hero_prog/provenance.json, drawn by
+    paper/figures/src/fig_hero_prog.py), re-encoded from their 4096^2 source PNGs (SHA-256 checked against the
+    provenance): the large image at 1600 px plus its full native-pixel WebP for the magnifier, six tiles at 800 px,
+    and the native 1:1 inset crops the paper draws."""
+    prov = json.load(open(os.path.join(PAPER_FIGS, "hero_prog", "provenance.json")))
+    out = []
+    for r in prov["records"]:
+        src, sid, big = r["source"], r["prompt_id"], r["slot"] == "big"
+        if imgsel.sha256(src) != r["png_sha256"]:
+            raise ValueError(f"{src}: SHA-256 differs from hero_prog/provenance.json")
+        im = Image.open(src).convert("RGB")
+        assert im.size == (4096, 4096), (src, im.size)
+        rec = dict(id=sid, slot=r["slot"], role=r.get("role"), prompt=r["prompt"], size=list(im.size), source_png=src,
+                   png_sha256=r["png_sha256"], operator="progressive", label="curated")
+        rec["full"] = save_webp(resized(im, 1600 if big else 800), os.path.join(IMG, "hero", f"{sid}.webp"), FULL_Q)
+        if big:
+            rec["native_file"] = save_webp(im, os.path.join(IMG, "hero", f"{sid}_native.webp"), 78)
+        ins = r.get("inset")
+        if ins:
+            x, y, s = ins["window_xys_px"]
+            rec["inset"] = dict(window=[x, y, s], corner=ins["corner"], content=ins.get("content", ""),
+                                file=save_webp(im.crop((x, y, x + s, y + s)),
+                                               os.path.join(IMG, "hero", f"{sid}_inset.webp"), CROP_Q))
+        out.append(rec)
+        print("hero", sid, r["slot"], flush=True)
+    DATA["hero"] = out
+
+
+QUAL_METHODS = ("area", "ultra", "hrdit", "prog")   # the column order of fig:qual_prog
+
+
+def qual():
+    """The paper's comparison grid fig:qual_prog (paper/figures/qual_prog/provenance.json, fig_qual_prog.py): AReA,
+    UltraImage, HRDiT and progressive SCA on four curated prompts, each image at 720 px and a native 1:1 crop of the
+    row's shared window, re-encoded from the source PNGs (SHA-256 checked against the provenance)."""
+    prov = json.load(open(os.path.join(PAPER_FIGS, "qual_prog", "provenance.json")))
+    rows = []
+    for row in prov["rows"]:
+        x, y, s = row["window_xys"]
+        rec = dict(sid=row["prompt_id"], prompt=row["prompt"], box=[x, y, s], size=[4096, 4096], label="curated", img={})
+        for m in QUAL_METHODS:
+            mm = row["methods"][m]
+            if imgsel.sha256(mm["source"]) != mm["png_sha256"]:
+                raise ValueError(f"{mm['source']}: SHA-256 differs from qual_prog/provenance.json")
+            im = Image.open(mm["source"]).convert("RGB")
+            assert im.size == (4096, 4096), (mm["source"], im.size)
+            rec["img"][m] = dict(
+                full=save_webp(resized(im, 720), os.path.join(IMG, "qual", f"{row['prompt_id']}_{m}.webp"), FULL_Q),
+                crop=save_webp(im.crop((x, y, x + s, y + s)), os.path.join(IMG, "qual", f"{row['prompt_id']}_{m}_crop.webp"),
+                               CROP_Q),
+                source_png=mm["source"])
+        rows.append(rec)
+        print("qual", row["prompt_id"], [x, y, s], flush=True)
+    DATA["qual"] = dict(rows=rows, methods=list(QUAL_METHODS), window_rule=prov["selection"].get("window_rule", ""),
+                        source="paper/figures/qual_prog/provenance.json")
+
+
 def method():
     figs = os.path.join(REPO, "paper", "figures")
     DATA["method"] = {}
-    for name in ("method", "method_zoom", "pi_heads"):
+    for name in ("method_v2", "method_zoom", "pi_heads"):
         path, size = pdf_to_webp(os.path.join(figs, name + ".pdf"), name)
         DATA["method"][name] = dict(file=path, size=size, source="paper/figures/%s.pdf" % name)
         print("method", name, size)
@@ -199,7 +260,7 @@ def write_js():
 if __name__ == "__main__":
     what = sys.argv[1] if len(sys.argv) > 1 else "all"
     jobs = dict(compare=compare, teaser=lambda: section("teaser", 1600), scale=lambda: section("scale", 1100),
-                failures=lambda: section("failures", 1100), method=method)
+                failures=lambda: section("failures", 1100), method=method, hero=hero, qual=qual)
     for name, fn in jobs.items():
         if what in (name, "all"):
             fn()

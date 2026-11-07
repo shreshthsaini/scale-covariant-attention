@@ -443,7 +443,7 @@ window.SCA_IMAGES = {
    "res": "2048x6144",
    "sid": "m2742856837225126754",
    "label": "curated",
-   "native": true,
+   "native": false,
    "long_side": 2400,
    "final": true,
    "operator": "final",
@@ -455,8 +455,7 @@ window.SCA_IMAGES = {
    ],
    "prompt": "A vibrant village with colorful houses and a picturesque castle is set against a backdrop of mountains and a clear blue sky, with bustling crowds walking along a stone bridge and a serene lake reflecting the scenery.",
    "full": "assets/img/teaser/pano_castle.webp",
-   "crop_files": [],
-   "native_file": "assets/img/teaser/pano_castle_native.webp"
+   "crop_files": []
   },
   {
    "id": "portrait",
@@ -972,13 +971,13 @@ window.SCA_IMAGES = {
   }
  ],
  "method": {
-  "method": {
-   "file": "assets/img/method/method.webp",
+  "method_v2": {
+   "file": "assets/img/method/method_v2.webp",
    "size": [
     2400,
-    991
+    1226
    ],
-   "source": "paper/figures/method.pdf"
+   "source": "paper/figures/method_v2.pdf"
   },
   "method_zoom": {
    "file": "assets/img/method/method_zoom.webp",
@@ -996,5 +995,307 @@ window.SCA_IMAGES = {
    ],
    "source": "paper/figures/pi_heads.pdf"
   }
- }
+ },
+ "qual": {
+  "rows": [
+   {
+    "sid": "1046736963520652161",
+    "prompt": "Majestic mountains rise against a clear sky, their peaks bathed in golden light, while a serene lake reflects their image surrounded by vibrant autumn foliage and mist hovering over the water.",
+    "box": [
+     600,
+     1384,
+     320
+    ],
+    "size": [
+     4096,
+     4096
+    ],
+    "label": "curated",
+    "img": {
+     "area": {
+      "full": "assets/img/qual/1046736963520652161_area.webp",
+      "crop": "assets/img/qual/1046736963520652161_area_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_1046736963520652161_826d2659e4_seed0.png"
+     },
+     "ultra": {
+      "full": "assets/img/qual/1046736963520652161_ultra.webp",
+      "crop": "assets/img/qual/1046736963520652161_ultra_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/main/ultraimage/4096x4096/a4k_eval_4096_1046736963520652161_826d2659e4_seed0.png"
+     },
+     "hrdit": {
+      "full": "assets/img/qual/1046736963520652161_hrdit.webp",
+      "crop": "assets/img/qual/1046736963520652161_hrdit_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_v1/hrdit_dev_author/4096x4096/a4k_eval_4096_1046736963520652161_826d2659e4_seed0.png"
+     },
+     "prog": {
+      "full": "assets/img/qual/1046736963520652161_prog.webp",
+      "crop": "assets/img/qual/1046736963520652161_prog_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_1046736963520652161_826d2659e4_seed0.png"
+     }
+    }
+   },
+   {
+    "sid": "8899498425633254014",
+    "prompt": "A solitary tree stands on rocky terrain under a dramatic sky, with vibrant sunset hues orange and yellow illuminating the landscape.",
+    "box": [
+     1632,
+     960,
+     320
+    ],
+    "size": [
+     4096,
+     4096
+    ],
+    "label": "curated",
+    "img": {
+     "area": {
+      "full": "assets/img/qual/8899498425633254014_area.webp",
+      "crop": "assets/img/qual/8899498425633254014_area_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_8899498425633254014_8df389cd0c_seed0.png"
+     },
+     "ultra": {
+      "full": "assets/img/qual/8899498425633254014_ultra.webp",
+      "crop": "assets/img/qual/8899498425633254014_ultra_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/main/ultraimage/4096x4096/a4k_eval_4096_8899498425633254014_8df389cd0c_seed0.png"
+     },
+     "hrdit": {
+      "full": "assets/img/qual/8899498425633254014_hrdit.webp",
+      "crop": "assets/img/qual/8899498425633254014_hrdit_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_8899498425633254014_8df389cd0c_seed0.png"
+     },
+     "prog": {
+      "full": "assets/img/qual/8899498425633254014_prog.webp",
+      "crop": "assets/img/qual/8899498425633254014_prog_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_8899498425633254014_8df389cd0c_seed0.png"
+     }
+    }
+   },
+   {
+    "sid": "58350587024203491",
+    "prompt": "A pale-skinned, armored figure wields a large scythe, surrounded by glowing-eyed skeletons and a massive, menacing creature in the background, all set in a dark, eerie environment.",
+    "box": [
+     2040,
+     664,
+     320
+    ],
+    "size": [
+     4096,
+     4096
+    ],
+    "label": "curated",
+    "img": {
+     "area": {
+      "full": "assets/img/qual/58350587024203491_area.webp",
+      "crop": "assets/img/qual/58350587024203491_area_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_58350587024203491_76ad484372_seed0.png"
+     },
+     "ultra": {
+      "full": "assets/img/qual/58350587024203491_ultra.webp",
+      "crop": "assets/img/qual/58350587024203491_ultra_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/main/ultraimage/4096x4096/a4k_eval_4096_58350587024203491_76ad484372_seed0.png"
+     },
+     "hrdit": {
+      "full": "assets/img/qual/58350587024203491_hrdit.webp",
+      "crop": "assets/img/qual/58350587024203491_hrdit_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_58350587024203491_76ad484372_seed0.png"
+     },
+     "prog": {
+      "full": "assets/img/qual/58350587024203491_prog.webp",
+      "crop": "assets/img/qual/58350587024203491_prog_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_58350587024203491_76ad484372_seed0.png"
+     }
+    }
+   },
+   {
+    "sid": "m2729538226706404616",
+    "prompt": "A woman\u2019s profile emerges among swirling clouds, with a deep gaze and delicate earrings, set against a gradient of blues and hints of gold.",
+    "box": [
+     2536,
+     256,
+     320
+    ],
+    "size": [
+     4096,
+     4096
+    ],
+    "label": "curated",
+    "img": {
+     "area": {
+      "full": "assets/img/qual/m2729538226706404616_area.webp",
+      "crop": "assets/img/qual/m2729538226706404616_area_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png"
+     },
+     "ultra": {
+      "full": "assets/img/qual/m2729538226706404616_ultra.webp",
+      "crop": "assets/img/qual/m2729538226706404616_ultra_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/main/ultraimage/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png"
+     },
+     "hrdit": {
+      "full": "assets/img/qual/m2729538226706404616_hrdit.webp",
+      "crop": "assets/img/qual/m2729538226706404616_hrdit_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_v1/hrdit_dev_author/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png"
+     },
+     "prog": {
+      "full": "assets/img/qual/m2729538226706404616_prog.webp",
+      "crop": "assets/img/qual/m2729538226706404616_prog_crop.webp",
+      "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus2729538226706404616_8475dfc03b_seed0.png"
+     }
+    }
+   }
+  ],
+  "methods": [
+   "area",
+   "ultra",
+   "hrdit",
+   "prog"
+  ],
+  "window_rule": "curated: placed by hand where the 1:1 crops show progressive SCA's advantage most clearly, free of any flaw of the progressive image; shared by the row",
+  "source": "paper/figures/qual_prog/provenance.json"
+ },
+ "hero": [
+  {
+   "id": "m3112502764021036396",
+   "slot": "big",
+   "role": "landscape and architecture",
+   "prompt": "A picturesque scene features cascading waterfalls flowing through rocky gorges, with lush green foliage surrounding the cliffs and an arched stone bridge spanning above the rushing water.",
+   "size": [
+    4096,
+    4096
+   ],
+   "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus3112502764021036396_10c241a7da_seed0.png",
+   "png_sha256": "6383e86fc341c007f08382bea54d1cbc5a7901a7da9350c05a616f5bc1a5f978",
+   "operator": "progressive",
+   "label": "curated",
+   "full": "assets/img/hero/m3112502764021036396.webp",
+   "native_file": "assets/img/hero/m3112502764021036396_native.webp",
+   "inset": {
+    "window": [
+     1600,
+     580,
+     384
+    ],
+    "corner": "bl",
+    "content": "the bridge's parapet openings, ashlar masonry and the stone ring of the arch",
+    "file": "assets/img/hero/m3112502764021036396_inset.webp"
+   }
+  },
+  {
+   "id": "3657338173664010496",
+   "slot": [
+    0,
+    0
+   ],
+   "role": "portrait",
+   "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
+   "size": [
+    4096,
+    4096
+   ],
+   "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_3657338173664010496_d4df7d19bb_seed0.png",
+   "png_sha256": "32a1f622f57d5153a22686f97ec2b415940ecd12006ecc4d322cd6115eb96ff3",
+   "operator": "progressive",
+   "label": "curated",
+   "full": "assets/img/hero/3657338173664010496.webp"
+  },
+  {
+   "id": "m5332089088153794307",
+   "slot": [
+    0,
+    1
+   ],
+   "role": "still life",
+   "prompt": "A gray pitcher with a handle filled with white flowers sits on a wooden surface beside three lemons and a small petal.",
+   "size": [
+    4096,
+    4096
+   ],
+   "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus5332089088153794307_bb81cc8796_seed0.png",
+   "png_sha256": "b5da7d78bbde8f30bce60482ae71b32a9657d4cc6ae5c3cc8a75b35d67a7f540",
+   "operator": "progressive",
+   "label": "curated",
+   "full": "assets/img/hero/m5332089088153794307.webp"
+  },
+  {
+   "id": "1594791064055740275",
+   "slot": [
+    0,
+    2
+   ],
+   "role": "fantasy",
+   "prompt": "A mysterious woman stands confidently in elaborate, dark armor adorned with intricate designs, holding a staff, against a backdrop of smoke and an ominous red sky, with shadowy, gothic buildings in the distance.",
+   "size": [
+    4096,
+    4096
+   ],
+   "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_1594791064055740275_f7306ee3c6_seed0.png",
+   "png_sha256": "b394171d642da693b54729068c72dffcd542dc8b4e9ecc691921301726a8ce9d",
+   "operator": "progressive",
+   "label": "curated",
+   "full": "assets/img/hero/1594791064055740275.webp"
+  },
+  {
+   "id": "4783241696049918576",
+   "slot": [
+    1,
+    0
+   ],
+   "role": "night",
+   "prompt": "A lone figure stands on a snowy terrain, illuminated by a flashlight, as vibrant auroras in shades of green and purple arc across a star-filled sky, with distant mountains and steam billowing from a geothermal feature in the background.",
+   "size": [
+    4096,
+    4096
+   ],
+   "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_4783241696049918576_3614fe2769_seed0.png",
+   "png_sha256": "4515ad45462a7188afa22ac8cea664f9c289be6b23a8a27fd59d79fd5fe93199",
+   "operator": "progressive",
+   "label": "curated",
+   "full": "assets/img/hero/4783241696049918576.webp"
+  },
+  {
+   "id": "7265494513082458083",
+   "slot": [
+    1,
+    1
+   ],
+   "role": "portrait",
+   "prompt": "A young woman with curly hair and rosy cheeks leans out of a stone window, holding a red fan adorned with floral patterns, dressed in a traditional European blouse with intricate detailing and a necklace.",
+   "size": [
+    4096,
+    4096
+   ],
+   "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_7265494513082458083_3ceeb2ed50_seed0.png",
+   "png_sha256": "04fb8be11d8bee8aadbc4234ddf2d3ae06d1f240fb5453ec7ec268c1b88e7478",
+   "operator": "progressive",
+   "label": "curated",
+   "full": "assets/img/hero/7265494513082458083.webp",
+   "inset": {
+    "window": [
+     2534,
+     1894,
+     256
+    ],
+    "corner": "tr",
+    "content": "the embroidered floral band of her bodice",
+    "file": "assets/img/hero/7265494513082458083_inset.webp"
+   }
+  },
+  {
+   "id": "m3118670343091498341",
+   "slot": [
+    1,
+    2
+   ],
+   "role": "animal",
+   "prompt": "A young woman in a black leather jacket kneels on the forest floor alongside three wolves, displaying a calm interaction as they sit closely together.",
+   "size": [
+    4096,
+    4096
+   ],
+   "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus3118670343091498341_9b81ec8748_seed0.png",
+   "png_sha256": "e5ce18e605dee9241337c460358f0ccb40ac7be5b9024e0291f1cb094f32fc77",
+   "operator": "progressive",
+   "label": "curated",
+   "full": "assets/img/hero/m3118670343091498341.webp"
+  }
+ ]
 };
