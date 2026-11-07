@@ -448,3 +448,13 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
 - r7_csg detector check (6 copyprone21 images, map overlay on sca_v2): fires at sca_v2's copy sites in 5 of 6
   (right-peak figure, left astronaut, rock astronaut, square pedestrians; surfer: weak on the hand, seabed copy
   missed). Gating the prompt there from step 9 lets the copies form a few tokens away. Copy-site anchor next (csga).
+- Timing probe (scripts/r7_probe_x0.py, r7/probe_x0/sca_v2, steps 7, 9, 11, 13, 15, 19 on 3 copy prompts): at step 7
+  (end of the opening) x0_hat has no copy on any prompt; at step 9 the copies are already faint blobs (black-hole
+  flier, the square's two pedestrians, the seated second astronaut); by step 11 they are figures. A second wave
+  (the black hole's ground figure) appears at steps 11 to 13. Copies are made by the first window steps acting on
+  the coarse opening latent.
+- r7_saAs75 on the 46: FAIL (10.7% human-corrected, IR -0.18, PickScore -0.38, HPSv2.1 -0.013, clean prompts too).
+- r7_csga2 (copy-site gate: running-max map from the previous step, ramp 0.3 to 0.6 of the main subject's share,
+  grow 3, all prompt values gated at the sites, x0 pulled to the opening's estimate there): by preview it removes the
+  step-8 copies (seated astronaut, flier) with a clean fill (one faint crescent smudge); misses late or weak ones (a
+  ground figure born at step 11 to 13, one pedestrian). 46-prompt run with eval queued.
