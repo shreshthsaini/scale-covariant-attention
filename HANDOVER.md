@@ -1087,5 +1087,12 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   New: copy-site anchor (commit 7ab46a3, frozen code/7ab46a3, --copy-gate-anchor): at copy sites x0' = x0_hat + C
   (L - x0_hat), L the opening's x0 estimate (sca/anchor.py local mode, full band). Screen r7_csga on copyprone21 with
   dumps (r7/sa_maps/r7_csga, a0_K0a25*). saAs75 previews look like saAs (background dissolve on the anime prompt).
+- 11:50: r7_csga by preview (2 of 21): copies still form; dumps show the map first fires at step 12 (too late) and
+  flickers (the gate lowers the share it was detected by). Fix (commit 9b4b34c, frozen code/9b4b34c): hold detected
+  sites (running max), earlier ramp 0.3 to 0.6, grow 3: r7_csga2 (a0_K0a26*, dumps r7/sa_maps/r7_csga2); csga's last
+  task parked. Timing probe (scripts/r7_probe_x0.py, commit 09cce0a): decodes x0_hat of sca_v2 at steps 7, 9, 11, 13,
+  15, 19 on 3 copy prompts (r7/probe3.jsonl) into r7/probe_x0/sca_v2, to see whether a copy is already in the opening.
+  Spool sort quirk: LANG collation ignores "_", so a0_K0_eval_* runs after every a0_K0a/b task; use eval tag 0a0
+  (saAs75's eval renamed a0_K0a0eval_r7_saAs75 at 11:46).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
