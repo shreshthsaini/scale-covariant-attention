@@ -810,6 +810,8 @@ class SCAContext:
                                         # three-part softmax over text, near, far)
     qmix_lo: float = 0.0                # qmix applies while sigma > qmix_lo (0.845: the seeding steps 0.888 to 0.850)
     qmix_tau: float = 1.0               # slope of the per-query log-odds swing (1 = Lemma 1)
+    qmix_gamma: float = 1.0             # f13: image part (near and far) scaled by gamma against the text part; 1 = one
+                                        # plain softmax (text share as full attention's), < 1 raises the text share
     pi_blend: float = 0.0               # audit Fix 2: pi' = (1 - pi_blend) pi + pi_blend m_h, m_h = full attention's
                                         # image-key share inside the step's window (calibration mass_mean); 0 = off
     pi_blend_lo: float = 0.8            # pi_blend applies while sigma > pi_blend_lo (the hand-off steps 8 to 12)
@@ -902,6 +904,8 @@ class SCAContext:
                 raise ValueError("open_pool needs a factor >= 1, gate_sigma > 0 and open_pool_hi > gate_sigma")
         if self.qmix not in ("", "f1", "f13"):
             raise ValueError("qmix must be '', f1 or f13")
+        if not self.qmix_gamma > 0.0:
+            raise ValueError("qmix_gamma must be positive")
         if not 0.0 <= self.pi_blend <= 1.0:
             raise ValueError("pi_blend must lie in [0, 1]")
         if self.qmix and (self.text_mode or self.morph_local or self.morph_text or self.local_impl != "flex" or self.band
@@ -1397,7 +1401,8 @@ class SCAProcessor:
         lat_in = None if three else ctx.lattice_layout(tile, win, f, q.device, inside=True)
         lat_out = ctx.lattice_layout(tile, win, f, q.device) if three else None
         return sca_qmix_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, layout,
-                                     cells, per, lat_in, lat_out, float(ctx.qmix_tau), three)
+                                     cells, per, lat_in, lat_out, float(ctx.qmix_tau), three,
+                                     float(math.log(ctx.qmix_gamma)))
 
     def text_forward(self, q, k, v, image_rotary_emb, f, tile, win, pi, modes):
         """Round-6 text modes (sca/textgate.py): the window softmax split into its text and image parts."""

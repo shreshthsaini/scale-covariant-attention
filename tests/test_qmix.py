@@ -67,12 +67,13 @@ def test_f1_matches_bruteforce():
     assert (out[0, L:] - ref).abs().max() < 1e-9
 
 
-def test_f13_matches_bruteforce():
+@pytest.mark.parametrize("gamma", [1.0, 0.25])
+def test_f13_matches_bruteforce(gamma):
     p = _pieces(41)
     pi = torch.tensor([0.7, 0.2], dtype=torch.float64).view(1, 1, 2, 1)
     lat_out = tg.lattice_layout((H, W), TILE, WIN, F, "cpu")
     out = qm.sca_qmix_forward(p["q"], p["k"], p["v"], p["rot"], p["rq"], p["rk"], pi, L, (H, W), F, "center", p["layR"],
-                              p["cells"], p["per"], None, lat_out, 1.0, True)
+                              p["cells"], p["per"], None, lat_out, 1.0, True, math.log(gamma))
     lse_n = p["sn"].logsumexp(-1)
     lse_t = p["st"].logsumexp(-1)
     sfar = p["sgb"].masked_fill(p["inside"][None], float("-inf"))
@@ -82,7 +83,7 @@ def test_f13_matches_bruteforce():
     o_n = torch.einsum("hnm,mhd->nhd", p["sn"].softmax(-1), p["vals_n"])
     o_t = torch.einsum("hnl,lhd->nhd", p["st"].softmax(-1), p["vt"])
     o_far = torch.einsum("hnm,mhd->nhd", sfar.softmax(-1), p["vb"])
-    logits = torch.stack([lse_t, lse_n + beta, log_far], 0)                        # [3, h, N]
+    logits = torch.stack([lse_t, lse_n + beta + math.log(gamma), log_far + math.log(gamma)], 0)   # [3, h, N]
     wts = logits.softmax(0).permute(0, 2, 1)[..., None]                            # [3, N, h, 1]
     ref = wts[0] * o_t + wts[1] * o_n + wts[2] * o_far
     assert (out[0, L:] - ref).abs().max() < 1e-9

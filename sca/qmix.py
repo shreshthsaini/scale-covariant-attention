@@ -39,9 +39,11 @@ def _logit(p):
 
 
 def sca_qmix_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, cells=None, per_cell=0, lat_in=None,
-                     lat_out=None, tau=1.0, three=False):
+                     lat_out=None, tau=1.0, three=False, log_gamma=0.0):
     """q, k, v pre-RoPE [B, L + N, h, D]; pi [1, 1, h, 1]; layout = flex layout for prefix R (the bridge only, no text),
-    lat_in / lat_out = textgate.lattice_layout(inside=True / False). Returns [B, L + N, h, D]."""
+    lat_in / lat_out = textgate.lattice_layout(inside=True / False). f13 only: log_gamma scales the whole image part
+    (near and far, so their balance is unchanged) against the text part, log gamma = 0 being one plain softmax.
+    Returns [B, L + N, h, D]."""
     cos, sin = rot
     kr = rope(k, rot)
     qi = rope(q[:, L:], (cos[L:], sin[L:]))                                       # image queries at true ids
@@ -78,7 +80,7 @@ def sca_qmix_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout,
         o_far, lse_out = lattice_part(qg, kb, vb, lat_out)                         # block centres outside the window
         log_far = log_s2 + _hi(lse_out)
         beta = lp - (lse_n - log_far).mean(-1, keepdim=True)                       # [B, h, 1]
-        a, b, c = _hi(lse_t), lse_n + beta, log_far
+        a, b, c = _hi(lse_t), lse_n + beta + log_gamma, log_far + log_gamma
         m = torch.maximum(torch.maximum(a, b), c)
         wa, wb, wc = (torch.exp(x - m).transpose(1, 2)[..., None] for x in (a, b, c))
         img = (wa * _hi(o_t) + wb * _hi(o_n) + wc * _hi(o_far)) / (wa + wb + wc)
