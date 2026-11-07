@@ -46,7 +46,8 @@ SPECS = {
         "caption": lambda manifest: (
             r"\textbf{At $4096^2$ DyPE and SEGA leave speckle, UltraImage softens the planet, and single-pass "
             r"SCA is sharp.} "
-            rf"{count_word(len(manifest['prompts']))} of {manifest['eligible_count']} prompts drawn at random; "
+            rf"{count_word(len(manifest['prompts']))} of {manifest['eligible_count']} non-development prompts drawn at "
+            r"random; "
             r"1:1 crops below."
         ),
     },
@@ -94,10 +95,10 @@ SPECS = {
 }
 
 NAMES = {"area": "AReA", "dype": "DyPE", "sega_official": "SEGA",
-         "ultraimage": "UltraImage", "sca": r"\textbf{SCA (ours)}",
+         "ultraimage": "UltraImage", "sca": r"\textbf{Single-pass SCA}",
          "flux2_full": "Full attention", "flux2_sca": r"\textbf{SCA (ours)}",
          "krea_area": "AReA", "krea_dype": "DyPE", "krea_sega": "SEGA",
-         "krea_sca": r"\textbf{SCA (ours)}"}
+         "krea_sca": r"\textbf{Single-pass SCA}"}
 for method in ("dype", "sega_official", "ultraimage"):
     imgsel.ROOTS[method] = imgsel.OUT + "/main/" + method + "/{res}"
 for method in ("flux2_full", "flux2_sca"):
@@ -347,7 +348,7 @@ def build(tag):
         geo = Geo(len(methods), (len(methods) - 1) * G_GROUP)
     else:
         geo = Geo(2 * len(methods), len(methods) * G_PAIR + (len(methods) - 1) * G_GROUP)
-    ours = "SCA (ours)" if spec.get("final_sca") else (OURS_PUB_SHORT if vertical else OURS_PUB)
+    ours = "Single-pass SCA" if spec.get("final_sca") else (OURS_PUB_SHORT if vertical else OURS_PUB)
     head = []
     for k, method in enumerate(methods):
         head += ([G_GROUP] if k else []) + [method_head(method, 1, 0, NAMES, ours=ours) if vertical

@@ -204,7 +204,7 @@ AM_BLOCKS = {"4096x4096": r"\emph{$4096\times4096$}, scale factors (4, 4)",
 SCA_FINAL = r"Single-pass \sca{}"  # the final operator (sca_v2), 28 steps at the target size
 SCA_FINAL_OLD = r"\sca{} (final)"   # its label before the paper made progressive SCA the headline (2026-11-07)
 BAND_LABEL, BAND_OLD = r"\sca{} band w/o sched.", r"\sca{} + band guard"  # no wider than "AReA (released code)"
-E2_LABEL = r"\sca{} w/o schedule"
+E2_LABEL = r"\sca{} without the schedule"
 # Multi-stage rows of Table tab:main (2026-11-07): HRDiT and progressive SCA (HRDiT's three-stage schedule with the
 # final operator), both evaluated in results/prog195_sca_v2 (base and extra summaries; FID, KID and patch versions
 # from its corrected_fidp, 168 reference identities). Progressive SCA's marks against AReA: per-image
@@ -222,7 +222,8 @@ def sweep3(method):
     rows = [r for r in csv.DictReader(open(PROG_LATENCY)) if r["res"] == "4096x4096" and r["method"] == method]
     if len(rows) != 1 or int(rows[0]["n_timed"]) != 3:
         raise ValueError(f"{PROG_LATENCY}: expected one 4096x4096 row with three timed images for {method}")
-    return float(rows[0]["median_s"])
+    from decimal import ROUND_HALF_UP, Decimal  # 49.15 must print 49.2, as in Table tab:main
+    return float(Decimal(rows[0]["median_s"]).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
 PROG_LABEL = r"Progressive \sca{}"
 
 
@@ -447,9 +448,9 @@ def app_4k(g):
         cells = [METD[m][1], vcell(S, ("area", m), m)] + sca + [
             vcell(S, ("full", m), m), dcell(vs.get(("full", m)), m)]
         body.append("    " + " & ".join(cells) + r" \\")
-    lines = [v2swap.PEND_FALLBACK, HEADER, r"  \centering\scriptsize\setlength{\tabcolsep}{1.8pt}",
+    lines = [v2swap.PEND_FALLBACK, HEADER, r"  \centering\scriptsize\setlength{\tabcolsep}{3pt}\let\tiny\scriptsize",
              r"  \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%",
-             r"  \begin{tabular}{lccY{57.5pt}cY{65.5pt}}", r"    \toprule",
+             r"  \begin{tabular}{lccccc}", r"    \toprule",
              r"    Metric & AReA & \shortstack{Single-pass\\\sca{}} & $\Delta$ [95\% CI] & Full attention & "
              r"$\Delta$ [95\% CI] \\", r"    \midrule"]
     lines += body + [r"    \bottomrule", r"  \end{tabular}}"]
@@ -483,9 +484,9 @@ def app_wide(g):
                     f"columns now come from {', '.join('results/' + r + '/' for r in landed)}")
     body = ["    " + " & ".join([METD[m][1]] + cols["2048x4096"][i] + cols["2048x6144"][i]) + r" \\"
             for i, m in enumerate(ALL)]
-    lines = [v2swap.PEND_FALLBACK, HEADER, r"  \centering\scriptsize\setlength{\tabcolsep}{1.8pt}",
+    lines = [v2swap.PEND_FALLBACK, HEADER, r"  \centering\scriptsize\setlength{\tabcolsep}{3pt}\let\tiny\scriptsize",
              r"  \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%",
-             r"  \begin{tabular}{lccY{57.5pt}ccY{57.5pt}}", r"    \toprule",
+             r"  \begin{tabular}{lcccccc}", r"    \toprule",
              r"    & \multicolumn{3}{c}{$2048\times4096$, factors (2, 4)} & "
              r"\multicolumn{3}{c}{$2048\times6144$, factors (2, 6)} \\",
              r"    \cmidrule(lr){2-4}\cmidrule(lr){5-7}",
@@ -535,7 +536,7 @@ def latency_table():
         warn.append("main text '\\sca{} is the fastest method we timed at every size': sca_v2 is not the fastest at "
                     + ", ".join(slower))
     lines = [v2swap.PEND_FALLBACK, HEADER, r"  \centering\footnotesize", r"  \setlength{\tabcolsep}{8pt}",
-             r"  \begin{tabular}{lrrr}", r"    \toprule", r"    Size ($N$ tokens) & Full attention & AReA & \sca{} \\",
+             r"  \begin{tabular}{lrrr}", r"    \toprule", r"    Size ($N$ tokens) & Full attention & AReA & Single-pass \sca{} \\",
              r"    \midrule"] + body + [r"    \bottomrule", r"  \end{tabular}"]
     return dict(name="latency", kind="tabular", label="tab:latency", runs=[v2swap.LATENCY], note="pendAppLatency",
                 tex="\n".join(lines) + "\n", subs=[], warnings=warn)
@@ -639,9 +640,9 @@ def row_tex(B, row, best, cols, full_n):
 def hrgen_ours(B, ours, pending):
     """build.py's hrgen_ours with the pending flag appended."""
     rows = []
-    for bid, m, label in (("hrgen_krea", "sca_krea", "\\sca{} (ours), FLUX.1-Krea-dev"),
+    for bid, m, label in (("hrgen_krea", "sca_krea", "Single-pass \\sca{} (ours), FLUX.1-Krea-dev"),
                           ("hrgen_dev", "area", "AReA, our run, FLUX.1-dev"),
-                          ("hrgen_dev", "sca_nb", "\\sca{} (ours), FLUX.1-dev")):
+                          ("hrgen_dev", "sca_nb", "Single-pass \\sca{} (ours), FLUX.1-dev")):
         vals = {k: ours[(bid, m, k)][0] for k in B["METRICS"] if (bid, m, k) in ours}
         if vals:
             n = min(ours[(bid, m, k)][1] for k in vals)
@@ -680,7 +681,8 @@ def key_result(B, rows, hrows):
         hi = [METRICS[c][0] for c in cols if delta[c] > 0.1 + 1e-9]
         near = [METRICS[c][0] for c in cols if abs(delta[c]) <= 0.1 + 1e-9]
         lo = [METRICS[c][0] for c in cols if delta[c] < -0.1 - 1e-9]
-        txt = "against that run \\sca{} is higher on " + join_words(hi) if hi else "against that run \\sca{}"
+        txt = ("against that run single-pass \\sca{} is higher on " + join_words(hi) if hi
+               else "against that run single-pass \\sca{}")
         if near:
             txt += ("," if hi else " is") + " within 0.1 on " + join_words(near)
         if lo:
@@ -692,7 +694,7 @@ def key_result(B, rows, hrows):
         cols = [c for c in COLS if c in hk[2] and c in ha[2]]
         hi = [METRICS[c][0] for c in cols if (hk[2][c] >= ha[2][c]) == METRICS[c][1]]
         lo = [METRICS[c][0] for c in cols if METRICS[c][0] not in hi]
-        txt = ("on HRGen-1K, where we did not rerun AReA on FLUX.1-Krea-dev, \\sca{} on that checkpoint "
+        txt = ("on HRGen-1K, where we did not rerun AReA on FLUX.1-Krea-dev, single-pass \\sca{} on that checkpoint "
                + ("exceeds every published AReA score" if hi and not lo else
                   f"exceeds AReA's published {join_words(hi)}" if hi else "does not exceed AReA's published numbers"))
         if lo:
@@ -700,8 +702,8 @@ def key_result(B, rows, hrows):
         if hk[3] != 1000:
             txt += f" ({hk[3]} of 1000 prompts)"
         parts.append((txt, hk[6]))
-    # one sentence per clause (the paper caps sentences at 35 words), each capitalized
-    parts = [(t[0].upper() + t[1:], p) for t, p in parts]
+    # one sentence per clause (the paper caps sentences at 35 words); the first follows "Key result:" in lower case
+    parts = [(t if i == 0 else t[0].upper() + t[1:], p) for i, (t, p) in enumerate(parts)]
     return ". ".join(PEND(t, p) for t, p in parts) + "."
 
 
@@ -751,7 +753,7 @@ def published_compare(B, pub, ours, pending):
         "  \\caption{\\textbf{Published numbers at $4096^2$ next to our runs.} Aesthetic-4K, 195 prompts: AReA's "
         "Table~1 (HPS and MUSIQ from its Table~6; ``FLUX.1''), our runs with FLUX.1-Krea-dev, "
         "the checkpoint AReA's released code uses (28 steps, guidance 4.5), and our FLUX.1-dev protocol. Last block: "
-        "HRGen-1K (all rows in Table~\\ref{tab:published_hrgen}). HPS: HPSv2 $\\times100$; MUSIQ on the full image; "
+        "HRGen-1K (all rows in Table~\\ref{tab:published_hrgen}). HPSv2 $\\times100$; MUSIQ on the full image; "
         "FID at $299^2$ against the 195 reference rows; patch FID is omitted because AReA does not state its crops. "
         "$^\\dagger$Fewer than all prompts; not ranked. \\textbf{Bold} / \\underline{underline}: best / second "
         "best within each block (bold only in two-row blocks); ours shaded. Key result: " + key_result(B, rows, hrows)
@@ -759,10 +761,11 @@ def published_compare(B, pub, ours, pending):
         "  \\label{tab:published_compare}",
         "  \\centering\\footnotesize",
         "  \\setlength{\\tabcolsep}{3.2pt}",
+        "  \\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",  # longer SCA labels (2026-11-07)
         "  \\begin{tabular}{@{}lr*{7}{r}@{}}",
         "    \\toprule",
         "     & & " + " & ".join(B["HEAD"]) + " \\\\",
-        "    Method & $n$ & " + " & ".join(B["HEAD2"]) + " \\\\",
+        "    Method & $n$ & " + " & ".join(h.replace("HPS$", "HPSv2$") for h in B["HEAD2"]) + " \\\\",  # HPSv2, not 2.1
         "    \\midrule",
     ]
     titles = {"pub": "Published by AReA, single pass (FLUX.1)", "pubms": "Published by AReA, multi-stage (FLUX.1)",
@@ -778,7 +781,7 @@ def published_compare(B, pub, ours, pending):
         cells = [cell(B, c, vals, rankable, best[g], pend,
                       f"{vals[c]:.1f}" if (c == "clip" and g == "pubms" and label in prec1 and c in vals) else None)
                  for c in COLS]
-        name = "\\textbf{\\sca{} (ours)}" if is_ours else label
+        name = "\\textbf{Single-pass \\sca{} (ours)}" if is_ours else label
         ntxt = f"{n}" + ("" if n == 195 else "$^\\dagger$")
         prefix = "\\rowcolor[HTML]{EAF4F1}" if is_ours else ""
         lines.append(f"    {prefix}{name} & {ntxt} & " + " & ".join(cells) + " \\\\")
@@ -787,7 +790,7 @@ def published_compare(B, pub, ours, pending):
                  "FLUX.1-Krea-dev run}} \\\\")
     for r in hrows:
         lines.append("    " + row_tex(B, r, hbest, COLS, 1000))
-    lines += ["    \\bottomrule", "  \\end{tabular}", "\\end{table}"]
+    lines += ["    \\bottomrule", "  \\end{tabular}}", "\\end{table}"]
     runs = [SWITCH[("krea", "sca_krea")], SWITCH[("dev", "sca_nb")], SWITCH[("hrgen_krea", "sca_krea")]]
     return dict(name="published_compare", kind="float", label="tab:published_compare", old="published_compare.tex",
                 runs=runs, note="pendAppPublishedCompare", tex="\n".join(lines) + "\n", subs=[], warnings=[])
@@ -809,7 +812,7 @@ def published_hrgen(B, pub, ours, pending):
     hi = [METRICS[c][0] for c in HCOLS if krea and c in krea[2] and c in area
           and (krea[2][c] >= area[c]) == METRICS[c][1]]
     lo = [METRICS[c][0] for c in HCOLS if krea and c in krea[2] and c in area and METRICS[c][0] not in hi]
-    key = ("\\sca{} on FLUX.1-Krea-dev " + (f"exceeds AReA's published {join_words(hi)}" if hi else
+    key = ("single-pass \\sca{} on FLUX.1-Krea-dev " + (f"exceeds AReA's published {join_words(hi)}" if hi else
            "does not exceed AReA's published numbers") + (f" and trails it on {join_words(lo)}" if lo else "")
            + (f" ({krea[3]} of 1000 prompts)" if krea and krea[3] != 1000 else "")) if krea else "pending"
     key = PEND(key, bool(krea and krea[6])) + "."
@@ -818,18 +821,19 @@ def published_hrgen(B, pub, ours, pending):
         "\\begin{table}[!htbp]",
         "  \\caption{\\textbf{HRGen-1K: AReA's published Table~2 next to our runs.} All 1000 prompts at $4096^2$, no "
         "reference images. Top: AReA's Table~2 (``FLUX.1'', which its released code runs as FLUX.1-Krea-dev). Bottom: "
-        "\\sca{} with a Krea-calibrated table on FLUX.1-Krea-dev (28 steps, guidance 4.5), and our paired FLUX.1-dev "
-        "runs of AReA and \\sca{}. HPS: HPSv2 $\\times100$; IS: Inception score; MUSIQ on the full image. "
+        "single-pass \\sca{} with a Krea-calibrated table on FLUX.1-Krea-dev (28 steps, guidance 4.5), and our paired "
+        "FLUX.1-dev runs of AReA and single-pass \\sca{}. HPSv2 $\\times100$; IS: Inception score; MUSIQ on the full image. "
         "\\textbf{Bold} / \\underline{underline}: best / second best among the "
         "published rows and our FLUX.1-Krea-dev row. Table~\\ref{tab:published_compare} holds the Aesthetic-4K "
         "comparison. Key result: " + key + "\\pendAppPublishedHrgen}",
         "  \\label{tab:published_hrgen}",
         "  \\centering\\footnotesize",
         "  \\setlength{\\tabcolsep}{3.2pt}",
+        "  \\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",  # longer SCA labels (2026-11-07)
         "  \\begin{tabular}{@{}lr*{7}{r}@{}}",
         "    \\toprule",
         "     & & Image- & Aes- &  & Pick- &  &  &  \\\\",
-        "    Method & $n$ & " + " & ".join(B["HHEAD2"]) + " \\\\",
+        "    Method & $n$ & " + " & ".join(h.replace("HPS$", "HPSv2$") for h in B["HHEAD2"]) + " \\\\",
         "    \\midrule",
         "    \\multicolumn{9}{@{}l}{\\emph{Published by AReA (FLUX.1)}} \\\\",
     ]
@@ -839,7 +843,7 @@ def published_hrgen(B, pub, ours, pending):
             lines += ["    \\midrule", "    \\multicolumn{9}{@{}l}{\\emph{Our runs}} \\\\"]
         group = r[0]
         lines.append("    " + row_tex(B, r, best, HCOLS, 1000))
-    lines += ["    \\bottomrule", "  \\end{tabular}", "\\end{table}"]
+    lines += ["    \\bottomrule", "  \\end{tabular}}", "\\end{table}"]
     runs = [SWITCH[("hrgen_krea", "sca_krea")], SWITCH[("hrgen_dev", "sca_nb")]]
     return dict(name="published_hrgen", kind="float", label="tab:published_hrgen", old="published_hrgen.tex",
                 runs=runs, note="pendAppPublishedHrgen", tex="\n".join(lines) + "\n", subs=[], warnings=[])

@@ -72,8 +72,8 @@ METHODS = ["hrdit_dev_author", "sca_v2_prog", "sca_v2"]
 # header text, TikZ style, bold: both SCA variants are ours (accent); "SCA (ours)" is last and the only
 # bold label. Times are not drawn (the caption points to the table); campaign_seconds() still validates them.
 HEADERS = {"hrdit_dev_author": ("HRDiT", "head", False),
-           "sca_v2_prog": ("Progressive SCA (ours)", "headours", False),
-           "sca_v2": ("SCA (ours)", "headours", True)}
+           "sca_v2_prog": ("Progressive SCA (ours)", "headours", True),
+           "sca_v2": ("Single-pass SCA", "headours", False)}
 PUBLISHED = {"sca_v2_prog": "sca_prog", "sca_v2": "sca_nb"}  # the published operator each SCA column replaced
 SCHEDULE = {k: v for k, v in imgsel.FINAL_FLAGS.items() if k not in ("window", "pi_variant", "gate_sigma")}
 RES, CROP = 4096, 512

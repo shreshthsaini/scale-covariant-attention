@@ -648,7 +648,7 @@ def table_prog_all():
     worse_pfid = [m for m in ("area", "hrdit_dev_author", "sca_v2") if sl_of[m] and sl_of[m]["patch_fid"][1] > 0]
     check(worse_pfid == ["area", "hrdit_dev_author", "sca_v2"], f"prog_all key result: patch FID worse vs {worse_pfid}")
     key = (r" Key result: progressive \sca{} is significantly better than AReA, DyPE, SEGA, and full attention on every "
-           r"per-image metric and than UltraImage on nine, matches HRDiT on ImageReward, HPSv2.1, and PickScore, and "
+           r"per-image metric and than UltraImage on nine. It matches HRDiT on ImageReward, HPSv2.1, and PickScore and "
            r"has higher patch FID than AReA, HRDiT, and single-pass \sca{}." if not pending_refs else "")
     if outside:  # a percentile interval of a biased statistic need not contain the point estimate
         note += (" The point estimate lies outside its percentile interval for " + ", ".join(outside) +

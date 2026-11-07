@@ -60,6 +60,7 @@ SOURCES = {  # run under results/ -> methods whose seconds and ImageReward are r
     "a4k195_main": ["full", "dype", "sega_official", "area", "sca_nb", "ultraimage"],
     "a4k195_panel": ["sigma_dev_matched", "hrdit_dev_author", "sca_s56", "sca_g7", "sca_s42"],
     "prog195_sca_v2": ["sca_v2_prog"],
+    "a4k195_main_sca_v2": ["sca_v2"],  # single-pass SCA, the final operator (render review 2026-11-07)
 }
 SUMMARIES = ("base_summary.csv", "extra_summary.csv")  # each run's summaries: seconds in base, ir in extra
 PAIRED_RUN, PAIRED_PAIR = "prog195_sca_v2", ("sca_v2_prog", "hrdit_dev_author")
@@ -69,10 +70,12 @@ PAIRED = f"results/{PAIRED_RUN}/{PAIRED_PAIR[0]}_vs_{PAIRED_PAIR[1]}.csv"
 PRINTED = {"full": (196.2, -2.18), "dype": (195.9, -0.10), "sigma_dev_matched": (192.5, -0.52),
            "sega_official": (190.4, 0.56), "area": (264.4, 0.92), "sca_nb": (71.5, 1.23),
            "ultraimage": (308.5, 1.28), "hrdit_dev_author": (110.4, 1.34), "sca_s56": (139.9, 1.26),
-           "sca_g7": (71.9, 1.16), "sca_s42": (106.8, 1.26), "sca_v2_prog": (50.7, 1.32)}
+           "sca_g7": (71.9, 1.16), "sca_s42": (106.8, 1.26), "sca_v2_prog": (50.7, 1.32),
+           "sca_v2": (78.4, 1.25)}
 NAME = {"full": "full attention", "dype": "DyPE", "sigma_dev_matched": "SigMa", "sega_official": "SEGA",
         "area": "AReA", "sca_nb": "SCA", "ultraimage": "UltraImage", "hrdit_dev_author": "HRDiT",
-        "sca_s56": "56 steps", "sca_g7": "guidance 7", "sca_s42": "42 steps", "sca_v2_prog": "Progressive SCA"}
+        "sca_s56": "56 steps", "sca_g7": "guidance 7", "sca_s42": "42 steps", "sca_v2_prog": "Progressive SCA",
+        "sca_v2": "Single-pass\nSCA"}
 OFF_AXIS = {"full", "dype", "sigma_dev_matched"}  # below YLIM; the caption names them
 
 W, H = 3.6, 1.8  # 2:1, included at natural size; the height must not grow
@@ -102,7 +105,8 @@ PLOT = {
     "area": ("area", (5, 0), "left", "center"),
     "ultraimage": ("multi_sq", (-5.5, 0), "right", "center"),
     "hrdit_dev_author": ("multi", (5, 1.5), "left", "center"),
-    "sca_nb": ("sca", (4.5, 0), "left", "center"),
+    "sca_nb": ("budget", None, "left", "center"),     # SCA without the schedule, 28 steps: open, unlabelled
+    "sca_v2": ("sca", (3, -4), "left", "top"),        # single-pass SCA: the one filled circle
     "sca_g7": ("budget", None, "left", "bottom"),     # budget variants: markers only, the
     "sca_s42": ("budget", None, "center", "top"),     # caption names them (house rule 9)
     "sca_s56": ("budget", None, "left", "center"),
@@ -121,7 +125,8 @@ WRAP_PLOT = {  # as PLOT, offsets re-placed for the smaller canvas
     "area": ("area", (4.5, 0), "left", "center"),
     "ultraimage": ("multi_sq", (3.5, -3.5), "right", "top"),  # below its marker: HRDiT's label fills the row
     "hrdit_dev_author": ("multi", (4.5, 1.5), "left", "center"),
-    "sca_nb": ("sca", (4, 0), "left", "center"),
+    "sca_nb": ("budget", None, "left", "center"),
+    "sca_v2": ("sca", (3, -4), "left", "top"),
     "sca_g7": ("budget", None, "left", "bottom"),
     "sca_s42": ("budget", None, "center", "top"),
     "sca_s56": ("budget", None, "left", "center"),

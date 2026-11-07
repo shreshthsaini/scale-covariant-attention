@@ -57,7 +57,7 @@ import gen_prog_tables as prog  # noqa: E402  (same)
 import v2swap  # noqa: E402
 
 MAIN_V2 = "a4k195_main_sca_v2"
-WOS = "w/o schedule"
+WOS = "without the schedule"  # group rows have room for the full name (render review 2026-11-07)
 WOS_SHORT = "w/o sched."
 
 # (csv metric, row label, scale, decimals) for the 4096^2 delta tables typed after gen_tables.py's MET
@@ -224,7 +224,7 @@ def krea_claim(v, secs):
     losses = [k for k, h in spec if sig(v[k], h) == -1]
     untested = [k for k, h in spec if sig(v[k], h) is None]
     n = len(wins)
-    text = rf"on FLUX.1-Krea-dev \sca{{}} wins {WORDS[n] if n < len(WORDS) else n} metric{'' if n == 1 else 's'}"
+    text = rf"on FLUX.1-Krea-dev single-pass \sca{{}} wins {WORDS[n] if n < len(WORDS) else n} metric{'' if n == 1 else 's'}"
     text += f" and loses {label_list(losses)}" if losses else " and loses none"
     if 0.28 <= secs < 0.40:
         text += ", in a third of the time"
@@ -237,12 +237,12 @@ def krea_claim(v, secs):
 
 def krea_6144():
     landed = v2swap.landed(KREA_RUN)
-    cols = [("e2_6144", "sca_nb", rf"\sca{{}} {WOS_SHORT}"), ("e9_krea", "sca_krea", r"\sca{}"),
+    cols = [("e2_6144", "sca_nb", rf"\sca{{}} {WOS_SHORT}"), ("e9_krea", "sca_krea", r"Single-pass \sca{}"),
             ("e9_krea", "dype", "DyPE"), ("e9_krea", "sega_official", "SEGA")]
     data = [late.load_deltas(f, m) for f, m, _ in cols]
     sources = ["results/e2_6144", "results/e9_krea"]
     if late.KREA195:  # as gen_late_tables: SCA on all 195 Krea prompts; DyPE and SEGA keep the 100 they ran
-        cols[1] = ("krea195", "sca_krea", r"\sca{}")
+        cols[1] = ("krea195", "sca_krea", r"Single-pass \sca{}")
         data[1] = late.load_deltas("krea195", "sca_krea", n="195", setlevel="corrected_fidp_ci/paired_deltas.csv")
         sources.append("results/krea195")
     summary = late.load_summary("krea195" if late.KREA195 else "e9_krea")
@@ -271,7 +271,7 @@ def krea_6144():
                       r"whose patch versions have no interval")
     caption = (rf"\caption{{\textbf{{At $6144^2$ \sca{{}} without the schedule beats AReA on {wins6144} of {len(spec)} "
                rf"metrics; {claim}.}} Method minus AReA with 95\% paired intervals over "
-               + (r"100 prompts at $6144^2$ and for DyPE and SEGA, which ran only those, and all 195 for \sca{} on "
+               + (r"100 prompts at $6144^2$ and for DyPE and SEGA, which ran only those, and all 195 for single-pass \sca{} on "
                   r"FLUX.1-Krea-dev. The first column is " if late.KREA195 else "100 prompts each. The first column is ")
                + r"FLUX.1-dev at $6144^2$, the others FLUX.1-Krea-dev at $4096^2$ with a Krea-calibrated \sca{} table. "
                + intervals + r". Lower is better for FID, KID, their patch versions, and time. \up{Blue} / \dn{orange}: "
@@ -493,9 +493,9 @@ def prog_deltas():
                r"label 0. Per-image differences (first-named setting minus "
                rf"second) with 95\% paired intervals over {prog.DRAWS} prompt draws; \up{{blue}} / \dn{{orange}}: the "
                r"interval excludes zero in favour of / against the first-named setting. Progressive: HRDiT's schedule "
-               r"with \sca{} attention (Section~\ref{sec:progressive}); \sca{}: 28 steps, single-pass \sca{} in the "
-               r"second column and \sca{} without the schedule in the third; 42 steps: single-pass \sca{} without "
-               r"the schedule, sized to HRDiT's campaign time. Intervals that include zero do not establish "
+               r"with \sca{} attention (Section~\ref{sec:progressive}). \sca{}: 28 steps, single-pass \sca{} in the "
+               r"second column and \sca{} without the schedule in the third. 42 steps: \sca{} without the schedule "
+               r"at 42 steps, sized to HRDiT's campaign time. Intervals that include zero do not establish "
                r"equivalence."
                + "\\" + note + "}")
     lines = [v2swap.PEND_FALLBACK, header(sources), r"\begin{table}[!htbp]", caption, r"\label{tab:prog_deltas}",

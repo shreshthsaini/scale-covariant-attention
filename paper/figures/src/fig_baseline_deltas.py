@@ -177,9 +177,9 @@ def claims(records):
 
 
 def write_snippet(path, landed=False):
-    cap = (r"\textbf{SCA beats every shared-protocol baseline on all four metrics; against UltraImage the result "
-           r"is mixed.}" "\n"
-           rf"  SCA minus baseline, mean over the same {N_PROMPTS} prompts at $4096^2$, whiskers 95\% "
+    cap = (r"\textbf{Single-pass SCA beats every shared-protocol baseline on all four metrics; against UltraImage "
+           r"the result is mixed.}" "\n"
+           rf"  Single-pass SCA minus baseline, mean over the same {N_PROMPTS} prompts at $4096^2$, whiskers 95\% "
            rf"prompt-bootstrap intervals ({DRAWS} draws, one seed); open markers: interval contains zero; "
            r"orange: significant loss." "\n"
            r"  $^\dagger$Own two-stage recipe, not an equal-cost comparison.")

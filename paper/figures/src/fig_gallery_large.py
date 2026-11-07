@@ -45,7 +45,7 @@ from fig_qual import (G_GROUP, G_PAIR, G_ROW, G_SECTION, GRID_DPI, JPEG_Q, NAMES
 
 SCRIPT = "paper/figures/src/fig_gallery_large.py"
 HEAD_NAMES = dict(NAMES, flux2_full="Full attention")
-ROW_LABEL = {"area": "AReA", "sca": ROW_OURS}
+ROW_LABEL = {"area": "AReA", "sca": r"\scaOurs{Single-pass SCA}"}  # one name for the final operator
 FINAL = {"gallery_4096", "gallery_4096x2048", "gallery_6144x2048"}  # SCA column: the final operator (sca_v2)
 
 # Captions: a bold claim, then at most 35 words in all; the shared protocol (model, seed, steps, guidance,
@@ -56,7 +56,7 @@ SPECS = {
         captions=[
             r"\textbf{At $4096^2$ single-pass SCA keeps texture that AReA blurs or grids.} "
             r"Prompts one to five of 32 drawn at random; 1:1 crops follow.",
-            r"\textbf{At $4096^2$, continued: single-pass SCA turns the steeple into clustered spires.} Prompts "
+            r"\textbf{At $4096^2$, continued: five more uncurated prompts, AReA against single-pass SCA.} Prompts "
             r"six to ten of the random draw in Figure~\ref{fig:gallery_4096}.",
         ]),
     "gallery_4096x2048": dict(k=2, captions=[
@@ -181,7 +181,7 @@ def stacked_rows(t, sids, methods, by, res, asp):
         for k, m in enumerate(methods):
             full, crop = t[sid, m]
             rows.append((g_row([t_full(full, box, res), G_PAIR, t_crop(crop)],
-                               label=ROW_LABEL[m] if i == 0 else None, indent=i > 0),
+                               label=ROW_LABEL[m]),  # every pair labelled (render review 2026-11-07)
                          G_PAIR if k < len(methods) - 1 else G_SECTION))
     return rows
 
@@ -221,7 +221,7 @@ def build(name):
         start += count
         figures[f"fig:{part}"] = sids
         rows = (stacked_rows(t, sids, methods, by, res, asp) if stacked
-                else square_rows(t, sids, methods, by, res, "SCA (ours)" if name in FINAL else OURS_PUB))
+                else square_rows(t, sids, methods, by, res, "Single-pass SCA" if name in FINAL else OURS_PUB))
         span = f"prompts {start - count + 1} to {start} of " if len(parts) > 1 else ""
         comments = [f"Shows {span}the first {k} of the {n} prompts in the frozen draw order of "
                     f"{name}/provenance.json (see its display record), in draw order.",
