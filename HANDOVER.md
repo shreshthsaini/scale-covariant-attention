@@ -945,5 +945,12 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   ctw showed the same right-edge garbage). New knob --qmix-gamma (commit 8ace484, frozen code/8ace484): scales the image
   part against the text, near/far balance unchanged. Queued at the head: r7_q13m (f13 while sigma > 0.55, a0_K28*),
   r7_q13g (f13 every step, gamma 0.25, text share near sca_v2's, a0_K29*), r7_q13s (seeding steps, a0_K30*).
+- 05:33: scripts/r7_qmix_gpu_check.py on an SCA24 GPU (4096^2 shapes, random q/k/v): compiled f1/f13 match eager to
+  5e-4; text, near, far and in-window parts match a float32 brute force on border and interior queries; LSEs are natural
+  log. So f13's glitches are the operator, not a bug. r7_q13m (f13 while sigma > 0.55), pQ7: 3 yes, 1 borderline, 17 no,
+  same glitches; r7_q13g's first images glitch too. f13's near/far weights equal f1's; what differs is that f13's far
+  part excludes the in-window block centres. New --qmix-far all (commit 92c8dff, frozen code/92c8dff): far part over
+  every centre. Queued at the head: r7_q13w (far all, gamma 1, a0_K295*), r7_q13wg (far all, gamma 0.25, a0_K296*).
+  46-prompt runs of q13m/q13g staged in taskq/hold_r7_fix13_46 (a0_K94*, a0_K95*).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).

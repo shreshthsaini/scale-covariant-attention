@@ -325,3 +325,10 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   the s^2-weighted far lattice (about 65K effective keys), so its share falls to about full attention's. Next:
   --qmix-gamma (8ace484) scales the image part against the text with the near/far balance fixed; gamma 0.25 puts the
   text share near sca_v2's mix. Screens queued: q13m (f13 while sigma > 0.55), q13g (gamma 0.25, every step), q13s.
+- GPU check (scripts/r7_qmix_gpu_check.py, 05:30, c609-042): compiled f1/f13 = eager (5e-4); all parts = float32 brute
+  force at border and interior queries. The glitches are the operator's.
+- r7_q13m (f13 while sigma > 0.55): pQ7, 3 yes, 1 borderline, 17 no; glitches as in q13a, so they are not a late-step
+  effect. r7_q13g (gamma 0.25) glitches as well in its first images, so not the text share either. f13's per-query
+  near/far weights are exactly f1's (sigmoid(beta + lse_n - log_far), same centring); the parts differ: f13's far part
+  excludes the in-window centres, so a query whose far weight dominates gets an update that ignores its neighbourhood.
+  Test: --qmix-far all (92c8dff), screens r7_q13w (gamma 1) and r7_q13wg (gamma 0.25), a 2 x 2 with q13a and q13g.
