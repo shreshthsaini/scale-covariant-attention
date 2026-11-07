@@ -1043,6 +1043,11 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   code/96c211e, tests/test_guidemap.py): on window steps with sigma > 0.58 (steps 8 to 19) a second transformer pass
   at low guidance, blended v_low + g (v_high - v_low) by the opening's subject map g (saAs map flags, rel 0.25/0.5,
   dilate 3, smooth 9); attention untouched. Queued: r7_gm15 (low 1.5, a0_K0h0*), r7_gm10 (low 1.0, a0_K0h1*).
-  r7_saAsG labeling (pQ22); r7_saAsL images done (labels after saAsG).
+- 10:13: r7_saAsG (all-text anchor, global branch only), pQ22: 6 yes, 3 borderline, 12 no. 10:21: r7_saAsL (window
+  only), pQ23: 12 yes, 9 no. Anchor family: both 7, global 6, window 12; the global branch's prompt read carries most
+  of the drive. sca_v2 itself draws the comb/drip streaks on the man-and-child aurora prompt (minus7692529131595280570);
+  tvG strengthens them. r7_gm15 runs at 124 s per image (first images). r7_g30 complete, labeling pQ24. Queued after
+  gm10: r7_q13i (f13 img anchor: text share of the plain three-part softmax, offset only on the near/far split;
+  commit cc62f52, frozen code/cc62f52, a0_K0i*).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
