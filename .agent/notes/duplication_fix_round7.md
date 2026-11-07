@@ -315,3 +315,6 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
 - r7_q12 (f1 on every step plus Fix 2): pQ4, 20 yes, 1 borderline of 21; 84.5 s. Fails. Weight changes on the
   window branch, per query or per head, do not reach the copies (round 5's txtmid and round 6's ctw, which lowered
   the window's text weight, also moved copies little), while wider windows (sca_area20) halved them.
+- r7_q12x (lead: f1 on every step plus pi = near share through sigma 0.75, steps 8 to 14): pQ5, 19 yes, 2 no. Fails.
+  Summary of the weight fixes on copyprone21 (yes of 21): q1s 20, q1a 20, q2 17, q12 20, q12x 19; sca_v2 19,
+  sca_area20 12, AReA 4. Only window geometry (AReA's wide windows held to about step 19) has moved the count.
