@@ -1049,5 +1049,12 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   tvG strengthens them. r7_gm15 runs at 124 s per image (first images). r7_g30 complete, labeling pQ24. Queued after
   gm10: r7_q13i (f13 img anchor: text share of the plain three-part softmax, offset only on the near/far split;
   commit cc62f52, frozen code/cc62f52, a0_K0i*).
+- 10:31: r7_g30 (sca_v2, guidance 3.0) pQ24: 19 yes, 1 borderline, 1 no; 10:36: r7_g35 (3.5) pQ25: 20 yes, 1 no.
+  Copies do not depend on guidance (4.5: 19). Screen bias: copyprone21 was selected on sca_v2 seed 0, so sca_v2's 19
+  is inflated; control r7_s1 (sca_v2 seed 1, a0_K0c*) queued. r7_op4 (AReA's Phase I pools) reproduces AReA's layouts
+  on the 46 yet keeps sca_v2-level copies (17.9% vs 2.2%): with the layout matched, SCA's window phase adds copies.
+  Ladder moved to the spool head (renamed a0_K0b*): L2 r7_scaD, L7 area_scaMix, L1 r7_op4 (copyprone21), L6
+  area_scaOpen, L8 area_scaText. 10:36: L2 r7_scaD (pi = 1) fails on sight (6 of 21 previewed, unlabeled): glyph
+  confetti and coloured dots on every image, copies remain (extra astronauts, a second woman); 76 s.
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
