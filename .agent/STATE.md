@@ -1,4 +1,4 @@
-# SCA live state, 2026-11-07 17:00 CST (method owner hand-back; HANDOVER.md Section 30 is the log)
+# SCA live state, 2026-11-07 17:25 CST (method owner hand-back; HANDOVER.md Section 30 is the log)
 
 ## Goal
 User decision (lead relay, 15:40): progressive SCA (sca_v2_prog) is the headline configuration and the project is
@@ -11,17 +11,15 @@ finishing for submission. The duplication work (single-pass variants) is paused 
   - (4) results/prog_latency: 49.15 s, against HRDiT's 106.97 s and AReA's 202.36 s.
   - (2) seed 1: results/prog195_s1. Its set-level intervals come from eval/prog195_s1/cpu_ci.sh on CPU, which writes
     results/prog195_s1/corrected_fidp_ci when it finishes; commit them.
-- Running:
-  - (2) seed 2: the evaluation 0a0_eval_prog195_s2 writes results/prog195_s2. When eval/prog195_s2/DONE appears,
-    commit, then run its CI with "eval/prog195_s1/cpu_ci.sh <E> <R>" using the s2 paths.
-  - (3) HRGen-1K: 40 generation tasks 0a2_pghk_*, about 14 GPU-h on SCA22's 4 GPUs until about 22:55, then
-    0a0_eval_prog_hrgen1k, which self-releases and writes results/prog_hrgen1k. Commit it when
-    eval/prog_hrgen1k/DONE exists. If SCA22 ends first, the worker requeues the task and it needs the next allocation.
+- Done since: (2) seed 2 (results/prog195_s2 with corrected_fidp_ci), and seed 1's intervals.
+- Running: (3) HRGen-1K, 40 generation tasks 0a2_pghk_* on SCA22 (about 22:55 end), then the self-releasing
+  0a0_eval_prog_hrgen1k writes results/prog_hrgen1k. Commit it when eval/prog_hrgen1k/DONE exists (about
+  21:30). If SCA22 ends first, the worker requeues the eval for the next allocation.
 - Krea is not run: scripts/sample_progressive.py supports --model dev only.
 
 ## In flight
 - taskq: the 0a* progressive tasks lead the spool; the review round (r1_/r2_/r3_) follows.
-- CPU on i615-091: eval/prog195_s1/cpu_ci.sh (started 16:43). Nothing else of the method owner's is left running.
+- Nothing of the method owner's is left running on i615-091.
 
 ## Map
 | file | what |
