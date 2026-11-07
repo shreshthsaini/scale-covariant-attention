@@ -94,6 +94,10 @@ def add_args(p):
     p.add_argument("--subject-anchor-q", type=float, nargs=2, default=(0.5, 0.95), metavar=("QLO", "QHI"),
                    help="Subject map normalization quantiles")
     p.add_argument("--subject-anchor-dump", default="", metavar="DIR", help="Save each image's subject map (npz)")
+    p.add_argument("--subject-anchor-smooth", type=int, default=0, metavar="K", help="Average the raw subject map over "
+                   "K x K tokens before the ramp (0 = off)")
+    p.add_argument("--subject-anchor-rel", type=float, nargs=2, default=None, metavar=("A", "B"), help="Ramp from "
+                   "med + A (max - med) to med + B (max - med) instead of the quantiles")
     p.add_argument("--text-value-subject", action="store_true", help="--text-value scales only the subject-word tokens "
                    "(needs --subject-words)")
     p.add_argument("--qmix", default="", choices=("", "f1", "f13"), help="Per-query mix (sca/qmix.py): f1 = weight "
@@ -146,7 +150,8 @@ def context_kwargs(args):
                 sa_dilate=getattr(args, "subject_anchor_dilate", 2), sa_all=getattr(args, "subject_anchor_all", False),
                 sa_qlo=float(getattr(args, "subject_anchor_q", (0.5, 0.95))[0]),
                 sa_qhi=float(getattr(args, "subject_anchor_q", (0.5, 0.95))[1]),
-                sa_dump=getattr(args, "subject_anchor_dump", ""), pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8))
+                sa_dump=getattr(args, "subject_anchor_dump", ""), sa_smooth=getattr(args, "subject_anchor_smooth", 0),
+                sa_rel=tuple(getattr(args, "subject_anchor_rel", None) or ()), pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8))
 
 
 def anchor(args, ctx):
@@ -222,6 +227,10 @@ def info(args):
             out["subject_anchor_all"] = True
         if tuple(getattr(args, "subject_anchor_q", (0.5, 0.95))) != (0.5, 0.95):
             out["subject_anchor_q"] = list(args.subject_anchor_q)
+        if getattr(args, "subject_anchor_smooth", 0):
+            out["subject_anchor_smooth"] = args.subject_anchor_smooth
+        if getattr(args, "subject_anchor_rel", None):
+            out["subject_anchor_rel"] = list(args.subject_anchor_rel)
     if getattr(args, "text_value", 1.0) != 1.0:
         out.update(text_value=args.text_value, text_value_lo=args.text_value_lo)
         if getattr(args, "text_value_subject", False):

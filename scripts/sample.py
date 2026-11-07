@@ -141,6 +141,7 @@ def main(argv=None):
                 spans = [m.span() for w_ in words for m in re.finditer(r"\b" + re.escape(w_) + r"\w*", row["prompt"], re.I)]
                 ctx.subject_tokens = tuple(j for j, (a, b) in enumerate(enc["offset_mapping"])
                                            if b > a and any(a < e and b > s for s, e in spans))
+                ctx.sa_tag = str(row["id"])
             if anchor is not None:
                 anchor.reset()
             generator = torch.Generator(device="cpu").manual_seed(image_seed(row["id"], args.seed))

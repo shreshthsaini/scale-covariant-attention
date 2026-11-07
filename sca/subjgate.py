@@ -50,13 +50,23 @@ def subject_part(qr, kt, vt, idx, valid, lse):
     return w.transpose(1, 2)[..., None] * o, w
 
 
-def finalize_map(m, grid, q_lo=0.5, q_hi=0.95, dilate=2):
-    """[N] accumulated subject share -> [N] map in [0, 1]: quantile-normalized and max-dilated by `dilate` tokens."""
+def finalize_map(m, grid, q_lo=0.5, q_hi=0.95, dilate=2, smooth=0, rel=None):
+    """[N] accumulated subject share -> [N] map in [0, 1]. smooth > 0 first averages m over smooth x smooth tokens (the
+    raw map is speckled: single background tokens with high subject attention). Ramp from lo to hi: quantiles q_lo,
+    q_hi of m, or with rel = (a, b) lo = med + a (max - med), hi = med + b (max - med), so only regions near the
+    strongest subject response get g = 1. Then max-dilated by `dilate` tokens."""
     m = m.float()
-    lo, hi = torch.quantile(m, q_lo), torch.quantile(m, q_hi)
+    H, W = grid
+    if smooth and smooth > 1:
+        m = F.avg_pool2d(m.view(1, 1, H, W), smooth, stride=1, padding=smooth // 2,
+                         count_include_pad=False).view(-1)[: H * W]
+    if rel is not None:
+        med, mx = torch.quantile(m, 0.5), m.max()
+        lo, hi = med + rel[0] * (mx - med), med + rel[1] * (mx - med)
+    else:
+        lo, hi = torch.quantile(m, q_lo), torch.quantile(m, q_hi)
     g = ((m - lo) / (hi - lo).clamp_min(1e-12)).clamp(0, 1)
     if dilate > 0:
-        H, W = grid
         g = F.max_pool2d(g.view(1, 1, H, W), 2 * dilate + 1, stride=1, padding=dilate).view(-1)
     return g
 

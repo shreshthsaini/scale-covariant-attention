@@ -250,6 +250,11 @@ def test_subject_part_share_and_map():
     m[5] = 1.0
     gm = sg.finalize_map(m, (4, 4), q_lo=0.5, q_hi=0.95, dilate=1)
     assert gm.view(4, 4)[1, 1] == 1 and gm.view(4, 4)[0, 0] == 1 and gm.view(4, 4)[3, 3] == 0
+    m2 = torch.zeros(64)
+    m2[27] = 4.0                    # a strong subject token
+    m2[60] = 0.5                    # a weaker speckle elsewhere
+    g2 = sg.finalize_map(m2, (8, 8), dilate=0, smooth=3, rel=(0.3, 0.6))
+    assert g2.view(8, 8)[3, 3] == 1 and g2.view(8, 8)[7, 4] == 0
 
 
 def test_processor_subject_anchor_records_map_then_gates():

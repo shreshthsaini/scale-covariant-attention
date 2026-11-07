@@ -828,7 +828,9 @@ class SCAContext:
     sa_all: bool = False                # the map gates every text token's content, not only the subject words
     sa_qlo: float = 0.5                 # map normalization: g = clip((m - q(sa_qlo)) / (q(sa_qhi) - q(sa_qlo)), 0, 1)
     sa_qhi: float = 0.95
-    sa_dump: str = ""                   # directory: save each image's raw map and gate (sa_map_NNN.npz, image order)
+    sa_dump: str = ""                   # directory: save each image's raw map and gate (sa_map_<tag>.npz)
+    sa_smooth: int = 0                  # average the raw map over sa_smooth x sa_smooth tokens first (0 = off)
+    sa_rel: tuple = ()                  # (a, b): ramp from med + a (max - med) to med + b (max - med) instead of quantiles
     morph_text: str = ""                # "" | window_mean: text queries = mean over windows (AReA) instead of global
                                         # | all_coarse: text queries attend every image key at its coarse id (Fix 4)
     # per-query mix (sca/qmix.py; root-cause audit 2026-11-06 Fix 1 / Fix 1+3); defaults = SCA
@@ -1052,13 +1054,15 @@ class SCAContext:
             if acc is None or acc.numel() != N:
                 return None
             from sca.subjgate import finalize_map
-            self._sa_map = finalize_map(acc, self.grid, q_lo=self.sa_qlo, q_hi=self.sa_qhi, dilate=self.sa_dilate)
+            self._sa_map = finalize_map(acc, self.grid, q_lo=self.sa_qlo, q_hi=self.sa_qhi, dilate=self.sa_dilate,
+                                        smooth=self.sa_smooth, rel=tuple(self.sa_rel) if self.sa_rel else None)
             if self.sa_dump:
                 import os
                 os.makedirs(self.sa_dump, exist_ok=True)
                 n = getattr(self, "_sa_count", 0)
                 self._sa_count = n + 1
-                np.savez(os.path.join(self.sa_dump, f"sa_map_{n:03d}.npz"), m=acc.float().cpu().numpy(),
+                tag = getattr(self, "sa_tag", "") or f"{os.getpid()}_{n:03d}"
+                np.savez(os.path.join(self.sa_dump, f"sa_map_{tag}.npz"), m=acc.float().cpu().numpy(),
                          g=self._sa_map.float().cpu().numpy(), grid=np.asarray(self.grid))
         return (self.sa_value + (1.0 - self.sa_value) * self._sa_map.to(device)).view(1, -1)
 
