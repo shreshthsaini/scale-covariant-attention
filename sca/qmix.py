@@ -39,10 +39,12 @@ def _logit(p):
 
 
 def sca_qmix_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, cells=None, per_cell=0, lat_in=None,
-                     lat_out=None, tau=1.0, three=False, log_gamma=0.0):
+                     lat_out=None, tau=1.0, three=False, log_gamma=0.0, far_all=False):
     """q, k, v pre-RoPE [B, L + N, h, D]; pi [1, 1, h, 1]; layout = flex layout for prefix R (the bridge only, no text),
     lat_in / lat_out = textgate.lattice_layout(inside=True / False). f13 only: log_gamma scales the whole image part
-    (near and far, so their balance is unchanged) against the text part, log gamma = 0 being one plain softmax.
+    (near and far, so their balance is unchanged) against the text part, log gamma = 0 being one plain softmax;
+    far_all=True reads the far part over all block centres (the in-window ones too, as the global branch does), so a
+    query whose far weight dominates still sees its own neighbourhood at coarse resolution.
     Returns [B, L + N, h, D]."""
     cos, sin = rot
     kr = rope(k, rot)
@@ -77,7 +79,7 @@ def sca_qmix_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout,
         o_loc = merge_lse(o_t, lse_t, o_n, lse_n)                                  # sca_v2's local branch
         img = w * o_loc + (1 - w) * _hi(o_glob[:, L:])
     else:
-        o_far, lse_out = lattice_part(qg, kb, vb, lat_out)                         # block centres outside the window
+        o_far, lse_out = lattice_part(qg, kb, vb, None if far_all else lat_out)    # block centres outside the window
         log_far = log_s2 + _hi(lse_out)
         beta = lp - (lse_n - log_far).mean(-1, keepdim=True)                       # [B, h, 1]
         a, b, c = _hi(lse_t), lse_n + beta + log_gamma, log_far + log_gamma

@@ -67,16 +67,16 @@ def test_f1_matches_bruteforce():
     assert (out[0, L:] - ref).abs().max() < 1e-9
 
 
-@pytest.mark.parametrize("gamma", [1.0, 0.25])
-def test_f13_matches_bruteforce(gamma):
+@pytest.mark.parametrize("gamma,far_all", [(1.0, False), (0.25, False), (1.0, True)])
+def test_f13_matches_bruteforce(gamma, far_all):
     p = _pieces(41)
     pi = torch.tensor([0.7, 0.2], dtype=torch.float64).view(1, 1, 2, 1)
     lat_out = tg.lattice_layout((H, W), TILE, WIN, F, "cpu")
     out = qm.sca_qmix_forward(p["q"], p["k"], p["v"], p["rot"], p["rq"], p["rk"], pi, L, (H, W), F, "center", p["layR"],
-                              p["cells"], p["per"], None, lat_out, 1.0, True, math.log(gamma))
+                              p["cells"], p["per"], None, lat_out, 1.0, True, math.log(gamma), far_all)
     lse_n = p["sn"].logsumexp(-1)
     lse_t = p["st"].logsumexp(-1)
-    sfar = p["sgb"].masked_fill(p["inside"][None], float("-inf"))
+    sfar = p["sgb"] if far_all else p["sgb"].masked_fill(p["inside"][None], float("-inf"))
     log_far = math.log(F[0] * F[1]) + sfar.logsumexp(-1)
     lp = torch.log(pi.view(-1, 1)) - torch.log1p(-pi.view(-1, 1))
     beta = lp - (lse_n - log_far).mean(-1, keepdim=True)
