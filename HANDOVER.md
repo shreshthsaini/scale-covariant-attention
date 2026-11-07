@@ -1294,3 +1294,12 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   tent-stripe artifact above. The pool-2 extended openings g2x2, g2x4 and g2x8 moved to the spool head
   (a0_K0b2961*; g2x2's 46 as a0_K0b29613*). They leave the prompt read untouched and move the hand-off later, the
   single-pass analogue of progressive SCA's committed layout, so they are the main remaining family.
+- 14:30 extended pool-2 opening on copyprone21 (detector triage): g2x2 (global at pool 2 on steps 8 and 9) 16 of 21,
+  g2x4 (steps 8 to 11) 11, g2x8 (steps 8 to 15, windows from sigma 0.70) 7. Copies fall with the length of the
+  global phase, and the prompt read stays intact; time 76 s, no cost. Native crops (r7/preview/g2x_detail.jpg)
+  show artifacts that grow with length. g2x8 has vertical and horizontal streaks along object edges and the horizon,
+  a mottled, cratered texture on the astronaut's armour and dashed outlines on the anime figures, while the diver
+  keeps his gear. g2x4 is milder (mottled armour, faint dashes). Likely cause: the pool-2 global steps at mid noise
+  give every 2 x 2 query block one shared coarse position. Queued: the 46-prompt runs of g2x8 (a0_K0b29614*, eval
+  a0_K0b29619_eval_r7_g2x8) and g2x4 (a0_K0b29616*, eval a0_K0b29618_eval_r7_g2x4) for the metric verdict, and
+  g2x8f (g2x8 with fractional coarse ids, --glob-pos frac, against the shared-position streaks) on copyprone21.
