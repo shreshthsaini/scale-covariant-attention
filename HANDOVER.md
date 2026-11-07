@@ -909,5 +909,16 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   pending to run; evaluations a0_Me_eval_* self-release into eval/r7_46_<label>). r7_op4 already has its 46 result.
 - GPU 21:25: nothing running since 18:28 (SCA21 est. 2026-11-07 13:14); my gh jobs (SCA24 x2, SCA27, SCA28) have priority ~1530 with ~430 gh jobs ahead (fairshare
   11); gh-dev submission is blocked by other projects' gh-dev jobs (JLDD pending, BL23 and V2P1 held).
+- 21:50 audit Fix 2, cheap form (commit 250cf0c, frozen /scratch/09032/saini_2/sca/code/250cf0c; tests/test_qmix.py):
+  --pi-blend LAMBDA --pi-blend-lo 0.8, pi' = (1 - LAMBDA) pi + LAMBDA m_h while sigma > 0.8, m_h = full attention's
+  image-key share inside the step's window (calibration mass_mean at the emulated radius, textgate.ctw_beta unfloored).
+  On the hand-off steps (sigma 0.888 to 0.808) mean pi 0.65 to 0.70 becomes 0.54 to 0.40 at LAMBDA = 1. Queued right
+  after the f1/f13 copy-prone runs: r7_q2 (Fix 2 alone, a0_K45*) and r7_q12 (f1 on all steps plus Fix 2, a0_K46*); their
+  46-prompt runs are parked in taskq/hold_r7_fix2 (a0_K91*, a0_K92*; evaluations a0_Ke_eval_r7_q2/q12 self-release)
+  until a copy-prone count warrants them (move to pending).
+- Spool order (21:50): a0_K fixes, a0_L ladder, a7_a9 (Track A's last people task), a7_b (r7_fg 46 and 21), review round
+  r1_ to r3_, then s0_ (Track A's 16 other-80 tasks and r7_op2bw, renamed s0_a7_*; markers keep the old names).
+- Tests: 249 pass. tests/test_review_round.py::test_generated_tasks fails by design of its subject: review_tasks.py skips
+  names already in the live spool, so its 148-task count depends on scratch state (24 now), not on code.
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).

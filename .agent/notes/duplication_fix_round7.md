@@ -285,3 +285,14 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
 - Variants: r7_q1s / r7_q13s at the seeding steps only (sigma > 0.845: 0.888, 0.870, 0.850), r7_q1a / r7_q13a at every
   window step; copyprone21 and the 46.
 
+
+## Fix 2, cheap form (21:50; commit 250cf0c)
+- --pi-blend LAMBDA --pi-blend-lo SIGMA: pi' = (1 - LAMBDA) pi + LAMBDA m_h while sigma > SIGMA (default 0.8, the
+  hand-off steps 8 to 12), m_h = full attention's image-key share inside the step's window: calibration mass_mean at
+  the emulated radius 0.5 n0 w / max(grid), interpolated over populated bins (SCAContext.near_share_now). It acts
+  through pi_now, so it feeds f1's logit pi_h as well.
+- Real table, window schedule of sca_v2: sigma 0.888 (w 128) pi mean 0.654 vs m 0.544; 0.870 (112) 0.665 vs 0.506;
+  0.850 (96) 0.677 vs 0.470; 0.830 (80) 0.690 vs 0.435; 0.808 (64) 0.704 vs 0.395. So LAMBDA = 1 lowers the window's
+  weight by 0.11 to 0.31 on the five hand-off steps and leaves step 13 on (0.707).
+- Queued (copy-prone screen, after the f1/f13 copy-prone runs): r7_q2 = Fix 2 alone (LAMBDA 1), r7_q12 = f1 on every
+  window step plus Fix 2. 46-prompt runs parked in taskq/hold_r7_fix2 until a screen warrants them.
