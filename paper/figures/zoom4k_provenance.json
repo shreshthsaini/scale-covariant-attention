@@ -1,14 +1,38 @@
 {
-  "figure": "zoom4k (replaces fig:qual_main)",
+  "figure": "zoom4k (fig:qual_main)",
   "script": "paper/figures/src/fig_zoom4k.py",
   "pdf": "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/paper/figures/zoom4k.pdf",
-  "pdf_sha256": "a5915f2f6c2d9f235fbf658fb1234366f73fecd3d0fdf3de3325a0363377e626",
-  "pdf_bytes": 834009,
+  "pdf_sha256": "848d64622580838a3d034e442003ce0e2bf75866ef655b849a6a90b20fce46b0",
+  "pdf_bytes": 585517,
+  "base_image": {
+    "method": "prog",
+    "csv_method": "sca_v2_prog",
+    "what": "every row's full image, with the window outlined in red just outside it"
+  },
   "methods_drawn": [
     "area",
     "hrdit",
-    "sca"
+    "sca",
+    "prog"
   ],
+  "headers": {
+    "area": {
+      "tex": "AReA",
+      "style": "head"
+    },
+    "hrdit": {
+      "tex": "HRDiT",
+      "style": "head"
+    },
+    "sca": {
+      "tex": "Single-pass SCA",
+      "style": "headours"
+    },
+    "prog": {
+      "tex": "\\textbf{Progressive SCA}",
+      "style": "headours"
+    }
+  },
   "not_drawn": {
     "full": {
       "why": "review round 1: the column spent three cells on the flat texture that Figure 1 (fig:teaser) already shows; Table tab:main carries its means; HRDiT is already shown",
@@ -71,6 +95,35 @@
       "checks": "its Table tab:main mean (table_check); the same prompt and derived seed as the drawn images; its value identical in every CSV of same_value_in"
     }
   },
+  "progressive_switch": {
+    "date": "2026-11-07",
+    "why": "progressive SCA became the headline configuration and single-pass SCA the fast mode; the full image of every row is now progressive SCA's and a progressive-SCA crop column follows single-pass SCA",
+    "changes": [
+      "full image: single-pass SCA (sca_v2) -> progressive SCA (sca_v2_prog)",
+      "crop columns: AReA, HRDiT, SCA -> AReA, HRDiT, single-pass SCA, progressive SCA",
+      "window 432x240 -> 352x176 px (four crops at about 2:1 within MAX_HEIGHT); the rule re-run over the four methods drawn; crops stay 1:1",
+      "header and value bands 10 and 8.5 pt -> 9.5 and 8 pt",
+      "the red outline drawn just outside the window, so the window itself stays visible",
+      "prompts unchanged (not re-curated)"
+    ],
+    "height_pt": {
+      "before": 219.484,
+      "after": 163.833,
+      "budget": 165.0
+    },
+    "viewed": {
+      "base_images": {
+        "7109958488611222679": "one woman in an olive dress before a dark green wall, hands at the lower edge; no extra subject; at 1:1 her hair is soft and partly defocused (WINDOW_VIEW_R2)",
+        "m7824758602266642611": "one blue-skinned character with round glasses at a desk; candle, two framed pictures, globe, map and compass; no copy of the character; flatter cartoon shading than single-pass SCA's image",
+        "m548913239957610051": "one conical mountain over a river; a main fall and a second, smaller fall to its right on the same river (the prompt asks for one cascading waterfall); both spray plumes fan out sideways; no repeated mountain"
+      },
+      "windows": {
+        "7109958488611222679": "hair beside the image-right side of her face; AReA fine strands, slightly smeared; HRDiT soft strands; single-pass SCA the sharpest, separate strands and flyaways; progressive SCA soft: the left half is defocused hair and the right half thicker strands over dark background with stair-stepped edges, as if upsampled; no seam, lattice or extra subject in any crop",
+        "m7824758602266642611": "the eye behind the image-right lens; AReA shows its echo outlines (concentric contour lines around the eye and lens), as in review round 1; HRDiT a clean, soft cartoon eye; single-pass SCA a clean eye with a detailed, striated iris and painted highlights; progressive SCA a clean, flat cartoon eye with the nose at the left edge, smooth shading and slightly soft outlines",
+        "m548913239957610051": "rocks in the river and the lip of the left fall; AReA crisp rocks and water; HRDiT softer; single-pass SCA the sharpest, crisp rock edges and fine water streaks at the lip; progressive SCA rocks and smooth water above a lower ledge, softer, with mild stair-stepping on rock outlines; layouts differ between methods"
+      }
+    }
+  },
   "review_round_1": {
     "date": "2026-11-04",
     "comment": "The full-attention column spends three cells on texture already shown in Figure 1 (flat field). Source window to 1 pt.",
@@ -78,7 +131,7 @@
       "full-attention column dropped (not_drawn); HRDiT is already shown",
       "window widened from 320x240 to 432x240 px to use the freed width at about the same row height; crops stay 1:1",
       "window outline on the full image from 0.7 to 1 pt",
-      "every new window viewed at 300 dpi and at 2x native pixels (examples[].window_view)"
+      "every new window viewed at 300 dpi and at 2x native pixels"
     ],
     "height_pt": {
       "before": 220.711,
@@ -88,11 +141,58 @@
     "row_height_pt": {
       "before": 61.737,
       "after": 61.328
-    }
+    },
+    "crop_px": [
+      432,
+      240
+    ],
+    "crop_ppi": 282.8,
+    "windows": {
+      "7109958488611222679": {
+        "xy": [
+          1288,
+          1360
+        ],
+        "view": "hair at the image-left edge of her face, the cheek in the top right corner; SCA clean (no seam, lattice or extra subject); AReA clean; HRDiT soft, its layout puts dark background behind the strands"
+      },
+      "m7824758602266642611": {
+        "xy": [
+          2120,
+          1312
+        ],
+        "view": "the eye behind the image-right lens, the bridge at the left edge (the previous window widened 72 px to the left and 40 px to the right, 24 px lower); SCA clean; the dark panes and white arcs inside the lens are a reflection already in the previous window; AReA shows its echo outlines (concentric contour lines around the eye and lens, hatching on the frame), as before; HRDiT clean"
+      },
+      "m548913239957610051": {
+        "xy": [
+          704,
+          1440
+        ],
+        "view": "the lip of the left fall with rocks in the river above it; SCA clean; AReA clean; HRDiT soft, its layout differs (a lower ledge and a rock pillar)"
+      }
+    },
+    "printed": {
+      "7109958488611222679": {
+        "area": "55.7",
+        "hrdit": "55.3",
+        "sca": "57.4"
+      },
+      "m7824758602266642611": {
+        "area": "51.2",
+        "hrdit": "49.1",
+        "sca": "70.6"
+      },
+      "m548913239957610051": {
+        "area": "45.2",
+        "hrdit": "48.6",
+        "sca": "65.3"
+      }
+    },
+    "pdf_sha256": "a5915f2f6c2d9f235fbf658fb1234366f73fecd3d0fdf3de3325a0363377e626"
   },
-  "selection": "Curated (audits of 2026-10-20). The first three prompts of the older fig:qual_main were viewed whole and at native pixels and all three were replaced; the medieval square that then took the middle row was replaced in turn (see 'replaced'). Eligible: the 195 evaluation prompts minus the four development prompts, the prompts of Figure 1 and every prompt displayed in another figure (galleries as displayed, showcase, ablation, failures, progressive). Rule: shortlist by SCA's ImageReward and MUSIQ_c percentiles within its own 195 images (eval/a4k195_main), keeping prompts where AReA and HRDiT each have ImageReward and HPSv2.1 at or above their own 25th percentile (asserted for every row; full attention is not constrained); view SCA whole and at native pixels and reject extra or repeated subjects, objects the prompt does not ask for, broken anatomy, seams, lattice or speckle; prefer varied subjects. The middle row was meant to show architecture or a street; every such candidate failed the viewing or the rule (see percentiles.rejected and percentiles.metric_stage), so it showed an interior still life, 2232973817337527860 (pink lilies in a vase by a paneled door). Its native pixels were clean; minor background quirks: a flat beige door with a brass knob and a wall plate beside the paneled door, and a squared back piece on the round table top; no subject is repeated. Clean at overview but not used, being a second landscape: 3638740675706761149. The rule constrains ImageReward and HPSv2.1 only; the baselines' MUSIQ_c percentiles are recorded in percentiles.shown. Ranking on SCA's metrics favours SCA in the printed values. None of the shown prompts is displayed in another figure. All of this ranked and viewed the published operator's images (sca_nb). On 2026-10-30 the SCA column switched to the final operator (sca_v2), the same prompts and seed; its images were viewed whole and at native pixels (final_operator.viewed) and its printed values come from eval/a4k195_main_sca_v2. The final operator's lily image streaks the table top, so the middle row was re-chosen on 2026-10-30 by the same rule on the final operator's metrics (eval/a4k195_main_sca_v2; the development prompts and every prompt shown in any figure excluded) with a native audit of every tile: the still life m947425340308551929 failed (see-through third bottle, floating pears) and the character at a desk m7824758602266642611 passed (its published-operator rejection does not hold for the final operator's image; percentiles.readmitted_final_operator). The other two rows were not re-ranked (their final-operator percentiles are in percentiles.shown).",
+  "selection": "Curated (audits of 2026-10-20). The first three prompts of the older fig:qual_main were viewed whole and at native pixels and all three were replaced; the medieval square that then took the middle row was replaced in turn (see 'replaced'). Eligible: the 195 evaluation prompts minus the four development prompts, the prompts of Figure 1 and every prompt displayed in another figure (galleries as displayed, showcase, ablation, failures, progressive). Rule: shortlist by SCA's ImageReward and MUSIQ_c percentiles within its own 195 images (eval/a4k195_main), keeping prompts where AReA and HRDiT each have ImageReward and HPSv2.1 at or above their own 25th percentile (asserted for every row; full attention is not constrained); view SCA whole and at native pixels and reject extra or repeated subjects, objects the prompt does not ask for, broken anatomy, seams, lattice or speckle; prefer varied subjects. The middle row was meant to show architecture or a street; every such candidate failed the viewing or the rule (see percentiles.rejected and percentiles.metric_stage), so it showed an interior still life, 2232973817337527860 (pink lilies in a vase by a paneled door). Its native pixels were clean; minor background quirks: a flat beige door with a brass knob and a wall plate beside the paneled door, and a squared back piece on the round table top; no subject is repeated. Clean at overview but not used, being a second landscape: 3638740675706761149. The rule constrains ImageReward and HPSv2.1 only; the baselines' MUSIQ_c percentiles are recorded in percentiles.shown. Ranking on SCA's metrics favours SCA in the printed values. None of the shown prompts is displayed in another figure. All of this ranked and viewed the published operator's images (sca_nb). On 2026-10-30 the SCA column switched to the final operator (sca_v2), the same prompts and seed; its images were viewed whole and at native pixels (final_operator.viewed) and its printed values come from eval/a4k195_main_sca_v2. The final operator's lily image streaks the table top, so the middle row was re-chosen on 2026-10-30 by the same rule on the final operator's metrics (eval/a4k195_main_sca_v2; the development prompts and every prompt shown in any figure excluded) with a native audit of every tile: the still life m947425340308551929 failed (see-through third bottle, floating pears) and the character at a desk m7824758602266642611 passed (its published-operator rejection does not hold for the final operator's image; percentiles.readmitted_final_operator). The other two rows were not re-ranked (their final-operator percentiles are in percentiles.shown). On 2026-11-07 progressive SCA was added and became the full image (progressive_switch); the prompts were kept, and progressive SCA's values played no part in their selection.",
   "final_operator": {
     "method": "sca_v2",
+    "role": "single-pass SCA (the fast mode since 2026-11-07)",
     "images": "out/dupfix/sca_v2/4096x4096 (imgsel.final_twin of the published image)",
     "metric_file": "/scratch/09032/saini_2/sca/eval/a4k195_main_sca_v2/base/per_image.csv",
     "viewed": {
@@ -138,13 +238,26 @@
       "note": "the values this figure printed for SCA before the switch"
     }
   },
-  "crop_rule": "Automatic, not hand-placed: fig_qual_main.auto_box over the drawn methods (area, hrdit and sca), i.e. the 432x240 (width x height) window with the largest mean PIL FIND_EDGES response of the 8x box-downsampled greyscale images, at least 256 px from every border. Over the four images used before review round 1 (full attention included) auto_box gives the same window in every row (asserted; examples[].crop_xywh_with_full_attention). The same window is cropped from every drawn method; layouts differ between methods, so the crops differ in content. Before review round 1 the window was 320x240 over all four methods.",
+  "progressive": {
+    "method": "sca_v2_prog",
+    "role": "progressive SCA (the headline configuration since 2026-11-07)",
+    "images": "out/dupfix_prog/sca_v2_prog/4096x4096 (paths as listed in eval/prog195_sca_v2)",
+    "metric_file": "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/base/per_image.csv",
+    "schedule": "HRDiT's released schedule: stages 1024x1024, 2048x2048, 4096x4096, 30 steps at the first stage with stock attention, then the last 17 steps at 2048^2 and the last 10 at 4096^2 with SCA attention (57 steps in all; asserted from every sidecar)",
+    "viewed": {
+      "7109958488611222679": "one woman in an olive dress before a dark green wall, hands at the lower edge; no extra subject; at 1:1 her hair is soft and partly defocused (WINDOW_VIEW_R2)",
+      "m7824758602266642611": "one blue-skinned character with round glasses at a desk; candle, two framed pictures, globe, map and compass; no copy of the character; flatter cartoon shading than single-pass SCA's image",
+      "m548913239957610051": "one conical mountain over a river; a main fall and a second, smaller fall to its right on the same river (the prompt asks for one cascading waterfall); both spray plumes fan out sideways; no repeated mountain"
+    }
+  },
+  "crop_rule": "Automatic, not hand-placed: fig_qual_main.auto_box over the four drawn methods (area, hrdit, sca and prog), i.e. the 352x176 (width x height) window with the largest mean PIL FIND_EDGES response of the 8x box-downsampled greyscale images, at least 256 px from every border. The same window is cropped from every drawn method; layouts differ between methods, so the crops differ in content. Review round 1 used a 432x240 window over area, hrdit and sca (review_round_1.windows).",
   "metric": "MUSIQ_c (CSV column musiq_crop1024): pyiqa MUSIQ averaged over four fixed random 1024^2 crops per image, crop positions set by the prompt id and shared across methods (Appendix app:metrics). It is a per-image score, not a score of the displayed window. Printed to one decimal; the best printed value per row is bold.",
   "sources": {
     "full_attention": "out/main/full (checked, not drawn)",
     "area": "out/main/area",
     "hrdit": "out/baseline_expansion_20261017_{v1,rest145}/hrdit_dev_author (paths as listed in eval/a4k195_panel)",
-    "sca": "out/dupfix/sca_v2 (final operator; the selection audits used out/main/sca_nb)"
+    "sca": "out/dupfix/sca_v2 (single-pass, final operator; the selection audits used out/main/sca_nb)",
+    "prog": "out/dupfix_prog/sca_v2_prog (progressive SCA)"
   },
   "metric_files": {
     "/scratch/09032/saini_2/sca/eval/a4k195_main/base/per_image.csv": "37946ab57be748a3587c6ef0ca683adc462ee75000288842e86ee4c89208d84b",
@@ -153,6 +266,7 @@
     "/scratch/09032/saini_2/sca/eval/final4k_full_base/per_image.csv": "b0c81aee38feaa4acf2f571db02c9bc19fa8573c6286e777ee14222775a13c3a",
     "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv": "f6e9d86479e73d9c24444af7f08b9ca4fff35780c39ecc26bc66d682197ba8e4",
     "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv": "fe0073e26d00893f67468acf1d14174e72589bfa7a13865d4339a1c351a426b5",
+    "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/base/per_image.csv": "1988c7198552c9a329d37c880c3dc54c7c96d44c76283dddde22a7f4912a6951",
     "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv": "b0c81aee38feaa4acf2f571db02c9bc19fa8573c6286e777ee14222775a13c3a",
     "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv": "f6e9d86479e73d9c24444af7f08b9ca4fff35780c39ecc26bc66d682197ba8e4"
   },
@@ -184,6 +298,13 @@
       "n": 195,
       "mean": 60.1139,
       "table": 60.1
+    },
+    "prog": {
+      "file": "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/base/per_image.csv",
+      "method": "sca_v2_prog",
+      "n": 195,
+      "mean": 54.1267,
+      "table": 54.1
     }
   },
   "examples": [
@@ -192,60 +313,48 @@
       "prompt": "Blonde model with tousled hair wearing a form-fitting olive green dress, looking intently at the camera with a soft expression.",
       "derived_seed": 8021251388353940390,
       "crop_xywh": [
+        2416,
         1288,
-        1360,
-        432,
-        240
+        352,
+        176
       ],
-      "crop_xywh_with_full_attention": [
-        1288,
-        1360,
-        432,
-        240
-      ],
-      "window_view": "hair at the image-left edge of her face, the cheek in the top right corner; SCA clean (no seam, lattice or extra subject); AReA clean; HRDiT soft, its layout puts dark background behind the strands",
-      "full_image": "7109958488611222679_sca_full.jpg",
-      "full_image_px": 679
+      "window_view": "hair beside the image-right side of her face; AReA fine strands, slightly smeared; HRDiT soft strands; single-pass SCA the sharpest, separate strands and flyaways; progressive SCA soft: the left half is defocused hair and the right half thicker strands over dark background with stair-stepped edges, as if upsampled; no seam, lattice or extra subject in any crop",
+      "base_image": "prog",
+      "base_image_view": "one woman in an olive dress before a dark green wall, hands at the lower edge; no extra subject; at 1:1 her hair is soft and partly defocused (WINDOW_VIEW_R2)",
+      "full_image": "7109958488611222679_prog_full.jpg",
+      "full_image_px": 481
     },
     {
       "prompt_id": "m7824758602266642611",
       "prompt": "A blue-skinned character with glasses sits at a desk cluttered with maps and instruments, including a compass and an ornate globe, while a lit candle casts a warm glow over the scene.",
       "derived_seed": 2812996670175593334,
       "crop_xywh": [
-        2120,
-        1312,
-        432,
-        240
+        2088,
+        1352,
+        352,
+        176
       ],
-      "crop_xywh_with_full_attention": [
-        2120,
-        1312,
-        432,
-        240
-      ],
-      "window_view": "the eye behind the image-right lens, the bridge at the left edge (the previous window widened 72 px to the left and 40 px to the right, 24 px lower); SCA clean; the dark panes and white arcs inside the lens are a reflection already in the previous window; AReA shows its echo outlines (concentric contour lines around the eye and lens, hatching on the frame), as before; HRDiT clean",
-      "full_image": "m7824758602266642611_sca_full.jpg",
-      "full_image_px": 679
+      "window_view": "the eye behind the image-right lens; AReA shows its echo outlines (concentric contour lines around the eye and lens), as in review round 1; HRDiT a clean, soft cartoon eye; single-pass SCA a clean eye with a detailed, striated iris and painted highlights; progressive SCA a clean, flat cartoon eye with the nose at the left edge, smooth shading and slightly soft outlines",
+      "base_image": "prog",
+      "base_image_view": "one blue-skinned character with round glasses at a desk; candle, two framed pictures, globe, map and compass; no copy of the character; flatter cartoon shading than single-pass SCA's image",
+      "full_image": "m7824758602266642611_prog_full.jpg",
+      "full_image_px": 481
     },
     {
       "prompt_id": "m548913239957610051",
       "prompt": "A cascading waterfall flows over rocky cliffs into a tranquil river, framed by a steep, conical mountain under a colorful sky at sunset.",
       "derived_seed": 5514841524660879384,
       "crop_xywh": [
-        704,
-        1440,
-        432,
-        240
+        760,
+        1480,
+        352,
+        176
       ],
-      "crop_xywh_with_full_attention": [
-        704,
-        1440,
-        432,
-        240
-      ],
-      "window_view": "the lip of the left fall with rocks in the river above it; SCA clean; AReA clean; HRDiT soft, its layout differs (a lower ledge and a rock pillar)",
-      "full_image": "m548913239957610051_sca_full.jpg",
-      "full_image_px": 679
+      "window_view": "rocks in the river and the lip of the left fall; AReA crisp rocks and water; HRDiT softer; single-pass SCA the sharpest, crisp rock edges and fine water streaks at the lip; progressive SCA rocks and smooth water above a lower ledge, softer, with mild stair-stepping on rock outlines; layouts differ between methods",
+      "base_image": "prog",
+      "base_image_view": "one conical mountain over a river; a main fall and a second, smaller fall to its right on the same river (the prompt asks for one cascading waterfall); both spray plumes fan out sideways; no repeated mountain",
+      "full_image": "m548913239957610051_prog_full.jpg",
+      "full_image_px": 481
     }
   ],
   "values": [
@@ -264,17 +373,18 @@
         "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
         "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv",
-        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv",
+        "/scratch/09032/saini_2/sca/eval/a4k195_main_sca_v2/base/per_image.csv"
       ],
       "image": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_7109958488611222679_ef2595ace4_seed0.png",
       "image_sha256": "e190c1f4bf319129e0a03ed4fd1d5c45dc9640d1cee74053bba678e26973d055",
       "derived_seed": 8021251388353940390,
       "crop": "7109958488611222679_area_crop.jpg",
       "crop_xywh": [
+        2416,
         1288,
-        1360,
-        432,
-        240
+        352,
+        176
       ]
     },
     {
@@ -289,17 +399,18 @@
       "printed": "55.3",
       "best": false,
       "same_value_in": [
-        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv"
+        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+        "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/base/per_image.csv"
       ],
       "image": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_7109958488611222679_ef2595ace4_seed0.png",
       "image_sha256": "8358defe70616c791a42e04cd470422141229078d0f074d745da83597566b92b",
       "derived_seed": 8021251388353940390,
       "crop": "7109958488611222679_hrdit_crop.jpg",
       "crop_xywh": [
+        2416,
         1288,
-        1360,
-        432,
-        240
+        352,
+        176
       ]
     },
     {
@@ -319,10 +430,33 @@
       "derived_seed": 8021251388353940390,
       "crop": "7109958488611222679_sca_crop.jpg",
       "crop_xywh": [
+        2416,
         1288,
-        1360,
-        432,
-        240
+        352,
+        176
+      ]
+    },
+    {
+      "prompt_id": "7109958488611222679",
+      "csv_prompt_id": "a4k_eval_4096_7109958488611222679",
+      "seed": 0,
+      "method": "prog",
+      "csv_method": "sca_v2_prog",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 36.327526569366455,
+      "printed": "36.3",
+      "best": false,
+      "same_value_in": [],
+      "image": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_7109958488611222679_ef2595ace4_seed0.png",
+      "image_sha256": "8761f703963dc9e5f4bce01b2bb05b6d1daef019f13b8d46452602de22f7e5a2",
+      "derived_seed": 8021251388353940390,
+      "crop": "7109958488611222679_prog_crop.jpg",
+      "crop_xywh": [
+        2416,
+        1288,
+        352,
+        176
       ]
     },
     {
@@ -340,17 +474,18 @@
         "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
         "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv",
-        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv",
+        "/scratch/09032/saini_2/sca/eval/a4k195_main_sca_v2/base/per_image.csv"
       ],
       "image": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_minus7824758602266642611_f4ed1dac8a_seed0.png",
       "image_sha256": "81ed8950b6391f27b593d494be43e99a0afa837b8cccdeef40832fae8913a510",
       "derived_seed": 2812996670175593334,
       "crop": "m7824758602266642611_area_crop.jpg",
       "crop_xywh": [
-        2120,
-        1312,
-        432,
-        240
+        2088,
+        1352,
+        352,
+        176
       ]
     },
     {
@@ -365,17 +500,18 @@
       "printed": "49.1",
       "best": false,
       "same_value_in": [
-        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv"
+        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+        "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/base/per_image.csv"
       ],
       "image": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_minus7824758602266642611_f4ed1dac8a_seed0.png",
       "image_sha256": "6142a6bba66d5b3ab56678b41cf568181059376b5ada451d540454f8ba3e90ac",
       "derived_seed": 2812996670175593334,
       "crop": "m7824758602266642611_hrdit_crop.jpg",
       "crop_xywh": [
-        2120,
-        1312,
-        432,
-        240
+        2088,
+        1352,
+        352,
+        176
       ]
     },
     {
@@ -395,10 +531,33 @@
       "derived_seed": 2812996670175593334,
       "crop": "m7824758602266642611_sca_crop.jpg",
       "crop_xywh": [
-        2120,
-        1312,
-        432,
-        240
+        2088,
+        1352,
+        352,
+        176
+      ]
+    },
+    {
+      "prompt_id": "m7824758602266642611",
+      "csv_prompt_id": "a4k_eval_4096_minus7824758602266642611",
+      "seed": 0,
+      "method": "prog",
+      "csv_method": "sca_v2_prog",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 54.44801950454712,
+      "printed": "54.4",
+      "best": false,
+      "same_value_in": [],
+      "image": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus7824758602266642611_f4ed1dac8a_seed0.png",
+      "image_sha256": "0201a8b1a10dddfca71736047888b044becb425d50df09d5427eccc02bed8a09",
+      "derived_seed": 2812996670175593334,
+      "crop": "m7824758602266642611_prog_crop.jpg",
+      "crop_xywh": [
+        2088,
+        1352,
+        352,
+        176
       ]
     },
     {
@@ -416,17 +575,18 @@
         "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
         "/scratch/09032/saini_2/sca/eval/final4k_nb_base/per_image.csv",
         "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_nb_base/per_image.csv",
-        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv"
+        "/work/09032/saini_2/vista/Projects/Exploration/Scale_Covariant_Attention/results/evidence/eval/final4k_full_base/per_image.csv",
+        "/scratch/09032/saini_2/sca/eval/a4k195_main_sca_v2/base/per_image.csv"
       ],
       "image": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_minus548913239957610051_43a9efd90a_seed0.png",
       "image_sha256": "cce83d011f02795108204128f7b443ae9b3cfb1846bd4c7fcbb88bf80407d9b2",
       "derived_seed": 5514841524660879384,
       "crop": "m548913239957610051_area_crop.jpg",
       "crop_xywh": [
-        704,
-        1440,
-        432,
-        240
+        760,
+        1480,
+        352,
+        176
       ]
     },
     {
@@ -441,17 +601,18 @@
       "printed": "48.6",
       "best": false,
       "same_value_in": [
-        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv"
+        "/scratch/09032/saini_2/sca/eval/hrdit191_base/per_image.csv",
+        "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/base/per_image.csv"
       ],
       "image": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_minus548913239957610051_43a9efd90a_seed0.png",
       "image_sha256": "d7aa9ebbf65db4356a516cecd2f7a0297315cb46ded3fb740af2c6733ef771eb",
       "derived_seed": 5514841524660879384,
       "crop": "m548913239957610051_hrdit_crop.jpg",
       "crop_xywh": [
-        704,
-        1440,
-        432,
-        240
+        760,
+        1480,
+        352,
+        176
       ]
     },
     {
@@ -471,10 +632,33 @@
       "derived_seed": 5514841524660879384,
       "crop": "m548913239957610051_sca_crop.jpg",
       "crop_xywh": [
-        704,
-        1440,
-        432,
-        240
+        760,
+        1480,
+        352,
+        176
+      ]
+    },
+    {
+      "prompt_id": "m548913239957610051",
+      "csv_prompt_id": "a4k_eval_4096_minus548913239957610051",
+      "seed": 0,
+      "method": "prog",
+      "csv_method": "sca_v2_prog",
+      "metric_file": "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/base/per_image.csv",
+      "column": "musiq_crop1024",
+      "value": 48.54506778717041,
+      "printed": "48.5",
+      "best": false,
+      "same_value_in": [],
+      "image": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus548913239957610051_43a9efd90a_seed0.png",
+      "image_sha256": "80f53b19ed648dd7b053ce5ad5908482245405397d258381fd8ead6a386ed93c",
+      "derived_seed": 5514841524660879384,
+      "crop": "m548913239957610051_prog_crop.jpg",
+      "crop_xywh": [
+        760,
+        1480,
+        352,
+        176
       ]
     }
   ],
@@ -648,7 +832,9 @@
       "/scratch/09032/saini_2/sca/eval/a4k195_main_sca_v2/base/per_image.csv": "d887a011a82eed496e1148ffecec1a3026d21762f98f96c4ef6aa51e43782a3d",
       "/scratch/09032/saini_2/sca/eval/a4k195_main_sca_v2/extra/extra_per_image.csv": "b73e9a7aded0ea355b7f9d2809410c1c703ec6ecc5b809524bbf7444aea3cf5a",
       "/scratch/09032/saini_2/sca/eval/a4k195_panel/base/per_image.csv": "4332cbb3b5f7fbb3dcc5914cee752cd71e92e4f83bc9e510e98d3923ec8d154a",
-      "/scratch/09032/saini_2/sca/eval/a4k195_panel/extra/extra_per_image.csv": "5cca627e52e0cdac512f67fe0426390175eff9edeb17a5a49d5ca077d89cb02e"
+      "/scratch/09032/saini_2/sca/eval/a4k195_panel/extra/extra_per_image.csv": "5cca627e52e0cdac512f67fe0426390175eff9edeb17a5a49d5ca077d89cb02e",
+      "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/base/per_image.csv": "1988c7198552c9a329d37c880c3dc54c7c96d44c76283dddde22a7f4912a6951",
+      "/scratch/09032/saini_2/sca/eval/prog195_sca_v2/extra/extra_per_image.csv": "ef968063b119e94a98a94aefbdae90a2bae1609515b07bdf0d3e69e89af3b0fe"
     },
     "shown": {
       "7109958488611222679": {
@@ -671,6 +857,11 @@
           "ir": 66,
           "musiq_crop1024": 37,
           "hpsv21": 60
+        },
+        "prog": {
+          "ir": 77,
+          "musiq_crop1024": 8,
+          "hpsv21": 36
         }
       },
       "m7824758602266642611": {
@@ -692,6 +883,11 @@
         "sca": {
           "ir": 88,
           "musiq_crop1024": 83,
+          "hpsv21": 92
+        },
+        "prog": {
+          "ir": 65,
+          "musiq_crop1024": 48,
           "hpsv21": 92
         }
       },
@@ -715,10 +911,15 @@
           "ir": 61,
           "musiq_crop1024": 64,
           "hpsv21": 34
+        },
+        "prog": {
+          "ir": 59,
+          "musiq_crop1024": 25,
+          "hpsv21": 30
         }
       }
     },
-    "note": "shown: SCA is the final operator (sca_v2); rejected and metric_stage: SCA is the published operator (sca_nb), whose images the audits viewed",
+    "note": "shown: sca is single-pass SCA (the final operator, sca_v2) and prog progressive SCA (sca_v2_prog); rejected and metric_stage: SCA is the published operator (sca_nb), whose images the audits viewed; the final-operator records rank area, hrdit and sca_v2",
     "rejected": {
       "m7393293802729135153": {
         "why": "a third hand under the veil",
@@ -1580,44 +1781,54 @@
   },
   "layout_pt": {
     "width": 397.5,
-    "height": 219.484,
-    "row_height": 61.328,
-    "full_image": 61.328,
-    "crops": 3,
-    "crop_width": 110.391,
+    "height": 163.833,
+    "row_height": 43.444,
+    "full_image": 43.444,
+    "crops": 4,
+    "crop_width": 86.889,
     "crop_px": [
-      432,
-      240
+      352,
+      176
     ],
     "gutters": {
       "full_to_crops": 2.0,
       "between_crops": 1.5
     },
-    "header_band": 10.0,
-    "value_band": 8.5,
+    "header_band": 9.5,
+    "value_band": 8.0,
     "box": {
       "colour": "#D62728",
-      "width_pt": 1.0
+      "width_pt": 1.0,
+      "placement": "just outside the window"
     },
-    "crop_ppi": 282.8,
-    "height_before_review_round_1": 220.711
+    "crop_ppi": 292.8,
+    "max_height": 165.0,
+    "text_pt": {
+      "headers": 8,
+      "values": 7,
+      "metric_label": 7,
+      "metric_subscript": 6.1
+    }
   },
   "jpeg": {
-    "full": "SCA full image, Lanczos to 800 px per printed inch, quality 90, 4:4:4",
+    "full": "progressive SCA's full image, Lanczos to 800 px per printed inch, quality 90, 4:4:4",
     "crop": "native pixels (1:1), quality 95, 4:4:4"
   },
   "asset_sha256": {
-    "7109958488611222679_area_crop.jpg": "9a3853494ca7fd75883a687817d3209aaed3c67cf479284ead1f422f210a273f",
-    "7109958488611222679_hrdit_crop.jpg": "397c3fc650aecd1b1e77aed9d92855385ab2e6dd5b741885815c044eb2e096b8",
-    "7109958488611222679_sca_crop.jpg": "369e14171144de4ef86e54127804f69fa71bf5bd03a77a28fae727b02587467b",
-    "7109958488611222679_sca_full.jpg": "997d68054ee7eb154d1b64960ec6857e494777d3c2a921844aa5d3fe7fe4d089",
-    "m548913239957610051_area_crop.jpg": "fcbc9c341e8b892616969321383d6fda2bd7614263ad07d6abf3e7b3a86d2f21",
-    "m548913239957610051_hrdit_crop.jpg": "f60d0f461b2043f707a14ccfdb7dff97df470f1d639314c21a6e89e5fffccb52",
-    "m548913239957610051_sca_crop.jpg": "be9aa35377ee3bd91414c56b3356d5edd002660f1c2964da2321db0d0f213573",
-    "m548913239957610051_sca_full.jpg": "f0ce9609acfe42f78bd62e9c6f923fb481fff0b54bd053c198d664cdffe4fae1",
-    "m7824758602266642611_area_crop.jpg": "b38b5b039720627dd3c89ef9a62299c1905e5971dafdd83a7481863f4ce7cef7",
-    "m7824758602266642611_hrdit_crop.jpg": "36bfe56fb310d0c6fb8b0c8cf299d82f8afd698cd0954d1e0cca2b8c2f829f75",
-    "m7824758602266642611_sca_crop.jpg": "3cb65792c9c894b666b6b7ab7ae8d76eb8d10dba41c8274e5ae3abbfa1004afe",
-    "m7824758602266642611_sca_full.jpg": "840ed1f6a6796c2e46df11f5a8c5ec3f561e028813aa88edcbcc08e07db698f8"
+    "7109958488611222679_area_crop.jpg": "d9aaad0e868472a1fd9e1a793b4cd447e724a69881086b48b9258ed1d111cfdb",
+    "7109958488611222679_hrdit_crop.jpg": "8041d836edaa2d56232475190e297515dfae2c89ef469e29f8c8817aad172a53",
+    "7109958488611222679_prog_crop.jpg": "c452bffe13bbfc4469b415027631a780a8656887d9cd7d87dbfa7cb40daa7d6d",
+    "7109958488611222679_prog_full.jpg": "7afd79c86c8b16a82c916605edacc85d58b2fe95b542c254044b71608dc9c731",
+    "7109958488611222679_sca_crop.jpg": "3cee79c3a7c9da70a85d8acb73f534fe318e99bc4a81722b613d592eac65e50b",
+    "m548913239957610051_area_crop.jpg": "42cb0a0361f0f2c1757b9f403c48b670233f36d38eb82145538baecc78c8a117",
+    "m548913239957610051_hrdit_crop.jpg": "3a22c1e15a88c2cdfecc071ca4606579e4e2c1143fb5f00fbf18f4a8cc94cace",
+    "m548913239957610051_prog_crop.jpg": "ffe17784e691d2e100e92314056153349b957841df6fb98697d5bbb4c4ebb5a2",
+    "m548913239957610051_prog_full.jpg": "5ace86b342383ff66e7fbc8542394ab6ee743dfa614f2c0dea7895eee1555e17",
+    "m548913239957610051_sca_crop.jpg": "df8b3fc509dd864837d9780365fad77a9b057e1677c214f3f22803709038601d",
+    "m7824758602266642611_area_crop.jpg": "c006fba57c415764e340334557f62395f95b1dec748406c27260ebaa610e7b2b",
+    "m7824758602266642611_hrdit_crop.jpg": "a97fa12cc1ed5a3eb442e8194f79ed7712e45f7fec33ebfc35fa6b149740d1f5",
+    "m7824758602266642611_prog_crop.jpg": "f7d7b0e0ba6aa6a466a68430adc4a699175b10b09b3c189b8164658074b5bf19",
+    "m7824758602266642611_prog_full.jpg": "101c77b625c377a3059256b78da019267f56708ccbfdb7099fcb751a45c44162",
+    "m7824758602266642611_sca_crop.jpg": "867813a719fae9e47f039e868fa55df704a0ff460f6fbd672ccfae24894c355d"
   }
 }

@@ -173,8 +173,8 @@ Diffusion transformers trained near one megapixel fail at $4096^2$: attention me
 
 \begin{center}
   \vspace{-4pt}
-  \IfFileExists{figures/hero_prog.pdf}{\includegraphics[width=\linewidth]{figures/hero_prog.pdf}}{\includegraphics[width=\linewidth,trim=0 0 0 1.12in,clip]{figures/teaser.pdf}}
-  \captionof{figure}{\textbf{Progressive \sca{} at $4096^2$.} FLUX.1-dev with HRDiT's three-stage schedule and \sca{} attention, curated from the 195 evaluation prompts at seed 0; insets show native pixels. Figure~\ref{fig:gallery_4096} shows uncurated samples.}
+  \includegraphics[width=\linewidth]{figures/hero_prog.pdf}
+  \captionof{figure}{\textbf{Progressive \sca{} at $4096^2$.} FLUX.1-dev with HRDiT's three-stage schedule and \sca{} attention, curated from the 195 evaluation prompts at seed 0; insets show native pixels. Figure~\ref{fig:gallery_prog} shows uncurated samples beside AReA, HRDiT, and single-pass \sca{}.}
   \label{fig:prog_hero}
 \end{center}
 
@@ -435,7 +435,7 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/zoom4k.pdf}
-  \caption{\textbf{Native detail at $4096^2$.} Three curated prompts (seed~0; curation favours \sca{}): an image with a red window, then that window at 1:1 from each method under its image's MUSIQ$_\text{c}$ (best bold). Table~\ref{tab:main} gives means and Figure~\ref{fig:gallery_4096} uncurated samples.\pendImgQual}
+  \caption{\textbf{Single-pass \sca{} keeps the most native detail.} Three prompts curated earlier on single-pass \sca{} (seed~0): progressive \sca{}'s image with a red window, then that window at 1:1 from each method under its image's MUSIQ$_\text{c}$ (best bold). Progressive \sca{} is softer than single-pass \sca{} in every crop; Figure~\ref{fig:gallery_prog} shows uncurated samples.}
   \label{fig:qual_main}
 \end{figure}
 
@@ -499,7 +499,7 @@ Table~\ref{tab:ablation} changes one component of single-pass \sca{} at a time (
 % Section 6 ends the main text; the statement starts the next page with natural spacing above.
 \newpage
 \section*{Reproducibility statement}
-Section~\ref{sec:experiments} states the protocol, including timing (Section~\ref{sec:sizes}), and Appendix~\ref{app:metrics} defines every metric and interval. Appendix~\ref{app:calib} gives the calibration geometry, statistics, and noise bins; Algorithms~\ref{alg:calib}, \ref{alg:sample}, and~\ref{alg:prog_main} give the procedures, and Appendix~\ref{app:code} gives them in full. Table~\ref{tab:prog_all} gives every paired comparison of progressive \sca{}, Appendix~\ref{app:hparams} lists every hyperparameter, including the window schedule, and Appendix~\ref{app:impl} the kernel layout, numerical checks, and position rounding. Appendices~\ref{app:area} and~\ref{app:additional_protocols} give each baseline's code revision, recipe, and seeds, and Appendix~\ref{app:compute} the hardware and logged compute. Code, calibration table, per-image metrics, and the paired-difference files behind every table will be released in the code repository (link in the abstract).
+Section~\ref{sec:experiments} states the protocol, including timing (Section~\ref{sec:sizes}), and Appendix~\ref{app:metrics} defines every metric and interval. Appendix~\ref{app:calib} gives the calibration geometry, statistics, and noise bins; Algorithms~\ref{alg:calib}, \ref{alg:sample}, and~\ref{alg:prog_main} give the procedures, and Appendix~\ref{app:code} gives them in full. Appendix~\ref{app:prog} gives the progressive protocol and every paired comparison of progressive \sca{}. Appendix~\ref{app:hparams} lists every hyperparameter, including the window schedule, and Appendix~\ref{app:impl} the kernel layout, numerical checks, and position rounding. Appendices~\ref{app:area} and~\ref{app:additional_protocols} give each baseline's code revision, recipe, and seeds, and Appendix~\ref{app:compute} the hardware and logged compute. Code, calibration table, per-image metrics, and the paired-difference files behind every table will be released in the code repository (link in the abstract).
 
 % Appendix: allow tall top floats.
 \renewcommand{\topfraction}{0.95}
