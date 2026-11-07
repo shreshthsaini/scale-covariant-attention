@@ -1338,3 +1338,7 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   census). AReA is at 3.8%.
 - 15:05 r7_g4gh (g2x4 plus glob-count 0.5) on copyprone21: detector 9 of 21 (g2x4 11, gch 14). The two levers add,
   but each alone already loses PickScore on the 46 (-0.094 and -0.125), so no 46-prompt run.
+- 15:05 r7_gcs (glob-count 1 on the birth steps only, sigma > 0.84) on copyprone21: detector 15 of 21, the same as
+  sca_v2 at seed 1. Removing the prompt drive on steps 8 to 10 alone changes nothing; gc1 needed it through sigma 0.55.
+  Copies are seeded early but are drawn only if the drive lasts through mid noise, as round 6's fflh showed for the
+  far field.
