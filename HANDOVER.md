@@ -1404,3 +1404,12 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
     results/prog195_s2/corrected_fidp_ci.
   - Detector: 10/95 against AReA's 4/95 (p = 0.07). Median 49.4 s.
   - Across seeds 0, 1 and 2 the per-image picture is the same; the patch FID gap to AReA ranges from 1.5 to 5.4.
+- 17:25 seed-2 set-level intervals (results/prog195_s2/corrected_fidp_ci; baseline minus prog). Against AReA, FID
+  +2.1 [-5.4, +7.9] and KID are within their intervals, but patch FID -5.4 [-10.8, -0.8] and patch KID -0.0031 are
+  significantly worse. Against sca_v2: patch FID -10.1 and patch KID worse. Across seeds 0, 1 and 2, progressive
+  SCA's patch FID is worse than AReA's by 4.8 (significant), 1.5 (not significant) and 5.4 (significant). FID is
+  level with AReA at every seed, and the per-image metrics beat AReA on all 10 at every seed.
+- Remaining: HRGen-1K. 40 generation tasks 0a2_pghk_* run on SCA22 (184 of 1000 images at 17:07), then the
+  self-releasing 0a0_eval_prog_hrgen1k writes results/prog_hrgen1k (with SHA256SUMS) and eval/prog_hrgen1k/DONE,
+  expected about 21:30. Commit results/prog_hrgen1k when DONE appears. Nothing of the method owner's is left
+  running on i615-091.
