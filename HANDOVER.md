@@ -1367,3 +1367,7 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
     (same pipeline, full attention at 2K/4K) it is level on IR, PickScore and HPSv2.1, ahead on HPSv2, ARNIQA
     and MUSIQ, and behind on CLIP-IQA (-0.009), at 50 s against 110 s. Set-level corrected FID/KID intervals are
     running on CPU (PID 3125365).
+- 16:08 item (4) landed (results/prog_latency, run out/prog_latency/20261107T153927_c609-002, one GH200, batch 1,
+  each method in its own process, warm-up excluded, median of 3 prompts): sca_v2_prog 49.15 s [49.13, 49.17],
+  HRDiT (author profile) 106.97 s, AReA 202.36 s. Progressive SCA is 2.18x faster than HRDiT and 4.12x faster
+  than AReA.
