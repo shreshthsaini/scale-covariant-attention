@@ -129,6 +129,8 @@ def add_args(p):
     p.add_argument("--copy-gate-rel", type=float, nargs=2, default=(0.5, 1.0), metavar=("A", "B"), help="Copy sites: "
                    "share from A to B of the main subject's level")
     p.add_argument("--copy-gate-excl", type=int, default=3, metavar="T", help="Dilation of the excluded subject region")
+    p.add_argument("--copy-gate-anchor", action="store_true", help="At copy sites also pull x0 back to the opening's "
+                   "estimate (sca/anchor.py, local mode, full band), weight = the copy-site map")
     p.add_argument("--copy-gate-grow", type=int, default=2, metavar="T", help="Dilation of the copy-site map")
     p.add_argument("--pi-one-lo", type=float, default=0.0, metavar="SIGMA", help="pi = 1 (window branch only) while sigma > SIGMA on window steps; 0 = off")
     p.add_argument("--native-open", type=int, default=0, metavar="K", help="Round 6 candidate d: first K steps at 1024^2 "
@@ -179,6 +181,11 @@ def context_kwargs(args):
 
 def anchor(args, ctx):
     """sca.anchor.LatentAnchor for --anchor-lo > 0 (validated against ctx, so before the model loads), else None."""
+    if getattr(args, "copy_gate_anchor", False):
+        if args.anchor_lo or getattr(args, "copy_gate", 1.0) == 1.0:
+            raise ValueError("--copy-gate-anchor needs --copy-gate < 1 and no --anchor-lo")
+        from sca.anchor import LatentAnchor
+        return LatentAnchor(ctx, ctx.csg_lo, local=True)
     if not args.anchor_lo:
         return None
     from sca.anchor import LatentAnchor
@@ -248,6 +255,8 @@ def info(args):
     if getattr(args, "copy_gate", 1.0) != 1.0:
         out.update(copy_gate=args.copy_gate, copy_gate_lo=args.copy_gate_lo, copy_gate_rel=list(args.copy_gate_rel),
                    copy_gate_excl=args.copy_gate_excl, copy_gate_grow=args.copy_gate_grow)
+        if getattr(args, "copy_gate_anchor", False):
+            out["copy_gate_anchor"] = True
     if getattr(args, "pi_one_lo", 0.0):
         out["pi_one_lo"] = args.pi_one_lo
     if getattr(args, "bridge_coarse", False):

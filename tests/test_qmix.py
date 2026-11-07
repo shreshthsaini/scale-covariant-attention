@@ -396,3 +396,27 @@ def test_processor_copy_gate_records_then_gates():
     at(ctx, 0.8), at(base, 0.8)                                                  # next image's opening resets the gate
     a3, b3 = at(ctx, 0.5), at(base, 0.5)
     assert torch.allclose(flat(a3), flat(b3), atol=1e-6)
+
+
+def test_local_anchor_pulls_x0_to_anchor_at_copy_sites():
+    from types import SimpleNamespace
+    from sca.anchor import LatentAnchor
+    ctx = SCAContext(mode="sca", gate_sigma=0.89)
+    ctx.grid, ctx.scheduler = (2, 3), object()
+    an = LatentAnchor(ctx, 0.6, local=True)
+    g = torch.Generator().manual_seed(0)
+    x = torch.randn(1, 6, 4, generator=g, dtype=torch.float64)
+    def call(step, sigma, v):
+        ctx.step, ctx.sigma = step, sigma
+        return an(None, (), {"hidden_states": x}, (v,))
+    v0 = torch.randn(1, 6, 4, generator=g, dtype=torch.float64)
+    assert call(0, 0.95, v0) is None                                     # opening: captures L = x - sigma v
+    L = x - 0.95 * v0
+    ctx._csg_map = torch.tensor([0.0, 1.0, 0.5, 0.0, 0.0, 1.0])
+    v1 = torch.randn(1, 6, 4, generator=g, dtype=torch.float64)
+    out = call(1, 0.8, v1)[0]
+    x0_hat, x0_new = x - 0.8 * v1, x - 0.8 * out
+    c = ctx._csg_map.view(1, -1, 1).double()
+    assert torch.allclose(x0_new, x0_hat + c * (L - x0_hat), atol=1e-10)
+    ctx._csg_map = None
+    assert call(2, 0.7, v1) is None                                       # no map: untouched

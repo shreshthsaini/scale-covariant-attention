@@ -71,7 +71,7 @@ def _with_sample(output, v):
 class LatentAnchor:
     """Transformer forward hook (with_kwargs) applying the anchor for one SCAContext; see the module docstring."""
 
-    def __init__(self, ctx, lo, shape="linear", pool=0, refresh=0):
+    def __init__(self, ctx, lo, shape="linear", pool=0, refresh=0, local=False):
         if ctx.mode != "sca" or not 0 < lo < ctx.gate_sigma:
             raise ValueError("the latent anchor needs SCA with a global-only opening phase: 0 < anchor_lo < gate_sigma")
         if shape not in SHAPES:
@@ -79,6 +79,9 @@ class LatentAnchor:
         if pool < 0 or refresh < 0:
             raise ValueError("anchor pool and refresh must be >= 0")
         self.ctx, self.lo, self.shape, self.pool, self.refresh = ctx, float(lo), shape, int(pool), int(refresh)
+        # local=True (copy-site anchor): per token weight = the copy-site gate's current map (SCAContext._csg_map),
+        # full band: x0' = x0_hat + C (L - x0_hat), so a forming copy is pulled back to the opening's layout there
+        self.local = bool(local)
         self._busy = False
         self.reset()
 
@@ -136,6 +139,14 @@ class LatentAnchor:
             return None
         if self.anchor is None:
             raise RuntimeError("latent anchor: no global-only step before the anchored steps")
+        if self.local:
+            c = getattr(ctx, "_csg_map", None)
+            if c is None or c.numel() != x.shape[1]:
+                return None
+            w = c.to(device=x.device, dtype=torch.float32).view(1, -1, 1)
+            x0 = _wide(x) - sigma * _wide(v)
+            self.applied.append([ctx.step, sigma, float(c.max())])
+            return _with_sample(output, (_wide(v) - (w / sigma) * (_wide(self.anchor) - x0)).to(v.dtype))
         if self.p is None:
             self.p = self.pool or max(pool_factors(grid, ctx.n0))
         if self.refresh and (ctx.step - self.capture_step) % self.refresh == 0:
