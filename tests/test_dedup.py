@@ -337,3 +337,20 @@ def test_bridge_coarse_validates_and_runs_in_processor():
     base = attn_outputs(m, SCAContext(**c), H_T, W_T)
     co = attn_outputs(m, SCAContext(**c, bridge_coarse=True), H_T, W_T)
     assert torch.isfinite(flat(co)).all() and not torch.allclose(flat(co), flat(base), atol=1e-5)
+
+
+def test_bridge_coarse_vpool_and_lo():
+    from sca.attn import bridge_index, sca_dedup_forward
+    H, W, L, f, tile, win = 8, 8, 4, (2, 2), (2, 2), (4, 4)
+    q, k, v = _qkv(H, W, L, seed=7)
+    _, _, rot, rq, rk = _setup(H, W, L, f)
+    lay = flex_layout(L, (H, W), tile, win, "cpu", (2, 2), (2, 2))
+    pi = torch.tensor([0.6, 1.0], dtype=torch.float64).view(1, 1, -1, 1)
+    a = sca_dedup_forward(q, k, v, rot, rq, rk, pi, L, (H, W), f, "center", lay, 0.0, (2, 2), 2, 0.0, None, 0, True, 0)
+    b = sca_dedup_forward(q, k, v, rot, rq, rk, pi, L, (H, W), f, "center", lay, 0.0, (2, 2), 2, 0.0, None, 0, True, 3)
+    assert torch.isfinite(b).all() and not torch.allclose(a, b)
+    m = model()
+    c = dict(mode="sca", n0=4, tile=2, window=4, local_impl="flex", bridge_cells=2, bridge_k=2)
+    base = attn_outputs(m, SCAContext(**c), H_T, W_T)
+    off = attn_outputs(m, SCAContext(**c, bridge_coarse=True, bridge_coarse_lo=0.6), H_T, W_T)     # sigma 0.5: off
+    assert torch.allclose(flat(off), flat(base), atol=1e-6)

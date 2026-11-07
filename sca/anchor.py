@@ -145,8 +145,12 @@ class LatentAnchor:
                 return None
             w = c.to(device=x.device, dtype=torch.float32).view(1, -1, 1)
             x0 = _wide(x) - sigma * _wide(v)
+            target = _wide(self.anchor)
+            lp = int(getattr(ctx, "csg_anchor_lp", 0) or 0)
+            if lp > 1:   # the opening's estimate is blocky at its pool size; a smooth target avoids pixelated fills
+                target = latent_low(target, grid, lp)
             self.applied.append([ctx.step, sigma, float(c.max())])
-            return _with_sample(output, (_wide(v) - (w / sigma) * (_wide(self.anchor) - x0)).to(v.dtype))
+            return _with_sample(output, (_wide(v) - (w / sigma) * (target - x0)).to(v.dtype))
         if self.p is None:
             self.p = self.pool or max(pool_factors(grid, ctx.n0))
         if self.refresh and (ctx.step - self.capture_step) % self.refresh == 0:

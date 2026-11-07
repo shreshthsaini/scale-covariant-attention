@@ -80,21 +80,40 @@ def finalize_map(m, grid, q_lo=0.5, q_hi=0.95, dilate=2, smooth=0, rel=None, edg
     return g
 
 
-def copy_map(S, M0, grid, smooth=9, rel=(0.5, 1.0), excl=3, grow=2, q=0.9):
+def copy_map(S, M0, grid, smooth=9, rel=(0.5, 1.0), excl=3, grow=2, q=0.9, S0=None, new=(0.1, 0.25), z=None):
     """Copy-site map of one window step (dynamic copy-site gate, SCAContext.csg_*). S [N]: the global branch's
     subject-word share summed over blocks; M0 [N]: the opening's subject map (finalize_map). S is averaged over
     smooth x smooth tokens and divided by the main subject's level (quantile q of S inside M0 > 0.5); sites whose level
     reaches rel[0] .. rel[1] of the main subject's ramp to 1. The opening's subject region, max-dilated by excl tokens,
-    is excluded, and the map is max-dilated by grow tokens to cover a forming figure. Returns [N] in [0, 1]."""
+    is excluded, and the map is max-dilated by grow tokens to cover a forming figure. With S0 (the opening's raw share,
+    the accumulation M0 was made from) only new subject attention counts: with o = (S0 - median) / (q99 - median) (0 at
+    background, 1 at the subject), the map is multiplied by 1 - ramp(o, new[0], new[1]), so the subject's own body and
+    scene parts that already read the subject words at the opening are never gated (copies start at background level
+    there, r6/probe). Returns [N] in [0, 1]."""
     H, W = grid
     S = S.float()
     if smooth and smooth > 1:
         S = F.avg_pool2d(S.view(1, 1, H, W), smooth, stride=1, padding=smooth // 2,
                          count_include_pad=False).reshape(-1)[: H * W]
     inside = M0.float() > 0.5
-    main = torch.quantile(S[inside], q) if bool(inside.any()) else S.max()
-    r = S / main.clamp_min(1e-12)
-    C = ((r - rel[0]) / max(rel[1] - rel[0], 1e-6)).clamp(0, 1)
+    if z is not None:   # background z-score: copies stand out of their own image's background (median, p95)
+        exm = F.max_pool2d(M0.float().view(1, 1, H, W), 2 * excl + 1, stride=1, padding=excl).reshape(-1) > 0.5
+        bg = S[~exm] if bool((~exm).any()) else S
+        med, p95 = torch.quantile(bg, 0.5), torch.quantile(bg, 0.95)
+        zz = (S - med) / (p95 - med).clamp_min(1e-12)
+        C = ((zz - z[0]) / max(z[1] - z[0], 1e-6)).clamp(0, 1)
+    else:
+        main = torch.quantile(S[inside], q) if bool(inside.any()) else S.max()
+        r = S / main.clamp_min(1e-12)
+        C = ((r - rel[0]) / max(rel[1] - rel[0], 1e-6)).clamp(0, 1)
+    if S0 is not None:
+        o = S0.float().to(S.device)
+        if smooth and smooth > 1:
+            o = F.avg_pool2d(o.view(1, 1, H, W), smooth, stride=1, padding=smooth // 2,
+                             count_include_pad=False).reshape(-1)[: H * W]
+        med = torch.quantile(o, 0.5)
+        o = ((o - med) / (torch.quantile(o, 0.99) - med).clamp_min(1e-12)).clamp_min(0)   # background 0, subject 1
+        C = C * (1 - ((o - new[0]) / max(new[1] - new[0], 1e-6)).clamp(0, 1))
     ex = M0.float()
     if excl > 0:
         ex = F.max_pool2d(ex.view(1, 1, H, W), 2 * excl + 1, stride=1, padding=excl).reshape(-1)

@@ -420,3 +420,22 @@ def test_local_anchor_pulls_x0_to_anchor_at_copy_sites():
     assert torch.allclose(x0_new, x0_hat + c * (L - x0_hat), atol=1e-10)
     ctx._csg_map = None
     assert call(2, 0.7, v1) is None                                       # no map: untouched
+
+
+def test_copy_map_new_attention_only():
+    from sca.subjgate import copy_map
+    H, W = 16, 16
+    S = torch.full((H * W,), 0.001)
+    S0 = torch.full((H * W,), 0.001)
+    M0 = torch.zeros(H * W)
+    for r in range(2, 5):
+        for c in range(2, 5):
+            S[r * W + c], S0[r * W + c], M0[r * W + c] = 0.01, 0.01, 1.0     # main subject
+    for r in range(10, 13):
+        for c in range(2, 5):
+            S[r * W + c], S0[r * W + c] = 0.009, 0.005                     # body part: already read the subject at the opening
+    for r in range(10, 13):
+        for c in range(10, 13):
+            S[r * W + c] = 0.009                                           # new site: background level at the opening
+    C = copy_map(S, M0, (H, W), smooth=1, rel=(0.5, 1.0), excl=1, grow=0, S0=S0, new=(0.1, 0.25)).view(H, W)
+    assert float(C[11, 11]) > 0.7 and float(C[11, 3]) == 0.0 and float(C[3, 3]) == 0.0

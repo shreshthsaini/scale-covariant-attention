@@ -421,7 +421,7 @@ def mix_lse(o_glob, lse_glob, o_loc, lse_loc, pi, L, tau, inv):
 
 
 def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, text_bias=0.0,
-                      cells=None, per_cell=0, tau=0.0, text_value=None, branch=0, bridge_coarse=False):
+                      cells=None, per_cell=0, tau=0.0, text_value=None, branch=0, bridge_coarse=False, vpool=0):
     """SCA with the late-duplication options: AReA-style bridge tokens (cells, per_cell) prepended to the
     local keys at their true positions, per-query LSE mixing (tau > 0), and the local text bias. layout
     must be built for the prefix length L + R, R = cells_h * cells_w * per_cell. text_value (None or a [L] tensor of
@@ -457,7 +457,14 @@ def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout
         idx = bridge_index(k[:, L:], grid, cells, per_cell)                          # [B, R]
         g = idx[:, :, None, None].expand(-1, -1, k.shape[2], k.shape[3])
         kb = rope(torch.gather(k[:, L:], 1, g), (rope_q[0][idx[0]], rope_q[1][idx[0]]))
-        vb = torch.gather(v[:, L:], 1, g)
+        if vpool > 1:   # smooth bridge values (the block around each token), so scattered tokens do not speckle
+            H, W = grid
+            vi = v[:, L:].reshape(v.shape[0], H, W, -1).permute(0, 3, 1, 2).float()
+            vi = torch.nn.functional.avg_pool2d(vi, vpool, stride=1, padding=vpool // 2, count_include_pad=False)
+            vi = vi[:, :, :H, :W].permute(0, 2, 3, 1).reshape(v.shape[0], H * W, v.shape[2], v.shape[3]).to(v.dtype)
+            vb = torch.gather(vi, 1, g)
+        else:
+            vb = torch.gather(v[:, L:], 1, g)
         qc = rope(q[:, L:], rope_q)
         o_b, lse_b = flex_fn(q.device)(qc.transpose(1, 2), kb.transpose(1, 2), vb.transpose(1, 2), return_lse=True)
         o_w, lse_w = local_branch_flex(qi, kr, v, L, layout, True, text_bias, L, return_lse=True)
@@ -872,6 +879,8 @@ class SCAContext:
                                         # the opening's subject map g (needs subject_tokens); 0 = off
     gm_lo: float = 0.58                 # gm applies on window steps while sigma > gm_lo (0.58: steps 8 to 19 of 28)
     bridge_coarse: bool = False         # score the bridge at coarse ids (scale-covariant bridge); needs bridge_cells
+    bridge_coarse_lo: float = 0.0       # the coarse bridge acts while sigma > bridge_coarse_lo (true-id bridge below)
+    bridge_vpool: int = 0               # coarse bridge values: mean over the p x p block around each bridge token
     pi_one_lo: float = 0.0              # > 0: pi = 1 (window branch only, no global mix) while sigma > pi_one_lo
     csg_value: float = 1.0              # dynamic copy-site gate (sca/subjgate.copy_map): < 1 scales every text value that
                                         # image queries read at copy sites (subject-word attention outside the opening's
@@ -881,6 +890,9 @@ class SCAContext:
     csg_excl: int = 3                   # dilation (tokens) of the opening's subject region excluded from the map
     csg_grow: int = 2                   # dilation (tokens) of the copy-site map
     csg_smooth: int = 9                 # smoothing (tokens) of the share before the ramp
+    csg_new: tuple = ()                 # (a, b): only new subject attention: off where the opening's share > a..b of its max
+    csg_anchor_lp: int = 0              # copy-site anchor target: the opening's x0 low-passed over p tokens (0 = as is)
+    csg_z: tuple = ()                   # (z_lo, z_hi): detect copy sites by a background z-score instead of csg_rel
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -1134,8 +1146,10 @@ class SCAContext:
         if acc is None or m0 is None or acc.numel() != N:
             return
         from sca.subjgate import copy_map
+        s0 = getattr(self, "_sa_acc", None) if self.csg_new else None     # the opening's raw share (map source)
         new = copy_map(acc.to(device), m0, self.grid, smooth=self.csg_smooth, rel=tuple(self.csg_rel),
-                       excl=self.csg_excl, grow=self.csg_grow)
+                       excl=self.csg_excl, grow=self.csg_grow, S0=s0, new=tuple(self.csg_new) if self.csg_new else (0.1, 0.25),
+                       z=tuple(self.csg_z) if self.csg_z else None)
         old = getattr(self, "_csg_map", None)
         # hold: a site that started a second subject stays gated for the rest of the gated steps (no flicker when
         # the gate itself lowers the share it was detected by)
@@ -1578,7 +1592,8 @@ class SCAProcessor:
             cells = (fit_divisor(H, ctx.bridge_cells, ctx.log, "bridge cells"),
                      fit_divisor(W, ctx.bridge_cells, ctx.log, "bridge cells")) if on else None
             per = min(ctx.bridge_k_now(cells[0] * cells[1]), (H // cells[0]) * (W // cells[1])) if on else 0
-            coarse = bool(on and ctx.bridge_coarse and not ctx.lse_tau)
+            coarse = bool(on and ctx.bridge_coarse and not ctx.lse_tau
+                          and (ctx.sigma is None or float(ctx.sigma) > ctx.bridge_coarse_lo))
             layout = ctx.flex_layout(L + (cells[0] * cells[1] * per if on and not coarse else 0), tile, win, q.device)
             if ctx.csg_active():   # dynamic copy-site gate (sca/subjgate.copy_map)
                 from sca.subjgate import sca_subject_fn, subject_index
@@ -1598,7 +1613,8 @@ class SCAProcessor:
                                                 ("both", "loc", "glob").index(ctx.text_branch))
             return sca_dedup_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
                                           layout, tb, cells, per, float(ctx.lse_tau), ctx.text_value_vec(L, q.device),
-                                          ("both", "loc", "glob").index(ctx.text_branch), coarse)
+                                          ("both", "loc", "glob").index(ctx.text_branch), coarse,
+                                          int(ctx.bridge_vpool) if coarse else 0)
         if band > 1:
             L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True, text_bias=tb)
             if inv is not None:

@@ -100,6 +100,10 @@ def add_args(p):
                    "med + A (max - med) to med + B (max - med) instead of the quantiles")
     p.add_argument("--subject-anchor-edge", type=int, default=0, metavar="T", help="Keep full prompt content on a "
                    "border band of T tokens")
+    p.add_argument("--bridge-coarse-lo", type=float, default=0.0, metavar="SIGMA", help="--bridge-coarse acts while sigma "
+                   "> SIGMA (the true-id bridge below)")
+    p.add_argument("--bridge-vpool", type=int, default=0, metavar="P", help="Coarse bridge values: mean over the P x P block "
+                   "around each bridge token")
     p.add_argument("--bridge-coarse", action="store_true", help="Score the bridge tokens at coarse ids (queries and bridge keys at floor(id / f), as the global branch), joined to the window softmax by log-sum-exp")
     p.add_argument("--guide-map", type=float, default=0.0, metavar="G", help="Spatially varying guidance (sca/guidemap.py): on window steps a second pass at guidance G, blended with the main pass by the opening's subject map (--subject-anchor-* map flags; needs --subject-words); 0 = off")
     p.add_argument("--guide-map-lo", type=float, default=0.58, metavar="SIGMA", help="--guide-map applies while sigma > SIGMA (0.58: steps 8 to 19 of 28)")
@@ -129,6 +133,12 @@ def add_args(p):
     p.add_argument("--copy-gate-rel", type=float, nargs=2, default=(0.5, 1.0), metavar=("A", "B"), help="Copy sites: "
                    "share from A to B of the main subject's level")
     p.add_argument("--copy-gate-excl", type=int, default=3, metavar="T", help="Dilation of the excluded subject region")
+    p.add_argument("--copy-gate-new", type=float, nargs=2, default=None, metavar=("A", "B"), help="Only new subject "
+                   "attention: no gate where the opening's own subject-word share was above A..B of its maximum")
+    p.add_argument("--copy-gate-z", type=float, nargs=2, default=None, metavar=("ZLO", "ZHI"), help="Detect copy sites by "
+                   "a background z-score (share - median) / (p95 - median) ramped from ZLO to ZHI, instead of --copy-gate-rel")
+    p.add_argument("--copy-gate-anchor-lp", type=int, default=0, metavar="P", help="Low-pass the copy-site anchor target "
+                   "over P tokens (the opening's estimate is blocky at its pool size)")
     p.add_argument("--copy-gate-anchor", action="store_true", help="At copy sites also pull x0 back to the opening's "
                    "estimate (sca/anchor.py, local mode, full band), weight = the copy-site map")
     p.add_argument("--copy-gate-grow", type=int, default=2, metavar="T", help="Dilation of the copy-site map")
@@ -174,9 +184,12 @@ def context_kwargs(args):
                 sa_edge=getattr(args, "subject_anchor_edge", 0), pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8),
                 gm_low=getattr(args, "guide_map", 0.0), gm_lo=getattr(args, "guide_map_lo", 0.58),
                 bridge_coarse=getattr(args, "bridge_coarse", False), pi_one_lo=getattr(args, "pi_one_lo", 0.0),
+                bridge_coarse_lo=getattr(args, "bridge_coarse_lo", 0.0), bridge_vpool=getattr(args, "bridge_vpool", 0),
                 csg_value=getattr(args, "copy_gate", 1.0), csg_lo=getattr(args, "copy_gate_lo", 0.6),
                 csg_rel=tuple(getattr(args, "copy_gate_rel", (0.5, 1.0))), csg_excl=getattr(args, "copy_gate_excl", 3),
-                csg_grow=getattr(args, "copy_gate_grow", 2))
+                csg_grow=getattr(args, "copy_gate_grow", 2),
+                csg_new=tuple(getattr(args, "copy_gate_new", None) or ()), csg_anchor_lp=getattr(args, "copy_gate_anchor_lp", 0),
+                csg_z=tuple(getattr(args, "copy_gate_z", None) or ()))
 
 
 def anchor(args, ctx):
@@ -257,10 +270,20 @@ def info(args):
                    copy_gate_excl=args.copy_gate_excl, copy_gate_grow=args.copy_gate_grow)
         if getattr(args, "copy_gate_anchor", False):
             out["copy_gate_anchor"] = True
+        if getattr(args, "copy_gate_new", None):
+            out["copy_gate_new"] = list(args.copy_gate_new)
+        if getattr(args, "copy_gate_anchor_lp", 0):
+            out["copy_gate_anchor_lp"] = args.copy_gate_anchor_lp
+        if getattr(args, "copy_gate_z", None):
+            out["copy_gate_z"] = list(args.copy_gate_z)
     if getattr(args, "pi_one_lo", 0.0):
         out["pi_one_lo"] = args.pi_one_lo
     if getattr(args, "bridge_coarse", False):
         out["bridge_coarse"] = True
+        if getattr(args, "bridge_coarse_lo", 0.0):
+            out["bridge_coarse_lo"] = args.bridge_coarse_lo
+        if getattr(args, "bridge_vpool", 0):
+            out["bridge_vpool"] = args.bridge_vpool
     if getattr(args, "guide_map", 0.0):
         out.update(guide_map=args.guide_map, guide_map_lo=args.guide_map_lo)
     if getattr(args, "subject_anchor", 1.0) != 1.0 or getattr(args, "guide_map", 0.0):
