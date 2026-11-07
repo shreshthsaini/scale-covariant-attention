@@ -80,6 +80,30 @@ def finalize_map(m, grid, q_lo=0.5, q_hi=0.95, dilate=2, smooth=0, rel=None, edg
     return g
 
 
+def copy_map(S, M0, grid, smooth=9, rel=(0.5, 1.0), excl=3, grow=2, q=0.9):
+    """Copy-site map of one window step (dynamic copy-site gate, SCAContext.csg_*). S [N]: the global branch's
+    subject-word share summed over blocks; M0 [N]: the opening's subject map (finalize_map). S is averaged over
+    smooth x smooth tokens and divided by the main subject's level (quantile q of S inside M0 > 0.5); sites whose level
+    reaches rel[0] .. rel[1] of the main subject's ramp to 1. The opening's subject region, max-dilated by excl tokens,
+    is excluded, and the map is max-dilated by grow tokens to cover a forming figure. Returns [N] in [0, 1]."""
+    H, W = grid
+    S = S.float()
+    if smooth and smooth > 1:
+        S = F.avg_pool2d(S.view(1, 1, H, W), smooth, stride=1, padding=smooth // 2,
+                         count_include_pad=False).reshape(-1)[: H * W]
+    inside = M0.float() > 0.5
+    main = torch.quantile(S[inside], q) if bool(inside.any()) else S.max()
+    r = S / main.clamp_min(1e-12)
+    C = ((r - rel[0]) / max(rel[1] - rel[0], 1e-6)).clamp(0, 1)
+    ex = M0.float()
+    if excl > 0:
+        ex = F.max_pool2d(ex.view(1, 1, H, W), 2 * excl + 1, stride=1, padding=excl).reshape(-1)
+    C = C * (1 - ex.clamp(0, 1))
+    if grow > 0:
+        C = F.max_pool2d(C.view(1, 1, H, W), 2 * grow + 1, stride=1, padding=grow).reshape(-1)
+    return C
+
+
 def text_all_part(qr, kt, vt, lse):
     """All text tokens' contribution w_i O_T,i to a softmax with log-partition lse [B, h, N] (the subject_part of the
     whole prompt), through textgate.text_part."""
@@ -90,10 +114,12 @@ def text_all_part(qr, kt, vt, lse):
 
 
 def sca_subject_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, text_bias, cells, per_cell,
-                        idx, valid, s_img, all_text=False, branch=0):
+                        idx, valid, s_img, all_text=False, branch=0, return_share=False):
     """sca_v2's operator (sca.attn.sca_dedup_forward, bridge path, tau = 0) where image query i reads the subject-word
     values (all text values with all_text=True) scaled by s_img[:, i] in both branches. s_img [B, N] (1 = untouched).
-    branch: 0 both branches, 1 the local (window) branch only, 2 the global branch only. Returns [B, L + N, h, D]."""
+    branch: 0 both branches, 1 the local (window) branch only, 2 the global branch only. Returns [B, L + N, h, D];
+    with return_share=True also the global branch's subject-word share per image query, head mean [B, N] (the copy-site
+    gate's detector, SCAContext.csg_*)."""
     from sca.attn import bridge_index, global_branch_lse, local_branch_flex, rope
     cos, sin = rot
     kr = rope(k, rot)
@@ -120,7 +146,11 @@ def sca_subject_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layo
     o_loc = o_loc - cut * sub_loc if branch != 2 else o_loc
     img_g = _hi(o_glob[:, L:]) - cut * sub_glob if branch != 1 else _hi(o_glob[:, L:])
     img = _hi(pi) * o_loc + (1 - _hi(pi)) * img_g
-    return torch.cat([o_glob[:, :L], img.to(o_glob.dtype)], 1)
+    out = torch.cat([o_glob[:, :L], img.to(o_glob.dtype)], 1)
+    if return_share:
+        _, w = subject_part(rope(q[:, L:], rope_q), kr[:, :L], v[:, :L], idx, valid, lse_glob[:, :, L:])
+        return out, w.mean(1)
+    return out
 
 
 def sca_subject_fn(device):

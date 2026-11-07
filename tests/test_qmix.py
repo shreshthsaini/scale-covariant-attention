@@ -328,3 +328,71 @@ def test_pi_one_lo_sets_pi_to_one_above_sigma():
         assert torch.allclose(c.pi_now(0, 4, "cpu"), torch.full((4,), want))
     with pytest.raises(ValueError):
         SCAContext(mode="sca", pi_one_lo=1.0)
+
+
+def test_copy_map_marks_second_blob_outside_subject():
+    from sca.subjgate import copy_map
+    H, W = 16, 16
+    S = torch.full((H * W,), 0.001)
+    M0 = torch.zeros(H * W)
+    for r in range(2, 6):
+        for c in range(2, 6):
+            S[r * W + c] = 0.01                                        # main subject, inside the opening map
+            M0[r * W + c] = 1.0
+    for r in range(10, 13):
+        for c in range(10, 13):
+            S[r * W + c] = 0.009                                       # a second site far away
+    C = copy_map(S, M0, (H, W), smooth=1, rel=(0.5, 1.0), excl=1, grow=0).view(H, W)
+    assert float(C[11, 11]) > 0.7 and float(C[3, 3]) == 0.0 and float(C[0, 15]) == 0.0
+    assert float(C.min()) >= 0.0 and float(C.max()) <= 1.0
+
+
+def test_subject_forward_return_share_matches_subject_part():
+    from sca.subjgate import sca_subject_forward, subject_index, subject_part
+    from sca.attn import global_branch_lse
+    p = _pieces(53)
+    L_ = L
+    idx, valid = subject_index((1, 2), L_, "cpu")
+    pi = torch.tensor([0.7, 0.2], dtype=torch.float64).view(1, 1, 2, 1)
+    s = torch.ones(1, H * W, dtype=torch.float64)
+    R = p["cells"][0] * p["cells"][1] * p["per"]
+    lay = flex_layout(L_ + R, (H, W), TILE, WIN, "cpu", (2, 2), (2, 2))
+    a = (p["q"], p["k"], p["v"], p["rot"], p["rq"], p["rk"], pi, L_, (H, W), F, "center", lay, 0.0, p["cells"],
+         p["per"], idx, valid, s, True, 0)
+    out0 = sca_subject_forward(*a)
+    out1, share = sca_subject_forward(*a, True)
+    assert torch.equal(out0, out1) and share.shape == (1, H * W)
+    cos, sin = p["rot"]
+    from sca.attn import rope
+    kr = rope(p["k"], p["rot"])
+    q_txt = rope(p["q"][:, :L_], (cos[:L_], sin[:L_]))
+    _, lse = global_branch_lse(p["q"], p["k"], p["v"], L_, (H, W), F, "center", p["rq"], p["rk"], q_txt, kr[:, :L_])
+    _, w = subject_part(rope(p["q"][:, L_:], p["rq"]), kr[:, :L_], p["v"][:, :L_], idx, valid, lse[:, :, L_:])
+    assert torch.allclose(share, w.mean(1), atol=1e-12)
+
+
+def test_processor_copy_gate_records_then_gates():
+    m = model()
+    c = dict(mode="sca", n0=4, tile=2, window=4, local_impl="flex", bridge_cells=2, bridge_k=2, gate_sigma=0.6)
+    with pytest.raises(ValueError):
+        SCAContext(mode="sca", csg_value=0.0)                                   # needs the bridge path and an opening
+    ctx = SCAContext(**c, csg_value=0.0, csg_lo=0.3, csg_rel=(0.0, 0.5), csg_excl=0, csg_grow=0,
+                     subject_tokens=(1, 2))
+    base = SCAContext(**c)
+
+    def at(cx, sigma):
+        orig = SCAContext.set_inputs
+        cx.set_inputs = lambda ids, txt_ids=None, sigma=None, _s=sigma: orig(cx, ids, txt_ids, _s)
+        try:
+            return attn_outputs(m, cx, H, W)
+        finally:
+            del cx.set_inputs
+    at(ctx, 0.8), at(base, 0.8)                                                  # opening: map recorded
+    a1, b1 = at(ctx, 0.5), at(base, 0.5)                                         # first window step: no gate yet
+    assert torch.allclose(flat(a1), flat(b1), atol=1e-6) and ctx._csg_acc is not None
+    a2, b2 = at(ctx, 0.45), at(base, 0.45)                                       # second: gated by the step-1 map
+    assert ctx._csg_map is not None and torch.isfinite(flat(a2)).all()
+    assert not torch.allclose(flat(a2), flat(b2), atol=1e-6)
+    at(ctx, 0.8), at(base, 0.8)                                                  # next image's opening resets the gate
+    a3, b3 = at(ctx, 0.5), at(base, 0.5)
+    assert torch.allclose(flat(a3), flat(b3), atol=1e-6)

@@ -873,6 +873,14 @@ class SCAContext:
     gm_lo: float = 0.58                 # gm applies on window steps while sigma > gm_lo (0.58: steps 8 to 19 of 28)
     bridge_coarse: bool = False         # score the bridge at coarse ids (scale-covariant bridge); needs bridge_cells
     pi_one_lo: float = 0.0              # > 0: pi = 1 (window branch only, no global mix) while sigma > pi_one_lo
+    csg_value: float = 1.0              # dynamic copy-site gate (sca/subjgate.copy_map): < 1 scales every text value that
+                                        # image queries read at copy sites (subject-word attention outside the opening's
+                                        # subject map, from the previous window step); 1 = off
+    csg_lo: float = 0.6                 # the gate acts while sigma > csg_lo
+    csg_rel: tuple = (0.5, 1.0)         # copy sites: share ramp from rel[0] to rel[1] of the main subject's level
+    csg_excl: int = 3                   # dilation (tokens) of the opening's subject region excluded from the map
+    csg_grow: int = 2                   # dilation (tokens) of the copy-site map
+    csg_smooth: int = 9                 # smoothing (tokens) of the share before the ramp
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -966,6 +974,9 @@ class SCAContext:
                                      or self.text_mode or self.morph_local or self.morph_text or self.band
                                      or self.local_impl != "flex"):
             raise ValueError("subject anchor combines only with the sca_v2 operator (flex, bridge)")
+        if self.csg_value != 1.0 and (self.sa_value != 1.0 or not self.bridge_cells or self.lse_tau or self.qmix
+                                      or self.text_value != 1.0 or self.bridge_coarse or self.gate_sigma <= 0):
+            raise ValueError("the copy-site gate needs sca_v2's bridge path and an opening, without other gates")
         if not 0.0 <= self.pi_one_lo < 1.0 or (self.pi_one_lo and self.pi_blend):
             raise ValueError("pi_one_lo must be in [0, 1) and does not combine with pi_blend")
         if self.bridge_coarse and (not self.bridge_cells or self.lse_tau or self.sa_value != 1.0):
@@ -1071,7 +1082,7 @@ class SCAContext:
 
     def sa_on(self):
         """The opening records the subject map (subject anchor or spatially varying guidance)."""
-        return (self.sa_value != 1.0 or self.gm_low > 0) and bool(self.subject_tokens)
+        return (self.sa_value != 1.0 or self.gm_low > 0 or self.csg_value != 1.0) and bool(self.subject_tokens)
 
     def sa_accumulate(self, share):
         """Add one block's [B, N] subject-word share (global branch, head mean) to the current opening step's map; a
@@ -1079,6 +1090,7 @@ class SCAContext:
         sig = None if self.sigma is None else float(self.sigma)
         if getattr(self, "_sa_sig", None) != sig or getattr(self, "_sa_acc", None) is None:
             self._sa_sig, self._sa_acc, self._sa_map = sig, torch.zeros_like(share[0], dtype=torch.float32), None
+            self._csg_sig, self._csg_acc, self._csg_map = None, None, None   # a new image's opening: no stale copy map
         self._sa_acc = self._sa_acc + share[0].float()
 
     def sa_map(self, N, device):
@@ -1103,6 +1115,45 @@ class SCAContext:
                 np.savez(os.path.join(self.sa_dump, f"sa_map_{tag}.npz"), m=acc.float().cpu().numpy(),
                          g=self._sa_map.float().cpu().numpy(), grid=np.asarray(self.grid))
         return self._sa_map.to(device)
+
+    def csg_active(self):
+        """Copy-site gate on this window step (needs the opening's map and the subject words)."""
+        return (self.csg_value != 1.0 and bool(self.subject_tokens) and self.sigma is not None
+                and float(self.sigma) > self.csg_lo)
+
+    def csg_step(self, N, device):
+        """On the first block of a new window step, turn the previous step's accumulated share into the copy-site map."""
+        sig = float(self.sigma)
+        prev = getattr(self, "_csg_sig", None)
+        if prev == sig:
+            return
+        acc, self._csg_sig, self._csg_acc = getattr(self, "_csg_acc", None), sig, None
+        if prev is not None and sig > prev:     # sigma went up: a new image, the old share does not apply
+            acc = None
+        m0 = self.sa_map(N, device)
+        if acc is None or m0 is None or acc.numel() != N:
+            self._csg_map = None
+            return
+        from sca.subjgate import copy_map
+        self._csg_map = copy_map(acc.to(device), m0, self.grid, smooth=self.csg_smooth, rel=tuple(self.csg_rel),
+                                 excl=self.csg_excl, grow=self.csg_grow)
+        if self.sa_dump:
+            import os
+            os.makedirs(self.sa_dump, exist_ok=True)
+            tag = getattr(self, "sa_tag", "") or str(os.getpid())
+            np.savez(os.path.join(self.sa_dump, f"csg_{tag}_{self.step:02d}.npz"), s=acc.float().cpu().numpy(),
+                     c=self._csg_map.float().cpu().numpy(), grid=np.asarray(self.grid))
+
+    def csg_scale(self, N, device):
+        """[1, N] text-value scale of this window step (ones until the first map exists)."""
+        c = getattr(self, "_csg_map", None)
+        if c is None or c.numel() != N:
+            return torch.ones(1, N, device=device)
+        return (1.0 - (1.0 - self.csg_value) * c.to(device)).view(1, -1)
+
+    def csg_accumulate(self, share):
+        acc = getattr(self, "_csg_acc", None)
+        self._csg_acc = share[0].float() if acc is None else acc + share[0].float()
 
     def sa_scale(self, N, device):
         """[1, N] per-query scale of the subject-word content on this window step, or None (off, out of range, or no
@@ -1526,6 +1577,15 @@ class SCAProcessor:
             per = min(ctx.bridge_k_now(cells[0] * cells[1]), (H // cells[0]) * (W // cells[1])) if on else 0
             coarse = bool(on and ctx.bridge_coarse and not ctx.lse_tau)
             layout = ctx.flex_layout(L + (cells[0] * cells[1] * per if on and not coarse else 0), tile, win, q.device)
+            if ctx.csg_active():   # dynamic copy-site gate (sca/subjgate.copy_map)
+                from sca.subjgate import sca_subject_fn, subject_index
+                ctx.csg_step(H * W, q.device)
+                idx, valid = subject_index(ctx.subject_tokens, L, q.device)
+                out, share = sca_subject_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f,
+                                                      ctx.pool, layout, tb, cells, per, idx, valid,
+                                                      ctx.csg_scale(H * W, q.device), True, 0, True)
+                ctx.csg_accumulate(share)
+                return out
             s_img = ctx.sa_scale(H * W, q.device)
             if s_img is not None:
                 from sca.subjgate import sca_subject_fn, subject_index
