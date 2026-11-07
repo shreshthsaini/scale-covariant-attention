@@ -1290,3 +1290,7 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   keeps prompted objects coherent at the coarse scale. Without it the windows draw prompted objects (tent, figures)
   as fragmented stroke texture, which is also what tv5, q13n and tcg showed. It is also the copy drive, so no
   setting of this lever separates the two. gcm2 is parked. gcm's 46-prompt run finishes for the record.
+- 14:05 r7_gcm (G 1 away from the subject map) on copyprone21: detector 9 of 21 (gc1 11, gch 14, gc2 7), with the
+  tent-stripe artifact above. The pool-2 extended openings g2x2, g2x4 and g2x8 moved to the spool head
+  (a0_K0b2961*; g2x2's 46 as a0_K0b29613*). They leave the prompt read untouched and move the hand-off later, the
+  single-pass analogue of progressive SCA's committed layout, so they are the main remaining family.
