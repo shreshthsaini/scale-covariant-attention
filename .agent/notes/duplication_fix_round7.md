@@ -308,3 +308,7 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   calibrated pi (about 0.7) does not reach the copies; the audit's other measurement (the image wants 0.2 to 0.4 on
   the window's output at the hand-off) points at the head mean, which Fix 2 lowers.
 - Lead 03:30: Fix 2 screens first (r7_q2, r7_q12), plus r7_q12x = f1 plus pi = near share through sigma 0.75.
+- r7_q2 (Fix 2 alone, pi = near share on steps 8 to 12): pQ3, 17 yes, 1 borderline, 3 no; paired vs sca_v2 2 copies
+  removed (788875264758341041, 8995582008874513707), none added (exact McNemar p = 0.5). 77.3 s. Lowering the head
+  mean by 0.11 to 0.31 at the hand-off barely moves the copies: neither the per-query distribution (f1) nor the head
+  mean (Fix 2) of the window weight is the main lever on copyprone21.
