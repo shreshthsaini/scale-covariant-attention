@@ -1170,3 +1170,16 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   q13i (the joint three-part softmax, the only family that has cut copies below AReA's count) moved ahead of the
   ladder rungs as a0_K0b295*. The r7_fg screens moved up as a0_K0b390* (copyprone21) and a0_K0b440* (the 46,
   whose eval is released as a0_K0b4490eval_r7_fg). fg is the joint far field at coarse ids, never run before.
+- 12:45 Copyprone21 triage with the CPU detector (r7/cpu_det_c21.sh LABEL; about 1 min per screen). The detector
+  undercounts wide-window variants: hyb0 has 12 flags but 17 by hand, AReA 3 flags and 4 by hand. A screen goes to
+  blind labels only when it flags about 6 or fewer, except for the ladder rungs I was asked to label. Seed-1
+  control r7_s1: 15 of 21 flagged (sca_v2 seed 0 flags 21 by construction). The unselected sca_v2 rate on these
+  prompts is therefore about 15 to 18 by hand, not 19. op4: 15 flagged. Blind packets pQ30 (op4) and pQ31 (s1) are
+  being labeled.
+- New code d440b71 (frozen code/d440b71, tests/test_globcount.py; suite 281 pass, the known test_review_round
+  failure): --glob-count G [--glob-count-lo S]. On window steps the global branch weights its block-centre keys by
+  (fh fw)^G against the text for image queries, which is audit cause 3 confined to the global branch. At G = 1 its
+  text share falls from about 0.25 to full attention's level, and the result is renormalized, unlike tvG's zeroed
+  text values (tvG had 8 of 21 copies plus streak artifacts). Screens: a0_K0b296* r7_gc1 (G 1, sigma > 0.55),
+  a0_K0b297* r7_gc1a (G 1, every window step), a0_K0b298* r7_gch (G 0.5, sigma > 0.55). Also queued:
+  a0_K0b385* r7_g2x8 (global at pool 2 through step 15, gate 0.72, then 96, 80, 64).
