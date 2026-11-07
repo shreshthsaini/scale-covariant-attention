@@ -1188,3 +1188,10 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   has 4. With the layout held, SCA's window phase draws the copies on copyprone21 as on the 46 (op4 17.9% against
   AReA's 3.8%). So the opening does not decide the copies. The rungs that remain are area_scaOpen (AReA with SCA's
   opening, the converse) and ohyb0 (AReA's opening plus hyb0's wide early windows inside SCA).
+- 12:55 progressive SCA, set-level intervals against sca_v2 (195 prompts, 1000 draws, prog195_pairs/cfid_vs_sca_v2).
+  FID +1.6 [-2.3, +7.3] and KID +0.0013 [-0.0005, +0.0031] are not significant. Patch FID +9.2 [+5.1, +13.2] and
+  patch KID +0.0059 [+0.0036, +0.0083] are significant losses, and both points are worse than AReA's (107.7 against
+  102.9, and 0.0148 against 0.0114). So under r7_decide's relaxed rule (a significant loss on another metric must still
+  beat AReA), progressive SCA fails on patch FID and patch KID, even though it gains on IR, HPSv2.1 and PickScore
+  and beats AReA on all 10 per-image metrics. It also loses MUSIQ (-3.4) and MUSIQ crop (-6.0), both still above
+  AReA. The interval against AReA is still computing.
