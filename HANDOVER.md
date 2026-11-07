@@ -1251,3 +1251,6 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   weights are unchanged, so the prompt stays a sink, unlike f13. Combined with --glob-count 1, both branches read the
   prompt as full attention would. Queued at the spool head: a0_K0b2964* r7_tcg (tc plus glob-count 1, sigma > 0.55),
   and after gch a0_K0b2984* r7_tc (tc alone). gctv is the crude form: uniform window text values x 0.5.
+- 13:25 r7_hyb0g (one extra global step at pool 2 on step 8, then hyb0's windows), detector triage: 11 of 21
+  flagged (hyb0 12). A finer layout for one more step before the wide windows changes nothing. FAIL by triage, no
+  labels.
