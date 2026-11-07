@@ -1068,5 +1068,18 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   frozen code/17dcf9e, --pi-one-lo): AReA's window sizes on steps 8 to 13 (180 to 137, bridge ratio 0.5), then 96,
   80 and sca_v2: r7_hyb (+ pi = 1 while sigma > 0.76, a0_K0b25*), r7_hyb0 (sca_v2 pi, a0_K0b26*), r7_ohyb (hyb with
   op4's opening, a0_K0b27*), all on copyprone21 ahead of area_scaOpen / area_scaText / s1 / q13i.
+- 11:00: r7_bc64 (coarse bridge, 4096 tokens) by preview: copies fall but pointillist speckle everywhere: FAIL; last task
+  parked. 11:08: r7_hyb (pi = 1 on steps 8 to 13) by preview: coloured square artifacts: FAIL; r7_ohyb parked (same
+  pi = 1). Reading: sca_v2's low-pi heads only work through the global branch; any pi = 1 exposes them (scaD, hyb).
+  r7_hyb0 (AReA windows on steps 8 to 13, sca_v2 pi): clean, 92 s, copies move (first 2 previewed).
+- 11:22: L7 area_scaMix (AReA + SCA's per-head global mix) pQ27: 5 yes, 3 borderline, 13 no (AReA 4), with ripple
+  and posterization. The global mix is not the copy source; SCA's small-window phase is (op4 on matched layouts).
+- Candidates on the 46 (bar test directly; the copyprone21 screen is selection-biased): r7_saAs75 (saAs gated only
+  while sigma > 0.75, i.e. steps 8 to 14; saAs met the copy bar at 3.3% but lost IR/PickScore/HPSv2.1 on clean
+  prompts), a0_K0a10*, eval a0_K0_eval_r7_saAs75. r7_csg, dynamic copy-site gate (commit 538114c, frozen
+  code/538114c, tests in tests/test_qmix.py): each window step measures the global branch's subject-word share per
+  token; sites outside the opening's subject region (dilated 3) at 0.5 to 1.0 of the main subject's level lose all
+  prompt values on the next step (while sigma > 0.6); clean prompts untouched. copyprone21 screen with map dumps
+  (r7/sa_maps/r7_csg, a0_K0a20*), then the 46 with eval (a0_K0a30*, a0_K0_eval_r7_csg).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
