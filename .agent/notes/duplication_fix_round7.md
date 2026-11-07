@@ -269,4 +269,7 @@ Rungs (code 71b31b6 = sca/morph.py, flags in scripts/sample.py and scripts/run_a
 | area+mix | AReA | SCA's global branch (pool 4, block centre, coarse ids) mixed into the image output with SCA's calibrated per-head pi at the window's emulated scale | --sca-pi-mix calib/k1_1024.npz |
 | area+text | AReA | text queries read SCA's global branch | --sca-text-rule |
 | area+fixed | AReA | no jitter, no Halo, no DWT splits (fixed partition; the closest AReA analogue of SCA's deterministic windows) | --fixed-tiles --halo 0 |
+- Copy-prone counts so far (every image hand-labeled; yes of 21): sca_v2 19, AReA 4, sca_area20 (AReA's 19 windows plus
+  bridge in SCA) 12, r7_area12 (first 12 windows) 12, r7_area8 (first 8) 16. Wide windows plus AReA's bridge for 12
+  steps remove 7 of sca_v2's 19; widening further adds nothing; the remaining 8 above AReA come from another component.
 
