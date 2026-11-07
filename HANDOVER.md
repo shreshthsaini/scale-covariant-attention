@@ -1195,3 +1195,8 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   beat AReA), progressive SCA fails on patch FID and patch KID, even though it gains on IR, HPSv2.1 and PickScore
   and beats AReA on all 10 per-image metrics. It also loses MUSIQ (-3.4) and MUSIQ crop (-6.0), both still above
   AReA. The interval against AReA is still computing.
+- 13:00 decision, seed-1 control r7_s1 (sca_v2 at seed 1 on copyprone21, pQ31, 6 blind labelers): 18 yes and 3 no of
+  21; detector 15. The selection bias is about 1 of 21, since sca_v2 has 19 at its own selecting seed 0. The 21
+  prompts are copy-prone for sca_v2 at any seed, so the screen stays valid. The reference is about 18 to 19 for sca_v2
+  and 4 for AReA, and any variant at 17 or 18 (hyb0 17, op4 18) has no effect. Table:
+  results/dup_audit_20261027/copyprone21_counts.txt (scripts/r7_c21_table.py).
