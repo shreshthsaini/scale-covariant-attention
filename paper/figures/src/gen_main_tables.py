@@ -694,20 +694,22 @@ def table_variance_split():
             body.append(" & ".join(cells) + r" \\")
         body.append(r"\midrule" if rng == "post_gate" else "")
     body = [b for b in body if b]
+    min_head = min(1 - float(R[(c, s_, "post_gate", "image_share", rr)]["noise_within_head"])
+                   for c, s_, _, _ in VS_ROWS for rr in ("8", "16"))
     cap = (r"\caption{\textbf{Reach is set by the head.} Variance of the share of each head's image attention within "
-           r"$r$ tokens of the query (Chebyshev distance), over all (block, head, noise bin) cells. It is split into "
+           r"8 or 16 tokens of the query (Chebyshev distance), over all (block, head, noise bin) cells. It is split into "
            r"the head (between blocks plus between heads of one block) and the noise level within a head; the two "
            r"sum to 100\%. Avg.\ is the variance of the head-averaged curve over noise levels, the part one schedule shared "
            r"by all heads could follow. 256 random queries per block and step, full attention at the calibration "
            r"size. AReA's statistic is the distance to dominant keys; ours is the mass share, which sets the output "
-           r"by Lemma~\ref{lem:split}. Key result: after the gate the head carries at least 96.9\% of the variance in "
-           r"every model and size.}")
+           r"by Lemma~\ref{lem:split}. Key result: after the gate the head carries at least "
+           + f"{100 * min_head:.1f}" + r"\% of the variance in every model and size.}")
     text = "\n".join([
         HEADER.replace("% Generated", "% Generated (app_tables/variance_split.tex)"),
         r"\begin{table}[!htbp]", cap, r"\label{tab:variance_split}",
         r"\centering\footnotesize\setlength{\tabcolsep}{4pt}",
         r"\begin{tabular}{@{}lr rrr rrr@{}}", r"\toprule",
-        r" & & \multicolumn{3}{c}{$r=8$ tokens (\%)} & \multicolumn{3}{c}{$r=16$ tokens (\%)} \\",
+        r" & & \multicolumn{3}{c}{within 8 tokens (\%)} & \multicolumn{3}{c}{within 16 tokens (\%)} \\",
         r"\cmidrule(lr){3-5}\cmidrule(l){6-8}",
         r"Model and size & Prompts & Head & Noise & Avg. & Head & Noise & Avg. \\", r"\midrule"]
         + body + [r"\bottomrule", r"\end{tabular}", r"\end{table}"]) + "\n"
