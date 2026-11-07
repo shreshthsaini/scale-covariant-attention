@@ -968,5 +968,10 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   dash strokes (sca_v2 crops clean; the aurora comb streaks are in sca_v2 too). f13n's near/far weights equal f1's
   (artifact-free); the difference left is the far output (outside centres, no text, no local coarse context). Queued
   at the head (code/1b8f855): r7_q13nw (anchor near, far all, a0_K2941*), r7_q13nd (anchor near, dose 0.5, a0_K2942*).
+- 07:26: r7_q13n, pQ10: 9 yes, 2 borderline, 10 no, stripe banding on most images. Fails. Reading across f13: one knob,
+  the prompt's attention mass, drives both copies (diluted -> fewer) and artifacts (diluted -> no sink -> blocks).
+  New --text-value A (commit a70efc6, frozen code/a70efc6): image queries read the text VALUES scaled by A in both
+  branches, weights unchanged (sink kept), text queries untouched; global branch corrected exactly by linearity.
+  Queued at the head: r7_tv0m (A = 0 while sigma > 0.55, a0_K2938*), r7_tv5 (A = 0.5 every step, a0_K2939*).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).

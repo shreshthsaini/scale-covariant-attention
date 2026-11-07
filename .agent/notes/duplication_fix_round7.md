@@ -342,3 +342,11 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   text/near balance as in the window softmax. Also new: --qmix-dose (ddda216), dose * f13 + (1 - dose) * sca_v2.
 - Label rule (all packets): a second real animal of the prompted kind counts as an extra even when the note's bound
   reserves a slot for a reflection that is not drawn.
+- r7_q13n (near-anchored f13): pQ10, 9 yes, 2 borderline, 10 no; colour blocks gone (sink restored) but fine periodic
+  vertical stripes on dark ground, sky and water and dash-stroke textures (tent) on most images. f13 family on
+  copyprone21: q13a 3, q13m 3, q13w 2 (all colour blocks), q13g 8 (blocks), q13n 9 (stripes). The prompt's attention
+  mass is one knob for both: diluted, copies fall and the sink is lost (blocks); restored, copies return.
+- New: --text-value A (a70efc6). Image queries read the text values scaled by A in both branches; their attention
+  weights are unchanged, so the prompt keeps its sink mass while its content drive is attenuated; text queries are
+  untouched. Global branch: O' = O - (1 - A) t O_T, exact by linearity (tests/test_qmix.py). Screens: r7_tv0m (A = 0
+  while sigma > 0.55), r7_tv5 (A = 0.5 every post-gate step).
