@@ -178,39 +178,33 @@ Diffusion transformers trained near one megapixel fail at $4096^2$: attention me
   \label{fig:prog_hero}
 \end{center}
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/method_v2.pdf}
+  \caption{\textbf{Calibrate once, then mix per head.} (a)~AReA gives every head one schedule, weight 0 on its windows above $\sigma=0.89$ and 1 below; \sca{} gives each of FLUX.1-dev's 1,368 heads its own, nearly flat weight $\pi_h$ (ratio 4). (b)~At $1024^2$, shrinking a native window and a native grid of block centres to the target's image-to-window ratio $r$ lets full attention fix each $\pi_h$ in closed form, so one table serves every size. (c)~Progressive \sca{} keeps HRDiT's schedule of 30, 17, and 10 steps, with full attention at $1024^2$ and the per-head mix at $2048^2$ and $4096^2$; Figure~\ref{fig:method_zoom} draws the operators at component level.}
+  \label{fig:method}
+\end{figure}
+
 % =====================================================================================
 \section{Introduction}
 \label{sec:intro}
 
 Diffusion transformers~\citep{peebles2022dit} such as FLUX.1~\citep{flux2024} and Stable Diffusion~3~\citep{esser2024sd3} are trained near one megapixel. At $4096\times4096$ the image has 16 times as many tokens, full attention costs about 256 times as much, and every layer meets token counts and position offsets it never saw in training. Full attention then returns stripes or a flat field (Figure~\ref{fig:teaser}). Fixes that restrict attention must decide how far each head looks, and at the target nothing can check that decision, because full attention there is the failure. We ask whether the decision can be measured where full attention is still correct, at the training resolution.
 
-\begin{wrapfigure}{r}{0.42\linewidth}
-  \wraptop
-  \centering
-  \includegraphics[width=\linewidth]{figures/concept.pdf}
-  \caption{\textbf{One switch for every head, or one measured mix per head.} In \sca{}'s notation AReA puts weight 0 on its windows above $\sigma=0.89$ and 1 below, for every head. \sca{} gives each of FLUX.1-dev's 1,368 heads the weight calibrated at $1024^2$ (lines coloured by mean; green: median).}
-  \label{fig:concept}
-  \wrapbot
-\end{wrapfigure}
-Some fixes edit the positional encoding~\citep{zhuo2024lumina,issachar2025dype,zhao2025ultraimage,rajabi2026sega}; others restrict the keys each query sees~\citep{zhang2023hidiffusion,ma2025resdit,xue2026hrdit,rajabi2026area}. AReA~\citep{rajabi2026area} finds that attention narrows during denoising, averaged over heads, and gives every head one schedule: pooled keys for 8 of 28 steps, then windows that shrink to native size. HRDiT searches per-head scopes for each target size, and UltraImage types heads at run time~\citep{xue2026hrdit,zhao2025ultraimage}. Measured head by head at $1024^2$, reach varies far more between heads than between steps (Figure~\ref{fig:concept}). After the first 8 steps, the head accounts for \hlVarHead\% of the variance in the share of attention a query keeps within 16 tokens, and the noise level for \hlVarStep\%.
+Some fixes edit the positional encoding~\citep{zhuo2024lumina,issachar2025dype,zhao2025ultraimage,rajabi2026sega}; others restrict the keys each query sees~\citep{zhang2023hidiffusion,ma2025resdit,xue2026hrdit,rajabi2026area}. AReA~\citep{rajabi2026area} finds that attention narrows during denoising, averaged over heads, and gives every head one schedule: pooled keys for 8 of 28 steps, then windows that shrink to native size. HRDiT searches per-head scopes for each target size, and UltraImage types heads at run time~\citep{xue2026hrdit,zhao2025ultraimage}. Measured head by head at $1024^2$, reach varies far more between heads than between steps (Figure~\ref{fig:method}a). After the first 8 steps, the head accounts for \hlVarHead\% of the variance in the share of attention a query keeps within 16 tokens, and the noise level for \hlVarStep\%.
 
 We introduce Scale-Covariant Attention (\sca{}), which gives each head its own reach, calibrated once at the training resolution (Figure~\ref{fig:method}). Each head mixes two views that keep the training geometry: an exact native-size window around the query, and a native-size grid of block-centre keys over the whole image. We fit the mix by emulation. At $1024^2$, shrinking the window and the grid to the target's image-to-window ratio lets the model's own full attention score both views, and the best weight has a closed form. One calibration pass serves every target size. We call this scale covariance: the weight depends on the head and the image-to-window ratio, not on the absolute size.
 
 \sca{} replaces only the attention, so it runs inside any sampler. Our main configuration keeps HRDiT's released three-stage schedule~\citep{xue2026hrdit}, which sets the layout at $1024^2$ and refines it at $2048^2$ and $4096^2$, and swaps HRDiT's four attention changes for \sca{}. We call it progressive \sca{}; the schedule is HRDiT's (Section~\ref{sec:progressive}). A single-pass mode samples at the target in 28 steps: it opens with the global view for 8 steps, as AReA does, then shrinks a window to native size over four steps. The opening, the window sizes, and 1,024 bridge tokens that show each window the whole image are set by hand; only the weights are calibrated (Table~\ref{tab:handset}).
 
-The calibrated weights are stable across disjoint prompts (correlation 0.99) and track each head's attention mass within 16 tokens ($\rho=0.77$). They transfer: the ratio-2 table explains ratio 4 with 2.4\% more output error, and tables fitted at $1024^2$ and $1280^2$ agree. At $4096^2$ on FLUX.1-dev, progressive \sca{} beats AReA on all ten per-image metrics for each of three seeds, at $\hlSpeedProgArea\times$ its speed; at seed 0 ImageReward rises from \hlAreaIrAbs{} to \hlProgIrAbs. On set-level scores it is level with AReA on FID, and its patch FID is higher at seed 0 but not significantly at seed 1. It matches HRDiT on ImageReward, HPSv2.1, and PickScore in \hlProgHrditPct\% of HRDiT's time, and trails it on KID and patch FID. Against single-pass \sca{} it gains preference and loses fine detail, with MUSIQ on $1024^2$ crops $\hlProgScaMusiqc$ and patch FID $\hlProgScaFidP$.
+The calibrated weights are stable across disjoint prompts (correlation 0.99), track each head's attention mass within 16 tokens ($\rho=0.77$), and transfer across ratios and resolutions (Section~\ref{sec:analysis}). At $4096^2$ on FLUX.1-dev, progressive \sca{} beats AReA on all ten per-image metrics for each of three seeds, at $\hlSpeedProgArea\times$ its speed; at seed 0 ImageReward rises from \hlAreaIrAbs{} to \hlProgIrAbs. On set-level scores it is level with AReA on FID, and its patch FID is higher at seed 0 but not significantly at seed 1. It matches HRDiT on ImageReward, HPSv2.1, and PickScore in \hlProgHrditPct\% of HRDiT's time, and trails it on KID and patch FID. Against single-pass \sca{} it gains preference and loses fine detail, with MUSIQ on $1024^2$ crops $\hlProgScaMusiqc$ and patch FID $\hlProgScaFidP$.
 \begin{itemize}
   \item We show that the reach of attention heads, measured at the training resolution, varies far more between heads than between denoising steps, on FLUX.1-dev, FLUX.1-Krea-dev, and FLUX.2-dev (Section~\ref{sec:analysis}).
   \item We calibrate each head's mix of a native window and a whole-image view once at $1024^2$, in closed form, by emulating the target's image-to-window ratio against the model's own full attention (Section~\ref{sec:calib}).
   \item We show that at $4096^2$ progressive \sca{} beats AReA on all ten per-image metrics for three seeds at $\hlSpeedProgArea\times$ its speed and matches HRDiT in less than half its time (Section~\ref{sec:main}).
 \end{itemize}
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/method.pdf}
-  \caption{\textbf{Calibrate once, then mix per head.} (a)~At $1024^2$, $\pi_h$ is fit to full attention per head, $\sigma$, and $r$. (b)~In a single pass at $4096^2$, sampling opens globally, shrinks the window over steps 9 to 12, and (c)~mixes both operators by $\pi_h$ at $r=256/w$. (d)~Progressive \sca{} runs (c) at its $2048^2$ and $4096^2$ stages (Algorithm~\ref{alg:prog_main}); Figure~\ref{fig:method_zoom} draws the operators at component level.}
-  \label{fig:method}
-\end{figure}
+
 
 % =====================================================================================
 \section{Scale-Covariant Attention}
@@ -456,7 +450,7 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
 \end{wrapfigure}
 \paragraph{Single-pass \sca{} is faster than every baseline we timed at every size; quality depends on the aspect ratio.} At $2048\times6144$ it beats AReA on \hlWideSixWins{} metrics and loses on the aesthetic score and patch FID; at $2048\times4096$ it wins three and loses three (Table~\ref{tab:app_wide}). Without the schedule it also wins 14 of 15 metrics at $6144^2$ (Table~\ref{tab:krea_6144}). At $8192^2$, 12 exploratory prompts favour it on six of ten scores, with grid artifacts (Appendix~\ref{app:8k}).
 
-\paragraph{Single-pass time grows nearly linearly with pixel count.} Fitting clean seconds $\propto N^b$ over the $N$ image tokens gives $b=\hlLatExpSca$ for single-pass \sca{} and 1.12 for AReA (Table~\ref{tab:latency}; Figure~\ref{fig:latency}). The schedule and the bridge add \hlTimeOverhead\ at $4096^2$ (\hlSecSca{} against \hlSecScaNoSched\,s without them), timed back to back on one GPU. At $8192^2$ single-pass \sca{} takes \hlLatEightSca\,s against AReA's 952.0\,s, $\hlLatEightRatio\times$ faster. Progressive \sca{} takes \hlSecProg\,s at $4096^2$, timed back to back with HRDiT (\hlSecHrditThree\,s) and AReA (\hlSecAreaThree\,s) on one GPU.
+\paragraph{Single-pass time grows nearly linearly with pixel count.} Fitting clean seconds $\propto N^b$ over the $N$ image tokens gives $b=\hlLatExpSca$ for single-pass \sca{} and 1.12 for AReA (Table~\ref{tab:latency}; Figure~\ref{fig:latency}). The schedule and the bridge add \hlTimeOverhead\ at $4096^2$ (\hlSecSca{} against \hlSecScaNoSched\,s without them), timed back to back on one GPU. At $8192^2$ single-pass \sca{} takes \hlLatEightSca\,s against AReA's 952.0\,s, $\hlLatEightRatio\times$ faster.
 
 \begin{table}[t]
   \centering

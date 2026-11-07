@@ -1,0 +1,61 @@
+{
+  "figure": "fig:method v2 (merged concept and method figure); TikZ sources paper/figures/src/method_v2*.tex",
+  "script": "paper/figures/src/fig_method_v2.py",
+  "inputs": {
+    "concept_curves": {
+      "path": "results/heads_view/concept_curves.csv",
+      "sha256": "2cdff6534a36d05d62bf95a038c38d89483042d2342b890ac480328f87f6a3d9",
+      "rows": 109440,
+      "heads": 1368,
+      "sigma_grid": [
+        0.89,
+        0.1,
+        80
+      ],
+      "note": "ratio-4 weights pi_h(sigma) as the sampler reads the table (fig_concept.py)"
+    },
+    "calibration_table": {
+      "path": "calib/k1_1024.npz",
+      "sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+      "keys": [
+        "s2_pi_head",
+        "s4_pi_head",
+        "populated"
+      ],
+      "block_one_based": 12
+    },
+    "images_reused_read_only": {
+      "calibration_image": "paper/figures/method_flow/calib.jpg (stand-in, see method_provenance.json)",
+      "noise": "paper/figures/method_flow/noise.png (icon, numpy default_rng(20261102))",
+      "progressive_output": "paper/figures/method_flow/output_prog.jpg (progressive SCA, 4096^2, prompt a4k_eval_4096_minus8343371271909676658, seed 0)"
+    }
+  },
+  "rules": {
+    "curves": "one line per head over sigma in [0.89, 0.10]; colour = head mean on PI_CMAP ends with a grey midpoint; lw 0.3 pt, alpha 0.12; mid heads drawn first",
+    "axes": {
+      "sigma": [
+        1.0,
+        0.1
+      ],
+      "pi": [
+        -0.06,
+        1.06
+      ]
+    },
+    "area_step": "AReA in SCA's notation: weight 0 on its windows for sigma > 0.89, then 1, for every head (drawn in TikZ, not data)",
+    "table_cards": "block 12, 24 heads sorted by mean ratio-4 weight (local on top) x 13 occupied noise bins, sigma falling left to right, scafig.PI_CMAP, 16x nearest upscale",
+    "stage_tiles": "schematic (no intermediate stage images were saved); side grows with stage size"
+  },
+  "figures": {
+    "paper/figures/src/method_v2a.tex": "candidate A: three columns (a) | (b) | (c), mix as a zoomed inset",
+    "paper/figures/src/method_v2b.tex": "candidate B: three full-width rows, mix inside each SCA stage block",
+    "paper/figures/src/method_v2.tex": "chosen: candidate B, compiled to paper/figures/method_v2.pdf"
+  },
+  "outputs": {
+    "cloud_a.png": "a40ee2896bea305af224597a1cd1cb846a8e4ca147edbe6d835fdca29bd9293a",
+    "cloud_b.png": "851c64a7f9741ee7b3cc276f9d985c76613b0efa01d80d3ad4bcacffa8b5c556",
+    "table_r2.png": "88a03f054fa4c6cdf850e8248a1906b2900b83f900744184d00d9179a6a88a38",
+    "table_r4.png": "389e564edc54b1e9bcc8c30497255633455cf7706870ac6adc6d7020916ceaee",
+    "data.tex": "651265b101e8320f92ebe5e5d5378637f0a4203739856794b9957c648de7f391"
+  }
+}

@@ -1,0 +1,183 @@
+% SCA method figure v2 (fig:method), the merged concept and method figure; replaces concept.pdf (Figure 2) and
+% method.pdf (Figure 3) in the main text. Chosen from two candidates on 2026-11-07: this is candidate B
+% (method_v2b.tex, three full-width rows read top to bottom); candidate A (method_v2a.tex) set the same content in
+% three columns. Rows:
+%   (a) concept: AReA's one schedule beside SCA's 1,368 per-head weights pi_h(sigma) at ratio 4, same axes
+%       (curves: ../method_v2/cloud_b.png from results/heads_view/concept_curves.csv)
+%   (b) calibrate once at 1024^2: full attention on the calibration image ~ pi_h local + (1 - pi_h) global at
+%       ratio r = 4 (to scale on the 64 x 64 grid), the closed form, the table cards (one block, ratios 2 and 4)
+%   (c) sample progressively (HRDiT's schedule): noise, 1024^2 full attention, 2048^2 and 4096^2 SCA stages that
+%       each hold the mix at their ratio (schematic views; no stage images were saved), the real progressive output
+% Build from this directory:  ~/.local/bin/tectonic --outdir .. method_v2.tex   (writes ../method_v2.pdf)
+% Data assets: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python fig_method_v2.py (../method_v2/,
+% provenance.json there). Images reused read-only from ../method_flow/ (see ../method_provenance.json).
+% Print size: 1 unit = 1 pt, canvas 397.48 x 203 pt (5.5 in wide), placed at \linewidth. Text: titles 9 pt bold
+% sans, labels 7.5 pt, ticks and sizes 7 pt, math 8 and 7 pt (scripts 6 pt). Palette: sca_colors.tex (green SCA,
+% amber local, blue global, purple AReA, greys).
+\documentclass[border=0pt]{standalone}
+\RequirePackage{fix-cm}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, calc}
+\DeclareMathSizes{7}{7}{6}{6}
+\DeclareMathSizes{7.5}{7.5}{6}{6}
+\DeclareMathSizes{8}{8}{6.2}{6}
+\DeclareMathSizes{8.5}{8.5}{6.5}{6}
+\DeclareMathSizes{10}{10}{7}{6}
+\input{sca_colors.tex}
+\input{../method_v2/data.tex}
+\definecolor{scaLocalText}{HTML}{A85F12}
+\definecolor{scaGlobalText}{HTML}{245A96}
+
+\newcommand{\ttl}{\fontsize{9}{10.5}\selectfont\sffamily\bfseries}
+\newcommand{\lab}{\fontsize{7.5}{9}\selectfont\sffamily}
+\newcommand{\sml}{\fontsize{7}{8}\selectfont\sffamily}
+\newcommand{\mth}{\fontsize{8}{9.5}\selectfont}
+\newcommand{\mts}{\fontsize{7}{8}\selectfont}
+\newcommand{\bigsym}{\fontsize{10}{12}\selectfont}
+
+\tikzset{
+  every node/.style={inner sep=0pt, outer sep=0pt, text=scaInk},
+  arr/.style={-{Stealth[length=3.2pt, width=2.8pt]}, line width=0.6pt, draw=scaInk},
+  blk/.style={rounded corners=2pt, line width=0.8pt},
+  sblk/.style={blk, draw=scaAccent, fill=scaAccentLight},
+  nblk/.style={blk, draw=scaFull, fill=white},
+  axis/.style={line width=0.5pt, draw=scaMid},
+}
+
+% ---------------------------------------------------------------- curve plots
+% x = sigma (\CvXL at the left edge, \CvXR at the right), y = pi (\CvYL .. \CvYH); box lower-left (#1,#2), size #3 x #4.
+\newcommand{\SX}[3]{#1+#3*(\CvXL-#2)/(\CvXL-\CvXR)}     % \SX{x0}{sigma}{w}
+\newcommand{\PY}[3]{#1+#3*(#2-\CvYL)/(\CvYH-\CvYL)}     % \PY{y0}{pi}{h}
+\newcommand{\Axes}[5]{% x0 y0 w h ticklabels(0/1)
+  \draw[axis] (#1,#2) rectangle ++(#3,#4);
+  \foreach \s/\t in {1/1, 0.89/0.89, 0.5/0.5, 0.1/0.1}{
+    \draw[axis] ({\SX{#1}{\s}{#3}},#2) -- ++(0,-1.6);
+    \node[anchor=north, text=scaMid] at ({\SX{#1}{\s}{#3}},#2-2.4) {\sml\t};}
+  \foreach \v in {0,1}{\draw[axis] (#1,{\PY{#2}{\v}{#4}}) -- ++(-1.6,0);}
+  \ifnum#5=1
+    \foreach \v in {0,1}{\node[anchor=east, text=scaMid] at (#1-2.4,{\PY{#2}{\v}{#4}}) {\sml\v};}
+  \fi}
+
+% ---------------------------------------------------------------- calibration image tiles at r = 4
+% Token geometry on the 64 x 64 grid (row 0 at the top): window rows 19..34, cols 23..38 (16 x 16, centred on the
+% 2 x 2 query tile at rows 26..27, cols 30..31, drawn enlarged to 4 x 4); block centres at 4b + 2, b = 0..15.
+\newcommand{\Query}[1]{% side
+  \fill[scaInk] (29*#1/64,{#1-29*#1/64}) rectangle (33*#1/64,{#1-25*#1/64});
+  \draw[white, line width=0.35pt] (29*#1/64,{#1-29*#1/64}) rectangle (33*#1/64,{#1-25*#1/64});}
+\newcommand{\CalTile}[4]{% x y side mode(0 full, 1 local, 2 global)
+  \begin{scope}[shift={(#1,#2)}]
+    \node[anchor=south west] at (0,0) {\includegraphics[width=#3pt]{../method_flow/calib.jpg}};
+    \ifcase#4
+      \draw[line width=0.6pt, scaFull] (0,0) rectangle (#3,#3);
+    \or
+      \fill[white, opacity=0.72, even odd rule] (0,0) rectangle (#3,#3)
+        (23*#3/64,{#3-35*#3/64}) rectangle (39*#3/64,{#3-19*#3/64});
+      \draw[line width=0.6pt, scaFull] (0,0) rectangle (#3,#3);
+      \draw[line width=0.9pt, scaLocal] (23*#3/64,{#3-35*#3/64}) rectangle (39*#3/64,{#3-19*#3/64});
+    \or
+      \fill[white, opacity=0.62] (0,0) rectangle (#3,#3);
+      \draw[line width=0.6pt, scaFull] (0,0) rectangle (#3,#3);
+      \foreach \i in {0,...,15}{\foreach \j in {0,...,15}{
+        \fill[scaGlobal] ({(4*\i+2.5)*#3/64},{#3-(4*\j+2.5)*#3/64}) circle[radius=0.42pt];}}
+    \fi
+    \Query{#3}
+  \end{scope}}
+
+% ---------------------------------------------------------------- schematic views at a target stage
+% \LocIcon / \GlobIcon{x}{y}{side}{r}: grey image tile; local: native window of side side/r around the query;
+% global: the native grid of block centres over the whole image (16 x 16 drawn).
+\newcommand{\Tile}[1]{\fill[scaGrid] (0,0) rectangle (#1,#1); \draw[line width=0.5pt, scaFull] (0,0) rectangle (#1,#1);}
+\newcommand{\QueryC}[1]{\fill[scaInk] ({0.47*#1},{0.53*#1}) rectangle ++({0.07*#1},{0.07*#1});
+  \draw[white, line width=0.3pt] ({0.47*#1},{0.53*#1}) rectangle ++({0.07*#1},{0.07*#1});}
+\newcommand{\LocIcon}[4]{\begin{scope}[shift={(#1,#2)}]\Tile{#3}
+  \pgfmathsetmacro{\wh}{0.5*#3/#4}
+  \fill[scaLocalLight] ({0.505*#3-\wh},{0.565*#3-\wh}) rectangle ({0.505*#3+\wh},{0.565*#3+\wh});
+  \draw[scaLocal, line width=0.8pt] ({0.505*#3-\wh},{0.565*#3-\wh}) rectangle ({0.505*#3+\wh},{0.565*#3+\wh});
+  \QueryC{#3}\end{scope}}
+\newcommand{\GlobIcon}[4]{\begin{scope}[shift={(#1,#2)}]\Tile{#3}
+  \foreach \i in {0,...,11}{\foreach \j in {0,...,11}{\fill[scaGlobal] ({(\i+0.5)*#3/12},{(\j+0.5)*#3/12}) circle[radius=0.42pt];}}
+  \QueryC{#3}\end{scope}}
+% One SCA stage: green block with the mix at ratio #4; lower-left (#1,#2), width #3.
+\newcommand{\SCAStage}[4]{\begin{scope}[shift={(#1,#2)}]
+  \draw[sblk] (0,0) rectangle (#3,30);
+  \node[anchor=east] at (17,15) {\mth $\pi_h$};
+  \LocIcon{18.5}{4}{22}{#4}
+  \node at (46.5,15) {\mth $+$};
+  \node[anchor=east] at (84,15) {\mth $(1-\pi_h)$};
+  \GlobIcon{85.5}{4}{22}{#4}
+  \end{scope}}
+
+\begin{document}
+\begin{tikzpicture}[x=1pt, y=1pt]
+\useasboundingbox (0,0) rectangle (397.48,203);
+
+% ================================================================== (a) concept
+\node[anchor=north west] at (0,202.2) {\ttl (a) One weight per head};
+\def\ay{145}\def\ah{\CvHb}\def\aw{\CvWb}
+% AReA: one schedule, every head
+\Axes{20}{\ay}{\aw}{\ah}{1}
+\draw[line width=1.3pt, scaArea, line cap=round, line join=round]
+  ({\SX{20}{1}{\aw}},{\PY{\ay}{0}{\ah}}) -- ({\SX{20}{\CvGate}{\aw}},{\PY{\ay}{0}{\ah}})
+  -- ({\SX{20}{\CvGate}{\aw}},{\PY{\ay}{1}{\ah}}) -- ({\SX{20}{0.1}{\aw}},{\PY{\ay}{1}{\ah}});
+\node[anchor=base east, text=scaArea] at (20+\aw,{\ay+\ah+3.4}) {\lab AReA: every head};
+\node at (7,{\ay+0.5*\ah}) {\mth $\pi_h$};
+\node[anchor=north east, text=scaMid] at (16,\ay-2.4) {\mth $\sigma$};
+% SCA: one weight per head (1,368 curves), same axes
+\def\bx{214}
+\node[anchor=south west] at (\bx,\ay) {\includegraphics[width=\aw pt, height=\ah pt]{../method_v2/cloud_b.png}};
+\Axes{\bx}{\ay}{\aw}{\ah}{0}
+\node[anchor=base east, text=scaAccent] at (\bx+\aw,{\ay+\ah+3.4}) {\lab SCA: each of \NHeads{} heads};
+\node[anchor=north east, text=scaMid] at (\bx-4,\ay-2.4) {\mth $\sigma$};
+
+% ================================================================== (b) calibrate once at 1024^2
+\node[anchor=north west] at (0,128.2) {\ttl (b) Calibrate once at 1024\textsuperscript{2}};
+\def\ty{76}\def\ts{40}
+\CalTile{0}{\ty}{\ts}{0}
+\node at (48,{\ty+0.5*\ts}) {\bigsym $\approx$};
+\node at (62,{\ty+0.5*\ts}) {\mth $\pi_h$};
+\CalTile{70}{\ty}{\ts}{1}
+\node at (118,{\ty+0.5*\ts}) {\mth $+$};
+\node at (141,{\ty+0.5*\ts}) {\mth $(1-\pi_h)$};
+\CalTile{160}{\ty}{\ts}{2}
+\node[anchor=north west] at (0,\ty-2) {\lab full attention};
+\node[anchor=north, text=scaLocalText] at (90,\ty-2) {\lab local};
+\node[anchor=north, text=scaGlobalText] at (180,\ty-2) {\lab global};
+\node[anchor=south east, text=scaMid] at (200,\ty+\ts+1.5) {\mts $r=4$};
+% closed form on the edge, then the table cards: one block, 24 heads x 13 noise bins; ratio 2 behind, 4 in front
+\draw[arr] (205,{\ty+0.5*\ts}) -- (271,{\ty+0.5*\ts});
+\node[anchor=south] at (238,{\ty+0.5*\ts+2.5}) {\mth $\pi_h^\star=\mathrm{clip}(B/A)$};
+\node[anchor=south west] at (278,\ty+11) {\includegraphics[width=34pt, height=26pt]{../method_v2/table_r2.png}};
+\draw[line width=0.5pt, scaFull] (278,\ty+11) rectangle ++(34,26);
+\fill[white] (273,\ty+6) rectangle ++(34,26);
+\node[anchor=south west] at (273,\ty+6) {\includegraphics[width=34pt, height=26pt]{../method_v2/table_r4.png}};
+\draw[line width=0.5pt, scaFull] (273,\ty+6) rectangle ++(34,26);
+\node[anchor=west] at (318,{\ty+0.5*\ts}) {\mth $\pi_h(\sigma,r)$};
+
+% ================================================================== (c) sample progressively
+\node[anchor=north west] at (0,60.2) {\ttl (c) Sample progressively};
+\def\cy{12}
+\node[anchor=south west] at (0,\cy+2) {\includegraphics[width=26pt]{../method_flow/noise.png}};
+\draw[arr] (28,\cy+15) -- (36,\cy+15);
+\draw[nblk] (38,\cy+3) rectangle ++(24,24);
+\node at (50,\cy+15) {\sml full};
+\node[anchor=north, text=scaMid] at (50,\cy) {\sml 1024\textsuperscript{2}};
+\draw[arr] (64,\cy+15) -- (76,\cy+15);
+\node[anchor=south, text=scaMid] at (70,\cy+16.5) {\mts $\times2$};
+\SCAStage{78}{\cy}{112}{2}
+\node[anchor=north, text=scaMid] at (134,\cy-1.2) {\sml 2048\textsuperscript{2}, \mts$r=2$};
+\draw[arr] (192,\cy+15) -- (204,\cy+15);
+\node[anchor=south, text=scaMid] at (198,\cy+16.5) {\mts $\times2$};
+\SCAStage{206}{\cy}{112}{4}
+\node[anchor=north, text=scaMid] at (262,\cy-1.2) {\sml 4096\textsuperscript{2}, \mts$r=4$};
+\draw[arr] (320,\cy+15) -- (328,\cy+15);
+\node[anchor=west] at (330,\cy+15) {\includegraphics[width=50pt]{../method_flow/output_prog.jpg}};
+% the one table feeds both SCA stages
+\draw[line width=0.6pt, scaInk] (290,\ty+6) -- (290,52) -- (134,52);
+\draw[arr] (134,52.3) -- (134,\cy+30.6);
+\draw[arr] (262,52) -- (262,\cy+30.6);
+\end{tikzpicture}
+\end{document}
