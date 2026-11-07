@@ -1371,3 +1371,13 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   each method in its own process, warm-up excluded, median of 3 prompts): sca_v2_prog 49.15 s [49.13, 49.17],
   HRDiT (author profile) 106.97 s, AReA 202.36 s. Progressive SCA is 2.18x faster than HRDiT and 4.12x faster
   than AReA.
+- 16:35 item (1) set-level landed (results/prog195_vs_baselines/cfid; corrected, 168 reference identities, 1000
+  draws, reference sca_v2_prog). Deltas are baseline minus prog, so positive means prog is better on these
+  lower-is-better metrics.
+  - FID: prog 141.9. AReA +3.9 [-3.1, +8.5], HRDiT -3.4, UltraImage +0.2 and sca_v2 -1.6 are not significant.
+    DyPE +63.6, SEGA +23.1 and full +170.6 are significant.
+  - Patch FID: prog 107.7. It is significantly worse than AReA (-4.8 [-10.6, -0.07]), HRDiT (-4.6) and sca_v2
+    (-9.2), level with UltraImage, and better than DyPE, SEGA and full.
+  - Patch KID: prog is worse than AReA, HRDiT and sca_v2, and better than UltraImage, DyPE, SEGA and full.
+  - KID: only HRDiT is significantly better.
+  - IS (results/prog195_vs_baselines/is_summary.csv): prog 7.18, highest after UltraImage's 7.38.
