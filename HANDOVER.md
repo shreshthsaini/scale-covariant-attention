@@ -1272,3 +1272,12 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   the one for the other, as every earlier prompt lever did. Stronger forms (gc2 running, gc1pb and gc1pb55) are
   parked or left to finish. gch (G 0.5, the weaker form) is the family's last point; if it keeps the core metrics it
   goes to its 46.
+- 14:00 r7_gc1 on copyprone21 by hand (pQ32, 6 blind labelers): 13 yes, 1 borderline, 7 no (sca_v2 19 on the same
+  layouts, AReA 4); detector 11. gc1a (every window step): detector 11, so extending past sigma 0.55 adds nothing.
+- New code 023918f (frozen code/023918f; suite 287 pass): --glob-count-map. The count correction now acts only away
+  from the opening's subject map, with per-query weight 1 + (W - 1)(1 - g_i). The subject keeps the native-strength
+  prompt read that sets its look, and the rest of the image reads the prompt as full attention would. A prompt that
+  names no subject (subject_words_r7.json, which covers the 26 people prompts of the 46) is left exactly as sca_v2.
+  Hypothesis: gc1's PickScore loss comes from the subject's prompt read, and its copy removal from the read
+  elsewhere. Queued at the spool head: r7_gcm on copyprone21 (a0_K0b2962*) and on the 46 (a0_K0b29625*, eval
+  a0_K0b29629_eval_r7_gcm). Map settings are saAs's (smooth 9, rel 0.25/0.5, dilate 3).
