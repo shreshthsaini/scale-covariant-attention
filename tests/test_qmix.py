@@ -166,3 +166,31 @@ def test_pi_blend_validates():
     ctx.grid, ctx.sigma = (8, 8), 0.9
     with pytest.raises(ValueError):
         ctx.pi_now(0, 2, "cpu")
+
+
+def test_text_value_scales_only_what_image_queries_read():
+    """--text-value a: image rows equal a run with the text values scaled by a (both branches); text rows are the
+    unscaled run's (text queries untouched)."""
+    from sca.attn import sca_dedup_forward
+    p = _pieces(45)
+    pi = torch.tensor([0.6, 0.3], dtype=torch.float64).view(1, 1, 2, 1)
+    layout = flex_layout(L + p["cells"][0] * p["cells"][1] * p["per"], (H, W), TILE, WIN, "cpu", (2, 2), (2, 2))
+    a = 0.4
+    args = (p["rot"], p["rq"], p["rk"], pi, L, (H, W), F, "center", layout, 0.0, p["cells"], p["per"], 0.0)
+    out = sca_dedup_forward(p["q"], p["k"], p["v"], *args, a)
+    base = sca_dedup_forward(p["q"], p["k"], p["v"], *args, 1.0)
+    v_s = torch.cat([p["v"][:, :L] * a, p["v"][:, L:]], 1)
+    ref = sca_dedup_forward(p["q"], p["k"], v_s, *args, 1.0)
+    assert (out[0, L:] - ref[0, L:]).abs().max() < 1e-6
+    assert (out[0, :L] - base[0, :L]).abs().max() < 1e-12
+    assert (out[0, L:] - base[0, L:]).abs().max() > 1e-4
+
+
+def test_processor_text_value_gates_by_sigma():
+    m = model()
+    c = dict(mode="sca", n0=4, tile=2, window=4, local_impl="flex", bridge_cells=2, bridge_k=2)
+    base = attn_outputs(m, SCAContext(**c), H, W)
+    off = attn_outputs(m, SCAContext(**c, text_value=0.5, text_value_lo=0.6), H, W)          # sigma .5: off
+    on = attn_outputs(m, SCAContext(**c, text_value=0.5), H, W)
+    assert torch.allclose(flat(off), flat(base), atol=1e-6)
+    assert torch.isfinite(flat(on)).all() and not torch.allclose(flat(on), flat(base), atol=1e-4)

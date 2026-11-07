@@ -421,18 +421,30 @@ def mix_lse(o_glob, lse_glob, o_loc, lse_loc, pi, L, tau, inv):
 
 
 def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, text_bias=0.0,
-                      cells=None, per_cell=0, tau=0.0):
+                      cells=None, per_cell=0, tau=0.0, text_value=1.0):
     """SCA with the late-duplication options: AReA-style bridge tokens (cells, per_cell) prepended to the
     local keys at their true positions, per-query LSE mixing (tau > 0), and the local text bias. layout
-    must be built for the prefix length L + R, R = cells_h * cells_w * per_cell."""
+    must be built for the prefix length L + R, R = cells_h * cells_w * per_cell. text_value < 1 scales the text
+    VALUES that image queries read in both branches (their attention weights, so the prompt's role as a sink, are
+    unchanged); text queries are untouched. Global branch: O' = O - (1 - a) t O_T (t = text share, O_T = text-only
+    output at the same coarse query ids), exact by linearity."""
     cos, sin = rot
     kr = rope(k, rot)
     qi = rope(q[:, L:], (cos[L:], sin[L:]))
     q_txt = rope(q[:, :L], (cos[:L], sin[:L]))
     if tau:
         o_glob, lse_glob = global_branch_lse(q, k, v, L, grid, f, pool, rope_q, rope_k, q_txt, kr[:, :L])
+    elif text_value != 1.0:
+        from sca.textgate import text_part
+        o_glob, lse_glob = global_branch_lse(q, k, v, L, grid, f, pool, rope_q, rope_k, q_txt, kr[:, :L])
+        o_tg, lse_tg = text_part(rope(q[:, L:], rope_q), kr[:, :L], v[:, :L])
+        t = torch.exp(lse_tg.float() - lse_glob[:, :, L:].float()).transpose(1, 2)[..., None]       # [B, N, h, 1]
+        img = o_glob[:, L:].float() - (1.0 - text_value) * t * o_tg.float()
+        o_glob = torch.cat([o_glob[:, :L], img.to(o_glob.dtype)], 1)
     else:
         o_glob = global_branch(q, k, v, L, grid, f, pool, (cos[:L], sin[:L]), rope_q, rope_k, q_txt, kr[:, :L])
+    if text_value != 1.0:
+        v = torch.cat([v[:, :L] * text_value, v[:, L:]], 1)                       # local branch: image queries only
     kl, vl, Lp = kr, v, L
     if per_cell:
         idx = bridge_index(k[:, L:], grid, cells, per_cell)                          # [B, R]
@@ -803,6 +815,10 @@ class SCAContext:
     open_pool_hi: float = 0.0           # coarse layout before the hand-off, e.g. 2 at 4096^2 = a 128 x 128 grid)
     # morph ladder (sca/morph.py): single AReA components inside SCA; defaults = SCA
     morph_local: str = ""               # "" | area_tiles: local branch = AReA's jittered tiles, Halo, DWT splits, merge
+    text_value: float = 1.0             # < 1: image queries read the text VALUES scaled by this in both branches; the
+                                        # attention weights (the prompt as a sink) are unchanged (sink-preserving prompt
+                                        # attenuation, round 7); text queries untouched
+    text_value_lo: float = 0.0          # text_value applies while sigma > text_value_lo
     morph_text: str = ""                # "" | window_mean: text queries = mean over windows (AReA) instead of global
                                         # | all_coarse: text queries attend every image key at its coarse id (Fix 4)
     # per-query mix (sca/qmix.py; root-cause audit 2026-11-06 Fix 1 / Fix 1+3); defaults = SCA
@@ -994,6 +1010,12 @@ class SCAContext:
             if self.sigma is not None and float(self.sigma) > s:
                 return w
         return self.window or self.n0
+
+    def text_value_now(self):
+        """Scale of the text values image queries read (text_value while sigma > text_value_lo, else 1)."""
+        if self.text_value != 1.0 and (self.sigma is None or float(self.sigma) > self.text_value_lo):
+            return float(self.text_value)
+        return 1.0
 
     def text_bias_now(self):
         if self.text_local and (self.sigma is None or float(self.sigma) > self.text_local_lo):
@@ -1384,7 +1406,7 @@ class SCAProcessor:
             per = min(ctx.bridge_k_now(cells[0] * cells[1]), (H // cells[0]) * (W // cells[1])) if on else 0
             layout = ctx.flex_layout(L + (cells[0] * cells[1] * per if on else 0), tile, win, q.device)
             return sca_dedup_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
-                                          layout, tb, cells, per, float(ctx.lse_tau))
+                                          layout, tb, cells, per, float(ctx.lse_tau), float(ctx.text_value_now()))
         if band > 1:
             L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True, text_bias=tb)
             if inv is not None:
