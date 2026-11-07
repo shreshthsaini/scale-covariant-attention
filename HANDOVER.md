@@ -1332,3 +1332,7 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   PickScore -0.261, HPSv2.1 -0.0076, aesthetic -0.134, CLIP -0.91, MUSIQ -3.3, MUSIQ crop -2.8, plus ARNIQA,
   CLIP-IQA and patch KID worse than AReA. 5/10 wins over AReA are kept. Eight pool-2 global steps at mid noise cost
   as much as AReA's windows.
+- 15:05 decision, r7_g2x4 on the 46: relaxed bar FAIL. Core losses PickScore -0.094 [-0.183, -0.007] and HPSv2.1
+  -0.0028; patch KID is worse than AReA; 2 detector flags (10.7% est.). Across the pool-2 family the trade-off is
+  monotone: g2x2 (no core loss, 15.4% census), g2x4 (PickScore -0.09, about 10.7%), g2x8 (PickScore -0.26, 7.7%
+  census). AReA is at 3.8%.
