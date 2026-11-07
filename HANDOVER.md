@@ -963,5 +963,10 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   (one image has a vertical-streak halo around its figures), 6 look clean by eye; 91 s per image warm (+18%). Its
   46-prompt run released to the head of the spool (a0_K2940Nx, gate markers unchanged; eval a0_Ke_eval_r7_q13n
   self-releases into eval/r7_46_r7_q13n). Blind labels of the 21 next.
+- 07:21: r7_q13w (far all, gamma 1), pQ9: 2 yes, 3 borderline, 16 no; glitches. r7_q13n at native resolution: no colour
+  blocks, but fine periodic vertical stripes on dark ground/sky/water and, on one prompt, the tent drawn as concentric
+  dash strokes (sca_v2 crops clean; the aurora comb streaks are in sca_v2 too). f13n's near/far weights equal f1's
+  (artifact-free); the difference left is the far output (outside centres, no text, no local coarse context). Queued
+  at the head (code/1b8f855): r7_q13nw (anchor near, far all, a0_K2941*), r7_q13nd (anchor near, dose 0.5, a0_K2942*).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
