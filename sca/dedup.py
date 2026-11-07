@@ -90,6 +90,7 @@ def add_args(p):
     p.add_argument("--subject-anchor-lo", type=float, default=0.55, metavar="SIGMA", help="--subject-anchor applies "
                    "while sigma > SIGMA")
     p.add_argument("--subject-anchor-dilate", type=int, default=2, metavar="T", help="Subject map dilation, tokens")
+    p.add_argument("--subject-anchor-all", action="store_true", help="The subject map gates every text token's content")
     p.add_argument("--text-value-subject", action="store_true", help="--text-value scales only the subject-word tokens "
                    "(needs --subject-words)")
     p.add_argument("--qmix", default="", choices=("", "f1", "f13"), help="Per-query mix (sca/qmix.py): f1 = weight "
@@ -139,7 +140,8 @@ def context_kwargs(args):
                 text_value_lo=getattr(args, "text_value_lo", 0.0),
                 text_value_subject=getattr(args, "text_value_subject", False),
                 sa_value=getattr(args, "subject_anchor", 1.0), sa_lo=getattr(args, "subject_anchor_lo", 0.55),
-                sa_dilate=getattr(args, "subject_anchor_dilate", 2), pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8))
+                sa_dilate=getattr(args, "subject_anchor_dilate", 2), sa_all=getattr(args, "subject_anchor_all", False),
+                pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8))
 
 
 def anchor(args, ctx):
@@ -211,6 +213,8 @@ def info(args):
     if getattr(args, "subject_anchor", 1.0) != 1.0:
         out.update(subject_anchor=args.subject_anchor, subject_anchor_lo=args.subject_anchor_lo,
                    subject_anchor_dilate=args.subject_anchor_dilate)
+        if getattr(args, "subject_anchor_all", False):
+            out["subject_anchor_all"] = True
     if getattr(args, "text_value", 1.0) != 1.0:
         out.update(text_value=args.text_value, text_value_lo=args.text_value_lo)
         if getattr(args, "text_value_subject", False):

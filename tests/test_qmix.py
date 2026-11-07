@@ -224,6 +224,10 @@ def test_subject_anchor_forward_is_affine_per_query_and_reduces_to_sca_v2():
     os_ = sg.sca_subject_forward(*a, idx, valid, s)
     ref = s[0, :, None, None] * o1[0, L:] + (1 - s[0, :, None, None]) * o0[0, L:]
     assert (os_[0, L:] - ref).abs().max() < 1e-9
+    # all_text: with s = 0 the image rows equal the text-value-0 operator whatever the subject set
+    idx1, valid1 = sg.subject_index((2,), L, "cpu")
+    oa = sg.sca_subject_forward(*a, idx1, valid1, zero, True)
+    assert (oa[0, L:] - tv0[0, L:]).abs().max() < 1e-6
     # a partial subject set changes less than all text tokens
     idx2, valid2 = sg.subject_index((1,), L, "cpu")
     o2 = sg.sca_subject_forward(*a, idx2, valid2, zero)

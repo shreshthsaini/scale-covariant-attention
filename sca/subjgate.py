@@ -61,10 +61,20 @@ def finalize_map(m, grid, q_lo=0.5, q_hi=0.95, dilate=2):
     return g
 
 
+def text_all_part(qr, kt, vt, lse):
+    """All text tokens' contribution w_i O_T,i to a softmax with log-partition lse [B, h, N] (the subject_part of the
+    whole prompt), through textgate.text_part."""
+    from sca.textgate import text_part
+    o, lt = text_part(qr, kt, vt)
+    w = torch.exp(_hi(lt) - _hi(lse))
+    return w.transpose(1, 2)[..., None] * _hi(o), w
+
+
 def sca_subject_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, text_bias, cells, per_cell,
-                        idx, valid, s_img):
+                        idx, valid, s_img, all_text=False):
     """sca_v2's operator (sca.attn.sca_dedup_forward, bridge path, tau = 0) where image query i reads the subject-word
-    values scaled by s_img[:, i] in both branches. s_img [B, N] (1 = untouched). Returns [B, L + N, h, D]."""
+    values (all text values with all_text=True) scaled by s_img[:, i] in both branches. s_img [B, N] (1 = untouched).
+    Returns [B, L + N, h, D]."""
     from sca.attn import bridge_index, global_branch_lse, local_branch_flex, rope
     cos, sin = rot
     kr = rope(k, rot)
@@ -82,8 +92,12 @@ def sca_subject_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layo
     o_loc = _hi(o_loc.transpose(1, 2).index_select(1, layout.q_inv))               # [B, N, h, D]
     lse_loc = lse_loc.index_select(2, layout.q_inv)                                # [B, h, N]
     cut = (1.0 - _hi(s_img))[:, :, None, None]                                      # [B, N, 1, 1]
-    sub_loc, _ = subject_part(qi, kr[:, :L], v[:, :L], idx, valid, lse_loc)
-    sub_glob, _ = subject_part(rope(q[:, L:], rope_q), kr[:, :L], v[:, :L], idx, valid, lse_glob[:, :, L:])
+    if all_text:
+        sub_loc, _ = text_all_part(qi, kr[:, :L], v[:, :L], lse_loc)
+        sub_glob, _ = text_all_part(rope(q[:, L:], rope_q), kr[:, :L], v[:, :L], lse_glob[:, :, L:])
+    else:
+        sub_loc, _ = subject_part(qi, kr[:, :L], v[:, :L], idx, valid, lse_loc)
+        sub_glob, _ = subject_part(rope(q[:, L:], rope_q), kr[:, :L], v[:, :L], idx, valid, lse_glob[:, :, L:])
     o_loc = o_loc - cut * sub_loc
     img_g = _hi(o_glob[:, L:]) - cut * sub_glob
     img = _hi(pi) * o_loc + (1 - _hi(pi)) * img_g

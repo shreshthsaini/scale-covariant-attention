@@ -825,6 +825,7 @@ class SCAContext:
                                         # opening's subject map is scaled by this (1 = off); needs subject_tokens
     sa_lo: float = 0.55                 # subject anchor applies while sigma > sa_lo
     sa_dilate: int = 2                  # dilation of the subject map, tokens
+    sa_all: bool = False                # the map gates every text token's content, not only the subject words
     morph_text: str = ""                # "" | window_mean: text queries = mean over windows (AReA) instead of global
                                         # | all_coarse: text queries attend every image key at its coarse id (Fix 4)
     # per-query mix (sca/qmix.py; root-cause audit 2026-11-06 Fix 1 / Fix 1+3); defaults = SCA
@@ -1467,7 +1468,7 @@ class SCAProcessor:
                 from sca.subjgate import sca_subject_fn, subject_index
                 idx, valid = subject_index(ctx.subject_tokens, L, q.device)
                 return sca_subject_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f,
-                                                ctx.pool, layout, tb, cells, per, idx, valid, s_img)
+                                                ctx.pool, layout, tb, cells, per, idx, valid, s_img, ctx.sa_all)
             return sca_dedup_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
                                           layout, tb, cells, per, float(ctx.lse_tau), ctx.text_value_vec(L, q.device))
         if band > 1:
