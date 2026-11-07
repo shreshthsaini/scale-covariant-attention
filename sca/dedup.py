@@ -115,7 +115,7 @@ def add_args(p):
     p.add_argument("--qmix-far", default="out", choices=("out", "all"), help="f13 far part: block centres outside the "
                    "window (out) or every block centre (all)")
     p.add_argument("--qmix-dose", type=float, default=1.0, help="f13: dose * f13 + (1 - dose) * sca_v2's image output")
-    p.add_argument("--qmix-anchor", default="text", choices=("text", "near"), help="f13 head offset on the near part "
+    p.add_argument("--qmix-anchor", default="text", choices=("text", "near", "img"), help="f13 head offset on the near part "
                    "(text) or on the far part (near: text and near keep the window softmax's balance)")
     p.add_argument("--pi-blend", type=float, default=0.0, metavar="LAMBDA", help="Audit Fix 2: pi' = (1 - LAMBDA) pi "
                    "+ LAMBDA m_h while sigma > --pi-blend-lo, m_h = full attention's image-key share inside the step's "

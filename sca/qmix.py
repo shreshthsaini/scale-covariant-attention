@@ -39,13 +39,16 @@ def _logit(p):
 
 
 def sca_qmix_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, cells=None, per_cell=0, lat_in=None,
-                     lat_out=None, tau=1.0, three=False, log_gamma=0.0, far_all=False, dose=1.0, near_anchor=False):
+                     lat_out=None, tau=1.0, three=False, log_gamma=0.0, far_all=False, dose=1.0, near_anchor=False,
+                     img_anchor=False):
     """q, k, v pre-RoPE [B, L + N, h, D]; pi [1, 1, h, 1]; layout = flex layout for prefix R (the bridge only, no text),
     lat_in / lat_out = textgate.lattice_layout(inside=True / False). f13 only: log_gamma scales the whole image part
     (near and far, so their balance is unchanged) against the text part, log gamma = 0 being one plain softmax;
     far_all=True reads the far part over all block centres (the in-window ones too, as the global branch does), so a
     query whose far weight dominates still sees its own neighbourhood at coarse resolution; dose < 1 returns
     dose * f13 + (1 - dose) * sca_v2's image output pi O_loc + (1 - pi) O_glob (all parts are already computed);
+    img_anchor=True keeps the text share of one plain three-part softmax (no offset, the prompt as full attention
+    weighs it) and uses the offset only for the near/far split of the image part;
     near_anchor=True puts the head offset on the far part instead of the near part (logits lse_T, lse_near,
     log_far - beta): the near/far balance is the same, but text and near keep the window softmax's own balance, so a
     query that sinks its mass into the prompt (flat background, borders) still can.
@@ -86,13 +89,18 @@ def sca_qmix_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout,
         o_far, lse_out = lattice_part(qg, kb, vb, None if far_all else lat_out)    # block centres outside the window
         log_far = log_s2 + _hi(lse_out)
         beta = lp - (lse_n - log_far).mean(-1, keepdim=True)                       # [B, h, 1]
-        if near_anchor:
-            a, b, c = _hi(lse_t), lse_n + log_gamma, log_far - beta + log_gamma
+        if img_anchor:   # text share of one plain softmax (no offset); the offset only splits the image part
+            t = torch.sigmoid(_hi(lse_t) - torch.logaddexp(lse_n, log_far) - log_gamma).transpose(1, 2)[..., None]
+            u = torch.sigmoid(lse_n + beta - log_far).transpose(1, 2)[..., None]
+            img = t * _hi(o_t) + (1 - t) * (u * _hi(o_n) + (1 - u) * _hi(o_far))
         else:
-            a, b, c = _hi(lse_t), lse_n + beta + log_gamma, log_far + log_gamma
-        m = torch.maximum(torch.maximum(a, b), c)
-        wa, wb, wc = (torch.exp(x - m).transpose(1, 2)[..., None] for x in (a, b, c))
-        img = (wa * _hi(o_t) + wb * _hi(o_n) + wc * _hi(o_far)) / (wa + wb + wc)
+            if near_anchor:
+                a, b, c = _hi(lse_t), lse_n + log_gamma, log_far - beta + log_gamma
+            else:
+                a, b, c = _hi(lse_t), lse_n + beta + log_gamma, log_far + log_gamma
+            m = torch.maximum(torch.maximum(a, b), c)
+            wa, wb, wc = (torch.exp(x - m).transpose(1, 2)[..., None] for x in (a, b, c))
+            img = (wa * _hi(o_t) + wb * _hi(o_n) + wc * _hi(o_far)) / (wa + wb + wc)
         if dose < 1.0:
             p = _hi(pi).view(1, 1, -1, 1)
             v2 = p * merge_lse(o_t, lse_t, o_n, lse_n) + (1 - p) * _hi(o_glob[:, L:])

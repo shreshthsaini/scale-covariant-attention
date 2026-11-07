@@ -92,6 +92,29 @@ def test_f13_matches_bruteforce(gamma, far_all, anchor):
     assert (out[0, L:] - ref).abs().max() < 1e-9
 
 
+@pytest.mark.parametrize("gamma,far_all", [(1.0, True), (0.25, False)])
+def test_f13_img_anchor_matches_bruteforce(gamma, far_all):
+    """img anchor: text share of the plain three-part softmax (no offset); offset only on the near/far split."""
+    p = _pieces(47)
+    pi = torch.tensor([0.7, 0.2], dtype=torch.float64).view(1, 1, 2, 1)
+    lat_out = tg.lattice_layout((H, W), TILE, WIN, F, "cpu")
+    out = qm.sca_qmix_forward(p["q"], p["k"], p["v"], p["rot"], p["rq"], p["rk"], pi, L, (H, W), F, "center", p["layR"],
+                              p["cells"], p["per"], None, lat_out, 1.0, True, math.log(gamma), far_all, 1.0, False, True)
+    lse_n, lse_t = p["sn"].logsumexp(-1), p["st"].logsumexp(-1)
+    sfar = p["sgb"] if far_all else p["sgb"].masked_fill(p["inside"][None], float("-inf"))
+    log_far = math.log(F[0] * F[1]) + sfar.logsumexp(-1)
+    lp = torch.log(pi.view(-1, 1)) - torch.log1p(-pi.view(-1, 1))
+    beta = lp - (lse_n - log_far).mean(-1, keepdim=True)
+    o_n = torch.einsum("hnm,mhd->nhd", p["sn"].softmax(-1), p["vals_n"])
+    o_t = torch.einsum("hnl,lhd->nhd", p["st"].softmax(-1), p["vt"])
+    o_far = torch.einsum("hnm,mhd->nhd", sfar.softmax(-1), p["vb"])
+    zt, zn, zf = lse_t.exp(), lse_n.exp() * gamma, log_far.exp() * gamma
+    t = (zt / (zt + zn + zf)).T[..., None]                                          # [N, h, 1]
+    u = (lse_n.exp() * math.exp(0) * beta.exp() / (lse_n.exp() * beta.exp() + log_far.exp())).T[..., None]
+    ref = t * o_t + (1 - t) * (u * o_n + (1 - u) * o_far)
+    assert (out[0, L:] - ref).abs().max() < 1e-9
+
+
 def test_f13_dose_interpolates_to_sca_v2():
     """dose 0 gives sca_v2's own image output (pi O_loc + (1 - pi) O_glob), dose 0.5 the midpoint."""
     from sca.attn import sca_dedup_forward
