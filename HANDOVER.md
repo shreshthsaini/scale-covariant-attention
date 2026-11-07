@@ -880,13 +880,19 @@ where the review release loop and the two CPU workers (PIDs 1692172 to 1692174) 
 
 ## 29. 2026-11-06 evening: morph ladder between AReA and sca_v2 (method owner; log .agent/notes/duplication_fix_round7.md, "Morph ladder")
 User directive (via lead, 19:30): keep going until the repeats are removed; no publication before. Localize the cause by
-single-component swaps between AReA (3.8% by hand on the 26) and sca_v2 (17%): sca+A (AReA's opening pool 4,4,4,4,2,2,2,2),
-sca+B (AReA's jittered tiles, Halo, DWT splits, raised-cosine merge), sca+C (text queries = mean over windows), sca+D (no
-global branch after the opening, pi = 1), sca+E (bridge round(0.5 w)^2); area+SCA opening (factor 4 for 8 steps), area+SCA
-global mix with calibrated pi, area+SCA text rule (text queries read the global branch), area+SCA sliding windows. Main
-readout: blind hand labels of every image on copyprone21 (sca_v2 19 yes of 21); metrics on the 46 for the decisive swaps.
-State 19:40: sca+A (label r7_op4), sca+D (r7_scaD, --pi-const 1), sca+E (r7_scaE, --bridge-ratio 0.5) queued on copyprone21
-(a0_L1..L3, tree 80396bd). Fleet SCA27 (job 1127223, gh 1 node 3 h) pending; a gh-dev job is refused while the other
-project's JLDD job holds the gh-dev submit slot; one more short job allowed. Labeling of AReA's 12 unlabeled and
-sca_area20's 21 copy-prone images running (packet r7/label/pL1). Next: implement C and B in SCA and the four AReA-side swaps
-in scripts/run_area.py (processor wrapper), then queue them.
+single-component swaps between AReA and sca_v2, hand-checking every image of copyprone21 (r7/copyprone21.jsonl: the 21
+person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on the 46 for the decisive swaps.
+- Baselines on copyprone21, every image hand-labeled (human_labels_95/r7.csv): sca_v2 19 yes of 21; AReA 4 of 21;
+  sca_area20 (AReA's 19 windows plus bridge in SCA) 12 of 21.
+- Code (commit 71b31b6, frozen /scratch/09032/saini_2/sca/code/71b31b6): sca/morph.py; SCA flags --morph-local
+  area_tiles (sca+B: AReA tiles, Halo, DWT, merge as the local branch) and --morph-text window_mean (sca+C); run_area.py
+  flags --phase1-factors, --sca-pi-mix NPZ, --sca-text-rule, --fixed-tiles (tests/test_morph.py).
+- Queued first in the spool (a0_L*, 3 tasks of 7 prompts each): L1 sca+A (label r7_op4, pool 4,4,4,4,2,2,2,2), L2 sca+D
+  (r7_scaD, pi = 1), L3 sca+E (r7_scaE, bridge round(0.5 w)^2), L4 sca+B (r7_scaB), L5 sca+C (r7_scaC); AReA side L6
+  area_scaOpen (factor 4 on all 8 opening steps), L7 area_scaMix (SCA global branch mixed by calibrated pi), L8
+  area_scaText (text queries read the global branch), L9 area_fixed (no jitter, Halo, DWT; the sliding-window swap's
+  closest AReA analogue). Outputs r7/out/<label>/4096x4096; label every image with r7/label_people.sh PACKET SEED
+  label=DIR:/scratch/09032/saini_2/sca/r7/copyprone21.jsonl, collect with scripts/r7_label_collect.py.
+- GPU: SCA27 (1127223) and SCA28 (1127231), gh 1 node 3 h each (the two allowed short jobs; gh-dev is blocked by other
+  projects' gh-dev jobs), plus SCA24 x2; estimated starts 19:44. SCA21 est. 2026-11-07 22:00.
+- Helper on i615-091: r7/requeue_stale.py (PID 1886414) requeues stale-handle failures until 20:35.
