@@ -1006,5 +1006,10 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
 - 08:48: r7_saA0m (all text, quantiles 0.5/0.95), pQ14: 14 yes, 1 borderline, 6 no; r7_saAq (quantiles 0.5/0.995),
   pQ15: 7 yes, 4 borderline, 10 no; subjects intact in both. Copies fall as the map sharpens. r7_saAs (smoothed,
   relative ramp) labeling as pQ16; 85.2 s per image (+10%).
+- 08:57: r7_saAs, pQ16: 7 yes, 2 borderline, 12 no (= saAq); subjects intact, some background details weak (coral,
+  asteroids), right-edge block column in 2 images. Remaining copies sit in or next to the subject region (kept at full
+  prompt) or in the bear scenes. --subject-anchor-edge T (3be1ea6, frozen code/3be1ea6) keeps a T-token border at full
+  prompt. Queued at the head: r7_saAt (rel 0.35/0.6, lo 0.45, dilate 2, edge 2), r7_saAw (saAs + edge 2 + sca_area20
+  windows and bridge ratio 0.5). saAs 46-prompt run generating (a0_K2939545*).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).

@@ -377,3 +377,8 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   7 yes, 4 borderline, 10 no; subjects keep their prompted look in both (labelers report the prompted elements present).
   Copies fall as the gate narrows to the subject; saAq's remaining ones are mostly figures on far ridges and shores
   and the crowd prompts. r7_saAs (9 x 9 smoothing, ramp med + 0.25..0.5 of max - med, dilate 3) is labeling.
+- r7_saAs (smoothed relative map): pQ16, 7 yes, 2 borderline, 12 no, the same count as saAq. Remaining copies are in or
+  next to the subject region (a person hidden behind the seated camper, extra pairs on the same outcrop, the anime
+  chibi group), where the anchor keeps the whole prompt, plus bear scenes. Background prompt details weaken (coral,
+  asteroids); two images show the right-edge block column, so the border gets a guard (--subject-anchor-edge, 3be1ea6).
+  Next: tighter ramp and longer range (saAt), and saAs combined with sca_area20's wide windows (saAw).
