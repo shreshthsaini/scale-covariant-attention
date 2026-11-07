@@ -386,3 +386,9 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   HPSv2.1 -0.015, HPSv2, CLIP -1.2, aesthetic, CLIP-IQA, MUSIQ crop), clean prompts included. Relaxed bar FAIL. The
   duplication target is met; the adherence cost comes from removing the scene words outside the subject. Next:
   r7_saSs gates only the subject-word tokens with the same sharp map (copy-prone and 46 together).
+- r7_saAt (tighter ramp 0.35/0.6, range to sigma 0.45, dilate 2, edge 2): 7 yes, 1 borderline, 13 no. The anchor
+  plateaus at 7 of 21 (saAq, saAs, saAt). The edge guard creates speckle and glyph bands along the borders (a sharp
+  prompt/no-prompt boundary next to the border); removed from saSs before it ran. Remaining copies are inside or next
+  to the subject region (a hidden head behind the camper, a miniature man on the child's shoulder, the chibi group).
+- Branch localization (394a37d, --text-branch): r7_tvL (window branch only) and r7_tvG (global branch only), text
+  values 0 while sigma > 0.55, to find which branch's prompt content draws the copies.

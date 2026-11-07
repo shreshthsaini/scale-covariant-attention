@@ -1016,5 +1016,10 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   also on clean prompts (IR -0.20, PickScore -0.49); 85.0 s. Relaxed bar FAIL (core losses). Gating every text token
   outside the subject removes scene words too. Queued at the head: r7_saSs (subject-word tokens only, same sharp map,
   edge 2; copy-prone a0_K2939548*, 46 a0_K2939549*, eval self-releases).
+- 09:20: r7_saAt (rel 0.35/0.6, lo 0.45, dilate 2, edge 2), pQ17: 7 yes, 1 borderline, 13 no; the anchor plateaus at 7
+  (saAq 7, saAs 7). The edge guard puts speckle/glyph bands along the borders of nearly every image (dropped from the
+  queued saSs tasks before they ran). Remaining copies sit in or next to the subject region. New --text-branch
+  both|loc|glob (commit 394a37d, frozen code/394a37d): text-value scaling or the anchor in one branch only. Queued:
+  r7_tvL (text values 0 in the window branch only, sigma > 0.55, a0_K2939550*), r7_tvG (global only, a0_K2939551*).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
