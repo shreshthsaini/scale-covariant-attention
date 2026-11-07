@@ -999,5 +999,9 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   3.8%, sca_v2 17.0%; detector 0 flags) but 9 significant losses incl. IR, HPSv2.1, PickScore (fixed prompts IR -0.90,
   PickScore -1.76); 80.0 s. Relaxed bar FAIL. Zeroing all prompt content on window steps reaches AReA's duplication at
   a large adherence cost; the subject anchor is the attempt to keep the prompt at the subject only.
+- 08:39: r7_saAs (anchor over all text, map 9 x 9 smoothed, ramp med + 0.25..0.5 of max - med, dilate 3; commit be13ac6)
+  first 7 copy-prone images: no extras, prompted subjects intact (suits, helmets), no colour artifacts; gate > 0.5 on
+  3-27% of the image (leaky versions 17-57%). Its 46-prompt run queued at the head (a0_K2939545*, eval a0_Ke_eval_r7_saAs
+  self-releases into eval/r7_46_r7_saAs). Labeling: pQ14 r7_saA0m (broad map; 12 yes of 17 so far), pQ15 r7_saAq.
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
