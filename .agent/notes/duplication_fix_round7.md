@@ -303,3 +303,8 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   does not touch the copies (passers-by, figures on far ridges, a second bear on a cliff, extra astronauts and divers).
   Cost 78.5 s per image warm (+2% over sca_v2's 77.1 s on these prompts). 46-prompt tasks parked
   (taskq/hold_r7_screen_fail).
+- r7_q1a (f1 on every post-gate step): pQ2, 20 yes of 21; 84.6 s per image (+10% over sca_v2). Fails; 46-prompt
+  tasks parked. Reading: redistributing the window weight across queries while each head's mean stays at the
+  calibrated pi (about 0.7) does not reach the copies; the audit's other measurement (the image wants 0.2 to 0.4 on
+  the window's output at the hand-off) points at the head mean, which Fix 2 lowers.
+- Lead 03:30: Fix 2 screens first (r7_q2, r7_q12), plus r7_q12x = f1 plus pi = near share through sigma 0.75.

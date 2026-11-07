@@ -928,5 +928,8 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   steps costs 78.5 s per image warm vs sca_v2 77.1 s on the same prompts (+2%), peak 38 GiB.
 - r7_q1s (f1, seeding steps) on copyprone21, blind labels pQ1 (6 Opus labelers): 20 yes of 21 (sca_v2 19). Fails the
   screen; its 46-prompt tasks a0_K50x parked in taskq/hold_r7_screen_fail.
+- r7_q1a (f1 on every post-gate step), pQ2: 20 yes of 21; 84.6 s per image (+10%). Fails; a0_K60x parked too.
+- Lead 03:30: Fix 2 screens moved ahead of f13 (renamed a0_K25* r7_q2, a0_K26* r7_q12) plus r7_q12x (a0_K27*: f1 on
+  every step plus pi = near share through sigma 0.75, steps 8 to 14; 46-prompt run parked as a0_K93* in hold_r7_fix2).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
