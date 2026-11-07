@@ -1000,8 +1000,8 @@ class SCAContext:
         if self.open_pool:
             if self.open_pool < 1 or self.gate_sigma <= 0 or self.open_pool_hi <= self.gate_sigma:
                 raise ValueError("open_pool needs a factor >= 1, gate_sigma > 0 and open_pool_hi > gate_sigma")
-        if self.qmix not in ("", "f1", "f13"):
-            raise ValueError("qmix must be '', f1 or f13")
+        if self.qmix not in ("", "f1", "f13", "tc"):
+            raise ValueError("qmix must be '', f1, f13 or tc")
         if self.sa_value != 1.0 and (not self.bridge_cells or self.lse_tau or self.text_value != 1.0 or self.qmix
                                      or self.text_mode or self.morph_local or self.morph_text or self.band
                                      or self.local_impl != "flex"):
@@ -1013,7 +1013,7 @@ class SCAContext:
             raise ValueError("pi_one_lo must be in [0, 1) and does not combine with pi_blend")
         if self.glob_count < 0 or (self.glob_count and (not self.bridge_cells or self.lse_tau
                                                        or (self.text_value != 1.0 and self.text_branch != "loc")
-                                                       or self.qmix or self.text_mode or self.morph_local
+                                                       or self.qmix not in ("", "tc") or self.text_mode or self.morph_local
                                                        or self.morph_text or self.sa_value != 1.0
                                                        or self.csg_value != 1.0 or self.bridge_coarse
                                                        or self.band or self.local_impl != "flex")):
@@ -1679,7 +1679,8 @@ class SCAProcessor:
         return sca_qmix_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, layout,
                                      cells, per, lat_in, lat_out, float(ctx.qmix_tau), three,
                                      float(math.log(ctx.qmix_gamma)), far_all, float(ctx.qmix_dose),
-                                     ctx.qmix_anchor == "near", ctx.qmix_anchor == "img")
+                                     ctx.qmix_anchor == "near", ctx.qmix_anchor == "img", ctx.qmix == "tc",
+                                     ctx.glob_count_now())
 
     def text_forward(self, q, k, v, image_rotary_emb, f, tile, win, pi, modes):
         """Round-6 text modes (sca/textgate.py): the window softmax split into its text and image parts."""

@@ -111,8 +111,9 @@ def add_args(p):
                    "--subject-anchor act: both branches, the window branch only, or the global branch only")
     p.add_argument("--text-value-subject", action="store_true", help="--text-value scales only the subject-word tokens "
                    "(needs --subject-words)")
-    p.add_argument("--qmix", default="", choices=("", "f1", "f13"), help="Per-query mix (sca/qmix.py): f1 = weight "
-                   "from count-corrected image partitions; f13 = plus one three-part softmax over text, near, far")
+    p.add_argument("--qmix", default="", choices=("", "f1", "f13", "tc"), help="Per-query mix (sca/qmix.py): f1 = weight "
+                   "from count-corrected image partitions; f13 = plus one three-part softmax over text, near, far; tc = "
+                   "the window reads the prompt content at full attention's per-query strength (weights unchanged)")
     p.add_argument("--qmix-lo", type=float, default=0.0, metavar="SIGMA", help="--qmix applies while sigma > SIGMA")
     p.add_argument("--qmix-tau", type=float, default=1.0, help="Slope of the per-query log-odds swing")
     p.add_argument("--qmix-gamma", type=float, default=1.0, help="f13: scale of the image part (near and far) against "

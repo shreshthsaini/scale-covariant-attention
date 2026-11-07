@@ -99,3 +99,46 @@ def test_glob_count_combines_with_window_text_value():
         SCAContext(**c, glob_count=1.0, text_value=0.5, text_branch="both")
     out = attn_outputs(m, SCAContext(**c, glob_count=1.0, text_value=0.5, text_branch="loc"), H, W)
     assert torch.isfinite(flat(out)).all()
+
+
+
+@pytest.mark.parametrize("gamma", [0.0, 1.0])
+def test_text_count_matches_bruteforce(gamma):
+    """qmix tc: window = (Z_T A O_T + Z_near O_near) / (Z_T + Z_near) with A = (Z_T + Z_near) / (Z_T + Z_near + Z_far),
+    Z_far = s^2 x the global branch's block centres outside the window; global = count-corrected (gamma); mix by pi."""
+    from sca import qmix as qm
+    from sca import textgate as tg
+    p = _pieces(54)
+    pi = torch.tensor([0.6, 0.3], dtype=torch.float64).view(1, 1, 2, 1)
+    lat_in = tg.lattice_layout((H, W), TILE, WIN, F, "cpu", inside=True)
+    out = qm.sca_qmix_forward(p["q"], p["k"], p["v"], p["rot"], p["rq"], p["rk"], pi, L, (H, W), F, "center", p["layR"],
+                              p["cells"], p["per"], lat_in, None, 1.0, False, 0.0, False, 1.0, False, False, True, gamma)
+    s2 = F[0] * F[1]
+    z_t, z_n = p["st"].exp().sum(-1), p["sn"].exp().sum(-1)                        # [h, N]
+    z_far = s2 * p["sgb"].masked_fill(p["inside"][None], float("-inf")).exp().sum(-1)
+    a = (z_t + z_n) / (z_t + z_n + z_far)
+    o_n = torch.einsum("hnm,mhd->nhd", p["sn"].softmax(-1), p["vals_n"])
+    o_t = torch.einsum("hnl,lhd->nhd", p["st"].softmax(-1), p["vt"])
+    tt = (z_t / (z_t + z_n)).transpose(0, 1)[..., None]
+    o_loc = tt * a.transpose(0, 1)[..., None] * o_t + (1 - tt) * o_n
+    sg = torch.cat([p["sgt"], p["sgb"] + gamma * math.log(s2)], -1)
+    o_g = torch.einsum("hnm,mhd->nhd", sg.softmax(-1), torch.cat([p["vt"], p["vb"]], 0))
+    pp = pi[0, 0, :, 0].view(1, 2, 1)
+    ref = pp * o_loc + (1 - pp) * o_g
+    assert (out[0, L:] - ref).abs().max() < 1e-8
+    base = qm.sca_qmix_forward(p["q"], p["k"], p["v"], p["rot"], p["rq"], p["rk"], pi, L, (H, W), F, "center",
+                               p["layR"], p["cells"], p["per"], lat_in, None, 1.0, False)
+    assert (out[0, :L] - base[0, :L]).abs().max() < 1e-12      # text queries untouched
+
+
+def test_processor_text_count_runs_and_validates():
+    m = model()
+    c = dict(mode="sca", n0=4, tile=2, window=4, local_impl="flex", bridge_cells=2, bridge_k=2,
+             pi=PiTable("const", value=0.5))
+    base = attn_outputs(m, SCAContext(**c), H, W)
+    on = attn_outputs(m, SCAContext(**c, qmix="tc", glob_count=1.0), H, W)
+    off = attn_outputs(m, SCAContext(**c, qmix="tc", qmix_lo=0.6, glob_count=1.0, glob_count_lo=0.6), H, W)
+    assert torch.isfinite(flat(on)).all() and not torch.allclose(flat(on), flat(base), atol=1e-4)
+    assert torch.allclose(flat(off), flat(base), atol=1e-6)
+    with pytest.raises(ValueError):
+        SCAContext(**c, qmix="f1", glob_count=1.0)

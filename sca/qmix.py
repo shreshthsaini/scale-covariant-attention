@@ -17,7 +17,13 @@ qmix "f13" (Fix 1 + Fix 3): one softmax over three disjoint parts, so the prompt
   T the text keys at the query's true position, near the bridge plus window keys (image only), far the block centres
   outside the window at coarse ids with the s^2 count correction, beta_h = logit pi_h - mean_i (log Z_near - log Z_far):
   pi enters only as the calibrated offset on log Z_near.
-Text queries keep SCA's rule (the global branch's text output) in both.
+qmix "tc" (text count, round 7 afternoon): both branches read the prompt's CONTENT at the strength full attention
+  would give it at that query, with every softmax weight unchanged (the prompt stays a sink). Window: the text values
+  are scaled by A_i = (Z_T + Z_near) / (Z_T + Z_near + Z_far), the window's share of the full partition (Z_far as in
+  f1), so the window's text term t_i O_T becomes Z_T O_T / Z_total exactly; global branch: the block centres carry
+  the count weight (fh fw)^glob_gamma against the text (attn.sca_dedup_forward's glob_gamma). Image output
+  pi O_loc' + (1 - pi) O_glob' with sca_v2's calibrated pi.
+Text queries keep SCA's rule (the global branch's text output) in all modes.
 """
 
 from __future__ import annotations
@@ -30,7 +36,7 @@ from sca.attn import _FLEX, _envfix, _raise_recompile_limit, bridge_index, flex_
     local_branch_flex, rope
 from sca.textgate import _hi, lattice_index, lattice_part, merge_lse, text_part
 
-MODES = ("", "f1", "f13")
+MODES = ("", "f1", "f13", "tc")
 
 
 def _logit(p):
@@ -40,7 +46,7 @@ def _logit(p):
 
 def sca_qmix_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, cells=None, per_cell=0, lat_in=None,
                      lat_out=None, tau=1.0, three=False, log_gamma=0.0, far_all=False, dose=1.0, near_anchor=False,
-                     img_anchor=False):
+                     img_anchor=False, text_count=False, glob_gamma=0.0):
     """q, k, v pre-RoPE [B, L + N, h, D]; pi [1, 1, h, 1]; layout = flex layout for prefix R (the bridge only, no text),
     lat_in / lat_out = textgate.lattice_layout(inside=True / False). f13 only: log_gamma scales the whole image part
     (near and far, so their balance is unchanged) against the text part, log gamma = 0 being one plain softmax;
@@ -76,7 +82,25 @@ def sca_qmix_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout,
     kb, vb = rope(k[:, L:][:, cen], rope_k), v[:, L:][:, cen]                    # block centres at coarse ids
     log_s2 = math.log(f[0] * f[1])
     lp = _logit(_hi(pi).view(1, -1, 1))                                            # [1, h, 1]
-    if not three:
+    if text_count:
+        o_tg, lse_tg = text_part(qg, kt, vt)                                       # global branch's text part
+        _, lse_in = lattice_part(qg, kb, vb, lat_in)                               # its block centres inside the window
+        frac = 1 - torch.exp(_hi(lse_tg) - lse_gi) - torch.exp(_hi(lse_in) - lse_gi)
+        log_far = log_s2 + lse_gi + torch.log(frac.clamp_min(1e-6))
+        lse_w = torch.logaddexp(_hi(lse_t), lse_n)                                 # log (Z_T + Z_near)
+        a = torch.sigmoid(lse_w - log_far).transpose(1, 2)[..., None]              # [B, N, h, 1] window share A_i
+        t = torch.sigmoid(_hi(lse_t) - lse_n).transpose(1, 2)[..., None]           # window text share
+        o_loc = t * a * _hi(o_t) + (1 - t) * _hi(o_n)
+        og = _hi(o_glob[:, L:])
+        if glob_gamma:
+            tg = torch.exp(_hi(lse_tg) - lse_gi).transpose(1, 2)[..., None].clamp(0.0, 1.0 - 1e-6)
+            w = float(f[0] * f[1]) ** float(glob_gamma)
+            tg2 = tg / (tg + w * (1 - tg))
+            r = (1 - tg2) / (1 - tg)
+            og = r * og + (tg2 - tg * r) * _hi(o_tg)
+        p = _hi(pi).view(1, 1, -1, 1)
+        img = p * o_loc + (1 - p) * og
+    elif not three:
         _, lse_tg = text_part(qg, kt, vt)                                          # global branch's text partition
         _, lse_in = lattice_part(qg, kb, vb, lat_in)                               # its block centres inside the window
         frac = 1 - torch.exp(_hi(lse_tg) - lse_gi) - torch.exp(_hi(lse_in) - lse_gi)
