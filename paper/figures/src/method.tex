@@ -3,7 +3,7 @@
 % every source, rule and value).
 %
 % Build from this directory:  ~/.local/bin/tectonic --outdir .. method.tex   (writes ../method.pdf)
-% Drawn at print size: 1 unit = 1 pt, canvas 5.5 in x 128 pt, placed at \linewidth. Text: panel titles 8.5 pt
+% Drawn at print size: 1 unit = 1 pt, canvas 5.5 in x 164 pt (128 pt before lane (d)), placed at \linewidth. Text: panel titles 8.5 pt
 % bold sans, labels 7.5 pt, numbers 7 pt, math 8 pt (scripts 6 pt). Helvetica metrics, Computer Modern math.
 %
 % Layout (redesign of 2026-11-02, after the round-1 presentation review and the lead's brief):
@@ -157,7 +157,9 @@
 
 \begin{document}
 \begin{tikzpicture}[x=1pt, y=1pt]
-\useasboundingbox (0,0) rectangle (397.48,128);
+\useasboundingbox (0,0) rectangle (397.48,164);
+% Panels (a) to (c) sit 36 pt up; lane (d), progressive SCA (added 2026-11-07), runs along the bottom.
+\begin{scope}[shift={(0,36)}]
 % ------------------------------------------------------------------ (a) calibrate
 \node[anchor=north west] at (0,128) {\ttl (a) Calibrate at 1024\textsuperscript{2}};
 \node[anchor=south west] at (0,76) {\includegraphics[width=34pt]{../method_flow/calib.jpg}};
@@ -178,7 +180,7 @@
 \node[anchor=north, text=scaMid] at (215.5,75) {\sml head};
 \TableX{220}{76}{15}{8.5}
 % ------------------------------------------------------------------ (b) sample
-\node[anchor=north west] at (0,62) {\ttl (b) Sample at 4096\textsuperscript{2}};
+\node[anchor=north west] at (0,62) {\ttl (b) Single pass at 4096\textsuperscript{2}};
 \node[anchor=south west] at (0,12) {\includegraphics[width=30pt]{../method_flow/noise.png}};
 \draw[arr] (32,27) -- (39,27);
 \PiPlot{56}{12}{100}{30}
@@ -207,5 +209,32 @@
 \node[sblk, minimum width=22pt, minimum height=14pt] (oi) at (383,64) {\mth $O_i$};
 \draw[arr] (pl.east) -- (oi.west);
 \draw[arr] (265.5,93) -- (272,93) -- (272,64) -- (285,64);
+\end{scope}
+% ------------------------------------------------------------------ (d) progressive (HRDiT's schedule, SCA attention)
+% Schematic stage boxes (side grows with the stage size); output: progressive SCA's image of the prompt of (b),
+% /scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.png
+% (sha256 492b215e...), resized to ../method_flow/output_prog.jpg.
+\node[anchor=west] at (0,20) {\ttl (d) Progressive};
+\node[anchor=south west] at (80,10) {\includegraphics[width=20pt]{../method_flow/noise.png}};
+\draw[arr] (102,20) -- (112,20);
+\draw[nblk] (114,12) rectangle (130,28);
+\node at (122,20) {\sml full};
+\node[anchor=south, text=scaMid] at (122,0.6) {\sml 1024\textsuperscript{2}};
+\draw[arr] (132,20) -- (150,20);
+\node[anchor=south, text=scaMid] at (141,21.5) {\sml $\times 2$};
+\draw[sblk] (152,11) rectangle (170,29);
+\node at (161,20) {\mth $r{=}2$};
+\node[anchor=south, text=scaMid] at (161,0.6) {\sml 2048\textsuperscript{2}};
+\draw[arr] (172,20) -- (190,20);
+\node[anchor=south, text=scaMid] at (181,21.5) {\sml $\times 2$};
+\draw[sblk] (192,9) rectangle (214,31);
+\node at (203,20) {\mth $r{=}4$};
+\node[anchor=south, text=scaMid] at (203,0.6) {\sml 4096\textsuperscript{2}};
+\draw[arr] (216,20) -- (224,20);
+\node[anchor=south west] at (226,7) {\includegraphics[width=26pt]{../method_flow/output_prog.jpg}};
+\draw[sblk] (284,21) rectangle ++(7,7);
+\node[anchor=west] at (295,24.5) {\sml \textsf{SCA} mix of (c)};
+\draw[nblk] (284,9) rectangle ++(7,7);
+\node[anchor=west] at (295,12.5) {\sml full attention};
 \end{tikzpicture}
 \end{document}
