@@ -995,5 +995,9 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   med + B (max - med); dumps tagged by prompt id). Screens: r7_saA0m (all text, broad map; 21 images, labeling),
   r7_saAq (q 0.5/0.995, running), r7_saAs (smooth 9, rel 0.25/0.5, dilate 3; queued first). tv0m 46-prompt
   evaluation running (a0_K0eval_r7_tv0m, renamed to run first).
+- 08:30: r7_tv0m on the 46 (eval/r7_46_r7_tv0m, scripts/r7_decide.py): human-corrected people/animal 3.3% (AReA
+  3.8%, sca_v2 17.0%; detector 0 flags) but 9 significant losses incl. IR, HPSv2.1, PickScore (fixed prompts IR -0.90,
+  PickScore -1.76); 80.0 s. Relaxed bar FAIL. Zeroing all prompt content on window steps reaches AReA's duplication at
+  a large adherence cost; the subject anchor is the attempt to keep the prompt at the subject only.
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).

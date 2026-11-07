@@ -369,3 +369,7 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   leaks: speckled raw map (single background tokens with high subject attention), and the quantile ramp plus a 5 x 5
   max dilation leave g > 0.1 on half the image. Fix (be13ac6): 9 x 9 average first, ramp relative to the maximum
   (med + 0.25 .. 0.5 of max - med), dilation 3. Screen r7_saAs gates every text token with that map.
+- r7_tv0m on the 46 (eval/r7_46_r7_tv0m): human-corrected 3.3% (AReA 3.8%, sca_v2 17.0%), detector 0 flags; 9
+  significant losses vs sca_v2 (core IR, HPSv2.1, PickScore; aesthetic, ARNIQA, CLIP, CLIP-IQA, HPSv2 not better than
+  AReA); on the 4 fixed prompts IR -0.90 and PickScore -1.76. Relaxed bar FAIL. Duplication at AReA's level is
+  reachable by removing prompt content on window steps; the open problem is keeping it where the subject is.
