@@ -896,6 +896,14 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
 - GPU: SCA27 (1127223) and SCA28 (1127231), gh 1 node 3 h each (the two allowed short jobs; gh-dev is blocked by other
   projects' gh-dev jobs), plus SCA24 x2; estimated starts 19:44. SCA21 est. 2026-11-07 22:00.
 - Helper on i615-091: r7/requeue_stale.py (wrapper PID 4136005, started 19:46) requeues stale-handle failures until 05:46.
+- Lead 21:00 (root-cause audit .agent/notes/root_cause_audit_20261106.md): Fix 1 and Fix 1+3 ahead of the ladder.
+  Implemented in sca/qmix.py (commit 606e2ae, frozen /scratch/09032/saini_2/sca/code/606e2ae; tests/test_qmix.py
+  brute force): --qmix f1 = per-query weight w_i = sigmoid(logit pi_h + d_i - mean_i d_i), d_i = log Z_loc,image -
+  log(s^2 Z_glob,image outside the window) (text excluded from both); --qmix f13 = one three-part softmax over text
+  (true ids), near (bridge + window) and far (block centres outside the window at coarse ids, s^2-corrected), pi as the
+  centred offset on log Z_near; text queries keep the global branch. Queued first (a0_K*): r7_q1s (f1, sigma > 0.845),
+  r7_q1a (f1, all window steps), r7_q13s, r7_q13a on copyprone21 (K1..K4) and the 46 (K5..K8, evaluations
+  a0_Ke_eval_* self-release). Hand-check every copy-prone image and the 26 person/animal images on the 46.
 - Copy-prone hand counts so far (yes of 21): sca_v2 19, AReA 4, sca_area20 12, r7_area12 12, r7_area8 16.
 - Staged (held) for the decisive rungs: 46-prompt metric runs of r7_scaD/E/B/C in taskq/hold_ladder46 (a0_M*; move to
   pending to run; evaluations a0_Me_eval_* self-release into eval/r7_46_<label>). r7_op4 already has its 46 result.

@@ -273,3 +273,15 @@ Rungs (code 71b31b6 = sca/morph.py, flags in scripts/sample.py and scripts/run_a
   bridge in SCA) 12, r7_area12 (first 12 windows) 12, r7_area8 (first 8) 16. Wide windows plus AReA's bridge for 12
   steps remove 7 of sca_v2's 19; widening further adds nothing; the remaining 8 above AReA come from another component.
 
+## Fix 1 and Fix 1+3 from the root-cause audit (lead 21:00; sca/qmix.py, commit 606e2ae)
+Exact definitions (tests/test_qmix.py checks both against brute force in float64):
+- f1: image output w_i O_loc + (1 - w_i) O_glob (O_loc, O_glob = sca_v2's branches), w_i = sigmoid(logit pi_h + tau (d_i
+  - mean_i d_i)), d_i = log Z_near,i - log Z_far,i; Z_near = bridge plus window keys at true ids (the window softmax's
+  image partition, text excluded); Z_far = s^2 (exp(lse_glob,i) - Z_text,glob,i - Z_in,i), lse_glob the global branch's
+  partition (coarse ids), Z_text,glob its text part, Z_in its block centres inside the query's window, s^2 = 16. tau 1.
+- f13: O = (Z_T O_T + e^beta Z_near O_near + Z_far O_far) / (Z_T + e^beta Z_near + Z_far), T = text keys at the query's
+  true ids, far = block centres outside the window at coarse ids with log s^2 added, beta_h = logit pi_h - mean_i
+  (log Z_near - log Z_far). Text queries keep the global branch's output in both.
+- Variants: r7_q1s / r7_q13s at the seeding steps only (sigma > 0.845: 0.888, 0.870, 0.850), r7_q1a / r7_q13a at every
+  window step; copyprone21 and the 46.
+
