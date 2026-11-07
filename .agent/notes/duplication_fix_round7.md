@@ -397,3 +397,7 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   people), not by the person/animal noun. Any prompt gate that removes them also removes scene content outside the
   subject, which is what costs saAs its IR and PickScore. Next: r7_tvL / r7_tvG (which branch carries the drive) and
   r7_saAsL (the all-token anchor on the window branch only, the global branch keeping the full prompt).
+- r7_saSs on the 46: no significant loss, 9/10 wins over AReA kept, 84.6 s; duplication 18.2% (sca_v2 17.0%). With
+  saAs (3.3%, 8 losses), the scene words carry both the copy drive and the adherence. r7_tvL (window branch gated)
+  first look: copies stay, adherence intact; the global branch's coarse prompt read is the suspect. Running: r7_tvG,
+  r7_saAsG (the all-text anchor on the global branch only).
