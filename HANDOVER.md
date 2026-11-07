@@ -959,5 +959,9 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   --qmix-anchor near (commit 1b8f855, frozen code/1b8f855): offset on the far part (lse_T, lse_near, log_far - beta), same
   near/far balance, window's own text/near balance. Spool head: r7_q13n (a0_K294*), q13w remainder, q13wg (a0_K296*),
   q13d5 (dose 0.5, a0_K297*, code/ddda216), q13s (a0_K30*), then the ladder (a0_L*). SCA24 ended 05:55.
+- 07:08 SCA21 (4 nodes, 10 h from 06:58). r7_q13n (near-anchored f13) first 9 copy-prone images: no colour blocks
+  (one image has a vertical-streak halo around its figures), 6 look clean by eye; 91 s per image warm (+18%). Its
+  46-prompt run released to the head of the spool (a0_K2940Nx, gate markers unchanged; eval a0_Ke_eval_r7_q13n
+  self-releases into eval/r7_46_r7_q13n). Blind labels of the 21 next.
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
