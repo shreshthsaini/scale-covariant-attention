@@ -83,6 +83,10 @@ def add_args(p):
                    "from count-corrected image partitions; f13 = plus one three-part softmax over text, near, far")
     p.add_argument("--qmix-lo", type=float, default=0.0, metavar="SIGMA", help="--qmix applies while sigma > SIGMA")
     p.add_argument("--qmix-tau", type=float, default=1.0, help="Slope of the per-query log-odds swing")
+    p.add_argument("--pi-blend", type=float, default=0.0, metavar="LAMBDA", help="Audit Fix 2: pi' = (1 - LAMBDA) pi "
+                   "+ LAMBDA m_h while sigma > --pi-blend-lo, m_h = full attention's image-key share inside the step's "
+                   "window (calibration mass_mean at the emulated radius; 0 = off)")
+    p.add_argument("--pi-blend-lo", type=float, default=0.8, metavar="SIGMA", help="--pi-blend applies while sigma > SIGMA")
     p.add_argument("--native-open", type=int, default=0, metavar="K", help="Round 6 candidate d: first K steps at 1024^2 "
                    "with full attention, then upsample, renoise at the next sigma and continue at the target (0 = off)")
     p.add_argument("--anchor-lo", type=float, default=0.0, metavar="SIGMA", help="Latent low-band anchor "
@@ -111,7 +115,7 @@ def context_kwargs(args):
                 ffl_coarse=args.ffl_coarse,
                 text_bw_lo=args.text_bw_lo, open_pool=args.open_pool, open_pool_hi=args.open_pool_hi,
                 morph_local=args.morph_local, morph_text=args.morph_text, qmix=args.qmix, qmix_lo=args.qmix_lo,
-                qmix_tau=args.qmix_tau)
+                qmix_tau=args.qmix_tau, pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8))
 
 
 def anchor(args, ctx):
@@ -172,6 +176,8 @@ def info(args):
         out["morph_text"] = args.morph_text
     if getattr(args, "qmix", ""):
         out.update(qmix=args.qmix, qmix_lo=args.qmix_lo, qmix_tau=args.qmix_tau)
+    if getattr(args, "pi_blend", 0.0):
+        out.update(pi_blend=args.pi_blend, pi_blend_lo=args.pi_blend_lo)
     if getattr(args, "native_open", 0):
         out["native_open"] = args.native_open
     if args.anchor_lo:

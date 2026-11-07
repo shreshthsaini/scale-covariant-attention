@@ -809,6 +809,9 @@ class SCAContext:
                                         # three-part softmax over text, near, far)
     qmix_lo: float = 0.0                # qmix applies while sigma > qmix_lo (0.845: the seeding steps 0.888 to 0.850)
     qmix_tau: float = 1.0               # slope of the per-query log-odds swing (1 = Lemma 1)
+    pi_blend: float = 0.0               # audit Fix 2: pi' = (1 - pi_blend) pi + pi_blend m_h, m_h = full attention's
+                                        # image-key share inside the step's window (calibration mass_mean); 0 = off
+    pi_blend_lo: float = 0.8            # pi_blend applies while sigma > pi_blend_lo (the hand-off steps 8 to 12)
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -898,6 +901,8 @@ class SCAContext:
                 raise ValueError("open_pool needs a factor >= 1, gate_sigma > 0 and open_pool_hi > gate_sigma")
         if self.qmix not in ("", "f1", "f13"):
             raise ValueError("qmix must be '', f1 or f13")
+        if not 0.0 <= self.pi_blend <= 1.0:
+            raise ValueError("pi_blend must lie in [0, 1]")
         if self.qmix and (self.text_mode or self.morph_local or self.morph_text or self.local_impl != "flex" or self.band
                           or self.lse_tau or self.scale_sched or self.scale_fixed or self.win_heads_below is not None
                           or self.route or self.pool != "center"):
@@ -939,10 +944,25 @@ class SCAContext:
             if p.shape[0] not in (1, self.n_layers) or p.shape[1] not in (1, heads):
                 raise ValueError(f"pi table shape {p.shape} does not match {self.n_layers} layers x {heads} heads")
             p = self.ramp(p)
+            if self.pi_blend and self.sigma is not None and float(self.sigma) > self.pi_blend_lo:
+                m = self.near_share_now()
+                if m.shape[0] not in (1, self.n_layers) or m.shape[1] != heads:
+                    raise ValueError(f"near-share table {m.shape} does not match {self.n_layers} layers x {heads} heads")
+                p = (1.0 - self.pi_blend) * p + self.pi_blend * m
             self._pi_now = torch.as_tensor(p, dtype=torch.float32, device=device)
             self.pi_trace.append({"step": self.step, "sigma": self.sigma, "pi_mean": float(p.mean())})
         p = self._pi_now
         return p[layer if p.shape[0] > 1 else 0].expand(heads)
+
+    def near_share_now(self):
+        """[layers, heads] full attention's image-key share inside the current window at the current sigma: the
+        calibration's mass_mean at the emulated radius 0.5 n0 w / max(grid), interpolated over its populated sigma bins
+        (sca/textgate.ctw_beta without its floor); the target of pi_blend (root-cause audit, Fix 2)."""
+        from sca.textgate import ctw_beta
+        path = getattr(self.pi, "path", None)
+        if path is None:
+            raise ValueError("pi_blend needs a pi table loaded from a calibration npz")
+        return np.exp(np.atleast_2d(ctw_beta(path, float(self.sigma), self.window_now(), self.grid, self.n0, floor=-30.0)))
 
     def ramp(self, p):
         """Soft opening phase: hand pi over from 0 (global only) at gate_sigma to the table at ramp_sigma."""

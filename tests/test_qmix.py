@@ -102,3 +102,45 @@ def test_processor_qmix_gates_and_runs():
         SCAContext(**c, qmix="f2")
     with pytest.raises(ValueError):
         SCAContext(**c, qmix="f1", text_mode="ffl")
+
+
+TABLE = Path("/scratch/09032/saini_2/sca/calib/k1_1024.npz")
+
+
+@pytest.mark.skipif(not TABLE.exists(), reason="calibration table not on this machine")
+def test_pi_blend_moves_pi_to_the_near_share():
+    """Audit Fix 2: pi' = (1 - lambda) pi + lambda m_h while sigma > pi_blend_lo, m_h = exp(ctw_beta) without its floor;
+    unchanged at or below pi_blend_lo and with lambda 0."""
+    import numpy as np
+    from sca.attn import PiTable
+    pi = PiTable.load(TABLE, "head", target_scale=4)
+    grid, sched = (256, 256), ((0.88, 128), (0.86, 112), (0.84, 96), (0.82, 80))
+
+    def pi_at(sigma, **kw):
+        ctx = SCAContext(mode="sca", known_grid=grid, n0=64, tile=8, pi=pi, n_layers=57, win_sched=sched,
+                         win_pi_match=True, win_pi_interp=True, **kw)
+        ctx.grid, ctx.sigma = grid, sigma
+        return ctx.pi_now(3, 24, "cpu").numpy().astype(np.float64), ctx
+
+    for sigma in (0.888, 0.85, 0.81):
+        base, ctx = pi_at(sigma)
+        full, _ = pi_at(sigma, pi_blend=1.0)
+        half, _ = pi_at(sigma, pi_blend=0.5)
+        m = np.exp(tg.ctw_beta(TABLE, sigma, ctx.window_now(), grid, 64, floor=-30.0))[3]
+        assert np.allclose(full, m, atol=1e-6) and np.allclose(half, 0.5 * (base + m), atol=1e-6)
+    base, _ = pi_at(0.75)
+    assert np.allclose(pi_at(0.75, pi_blend=1.0)[0], base) and np.allclose(pi_at(0.85, pi_blend=0.0)[0], pi_at(0.85)[0])
+    # the audit's premise on the real table: at the hand-off the near share sits well below the calibrated pi
+    b, _ = pi_at(0.85)
+    f, _ = pi_at(0.85, pi_blend=1.0)
+    assert float(np.median(b - f)) > 0.1
+
+
+def test_pi_blend_validates():
+    from sca.attn import PiTable
+    with pytest.raises(ValueError):
+        SCAContext(mode="sca", pi_blend=1.5)
+    ctx = SCAContext(mode="sca", known_grid=(8, 8), n0=4, pi=PiTable("const", value=0.7), pi_blend=1.0)
+    ctx.grid, ctx.sigma = (8, 8), 0.9
+    with pytest.raises(ValueError):
+        ctx.pi_now(0, 2, "cpu")
