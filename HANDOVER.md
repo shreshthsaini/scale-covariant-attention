@@ -1200,3 +1200,10 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   prompts are copy-prone for sca_v2 at any seed, so the screen stays valid. The reference is about 18 to 19 for sca_v2
   and 4 for AReA, and any variant at 17 or 18 (hyb0 17, op4 18) has no effect. Table:
   results/dup_audit_20261027/copyprone21_counts.txt (scripts/r7_c21_table.py).
+- 13:05 progressive SCA, combined with the parallel census (results/dup_audit_20261027/human_rates_prog95.txt,
+  commit 8f3ebc5). Labeling every image of the 95 by hand gives sca_v2_prog 10/95 = 10.5% [5.8, 18.3] against AReA
+  5/95 = 5.3% and HRDiT 12.6%. The paired McNemar against AReA is b 8, c 3, p = 0.23. So the detector's 6.3% does
+  not hold, and progressive SCA sits above AReA on duplication (not significantly). It also fails the relaxed bar's
+  other-metric rule on patch FID and patch KID (above). As a headline it would therefore need the bar changed, or a
+  fix to its 4K stage. Queued a cheap probe of the latter: a0_K0b48*0 r7_prog14 (--highres-steps 17,14, so the 4K
+  stage gets 14 steps instead of 10) on the 46, with eval a0_K0b4890eval_r7_prog14.
