@@ -857,6 +857,9 @@ def prog_macros(clean):
                                 src, False))
                     out.append((f"hlProg{nm}AreaFidPSig", {"dn": "significantly higher", "up": "significantly lower",
                                                          "": "not significantly different"}[sg], src, False))
+                    # main text: "significant at seeds 0 and 2 but not at seed 1" (seed 0 is checked in prog_macros)
+                    check(sg == {"SeedOne": "", "SeedTwo": "dn"}.get(nm, sg),
+                          f"text: patch FID gap to AReA at {label} is '{sg}', text says seed 1 unresolved, seed 2 higher")
                 else:
                     out.append((f"hlProg{nm}AreaFidPText", f"${-float(r['value']):+.1f}$ (interval pending)", src,
                                 False))
