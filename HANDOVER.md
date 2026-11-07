@@ -1313,3 +1313,11 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   -0.125 [-0.173, -0.080], IR -0.059 and HPSv2.1 -0.0038, with 2 detector flags. Even the mild count correction costs
   PickScore about 0.12. On the 46 the global-prompt lever gives gch -0.125 at 2 flags, gcm -0.130 at 2 flags and gc1
   -0.215 at 0 flags (sca_v2 4 flags). There is no setting with PickScore inside its interval.
+- 14:55 decision, r7_g2x2 (global at pool 2 on steps 8 and 9, then sca_v2's windows) on the 46: no core loss.
+  IR, HPSv2.1 and PickScore are all within their intervals, and the remaining losses (CLIP -0.31, CLIP-IQA -0.017,
+  HPSv2 -0.0013, MUSIQ crop -0.59) are all still better than AReA. 8/10 wins are kept and time is 74.9 s (x0.97).
+  It fails the relaxed bar only on duplication: 1 detector flag (the kimono crowd prompt 820801809737345747; sca_v2 4,
+  AReA 1) gives a human-corrected estimate of 7.0% against AReA's 3.8%. This is the first quality-neutral change
+  of the day. The longer forms cut copyprone21 further (g2x4 11, g2x8 7), so their 46-prompt evaluations (running)
+  decide whether a longer pool-2 phase keeps the metrics. If g2x4 or g2x8 holds them, its 26 person/animal images go
+  to blind labels at once.
