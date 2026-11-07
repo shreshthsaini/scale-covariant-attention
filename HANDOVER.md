@@ -1024,5 +1024,8 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
 - 09:35: r7_saAw (saAs + sca_area20 windows + edge 2), pQ18: 6 yes, 15 no; 110.4 s; border bands from the edge guard.
   Anchor family on copyprone21: saA0m 14, saAq 7, saAs 7, saAt 7, saAw 6. r7_saSs copy-prone labeling (pQ19); its
   46-prompt run generating; r7_tvL/r7_tvG queued.
+- 09:44: r7_saSs (subject words only, sharp map, no edge guard), pQ19: 18 yes, 3 no. With the same map, gating every
+  text token gives 7 (saAs): the copies are drawn by the scene part of the prompt, not the subject noun. Queued after
+  r7_tvL/r7_tvG: r7_saAsL (saAs on the window branch only, --text-branch loc, code/394a37d, a0_K2939552*).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).

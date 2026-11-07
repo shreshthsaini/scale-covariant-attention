@@ -392,3 +392,8 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   to the subject region (a hidden head behind the camper, a miniature man on the child's shoulder, the chibi group).
 - Branch localization (394a37d, --text-branch): r7_tvL (window branch only) and r7_tvG (global branch only), text
   values 0 while sigma > 0.55, to find which branch's prompt content draws the copies.
+- r7_saSs (subject-word tokens only, the saAs map, no edge guard): 18 yes, 3 no, against saAs (all tokens, same map) 7.
+  The copies are drawn by the scene words (a window reading "medieval square" or "rocky outcrop" adds plausible
+  people), not by the person/animal noun. Any prompt gate that removes them also removes scene content outside the
+  subject, which is what costs saAs its IR and PickScore. Next: r7_tvL / r7_tvG (which branch carries the drive) and
+  r7_saAsL (the all-token anchor on the window branch only, the global branch keeping the full prompt).
