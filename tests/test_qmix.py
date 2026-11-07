@@ -187,6 +187,21 @@ def test_text_value_scales_only_what_image_queries_read():
         assert (out[0, L:] - base[0, L:]).abs().max() > 1e-4
 
 
+def test_text_value_branch_splits_the_two_corrections():
+    """branch 1 (window only) + branch 2 (global only) corrections add up to the both-branch correction."""
+    from sca.attn import sca_dedup_forward
+    p = _pieces(49)
+    pi = torch.tensor([0.6, 0.3], dtype=torch.float64).view(1, 1, 2, 1)
+    layout = flex_layout(L + p["cells"][0] * p["cells"][1] * p["per"], (H, W), TILE, WIN, "cpu", (2, 2), (2, 2))
+    args = (p["q"], p["k"], p["v"], p["rot"], p["rq"], p["rk"], pi, L, (H, W), F, "center", layout, 0.0, p["cells"],
+            p["per"], 0.0)
+    sv = torch.zeros(L, dtype=torch.float64)
+    base = sca_dedup_forward(*args, None)
+    both, loc, glob = (sca_dedup_forward(*args, sv, b) for b in (0, 1, 2))
+    assert ((both - base) - ((loc - base) + (glob - base))).abs().max() < 1e-9
+    assert (loc - base).abs().max() > 1e-4 and (glob - base).abs().max() > 1e-4
+
+
 def test_processor_text_value_gates_by_sigma():
     m = model()
     c = dict(mode="sca", n0=4, tile=2, window=4, local_impl="flex", bridge_cells=2, bridge_k=2)

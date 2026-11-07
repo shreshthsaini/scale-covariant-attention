@@ -421,20 +421,21 @@ def mix_lse(o_glob, lse_glob, o_loc, lse_loc, pi, L, tau, inv):
 
 
 def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, text_bias=0.0,
-                      cells=None, per_cell=0, tau=0.0, text_value=None):
+                      cells=None, per_cell=0, tau=0.0, text_value=None, branch=0):
     """SCA with the late-duplication options: AReA-style bridge tokens (cells, per_cell) prepended to the
     local keys at their true positions, per-query LSE mixing (tau > 0), and the local text bias. layout
     must be built for the prefix length L + R, R = cells_h * cells_w * per_cell. text_value (None or a [L] tensor of
     per-token scales s_j) scales the text VALUES that image queries read in both branches (their attention weights, so
     the prompt's role as a sink, are unchanged); text queries are untouched. Global branch, exact by linearity:
-    O' = O - t O_T[(1 - s) v], t = the text share, O_T[u] = the text-only attention output with values u."""
+    O' = O - t O_T[(1 - s) v], t = the text share, O_T[u] = the text-only attention output with values u.
+    branch: 0 = both branches, 1 = the local (window) branch only, 2 = the global branch only."""
     cos, sin = rot
     kr = rope(k, rot)
     qi = rope(q[:, L:], (cos[L:], sin[L:]))
     q_txt = rope(q[:, :L], (cos[:L], sin[:L]))
     if tau:
         o_glob, lse_glob = global_branch_lse(q, k, v, L, grid, f, pool, rope_q, rope_k, q_txt, kr[:, :L])
-    elif text_value is not None:
+    elif text_value is not None and branch != 1:
         from sca.textgate import text_part
         sv = text_value.to(v.dtype).view(1, -1, 1, 1)                                # [1, L, 1, 1]
         o_glob, lse_glob = global_branch_lse(q, k, v, L, grid, f, pool, rope_q, rope_k, q_txt, kr[:, :L])
@@ -444,7 +445,7 @@ def sca_dedup_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout
         o_glob = torch.cat([o_glob[:, :L], img.to(o_glob.dtype)], 1)
     else:
         o_glob = global_branch(q, k, v, L, grid, f, pool, (cos[:L], sin[:L]), rope_q, rope_k, q_txt, kr[:, :L])
-    if text_value is not None:
+    if text_value is not None and branch != 2:
         v = torch.cat([v[:, :L] * text_value.to(v.dtype).view(1, -1, 1, 1), v[:, L:]], 1)   # local: image queries
     kl, vl, Lp = kr, v, L
     if per_cell:
@@ -821,6 +822,7 @@ class SCAContext:
                                         # attenuation, round 7); text queries untouched
     text_value_lo: float = 0.0          # text_value applies while sigma > text_value_lo
     text_value_subject: bool = False    # text_value only on the prompt's subject-word tokens (subject_tokens)
+    text_branch: str = "both"           # where text_value / the subject anchor act: both | loc (window) | glob
     sa_value: float = 1.0               # subject anchor (sca/subjgate.py): on window steps, subject-word content outside the
                                         # opening's subject map is scaled by this (1 = off); needs subject_tokens
     sa_lo: float = 0.55                 # subject anchor applies while sigma > sa_lo
@@ -941,6 +943,8 @@ class SCAContext:
                                      or self.text_mode or self.morph_local or self.morph_text or self.band
                                      or self.local_impl != "flex"):
             raise ValueError("subject anchor combines only with the sca_v2 operator (flex, bridge)")
+        if self.text_branch not in ("both", "loc", "glob"):
+            raise ValueError("text_branch must be both, loc or glob")
         if self.qmix_anchor not in ("text", "near"):
             raise ValueError("qmix_anchor must be text or near")
         if not 0.0 <= self.qmix_dose <= 1.0:
@@ -1484,9 +1488,11 @@ class SCAProcessor:
                 from sca.subjgate import sca_subject_fn, subject_index
                 idx, valid = subject_index(ctx.subject_tokens, L, q.device)
                 return sca_subject_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f,
-                                                ctx.pool, layout, tb, cells, per, idx, valid, s_img, ctx.sa_all)
+                                                ctx.pool, layout, tb, cells, per, idx, valid, s_img, ctx.sa_all,
+                                                ("both", "loc", "glob").index(ctx.text_branch))
             return sca_dedup_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
-                                          layout, tb, cells, per, float(ctx.lse_tau), ctx.text_value_vec(L, q.device))
+                                          layout, tb, cells, per, float(ctx.lse_tau), ctx.text_value_vec(L, q.device),
+                                          ("both", "loc", "glob").index(ctx.text_branch))
         if band > 1:
             L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True, text_bias=tb)
             if inv is not None:

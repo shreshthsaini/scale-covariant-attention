@@ -100,6 +100,8 @@ def add_args(p):
                    "med + A (max - med) to med + B (max - med) instead of the quantiles")
     p.add_argument("--subject-anchor-edge", type=int, default=0, metavar="T", help="Keep full prompt content on a "
                    "border band of T tokens")
+    p.add_argument("--text-branch", default="both", choices=("both", "loc", "glob"), help="Where --text-value and "
+                   "--subject-anchor act: both branches, the window branch only, or the global branch only")
     p.add_argument("--text-value-subject", action="store_true", help="--text-value scales only the subject-word tokens "
                    "(needs --subject-words)")
     p.add_argument("--qmix", default="", choices=("", "f1", "f13"), help="Per-query mix (sca/qmix.py): f1 = weight "
@@ -148,6 +150,7 @@ def context_kwargs(args):
                 qmix_tau=args.qmix_tau, qmix_gamma=getattr(args, "qmix_gamma", 1.0), qmix_far=getattr(args, "qmix_far", "out"), qmix_dose=getattr(args, "qmix_dose", 1.0), qmix_anchor=getattr(args, "qmix_anchor", "text"), text_value=getattr(args, "text_value", 1.0),
                 text_value_lo=getattr(args, "text_value_lo", 0.0),
                 text_value_subject=getattr(args, "text_value_subject", False),
+                text_branch=getattr(args, "text_branch", "both"),
                 sa_value=getattr(args, "subject_anchor", 1.0), sa_lo=getattr(args, "subject_anchor_lo", 0.55),
                 sa_dilate=getattr(args, "subject_anchor_dilate", 2), sa_all=getattr(args, "subject_anchor_all", False),
                 sa_qlo=float(getattr(args, "subject_anchor_q", (0.5, 0.95))[0]),
@@ -223,6 +226,8 @@ def info(args):
             out["qmix_dose"] = args.qmix_dose
         if getattr(args, "qmix_anchor", "text") != "text":
             out["qmix_anchor"] = args.qmix_anchor
+    if getattr(args, "text_branch", "both") != "both":
+        out["text_branch"] = args.text_branch
     if getattr(args, "subject_anchor", 1.0) != 1.0:
         out.update(subject_anchor=args.subject_anchor, subject_anchor_lo=args.subject_anchor_lo,
                    subject_anchor_dilate=args.subject_anchor_dilate)

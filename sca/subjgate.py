@@ -90,10 +90,10 @@ def text_all_part(qr, kt, vt, lse):
 
 
 def sca_subject_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layout, text_bias, cells, per_cell,
-                        idx, valid, s_img, all_text=False):
+                        idx, valid, s_img, all_text=False, branch=0):
     """sca_v2's operator (sca.attn.sca_dedup_forward, bridge path, tau = 0) where image query i reads the subject-word
     values (all text values with all_text=True) scaled by s_img[:, i] in both branches. s_img [B, N] (1 = untouched).
-    Returns [B, L + N, h, D]."""
+    branch: 0 both branches, 1 the local (window) branch only, 2 the global branch only. Returns [B, L + N, h, D]."""
     from sca.attn import bridge_index, global_branch_lse, local_branch_flex, rope
     cos, sin = rot
     kr = rope(k, rot)
@@ -117,8 +117,8 @@ def sca_subject_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, layo
     else:
         sub_loc, _ = subject_part(qi, kr[:, :L], v[:, :L], idx, valid, lse_loc)
         sub_glob, _ = subject_part(rope(q[:, L:], rope_q), kr[:, :L], v[:, :L], idx, valid, lse_glob[:, :, L:])
-    o_loc = o_loc - cut * sub_loc
-    img_g = _hi(o_glob[:, L:]) - cut * sub_glob
+    o_loc = o_loc - cut * sub_loc if branch != 2 else o_loc
+    img_g = _hi(o_glob[:, L:]) - cut * sub_glob if branch != 1 else _hi(o_glob[:, L:])
     img = _hi(pi) * o_loc + (1 - _hi(pi)) * img_g
     return torch.cat([o_glob[:, :L], img.to(o_glob.dtype)], 1)
 
