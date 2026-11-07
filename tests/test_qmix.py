@@ -316,3 +316,15 @@ def test_processor_subject_anchor_records_map_then_gates():
     lo_a, lo_b = at(ctx, 0.5), at(base, 0.5)                                         # window step
     assert ctx._sa_map is not None and torch.isfinite(flat(lo_a)).all()
     assert not torch.allclose(flat(lo_a), flat(lo_b), atol=1e-5)
+
+
+def test_pi_one_lo_sets_pi_to_one_above_sigma():
+    from sca.attn import PiTable
+    c = SCAContext(mode="sca", gate_sigma=0.89, pi_one_lo=0.75)
+    c.pi = PiTable("const", value=0.3)
+    c.n_layers = 2
+    for sigma, want in ((0.85, 1.0), (0.6, 0.3)):
+        c.sigma, c._pi_now = sigma, None
+        assert torch.allclose(c.pi_now(0, 4, "cpu"), torch.full((4,), want))
+    with pytest.raises(ValueError):
+        SCAContext(mode="sca", pi_one_lo=1.0)

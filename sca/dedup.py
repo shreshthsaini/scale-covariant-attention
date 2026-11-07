@@ -122,6 +122,7 @@ def add_args(p):
                    "+ LAMBDA m_h while sigma > --pi-blend-lo, m_h = full attention's image-key share inside the step's "
                    "window (calibration mass_mean at the emulated radius; 0 = off)")
     p.add_argument("--pi-blend-lo", type=float, default=0.8, metavar="SIGMA", help="--pi-blend applies while sigma > SIGMA")
+    p.add_argument("--pi-one-lo", type=float, default=0.0, metavar="SIGMA", help="pi = 1 (window branch only) while sigma > SIGMA on window steps; 0 = off")
     p.add_argument("--native-open", type=int, default=0, metavar="K", help="Round 6 candidate d: first K steps at 1024^2 "
                    "with full attention, then upsample, renoise at the next sigma and continue at the target (0 = off)")
     p.add_argument("--anchor-lo", type=float, default=0.0, metavar="SIGMA", help="Latent low-band anchor "
@@ -162,7 +163,7 @@ def context_kwargs(args):
                 sa_rel=tuple(getattr(args, "subject_anchor_rel", None) or ()),
                 sa_edge=getattr(args, "subject_anchor_edge", 0), pi_blend=getattr(args, "pi_blend", 0.0), pi_blend_lo=getattr(args, "pi_blend_lo", 0.8),
                 gm_low=getattr(args, "guide_map", 0.0), gm_lo=getattr(args, "guide_map_lo", 0.58),
-                bridge_coarse=getattr(args, "bridge_coarse", False))
+                bridge_coarse=getattr(args, "bridge_coarse", False), pi_one_lo=getattr(args, "pi_one_lo", 0.0))
 
 
 def anchor(args, ctx):
@@ -233,6 +234,8 @@ def info(args):
             out["qmix_anchor"] = args.qmix_anchor
     if getattr(args, "text_branch", "both") != "both":
         out["text_branch"] = args.text_branch
+    if getattr(args, "pi_one_lo", 0.0):
+        out["pi_one_lo"] = args.pi_one_lo
     if getattr(args, "bridge_coarse", False):
         out["bridge_coarse"] = True
     if getattr(args, "guide_map", 0.0):

@@ -872,6 +872,7 @@ class SCAContext:
                                         # the opening's subject map g (needs subject_tokens); 0 = off
     gm_lo: float = 0.58                 # gm applies on window steps while sigma > gm_lo (0.58: steps 8 to 19 of 28)
     bridge_coarse: bool = False         # score the bridge at coarse ids (scale-covariant bridge); needs bridge_cells
+    pi_one_lo: float = 0.0              # > 0: pi = 1 (window branch only, no global mix) while sigma > pi_one_lo
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -965,6 +966,8 @@ class SCAContext:
                                      or self.text_mode or self.morph_local or self.morph_text or self.band
                                      or self.local_impl != "flex"):
             raise ValueError("subject anchor combines only with the sca_v2 operator (flex, bridge)")
+        if not 0.0 <= self.pi_one_lo < 1.0 or (self.pi_one_lo and self.pi_blend):
+            raise ValueError("pi_one_lo must be in [0, 1) and does not combine with pi_blend")
         if self.bridge_coarse and (not self.bridge_cells or self.lse_tau or self.sa_value != 1.0):
             raise ValueError("bridge_coarse needs the bridge (bridge_cells) and no lse_tau or subject anchor")
         if self.gm_low < 0 or (self.gm_low > 0 and self.gate_sigma <= 0):
@@ -1022,6 +1025,8 @@ class SCAContext:
             if p.shape[0] not in (1, self.n_layers) or p.shape[1] not in (1, heads):
                 raise ValueError(f"pi table shape {p.shape} does not match {self.n_layers} layers x {heads} heads")
             p = self.ramp(p)
+            if self.pi_one_lo and self.sigma is not None and float(self.sigma) > self.pi_one_lo:
+                p = np.ones_like(p)
             if self.pi_blend and self.sigma is not None and float(self.sigma) > self.pi_blend_lo:
                 m = self.near_share_now()
                 if m.shape[0] not in (1, self.n_layers) or m.shape[1] != heads:
