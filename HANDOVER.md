@@ -1033,5 +1033,16 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
 - 09:54: r7_saSs on the 46 (eval/r7_46_r7_saSs): 0 significant losses, 9/10 wins over AReA kept, 84.6 s, but
   human-corrected 18.2% (4 confirmed flags; sca_v2 17.0%). With saAs (3.3%, 8 losses): scene-word content drives both
   copies and adherence; a two-branch spatial gate cannot separate them. Remaining lever: the branch (tvG, saAsG).
+- 09:58: r7_tvL, pQ20: 14 yes, 7 no. 10:05: r7_tvG (text values 0 on the global branch only), pQ21: 8 yes, 1
+  borderline, 12 no, plus comb streaks on figures, dashed halos and missing prompt details. Branch split on
+  copyprone21: window 14, global 8, both 1 (tv0m, adherence lost); neither branch alone separates copies from
+  adherence. tvG's 46-prompt run (queued 10:03 on early labels) was parked after the count: 3 tasks had started and
+  finish (24 images); a0_K0a03..05 and its eval sit in taskq/hold_r7_parked.
+- Lead levers (10:00): (2) guidance dependence: sca_v2 at guidance 3.5 (r7_g35) and 3.0 (r7_g30) on copyprone21
+  (our runs use 4.5), a0_K0g*, code/394a37d. (1) spatially varying guidance, sca/guidemap.py (commit 96c211e, frozen
+  code/96c211e, tests/test_guidemap.py): on window steps with sigma > 0.58 (steps 8 to 19) a second transformer pass
+  at low guidance, blended v_low + g (v_high - v_low) by the opening's subject map g (saAs map flags, rel 0.25/0.5,
+  dilate 3, smooth 9); attention untouched. Queued: r7_gm15 (low 1.5, a0_K0h0*), r7_gm10 (low 1.0, a0_K0h1*).
+  r7_saAsG labeling (pQ22); r7_saAsL images done (labels after saAsG).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
