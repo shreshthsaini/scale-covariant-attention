@@ -511,3 +511,20 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   Count-correcting it halves the copies on the same layouts but costs PickScore 0.2 on the 46 (clean prompts too).
   The window's prompt content cannot be cut without dash-stroke artifacts and lost subject details. gcm
   (glob-count-map) keeps the native read only at the opening's subject, to test whether adherence lives there.
+- 46-prompt verdicts this afternoon (r7_decide; results/dup_audit_20261027/round7_frontier_46_afternoon.csv):
+  | label | rate (46, person/animal) | core losses | other | time |
+  |---|---|---|---|---|
+  | r7_hyb0 | 7.0% est. (1 flag) | IR -0.064, HPSv2.1 -0.006, PickScore -0.107 | 8 losses | 92.7 s |
+  | r7_gc1 | 3.3% est. (0 flags) | IR -0.081, HPSv2.1 -0.008, PickScore -0.215 | 8 losses, ARNIQA below AReA | 80.0 s |
+  | r7_gcm | 10.7% est. (2 flags) | IR -0.067, HPSv2.1 -0.005, PickScore -0.130 | 7 losses | 83.6 s |
+  | r7_gch | 10.7% est. (2 flags) | IR -0.059, HPSv2.1 -0.004, PickScore -0.125 | 7 losses | 79.7 s |
+  | r7_g2x2 | 15.4% census | none | 4 small, all better than AReA | 74.9 s |
+  | r7_g2x8 | 7.7% census (2 yes, 1 borderline) | (eval running) | streak and mottle artifacts | 76 s |
+  AReA 3.8% (census, 1 yes + 3 borderline), sca_v2 17.0%.
+- Reading at the end of the afternoon. Copies and SCA's adherence come from the same thing: the prompt is read at
+  native-canvas strength while the layout is still open (sigma 0.89 to 0.55), by the global branch at coarse
+  scale and by the windows at native scale. Weakening the read anywhere breaks the coherence of prompted objects
+  (dash strokes, lost gear) and costs PickScore by about 0.1 or more, even at G 0.5. Widening the context (AReA's
+  windows) costs the same metrics. Delaying the windows behind more global steps at pool 2 trades copies for
+  2x2-block texture artifacts and does not reach AReA's rate. No single-pass variant tested in round 7 meets the
+  relaxed bar.
