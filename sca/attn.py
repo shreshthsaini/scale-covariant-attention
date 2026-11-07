@@ -821,6 +821,10 @@ class SCAContext:
                                         # attenuation, round 7); text queries untouched
     text_value_lo: float = 0.0          # text_value applies while sigma > text_value_lo
     text_value_subject: bool = False    # text_value only on the prompt's subject-word tokens (subject_tokens)
+    sa_value: float = 1.0               # subject anchor (sca/subjgate.py): on window steps, subject-word content outside the
+                                        # opening's subject map is scaled by this (1 = off); needs subject_tokens
+    sa_lo: float = 0.55                 # subject anchor applies while sigma > sa_lo
+    sa_dilate: int = 2                  # dilation of the subject map, tokens
     morph_text: str = ""                # "" | window_mean: text queries = mean over windows (AReA) instead of global
                                         # | all_coarse: text queries attend every image key at its coarse id (Fix 4)
     # per-query mix (sca/qmix.py; root-cause audit 2026-11-06 Fix 1 / Fix 1+3); defaults = SCA
@@ -926,6 +930,10 @@ class SCAContext:
                 raise ValueError("open_pool needs a factor >= 1, gate_sigma > 0 and open_pool_hi > gate_sigma")
         if self.qmix not in ("", "f1", "f13"):
             raise ValueError("qmix must be '', f1 or f13")
+        if self.sa_value != 1.0 and (not self.bridge_cells or self.lse_tau or self.text_value != 1.0 or self.qmix
+                                     or self.text_mode or self.morph_local or self.morph_text or self.band
+                                     or self.local_impl != "flex"):
+            raise ValueError("subject anchor combines only with the sca_v2 operator (flex, bridge)")
         if self.qmix_anchor not in ("text", "near"):
             raise ValueError("qmix_anchor must be text or near")
         if not 0.0 <= self.qmix_dose <= 1.0:
@@ -1018,6 +1026,30 @@ class SCAContext:
         if self.text_value != 1.0 and (self.sigma is None or float(self.sigma) > self.text_value_lo):
             return float(self.text_value)
         return 1.0
+
+    def sa_on(self):
+        return self.sa_value != 1.0 and bool(self.subject_tokens)
+
+    def sa_accumulate(self, share):
+        """Add one block's [B, N] subject-word share (global branch, head mean) to the current opening step's map; a
+        new sigma starts a new map, so the last opening step's map is the one the window steps read."""
+        sig = None if self.sigma is None else float(self.sigma)
+        if getattr(self, "_sa_sig", None) != sig or getattr(self, "_sa_acc", None) is None:
+            self._sa_sig, self._sa_acc, self._sa_map = sig, torch.zeros_like(share[0], dtype=torch.float32), None
+        self._sa_acc = self._sa_acc + share[0].float()
+
+    def sa_scale(self, N, device):
+        """[1, N] per-query scale of the subject-word content on this window step, or None (off, out of range, or no
+        opening map yet)."""
+        if not self.sa_on() or self.sigma is None or float(self.sigma) <= self.sa_lo:
+            return None
+        if getattr(self, "_sa_map", None) is None:
+            acc = getattr(self, "_sa_acc", None)
+            if acc is None or acc.numel() != N:
+                return None
+            from sca.subjgate import finalize_map
+            self._sa_map = finalize_map(acc, self.grid, dilate=self.sa_dilate)
+        return (self.sa_value + (1.0 - self.sa_value) * self._sa_map.to(device)).view(1, -1)
 
     def text_value_vec(self, L, device):
         """None when text values are not scaled at this step, else the [L] per-token scale: text_value on every text
@@ -1389,6 +1421,13 @@ class SCAProcessor:
             cos, sin = image_rotary_emb
             rq, rk = ctx.coarse_rope(f, q.device)
             kr_txt = rope(k[:, :L], rope_txt)
+            if ctx.sa_on():   # subject anchor: record where the opening puts the subject (sca/subjgate.py)
+                from sca.subjgate import subject_index, subject_part
+                o, lse = global_branch_lse(q, k, v, L, ctx.grid, f, ctx.pool, rq, rk, rope(q[:, :L], rope_txt), kr_txt)
+                idx, valid = subject_index(ctx.subject_tokens, L, q.device)
+                _, w = subject_part(rope(q[:, L:], rq), kr_txt, v[:, :L], idx, valid, lse[:, :, L:])
+                ctx.sa_accumulate(w.mean(1))
+                return o
             return global_branch(q, k, v, L, ctx.grid, f, ctx.pool, rope_txt, rq, rk,
                                  rope(q[:, :L], rope_txt), kr_txt)
         if ctx.scale_sched:
@@ -1423,6 +1462,12 @@ class SCAProcessor:
                      fit_divisor(W, ctx.bridge_cells, ctx.log, "bridge cells")) if on else None
             per = min(ctx.bridge_k_now(cells[0] * cells[1]), (H // cells[0]) * (W // cells[1])) if on else 0
             layout = ctx.flex_layout(L + (cells[0] * cells[1] * per if on else 0), tile, win, q.device)
+            s_img = ctx.sa_scale(H * W, q.device)
+            if s_img is not None:
+                from sca.subjgate import sca_subject_fn, subject_index
+                idx, valid = subject_index(ctx.subject_tokens, L, q.device)
+                return sca_subject_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f,
+                                                ctx.pool, layout, tb, cells, per, idx, valid, s_img)
             return sca_dedup_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
                                           layout, tb, cells, per, float(ctx.lse_tau), ctx.text_value_vec(L, q.device))
         if band > 1:

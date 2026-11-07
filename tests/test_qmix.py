@@ -199,3 +199,71 @@ def test_processor_text_value_gates_by_sigma():
     assert torch.allclose(flat(none), flat(base), atol=1e-6)
     sub = attn_outputs(m, SCAContext(**c, text_value=0.0, text_value_subject=True, subject_tokens=(1, 2)), H, W)
     assert torch.isfinite(flat(sub)).all() and not torch.allclose(flat(sub), flat(base), atol=1e-4)
+
+
+def test_subject_anchor_forward_is_affine_per_query_and_reduces_to_sca_v2():
+    """sca/subjgate.py: s = 1 gives sca_v2's own output; with every text token a subject word and s = 0 it equals the
+    text-value-0 operator; per query the output is affine in s (out_s = s out_1 + (1 - s) out_0)."""
+    from sca.attn import sca_dedup_forward
+    from sca import subjgate as sg
+    p = _pieces(47)
+    pi = torch.tensor([0.6, 0.3], dtype=torch.float64).view(1, 1, 2, 1)
+    layout = flex_layout(L + p["cells"][0] * p["cells"][1] * p["per"], (H, W), TILE, WIN, "cpu", (2, 2), (2, 2))
+    a = (p["q"], p["k"], p["v"], p["rot"], p["rq"], p["rk"], pi, L, (H, W), F, "center", layout, 0.0, p["cells"],
+         p["per"])
+    N = H * W
+    idx, valid = sg.subject_index(tuple(range(L)), L, "cpu")
+    one, zero = torch.ones(1, N, dtype=torch.float64), torch.zeros(1, N, dtype=torch.float64)
+    base = sca_dedup_forward(*a, 0.0, None)
+    o1 = sg.sca_subject_forward(*a, idx, valid, one)
+    o0 = sg.sca_subject_forward(*a, idx, valid, zero)
+    tv0 = sca_dedup_forward(*a, 0.0, torch.zeros(L, dtype=torch.float64))
+    assert (o1 - base).abs().max() < 1e-6
+    assert (o0[0, L:] - tv0[0, L:]).abs().max() < 1e-6
+    s = torch.rand(1, N, dtype=torch.float64, generator=torch.Generator().manual_seed(3))
+    os_ = sg.sca_subject_forward(*a, idx, valid, s)
+    ref = s[0, :, None, None] * o1[0, L:] + (1 - s[0, :, None, None]) * o0[0, L:]
+    assert (os_[0, L:] - ref).abs().max() < 1e-9
+    # a partial subject set changes less than all text tokens
+    idx2, valid2 = sg.subject_index((1,), L, "cpu")
+    o2 = sg.sca_subject_forward(*a, idx2, valid2, zero)
+    assert 0 < (o2 - base).abs().max() < (o0 - base).abs().max()
+
+
+def test_subject_part_share_and_map():
+    from sca import subjgate as sg
+    g = torch.Generator().manual_seed(9)
+    B, N, Lt, h, D = 1, 16, 5, 2, 8
+    qr, kt, vt = (torch.randn(B, n, h, D, generator=g, dtype=torch.float64) for n in (N, Lt, Lt))
+    sc = torch.einsum("bnhd,blhd->bhnl", qr, kt) / D ** 0.5
+    lse = sc.logsumexp(-1)
+    idx, valid = sg.subject_index((1, 3), Lt, "cpu")
+    part, w = sg.subject_part(qr, kt, vt, idx, valid, lse)
+    p = sc.softmax(-1)
+    ref = torch.einsum("bhnl,blhd->bnhd", p[..., [1, 3]], vt[:, [1, 3]])
+    assert (part - ref).abs().max() < 1e-12 and (w - p[..., [1, 3]].sum(-1)).abs().max() < 1e-12
+    m = torch.zeros(16)
+    m[5] = 1.0
+    gm = sg.finalize_map(m, (4, 4), q_lo=0.5, q_hi=0.95, dilate=1)
+    assert gm.view(4, 4)[1, 1] == 1 and gm.view(4, 4)[0, 0] == 1 and gm.view(4, 4)[3, 3] == 0
+
+
+def test_processor_subject_anchor_records_map_then_gates():
+    m = model()
+    c = dict(mode="sca", n0=4, tile=2, window=4, local_impl="flex", bridge_cells=2, bridge_k=2, gate_sigma=0.6)
+    with pytest.raises(ValueError):
+        SCAContext(mode="sca", sa_value=0.0)                                       # needs the bridge path
+    ctx = SCAContext(**c, sa_value=0.0, sa_lo=0.3, subject_tokens=(1, 2))
+    base = SCAContext(**c)
+    def at(c, sigma):
+        orig = SCAContext.set_inputs
+        c.set_inputs = lambda ids, txt_ids=None, sigma=None, _s=sigma: orig(c, ids, txt_ids, _s)
+        try:
+            return attn_outputs(m, c, H, W)
+        finally:
+            del c.set_inputs
+    hi_a, hi_b = at(ctx, 0.8), at(base, 0.8)                                         # opening (sigma > gate)
+    assert torch.allclose(flat(hi_a), flat(hi_b), atol=1e-5) and ctx._sa_acc is not None
+    lo_a, lo_b = at(ctx, 0.5), at(base, 0.5)                                         # window step
+    assert ctx._sa_map is not None and torch.isfinite(flat(lo_a)).all()
+    assert not torch.allclose(flat(lo_a), flat(lo_b), atol=1e-5)
