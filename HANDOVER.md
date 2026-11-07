@@ -1056,5 +1056,11 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   Ladder moved to the spool head (renamed a0_K0b*): L2 r7_scaD, L7 area_scaMix, L1 r7_op4 (copyprone21), L6
   area_scaOpen, L8 area_scaText. 10:36: L2 r7_scaD (pi = 1) fails on sight (6 of 21 previewed, unlabeled): glyph
   confetti and coloured dots on every image, copies remain (extra astronauts, a second woman); 76 s.
+- 10:44: r7_gm15 (spatially varying guidance, low 1.5) pQ26: 17 yes, 1 borderline, 3 no; haze, washed-out
+  backgrounds, dissolve streaks; 124 s. r7_gm10 by preview (6 of 21, unlabeled): copies remain, stronger haze.
+  Guidance levers closed. New: scale-covariant bridge (commit b36ef9a, frozen code/b36ef9a, tests/test_dedup.py
+  brute force): --bridge-coarse scores the bridge keys with the window queries at coarse ids (as the global branch)
+  and joins them to the window softmax by log-sum-exp; window keys stay at true ids. Screens r7_bc16 (k 16) and
+  r7_bc64 (k 64), a0_K0b15* / a0_K0b16*, after area_scaMix.
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
