@@ -1128,15 +1128,18 @@ class SCAContext:
         if prev == sig:
             return
         acc, self._csg_sig, self._csg_acc = getattr(self, "_csg_acc", None), sig, None
-        if prev is not None and sig > prev:     # sigma went up: a new image, the old share does not apply
-            acc = None
+        if prev is not None and sig > prev:     # sigma went up: a new image, the old share and map do not apply
+            acc, self._csg_map = None, None
         m0 = self.sa_map(N, device)
         if acc is None or m0 is None or acc.numel() != N:
-            self._csg_map = None
             return
         from sca.subjgate import copy_map
-        self._csg_map = copy_map(acc.to(device), m0, self.grid, smooth=self.csg_smooth, rel=tuple(self.csg_rel),
-                                 excl=self.csg_excl, grow=self.csg_grow)
+        new = copy_map(acc.to(device), m0, self.grid, smooth=self.csg_smooth, rel=tuple(self.csg_rel),
+                       excl=self.csg_excl, grow=self.csg_grow)
+        old = getattr(self, "_csg_map", None)
+        # hold: a site that started a second subject stays gated for the rest of the gated steps (no flicker when
+        # the gate itself lowers the share it was detected by)
+        self._csg_map = new if old is None or old.numel() != new.numel() else torch.maximum(old.to(device), new)
         if self.sa_dump:
             import os
             os.makedirs(self.sa_dump, exist_ok=True)
