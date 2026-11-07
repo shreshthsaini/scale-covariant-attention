@@ -79,6 +79,10 @@ def add_args(p):
                    "area_tiles = AReA's jittered tiles, Halo, DWT splits and merge as SCA's local branch")
     p.add_argument("--morph-text", default="", choices=("", "window_mean"), help="Morph ladder: window_mean = text "
                    "queries read the mean over windows (AReA) instead of the global branch")
+    p.add_argument("--qmix", default="", choices=("", "f1", "f13"), help="Per-query mix (sca/qmix.py): f1 = weight "
+                   "from count-corrected image partitions; f13 = plus one three-part softmax over text, near, far")
+    p.add_argument("--qmix-lo", type=float, default=0.0, metavar="SIGMA", help="--qmix applies while sigma > SIGMA")
+    p.add_argument("--qmix-tau", type=float, default=1.0, help="Slope of the per-query log-odds swing")
     p.add_argument("--native-open", type=int, default=0, metavar="K", help="Round 6 candidate d: first K steps at 1024^2 "
                    "with full attention, then upsample, renoise at the next sigma and continue at the target (0 = off)")
     p.add_argument("--anchor-lo", type=float, default=0.0, metavar="SIGMA", help="Latent low-band anchor "
@@ -106,7 +110,8 @@ def context_kwargs(args):
                 ffl_head_frac=args.ffl_head_frac, ffl_fade_lo=args.ffl_fade_lo, ffl_outside=args.ffl_outside,
                 ffl_coarse=args.ffl_coarse,
                 text_bw_lo=args.text_bw_lo, open_pool=args.open_pool, open_pool_hi=args.open_pool_hi,
-                morph_local=args.morph_local, morph_text=args.morph_text)
+                morph_local=args.morph_local, morph_text=args.morph_text, qmix=args.qmix, qmix_lo=args.qmix_lo,
+                qmix_tau=args.qmix_tau)
 
 
 def anchor(args, ctx):
@@ -165,6 +170,8 @@ def info(args):
         out["morph_local"] = args.morph_local
     if getattr(args, "morph_text", ""):
         out["morph_text"] = args.morph_text
+    if getattr(args, "qmix", ""):
+        out.update(qmix=args.qmix, qmix_lo=args.qmix_lo, qmix_tau=args.qmix_tau)
     if getattr(args, "native_open", 0):
         out["native_open"] = args.native_open
     if args.anchor_lo:

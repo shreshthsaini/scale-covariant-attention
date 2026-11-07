@@ -804,6 +804,11 @@ class SCAContext:
     # morph ladder (sca/morph.py): single AReA components inside SCA; defaults = SCA
     morph_local: str = ""               # "" | area_tiles: local branch = AReA's jittered tiles, Halo, DWT splits, merge
     morph_text: str = ""                # "" | window_mean: text queries = mean over windows (AReA) instead of global
+    # per-query mix (sca/qmix.py; root-cause audit 2026-11-06 Fix 1 / Fix 1+3); defaults = SCA
+    qmix: str = ""                      # "" | f1 (per-query weight from count-corrected image partitions) | f13 (+ one
+                                        # three-part softmax over text, near, far)
+    qmix_lo: float = 0.0                # qmix applies while sigma > qmix_lo (0.845: the seeding steps 0.888 to 0.850)
+    qmix_tau: float = 1.0               # slope of the per-query log-odds swing (1 = Lemma 1)
     pi: PiTable = field(default_factory=PiTable)
     # calibration
     calib: object | None = None         # sca.calib.CalibStats
@@ -891,6 +896,12 @@ class SCAContext:
         if self.open_pool:
             if self.open_pool < 1 or self.gate_sigma <= 0 or self.open_pool_hi <= self.gate_sigma:
                 raise ValueError("open_pool needs a factor >= 1, gate_sigma > 0 and open_pool_hi > gate_sigma")
+        if self.qmix not in ("", "f1", "f13"):
+            raise ValueError("qmix must be '', f1 or f13")
+        if self.qmix and (self.text_mode or self.morph_local or self.morph_text or self.local_impl != "flex" or self.band
+                          or self.lse_tau or self.scale_sched or self.scale_fixed or self.win_heads_below is not None
+                          or self.route or self.pool != "center"):
+            raise ValueError("qmix combines only with the sca_v2 operator (flex, pool center, bridge, win_sched)")
         if self.morph_local not in ("", "area_tiles") or self.morph_text not in ("", "window_mean"):
             raise ValueError("morph_local must be '' or area_tiles, morph_text '' or window_mean")
         if (self.morph_local or self.morph_text) and (self.text_mode or self.local_impl != "flex" or self.band
@@ -1130,12 +1141,12 @@ class SCAContext:
         lo, g = float(self.ffl_fade_lo), float(self.gate_sigma)
         return float(np.clip((float(self.sigma) - lo) / (g - lo), 0.0, 1.0))
 
-    def lattice_layout(self, tile, win, f, device):
-        """textgate.lattice_layout for ffl_outside, cached per (grid, tile, window, f, device)."""
-        key = ("lattice", self.grid, tuple(tile), tuple(win), tuple(f), str(device))
+    def lattice_layout(self, tile, win, f, device, inside=False):
+        """textgate.lattice_layout (outside or inside the window), cached per (grid, tile, window, f, side, device)."""
+        key = ("lattice", self.grid, tuple(tile), tuple(win), tuple(f), bool(inside), str(device))
         if key not in self._flex_cache:
             from sca.textgate import lattice_layout
-            self._flex_cache[key] = lattice_layout(self.grid, tile, win, f, device)
+            self._flex_cache[key] = lattice_layout(self.grid, tile, win, f, device, inside=inside)
         return self._flex_cache[key]
 
     def open_pool_now(self, f):
@@ -1320,6 +1331,8 @@ class SCAProcessor:
             band = int(round(-band * sg / max(1e-3, 1 - sg)))
             band = min(band, min(ctx.grid))
         tb = ctx.text_bias_now()
+        if ctx.qmix and (ctx.sigma is None or float(ctx.sigma) > ctx.qmix_lo):
+            return self.qmix_forward(q, k, v, image_rotary_emb, f, tile, win, pi)
         if ctx.morph_local or ctx.morph_text:
             from sca.morph import morph_forward
             return morph_forward(self, q, k, v, image_rotary_emb, f, tile, win, pi)
@@ -1350,6 +1363,20 @@ class SCAProcessor:
             return sca_flex_fn(q.device)(*args, tb) if tb else sca_flex_fn(q.device)(*args)
         L, o_loc, o_glob, inv = self.branches(q, k, v, image_rotary_emb, f, tile, win, permuted=True, text_bias=tb)
         return mix_fn(q.device)(o_glob, o_loc, pi, L, inv)
+
+    def qmix_forward(self, q, k, v, image_rotary_emb, f, tile, win, pi):
+        """Per-query mix (sca/qmix.py): Fix 1 (qmix f1) or one three-part softmax (qmix f13)."""
+        from sca.qmix import sca_qmix_fn
+        ctx = self.ctx
+        L, _ = self._split(q, image_rotary_emb)
+        rq, rk = ctx.coarse_rope(f, q.device)
+        cells, per = ctx.bridge_now()
+        layout = ctx.flex_layout(cells[0] * cells[1] * per if per else 0, tile, win, q.device)
+        three = ctx.qmix == "f13"
+        lat_in = None if three else ctx.lattice_layout(tile, win, f, q.device, inside=True)
+        lat_out = ctx.lattice_layout(tile, win, f, q.device) if three else None
+        return sca_qmix_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, layout,
+                                     cells, per, lat_in, lat_out, float(ctx.qmix_tau), three)
 
     def text_forward(self, q, k, v, image_rotary_emb, f, tile, win, pi, modes):
         """Round-6 text modes (sca/textgate.py): the window softmax split into its text and image parts."""

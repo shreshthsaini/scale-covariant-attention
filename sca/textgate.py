@@ -163,10 +163,11 @@ def lattice_index(grid, f, device=None):
     return torch.arange(H * W, device=device).view(H, W)[f[0] // 2::f[0], f[1] // 2::f[1]].reshape(-1)
 
 
-def lattice_layout(grid, tile, window, f, device, block=(128, 128)):
+def lattice_layout(grid, tile, window, f, device, block=(128, 128), inside=False):
     """(BlockMask, kernel_options) over image queries (row-major) x block-centre lattice keys (row-major): a lattice key
     is visible to a query iff it lies outside the query's local window (the window of its query tile, the same start
-    rule as sca.attn.flex_layout). With it the lattice far field holds only what the window does not see."""
+    rule as sca.attn.flex_layout), or inside it with inside=True. With it the lattice far field holds only what the window
+    does not see."""
     from torch.nn.attention.flex_attention import create_block_mask
     from torch._dynamo import config as dynamo_config
     _envfix()
@@ -180,7 +181,8 @@ def lattice_layout(grid, tile, window, f, device, block=(128, 128)):
 
     def mask_mod(b, h, q, kv):
         r0, c0, r, c = rs[q // W], cs[q % W], kr[kv], kc[kv]
-        return ~((r >= r0) & (r < r0 + Wh) & (c >= c0) & (c < c0 + Ww))
+        hit = (r >= r0) & (r < r0 + Wh) & (c >= c0) & (c < c0 + Ww)
+        return hit if inside else ~hit
 
     N, Nb = H * W, cen.numel()
     bs = (math.gcd(N, block[0]), math.gcd(Nb, block[1]))
