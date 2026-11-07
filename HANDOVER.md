@@ -1129,3 +1129,24 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
   tvG 46, bc64, hyb, ohyb, csg 46 + eval, csga, csga2 46 + eval, csga3, bce. Unlabeled packets: pQ28 (csga2).
 
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).
+
+## 30. 2026-11-07 afternoon: round 7 continued (method owner; log .agent/notes/duplication_fix_round7.md, "Afternoon")
+- 12:15 took over from the Section 29 owner. GPU: SCA21 (4 gh, ends about 16:58); SCA22 (4 gh x 10 h) pending, Slurm
+  start estimate 12:52. SCA24 x2, SCA27 and SCA28 have already ended (TIMEOUT), so no other job is pending.
+- Progressive SCA (sca_v2_prog) at 195 prompts: before today only paired files against HRDiT and sca_prog existed
+  (results/prog195_sca_v2). Paired deltas against AReA and sca_v2 are now computed on CPU from the cached per-image
+  metrics of eval/a4k195_main_sca_v2 and eval/prog195_sca_v2 (same evaluator and cache generation, AReA's values are
+  identical in both evals): scratch eval/prog195_pairs, results/prog195_pairs. Against AReA, progressive SCA
+  significantly beats AReA on all 10 per-image metrics (IR +0.40, PickScore +1.05, HPSv2.1 +0.039, MUSIQ +2.3, MUSIQ
+  crop +3.7). Against sca_v2 it gains on IR (+0.072), HPSv2.1 (+0.013), PickScore (+0.29), aesthetic, ARNIQA, CLIP-IQA and
+  HPSv2, but loses MUSIQ (-3.4) and MUSIQ crop (-6.0). Corrected set-level point estimates (168 reference identities):
+  FID 141.9 (AReA 145.8, sca_v2 140.2), KID 0.0071 (0.0072, 0.0058), patch FID 107.7 (102.9, 98.4), patch KID 0.0148
+  (0.0114, 0.0089). So patch FID and patch KID are worse than AReA's. Their 1000-draw intervals are running on CPU
+  (prog195_pairs/cpu_setlevel.sh, PID 2345099). Detector rate 6/95 against AReA's 4/95 (McNemar p = 0.75). Median time
+  50.7 s per image (sca_v2 78.4 s, AReA 264 s on this set). No GPU evaluation is needed.
+- hyb0 on copyprone21 is complete (21 images, 92 s each) and is being labeled blind as packet pQ29.
+- Queued, all on code/17dcf9e. The copyprone21 screens are a0_K0b28* r7_ohyb0 (AReA's opening pools 4,4,4,4,2,2,2,2 plus
+  hyb0's windows, sca_v2's pi), a0_K0b29* r7_hyb0g (one extra global step at pool 2 on step 8, gate 0.87, then hyb0's
+  windows from step 9), a0_K0b35* r7_g2x2 (steps 8 and 9 global at pool 2, gate 0.86, then sca_v2's windows) and
+  a0_K0b45* r7_hyb3 / a0_K0b46* r7_hyb4 (AReA's sizes on steps 8 to 10 or 8 to 11, then 96 and 80). The 46-prompt run
+  of r7_g2x2 is a0_K0b36*, with its eval a0_K0b37_eval_r7_g2x2 self-releasing from hold_dup_eval.
