@@ -1321,3 +1321,10 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   of the day. The longer forms cut copyprone21 further (g2x4 11, g2x8 7), so their 46-prompt evaluations (running)
   decide whether a longer pool-2 phase keeps the metrics. If g2x4 or g2x8 holds them, its 26 person/animal images go
   to blind labels at once.
+- 15:00 decision, extended pool-2 opening on the 46 by full blind census of the 26 person/animal images. r7_g2x2
+  (pQ34): 4 yes = 15.4% (sca_v2 17.0%, AReA 3.8%), FAIL on the rate despite no core loss. r7_g2x8 (pQ33): 2 yes and
+  1 borderline = 7.7%, FAIL on the rate whatever its metrics (still evaluating). The copies left are a figure on a
+  distant path, the canoe's extra paddlers and one anime-crowd figure. g2x8f (fractional coarse ids) is 8 of 21 on
+  copyprone21: frac removes the long streaks but keeps the mottled armour and the dashed tent edges
+  (r7/preview/g2x8f_detail.jpg). The family trades copies for texture artifacts in proportion to the global
+  phase's length, and stops above AReA's rate even at 8 steps.
