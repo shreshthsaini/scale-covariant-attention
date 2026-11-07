@@ -921,4 +921,12 @@ person/animal prompts outside the 46-subset where sca_v2 has a copy), metrics on
 - Tests: 249 pass. tests/test_review_round.py::test_generated_tasks fails by design of its subject: review_tasks.py skips
   names already in the live spool, so its 148-task count depends on scratch state (24 now), not on code.
 
+- 11-07 02:55 SCA24 x2 started (c609-142, c609-042; end about 05:55). The first qmix task crashed at step 8: Triton
+  built a launcher for the new kernels with the account's CC=nvc (rejects -Wno-psabi; as in
+  .agent/notes/gpu_smoke_compiler_repair_1076947.md). Fix: every task script (pending and every hold dir) and
+  slurm/dup_tasks.ENV export CC=/usr/bin/gcc CXX=/usr/bin/g++ (commit b40c295); K100 requeued. f1 at the seeding
+  steps costs 78.5 s per image warm vs sca_v2 77.1 s on the same prompts (+2%), peak 38 GiB.
+- r7_q1s (f1, seeding steps) on copyprone21, blind labels pQ1 (6 Opus labelers): 20 yes of 21 (sca_v2 19). Fails the
+  screen; its 46-prompt tasks a0_K50x parked in taskq/hold_r7_screen_fail.
+
 Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU node the account gets (gh, gh-dev, gb) fully with no downtime; finish all the work. slurm/gpu_watch.sh runs on the controller i615-091 (nohup, log /scratch/09032/saini_2/sca/logs/gpu_watch.log) and starts an idle-only SCA worker on any held GPU node lacking one, every 10 min, while the spool has work; restart it on the next controller if this one ends (job 1125760 ends 11-08 04:59).

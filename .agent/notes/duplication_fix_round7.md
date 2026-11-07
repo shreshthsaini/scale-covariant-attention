@@ -296,3 +296,10 @@ Exact definitions (tests/test_qmix.py checks both against brute force in float64
   weight by 0.11 to 0.31 on the five hand-off steps and leaves step 13 on (0.707).
 - Queued (copy-prone screen, after the f1/f13 copy-prone runs): r7_q2 = Fix 2 alone (LAMBDA 1), r7_q12 = f1 on every
   window step plus Fix 2. 46-prompt runs parked in taskq/hold_r7_fix2 until a screen warrants them.
+
+## Fix screens on copyprone21 (11-07, SCA24 x2)
+- r7_q1s (f1 at sigma > 0.845): blind labels pQ1, 20 yes of 21 (only 11799097571596124 clean); sca_v2 19, AReA 4.
+  Per-query redistribution with the head mean pinned at the calibrated pi (about 0.7) over the three seeding steps
+  does not touch the copies (passers-by, figures on far ridges, a second bear on a cliff, extra astronauts and divers).
+  Cost 78.5 s per image warm (+2% over sca_v2's 77.1 s on these prompts). 46-prompt tasks parked
+  (taskq/hold_r7_screen_fail).
