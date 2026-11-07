@@ -774,7 +774,7 @@ def fig_failures(a):
     # Audited 2026-10-20 at 1:1: the dancer window holds an extra raised foot, not a foot replacing an arm; none of
     # the four named errors appears in AReA's windows.
     cap = (r"\textbf{Local errors of \sca{} without the schedule.} Four curated prompts at $4096^2$, each full image "
-           r"with its window, then the window at 1:1: a staircase sword, a blocky patch, an extra foot, and border "
+           r"with its window, then the window at 1:1, showing a staircase sword, a blocky patch, a malformed foot, and border"
            r"speckle. AReA's same windows (top row) show none of them.")
     # below the section text (a top float after \clearpage would sit above the section heading)
     grid_snippet("failures", geo, rows, cap, "fig:failures", env="figure", placement="!hb", pre_geo=FAIL_LABEL_PRE,

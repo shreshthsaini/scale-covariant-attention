@@ -485,7 +485,7 @@ def prog_deltas():
     note = "pendAppProgDeltas"
     group = r" & & & \multicolumn{2}{c}{\emph{\sca{} " + WOS + r"}} \\" + "\n" + r"\cmidrule(l){4-5}"
     worse_now = [NAMES[k] for k, *_ in prog.METRICS if prog_landed and data[0][k][2] < 0]
-    lead = (rf"Against HRDiT, progressive \sca{{}} is significantly worse only on {join(worse_now)}."
+    lead = (rf"Per image, progressive \sca{{}} is significantly worse than HRDiT only on {join(worse_now)}."
             if worse_now else r"Against HRDiT, progressive \sca{} is not significantly worse on any per-image metric; "
             r"single-pass \sca{} without the schedule at 42 steps is.")
     caption = (r"\caption{\textbf{" + lead + "}"

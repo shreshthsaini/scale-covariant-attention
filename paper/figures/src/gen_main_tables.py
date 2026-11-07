@@ -623,7 +623,8 @@ def table_prog_all():
         cols.append((pi, sl))
     lines = []
     pending_refs = [name for (m, name), (_, sl) in zip(PROG_ALL_REFS, cols) if sl is None]
-    outside = [f"{name} {key.replace('_', ' ')}" for (m, name), (pi, sl) in zip(PROG_ALL_REFS, cols)
+    metric_name = {"fid": "FID", "kid": "KID", "patch_fid": "patch FID", "patch_kid": "patch KID"}
+    outside = [f"{name} {metric_name[key]}" for (m, name), (pi, sl) in zip(PROG_ALL_REFS, cols)
                for key in data195.DIST if sl and key in sl and not (sl[key][1] <= sl[key][0] <= sl[key][2])]
     for key, label, sc, d in PROG_ALL_METRICS:
         top, low = [label], [""]
@@ -648,8 +649,9 @@ def table_prog_all():
     worse_pfid = [m for m in ("area", "hrdit_dev_author", "sca_v2") if sl_of[m] and sl_of[m]["patch_fid"][1] > 0]
     check(worse_pfid == ["area", "hrdit_dev_author", "sca_v2"], f"prog_all key result: patch FID worse vs {worse_pfid}")
     key = (r" Key result: progressive \sca{} is significantly better than AReA, DyPE, SEGA, and full attention on every "
-           r"per-image metric and than UltraImage on nine. It matches HRDiT on ImageReward, HPSv2.1, and PickScore and "
-           r"has higher patch FID than AReA, HRDiT, and single-pass \sca{}." if not pending_refs else "")
+           r"per-image metric and than UltraImage on nine. Its differences from HRDiT on ImageReward, HPSv2.1, and "
+           r"PickScore span zero, and its patch FID is higher than AReA's, HRDiT's, and single-pass \sca{}'s."
+           if not pending_refs else "")
     if outside:  # a percentile interval of a biased statistic need not contain the point estimate
         note += (" The point estimate lies outside its percentile interval for " + ", ".join(outside) +
                  ", as it can for a biased statistic.")

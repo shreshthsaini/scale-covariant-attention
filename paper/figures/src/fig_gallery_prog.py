@@ -215,7 +215,7 @@ def tiles(job):
 
 CAPTION = (
     r"\textbf{Uncurated samples at $4096^2$.} Six prompts drawn at random (selection seed~%d) from the %d of the "
-    r"%d evaluation prompts that are neither development prompts nor shown in a curated figure; rows in draw order. "
+    r"%d evaluation prompts that are neither development prompts nor shown in a curated figure. "
     r"FLUX.1-dev, generation seed~0. AReA and single-pass \sca{}: 28 steps at $4096^2$, guidance 4.5. HRDiT and "
     r"progressive \sca{}: HRDiT's schedule of 30 steps at $1024^2$, 17 at $2048^2$ and 10 at $4096^2$ (guidance 3.5, "
     r"4.5 and 6.0); progressive \sca{} uses \sca{} attention in the last two stages. Rows are methods; columns are "

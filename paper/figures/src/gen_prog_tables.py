@@ -42,8 +42,8 @@ METRICS = [("ir", "ImageReward", 1, 3), ("aesthetic", "Aesthetic", 1, 3), ("clip
            ("arniqa", r"ARNIQA ($\times100$)", 100, 1)]
 # (method, reference, column head); each pair is read from results/a4k195_panel/<method>_vs_<reference>.csv
 PAIRS = [("sca_prog", "hrdit_dev_author", r"Progressive vs.\ HRDiT"),
-         ("sca_prog", "sca_nb", r"Progressive vs.\ \sca{}"),
-         ("sca_s42", "sca_nb", r"42 steps vs.\ \sca{}"),
+         ("sca_prog", "sca_nb", r"Progressive vs.\ single-pass"),
+         ("sca_s42", "sca_nb", r"42 vs.\ 28 steps"),
          ("hrdit_dev_author", "sca_s42", r"HRDiT vs.\ 42 steps")]
 
 
