@@ -262,12 +262,30 @@ def main(argv=None):
                     e["web"], b = export(e, img, g, a.quality_overview, a.quality_crop)
                     web_bytes += b
                 images.append(e)
+    timings = {}
+    for e in images:
+        if e["method"] == "lanczos" or e.get("seconds") is None:
+            continue
+        k = f"{e['model']} | {e['method']} | {e['size']}"
+        if k in timings:
+            continue
+        rows_k = [x for x in images if x["model"] == e["model"] and x["method"] == e["method"] and x["size"] == e["size"]
+                  and x.get("seconds") is not None]
+        uniq = {x["png"]: x for x in rows_k}.values()          # an image appears once per group it belongs to
+        clean = sorted(x["seconds"] for x in uniq if x.get("gpu_shared") is False)
+        every = sorted(x["seconds"] for x in uniq)
+        med = lambda v: None if not v else round(v[len(v) // 2] if len(v) % 2 else (v[len(v) // 2 - 1] + v[len(v) // 2]) / 2, 1)
+        timings[k] = {"images": len(every), "median_seconds_all": med(every), "clean_images": len(clean),
+                      "median_seconds_clean": med(clean),
+                      "peak_memory_gb_max": max((x.get("peak_memory_gb") or 0) for x in uniq) or None}
     out = {"schema_version": 1, "description": "GPU showcase (HANDOVER Section 32): one entry per image; seconds are the "
            "samplers' per-image wall times (denoising and VAE decode, model loading excluded) and include slowdowns from "
            "other projects' processes sharing the GPU; clean batch-1 timings are in timings", "seed": 0,
            "crop_rule": f"{NCROP} non-overlapping {CROP} px windows with the most gradient energy in the group's SCA image",
            "overview_px": OVERVIEW, "images": images, "missing": missing, "web_bytes": web_bytes,
-           "timings": old.get("timings", {})}
+           "timings": timings, "timings_note": "per (model, method, size): median of the samplers' per-image seconds over "
+           "every image and over the images whose task saw no other process on its GPU (gpu_shared false); the first "
+           "image of each task includes compile warm-up"}
     if a.dry:
         print(json.dumps({"images": len(images), "missing": len(missing)}, indent=1))
         return
