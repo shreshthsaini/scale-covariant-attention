@@ -43,6 +43,12 @@ SCA_V2 = ("--method sca --n0 256 --tile 8 --gate-sigma 0.97444 --bridge-cells 8 
 EVAL = f"{PY} scripts/ideogram4_eval.py --results {P}/results/ideogram4_8k"
 STAGE1 = ("00a1_3", "00s1a1_2")                  # SCA and SEGA at 8192^2
 STAGE2 = ("00a1_3", "00s1a1_2", "00s1a1_5", "00z_a1_3", "00z_a1_4")   # every generation task (not the evaluations)
+# after an evaluation: page assets and paper pieces, written into the live repo as new files (nothing is committed);
+# a failure here is logged and does not fail the evaluation
+WEB_POST = (f"(cd {P} && {PY} web/build/build_ideogram4.py --workers 16 --budget-mb 4000) "
+            "|| echo \"web export failed (rc $?)\"\n")
+PAPER_POST = (f"(cd {P}/paper/figures/src && {PY} gen_ideogram4_table.py && {PY} fig_ideogram4.py) "
+              "|| echo \"paper table or figure failed (rc $?)\"\n")
 GEN = f"{PY} scripts/sample_ideogram4.py --prompts {PROMPTS} --captions {CAPTIONS} --seed 0"
 
 GUARD = """G=${{CUDA_VISIBLE_DEVICES:-0}}; G=${{G%%,*}}; NEED={need}; LOG={out}/_gpu; mkdir -p $LOG
@@ -154,7 +160,7 @@ def group_a1(dry, code):
              wait=f"{TABLE}_uncond.npz", hold=True,
              post=gate(f"00a1_3{k}_", STAGE1, "00a1_40_eval8k") + gate(f"00a1_3{k}_", STAGE2, "00z_a1_90_eval8k_all"))
     task("00a1_40_eval8k", 60, "evaluate SCA and SEGA at 8192^2 (+ whatever else exists), archive results/ideogram4_8k",
-         code, f"{EVAL}", dry, need=40, hold=True)
+         code, f"{EVAL}", dry, need=40, hold=True, post=WEB_POST)
 
 
 def group_s1(dry, code):
@@ -180,7 +186,7 @@ def group_z(dry, code):
                  f"{GEN} --res 8192x8192 --ids {pid} --method {m} --train-grid 256 --out {OUT}/ideogram4_{m}/8192x8192",
                  dry, need=72, wait=CAPTIONS_DONE, post=gate(f"00z_a1_{tag}{k}_", STAGE2, "00z_a1_90_eval8k_all"))
     task("00z_a1_90_eval8k_all", 60, "evaluate every 8192^2 set and the 4096^2 references, archive results/ideogram4_8k",
-         code, f"{EVAL}", dry, need=40, hold=True)
+         code, f"{EVAL}", dry, need=40, hold=True, post=WEB_POST + PAPER_POST)
 
 
 def main():

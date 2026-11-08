@@ -13,6 +13,7 @@ Re-running skips tiles newer than their PNG. Run with the sca env python from th
     python web/build/build_ideogram4.py [--budget-mb 600] [--dry]
 """
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import hashlib
 import json
 import os
@@ -61,19 +62,22 @@ def gpu_shared(out, pid, m):
     return False
 
 
-def panel(png, meta, rec, m, pid, size_tag, regs, dry, web, img_root):
-    rel = f"{pid}/{m}_{size_tag}"
-    d = img_root / rel
-    view = d / "view.webp"
+def export(png, d, dry):
+    """(overview size, tile grid) of one panel; writes view.webp and t/<c>_<r>.webp unless dry."""
     with Image.open(png) as im:
         W, H = im.size
         if dry:
-            vs, tiles = [OVERVIEW, round(OVERVIEW * H / W)], {"size": zoomlib.TILE, "cols": -(-W // zoomlib.TILE),
-                                                                "rows": -(-H // zoomlib.TILE)}
-        else:
-            im = im.convert("RGB")
-            vs = zoomlib.save_view(im, str(view), long_side=OVERVIEW, q=80, src=str(png))
-            tiles = zoomlib.cut_grid(im, str(d / "t"), src=str(png))
+            return [OVERVIEW, round(OVERVIEW * H / W)], {"size": zoomlib.TILE, "cols": -(-W // zoomlib.TILE),
+                                                         "rows": -(-H // zoomlib.TILE)}
+        im = im.convert("RGB")
+        vs = zoomlib.save_view(im, str(d / "view.webp"), long_side=OVERVIEW, q=80, src=str(png))
+        return vs, zoomlib.cut_grid(im, str(d / "t"), src=str(png))
+
+
+def panel(png, meta, rec, m, pid, size_tag, regs, dry, web, img_root, done=None):
+    rel = f"{pid}/{m}_{size_tag}"
+    d = img_root / rel
+    vs, tiles = done if done is not None else export(png, d, dry)
     base = os.path.relpath(img_root, web).replace(os.sep, "/")
     tiles = dict(tiles, path=f"{base}/{rel}/t/{{c}}_{{r}}.webp")
     return {"method": m, "label": LABELS[m], "ours": m == "sca", "view": f"{base}/{rel}/view.webp", "vs": vs,
@@ -92,8 +96,21 @@ def main(argv=None):
     p.add_argument("--web", type=Path, default=WEB)
     p.add_argument("--budget-mb", type=float, default=600.0)
     p.add_argument("--dry", action="store_true")
+    p.add_argument("--workers", type=int, default=1, help="Processes for the WebP encodes (one panel each)")
     a = p.parse_args(argv)
     prompts = [json.loads(line) for line in open(a.prompts) if line.strip()]
+    jobs = []   # every panel's encode, run first in parallel; panel() then reads the results
+    for r in prompts:
+        for m in ORDER:
+            f = find(a.outputs, m, "8192x8192", r["id"])
+            if f and find(a.outputs, "sca", "8192x8192", r["id"]):
+                jobs.append(((r["id"], m, "8192"), f[0]))
+        f = find(a.outputs, "full", "4096x4096", r["id"])
+        if f:
+            jobs.append(((r["id"], "full", "4096"), f[0]))
+    with ProcessPoolExecutor(max(1, a.workers)) as ex:
+        futs = {k: ex.submit(export, png, a.img / f"{k[0]}/{k[1]}_{k[2]}", a.dry) for k, png in jobs}
+        done = {k: f.result() for k, f in futs.items()}
     grids, native, missing = [], [], []
     for r in prompts:
         pid = r["id"]
@@ -110,14 +127,14 @@ def main(argv=None):
             regs = zoomlib.regions(maps, size, k=3, span=1024, f=8)
             panels = []
             for m in have:
-                q = panel(*found[m], m, pid, "8192", regs, a.dry, a.web, a.img)
+                q = panel(*found[m], m, pid, "8192", regs, a.dry, a.web, a.img, done[(pid, m, "8192")])
                 q["gpu_shared"] = gpu_shared(a.outputs, pid, m)
                 panels.append(q)
             grids.append({"prompt_id": pid, "title": r["title"], "category": r["category"], "prompt": r["prompt"],
                           "seed": 0, "size": list(size), "regions": regs, "panels": panels})
         nat = find(a.outputs, "full", "4096x4096", pid)
         if nat:
-            q = panel(*nat, "full", pid, "4096", None, a.dry, a.web, a.img)
+            q = panel(*nat, "full", pid, "4096", None, a.dry, a.web, a.img, done[(pid, "full", "4096")])
             q.update(label="Ideogram 4 at 4096² (native)", ours=False)
             native.append({"prompt_id": pid, "title": r["title"], "prompt": r["prompt"], "seed": 0,
                            "size": [4096, 4096], **q})
