@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render the showcase "how it works" videos from progressive SCA and AReA traces (CPU only; HANDOVER Section 32).
 
-Reads /scratch/09032/saini_2/sca/web_assets/trace_showcase/{sca_v2_prog,area_sc}/<prompt id>/ (trace.json and the
+Reads /scratch/09032/saini_2/sca/web_assets/trace/{sca_v2_prog,area_sc}/<prompt id>/ (trace.json and the
 per-step previews and crops written by scripts/sample_trace.py) and writes to --out-dir (default
 /scratch/09032/saini_2/sca/web_assets/video_showcase):
 
@@ -30,7 +30,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import render_trace_videos as R  # noqa: E402
 
-TRACES = Path("/scratch/09032/saini_2/sca/web_assets/trace_showcase")
+TRACES = Path("/scratch/09032/saini_2/sca/web_assets/trace")
 OUT = Path("/scratch/09032/saini_2/sca/web_assets/video_showcase")
 NATIVE_STAGE = "#8A929B"
 

@@ -11,7 +11,8 @@ For the chosen showcase prompt ids (12 by default):
           selection file; never modified once written.
 --enqueue taskq/pending: 00s4_f_area4096tr_* (AReA 4096^2 on the selected prompts, campaign flags, code/7bd64c0),
           00s5_a_trace_prog_* (progressive SCA traces) and 00s5_b_trace_area_* (AReA traces, each waits for its AReA
-          chunk), outputs under /scratch/09032/saini_2/sca/web_assets/trace_showcase/<method>/<prompt id>/.
+          chunk), outputs under /scratch/09032/saini_2/sca/web_assets/trace/<method>/<prompt id>/ (method dirs sca_v2_prog and
+          area_sc), the root repro/migration/sync_hf.py mirrors to the sca-frozen-code repo.
 
 Run with the sca env python: python web/build/make_showcase_traces.py --ids a,b,... [--freeze] [--enqueue]
 """
@@ -33,7 +34,7 @@ from build_showcase import crop_boxes, record, stem  # noqa: E402
 S = Path("/scratch/09032/saini_2/sca")
 SEL = HERE / "showcase_trace_selection.json"
 TRACE_PROMPTS = S / "prompts/showcase12_trace.jsonl"
-OUT_ROOT = S / "web_assets/trace_showcase"
+OUT_ROOT = S / "web_assets/trace"          # method dirs sca_v2_prog and area_sc; sync_hf.py mirrors this root
 CAMPAIGN = "7bd64c0"
 FROZEN = ["sca", "scripts", "slurm", "tests", "README.md", "HANDOVER.md", ".gitignore"]
 OVERLAY = ["scripts/sample_trace.py", "scripts/sample_progressive.py", "web/build/showcase_trace_selection.json"]
