@@ -1490,3 +1490,18 @@ Goal (user, via lead): SCA on FLUX.1-dev, FLUX.2-dev and Qwen-Image at 4096 to 6
   steps): 14 of 50 steps global (gate 0.85799), then windows 2, 1.75, 1.5, 1.25 x n0 = 166, 145, 124, 104 for two steps
   each (--win-sched 0.83248:166,0.80553:145,0.77701:124,0.74679:104), native 83 after; bridge 1,024 tokens (8 x 16 at
   4096^2, 4 x 64 at 5312^2 where 8 cells do not divide 332).
+- Code and trees: Qwen and FLUX.2 tasks run code/fe00d4b (git archive of fe00d4b); FLUX.1 progressive, sca_v2 and AReA
+  run code/7bd64c0 (the paper's tree). Traces: web/build/make_showcase_traces.py --ids ... writes
+  web/build/showcase_trace_selection.json (box = most-detailed 512 px window of the progressive image), freezes
+  code/web_trace_sc_<commit> (7bd64c0 plus the committed sample_trace.py and sample_progressive.py with the per-step
+  hook) and enqueues AReA on the traced prompts first (00s4_f), then 00s5 trace tasks; traces land in
+  web_assets/trace/{sca_v2_prog,area_sc}/<id> (57 progressive steps: 30 at 1024^2 stock attention, 17 at 2048^2, 10 at
+  4096^2; raw x0 decoded per step, 1024 px preview, box crop, the [57, 24] pi per step). Videos:
+  web/build/render_showcase_videos.py (<id>_prog.mp4, <id>_prog_vs_area.mp4, to web_assets/video_showcase).
+- Manifest and web assets: web/build/build_showcase.py (manifest web/build/showcase_manifest.json with seconds,
+  gpu_shared flag from out/showcase/_gpu, scratch paths; Lanczos references out/showcase/<model>_lanczos/<size>; WebP
+  overview 2400 px + four 768 px crops at the most detailed windows into web/assets/img/showcase/<group>/, 60 MB budget).
+- HF mirror: plan_archives.py lists the showcase SCA sets as phases 1e (prog 4096, Qwen 5312, FLUX.2 5120, FLUX.1 5120)
+  and 1f (aspect, FLUX.2 4096, Qwen 4096); sync_hf.py uploads them under the 97 GB cap (85.9 GB used on 2026-11-06),
+  comparison sets stay on scratch. No sync loop was running at 22:10; run repro/migration/sync_incremental.sh once the
+  sets are complete.
