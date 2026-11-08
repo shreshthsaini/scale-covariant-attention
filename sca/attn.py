@@ -58,6 +58,8 @@ def fit_divisor(n, t, log=None, what="tile"):
 
 def rope(x, cs):
     """Apply FLUX RoPE to x [B, S, h, D] with (cos, sin) each [S, D]."""
+    if x.shape[1] == 0:   # no tokens to rotate (Ideogram 4's unconditional pass has no text); diffusers cannot reshape it
+        return x
     return apply_rotary_emb(x, cs, sequence_dim=1)
 
 
