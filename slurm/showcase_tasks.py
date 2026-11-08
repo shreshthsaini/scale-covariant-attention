@@ -168,7 +168,7 @@ def qwen_full(dry, code):
 
 
 def flux2(dry, code):
-    base = f"PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True {PY} scripts/sample_flux2.py"
+    base = f"{PY} scripts/sample_flux2.py"
     task("00s3_c_f2encode.sh", 15, "FLUX.2-dev Mistral prompt embeddings for the 40 prompts (cache, sca/flux2.py)", code,
          f"{base} --encode-only --prompts {PROMPTS}", dry, need=60)
     for m, flags in (("sca", FLUX2_SCA + " --label flux2_sca_v2"),
@@ -187,7 +187,7 @@ def flux2(dry, code):
 
 
 def flux2_full(dry, code):
-    base = f"PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True {PY} scripts/sample_flux2.py"
+    base = f"{PY} scripts/sample_flux2.py"
     for size, n, mins in (("4096x4096", 4, 35), ("5120x5120", 3, 55)):
         for a, b in chunks(count(PROMPTS), n):
             task(f"00s8_f2full{size[:4]}_{a:02d}_{b:02d}.sh", mins, f"FLUX.2-dev full attention at {size}", code,
@@ -199,7 +199,7 @@ def pairs(dry, code, a=0, b=3):
     """First FLUX.2-dev and Qwen-Image pairs at the largest sizes (SCA and full attention on the same prompts), ahead of
     every other task (000p): prompts [a, b) of showcase40.jsonl, the ones paper/figures/src/fig_showcase_models.py
     takes first. Qwen full attention at 5312^2 runs one prompt per task (about 31 min each)."""
-    f2 = f"PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True {PY} scripts/sample_flux2.py"
+    f2 = f"{PY} scripts/sample_flux2.py"
     rng = f"--prompts {PROMPTS} --start {a} --end {b}"
     task(f"000p_a_qsca5312_{a:02d}_{b:02d}.sh", 45, "first pairs: Qwen-Image single-pass SCA at 5312^2", code,
          f"{PY} scripts/sample_qwen.py {QWEN_SCA} --pi-table {QWEN_TABLE} --bridge-cells 4 --bridge-k 64 --label qwen_sca "
