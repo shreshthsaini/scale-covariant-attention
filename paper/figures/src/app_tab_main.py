@@ -490,7 +490,8 @@ def app_wide(g):
              r"    & \multicolumn{3}{c}{$2048\times4096$, factors (2, 4)} & "
              r"\multicolumn{3}{c}{$2048\times6144$, factors (2, 6)} \\",
              r"    \cmidrule(lr){2-4}\cmidrule(lr){5-7}",
-             r"    Metric & AReA & \sca{} & $\Delta$ [95\% CI] & AReA & \sca{} & $\Delta$ [95\% CI] \\",
+             r"    Metric & AReA & \shortstack{Single-pass\\\sca{}} & $\Delta$ [95\% CI] & AReA & "
+             r"\shortstack{Single-pass\\\sca{}} & $\Delta$ [95\% CI] \\",
              r"    \midrule"]
     lines += body + [r"    \bottomrule", r"  \end{tabular}}"]
     return dict(name="app_wide", kind="tabular", label="tab:app_wide", runs=[r2 for _, r2 in WIDE.values()],

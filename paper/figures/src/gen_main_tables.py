@@ -606,9 +606,9 @@ PROG_ALL_REFS = [("area", "AReA"), ("hrdit_dev_author", "HRDiT"), ("ultraimage",
 PROG_ALL_METRICS = [("ir", "ImageReward", 1, 3), ("aesthetic", "Aesthetic", 1, 2), ("clip", "CLIP score", 1, 2),
                     ("pickscore", "PickScore", 1, 2), ("hpsv2", r"HPSv2 ($\times100$)", 100, 2),
                     ("hpsv21", r"HPSv2.1 ($\times100$)", 100, 2), ("musiq", "MUSIQ", 1, 1),
-                    ("musiq_crop1024", r"MUSIQ$_\text{c}$", 1, 1), ("clipiqa", r"CLIP-IQA ($\times100$)", 100, 1),
-                    ("arniqa", r"ARNIQA ($\times100$)", 100, 1), ("fid", "FID", 1, 1), ("kid", r"KID ($\times10^3$)", 1000, 2),
-                    ("patch_fid", "Patch FID", 1, 1), ("patch_kid", r"Patch KID ($\times10^3$)", 1000, 2)]
+                    ("musiq_crop1024", "MUSIQ, crops", 1, 1), ("clipiqa", r"CLIP-IQA ($\times100$)", 100, 1),
+                    ("arniqa", r"ARNIQA ($\times100$)", 100, 1), ("fid", "FID", 1, 1), ("kid", r"KID ($\times$1000)", 1000, 2),
+                    ("patch_fid", "Patch FID", 1, 1), ("patch_kid", r"Patch KID ($\times$1000)", 1000, 2)]
 
 
 def interval(lo, hi, d):

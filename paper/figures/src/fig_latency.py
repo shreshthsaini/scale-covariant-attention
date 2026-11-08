@@ -88,13 +88,13 @@ V2_METHOD = "sca_v2"  # the final operator's rows in results/latency_curve_v2/su
 METHODS = {  # canonical key -> (label, color, marker); drawn in this order (SCA on top)
     "full": ("Full attention", sf.METHOD_COLOR["full"], "^"),
     "area": ("AReA", sf.METHOD_COLOR["area"], "s"),
-    "sca": ("SCA (ours)", sf.SCA, "o"),
+    "sca": ("Single-pass SCA (ours)", sf.SCA, "o"),
 }
 ALIASES = {"full": "full", "full_attention": "full", "sdpa": "full", "area": "area",
            "sca": "sca", "sca_nb": "sca", "sca_final": "sca"}
 CAMPAIGN_RES = "4096x4096"
 CAMPAIGN = {  # base_summary.csv method -> (label, color, marker); baselines in neutral greys
-    "sca_nb": ("SCA (ours)", sf.SCA, "o"),
+    "sca_nb": ("SCA without the schedule", sf.SCA, "o"),  # provenance only, not plotted
     "hrdit_dev_author": ("HRDiT", "#6F7C89", "D"),
     "ultraimage": ("UltraImage", sf.METHOD_COLOR["ultraimage"], "D"),
 }
@@ -352,7 +352,7 @@ def curve_figure(med, ranges, resolutions, speed, expo):
     ax.yaxis.set_major_locator(FixedLocator(yt))
     ax.yaxis.set_minor_locator(NullLocator())
     ax.set_yticklabels([f"{t:g} s" for t in yt])  # units in the ticks
-    ax.set_xlim(xt[0] / 1.2, xt[-1] * 2.3)
+    ax.set_xlim(xt[0] / 1.2, xt[-1] * 3.1)  # room for the "Single-pass SCA (ours)" label (2026-11-07)
     ax.set_ylim(min(ys) / 1.35, max(ys) * 1.75)  # headroom for the full-attention label
     ax.grid(visible=False)
     ax.set_xlabel("output resolution")

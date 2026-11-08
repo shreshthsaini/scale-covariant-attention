@@ -178,7 +178,7 @@ GALLERY = [{'pid': '5374762814090317810',
 CAPTIONS = [
     (r"\textbf{Curated samples at $4096^2$: AReA, HRDiT and progressive \sca{}.} Curated: sixteen of the %d "
      r"evaluation prompts not shown in another curated figure, chosen by hand after ranking by progressive \sca{}'s "
-     r"per-image advantage and a native-pixel audit; every baseline image is at or above its method's 10th "
+     r"per-image advantage and a native-pixel audit. Every baseline image is at or above its method's 10th "
      r"percentile of ImageReward. FLUX.1-dev, seed~0. AReA: 28 steps at $4096^2$. HRDiT and progressive \sca{}: "
      r"HRDiT's schedule of 30 steps at $1024^2$, 17 at $2048^2$ and 10 at $4096^2$, progressive \sca{} with \sca{} "
      r"attention in the last two stages. Each image is followed by a 1:1 crop of its outlined $%d\times%d$ window, "
