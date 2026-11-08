@@ -41,7 +41,7 @@ SCA_V2 = ("--method sca --n0 256 --tile 8 --gate-sigma 0.97444 --bridge-cells 8 
           f"--pi-table {TABLE}_cond.npz --pi-table-uncond {TABLE}_uncond.npz")
 EVAL = f"{PY} scripts/ideogram4_eval.py --results {P}/results/ideogram4_8k"
 STAGE1 = ("00a1_3", "00s1a1_2")                  # SCA and SEGA at 8192^2
-STAGE2 = ("00a1_3", "00s1a1_2", "00s1a1_5", "00z_a1_")   # every generation task
+STAGE2 = ("00a1_3", "00s1a1_2", "00s1a1_5", "00z_a1_3", "00z_a1_4")   # every generation task (not the evaluations)
 GEN = f"{PY} scripts/sample_ideogram4.py --prompts {PROMPTS} --captions {CAPTIONS} --seed 0"
 
 GUARD = """G=${{CUDA_VISIBLE_DEVICES:-0}}; G=${{G%%,*}}; NEED={need}; LOG={out}/_gpu; mkdir -p $LOG
