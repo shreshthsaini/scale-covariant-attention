@@ -9,7 +9,7 @@ For the chosen showcase prompt ids (12 by default):
 --freeze  code/web_trace_sc_<commit>: `git archive 7bd64c0` (the campaign tree of the progressive and AReA runs) plus
           the committed overlay scripts/sample_trace.py, scripts/sample_progressive.py (per-step hook) and the
           selection file; never modified once written.
---enqueue taskq/pending: 00s4_f_area4096tr_* (AReA 4096^2 on the selected prompts, campaign flags, code/7bd64c0),
+--enqueue taskq/pending: 00s4_f_area4096tr_* (AReA 4096^2 on the selected prompts, campaign flags, code/7bd64c0r),
           00s5_a_trace_prog_* (progressive SCA traces) and 00s5_b_trace_area_* (AReA traces, each waits for its AReA
           chunk), outputs under /scratch/09032/saini_2/sca/web_assets/trace/<method>/<prompt id>/ (method dirs sca_v2_prog and
           area_sc), the root repro/migration/sync_hf.py mirrors to the sca-frozen-code repo.
@@ -36,7 +36,8 @@ SEL = HERE / "showcase_trace_selection.json"
 TRACE_PROMPTS = S / "prompts/showcase12_trace.jsonl"
 OUT_ROOT = S / "web_assets/trace"          # method dirs sca_v2_prog and area_sc; sync_hf.py mirrors this root
 CAMPAIGN = "7bd64c0"
-FROZEN = ["sca", "scripts", "slurm", "tests", "README.md", "HANDOVER.md", ".gitignore"]
+AREA_TREE = S / "code/7bd64c0r"            # 7bd64c0 plus repro/evaluator_snapshot (run_area.py imports crope)
+FROZEN = ["sca", "scripts", "slurm", "tests", "repro/evaluator_snapshot", "README.md", "HANDOVER.md", ".gitignore"]
 OVERLAY = ["scripts/sample_trace.py", "scripts/sample_progressive.py", "web/build/showcase_trace_selection.json"]
 BOX = 512
 
@@ -104,7 +105,7 @@ def enqueue(dest, ids, dry=False):
     for k, a in enumerate(range(0, len(rows), 4)):
         b = min(a + 4, len(rows))
         stq.task(f"00s4_f_area4096tr_{k}.sh", 20, "AReA on FLUX.1-dev at 4096^2, the traced prompts first",
-                 str(S / "code" / CAMPAIGN), f"{run} --res 4096x4096 --prompts {TRACE_PROMPTS} "
+                 str(AREA_TREE), f"{run} --res 4096x4096 --prompts {TRACE_PROMPTS} "
                  f"--out {stq.OUT}/flux1_area/4096x4096 --start {a} --end {b}", dry, need=50)
     sel = dest / "web/build/showcase_trace_selection.json"
     for k, sids in enumerate(chunks):

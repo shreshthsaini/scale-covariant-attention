@@ -27,6 +27,7 @@ PROMPTS = f"{S}/prompts/showcase40.jsonl"
 LAND = f"{S}/prompts/showcase40_land.jsonl"
 PORT = f"{S}/prompts/showcase40_port.jsonl"
 FLUX1_CODE = f"{S}/code/7bd64c0"
+AREA_CODE = f"{S}/code/7bd64c0r"     # 7bd64c0 plus repro/evaluator_snapshot, which scripts/run_area.py imports
 ENV = ("export HF_HOME=/scratch/09032/saini_2/tmp/hf TORCH_HOME=/scratch/09032/saini_2/tmp/torch HF_HUB_OFFLINE=1 "
        "TRANSFORMERS_OFFLINE=1 XDG_CACHE_HOME=/scratch/09032/saini_2/tmp/cache TRITON_CACHE_DIR=/scratch/09032/saini_2/tmp/triton "
        "OMP_NUM_THREADS=8\nunset CROPE_TRANSFORMER CROPE_ROPE\nexport CC=/usr/bin/gcc CXX=/usr/bin/g++\n"
@@ -223,7 +224,7 @@ def main():
     if "flux1" in a.groups:
         flux1(a.dry, a.code or FLUX1_CODE)
     if "area" in a.groups:
-        area(a.dry, a.code or FLUX1_CODE)
+        area(a.dry, AREA_CODE)
     for g, fn in (("qwen", qwen), ("qwenfull", qwen_full), ("flux2", flux2), ("flux2full", flux2_full)):
         if g in a.groups:
             if not a.code:
