@@ -23,8 +23,9 @@ Groups: flux1_4096 (progressive SCA vs AReA vs FLUX.1-dev 1024^2 + Lanczos), flu
 SCA vs AReA vs Lanczos), flux2_4096 and flux2_5120 (SCA vs full attention vs 1024^2 + Lanczos), qwen_4096 and qwen_5312
 (SCA vs full attention vs 1328^2 + Lanczos).
 
-Usage: build_showcase.py [--web GROUP:PROMPTS ...] [--budget-mb 60] [--dry]
-  --web flux1_4096:all --web qwen_5312:sc_p01_skeleton_watch,sc_l01_fjord_village   (which images go to web/)
+Usage: build_showcase.py [--web GROUP[/METHOD+METHOD]:PROMPTS ...] [--budget-mb 60] [--dry]
+  --web flux1_4096/sca_v2_prog:all --web qwen_5312:sc_p01_skeleton_watch,sc_l01_fjord_village
+  (which images go to web/: every method of the group unless methods are named; PROMPTS a comma list or all)
 """
 
 import argparse
@@ -195,12 +196,15 @@ def main(argv=None):
     shared = task_logs()
     old = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {}
     old_boxes = {(e["group"], e["prompt_id"]): e["crops"] for e in old.get("images", []) if e.get("crops")}
-    want = {}
+    want = {}                     # (group, prompt id) -> methods to export (None = every method of the group)
     for spec in a.web:
         g, ids = spec.split(":", 1)
+        g, _, ms = g.partition("/")
         if g not in GROUPS:
             raise SystemExit(f"unknown group {g}")
-        want[g] = {r["id"] for r in rows} if ids == "all" else set(ids.split(","))
+        for pid in ([r["id"] for r in rows] if ids == "all" else ids.split(",")):
+            prev = want.get((g, pid), set())
+            want[(g, pid)] = None if not ms or prev is None else prev | set(ms.split("+"))
     images, web_bytes, missing = [], 0, []
     for g, (model, size_of, sca_dir, comps, native_of) in GROUPS.items():
         for row in rows:
@@ -230,7 +234,7 @@ def main(argv=None):
                 members.append(("lanczos", lz, nrec))
             boxes = old_boxes.get((g, row["id"]))
             img_sca = None
-            if boxes is None or g in want and row["id"] in want[g]:
+            if boxes is None or (g, row["id"]) in want:
                 with Image.open(sca_png) as im:
                     img_sca = im.convert("RGB")
                 boxes = boxes or crop_boxes(img_sca)
@@ -248,7 +252,8 @@ def main(argv=None):
                              peak_memory_gb=None if r.get("peak_memory_bytes") is None else round(r["peak_memory_bytes"] / 1e9, 1),
                              config_method=cfg["method"], steps=cfg.get("steps"), stage_seconds=r.get("stage_seconds"))
                     e["gpu_shared"] = shared.get((str(png.parent.resolve()), row["id"]))   # None: no task log
-                if g in want and row["id"] in want[g] and not a.dry:
+                sel = want.get((g, row["id"]), set())
+                if (sel is None or method in sel) and not a.dry:
                     if method == sca_dir or png == sca_png:
                         img = img_sca
                     else:
