@@ -1666,7 +1666,24 @@ SEGA, full attention and 4096^2; NTK and YaRN on 3; seed 0; cut full attention t
   00a1_28/29 merges, 00a1_3x SCA at 8192^2 (released by the 4096^2 merge); 00s1a1_2x SEGA and 00s1a1_5x 4096^2 after
   the Qwen check; 00z_a1_* full attention, NTK and YaRN last. Held tasks wait in taskq/hold_ideogram4. Outputs
   /scratch/09032/saini_2/sca/out/ideogram4/ideogram4_<method>/<HxW>/, markers out/ideogram4/_done, GPU logs _gpu.
-- Status 02:40: all tasks enqueued; no SCA GPU job running (SCSd, SCS1, SCS2 pending; gh 570 of 577 nodes busy).
-  Next: read check.json when it lands (identity, step cost; decide 5 or 10 full-attention prompts), then eval
-  (results/ideogram4_8k), web export (web/assets/img/ideogram4, web/build/ideogram4_manifest.json), paper snippet and
-  figure script (paper/figures/snippets/ideogram4.tex, paper/figures/fig_ideogram4.py).
+  Frozen tree /scratch/09032/saini_2/sca/code/ideogram4_9841b6a (bf2d882's tasks superseded unrun, kept in
+  taskq/superseded_ideogram4). Evaluation runs itself: when no SCA or SEGA task is left, the last one releases
+  00a1_40_eval8k; when no generation task is left, 00z_a1_90_eval8k_all. A failed task does not block (the evaluation
+  scores what exists and pairs on common prompts). To cut full attention to 5 prompts, move 00z_a1_35 to 00z_a1_39 to
+  a folder other than hold_ideogram4 (held tasks count as left, so they would block the final evaluation).
+- Evaluation (scripts/ideogram4_eval.py, writes results/ideogram4_8k with SHA256SUMS): eval_extra.py (ImageReward,
+  aesthetic, HPSv2, HPSv2.1, CLIP-IQA, ARNIQA), constancy_rope eval.py (CLIP, PickScore), scripts/ideogram4_musiq.py
+  (MUSIQ_c on the project's four 1024^2 native crops; full-image MUSIQ on a 4096 px downscale, because pyiqa 0.1.16's
+  MUSIQ builds full attention over ~65.7k native patches at 8192^2, about 100 GB), paired bootstrap of SCA against each
+  baseline on common prompts, timing with a shared-GPU flag from the task logs, the 4096^2 set scored apart.
+- Page and paper (ready, smoke-tested on synthetic 8192^2 images; run on a compute node once images land):
+  web/build/build_ideogram4.py (zoomlib: 2400 px overview WebP, 8 x 8 native 1024 px tiles, tour regions shared per
+  grid; web/assets/img/ideogram4, web/build/ideogram4_manifest.json, web/assets/js/ideogram4.js with one zoomgrid spec
+  per prompt; tiles are about 0.2 MB each, so 36 grids at 8192^2 come to several hundred MB, check the budget);
+  paper/figures/src/gen_ideogram4_table.py (snippets/ideogram4.tex, tab:ideogram4) and paper/figures/src/fig_ideogram4.py
+  (snippets/ideogram4_fig.tex, fig:ideogram4, first prompts in order with all of SCA, full attention and SEGA).
+- Status 02:45: all tasks enqueued; no SCA GPU job running (SCSd, SCS1, SCS2 pending; gh 570 of 577 nodes busy;
+  qdevelopment allows 3 submitted jobs per user and SCSd, BL23, V2P1 hold them, so no extra gh-dev job is possible).
+  Next: read /scratch/09032/saini_2/sca/ideogram4/check/check.json when it lands (identity on GPU, flex options, step
+  cost; decide 5 or 10 full-attention prompts), report the first SCA image's seconds and peak memory, then after the
+  evaluations run the web export and the two paper scripts, commit results/ideogram4_8k.
