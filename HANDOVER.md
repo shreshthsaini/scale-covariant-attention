@@ -1666,7 +1666,7 @@ SEGA, full attention and 4096^2; NTK and YaRN on 3; seed 0; cut full attention t
   00a1_28/29 merges, 00a1_3x SCA at 8192^2 (released by the 4096^2 merge); 00s1a1_2x SEGA and 00s1a1_5x 4096^2 after
   the Qwen check; 00z_a1_* full attention, NTK and YaRN last. Held tasks wait in taskq/hold_ideogram4. Outputs
   /scratch/09032/saini_2/sca/out/ideogram4/ideogram4_<method>/<HxW>/, markers out/ideogram4/_done, GPU logs _gpu.
-  Frozen tree /scratch/09032/saini_2/sca/code/ideogram4_9841b6a (bf2d882's tasks superseded unrun, kept in
+  Frozen tree /scratch/09032/saini_2/sca/code/ideogram4_227a086 (bf2d882's tasks superseded unrun, kept in
   taskq/superseded_ideogram4). Evaluation runs itself: when no SCA or SEGA task is left, the last one releases
   00a1_40_eval8k; when no generation task is left, 00z_a1_90_eval8k_all. A failed task does not block (the evaluation
   scores what exists and pairs on common prompts). To cut full attention to 5 prompts, move 00z_a1_35 to 00z_a1_39 to
