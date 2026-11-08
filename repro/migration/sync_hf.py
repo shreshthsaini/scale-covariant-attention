@@ -48,7 +48,7 @@ OK, PLANNED = "uploaded_verified", "planned_not_uploaded"
 QUIET_S = 15 * 60
 WEB_BASE_LIST = f"{STAGING}/lists/web_assets.txt"
 WEB_BASE_TIME = 1793474839  # 2026-10-31 14:27:19 CDT: the migration listed web_assets/ for web_assets.tar.zst
-PHASE_RANK = {"1a-headline": 0, "1b-rerun": 1, "1c-latency": 2, "1d-pending-eval": 3}
+PHASE_RANK = {"1a-headline": 0, "1b-rerun": 1, "1c-latency": 2, "1d-pending-eval": 3, "1e-showcase": 4, "1f-showcase": 5}
 REUPLOAD_KINDS = {"calib", "eval", "trace", "linktrees"}  # a changed source of these kinds is uploaded again
 
 

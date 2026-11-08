@@ -23,6 +23,13 @@ RERUN = ["dupfix/sca_v2/2048x4096", "dupfix/sca_v2/2048x6144", "dupfix_seed1/sca
          "dupfix_seed2/sca_v2/4096x4096", "dupfix_prog/sca_v2_prog/4096x4096", "dupfix_krea/sca_v2_krea/4096x4096"]
 LATENCY_CAMPAIGNS = ["latency", "latency2", "latency3", "latency_curve", "latency_curve_v2", "latency_hrdit"]
 PENDING_EVAL = ["dupfix_hrgen_krea/sca_v2_krea/4096x4096"]
+# GPU showcase (HANDOVER Section 32): the SCA image sets the web page and paper use. The account's private storage was
+# 85.9 of 97 GB on 2026-11-06, so the comparison sets (AReA, full attention, natives) stay on scratch; sync_hf.py
+# uploads 1e before 1f and skips whatever no longer fits under the cap.
+SHOWCASE_A = ["showcase/flux1_sca_v2_prog/4096x4096", "showcase/qwen_sca/5312x5312", "showcase/flux2_sca_v2/5120x5120",
+              "showcase/flux1_sca_v2/5120x5120"]
+SHOWCASE_B = ["showcase/flux1_sca_v2/4096x6144", "showcase/flux1_sca_v2/6144x4096", "showcase/flux2_sca_v2/4096x4096",
+              "showcase/qwen_sca/4096x4096"]
 
 
 def files_under(root, rel):
@@ -69,7 +76,8 @@ def main():
     for key in sorted(sets):
         members = sets[key]
         phase = ("1a-headline" if key in HEADLINE else "1b-rerun" if key in RERUN else
-                 "1c-latency" if key in lat else "1d-pending-eval" if key in PENDING_EVAL else "2")
+                 "1c-latency" if key in lat else "1d-pending-eval" if key in PENDING_EVAL else
+                 "1e-showcase" if key in SHOWCASE_A else "1f-showcase" if key in SHOWCASE_B else "2")
         base = key.replace("/", "__")
         total = sum(s for _, s in members)
         if total <= SHARD_BYTES:
