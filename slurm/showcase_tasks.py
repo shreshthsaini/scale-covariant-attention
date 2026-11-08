@@ -142,14 +142,14 @@ QWEN_SCA = ("--method sca --steps 50 --true-cfg 4.0 --mu-mode native --n0 83 --g
 
 
 def qwen(dry, code):
-    task("00s3_a_qwen_check.sh", 25, "Qwen-Image port GPU check (exactness at 1328^2, latents, cost at 4096^2 and 5312^2) "
+    task("00s0_a_qwen_check.sh", 25, "Qwen-Image port GPU check (exactness at 1328^2, latents, cost at 4096^2 and 5312^2) "
          "and the embedding cache for the calibration and showcase prompts", code,
          f"{PY} scripts/qwen_gpu_check.py --prompts scripts/calib_prompts.jsonl {PROMPTS} --count 16 40 "
          f"--out {OUT}/_checks/qwen_gpu_check.json", dry, need=88)
     for i, (a, b) in enumerate(chunks(16, 4)):
         merge = (f"if [ $(ls {S}/calib/qwen_1344_parts/*.npz 2>/dev/null | wc -l) -ge 16 ] && mkdir {S}/calib/qwen_1344_merge.lock "
                  f"2>/dev/null; then {PY} scripts/calibrate_qwen.py --out {QWEN_TABLE} --report-only || exit 4; fi\n")
-        task(f"00s3_b_qcal_{a:02d}_{b:02d}.sh", 30, "Qwen-Image calibration at 1344^2 (16 prompts, ratios 2 and 4)", code,
+        task(f"00s0_b_qcal_{a:02d}_{b:02d}.sh", 30, "Qwen-Image calibration at 1344^2 (16 prompts, ratios 2 and 4)", code,
              f"{PY} scripts/calibrate_qwen.py --out {QWEN_TABLE} --start {a} --end {b} --no-merge", dry, need=70,
              post=merge)
     for a, b in chunks(count(PROMPTS), 5):
