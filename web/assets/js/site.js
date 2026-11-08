@@ -291,11 +291,15 @@
     var H = SHOW.hero || [];
     if (H.length) {
       var wrap = el("div", { class: "hshow" + (H.length > 1 ? " two" : "") });
+      wrap.style.setProperty("--cols", H.slice(0, 2).map(function (it) { return (it.size[0] / it.size[1]).toFixed(3) + "fr"; }).join(" "));
       H.slice(0, 2).forEach(function (it, i) {
+        var btn = it.compare && it.compare.length ? el("button", { type: "button", class: "pill sc-cmp", text: "Compare with " + it.compare.map(function (c) { return c.label; }).join(" and ") }) : null;
+        if (btn) btn.addEventListener("click", function () { openCompare(it, 0); });
         wrap.appendChild(el("figure", { class: "sc-card" }, [ZoomFrame(heroSpec(it, i === 0)),
-          el("figcaption", {}, [el("span", { class: "sc-title", text: it.title || "" }), itemMeta(it), el("p", { class: "prompt" }, [el("q", { text: it.prompt })])])]));
+          el("figcaption", {}, [el("span", { class: "sc-title", text: it.title || "" }), itemMeta(it), el("p", { class: "prompt" }, [el("q", { text: it.prompt })]), btn])]));
       });
       host.appendChild(wrap);
+      host.appendChild(el("p", { class: "caption hcap", html: "Move the pointer over either image for a lens at native pixels (1:1) or twice that (2:1); on a phone, touch the image. More images, with progressive SCA at 4096&sup2;, are in the <a href=\"#showcase\">showcase</a>." }));
       return;
     }
     var L = IM.hero || []; if (!L.length) { host.appendChild(ph("Hero images in preparation")); return; }
