@@ -127,14 +127,17 @@ def main(argv=None):
             try:
                 for label, emb in (("cond", cond), ("neg", neg)):
                     for sigma in ((0.5,) if name == "full" else (0.95, 0.84, 0.5)):
+                        torch.cuda.synchronize()
+                        t = time.perf_counter()
                         call(H, W, emb, sigma)   # warm-up (compiles the flex layout for this text length)
                         torch.cuda.synchronize()
+                        warm = time.perf_counter() - t
                         torch.cuda.reset_peak_memory_stats()
                         t = time.perf_counter()
                         out = call(H, W, emb, sigma)
                         torch.cuda.synchronize()
                         key = f"{size}/{name}/{label}/sigma{sigma}"
-                        cost[key] = {"seconds": time.perf_counter() - t,
+                        cost[key] = {"seconds": time.perf_counter() - t, "warmup_seconds": warm,
                                      "peak_gb": torch.cuda.max_memory_allocated() / 1e9,
                                      "finite": bool(torch.isfinite(out).all()), "text_len": int(emb.shape[1])}
                         print(key, cost[key], flush=True)
