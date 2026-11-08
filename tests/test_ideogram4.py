@@ -304,3 +304,57 @@ def test_scripts_cpu(tmp_path, monkeypatch):
     assert set(m["pi_trace"]) == {"cond", "uncond"} and m["config"]["sca"]["cond"]["pool_factors"] == [2, 2]
     assert json.loads(sorted((out / "sega").glob("*.json"))[0].read_text())["config"]["rope_scaling"]["method"] == "sega"
     sample_ideogram4.main(base + sca + ["--out", str(out / "sca")])   # resume: all present
+
+
+def test_eval_driver_plumbing_cpu(tmp_path):
+    """scripts/ideogram4_eval.py without the GPU metrics: links complete sets, pairs SCA with each baseline on common
+    prompts only, writes summaries, timing (shared flag from the GPU logs) and SHA256SUMS."""
+    import csv
+    import json
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    import ideogram4_eval as EV
+    from PIL import Image
+    ids = [f"sc_x{i}" for i in range(4)]
+    prompts = tmp_path / "p.jsonl"
+    prompts.write_text("".join(json.dumps({"id": i, "prompt": f"prompt {i}"}) + "\n" for i in ids))
+    out, E, R = tmp_path / "out", tmp_path / "eval", tmp_path / "results"
+    have = {"sca": ids, "full": ids[:3], "sega": ids, "ntk": ids[:2]}
+    g = np.random.default_rng(0)
+    rows = {"extra": [], "base": [], "musiq": []}
+    for m, keep in have.items():
+        d = out / f"ideogram4_{m}" / "8192x8192"
+        d.mkdir(parents=True)
+        for i in keep:
+            Image.new("RGB", (8, 8)).save(d / f"{i}.png")
+            (d / f"{i}.json").write_text(json.dumps({"complete": True, "seconds": 100.0 + len(m),
+                                                     "peak_memory_bytes": 5e10, "gpu": "fake",
+                                                     "config": {"method": m, "prompt_id": i, "res": "8192x8192",
+                                                                "seed": 0}}))
+            base = {"method": m, "res": "8192x8192", "prompt_id": i, "seed": 0, "path": "x"}
+            rows["extra"].append({**base, "ir": g.normal() + (m == "sca"), "hpsv21": g.normal()})
+            rows["base"].append({**base, "clip": g.normal(), "pickscore": g.normal()})
+            rows["musiq"].append({**base, "musiq_4096": g.normal(), "musiq_crop1024": g.normal()})
+    (out / "_gpu").mkdir()
+    (out / "_gpu" / "00a1_30_sca8k_sc_x0.apps").write_text("start t h gpu0\n123, 2000 MiB\ncmd x\nend t h gpu0\n")
+    (out / "_gpu" / "00a1_31_sca8k_sc_x1.apps").write_text("start t h gpu0\ncmd x\nend t h gpu0\n")
+    for name, f in (("extra", E / "extra8k" / "extra_per_image.csv"), ("base", E / "base8k" / "per_image.csv"),
+                    ("musiq", E / "musiq8k.csv")):
+        f.parent.mkdir(parents=True, exist_ok=True)
+        with open(f, "w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=list(rows[name][0]))
+            w.writeheader()
+            w.writerows(rows[name])
+    EV.main(["--prompts", str(prompts), "--eval", str(E), "--results", str(R), "--outputs", str(out),
+             "--skip-metrics", "--min-pairs", "2", "--device", "cpu"])
+    pairs = {p.name: list(csv.DictReader(open(p))) for p in R.glob("sca_vs_*.csv")}
+    assert set(pairs) == {"sca_vs_full.csv", "sca_vs_sega.csv", "sca_vs_ntk.csv"}
+    assert {r["n_prompts"] for r in pairs["sca_vs_full.csv"]} == {"3"}
+    assert {r["n_prompts"] for r in pairs["sca_vs_ntk.csv"]} == {"2"}
+    assert {r["metric"] for r in pairs["sca_vs_sega.csv"]} == {"ir", "hpsv21", "clip", "pickscore", "musiq_4096",
+                                                               "musiq_crop1024"}
+    t = {(r["method"], r["prompt_id"]): r for r in csv.DictReader(open(R / "timing.csv"))}
+    assert t[("sca", "sc_x0")]["gpu_shared"] == "True" and t[("sca", "sc_x1")]["gpu_shared"] == "False"
+    summ = {r["method"]: r for r in csv.DictReader(open(R / "summary_8192.csv"))}
+    assert summ["full"]["n"] == "3" and "musiq_crop1024" in summ["sca"]
+    sums = (R / "SHA256SUMS").read_text()
+    assert "./per_image_8192.csv" in sums and "./timing_summary.csv" in sums and "./prompts.jsonl" in sums
