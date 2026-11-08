@@ -1827,6 +1827,344 @@ window.SCA_SHOWCASE = {
    ]
   },
   {
+   "id": "qwen_5312_sc_p02_dive_watch",
+   "title": "Dive watch on basalt",
+   "category": "product",
+   "prompt": "Product photograph of a titanium dive watch lying on wet black basalt at the shoreline, beads of sea water on the sapphire crystal, a ceramic bezel with engraved minute marks, a deep blue sunburst dial with luminous hour markers and no text, a brushed bracelet with fine machining lines, sea spray frozen in the air, cold morning light, crisp macro detail",
+   "model": "Qwen-Image",
+   "config": "SCA, single pass",
+   "size": [
+    5312,
+    5312
+   ],
+   "seed": 0,
+   "steps": 50,
+   "view": "assets/img/zoom/qwen_5312_sc_p02_dive_watch/view.webp",
+   "view_size": [
+    1600,
+    1600
+   ],
+   "crops": [
+    {
+     "box": [
+      4224,
+      3712,
+      768
+     ],
+     "file": "assets/img/zoom/qwen_5312_sc_p02_dive_watch/c0.webp"
+    },
+    {
+     "box": [
+      1152,
+      2944,
+      768
+     ],
+     "file": "assets/img/zoom/qwen_5312_sc_p02_dive_watch/c1.webp"
+    },
+    {
+     "box": [
+      3264,
+      3776,
+      768
+     ],
+     "file": "assets/img/zoom/qwen_5312_sc_p02_dive_watch/c2.webp"
+    },
+    {
+     "box": [
+      1088,
+      1984,
+      768
+     ],
+     "file": "assets/img/zoom/qwen_5312_sc_p02_dive_watch/c3.webp"
+    }
+   ],
+   "compare": [
+    {
+     "method": "qwen_full",
+     "label": "Full attention",
+     "view": "assets/img/zoom/qwen_5312_sc_p02_dive_watch/qwen_full_view.webp",
+     "crops": [
+      "assets/img/zoom/qwen_5312_sc_p02_dive_watch/qwen_full_c0.webp",
+      "assets/img/zoom/qwen_5312_sc_p02_dive_watch/qwen_full_c1.webp",
+      "assets/img/zoom/qwen_5312_sc_p02_dive_watch/qwen_full_c2.webp",
+      "assets/img/zoom/qwen_5312_sc_p02_dive_watch/qwen_full_c3.webp"
+     ]
+    }
+   ],
+   "regions": [
+    [
+     4608,
+     4096,
+     768
+    ],
+    [
+     1536,
+     3328,
+     768
+    ],
+    [
+     3648,
+     4160,
+     768
+    ],
+    [
+     1472,
+     2368,
+     768
+    ]
+   ],
+   "panels": [
+    {
+     "method": "qwen_sca",
+     "label": "SCA, single pass",
+     "view": "assets/img/zoom/qwen_5312_sc_p02_dive_watch/view.webp",
+     "vs": [
+      1600,
+      1600
+     ],
+     "ours": true,
+     "rt": [
+      [
+       4224,
+       3712,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p02_dive_watch/c0.webp"
+      ],
+      [
+       1152,
+       2944,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p02_dive_watch/c1.webp"
+      ],
+      [
+       3264,
+       3776,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p02_dive_watch/c2.webp"
+      ],
+      [
+       1088,
+       1984,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p02_dive_watch/c3.webp"
+      ]
+     ]
+    },
+    {
+     "method": "qwen_full",
+     "label": "Full attention",
+     "view": "assets/img/zoom/qwen_5312_sc_p02_dive_watch/qwen_full_view.webp",
+     "vs": [
+      1600,
+      1600
+     ],
+     "rt": [
+      [
+       4224,
+       3712,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p02_dive_watch/qwen_full_c0.webp"
+      ],
+      [
+       1152,
+       2944,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p02_dive_watch/qwen_full_c1.webp"
+      ],
+      [
+       3264,
+       3776,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p02_dive_watch/qwen_full_c2.webp"
+      ],
+      [
+       1088,
+       1984,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p02_dive_watch/qwen_full_c3.webp"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "qwen_5312_sc_p03_amber_perfume",
+   "title": "Crystal perfume bottle",
+   "category": "product",
+   "prompt": "Luxury product photograph of a faceted crystal perfume bottle filled with amber liquid on a white marble pedestal, a sculpted gold atomizer cap, a blank ivory label, caustic light patterns thrown across the marble, scattered dark red rose petals with fine veins, warm backlight through the glass, soft studio shadows, no text",
+   "model": "Qwen-Image",
+   "config": "SCA, single pass",
+   "size": [
+    5312,
+    5312
+   ],
+   "seed": 0,
+   "steps": 50,
+   "view": "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/view.webp",
+   "view_size": [
+    1600,
+    1600
+   ],
+   "crops": [
+    {
+     "box": [
+      2176,
+      1088,
+      768
+     ],
+     "file": "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/c0.webp"
+    },
+    {
+     "box": [
+      2752,
+      1856,
+      768
+     ],
+     "file": "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/c1.webp"
+    },
+    {
+     "box": [
+      1856,
+      1856,
+      768
+     ],
+     "file": "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/c2.webp"
+    },
+    {
+     "box": [
+      1664,
+      2752,
+      768
+     ],
+     "file": "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/c3.webp"
+    }
+   ],
+   "compare": [
+    {
+     "method": "qwen_full",
+     "label": "Full attention",
+     "view": "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/qwen_full_view.webp",
+     "crops": [
+      "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/qwen_full_c0.webp",
+      "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/qwen_full_c1.webp",
+      "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/qwen_full_c2.webp",
+      "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/qwen_full_c3.webp"
+     ]
+    }
+   ],
+   "regions": [
+    [
+     2560,
+     1472,
+     768
+    ],
+    [
+     3136,
+     2240,
+     768
+    ],
+    [
+     2240,
+     2240,
+     768
+    ],
+    [
+     2048,
+     3136,
+     768
+    ]
+   ],
+   "panels": [
+    {
+     "method": "qwen_sca",
+     "label": "SCA, single pass",
+     "view": "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/view.webp",
+     "vs": [
+      1600,
+      1600
+     ],
+     "ours": true,
+     "rt": [
+      [
+       2176,
+       1088,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/c0.webp"
+      ],
+      [
+       2752,
+       1856,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/c1.webp"
+      ],
+      [
+       1856,
+       1856,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/c2.webp"
+      ],
+      [
+       1664,
+       2752,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/c3.webp"
+      ]
+     ]
+    },
+    {
+     "method": "qwen_full",
+     "label": "Full attention",
+     "view": "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/qwen_full_view.webp",
+     "vs": [
+      1600,
+      1600
+     ],
+     "rt": [
+      [
+       2176,
+       1088,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/qwen_full_c0.webp"
+      ],
+      [
+       2752,
+       1856,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/qwen_full_c1.webp"
+      ],
+      [
+       1856,
+       1856,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/qwen_full_c2.webp"
+      ],
+      [
+       1664,
+       2752,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p03_amber_perfume/qwen_full_c3.webp"
+      ]
+     ]
+    }
+   ]
+  },
+  {
    "id": "flux2_5120_sc_p01_skeleton_watch",
    "title": "Skeleton watch",
    "category": "product",
