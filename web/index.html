@@ -144,10 +144,6 @@
         <p class="small muted">The averaged curve rises from <span data-num="heads.var.curve_lo">0.57</span> to <span data-num="heads.var.curve_hi">0.62</span> during sampling, the narrowing AReA reports. On FLUX.1-Krea-dev and FLUX.2-dev the head's part is <span data-num="heads.var.krea_head">97.6</span>% and <span data-num="heads.var.flux2_head">99.1</span>%.</p>
       </div>
     </div>
-    <figure class="paper-fig wide-fig">
-      <button class="pf" type="button" aria-label="Open the figure full size"><img src="assets/img/method/heads_view.webp" width="2400" height="707" loading="lazy" alt="Four panels: the local window and the global keys on a 4096 squared image; the measured attention mass of three heads at 1024 squared; their fitted weights against noise level with the median of all heads; and the fitted weight of every head against its measured share within 16 tokens, correlation 0.77."></button>
-      <figcaption><b>Measured reach tracks the fitted weight</b> (from the paper). (b) Full-attention mass of three heads at 1024&sup2;, with each head's share within 16 tokens. (c) Their fitted &pi;<sub><i>h</i></sub> at ratio 2 beside the median and interquartile range of all heads. (d) Every head's &pi;<sub><i>h</i></sub> against its share within 16 tokens (&rho; = 0.77).</figcaption>
-    </figure>
   </div>
 </section>
 
@@ -157,8 +153,41 @@
     <div class="head-c">
       <p class="kicker">The method</p>
       <h2 id="h-method">Two views per head, one measured weight</h2>
-      <p class="lede-c">SCA replaces only the attention, so it runs inside any sampler. Each head mixes two views that keep the training geometry. The weight of the mix is fit once at 1024&sup2; and read at every size through the image-to-window ratio.</p>
+      <p class="lede-c">SCA replaces only the attention, so it runs inside any sampler. One query on a real FLUX.1-dev image at 1024&sup2; shows the idea in four steps: the near view, the far view, each head's reach and reach emulation.</p>
     </div>
+
+    <figure class="paper-fig focus-fig" id="focus-fig">
+      <div class="pf-s" tabindex="0" role="group" aria-label="Attention figure; on a narrow screen it scrolls sideways"><img class="th-l" src="assets/img/figs/attn_focus_light.webp" width="1650" height="579" loading="lazy" alt="Two heads of FLUX.1-dev on one 1024 squared image of sheep before a church, one query on a sheep: a near-reaching head whose attention stays inside the window around the query, and a far-reaching head whose attention spreads over the whole image; for each, full attention, its near and far parts, and SCA's window and grid; then reach emulation on the same image and the variance split, head 97.5 percent and noise level 2.5 percent."><img class="th-d" src="assets/img/figs/attn_focus_dark.webp" width="1650" height="579" loading="lazy" alt=""></div>
+      <figcaption><span class="narrow-only">Swipe the figure sideways to see all of it. </span><b>What two heads look at</b> (from the paper). FLUX.1-dev at 1024&sup2;, one query (ringed) during sampling, two heads of one block. (a) Full attention, its near part inside the window (amber, enlarged) and its far part outside it (blue), with the near share <i>m</i><sub><i>i</i></sub>; then SCA's window and grid for the same head, drawn with the head's fitted weight &pi;<sub><i>h</i></sub>. (b) Reach emulation on the same image. (c) How the variance of the near share splits between the head and the noise level.</figcaption>
+    </figure>
+
+    <ol class="walk">
+      <li class="wk">
+        <p class="step-n">1 &middot; Near view</p>
+        <h3>Full attention is already a mix</h3>
+        <p>Split one query's keys into those inside a native-size window and those outside. Full attention is then exactly</p>
+        <p class="eq">O = <i>m</i>&thinsp;O<sub>near</sub> + (1 &minus; <i>m</i>)&thinsp;O<sub>far</sub>,</p>
+        <p>where <i>m</i> is the softmax mass inside the window. The top head in (a) keeps nearly all of its attention there.</p>
+      </li>
+      <li class="wk">
+        <p class="step-n">2 &middot; Far view</p>
+        <h3>The rest of the image, through a grid</h3>
+        <p>The bottom head sends nearly all of its attention outside the window, across the whole image. SCA serves that far part with one real key per block: a <span data-num="config.window">64</span>&nbsp;&times;&nbsp;<span data-num="config.window">64</span> grid with the spacing of the training resolution, so every offset stays in the range the model was trained on.</p>
+      </li>
+      <li class="wk">
+        <p class="step-n">3 &middot; Reach</p>
+        <h3>One weight per head</h3>
+        <p>Each head mixes its window and its grid:</p>
+        <p class="eq">O<sub><i>h</i></sub> = &pi;<sub><i>h</i></sub>&thinsp;O<sub>loc</sub> + (1 &minus; &pi;<sub><i>h</i></sub>)&thinsp;O<sub>glob</sub>.</p>
+        <p>The head sets <span data-num="heads.var.head">97.5</span>% of the variance in how much attention stays near and the noise level <span data-num="heads.var.noise">2.5</span>% (c), so one weight per head and noise level is enough.</p>
+      </li>
+      <li class="wk">
+        <p class="step-n">4 &middot; Reach emulation</p>
+        <h3>Measured where full attention still works</h3>
+        <p>At 4096&sup2; full attention is the failure, so it cannot judge &pi;<sub><i>h</i></sub>. At 1024&sup2; it can: shrink the window and the grid by the target's ratio <i>r</i>, so the image-to-window ratio matches the target (b), and fit &pi;<sub><i>h</i></sub> against the model's own full attention.</p>
+        <p class="small muted">Ratio 2 stands for 2048&sup2;, ratio 4 for 4096&sup2;. The weights depend mainly on the ratio: the 1024&sup2; reach table scored at 1280&sup2; is as good as one fitted there.</p>
+      </li>
+    </ol>
 
     <figure class="paper-fig" id="method-fig">
       <button class="pf" type="button" aria-label="Open the method figure full size"><img src="assets/img/method/method_v3.webp" width="2400" height="1184" loading="lazy" alt="Method figure in four panels: full attention split exactly into near and far outputs, and SCA's per-head mix of a local window and a global grid; reach emulation at 1024 squared with the same image-to-window ratio; the closed-form fit of the weight; progressive sampling from 1024 squared to 4096 squared."></button>
@@ -167,21 +196,7 @@
 
     <div class="step-row">
       <div class="step-text">
-        <p class="step-n">1 &middot; Near and far</p>
-        <h3>Full attention is already a mix</h3>
-        <p>Split one query's keys into a near set and a far set. Full attention is then exactly</p>
-        <p class="eq">O = <i>m</i>&thinsp;O<sub>near</sub> + (1 &minus; <i>m</i>)&thinsp;O<sub>far</sub>,</p>
-        <p>where <i>m</i> is the softmax mass of the near set and each O attends to its own set. Heads differ mostly in <i>m</i>. The three heads in the figure, measured at 1024&sup2;, keep very different shares of their attention within <span data-num="heads.var.radius">16</span> tokens.</p>
-      </div>
-      <figure class="step-fig">
-        <div class="rings" id="rings"></div>
-        <figcaption>Attention mass around a query at 1024&sup2; (&sigma; &asymp; <span id="rings-sigma">0.62</span>) for three FLUX.1-dev heads, in square rings of 2, 4, 8 and 16 tokens; darker is denser. <i>m</i> is the share within the 16-token frame and &pi; the head's fitted weight at ratio 2. Across all heads the two correlate at &rho; = 0.77.</figcaption>
-      </figure>
-    </div>
-
-    <div class="step-row flip">
-      <div class="step-text">
-        <p class="step-n">2 &middot; Two views</p>
+        <p class="step-n">5 &middot; The two views at 4096&sup2;</p>
         <h3>A native window and a native view of the whole image</h3>
         <p><b class="t-loc">Local:</b> an exact <span data-num="config.window">64</span>&nbsp;&times;&nbsp;<span data-num="config.window">64</span>-token window around each <span data-num="config.tile">8</span>&nbsp;&times;&nbsp;<span data-num="config.tile">8</span> query tile at its original positions, plus the text and <span data-num="config.bridge_tokens">1,024</span> bridge tokens from the whole image. <b class="t-glob">Global:</b> one real token per block, a <span data-num="config.window">64</span>&nbsp;&times;&nbsp;<span data-num="config.window">64</span> grid over the whole image with its coordinates rescaled to that grid. Each head returns</p>
         <p class="eq">O<sub><i>h</i></sub> = &pi;<sub><i>h</i></sub>&thinsp;O<sub>loc</sub> + (1 &minus; &pi;<sub><i>h</i></sub>)&thinsp;O<sub>glob</sub>.</p>
@@ -193,22 +208,9 @@
       </figure>
     </div>
 
-    <div class="step-row">
-      <div class="step-text">
-        <p class="step-n">3 &middot; Reach emulation</p>
-        <h3>Measured where full attention still works</h3>
-        <p>At 4096&sup2; full attention is the failure, so it cannot judge &pi;<sub><i>h</i></sub>. At 1024&sup2; it can. We fit the mix by reach emulation: shrink the window to <i>n</i>/<i>r</i> tokens and subsample the global grid by <i>r</i>. The image-to-window ratio is then <i>r</i>, as at a target <i>r</i> times larger, and the model's own full attention and both shrunken views see the same queries, keys and values.</p>
-        <p class="small muted">Ratio 2 stands for 2048&sup2;, ratio 4 for 4096&sup2;. The weights depend mainly on the ratio: the 1024&sup2; reach table scored at 1280&sup2; is as good as one fitted there.</p>
-      </div>
-      <figure class="step-fig">
-        <div class="emu" id="emu"></div>
-        <figcaption>Same ratio, two sizes. Left: the target, a 64-token window on a 256-token side. Right: at 1024&sup2;, a 16-token window on a 64-token side, where full attention is a valid reference.</figcaption>
-      </figure>
-    </div>
-
     <div class="step-row flip">
       <div class="step-text">
-        <p class="step-n">4 &middot; Closed form</p>
+        <p class="step-n">6 &middot; Closed form</p>
         <h3>The best weight is one division</h3>
         <p>For each block, head, noise level and ratio, three sums over prompts, steps, queries and channels give the squared error of any weight:</p>
         <p class="eq">J(&pi;) = E &minus; 2&pi;B + &pi;<sup>2</sup>A, &nbsp;&nbsp; &pi;* = clip(B&thinsp;/&thinsp;A, 0, 1),</p>
@@ -227,7 +229,7 @@
 
     <div class="step-row stages-row">
       <div class="step-text">
-        <p class="step-n">5 &middot; Sampling</p>
+        <p class="step-n">7 &middot; Sampling</p>
         <h3>Progressive SCA, the headline</h3>
         <p>We keep HRDiT's released three-stage schedule as is: <span data-num="prog.cfg.base_steps">30</span> steps at 1024&sup2; with the model's own attention set the layout. The image is then decoded, upsampled, sharpened, re-encoded and re-noised for the last <span data-num="prog.cfg.steps_2048">17</span> steps at 2048&sup2; and the last <span data-num="prog.cfg.steps_4096">10</span> at 4096&sup2;. SCA replaces HRDiT's attention changes at both upper stages, reading ratio <span data-num="prog.cfg.ratio_2048">2</span> and then <span data-num="prog.cfg.ratio_4096">4</span> from one table.</p>
         <p><b>Single-pass SCA</b> is the fast mode: all <span data-num="config.steps">28</span> steps at the target, the global view alone for the first <span data-num="config.opening_steps">8</span> as in AReA, then windows of <span data-num="config.win_sched">128, 112, 96, 80</span> tokens before the native <span data-num="config.window">64</span>. The opening, the window sizes and the bridge are set by hand; only the weights are fitted.</p>

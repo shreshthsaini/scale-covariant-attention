@@ -1619,4 +1619,10 @@ reach emulation with the new attention-focus figures instead of the curve bundle
   (build_showcase_page.py), as do FLUX.2-dev and Qwen-Image with full attention at the target size.
 - Speed: new section after the headline numbers with the paper owner's speed_time and speed_latency exports (light
   and dark WebP from paper/figures/src/fig_speed.py); the page's own latency chart is retired.
-- Curve bundles: the 1,368-curve chart, its data file and the head-curve teaser loop are off the page.
+- Explanation: the paper owner's attention-focus figure (attn_focus_{light,dark}.webp; two heads of one block on the
+  sheep-and-church image: full attention, near and far parts, SCA's window and grid; reach emulation; the variance
+  split) opens the method section, followed by a four-step walk (near view, far view, reach, reach emulation), then
+  the method figure, the two views to scale, the closed form, the reach table and the schedules. The 1,368-curve chart,
+  its data file, the head-curve teaser loop, the heads_view figure and the rings and emulation diagrams are off the page.
+- Checks: check_page.py PASS on desktop, phone, light and dark and on web/review/ (wheel, drag, synthetic pinch,
+  double-click, auto zoom, pause); file:// works on both pages; live site checked headless after each publish.

@@ -14,8 +14,10 @@ SCA attention at the two upper stages, reading ratio 2 and ratio 4 from one reac
 images (5120^2 and 6144x4096) as zoom grids; four headline numbers; **speed** (the paper's quality-against-time plot
 with speed-up arrows and its latency-against-size plot, `assets/img/figs/speed_{time,latency}_{light,dark}.webp`,
 exported by the paper owner from paper/figures/src/fig_speed.py); abstract; the explainer video; the observation (all
-four methods at 4096^2 in one zoom grid, the variance split, the paper's heads figure); the method (the paper's method
-figure, then five steps with interactive figures drawn from real data); the showcase (cards from
+four methods at 4096^2 in one zoom grid and the variance split); the method (the paper owner's attention-focus figure,
+`assets/img/figs/attn_focus_{light,dark}.webp` from paper/figures/src/fig_attn_focus.py, with a four-step walk through
+near view, far view, reach and reach emulation; then the paper's method figure, the two views to scale, the
+closed-form fit, the reach table and both schedules; the 1,368-curve visuals are retired); the showcase (cards from
 build/showcase_manifest.json via build_showcase_page.py); comparisons at 4096^2 (15 prompts, eight methods in one
 zoom grid: progressive and single-pass SCA, AReA, HRDiT, UltraImage, DyPE, SEGA, full attention); per-example videos;
 results; the fixed-rule gallery (progressive SCA and AReA in a zoom grid); Ideogram placeholders; limitations;
