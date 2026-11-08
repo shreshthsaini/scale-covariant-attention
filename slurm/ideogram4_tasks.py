@@ -24,6 +24,7 @@ OUT = f"{S}/out/ideogram4"
 PENDING, HOLD = f"{S}/taskq/pending", f"{S}/taskq/hold_ideogram4"
 PROMPTS = f"{S}/prompts/ideogram4_10.jsonl"
 CAPTIONS = f"{S}/ideogram4/captions/captions_1x1_seed0.jsonl"
+CAPTIONS_DONE = f"{OUT}/_done/00a1_01_captions"   # the caption file grows one line at a time; wait for the task
 CALIB = f"{S}/calib"
 TABLE = f"{CALIB}/ideogram4_4096"            # the native-scale fit the SCA runs use
 ORDER = ("sc_p01_skeleton_watch", "sc_l04_hillside_town", "sc_h01_silver_braids", "sc_l06_atoll",
@@ -140,7 +141,7 @@ def group_a1(dry, code):
                  f"reach emulation at {res}^2, ratio 2, prompts {a}-{b}", code,
                  f"{PY} scripts/calibrate_ideogram4.py --captions {CAPTIONS} --count 16 --start {a} --end {b} "
                  f"--res {res}x{res} --scales 2 --sigma-bins 28 --out {stem} --no-merge", dry, need=need,
-                 wait=CAPTIONS, hold=True,
+                 wait=CAPTIONS_DONE, hold=True,
                  post=f"if {parts_done(stem, 16)}; then\n" + release(f"00a1_{merge}_merge{res}") + "fi\n")
         other = f" --transfer-with {CALIB}/ideogram4_2048" if res == 4096 else ""
         task(f"00a1_{merge}_merge{res}", 5, f"merge the {res}^2 reach tables (CPU)", code,
@@ -160,24 +161,24 @@ def group_s1(dry, code):
     for k, pid in enumerate(ORDER):
         task(f"00s1a1_2{k}_sega8k_{pid}", 180, f"SEGA at 8192^2 (train grid 256), {pid}", code,
              f"{GEN} --res 8192x8192 --ids {pid} --method sega --train-grid 256 --out {OUT}/ideogram4_sega/8192x8192",
-             dry, need=72, wait=CAPTIONS,
+             dry, need=72, wait=CAPTIONS_DONE,
              post=gate(f"00s1a1_2{k}_", STAGE1, "00a1_40_eval8k") + gate(f"00s1a1_2{k}_", STAGE2, "00z_a1_90_eval8k_all"))
     for a, b in ((0, 5), (5, 10)):
         task(f"00s1a1_5{a // 5}_nat4k_{a:02d}_{b:02d}", 75, f"Ideogram 4 at its native 4096^2, prompts {a}-{b}", code,
              f"{GEN} --res 4096x4096 --start {a} --end {b} --method full --out {OUT}/ideogram4_full/4096x4096", dry,
-             need=50, wait=CAPTIONS, post=gate(f"00s1a1_5{a // 5}_", STAGE2, "00z_a1_90_eval8k_all"))
+             need=50, wait=CAPTIONS_DONE, post=gate(f"00s1a1_5{a // 5}_", STAGE2, "00z_a1_90_eval8k_all"))
 
 
 def group_z(dry, code):
     for k, pid in enumerate(ORDER):
         task(f"00z_a1_3{k}_full8k_{pid}", 180, f"full attention at 8192^2, {pid}", code,
              f"{GEN} --res 8192x8192 --ids {pid} --method full --out {OUT}/ideogram4_full/8192x8192", dry, need=72,
-             wait=CAPTIONS, post=gate(f"00z_a1_3{k}_", STAGE2, "00z_a1_90_eval8k_all"))
+             wait=CAPTIONS_DONE, post=gate(f"00z_a1_3{k}_", STAGE2, "00z_a1_90_eval8k_all"))
     for m, tag in (("ntk", "40"), ("yarn", "41")):
         for k, pid in enumerate(ROPE_IDS):
             task(f"00z_a1_{tag}{k}_{m}8k_{pid}", 180, f"{m.upper()} at 8192^2 (train grid 256), {pid}", code,
                  f"{GEN} --res 8192x8192 --ids {pid} --method {m} --train-grid 256 --out {OUT}/ideogram4_{m}/8192x8192",
-                 dry, need=72, wait=CAPTIONS, post=gate(f"00z_a1_{tag}{k}_", STAGE2, "00z_a1_90_eval8k_all"))
+                 dry, need=72, wait=CAPTIONS_DONE, post=gate(f"00z_a1_{tag}{k}_", STAGE2, "00z_a1_90_eval8k_all"))
     task("00z_a1_90_eval8k_all", 60, "evaluate every 8192^2 set and the 4096^2 references, archive results/ideogram4_8k",
          code, f"{EVAL}", dry, need=40, hold=True)
 
