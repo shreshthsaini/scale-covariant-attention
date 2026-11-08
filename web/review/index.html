@@ -3,44 +3,62 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SCA Review Gallery</title>
+<title>SCA: side by side on 96 prompts</title>
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("sca-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <style>
-:root{--bg:#f7f7f5;--fg:#1d1f21;--muted:#6b7075;--card:#fff;--line:#e3e3df;--accent:#13865F}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141516;--fg:#e8e8e6;--muted:#9a9fa4;--card:#1d1f21;--line:#2c2f32;--accent:#3fbf8f}}
-:root[data-theme="dark"]{--bg:#141516;--fg:#e8e8e6;--muted:#9a9fa4;--card:#1d1f21;--line:#2c2f32;--accent:#3fbf8f}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
-header{padding:20px 16px 8px;max-width:1280px;margin:auto}h1{font-size:22px;margin:0 0 4px}
-.sub{color:var(--muted);margin:0}
-.bar{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 16px}
+/* Same type, palette and controls as the main page (../assets/css/site.css); kept inline so this page stands alone. */
+@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:swap;src:url(../assets/fonts/inter-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:swap;src:url(../assets/fonts/inter-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:swap;src:url(../assets/fonts/inter-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Source Serif 4";font-style:normal;font-weight:600;font-display:swap;src:url(../assets/fonts/source-serif-4-latin-600-normal.woff2) format("woff2")}
+:root{--bg:#FCFCFB;--fg:#1C2024;--muted:#59636D;--faint:#8A939C;--card:#FFFFFF;--line:#E2E5E3;--line2:#D3D8D5;--surface:#F4F5F4;--accent:#13865F;--accent-ink:#0E6B4C;--on-accent:#fff;
+ --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--serif:"Source Serif 4","Iowan Old Style",Palatino,Georgia,serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0D100F;--fg:#E7EAE8;--muted:#A3ACB3;--faint:#77818A;--card:#151918;--line:#262C2A;--line2:#323A37;--surface:#151918;--accent:#3DBB8C;--accent-ink:#62D2A7;--on-accent:#06140E;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0D100F;--fg:#E7EAE8;--muted:#A3ACB3;--faint:#77818A;--card:#151918;--line:#262C2A;--line2:#323A37;--surface:#151918;--accent:#3DBB8C;--accent-ink:#62D2A7;--on-accent:#06140E;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--accent-ink);text-underline-offset:3px}
+.top{position:sticky;top:0;z-index:6;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1280px;margin:auto;padding:0 16px;height:54px;display:flex;align-items:center;gap:16px}
+.brand{font:600 19px/1 var(--serif);color:var(--fg);text-decoration:none}
+.back{font-size:14px;color:var(--muted);text-decoration:none;margin-left:auto}.back:hover{color:var(--fg)}
+.theme{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer}
+.theme svg{width:17px;height:17px}
+header{padding:40px 16px 18px;max-width:1280px;margin:auto;text-align:center}
+.kicker{font:600 12px/1.3 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink);margin:0 0 10px}
+h1{font:600 clamp(28px,3.6vw,40px)/1.12 var(--serif);margin:0 0 12px}
+.sub{color:var(--muted);margin:0 auto;max-width:52rem;font-size:15.5px}
+.bar{position:sticky;top:54px;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 16px}
 .bar .in{max-width:1280px;margin:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bar:has(.in:empty){display:none}
 .bar button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:5px 12px;cursor:pointer;font:inherit;font-size:13px}
-.bar button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.bar button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent-ink);font-weight:600}
 main{max-width:1280px;margin:auto;padding:12px 16px 40px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:16px 0}
-.prompt{font-size:14px;margin:0 0 10px}.prompt b{color:var(--muted);font-weight:500;margin-right:6px}
+.prompt{font-size:14px;margin:0 0 10px;color:var(--fg)}.prompt b{color:var(--faint);font-weight:500;margin-right:6px}
 .views{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .v{position:relative;cursor:zoom-in}.v img{width:100%;display:block;border-radius:6px}
-.v .lab{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:2px 6px;border-radius:4px}
-.v.ours .lab{background:var(--accent)}
+.v .lab{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.58);color:#fff;font:600 11px/1 var(--sans);padding:5px 6px;border-radius:5px}
+.v.ours .lab{background:var(--accent);color:var(--on-accent)}
 .crops{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px}
 .crops img{width:100%;display:block;border-radius:6px;image-rendering:auto}
 .ctitle{font-size:12px;color:var(--muted);margin:8px 0 2px}
-.lens{position:absolute;width:180px;height:180px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 12px rgba(0,0,0,.4);pointer-events:none;display:none;background-repeat:no-repeat}
+.lens{position:absolute;width:180px;height:180px;border-radius:50%;box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(0,0,0,.35),0 10px 30px rgba(0,0,0,.35);pointer-events:none;display:none;background-repeat:no-repeat}
 @media (max-width:760px){.views,.crops{grid-template-columns:repeat(2,1fr)}}
-#modal{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;z-index:20;align-items:center;justify-content:center;flex-direction:column}
+#modal{position:fixed;inset:0;background:rgba(8,10,10,.97);display:none;z-index:20;align-items:center;justify-content:center;flex-direction:column}
 #modal.on{display:flex}#modal .wrap{position:relative;max-width:96vw;max-height:84vh}
-#modal img{max-width:96vw;max-height:84vh;display:block}
+#modal img{max-width:96vw;max-height:84vh;display:block;border-radius:8px}
 #modal .tabs{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:center}
-#modal .tabs button{background:#2a2c2e;color:#eee;border:1px solid #444;border-radius:999px;padding:6px 12px;cursor:pointer}
-#modal .tabs button[aria-pressed="true"]{border-color:#3fbf8f;color:#3fbf8f}
-#modal .hint{color:#aaa;font-size:12px;margin-top:6px}
-#modal .close{position:absolute;top:12px;right:16px;color:#fff;font-size:28px;cursor:pointer;background:none;border:0}
+#modal .tabs button{background:rgba(255,255,255,.08);color:#E7EAE8;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:6px 12px;cursor:pointer;font:500 13px/1 var(--sans)}
+#modal .tabs button[aria-pressed="true"]{border-color:#3DBB8C;color:#62D2A7}
+#modal .hint{color:#A3ACB3;font-size:12px;margin-top:6px}
+#modal .close{position:absolute;top:12px;right:16px;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.3);color:#fff;font-size:26px;line-height:1;cursor:pointer;background:none}
 </style>
 </head>
 <body>
+<div class="top"><div class="in"><a class="brand" href="../index.html">SCA</a><a class="back" href="../index.html">&larr; Project page</a><button class="theme" id="theme" type="button" aria-label="Switch between light and dark theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg></button></div></div>
 <header>
-<p><a href="../index.html">&larr; Project page</a></p><h1>Side by side on 96 prompts</h1>
-<p class="sub">Prompts drawn at random (fixed seed) from the 195 Aesthetic-4K evaluation prompts. FLUX.1-dev at 4096&times;4096, seed 0, same prompt and seed for every method. Hover an image for a magnifier; click to open it full screen and switch methods in place with the number keys 1 to 5. The bottom row is a 768&times;768 window at native pixels, the same window for every method.</p>
+<p class="kicker">Scale-Covariant Attention</p><h1>Side by side on 96 prompts</h1>
+<p class="sub">96 of the 195 Aesthetic-4K evaluation prompts, drawn once with a fixed seed. FLUX.1-dev at 4096&times;4096, seed 0, the same prompt and seed for every method. Hover an image for a magnifier; click to open it full screen and switch methods in place with the number keys 1 to 5. The bottom row is a 768&times;768 window at native pixels, the same window for every method.</p>
 </header>
 <div class="bar"><div class="in" id="order"></div></div>
 <main id="list"></main>
@@ -69,6 +87,7 @@ document.addEventListener('keydown',e=>{const md=document.getElementById('modal'
  if(e.key==='ArrowRight'){cur=(cur+1)%items.length;showM()}if(e.key==='ArrowLeft'){cur=(cur-1+items.length)%items.length;showM()}});
 lensOn(document.querySelector('#modal .wrap'),document.getElementById('mimg'));
 items=window.ITEMS;render();
+document.getElementById('theme').onclick=()=>{const r=document.documentElement,t=r.getAttribute('data-theme'),dark=t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches,n=dark?'light':'dark';r.setAttribute('data-theme',n);try{localStorage.setItem('sca-theme',n)}catch(e){}};
 </script>
 </body>
 </html>
