@@ -1597,3 +1597,26 @@ web/build and web/README.md and refuses to publish internal paths or calibration
   2026-11-13); gh-dev backfill SCSd (1129746, 4 x 2 h) submitted 01:38 once TLT-dev freed the qdevelopment slot. Spool
   order: 00s0 Qwen GPU check and calibration, 00s2 FLUX.1 sca_v2 rest, 00s3 FLUX.2 encode and 5120^2 smokes, 00s4 Qwen
   and FLUX.2 SCA plus AReA on the traced prompts, 00s5 traces, 00s6/7 AReA, 00s8 FLUX.2 full, 00s9 Qwen full.
+
+## 35. 2026-11-08 early: page v4, synced zoom grids, speed up top, no Lanczos (web owner; state in .agent/notes/web_v4_20261108.md)
+User requests (binding, via lead): every multi-method comparison is a grid with synchronized zoom (wheel or pinch,
+drag, double-click reset, an inset map, an auto-zoom tour through high-detail regions chosen at build time, deep zoom
+from native tiles loaded on demand); no comparison against the native image upscaled with Lanczos; speed as a
+highlight near the top from the paper owner's export; the explanation walks through near view, far view, reach and
+reach emulation with the new attention-focus figures instead of the curve bundles.
+- Component: web/assets/js/zoomgrid.js + css/zoomgrid.css (vanilla, file:// safe), used by the hero, the observation's
+  four-method row, the showcase cards, Comparisons (15 prompts, eight methods: progressive and single-pass SCA, AReA,
+  HRDiT, UltraImage, DyPE, SEGA, full attention, with method toggles), the gallery lightbox and every card of
+  web/review/ (96 prompts x 5 methods). Plain lazy <img> at the whole-image view; canvases only while zoomed.
+- Stops and tiles: web/build/zoomlib.py + build_zoom.py (mean-normalised edge energy averaged over a grid's images,
+  three stops at least 1.4 windows apart, the same for every method; region cache on scratch web_assets/zoom_cache/).
+  One 1024 px q80 tile per stop and image on the main page, 640 px on web/review/ (1024 px overviews there); the
+  showcase uses its four 768 px windows, the hero its 512 px whole-image tiles. Whole-image 4x4 tiling of every
+  compared image would cost 0.5 to 2 MB per image (web/ far past 250 MB), and a private HF dataset cannot serve a
+  public page, so tiles are cut where the tour goes. web/ is about 250 MB published.
+- Lanczos: gone from page data, text and files (showcase owner dropped it from the manifest, 505fd14); the showcase
+  cards are single zoom panels until AReA's showcase runs land, then AReA joins each grid automatically
+  (build_showcase_page.py), as do FLUX.2-dev and Qwen-Image with full attention at the target size.
+- Speed: new section after the headline numbers with the paper owner's speed_time and speed_latency exports (light
+  and dark WebP from paper/figures/src/fig_speed.py); the page's own latency chart is retired.
+- Curve bundles: the 1,368-curve chart, its data file and the head-curve teaser loop are off the page.

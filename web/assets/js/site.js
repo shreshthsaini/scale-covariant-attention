@@ -1,7 +1,8 @@
 /* SCA project page. Vanilla JS, no build step, works from file://.
    Data (generated, see web/README.md): numbers.js SCA_NUMBERS, images.js SCA_IMAGES, media.js SCA_MEDIA,
    showcase.js SCA_SHOWCASE, process.js SCA_PROCESS, traces.js SCA_TRACES, gallery.js SCA_GALLERY,
-   concept.js SCA_CONCEPT, method_data.js SCA_METHOD, ideogram_manifest.js SCA_IDEOGRAM. */
+   zoomsets.js SCA_ZOOMSETS, method_data.js SCA_METHOD, ideogram_manifest.js SCA_IDEOGRAM.
+   Every multi-method comparison is a synced zoom grid from zoomgrid.js (window.SCAZoom). */
 (function () {
   "use strict";
   var NUM = window.SCA_NUMBERS || {}, IM = window.SCA_IMAGES || {}, MEDIA = window.SCA_MEDIA || {};
@@ -123,139 +124,10 @@
     return v;
   }
 
-  /* ---------------------------------------------------------------- native-pixel lens */
-  /* spec: {view, vw, vh, w, h, alt, badge, native (one file) or tiles {path "…{c}_{r}.webp", size, cols, rows}, insets} */
-  function ZoomFrame(spec) {
-    var W = spec.w, H = spec.h;
-    var fr = el("div", { class: "zf", tabindex: "0", role: "group", "aria-label": (spec.alt || "Image") + ". Move the pointer, touch, or use the arrow keys for a native-pixel lens; plus and minus change its power." });
-    var view = img(spec.view, spec.alt || "", { class: "view", width: spec.vw, height: spec.vh, loading: spec.eager ? "eager" : "lazy", fetchpriority: spec.eager ? "high" : null });
-    fr.appendChild(view);
-    (spec.insets || []).forEach(function (s) {
-      fr.appendChild(el("span", { class: "win", style: "left:" + (s.window[0] / W * 100).toFixed(3) + "%;top:" + (s.window[1] / H * 100).toFixed(3) + "%;width:" + (s.window[2] / W * 100).toFixed(3) + "%;height:" + (s.window[2] / H * 100).toFixed(3) + "%", "aria-hidden": "true" }));
-      fr.appendChild(el("span", { class: "inset " + (s.corner || "bl") }, [img(s.file, "Native 1:1 crop" + (s.content ? ": " + s.content : ""))]));
-    });
-    var lens = el("div", { class: "lens", "aria-hidden": "true" }), cv = el("canvas"), tag = el("div", { class: "ltag", "aria-hidden": "true" });
-    lens.appendChild(cv); fr.appendChild(lens); fr.appendChild(tag);
-    if (spec.badge) fr.appendChild(el("span", { class: "badge", text: spec.badge }));
-    fr.appendChild(el("span", { class: "hint", "aria-hidden": "true", html: '<span class="h-hover">Hover for native pixels</span><span class="h-touch">Touch for native pixels</span>' }));
-    var POW = [1, 2], P = 1;
-    var pw = el("div", { class: "powers", role: "group", "aria-label": "Lens power" });
-    var pbs = POW.map(function (p) {
-      var b = el("button", { type: "button", "aria-pressed": String(p === P), text: p + ":1", title: p === 1 ? "one image pixel per screen pixel" : "each image pixel twice as large" });
-      b.addEventListener("click", function (e) { e.stopPropagation(); setP(p); });
-      b.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
-      pw.appendChild(b); return b;
-    });
-    fr.appendChild(pw);
-    function setP(p) { P = p; pbs.forEach(function (b, i) { b.setAttribute("aria-pressed", String(POW[i] === P)); }); if (st.on) draw(); }
-
-    var st = { on: false, x: .5, y: .5 }, cache = {}, single = null;
-    function srcTile(c, r) {
-      var key = c + "_" + r;
-      if (cache[key]) return cache[key];
-      var t = { img: new Image(), ok: false };
-      t.img.decoding = "async";
-      t.img.onload = function () { t.ok = true; if (st.on) draw(); };
-      t.img.src = spec.tiles.path.replace("{c}", c).replace("{r}", r);
-      cache[key] = t; return t;
-    }
-    function nativeOne() {
-      if (!single) { single = { img: new Image(), ok: false }; single.img.onload = function () { single.ok = true; tag.textContent = label(); if (st.on) draw(); }; single.img.src = spec.native; }
-      return single;
-    }
-    function label() { return P + ":1 native pixels" + ((spec.native && !(single && single.ok)) ? " (loading)" : ""); }
-    function draw() {
-      var fw = fr.clientWidth, fh = fr.clientHeight; if (!fw || !fh) return;
-      var D = Math.round(clamp(fw * .3, 130, 300));
-      var dpr = Math.min(2, window.devicePixelRatio || 1);
-      if (cv.width !== Math.round(D * dpr)) { cv.width = Math.round(D * dpr); cv.height = Math.round(D * dpr); }
-      lens.style.width = lens.style.height = D + "px";
-      var lx = st.x * fw, ly = st.y * fh;
-      lens.style.transform = "translate(" + (lx - D / 2) + "px," + (ly - D / 2) + "px)";
-      tag.style.transform = "translate(" + (lx - 0) + "px," + (ly + D / 2 + 8) + "px) translate(-50%,0)";
-      tag.textContent = label();
-      var nx = st.x * W, ny = st.y * H, half = D / 2 / P;                    /* native pixels around the centre */
-      var x0 = nx - half, y0 = ny - half, s = (D * dpr) / (2 * half);       /* device pixels per native pixel */
-      var ctx = cv.getContext("2d");
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = "#222"; ctx.fillRect(0, 0, cv.width, cv.height);
-      /* base: the display image, upscaled */
-      if (view.complete && view.naturalWidth) {
-        var kx = view.naturalWidth / W, ky = view.naturalHeight / H;
-        ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(view, x0 * kx, y0 * ky, 2 * half * kx, 2 * half * ky, 0, 0, cv.width, cv.height);
-      }
-      ctx.imageSmoothingEnabled = s < 1.5;
-      if (spec.tiles) {
-        var T = spec.tiles.size;
-        var c0 = Math.max(0, Math.floor(x0 / T)), c1 = Math.min(spec.tiles.cols - 1, Math.floor((x0 + 2 * half) / T));
-        var r0 = Math.max(0, Math.floor(y0 / T)), r1 = Math.min(spec.tiles.rows - 1, Math.floor((y0 + 2 * half) / T));
-        for (var r = r0; r <= r1; r++) for (var c = c0; c <= c1; c++) {
-          var t = srcTile(c, r); if (!t.ok) continue;
-          var tx = c * T, ty = r * T, tw = t.img.naturalWidth, th = t.img.naturalHeight;
-          var ix0 = Math.max(x0, tx), iy0 = Math.max(y0, ty), ix1 = Math.min(x0 + 2 * half, tx + tw), iy1 = Math.min(y0 + 2 * half, ty + th);
-          if (ix1 <= ix0 || iy1 <= iy0) continue;
-          ctx.drawImage(t.img, ix0 - tx, iy0 - ty, ix1 - ix0, iy1 - iy0, (ix0 - x0) * s, (iy0 - y0) * s, (ix1 - ix0) * s, (iy1 - iy0) * s);
-        }
-      } else if (spec.native) {
-        var n = nativeOne();
-        if (n.ok) {
-          var jx0 = Math.max(0, x0), jy0 = Math.max(0, y0), jx1 = Math.min(W, x0 + 2 * half), jy1 = Math.min(H, y0 + 2 * half);
-          if (jx1 > jx0 && jy1 > jy0) ctx.drawImage(n.img, jx0, jy0, jx1 - jx0, jy1 - jy0, (jx0 - x0) * s, (jy0 - y0) * s, (jx1 - jx0) * s, (jy1 - jy0) * s);
-        }
-      }
-    }
-    function place(cx, cy) {
-      var r = fr.getBoundingClientRect();
-      st.x = clamp((cx - r.left) / r.width, 0, 1); st.y = clamp((cy - r.top) / r.height, 0, 1);
-      draw();
-    }
-    function show(on) { st.on = on; fr.classList.toggle("on", on); if (on) { fr.classList.add("used"); draw(); } }
-    fr.addEventListener("pointermove", function (e) { if (e.pointerType === "mouse" || st.on) { if (!st.on) show(true); place(e.clientX, e.clientY); } });
-    fr.addEventListener("pointerdown", function (e) { show(true); place(e.clientX, e.clientY); });
-    fr.addEventListener("pointerleave", function (e) { if (e.pointerType === "mouse") show(false); });
-    document.addEventListener("pointerdown", function (e) { if (st.on && !fr.contains(e.target)) show(false); });
-    fr.addEventListener("keydown", function (e) {
-      var d = .02, k = e.key;
-      if (k === "ArrowLeft") st.x -= d; else if (k === "ArrowRight") st.x += d; else if (k === "ArrowUp") st.y -= d; else if (k === "ArrowDown") st.y += d;
-      else if (k === "+" || k === "=") { setP(2); return; } else if (k === "-") { setP(1); return; } else if (k === "Escape") { show(false); return; } else return;
-      e.preventDefault(); st.x = clamp(st.x, 0, 1); st.y = clamp(st.y, 0, 1); show(true);
-    });
-    fr.addEventListener("blur", function () { show(false); });
-    window.addEventListener("resize", function () { if (st.on) draw(); });
-    return fr;
-  }
-
-  /* ---------------------------------------------------------------- before/after slider, synced within a group */
-  function BA(o, group) {
-    /* o: {left: {src, label, ours}, right: {src, label}, w, h, alt, win: [x, y, s] in native px of a w x h image, crop} */
-    var box = el("div", { class: "ba" + (o.crop ? " crop" : ""), role: "slider", tabindex: "0", "aria-valuemin": "0", "aria-valuemax": "100",
-                          "aria-label": "Divider between " + o.left.label + " (left) and " + o.right.label + " (right)" });
-    var base = img(o.right.src, o.right.label + (o.alt ? ": " + o.alt : ""), { width: o.vw || null, height: o.vh || null });
-    var topWrap = el("div", { class: "top" }, [img(o.left.src, o.left.label + (o.alt ? ": " + o.alt : ""))]);
-    box.appendChild(base); box.appendChild(topWrap);
-    if (o.win) box.appendChild(el("span", { class: "win", style: "left:" + (o.win[0] / o.w * 100).toFixed(3) + "%;top:" + (o.win[1] / o.h * 100).toFixed(3) + "%;width:" + (o.win[2] / o.w * 100).toFixed(3) + "%;height:" + (o.win[2] / o.h * 100).toFixed(3) + "%", "aria-hidden": "true" }));
-    box.appendChild(el("span", { class: "handle", "aria-hidden": "true" }));
-    box.appendChild(el("span", { class: "tag l" + (o.left.ours ? " ours" : ""), text: o.left.label }));
-    box.appendChild(el("span", { class: "tag r", text: o.right.label }));
-    group = group || { p: 50, members: [] };
-    group.members.push(box);
-    function setAll(p) {
-      group.p = clamp(p, 0, 100);
-      group.members.forEach(function (m) { m.style.setProperty("--p", group.p + "%"); m.setAttribute("aria-valuenow", Math.round(group.p)); });
-    }
-    setAll(group.p);
-    var drag = false;
-    function at(e) { var r = box.getBoundingClientRect(); return (e.clientX - r.left) / r.width * 100; }
-    box.addEventListener("pointerdown", function (e) { drag = true; try { box.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ } setAll(at(e)); });
-    box.addEventListener("pointermove", function (e) { if (drag || e.pointerType === "mouse" && e.buttons === 1) setAll(at(e)); });
-    ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (t) { box.addEventListener(t, function () { drag = false; }); });
-    box.addEventListener("keydown", function (e) {
-      if (e.key === "ArrowLeft") { setAll(group.p - 4); e.preventDefault(); } else if (e.key === "ArrowRight") { setAll(group.p + 4); e.preventDefault(); }
-    });
-    box._group = group;
-    return box;
-  }
+  /* ---------------------------------------------------------------- synced zoom grids (assets/js/zoomgrid.js, data zoomsets.js) */
+  var ZS = window.SCA_ZOOMSETS || {}, ZG = window.SCAZoom || null;
+  function zgrid(spec) { return ZG.grid(spec); }
+  function zset(name, sid) { return (ZS[name] || []).filter(function (z) { return z.sid === sid; })[0] || null; }
 
   /* ---------------------------------------------------------------- teaser loops */
   (function loops() {
@@ -263,24 +135,19 @@
     var T = MEDIA.teaser || {};
     var slots = [
       ["zoom", "<b>Deep zoom.</b> Progressive SCA at 4096&sup2;, down to native pixels", "Zoom from the whole image to native pixels"],
-      ["stages", "<b>Three stages.</b> Layout at 1024&sup2;, refined at 2048&sup2; and 4096&sup2;", "One sample through the three stages"],
-      ["heads", "<b>" + (num("calib.n_heads_c") || "1,368") + " heads.</b> Each with its own weight on the window", "The per-head weights of FLUX.1-dev"]
+      ["stages", "<b>Three stages.</b> Layout at 1024&sup2;, refined at 2048&sup2; and 4096&sup2;", "One sample through the three stages"]
     ];
     var ready = slots.filter(function (s) { return T[s[0]] && T[s[0]].mp4; });
-    (ready.length ? ready : slots).forEach(function (s) {
+    (ready.length ? ready : slots.slice(0, 1)).forEach(function (s) {
       var m = T[s[0]], box = el("div", { class: "lbox" });
       if (m && m.mp4) box.appendChild(loopVideo(m.mp4, m.poster, s[2]));
       else box.appendChild(ph("Video in preparation", s[2] + "."));
       host.appendChild(el("figure", { class: "loop" }, [box, el("figcaption", { html: s[1] })]));
     });
-    if (ready.length && ready.length < 3) host.classList.add("n" + ready.length);
+    host.classList.add("n" + Math.max(1, ready.length));
   })();
 
-  /* ---------------------------------------------------------------- hero */
-  function heroSpec(it, eager) {
-    return { view: it.view, vw: it.view_size[0], vh: it.view_size[1], w: it.size[0], h: it.size[1], tiles: it.tiles, native: it.native,
-             alt: (it.config || "Progressive SCA") + ", " + sizeLabel(it.size) + ": " + it.prompt, badge: sizeLabel(it.size) + (it.model && it.model !== "FLUX.1-dev" ? " · " + it.model : ""), eager: eager };
-  }
+  /* ---------------------------------------------------------------- hero: very large images, zoomable to native pixels */
   function metaRow(bits, oursFirst) {
     return el("div", { class: "meta" }, bits.filter(Boolean).map(function (b, i) { return el("span", { class: i === 0 && oursFirst ? "m-ours" : null, text: b }); }));
   }
@@ -290,141 +157,26 @@
   }
   (function hero() {
     var host = $("#hero-figure"); if (!host) return;
-    var H = SHOW.hero || [];
-    if (H.length) {
-      var wrap = el("div", { class: "hshow" + (H.length > 1 ? " two" : "") });
-      wrap.style.setProperty("--cols", H.slice(0, 2).map(function (it) { return (it.size[0] / it.size[1]).toFixed(3) + "fr"; }).join(" "));
-      H.slice(0, 2).forEach(function (it, i) {
-        var btn = it.compare && it.compare.length ? el("button", { type: "button", class: "pill sc-cmp", text: "Compare with " + it.compare.map(function (c) { return c.label; }).join(" and ") }) : null;
-        if (btn) btn.addEventListener("click", function () { openCompare(it, 0); });
-        wrap.appendChild(el("figure", { class: "sc-card" }, [ZoomFrame(heroSpec(it, i === 0)),
-          el("figcaption", {}, [el("span", { class: "sc-title", text: it.title || "" }), itemMeta(it), el("p", { class: "prompt" }, [el("q", { text: it.prompt })]), btn])]));
-      });
-      host.appendChild(wrap);
-      host.appendChild(el("p", { class: "caption hcap", html: "Move the pointer over either image for a lens at native pixels (1:1) or twice that (2:1); on a phone, touch the image. More images, with progressive SCA at 4096&sup2;, are in the <a href=\"#showcase\">showcase</a>." }));
-      return;
-    }
-    var L = IM.hero || []; if (!L.length) { host.appendChild(ph("Hero images in preparation")); return; }
-    var big = L.filter(function (h) { return h.slot === "big"; })[0], tiles = L.filter(function (h) { return h.slot !== "big"; });
-    var grid = el("div", { class: "hshow legacy" });
-    var spec = { view: big.full, vw: 1600, vh: 1600, w: big.size[0], h: big.size[1], native: big.native_file, eager: true,
-                 alt: "Progressive SCA, " + sizeLabel(big.size) + ": " + big.prompt, badge: sizeLabel(big.size),
-                 insets: big.inset ? [big.inset] : [] };
-    grid.appendChild(ZoomFrame(spec));
-    var tg = el("div", { class: "tiles" });
-    tiles.forEach(function (t) {
-      var tile = el("div", { class: "tile" }, [img(t.full, "Progressive SCA, " + sizeLabel(t.size) + ": " + t.prompt, { width: 800, height: 800 })]);
-      if (t.inset) {
-        var w = t.inset.window;
-        tile.appendChild(el("span", { class: "win", style: "left:" + (w[0] / t.size[0] * 100).toFixed(3) + "%;top:" + (w[1] / t.size[1] * 100).toFixed(3) + "%;width:" + (w[2] / t.size[0] * 100).toFixed(3) + "%;height:" + (w[2] / t.size[1] * 100).toFixed(3) + "%", "aria-hidden": "true" }));
-        tile.appendChild(el("span", { class: "inset " + (t.inset.corner || "tr") }, [img(t.inset.file, "Native 1:1 crop: " + (t.inset.content || ""))]));
-      }
-      tg.appendChild(tile);
+    var H = (SHOW.hero || []).filter(function (it) { return it.panels && it.panels.length; }).slice(0, 2);
+    if (!H.length || !ZG) { host.appendChild(ph("Hero images in preparation")); return; }
+    var wrap = el("div", { class: "hshow" + (H.length > 1 ? " two" : "") });
+    wrap.style.setProperty("--cols", H.map(function (it) { return (it.size[0] / it.size[1]).toFixed(3) + "fr"; }).join(" "));
+    H.forEach(function (it, i) {
+      var g = zgrid({ size: it.size, panels: it.panels, regions: it.regions, alt: it.prompt, eager: i === 0, cls: "compact", minW: 260 });
+      wrap.appendChild(el("figure", { class: "sc-card hero-card" }, [g.el,
+        el("figcaption", {}, [el("span", { class: "sc-title", text: it.title || "" }), itemMeta(it), el("p", { class: "prompt" }, [el("q", { text: it.prompt })])])]));
     });
-    grid.appendChild(tg);
-    host.appendChild(grid);
-    host.appendChild(el("p", { class: "caption hcap", html: "Progressive SCA at 4096&nbsp;&times;&nbsp;4096 on FLUX.1-dev, seed 0, evaluation prompts. Framed insets are native pixels; the lens on the large image shows native pixels too. <a href=\"#showcase\">More in the showcase.</a>" }));
+    host.appendChild(wrap);
+    host.appendChild(el("p", { class: "caption hcap", html: "Scroll or pinch on an image to zoom down to native pixels and drag to pan; double-click goes back to the whole image. <b>Auto zoom</b> flies through its most detailed regions. More images in the <a href=\"#showcase\">showcase</a>." }));
   })();
 
-  /* ---------------------------------------------------------------- the failure row: full attention and the fixes at 4096^2 */
+  /* ---------------------------------------------------------------- the failure row: full attention and the fixes at 4096^2, zoomed together */
   (function failRow() {
-    var host = $("#fail-row"); if (!host) return;
-    var items = (IM.compare || {}).items || [];
-    var it = items.filter(function (x) { return x.sid === "m8343371271909676658"; })[0] || items[0];
-    if (!it) return;
-    [["full", "Full attention"], ["area", "AReA"], ["hrdit", "HRDiT"], ["prog", "Progressive SCA"]].forEach(function (m) {
-      var r = it.img[m[0]]; if (!r) return;
-      host.appendChild(el("figure", { class: m[0] === "prog" ? "ours" : null }, [el("div", { class: "fi" }, [img(r.full, m[1] + ": " + it.prompt)]), el("figcaption", {}, [el("b", { text: m[1] })])]));
-    });
-    host.appendChild(el("p", { class: "caption fail-cap", html: "FLUX.1-dev at 4096&nbsp;&times;&nbsp;4096, one prompt and seed: <q>" + it.prompt + "</q> With full attention at the target the model loses the layout. See <a href=\"#compare\">Comparisons</a> for every method at native pixels." }));
-  })();
-
-  /* ---------------------------------------------------------------- concept chart: every head's window weight against noise level */
-  (function conceptChart() {
-    var box = $("#concept"), D = window.SCA_CONCEPT; if (!box || !D) return;
-    var nH = D.n_heads, nS = D.n_sigma, sig = D.sigma, gate = D.gate, med = D.median, mean = D.mean;
-    var raw = atob(D.pi_b64), PI = new Uint8Array(raw.length);
-    for (var q = 0; q < raw.length; q++) PI[q] = raw.charCodeAt(q);
-    var order = []; for (var h0 = 0; h0 < nH; h0++) order.push(h0);
-    order.sort(function (a, b) { return Math.abs(mean[b] - .5) - Math.abs(mean[a] - .5); });
-    var canvas = el("canvas", { "aria-hidden": "true" }), sv = svg("svg", { "aria-hidden": "true" });
-    box.appendChild(canvas); box.appendChild(sv);
-    var readout = $("#concept-readout"), hint = readout ? readout.innerHTML : "";
-    var M = { l: 46, r: 12, t: 18, b: 40 }, X0 = 1.0, X1 = 0.08, Y0 = -0.04, Y1 = 1.12;
-    var G = { w: 0, h: 0 }, colors = [], selEl = null;
-    function px(x) { return M.l + (X0 - x) / (X0 - X1) * (G.w - M.l - M.r); }
-    function py(y) { return M.t + (Y1 - y) / (Y1 - Y0) * (G.h - M.t - M.b); }
-    function curve(k, ys) {
-      var pts = [[px(1), py(0)], [px(gate), py(0)]];
-      for (var j = 0; j < nS; j++) pts.push([px(sig[j]), py(ys ? ys[j] : PI[k * nS + j] / 255)]);
-      return pts;
-    }
-    function pathD(pts) { return pts.map(function (p, i) { return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" "); }
-    function draw() {
-      var w = box.clientWidth; if (!w) return;
-      var h = Math.round(clamp(w * .66, 250, 420));
-      box.style.height = h + "px"; G.w = w; G.h = h;
-      var dpr = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
-      var ctx = canvas.getContext("2d");
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
-      var stops = piStops();
-      colors = mean.map(function (m) { return rgbStr(piRgb(m, stops)); });
-      ctx.fillStyle = cssVar("--surface"); ctx.fillRect(px(1), py(Y1), px(gate) - px(1), py(Y0) - py(Y1));
-      ctx.globalAlpha = isDark() ? .24 : .17; ctx.lineWidth = .9; ctx.lineJoin = "round";
-      order.forEach(function (k) {
-        var pts = curve(k); ctx.strokeStyle = colors[k]; ctx.beginPath();
-        pts.forEach(function (p, i) { if (i) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]); });
-        ctx.stroke();
-      });
-      ctx.globalAlpha = 1;
-      sv.setAttribute("viewBox", "0 0 " + w + " " + h); sv.innerHTML = "";
-      [0, .5, 1].forEach(function (v) {
-        sv.appendChild(svg("line", { x1: px(X0), x2: px(X1), y1: py(v), y2: py(v), stroke: "var(--chart-grid)" }));
-        sv.appendChild(svg("text", { x: M.l - 8, y: py(v) + 4, "text-anchor": "end" }, String(v)));
-      });
-      [[1, "1"], [gate, String(num("config.gate_sigma") || gate)], [.6, "0.6"], [.3, "0.3"], [.1, "0.1"]].forEach(function (t) {
-        sv.appendChild(svg("line", { x1: px(t[0]), x2: px(t[0]), y1: py(Y0), y2: py(Y0) + 4, stroke: "var(--chart-base)" }));
-        sv.appendChild(svg("text", { x: px(t[0]), y: py(Y0) + 17, "text-anchor": "middle" }, t[1]));
-      });
-      sv.appendChild(svg("line", { x1: px(X0), x2: px(X1), y1: py(Y0), y2: py(Y0), stroke: "var(--chart-base)" }));
-      var gx = (px(1) + px(gate)) / 2, gy = (py(Y1) + py(Y0)) / 2;
-      sv.appendChild(svg("text", { x: gx, y: gy, "text-anchor": "middle", class: "lbl-glob", transform: "rotate(-90 " + gx + " " + gy + ")" }, "global view only"));
-      sv.appendChild(svg("text", { x: (px(X0) + px(X1)) / 2, y: h - 6, "text-anchor": "middle" }, "noise level σ (sampling runs left to right)"));
-      var ay = (py(Y1) + py(Y0)) / 2;
-      sv.appendChild(svg("text", { x: 12, y: ay, "text-anchor": "middle", transform: "rotate(-90 12 " + ay + ")" }, "weight on the window π"));
-      sv.appendChild(svg("path", { d: pathD(curve(-1, med)), fill: "none", stroke: "var(--accent)", "stroke-width": 2.6, "stroke-linejoin": "round" }));
-      sv.appendChild(svg("path", { d: pathD([[px(1), py(0)], [px(gate), py(0)], [px(gate), py(1)], [px(.1), py(1)]]), fill: "none", stroke: "var(--area)", "stroke-width": 2.2, "stroke-dasharray": "7 4" }));
-      var halo = "paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round;";
-      sv.appendChild(svg("text", { x: px(.1), y: py(1) - 9, "text-anchor": "end", class: "lbl-area", style: halo }, "AReA: one switch for every head"));
-      sv.appendChild(svg("text", { x: px(.1), y: py(.33), "text-anchor": "end", class: "lbl-sca", style: halo }, "SCA: one mix per head"));
-      sv.appendChild(svg("text", { x: px(.1), y: py(.33) + 15, "text-anchor": "end", class: "lbl-sca", style: halo + "font-weight:500" }, "green: median of " + nH + " heads"));
-      selEl = svg("g", {}); sv.appendChild(selEl);
-    }
-    function pick(cx, cy) {
-      var r = box.getBoundingClientRect(), x = cx - r.left, y = cy - r.top;
-      var sx = X0 - (x - M.l) / (G.w - M.l - M.r) * (X0 - X1), sy = Y1 - (y - M.t) / (G.h - M.t - M.b) * (Y1 - Y0);
-      if (sx > gate + .005 || sx < sig[nS - 1] - .02 || sy < Y0 || sy > Y1) { clear(); return; }
-      var j = clamp(Math.round((sig[0] - sx) / (sig[0] - sig[nS - 1]) * (nS - 1)), 0, nS - 1);
-      var best = -1, bd = 1e9;
-      for (var k = 0; k < nH; k++) { var dd = Math.abs(PI[k * nS + j] / 255 - sy); if (dd < bd) { bd = dd; best = k; } }
-      if (best < 0 || bd > .06) { clear(); return; }
-      selEl.innerHTML = "";
-      var pts = curve(best);
-      selEl.appendChild(svg("path", { d: pathD(pts), fill: "none", stroke: "var(--bg)", "stroke-width": 5, "stroke-linejoin": "round" }));
-      selEl.appendChild(svg("path", { d: pathD(pts), fill: "none", stroke: colors[best], "stroke-width": 2.4, "stroke-linejoin": "round" }));
-      selEl.appendChild(svg("circle", { cx: px(sig[j]), cy: py(PI[best * nS + j] / 255), r: 4, fill: colors[best], stroke: "var(--ink)", "stroke-width": 1.2 }));
-      var b = Math.floor(best / D.heads_per_block), hh = best % D.heads_per_block;
-      if (readout) readout.innerHTML = "<b>Block " + b + ", head " + hh + "</b> (from 0): mean weight " + mean[best].toFixed(2) + " on the window after the opening.";
-    }
-    function clear() { if (selEl) selEl.innerHTML = ""; if (readout) readout.innerHTML = hint; }
-    box.addEventListener("pointermove", function (e) { pick(e.clientX, e.clientY); });
-    box.addEventListener("pointerdown", function (e) { pick(e.clientX, e.clientY); });
-    box.addEventListener("pointerleave", clear);
-    var raf = 0;
-    window.addEventListener("resize", function () { cancelAnimationFrame(raf); raf = requestAnimationFrame(function () { if (box.clientWidth !== G.w) draw(); }); });
-    themeHooks.push(draw);
-    draw();
+    var host = $("#fail-row"); if (!host || !ZG) return;
+    var z = zset("compare", "m8343371271909676658") || (ZS.compare || [])[0]; if (!z) return;
+    var panels = ["full", "area", "hrdit", "prog"].map(function (m) { return z.panels.filter(function (p) { return p.m === m; })[0]; }).filter(Boolean);
+    host.appendChild(zgrid({ size: z.size, panels: panels, regions: z.regions, alt: z.prompt, cls: "compact", minW: 150 }).el);
+    host.appendChild(el("p", { class: "caption fail-cap", html: "FLUX.1-dev at 4096&nbsp;&times;&nbsp;4096, one prompt and seed: <q>" + z.prompt + "</q> With full attention at the target the model loses the layout. Zoom any panel and the others follow; <a href=\"#compare\">Comparisons</a> has every method on 15 prompts." }));
   })();
 
   /* ---------------------------------------------------------------- method 1: attention mass rings of three heads */
@@ -655,28 +407,45 @@
     } else host.appendChild(ph("Explainer video in preparation", "About two minutes: near and far fields, the reach of every head, the emulation at 1024&sup2;, the closed-form fit and progressive sampling."));
   })();
 
-  /* ---------------------------------------------------------------- showcase groups */
+  /* ---------------------------------------------------------------- lightbox */
+  var lbHooks = [];
+  function lbOnClose(f) { lbHooks.push(f); }
+  function lbClean() { lbHooks.splice(0).forEach(function (f) { try { f(); } catch (e) { /* ignore */ } }); }
   function lightbox(render) {
     var lb = $("#lightbox"), body = $("#lb-body"); if (!lb) return;
-    body.innerHTML = ""; render(body); lb.hidden = false; document.body.style.overflow = "hidden";
+    lbClean(); body.innerHTML = ""; lb.hidden = false; document.body.style.overflow = "hidden"; render(body);
     var close = $(".lb-close", lb); close.focus();
   }
   (function lightboxInit() {
     var lb = $("#lightbox"); if (!lb) return;
-    function shut() { lb.hidden = true; document.body.style.overflow = ""; $("#lb-body").innerHTML = ""; }
+    function shut() { lbClean(); lb.hidden = true; document.body.style.overflow = ""; $("#lb-body").innerHTML = ""; }
     $(".lb-close", lb).addEventListener("click", shut);
     lb.addEventListener("click", function (e) { if (e.target === lb) shut(); });
     document.addEventListener("keydown", function (e) { if (!lb.hidden && e.key === "Escape") shut(); });
   })();
+
+  /* ---------------------------------------------------------------- showcase: one zoom grid per image (and per comparison when it exists) */
+  function showCard(it) {
+    var g = zgrid({ size: it.size, panels: it.panels, regions: it.regions, alt: it.prompt, cls: "compact", minW: 150 });
+    var crops = el("div", { class: "sc-crops" }, (it.crops || []).map(function (c, k) {
+      var b = el("button", { type: "button", class: "tile", "aria-label": "Zoom every panel to window " + (k + 1) }, [img(c.file, "Native pixels, window " + (k + 1)), el("span", { class: "n", text: String(k + 1) })]);
+      b.addEventListener("click", function () { g.flyTo(k); });
+      return b;
+    }));
+    return el("figure", { class: "sc-card" + (it.panels.length > 1 ? " multi" : "") }, [g.el, crops,
+      el("figcaption", {}, [el("span", { class: "sc-title", text: it.title || "" }), itemMeta(it), el("p", { class: "prompt" }, [el("q", { text: it.prompt })])])]);
+  }
   (function showcase() {
     var host = $("#showcase-body"); if (!host) return;
-    var groups = SHOW.groups || [];
-    if (!groups.length) {
-      host.appendChild(el("div", { class: "sc-group" }, [ph("Showcase images in preparation", "5120&nbsp;&times;&nbsp;5120 and 6144&nbsp;&times;&nbsp;4096 images, product shots, landscapes, architecture, portraits and animals, each with native-pixel crops and the same windows of AReA and of the native image upscaled.")]));
-    }
-    if (groups.length) {
-      var all = [], chips = el("div", { class: "seg sc-filter", role: "group", "aria-label": "Category" }), grid = el("div", { class: "sc-grid three" });
-      groups.forEach(function (g) { (g.items || []).forEach(function (it) { all.push([g.id, showCard(it)]); }); });
+    var groups = (SHOW.groups || []).map(function (g) { return { id: g.id, title: g.title, items: (g.items || []).filter(function (it) { return it.panels && it.panels.length; }) }; })
+                                    .filter(function (g) { return g.items.length; });
+    if (!groups.length || !ZG) {
+      host.appendChild(el("div", { class: "sc-group" }, [ph("Showcase images in preparation", "5120&nbsp;&times;&nbsp;5120 and 6144&nbsp;&times;&nbsp;4096 images, product shots, landscapes, architecture, portraits and animals, zoomable to native pixels beside AReA on the same prompt and seed.")]));
+    } else {
+      var all = [], multi = false, chips = el("div", { class: "seg sc-filter", role: "group", "aria-label": "Category" });
+      groups.forEach(function (g) { g.items.forEach(function (it) { if (it.panels.length > 1) multi = true; all.push([g.id, it]); }); });
+      var grid = el("div", { class: "sc-grid " + (multi ? "two" : "three") });
+      all = all.map(function (a) { return [a[0], showCard(a[1])]; });
       var cats = [["all", "All"]].concat(groups.map(function (g) { return [g.id, g.title]; }));
       cats.forEach(function (c) {
         var b = el("button", { type: "button", "aria-pressed": String(c[0] === "all"), text: c[1] });
@@ -710,108 +479,48 @@
     }
   })();
 
-  /* a showcase card: the overview with its crop windows, the native crops, a button to compare */
-  function boxStyle(b, size) {
-    return "left:" + (b[0] / size[0] * 100).toFixed(3) + "%;top:" + (b[1] / size[1] * 100).toFixed(3) + "%;width:" + (b[2] / size[0] * 100).toFixed(3) + "%;height:" + (b[2] / size[1] * 100).toFixed(3) + "%";
-  }
-  function showCard(it) {
-    var fr = el("div", { class: "sc-frame tile" }, [img(it.view, it.config + ", " + sizeLabel(it.size) + ": " + it.prompt, { width: it.view_size[0], height: it.view_size[1] })]);
-    (it.crops || []).forEach(function (c, k) { fr.appendChild(el("span", { class: "win", style: boxStyle(c.box, it.size), "aria-hidden": "true" }, [el("i", { text: String(k + 1) })])); });
-    fr.appendChild(el("span", { class: "badge", text: sizeLabel(it.size) }));
-    var crops = el("div", { class: "sc-crops" }, (it.crops || []).map(function (c, k) { return el("div", { class: "tile" }, [img(c.file, "Native pixels, window " + (k + 1)), el("span", { class: "n", text: String(k + 1) })]); }));
-    var btn = it.compare && it.compare.length ? el("button", { type: "button", class: "pill sc-cmp", text: "Compare with " + it.compare.map(function (c) { return c.label; }).join(" and ") }) : null;
-    var open = function () { openCompare(it, 0); };
-    if (btn) btn.addEventListener("click", open);
-    fr.addEventListener("click", open); fr.style.cursor = btn ? "zoom-in" : "default";
-    return el("figure", { class: "sc-card" }, [fr, crops, el("figcaption", {}, [el("span", { class: "sc-title", text: it.title || "" }), itemMeta(it), el("p", { class: "prompt" }, [el("q", { text: it.prompt })]), btn])]);
-  }
-  function openCompare(it, k) {
-    if (!it.compare || !it.compare.length) return;
-    lightbox(function (body) {
-      var c = it.compare[k], grp = { p: 50, members: [] };
-      var seg = el("div", { class: "seg lb-seg", role: "group", "aria-label": "Compare with" });
-      it.compare.forEach(function (o, j) {
-        var b = el("button", { type: "button", "aria-pressed": String(j === k), text: o.label });
-        b.addEventListener("click", function () { openCompare(it, j); });
-        seg.appendChild(b);
-      });
-      var crops = el("div", { class: "lb-crops" });
-      (it.crops || []).forEach(function (cr, j) {
-        if (!c.crops[j]) return;
-        crops.appendChild(BA({ left: { src: cr.file, label: it.config, ours: true }, right: { src: c.crops[j], label: c.label }, w: cr.box[2], h: cr.box[2], crop: true, alt: "native window " + (j + 1) }, grp));
-      });
-      body.appendChild(el("div", { class: "lb-grid" }, [
-        BA({ left: { src: it.view, label: it.config, ours: true }, right: { src: c.view, label: c.label }, w: it.size[0], h: it.size[1], vw: it.view_size[0], vh: it.view_size[1], alt: it.prompt }, grp),
-        el("div", {}, [seg, crops, metaRow([it.model, sizeLabel(it.size), "seed " + it.seed, c.note], false), el("p", { class: "prompt" }, [el("q", { text: it.prompt })])])]));
-    });
-  }
-
-  /* ---------------------------------------------------------------- other backbones: SCA beside full attention or the native image */
+  /* ---------------------------------------------------------------- other backbones: SCA beside the same model sampled directly at the target size */
   (function backbones() {
     var host = $("#backbones-body"); if (!host) return;
-    var B = SHOW.backbones || [];
-    if (!B.length) {
-      host.appendChild(ph("FLUX.2-dev and Qwen-Image comparisons in preparation", "Each pair: SCA at the target size beside the same model with full attention at the target, or at its native resolution upscaled with Lanczos, with synced native crops."));
+    var B = (SHOW.backbones || []).filter(function (it) { return it.panels && it.panels.length; });
+    if (!B.length || !ZG) {
+      host.appendChild(ph("FLUX.2-dev and Qwen-Image comparisons in preparation", "Each: SCA at the target size beside the same model sampled directly at that size with full attention, zoomable together to native pixels."));
       return;
     }
-    B.forEach(function (it) {
-      var cmp = (it.compare || []).filter(function (c) { return c.method !== "lanczos"; })[0] || (it.compare || [])[0];
-      if (!cmp) { host.appendChild(showCard(it)); return; }
-      var grp = { p: 50, members: [] };
-      var main = BA({ left: { src: it.view, label: it.config, ours: true }, right: { src: cmp.view, label: cmp.label }, w: it.size[0], h: it.size[1], vw: it.view_size[0], vh: it.view_size[1], alt: it.prompt }, grp);
-      var crops = el("div", { class: "lb-crops" });
-      (it.crops || []).slice(0, 2).forEach(function (cr, j) {
-        if (cmp.crops[j]) crops.appendChild(BA({ left: { src: cr.file, label: it.config, ours: true }, right: { src: cmp.crops[j], label: cmp.label }, w: cr.box[2], h: cr.box[2], crop: true, alt: "native window " + (j + 1) }, grp));
-      });
-      var more = it.compare.length > 1 ? el("button", { type: "button", class: "pill", text: "All comparisons" }) : null;
-      if (more) more.addEventListener("click", function () { openCompare(it, 0); });
-      host.appendChild(el("div", { class: "bb" }, [main, el("div", {}, [crops, el("div", { class: "cmp-meta" }, [metaRow([it.model, sizeLabel(it.size), "seed " + it.seed, it.steps ? it.steps + " steps" : null], false), el("p", { class: "prompt" }, [el("q", { text: it.prompt })]), it.note ? el("p", { class: "small muted", text: it.note }) : null, more])])]));
-    });
+    var grid = el("div", { class: "sc-grid two" });
+    B.forEach(function (it) { grid.appendChild(showCard(it)); });
+    host.appendChild(grid);
   })();
 
-  /* ---------------------------------------------------------------- comparisons at 4096^2 */
+  /* ---------------------------------------------------------------- comparisons at 4096^2: every method in one synced zoom grid */
   (function compare() {
-    var main = $("#cmp-main"), side = $("#cmp-side"), meta = $("#cmp-meta"), thumbs = $("#cmp-thumbs"); if (!main) return;
-    var items = [];
-    ((IM.qual || {}).rows || []).forEach(function (r) { items.push({ sid: r.sid, prompt: r.prompt, box: r.box, size: r.size, img: r.img, thumb: r.img.prog.full }); });
-    ((IM.compare || {}).items || []).forEach(function (r) {
-      if (items.some(function (x) { return x.sid === r.sid; })) return;
-      items.push({ sid: r.sid, prompt: r.prompt, box: r.box, size: r.size, img: r.img, thumb: r.thumb || (r.img.prog || r.img.sca).full });
-    });
-    if (!items.length) return;
-    var LEFT = ["prog", "sca"], RIGHT = ["area", "hrdit", "ultra", "full", "sca", "prog"];
-    var st = { i: 0, l: "prog", r: "area" }, grp = { p: 50, members: [] };
-    var lseg = $("#cmp-left"), rseg = $("#cmp-right");
-    function mk(segEl, keys, field) {
-      keys.forEach(function (k) {
-        var b = el("button", { type: "button", "data-k": k, text: METHOD[k] });
-        b.addEventListener("click", function () { if (b.disabled) return; st[field] = k; if (st.l === st.r) st.r = st.l === "prog" ? "area" : "prog"; render(); });
-        segEl.appendChild(b);
+    var host = $("#cmp-zoom"), thumbs = $("#cmp-thumbs"), chips = $("#cmp-methods"), meta = $("#cmp-meta");
+    var Z = ZS.compare || []; if (!host || !Z.length || !ZG) return;
+    var thumbOf = {}; ((IM.compare || {}).items || []).forEach(function (r) { if (r.thumb) thumbOf[r.sid] = r.thumb; });
+    var ORDER = Z[0].panels.map(function (p) { return [p.m, p.label, !!p.ours]; }), on = {}, cur = null, at = 0;
+    ORDER.forEach(function (o) {
+      on[o[0]] = true;
+      var b = el("button", { type: "button", "aria-pressed": "true", text: o[1], class: o[2] ? "ours" : null });
+      b.addEventListener("click", function () {
+        if (on[o[0]] && ORDER.filter(function (k) { return on[k[0]]; }).length <= 2) return;   /* keep two methods at least */
+        on[o[0]] = !on[o[0]]; b.setAttribute("aria-pressed", String(on[o[0]])); render();
       });
-    }
-    mk(lseg, LEFT, "l"); mk(rseg, RIGHT, "r");
-    items.forEach(function (it, i) {
-      var b = el("button", { type: "button", "aria-label": "Prompt " + (i + 1) + ": " + short(it.prompt, 80) }, [img(it.thumb, "")]);
-      b.addEventListener("click", function () { st.i = i; render(); });
+      chips.appendChild(b);
+    });
+    Z.forEach(function (z, i) {
+      var b = el("button", { type: "button", "aria-label": "Prompt " + (i + 1) + ": " + short(z.prompt, 80) }, [img(z.thumb || thumbOf[z.sid] || z.panels[0].view, "")]);
+      b.addEventListener("click", function () { if (at !== i) { at = i; render(); } });
       thumbs.appendChild(b);
     });
     function render() {
-      var it = items[st.i];
-      if (!it.img[st.r] || st.r === st.l) st.r = ["area", "hrdit", "ultra", "full"].filter(function (k) { return it.img[k]; })[0];
-      if (!it.img[st.l]) st.l = "prog";
-      $$("button", lseg).forEach(function (b) { var k = b.getAttribute("data-k"); b.disabled = !it.img[k]; b.setAttribute("aria-pressed", String(k === st.l)); });
-      $$("button", rseg).forEach(function (b) { var k = b.getAttribute("data-k"); b.disabled = !it.img[k] || k === st.l; b.setAttribute("aria-pressed", String(k === st.r)); });
-      $$("button", thumbs).forEach(function (b, i) { b.setAttribute("aria-pressed", String(i === st.i)); });
-      grp.members = [];
-      var L = it.img[st.l], R = it.img[st.r];
-      main.innerHTML = ""; side.innerHTML = ""; meta.innerHTML = "";
-      main.appendChild(BA({ left: { src: L.full, label: METHOD[st.l], ours: true }, right: { src: R.full, label: METHOD[st.r] }, w: it.size[0], h: it.size[1], vw: 1600, vh: 1600, win: it.box, alt: it.prompt }, grp));
-      side.appendChild(BA({ left: { src: L.crop, label: METHOD[st.l], ours: true }, right: { src: R.crop, label: METHOD[st.r] }, w: it.box[2], h: it.box[2], crop: true, alt: "native 1:1 crop of the boxed window" }, grp));
-      meta.appendChild(metaRow(["FLUX.1-dev", sizeLabel(it.size), "seed 0", METHOD[st.l] + ": " + STEPS[st.l] + " steps", METHOD[st.r] + ": " + STEPS[st.r] + " steps"], false));
-      meta.appendChild(el("p", { class: "prompt" }, [el("q", { text: it.prompt })]));
-      meta.appendChild(el("p", { class: "small muted", html: "The crop is " + it.box[2] + "&nbsp;&times;&nbsp;" + it.box[2] + " native pixels, shown at its own size or larger; the yellow box marks it on the full view." }));
-      var nx = items[(st.i + 1) % items.length];
-      [nx.img[st.l], nx.img[st.r]].forEach(function (x) { if (x) { var p = new Image(); p.src = x.full; } });
+      var z = Z[at];
+      if (cur) { cur.destroy(); cur = null; }
+      host.innerHTML = ""; meta.innerHTML = "";
+      $$("button", thumbs).forEach(function (b, i) { b.setAttribute("aria-pressed", String(i === at)); });
+      cur = zgrid({ size: z.size, panels: z.panels.filter(function (p) { return on[p.m]; }), regions: z.regions, alt: z.prompt, minW: 200, label: "Every method on one prompt; zoom moves every panel" });
+      host.appendChild(cur.el);
+      meta.appendChild(metaRow(["Prompt " + (at + 1) + " of " + Z.length, "FLUX.1-dev", sizeLabel(z.size), "seed 0"], false));
+      meta.appendChild(el("p", { class: "prompt" }, [el("q", { text: z.prompt })]));
     }
     render();
   })();
@@ -938,47 +647,22 @@
     host.appendChild(s);
   })();
 
-  /* ---------------------------------------------------------------- results: seconds per image against size */
-  (function latencyChart() {
-    var host = $("#chart-latency"); if (!host) return;
-    var sizes = [2048, 3072, 4096, 6144, 8192], methods = [["full", "Full attention", "var(--chart-light)"], ["area", "AReA", "var(--chart-base)"], ["sca", "Single-pass SCA", "var(--accent)"]];
-    function get(m, z) { var v = val("latency." + m + "." + z + "x" + z); return isNaN(v) ? val("latency." + m + "." + z) : v; }
-    var series = methods.map(function (m) { return { m: m, pts: sizes.map(function (z) { return [z, get(m[0], z)]; }).filter(function (p) { return !isNaN(p[1]); }) }; }).filter(function (sr) { return sr.pts.length; });
-    if (!series.length) { host.textContent = "Numbers not built yet."; return; }
-    var W = 520, H = 300, L = 46, R = 110, T = 12, B = 34;
-    var ys = [].concat.apply([], series.map(function (sr) { return sr.pts.map(function (p) { return p[1]; }); }));
-    var y0 = Math.log10(Math.min.apply(null, ys) * .8), y1 = Math.log10(Math.max.apply(null, ys) * 1.15), x0 = Math.log10(2048 * 2048), x1 = Math.log10(8192 * 8192);
-    function X(z) { return L + (Math.log10(z * z) - x0) / (x1 - x0) * (W - L - R); }
-    function Y(v) { return T + (1 - (Math.log10(v) - y0) / (y1 - y0)) * (H - T - B); }
-    var s = svg("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Seconds per image against image size, batch 1, one GH200, single pass" });
-    [10, 20, 50, 100, 200, 500, 1000, 2000].forEach(function (v) {
-      if (Math.log10(v) < y0 || Math.log10(v) > y1) return;
-      s.appendChild(svg("line", { x1: L, x2: W - R, y1: Y(v), y2: Y(v), stroke: "var(--chart-grid)" }));
-      s.appendChild(svg("text", { x: L - 6, y: Y(v) + 4, "text-anchor": "end" }, v + " s"));
-    });
-    sizes.forEach(function (z) { s.appendChild(svg("text", { x: X(z), y: H - 12, "text-anchor": "middle" }, z + "²")); });
-    series.forEach(function (sr) {
-      var d = sr.pts.map(function (p, i) { return (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1); }).join(" ");
-      s.appendChild(svg("path", { d: d, fill: "none", stroke: sr.m[2], "stroke-width": sr.m[0] === "sca" ? 2.4 : 1.8 }));
-      sr.pts.forEach(function (p) { s.appendChild(svg("circle", { cx: X(p[0]), cy: Y(p[1]), r: 3.2, fill: sr.m[2] })); });
-      var last = sr.pts[sr.pts.length - 1];
-      s.appendChild(svg("text", { x: X(last[0]) + 7, y: Y(last[1]) + 4, class: sr.m[0] === "sca" ? "acc" : "lbl" }, sr.m[1]));
-    });
-    host.appendChild(s);
-  })();
-
-  /* ---------------------------------------------------------------- gallery: a fixed rule, progressive SCA beside AReA */
+  /* ---------------------------------------------------------------- gallery: a fixed rule, progressive SCA beside AReA in a synced zoom grid */
   (function gallery() {
     var host = $("#gal"), G = window.SCA_GALLERY; if (!host) return;
     if (!G || !G.items || !G.items.length) { host.appendChild(ph("Gallery in preparation")); return; }
     function open(i) {
       lightbox(function (body) {
-        var it = G.items[i], p = it.img.prog, a = it.img.area, grp = { p: 50, members: [] };
-        body.appendChild(el("div", { class: "lb-grid" }, [
-          BA({ left: { src: p.view, label: "Progressive SCA", ours: true }, right: { src: a.view, label: "AReA" }, w: p.size[0], h: p.size[1], win: p.box, alt: it.prompt }, grp),
-          el("div", {}, [BA({ left: { src: p.crop, label: "Progressive SCA", ours: true }, right: { src: a.crop, label: "AReA" }, w: p.box[2], h: p.box[2], crop: true, alt: "central native crop" }, grp),
-            metaRow(["Prompt " + it.index + " of " + (num("main.n_prompts") || "195"), "FLUX.1-dev", sizeLabel(p.size), "seed 0"], false),
-            el("p", { class: "prompt" }, [el("q", { text: it.prompt })])])]));
+        var it = G.items[i], z = zset("gallery", it.sid);
+        if (z && ZG) {
+          var g = zgrid({ size: z.size, panels: z.panels, regions: z.regions, alt: it.prompt, eager: true, minW: 160 });
+          lbOnClose(g.destroy);
+          body.appendChild(el("div", { class: "lb-zoom", style: "--n:" + z.panels.length }, [g.el]));
+        } else {
+          body.appendChild(el("div", { class: "lb-zoom", style: "--n:2" }, [el("div", { class: "lb-pair" }, [img(it.img.prog.view, "Progressive SCA: " + it.prompt), img(it.img.area.view, "AReA: " + it.prompt)])]));
+        }
+        body.appendChild(metaRow(["Prompt " + it.index + " of " + (num("main.n_prompts") || "195"), "FLUX.1-dev", sizeLabel(it.img.prog.size), "seed 0"], false));
+        body.appendChild(el("p", { class: "prompt" }, [el("q", { text: it.prompt })]));
         var nav = el("div", { class: "lb-nav" });
         var pv = el("button", { type: "button", text: "Previous" }), nx = el("button", { type: "button", text: "Next" });
         pv.addEventListener("click", function () { open((i - 1 + G.items.length) % G.items.length); });

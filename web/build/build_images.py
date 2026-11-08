@@ -75,9 +75,10 @@ def compare():
             src = ultra_png(it["sid"]) if m == "ultra" else (it["paths"]["sca_v2"] if (m == "sca" and final) else it["paths"][m])
             im = Image.open(src).convert("RGB")
             full = save_webp(resized(im, FULL_PX), os.path.join(IMG, "compare", f"{it['sid']}_{m}.webp"), FULL_Q)
-            crop = save_webp(im.crop((x, y, x + s, y + s)),
-                             os.path.join(IMG, "compare", f"{it['sid']}_{m}_crop.webp"), CROP_Q)
-            rec["img"][m] = dict(full=full, crop=crop)
+            rec["img"][m] = dict(full=full)
+            if m == "prog":   # the Ideogram section's native crop; the comparison grids zoom instead (build_zoom.py)
+                rec["img"][m]["crop"] = save_webp(im.crop((x, y, x + s, y + s)),
+                                                  os.path.join(IMG, "compare", f"{it['sid']}_{m}_crop.webp"), CROP_Q)
             if m == "sca":
                 rec["thumb"] = save_webp(resized(im, 240), os.path.join(IMG, "compare", f"{it['sid']}_thumb.webp"), 78)
         items.append(rec)
@@ -233,10 +234,8 @@ def qual():
                 raise ValueError(f"{mm['source']}: SHA-256 differs from qual_prog/provenance.json")
             im = Image.open(mm["source"]).convert("RGB")
             assert im.size == (4096, 4096), (mm["source"], im.size)
-            rec["img"][m] = dict(
+            rec["img"][m] = dict(   # native detail comes from the zoom grid's tiles (build_zoom.py), not crops
                 full=save_webp(resized(im, FULL_PX), os.path.join(IMG, "qual", f"{row['prompt_id']}_{m}.webp"), FULL_Q),
-                crop=save_webp(im.crop((x, y, x + s, y + s)), os.path.join(IMG, "qual", f"{row['prompt_id']}_{m}_crop.webp"),
-                               CROP_Q),
                 source_png=mm["source"])
         rows.append(rec)
         print("qual", row["prompt_id"], [x, y, s], flush=True)

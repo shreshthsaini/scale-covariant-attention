@@ -5,11 +5,6 @@ window.SCA_MEDIA = {
    "mp4": "assets/video/teaser/zoom_loop.mp4",
    "bytes": 1478620,
    "poster": "assets/video/teaser/zoom_loop.webp"
-  },
-  "heads": {
-   "mp4": "assets/video/teaser/heads_loop.mp4",
-   "bytes": 650480,
-   "poster": "assets/video/teaser/heads_loop.webp"
   }
  },
  "explainer": {

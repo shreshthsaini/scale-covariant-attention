@@ -8,10 +8,14 @@ list of {group, prompt_id}). The PNGs are decoded here; nothing depends on which
 Outputs, per shown image, in web/assets/img/zoom/<group>_<prompt id>/:
   view.webp            display view (hero 2000 px, cards 1600 px on the long side)
   c<k>.webp            the k-th crop window at native pixels (768 px, the manifest's boxes)
-  t/<c>_<r>.webp       hero only: the native image in 512 px tiles for the page's lens
-  <method>_view.webp, <method>_c<k>.webp
-                       the same view and windows of each comparison image of the group (AReA, full attention,
-                       or the native image upscaled with Lanczos), when the manifest lists it
+  t/<c>_<r>.webp       hero only: the native image in 512 px tiles for the page's deep zoom
+  <method>_view.webp, <method>_c<k>.webp, <method>_t/
+                       the same view, windows and (hero) tiles of each comparison image of the group (AReA, or the
+                       same model sampled directly at the target size with full attention), when the manifest lists
+                       it. Native images upscaled with Lanczos are never shown (user directive 2026-11-08).
+Each item carries the page's zoom grid (assets/js/zoomgrid.js): one panel per image, the four windows as the
+auto-zoom stops (they come from build_showcase.py's edge-energy map, the same boxes for every image of the group)
+and as native-pixel tiles, and the hero's whole-image tiles. Every panel of a grid gets the same tile coverage.
 Sizes on the page are width x height (the manifest's "size" is "HxW"). Files are rewritten only when missing or
 older than their PNG.
 
@@ -36,8 +40,9 @@ JS = os.path.join(WEB, "assets", "js", "showcase.js")
 TILE = 512
 SCA_METHODS = ("sca_v2_prog", "sca_v2", "flux2_sca_v2", "qwen_sca")
 CONFIG = {"sca_v2_prog": "Progressive SCA", "sca_v2": "Single-pass SCA", "flux2_sca_v2": "SCA, single pass",
-          "qwen_sca": "SCA, single pass", "area": "AReA", "flux2_full": "Full attention", "qwen_full": "Full attention",
-          "lanczos": "Native size, upscaled"}
+          "qwen_sca": "SCA, single pass", "area": "AReA", "qwen_area": "AReA", "flux2_full": "Full attention",
+          "qwen_full": "Full attention"}
+NOT_SHOWN = ("lanczos",)    # user directive 2026-11-08: compare against methods only
 CATS = {"product": "Products", "landscape": "Landscapes", "architecture": "Architecture", "portrait": "Portraits",
         "animal": "Animals", "dense": "Dense scenes"}
 
@@ -62,7 +67,7 @@ def render(job):
     vp = os.path.join(out, f"{prefix}view.webp")
     crops = [os.path.join(out, f"{prefix}c{k}.webp") for k in range(len(boxes))]
     todo = not all(fresh(p, png) for p in [vp] + crops)
-    tdir = os.path.join(out, "t")
+    tdir = os.path.join(out, prefix + "t")
     if want_tiles:
         with Image.open(png) as probe:
             W, H = probe.size
@@ -126,9 +131,10 @@ def main():
             out = os.path.join(ZOOM, f"{key[0]}_{key[1]}")
             boxes = [list(b) for b in s["crops"]]
             ref = wh(s["size"])
-            members = [(s, "")] + [(o, o["method"] + "_") for o in es if o is not s and os.path.exists(o["png"])]
+            members = [(s, "")] + [(o, o["method"] + "_") for o in es if o is not s and os.path.exists(o["png"])
+                                   and o["method"] not in NOT_SHOWN and o["method"] not in SCA_METHODS]
             for e, prefix in members:
-                jobs.append((e["png"], out, prefix, 2000 if role == "hero" else 1600, boxes, role == "hero" and prefix == "", ref))
+                jobs.append((e["png"], out, prefix, 2000 if role == "hero" else 1600, boxes, role == "hero", ref))
             plan.append((role, s, members))
     with Pool(a.procs) as pool:
         results = pool.map(render, jobs)
@@ -144,11 +150,19 @@ def main():
                 "crops": [{"box": b, "file": f} for b, f in zip(s["crops"], r0["crops"])], "compare": []}
         if "tiles" in r0:
             item["tiles"] = r0["tiles"]
-        for (o, _), r in zip(members[1:], recs[1:]):
-            c = {"method": o["method"], "label": CONFIG.get(o["method"], o["method"]), "view": r["view"], "crops": r["crops"]}
-            if o["method"] == "lanczos" and o.get("native_size"):
-                c["note"] = "native " + "×".join(reversed(o["native_size"].split("x"))) + ", upscaled with Lanczos"
-            item["compare"].append(c)
+        item["regions"] = [[b[0] + b[2] // 2, b[1] + b[2] // 2, b[2]] for b in s["crops"]]
+        item["panels"] = []
+        for (o, _), r in zip(members, recs):
+            pan = {"method": o["method"], "label": CONFIG.get(o["method"], o["method"]), "view": r["view"], "vs": r["view_size"]}
+            if o is s:
+                pan["ours"] = True
+            if "tiles" in r:
+                pan["tiles"] = r["tiles"]
+            else:
+                pan["rt"] = [[b[0], b[1], b[2], b[2], f] for b, f in zip(s["crops"], r["crops"])]
+            item["panels"].append(pan)
+            if o is not s:
+                item["compare"].append({"method": o["method"], "label": pan["label"], "view": r["view"], "crops": r["crops"]})
         if role == "hero":
             data["hero"].append(item)
         elif role == "cards":

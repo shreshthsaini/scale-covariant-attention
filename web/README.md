@@ -10,15 +10,32 @@ Source Serif 4, SIL OFL, licence texts in `assets/fonts/`). Bulky intermediates 
 **What the page shows.** The headline is **progressive SCA** (`sca_v2_prog`): HRDiT's released three-stage schedule
 (30 steps at 1024^2 with the model's own attention, then the last 17 steps at 2048^2 and the last 10 at 4096^2) with
 SCA attention at the two upper stages, reading ratio 2 and ratio 4 from one reach table. **Single-pass SCA**
-(`sca_v2`) is the fast mode. Every SCA image names its configuration. Sections, in order: title and three teaser
-loops; hero images with a native-pixel lens; four headline numbers; abstract; the explainer video; the observation
-(full attention at 4096^2, the variance split, the 1,368-head chart, the paper's heads figure); the method (the
-paper's method figure, then five steps with interactive figures drawn from real data: near/far rings of three heads,
-the two views to scale, reach emulation, the closed-form error parabola, the reach table, the two schedules); the
-showcase (very high resolution, other backbones); comparisons at 4096^2 (progressive and single-pass SCA against
-AReA, HRDiT, UltraImage and full attention, synced full-view and 1:1 sliders); per-example videos; results (three
-seeds and HRGen-1K, time bars, Table 1, the paired chart, the latency chart, short findings); the fixed-rule gallery;
-Ideogram placeholders; limitations; citation.
+(`sca_v2`) is the fast mode. Every SCA image names its configuration. Sections, in order: title and teaser loop; hero
+images (5120^2 and 6144x4096) as zoom grids; four headline numbers; **speed** (the paper's quality-against-time plot
+with speed-up arrows and its latency-against-size plot, `assets/img/figs/speed_{time,latency}_{light,dark}.webp`,
+exported by the paper owner from paper/figures/src/fig_speed.py); abstract; the explainer video; the observation (all
+four methods at 4096^2 in one zoom grid, the variance split, the paper's heads figure); the method (the paper's method
+figure, then five steps with interactive figures drawn from real data); the showcase (cards from
+build/showcase_manifest.json via build_showcase_page.py); comparisons at 4096^2 (15 prompts, eight methods in one
+zoom grid: progressive and single-pass SCA, AReA, HRDiT, UltraImage, DyPE, SEGA, full attention); per-example videos;
+results; the fixed-rule gallery (progressive SCA and AReA in a zoom grid); Ideogram placeholders; limitations;
+citation. Native images upscaled with Lanczos are never shown (user directive 2026-11-08): comparisons are against
+methods only, and for FLUX.2-dev and Qwen-Image against the same model sampled directly at the target size.
+
+**Synced zoom grids** (`assets/js/zoomgrid.js`, `assets/css/zoomgrid.css`, shared with `review/`). Every multi-method
+comparison is a grid of panels that share one view: scroll or pinch on any panel to zoom, drag to pan, double-click or
+double-tap to reset; every panel shows the same region. A small map in the first panel shows where the view is (drag
+it to move). **Auto zoom** flies (van Wijk and Nuij's smooth zoom path) through the grid's stops, holding at each at
+about one native pixel per device pixel; any input stops it and leaves the view in place. The stops come from an
+edge-energy map computed at build time (`build/zoomlib.py`: per image the mean-normalised |dx| + |dy| at half
+resolution, averaged over the grid's images; the three windows with the most energy, at least 1.4 windows apart),
+the same stops for every method. At the whole-image view each panel is a plain lazy `<img>`; canvases exist only
+while a grid is zoomed, and native-pixel tiles load only when the view needs more pixels than the overview holds.
+Tiles: one 1024 px WebP (quality 80) per stop and image on the main page (640 px on the 96-prompt page, whose
+panels are about 250 px wide); the showcase uses its four 768 px windows as stops and tiles, the hero its whole
+images in 512 px tiles. Whole-image 4 x 4 tiling of every compared image would take web/ far past 250 MB (0.5 to
+2 MB per image), and a private Hugging Face dataset cannot serve tiles to a public page, so the tiles are cut where
+the tour goes.
 
 ## Wording rules (user directives, 2026-11-07)
 
@@ -41,14 +58,17 @@ Ideogram placeholders; limitations; citation.
   classes come from the `<key>.cls` entries. The Paper button links to `../paper/main.pdf`.
 - `assets/css/site.css`, `assets/js/site.js`: styles and the vanilla JS (lens, sliders, charts, carousels, lightbox).
 - Generated data (do not edit): `numbers.js`, `images.js`, `media.js` (which videos exist), `showcase.js`,
-  `process.js`, `traces.js` (single-pass videos, shown until the progressive ones exist), `gallery.js`, `concept.js`,
-  `method_data.js`, `ideogram_manifest.js`.
+  `process.js`, `traces.js` (single-pass videos, shown until the progressive ones exist), `gallery.js`, `zoomsets.js`
+  (the comparison and gallery grids: stops, overviews, tiles), `method_data.js`, `ideogram_manifest.js`.
+- `assets/img/deep/<set>/<sid>/<method>/`: tour-stop tiles (`r<k>.webp`) and overviews (`v.webp`) of the zoom grids
+  that had no overview on the page yet; `assets/img/figs/`: figures exported by the paper owner (light and dark).
 - `assets/img/`: `hero/`, `compare/` (11 prompts, six methods), `qual/` (four prompts, four methods, 1600 px), `gallery/`
   (12 prompts), `method/` (paper figures), `scale/`, `showcase/` (build_showcase.py), `zoom/` (lens tiles),
   `teaser/`, `failures/` (kept for the record, not shown).
 - `assets/video/`: `teaser/` (three loops), `method/` (explainer), `process/` (per-example videos), `trace/` (single-pass
   videos).
-- `review/`: the second page (`index.html`, `items.json`, `img/`); built by `build/review_gallery.py`.
+- `review/`: the second page (`index.html`, `items.json` from `build/review_gallery.py`, `items.js` and `img/z/` from
+  `build/build_zoom.py review`).
 
 ## Regenerating every asset
 
@@ -62,20 +82,24 @@ Run from the repository root with `PY=/work/09032/saini_2/vista/library/uv-envs/
    paper's four-method grid at 1600 px; `method` rasterises `method_v3`, `method_zoom`, `pi_heads` and `heads_view`
    (set `SCA_PDF_PY` to an env with PyMuPDF, for example `uv-envs/csd-figs`).
 3. **Method data**: `$PY web/build/build_method_data.py` (reach table at ratios 2 and 4, the three ring heads with their
-   exact A, B, E, F sums, the rings) and `$PY web/build/build_concept.py` (the 1,368 curves).
+   exact A, B, E, F sums, the rings). `build_concept.py` (the 1,368-curve chart) is retired from the page.
 4. **Gallery**: `$PY web/build/build_gallery.py --n 12` (first 12 prompts of
    `results/evidence/prompts/aesthetic4k_eval.jsonl`, progressive SCA and AReA at seed 0, central 512 px crops).
-5. **Showcase**: `build/build_showcase.py` (showcase owner; manifest, Lanczos references, overview WebP and four
-   768 px native crops per image), then `$PY web/build/build_showcase_page.py` (page side: lens tiles for the large
+5. **Showcase**: `build/build_showcase.py` (showcase owner; manifest, overview WebP and four
+   768 px native crops per image), then `$PY web/build/build_showcase_page.py` (page side: zoom grids, whole-image tiles for the large
    images, `assets/js/showcase.js`; writes an empty `SCA_SHOWCASE` until the manifest exists).
 6. **Videos**: `$PY web/build/render_explainer.py` (the explainer and `teaser/heads_loop.mp4`),
    `$PY web/build/render_process_videos.py` (per-example videos from the progressive and AReA traces under
    `/scratch/09032/saini_2/sca/web_assets/trace/`, `assets/js/process.js`, `teaser/zoom_loop.mp4` and
    `teaser/stages_loop.mp4`), then `$PY web/build/build_media.py` so the page picks them up.
-7. **Check**: `PLAYWRIGHT_BROWSERS_PATH=/scratch/09032/saini_2/tmp/ms-playwright
+7. **Zoom grids**: `$PY web/build/build_zoom.py compare gallery review --procs 12` (a few minutes; reuses the
+   overviews of steps 2 and 4, caches the stops on scratch under `web_assets/zoom_cache/`, rewrites only stale
+   files). Rerun `build_showcase_page.py` after the showcase manifest changes; it writes the showcase grids.
+8. **Check**: `PLAYWRIGHT_BROWSERS_PATH=/scratch/09032/saini_2/tmp/ms-playwright
    /work/09032/saini_2/vista/library/uv-envs/pwqa/bin/python web/build/check_page.py --http --sections --out DIR`
-   (desktop and phone, light and dark: missing files, broken images, console errors, overflow, forbidden words; lens and
-   lightbox screenshots). Also open the page once over file:// (fonts load there; font preloads do not).
+   (desktop and phone, light and dark, and the 96-prompt page: missing files, broken images, console errors, overflow,
+   forbidden words; wheel zoom, drag, a synthetic two-finger pinch, double-click reset and auto zoom on a grid;
+   screenshots). Also open the page once over file:// (fonts load there; font preloads do not).
 
 ## Against a commercial model: adding the Ideogram 4.0 images
 

@@ -11,6 +11,7 @@
 <meta property="og:image" content="assets/img/hero/m3112502764021036396.webp">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2313865F'/%3E%3Cpath d='M8 8h7v7H8zM17 17h7v7h-7z' fill='%23fff'/%3E%3Cpath d='M17 8h7v7h-7zM8 17h7v7H8z' fill='%23fff' opacity='.45'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/css/site.css">
+<link rel="stylesheet" href="assets/css/zoomgrid.css">
 <script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("sca-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 </head>
 <body>
@@ -18,6 +19,7 @@
   <div class="wrap wide bar">
     <a class="brand" href="#top">SCA</a>
     <nav class="nav" aria-label="Sections">
+      <a href="#speed">Speed</a>
       <a href="#idea">Idea</a>
       <a href="#method">Method</a>
       <a href="#showcase">Showcase</a>
@@ -78,6 +80,27 @@
   </div>
 </section>
 
+<!-- ================================================================ speed -->
+<section id="speed" class="speed-sec" aria-labelledby="h-speed">
+  <div class="wrap wide">
+    <div class="head-c">
+      <p class="kicker">Speed</p>
+      <h2 id="h-speed"><span data-num="prog.clean.area_x">4.1×</span> faster than AReA, <span data-num="prog.clean.hrdit_x">2.2×</span> faster than HRDiT</h2>
+      <p class="lede-c">Progressive SCA makes a 4096&sup2; image in <span data-num="prog.clean.prog">49.2</span>&nbsp;s on one GH200 and matches the preference scores of HRDiT, which needs <span data-num="prog.clean.hrdit">107.0</span>&nbsp;s on the same schedule. Single-pass SCA's time grows in proportion to the pixel count, so its lead over AReA widens with size.</p>
+    </div>
+    <div class="speed-figs">
+      <figure class="paper-fig speed-fig">
+        <button class="pf" type="button" aria-label="Open the speed figure full size"><img class="th-l" src="assets/img/figs/speed_time_light.webp" width="1380" height="870" loading="lazy" alt="ImageReward against seconds per 4096 squared image for every method, with arrows from each baseline to progressive SCA labelled with its speed-up: 2.2 times over HRDiT, 4.1 times over AReA, 6.1 times over UltraImage, and about 3.8 to 3.9 times over SEGA, DyPE and full attention."><img class="th-d" src="assets/img/figs/speed_time_dark.webp" width="1380" height="870" loading="lazy" alt=""></button>
+        <figcaption><b>Quality against time at 4096&sup2;.</b> ImageReward on the <span data-num="main.n_prompts">195</span> prompts against seconds per image (log axis). Filled markers are clean batch-1 medians; hollow markers are campaign means, set against progressive SCA's campaign mean of <span data-num="main.prog.time_camp">50.7</span>&nbsp;s. Each arrow carries progressive SCA's speed-up.</figcaption>
+      </figure>
+      <figure class="paper-fig speed-fig">
+        <button class="pf" type="button" aria-label="Open the latency figure full size"><img class="th-l" src="assets/img/figs/speed_latency_light.webp" width="1380" height="870" loading="lazy" alt="Seconds per image against image side from 2048 to 8192 pixels, both axes logarithmic: single-pass SCA stays 2.1 to 3.1 times faster than AReA, full attention grows fastest, and progressive SCA at 4096 squared sits below both."><img class="th-d" src="assets/img/figs/speed_latency_dark.webp" width="1380" height="870" loading="lazy" alt=""></button>
+        <figcaption><b>Seconds per image against size.</b> Batch 1 on one GH200, median of three prompts, both axes logarithmic. Labels give single-pass SCA's speed-up over AReA at each size (fitted exponents <span data-num="latency.exp.sca">0.99</span> and <span data-num="latency.exp.area">1.12</span>); at 8192&sup2; it takes <span data-num="latency.sca.8192">309.7</span>&nbsp;s against <span data-num="latency.area.8192">952.0</span>&nbsp;s. The star is progressive SCA at 4096&sup2;.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
 <!-- ================================================================ abstract -->
 <section id="abstract" aria-labelledby="h-abstract">
   <div class="wrap prose">
@@ -110,7 +133,7 @@
       <p class="lede-c">A fix that restricts attention must decide how far each head looks. At 4096&sup2; nothing can check that decision, because full attention there is the failure. At 1024&sup2;, where full attention still works, the decision can be measured.</p>
     </div>
     <div class="fail-row" id="fail-row"></div>
-    <div class="idea-grid">
+    <div class="idea-grid one">
       <div class="idea-text">
         <p>For 256 queries in every block and step at 1024&sup2;, we record the share of each head's image attention within <span data-num="heads.var.radius">16</span> tokens of the query. After the first <span data-num="config.opening_steps">8</span> steps, the variance of that share over all heads and noise levels splits three ways.</p>
         <div class="split">
@@ -120,11 +143,6 @@
         </div>
         <p class="small muted">The averaged curve rises from <span data-num="heads.var.curve_lo">0.57</span> to <span data-num="heads.var.curve_hi">0.62</span> during sampling, the narrowing AReA reports. On FLUX.1-Krea-dev and FLUX.2-dev the head's part is <span data-num="heads.var.krea_head">97.6</span>% and <span data-num="heads.var.flux2_head">99.1</span>%.</p>
       </div>
-      <figure class="chart concept">
-        <div class="concept-box" id="concept" role="img" aria-label="Line chart: the weight each of FLUX.1-dev's 1,368 heads puts on its window, against noise level, beside AReA's single switch from 0 to 1."></div>
-        <p class="concept-readout small" id="concept-readout" aria-live="polite">Hover or touch the chart to pick out one head.</p>
-        <figcaption><b>One switch for every head, or one mix per head.</b> In SCA's notation AReA sets every head's window weight to 0 above &sigma; = <span data-num="config.gate_sigma">0.89</span> and to 1 below (dashed). Each line is one of FLUX.1-dev's <span data-num="calib.n_heads_c">1,368</span> heads at ratio <span data-num="config.native_ratio">4</span>, coloured by its mean weight: blue global, amber local, green the median.</figcaption>
-      </figure>
     </div>
     <figure class="paper-fig wide-fig">
       <button class="pf" type="button" aria-label="Open the figure full size"><img src="assets/img/method/heads_view.webp" width="2400" height="707" loading="lazy" alt="Four panels: the local window and the global keys on a 4096 squared image; the measured attention mass of three heads at 1024 squared; their fitted weights against noise level with the median of all heads; and the fitted weight of every head against its measured share within 16 tokens, correlation 0.77."></button>
@@ -229,12 +247,12 @@
     <div class="head-c">
       <p class="kicker">Showcase</p>
       <h2 id="h-showcase">Inspect every image at native pixels</h2>
-      <p class="lede-c">FLUX.1-dev without training; each image names its configuration and size. The large images at the top of the page carry a native-pixel lens. Here the numbered boxes mark four windows shown at native pixels under each image; click an image to compare the same windows with the other runs of that prompt.</p>
+      <p class="lede-c">FLUX.1-dev without training; each image names its configuration and size. Scroll or pinch on an image to zoom down to native pixels, or press <b>Auto zoom</b>. The four windows under each image are its most detailed regions at native pixels; click one to fly there. Where AReA has the same prompt and seed, it sits beside the image and zooms with it.</p>
     </div>
     <div id="showcase-body"></div>
     <div class="sub-head">
       <h3 id="backbones">Other backbones</h3>
-      <p class="muted">The same attention on FLUX.2-dev and Qwen-Image, each with its own reach table, beside the same model with full attention at the target or at its native resolution. Drag the divider; the crops move with it.</p>
+      <p class="muted">The same attention on FLUX.2-dev and Qwen-Image, each with its own reach table, beside the same model sampled directly at the target size with full attention. Both panels zoom together.</p>
     </div>
     <div id="backbones-body"></div>
   </div>
@@ -246,18 +264,13 @@
     <div class="head-c">
       <p class="kicker">Comparisons</p>
       <h2 id="h-compare">Against the baselines at 4096&sup2;</h2>
-      <p class="lede-c">FLUX.1-dev, same prompt and seed for every method. Drag the divider on either image; the full view and the native 1:1 crop of the boxed window move together.</p>
-    </div>
-    <div class="cmp-controls">
-      <div class="ctl"><span class="label" id="cmp-l-label">Left</span><div class="seg" id="cmp-left" role="group" aria-labelledby="cmp-l-label"></div></div>
-      <div class="ctl"><span class="label" id="cmp-r-label">Right</span><div class="seg" id="cmp-right" role="group" aria-labelledby="cmp-r-label"></div></div>
+      <p class="lede-c">FLUX.1-dev, the same prompt and seed in every panel. Scroll or pinch on any panel to zoom and drag to pan: every method follows, down to native pixels. <b>Auto zoom</b> visits the three most detailed regions of the prompt, found from the edge energy of all eight images. Steps: progressive SCA and HRDiT <span data-num="main.prog.steps">30+17+10</span>, UltraImage <span data-num="main.ultraimage.steps">30+30</span>, the others <span data-num="config.steps">28</span>.</p>
     </div>
     <div class="thumbs" id="cmp-thumbs" role="group" aria-label="Prompt"></div>
-    <div class="cmp-grid" id="cmp">
-      <div class="cmp-main" id="cmp-main"></div>
-      <div class="cmp-side"><div id="cmp-side"></div><div class="cmp-meta" id="cmp-meta"></div></div>
-    </div>
-    <noscript><p class="muted">The comparison needs JavaScript. The images are in assets/img/compare/ and assets/img/qual/.</p></noscript>
+    <div class="m-chips" id="cmp-methods" role="group" aria-label="Methods shown"></div>
+    <div id="cmp-zoom"></div>
+    <div class="cmp-meta" id="cmp-meta"></div>
+    <noscript><p class="muted">The comparison needs JavaScript. The images are in assets/img/compare/, assets/img/qual/ and assets/img/deep/compare/.</p></noscript>
   </div>
 </section>
 
@@ -328,16 +341,11 @@
     </div>
     <p class="caption"><b>Paper Table 1.</b> Seed label 0. Seconds on one GH200: clean is the batch-1 median after a warm-up; campaign is the mean over the full run on shared nodes, not ranked; n/m: not measured. Clean times come from three sweeps: AReA and full attention from the first, single-pass SCA from the second, HRDiT and progressive SCA from the third, which re-timed AReA at <span data-num="prog.clean.area">202.4</span>&nbsp;s. HPSv2.1 &times;100; MUSIQ<sub>c</sub> is MUSIQ on 1024&sup2; crops; patch FID is our own definition and is not comparable across papers. Bold: best; underline: second best, within each group. <span class="sig-up-key">Blue</span>: significantly better than progressive SCA; <span class="sig-dn-key">orange</span>: significantly worse (95% paired intervals).</p>
 
-    <div class="charts">
+    <div class="charts one">
       <figure class="chart">
         <h3>Both modes against AReA</h3>
         <div id="chart-paired"></div>
         <figcaption>Difference from AReA at 4096&sup2; (<span data-num="main.n_prompts">195</span> prompts) as percent of AReA's mean, with 95% paired intervals; right is better (FID, KID and their patch versions are negated). Circles: progressive SCA; diamonds: single-pass SCA. Green: significantly better; orange: significantly worse; open grey: the interval spans zero.</figcaption>
-      </figure>
-      <figure class="chart">
-        <h3>Seconds per image against size, single pass</h3>
-        <div id="chart-latency"></div>
-        <figcaption>Batch 1 on one GH200, median of three prompts, both axes logarithmic. Single-pass SCA's time grows in proportion to the pixel count (fitted exponent <span data-num="latency.exp.sca">0.99</span>, AReA <span data-num="latency.exp.area">1.12</span>). At 8192&sup2;: <span data-num="latency.sca.8192">309.7</span>&nbsp;s against <span data-num="latency.area.8192">952.0</span>&nbsp;s.</figcaption>
       </figure>
     </div>
 
@@ -376,7 +384,7 @@
     <div class="head-c">
       <p class="kicker">Gallery</p>
       <h2 id="h-gallery">The first 12 prompts of the evaluation set</h2>
-      <p class="lede-c">Progressive SCA on the first 12 of the <span data-num="main.n_prompts">195</span> Aesthetic-4K evaluation prompts, in file order, at seed 0 and 4096&sup2;. Open one to compare it with AReA; the crop is the central 512&nbsp;&times;&nbsp;512 native pixels.</p>
+      <p class="lede-c">Progressive SCA on the first 12 of the <span data-num="main.n_prompts">195</span> Aesthetic-4K evaluation prompts, in file order, at seed 0 and 4096&sup2;. Open one to zoom it beside AReA on the same prompt and seed, down to native pixels.</p>
     </div>
     <div class="gal" id="gal"></div>
     <p class="cta"><a class="chip" href="review/index.html">Side by side on 96 prompts<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><span class="cta-note">progressive and single-pass SCA, AReA, HRDiT and UltraImage</span></p>
@@ -447,9 +455,10 @@
 <script src="assets/js/process.js"></script>
 <script src="assets/js/traces.js"></script>
 <script src="assets/js/gallery.js"></script>
-<script src="assets/js/concept.js"></script>
 <script src="assets/js/method_data.js"></script>
 <script src="assets/js/ideogram_manifest.js"></script>
+<script src="assets/js/zoomsets.js"></script>
+<script src="assets/js/zoomgrid.js"></script>
 <script src="assets/js/site.js"></script>
 </body>
 </html>

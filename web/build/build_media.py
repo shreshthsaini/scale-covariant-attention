@@ -2,7 +2,7 @@
 its file exists and a labelled placeholder otherwise (no 404s from file://).
 
 Videos (made by other scripts in web/build):
-  teaser/zoom_loop.mp4, stages_loop.mp4 (render_process_videos.py), teaser/heads_loop.mp4 (render_explainer.py),
+  teaser/zoom_loop.mp4, stages_loop.mp4 (render_process_videos.py), (teaser/heads_loop.mp4 from render_explainer.py is no longer shown),
   each with a .webp poster of the same name; method/sca_explainer.mp4 with _poster.webp and .vtt (render_explainer.py).
 Run after any of them changes: python web/build/build_media.py
 """
@@ -30,7 +30,7 @@ def entry(mp4, poster=None, vtt=None):
 
 def main():
     media = {"teaser": {}}
-    for key in ("zoom", "stages", "heads"):
+    for key in ("zoom", "stages"):   # the 1,368-head curve loop is retired (2026-11-08)
         e = entry(os.path.join(V, "teaser", f"{key}_loop.mp4"), os.path.join(V, "teaser", f"{key}_loop.webp"))
         if e:
             media["teaser"][key] = e

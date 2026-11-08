@@ -53,26 +53,53 @@ window.SCA_SHOWCASE = {
      "file": "assets/img/zoom/flux1_5120_sc_l04_hillside_town/c3.webp"
     }
    ],
-   "compare": [
-    {
-     "method": "lanczos",
-     "label": "Native size, upscaled",
-     "view": "assets/img/zoom/flux1_5120_sc_l04_hillside_town/lanczos_view.webp",
-     "crops": [
-      "assets/img/zoom/flux1_5120_sc_l04_hillside_town/lanczos_c0.webp",
-      "assets/img/zoom/flux1_5120_sc_l04_hillside_town/lanczos_c1.webp",
-      "assets/img/zoom/flux1_5120_sc_l04_hillside_town/lanczos_c2.webp",
-      "assets/img/zoom/flux1_5120_sc_l04_hillside_town/lanczos_c3.webp"
-     ],
-     "note": "native 1024\u00d71024, upscaled with Lanczos"
-    }
-   ],
+   "compare": [],
    "tiles": {
     "path": "assets/img/zoom/flux1_5120_sc_l04_hillside_town/t/{c}_{r}.webp",
     "size": 512,
     "cols": 10,
     "rows": 10
-   }
+   },
+   "regions": [
+    [
+     1472,
+     4096,
+     768
+    ],
+    [
+     2432,
+     3712,
+     768
+    ],
+    [
+     704,
+     4672,
+     768
+    ],
+    [
+     1216,
+     3328,
+     768
+    ]
+   ],
+   "panels": [
+    {
+     "method": "sca_v2",
+     "label": "Single-pass SCA",
+     "view": "assets/img/zoom/flux1_5120_sc_l04_hillside_town/view.webp",
+     "vs": [
+      2000,
+      2000
+     ],
+     "ours": true,
+     "tiles": {
+      "path": "assets/img/zoom/flux1_5120_sc_l04_hillside_town/t/{c}_{r}.webp",
+      "size": 512,
+      "cols": 10,
+      "rows": 10
+     }
+    }
+   ]
   },
   {
    "id": "flux1_aspect_sc_p01_skeleton_watch",
@@ -126,26 +153,53 @@ window.SCA_SHOWCASE = {
      "file": "assets/img/zoom/flux1_aspect_sc_p01_skeleton_watch/c3.webp"
     }
    ],
-   "compare": [
-    {
-     "method": "lanczos",
-     "label": "Native size, upscaled",
-     "view": "assets/img/zoom/flux1_aspect_sc_p01_skeleton_watch/lanczos_view.webp",
-     "crops": [
-      "assets/img/zoom/flux1_aspect_sc_p01_skeleton_watch/lanczos_c0.webp",
-      "assets/img/zoom/flux1_aspect_sc_p01_skeleton_watch/lanczos_c1.webp",
-      "assets/img/zoom/flux1_aspect_sc_p01_skeleton_watch/lanczos_c2.webp",
-      "assets/img/zoom/flux1_aspect_sc_p01_skeleton_watch/lanczos_c3.webp"
-     ],
-     "note": "native 1536\u00d71024, upscaled with Lanczos"
-    }
-   ],
+   "compare": [],
    "tiles": {
     "path": "assets/img/zoom/flux1_aspect_sc_p01_skeleton_watch/t/{c}_{r}.webp",
     "size": 512,
     "cols": 12,
     "rows": 8
-   }
+   },
+   "regions": [
+    [
+     3072,
+     1856,
+     768
+    ],
+    [
+     3840,
+     1984,
+     768
+    ],
+    [
+     2304,
+     1984,
+     768
+    ],
+    [
+     1536,
+     2496,
+     768
+    ]
+   ],
+   "panels": [
+    {
+     "method": "sca_v2",
+     "label": "Single-pass SCA",
+     "view": "assets/img/zoom/flux1_aspect_sc_p01_skeleton_watch/view.webp",
+     "vs": [
+      2000,
+      1333
+     ],
+     "ours": true,
+     "tiles": {
+      "path": "assets/img/zoom/flux1_aspect_sc_p01_skeleton_watch/t/{c}_{r}.webp",
+      "size": 512,
+      "cols": 12,
+      "rows": 8
+     }
+    }
+   ]
   }
  ],
  "groups": [
@@ -205,18 +259,69 @@ window.SCA_SHOWCASE = {
        "file": "assets/img/zoom/flux1_4096_sc_p08_sapphire_ring/c3.webp"
       }
      ],
-     "compare": [
+     "compare": [],
+     "regions": [
+      [
+       1728,
+       2368,
+       768
+      ],
+      [
+       2496,
+       2496,
+       768
+      ],
+      [
+       1664,
+       1600,
+       768
+      ],
+      [
+       2496,
+       1472,
+       768
+      ]
+     ],
+     "panels": [
       {
-       "method": "lanczos",
-       "label": "Native size, upscaled",
-       "view": "assets/img/zoom/flux1_4096_sc_p08_sapphire_ring/lanczos_view.webp",
-       "crops": [
-        "assets/img/zoom/flux1_4096_sc_p08_sapphire_ring/lanczos_c0.webp",
-        "assets/img/zoom/flux1_4096_sc_p08_sapphire_ring/lanczos_c1.webp",
-        "assets/img/zoom/flux1_4096_sc_p08_sapphire_ring/lanczos_c2.webp",
-        "assets/img/zoom/flux1_4096_sc_p08_sapphire_ring/lanczos_c3.webp"
+       "method": "sca_v2_prog",
+       "label": "Progressive SCA",
+       "view": "assets/img/zoom/flux1_4096_sc_p08_sapphire_ring/view.webp",
+       "vs": [
+        1600,
+        1600
        ],
-       "note": "native 1024\u00d71024, upscaled with Lanczos"
+       "ours": true,
+       "rt": [
+        [
+         1344,
+         1984,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_p08_sapphire_ring/c0.webp"
+        ],
+        [
+         2112,
+         2112,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_p08_sapphire_ring/c1.webp"
+        ],
+        [
+         1280,
+         1216,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_p08_sapphire_ring/c2.webp"
+        ],
+        [
+         2112,
+         1088,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_p08_sapphire_ring/c3.webp"
+        ]
+       ]
       }
      ]
     },
@@ -272,18 +377,69 @@ window.SCA_SHOWCASE = {
        "file": "assets/img/zoom/flux1_4096_sc_p09_filigree_necklace/c3.webp"
       }
      ],
-     "compare": [
+     "compare": [],
+     "regions": [
+      [
+       832,
+       2240,
+       768
+      ],
+      [
+       1920,
+       2624,
+       768
+      ],
+      [
+       2688,
+       3136,
+       768
+      ],
+      [
+       832,
+       3008,
+       768
+      ]
+     ],
+     "panels": [
       {
-       "method": "lanczos",
-       "label": "Native size, upscaled",
-       "view": "assets/img/zoom/flux1_4096_sc_p09_filigree_necklace/lanczos_view.webp",
-       "crops": [
-        "assets/img/zoom/flux1_4096_sc_p09_filigree_necklace/lanczos_c0.webp",
-        "assets/img/zoom/flux1_4096_sc_p09_filigree_necklace/lanczos_c1.webp",
-        "assets/img/zoom/flux1_4096_sc_p09_filigree_necklace/lanczos_c2.webp",
-        "assets/img/zoom/flux1_4096_sc_p09_filigree_necklace/lanczos_c3.webp"
+       "method": "sca_v2_prog",
+       "label": "Progressive SCA",
+       "view": "assets/img/zoom/flux1_4096_sc_p09_filigree_necklace/view.webp",
+       "vs": [
+        1600,
+        1600
        ],
-       "note": "native 1024\u00d71024, upscaled with Lanczos"
+       "ours": true,
+       "rt": [
+        [
+         448,
+         1856,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_p09_filigree_necklace/c0.webp"
+        ],
+        [
+         1536,
+         2240,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_p09_filigree_necklace/c1.webp"
+        ],
+        [
+         2304,
+         2752,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_p09_filigree_necklace/c2.webp"
+        ],
+        [
+         448,
+         2624,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_p09_filigree_necklace/c3.webp"
+        ]
+       ]
       }
      ]
     },
@@ -339,18 +495,69 @@ window.SCA_SHOWCASE = {
        "file": "assets/img/zoom/flux1_4096_sc_p11_honey_jars/c3.webp"
       }
      ],
-     "compare": [
+     "compare": [],
+     "regions": [
+      [
+       1600,
+       1600,
+       768
+      ],
+      [
+       384,
+       3392,
+       768
+      ],
+      [
+       2368,
+       1600,
+       768
+      ],
+      [
+       1984,
+       3712,
+       768
+      ]
+     ],
+     "panels": [
       {
-       "method": "lanczos",
-       "label": "Native size, upscaled",
-       "view": "assets/img/zoom/flux1_4096_sc_p11_honey_jars/lanczos_view.webp",
-       "crops": [
-        "assets/img/zoom/flux1_4096_sc_p11_honey_jars/lanczos_c0.webp",
-        "assets/img/zoom/flux1_4096_sc_p11_honey_jars/lanczos_c1.webp",
-        "assets/img/zoom/flux1_4096_sc_p11_honey_jars/lanczos_c2.webp",
-        "assets/img/zoom/flux1_4096_sc_p11_honey_jars/lanczos_c3.webp"
+       "method": "sca_v2_prog",
+       "label": "Progressive SCA",
+       "view": "assets/img/zoom/flux1_4096_sc_p11_honey_jars/view.webp",
+       "vs": [
+        1600,
+        1600
        ],
-       "note": "native 1024\u00d71024, upscaled with Lanczos"
+       "ours": true,
+       "rt": [
+        [
+         1216,
+         1216,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_p11_honey_jars/c0.webp"
+        ],
+        [
+         0,
+         3008,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_p11_honey_jars/c1.webp"
+        ],
+        [
+         1984,
+         1216,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_p11_honey_jars/c2.webp"
+        ],
+        [
+         1600,
+         3328,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_p11_honey_jars/c3.webp"
+        ]
+       ]
       }
      ]
     }
@@ -412,18 +619,69 @@ window.SCA_SHOWCASE = {
        "file": "assets/img/zoom/flux1_4096_sc_l06_atoll/c3.webp"
       }
      ],
-     "compare": [
+     "compare": [],
+     "regions": [
+      [
+       1984,
+       2048,
+       768
+      ],
+      [
+       960,
+       2944,
+       768
+      ],
+      [
+       2048,
+       3072,
+       768
+      ],
+      [
+       896,
+       2176,
+       768
+      ]
+     ],
+     "panels": [
       {
-       "method": "lanczos",
-       "label": "Native size, upscaled",
-       "view": "assets/img/zoom/flux1_4096_sc_l06_atoll/lanczos_view.webp",
-       "crops": [
-        "assets/img/zoom/flux1_4096_sc_l06_atoll/lanczos_c0.webp",
-        "assets/img/zoom/flux1_4096_sc_l06_atoll/lanczos_c1.webp",
-        "assets/img/zoom/flux1_4096_sc_l06_atoll/lanczos_c2.webp",
-        "assets/img/zoom/flux1_4096_sc_l06_atoll/lanczos_c3.webp"
+       "method": "sca_v2_prog",
+       "label": "Progressive SCA",
+       "view": "assets/img/zoom/flux1_4096_sc_l06_atoll/view.webp",
+       "vs": [
+        1600,
+        1600
        ],
-       "note": "native 1024\u00d71024, upscaled with Lanczos"
+       "ours": true,
+       "rt": [
+        [
+         1600,
+         1664,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_l06_atoll/c0.webp"
+        ],
+        [
+         576,
+         2560,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_l06_atoll/c1.webp"
+        ],
+        [
+         1664,
+         2688,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_l06_atoll/c2.webp"
+        ],
+        [
+         512,
+         1792,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_l06_atoll/c3.webp"
+        ]
+       ]
       }
      ]
     }
@@ -485,18 +743,69 @@ window.SCA_SHOWCASE = {
        "file": "assets/img/zoom/flux1_4096_sc_l03_opera_house/c3.webp"
       }
      ],
-     "compare": [
+     "compare": [],
+     "regions": [
+      [
+       3584,
+       1408,
+       768
+      ],
+      [
+       448,
+       1408,
+       768
+      ],
+      [
+       2112,
+       704,
+       768
+      ],
+      [
+       2816,
+       1856,
+       768
+      ]
+     ],
+     "panels": [
       {
-       "method": "lanczos",
-       "label": "Native size, upscaled",
-       "view": "assets/img/zoom/flux1_4096_sc_l03_opera_house/lanczos_view.webp",
-       "crops": [
-        "assets/img/zoom/flux1_4096_sc_l03_opera_house/lanczos_c0.webp",
-        "assets/img/zoom/flux1_4096_sc_l03_opera_house/lanczos_c1.webp",
-        "assets/img/zoom/flux1_4096_sc_l03_opera_house/lanczos_c2.webp",
-        "assets/img/zoom/flux1_4096_sc_l03_opera_house/lanczos_c3.webp"
+       "method": "sca_v2_prog",
+       "label": "Progressive SCA",
+       "view": "assets/img/zoom/flux1_4096_sc_l03_opera_house/view.webp",
+       "vs": [
+        1600,
+        1600
        ],
-       "note": "native 1024\u00d71024, upscaled with Lanczos"
+       "ours": true,
+       "rt": [
+        [
+         3200,
+         1024,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_l03_opera_house/c0.webp"
+        ],
+        [
+         64,
+         1024,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_l03_opera_house/c1.webp"
+        ],
+        [
+         1728,
+         320,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_l03_opera_house/c2.webp"
+        ],
+        [
+         2432,
+         1472,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_l03_opera_house/c3.webp"
+        ]
+       ]
       }
      ]
     },
@@ -552,18 +861,69 @@ window.SCA_SHOWCASE = {
        "file": "assets/img/zoom/flux1_4096_sc_l05_palm_house/c3.webp"
       }
      ],
-     "compare": [
+     "compare": [],
+     "regions": [
+      [
+       640,
+       512,
+       768
+      ],
+      [
+       1088,
+       3072,
+       768
+      ],
+      [
+       960,
+       1280,
+       768
+      ],
+      [
+       1088,
+       2112,
+       768
+      ]
+     ],
+     "panels": [
       {
-       "method": "lanczos",
-       "label": "Native size, upscaled",
-       "view": "assets/img/zoom/flux1_4096_sc_l05_palm_house/lanczos_view.webp",
-       "crops": [
-        "assets/img/zoom/flux1_4096_sc_l05_palm_house/lanczos_c0.webp",
-        "assets/img/zoom/flux1_4096_sc_l05_palm_house/lanczos_c1.webp",
-        "assets/img/zoom/flux1_4096_sc_l05_palm_house/lanczos_c2.webp",
-        "assets/img/zoom/flux1_4096_sc_l05_palm_house/lanczos_c3.webp"
+       "method": "sca_v2_prog",
+       "label": "Progressive SCA",
+       "view": "assets/img/zoom/flux1_4096_sc_l05_palm_house/view.webp",
+       "vs": [
+        1600,
+        1600
        ],
-       "note": "native 1024\u00d71024, upscaled with Lanczos"
+       "ours": true,
+       "rt": [
+        [
+         256,
+         128,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_l05_palm_house/c0.webp"
+        ],
+        [
+         704,
+         2688,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_l05_palm_house/c1.webp"
+        ],
+        [
+         576,
+         896,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_l05_palm_house/c2.webp"
+        ],
+        [
+         704,
+         1728,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_l05_palm_house/c3.webp"
+        ]
+       ]
       }
      ]
     }
@@ -625,18 +985,69 @@ window.SCA_SHOWCASE = {
        "file": "assets/img/zoom/flux1_4096_sc_h03_watchmaker/c3.webp"
       }
      ],
-     "compare": [
+     "compare": [],
+     "regions": [
+      [
+       2688,
+       3072,
+       768
+      ],
+      [
+       1792,
+       1216,
+       768
+      ],
+      [
+       3456,
+       3200,
+       768
+      ],
+      [
+       2176,
+       384,
+       768
+      ]
+     ],
+     "panels": [
       {
-       "method": "lanczos",
-       "label": "Native size, upscaled",
-       "view": "assets/img/zoom/flux1_4096_sc_h03_watchmaker/lanczos_view.webp",
-       "crops": [
-        "assets/img/zoom/flux1_4096_sc_h03_watchmaker/lanczos_c0.webp",
-        "assets/img/zoom/flux1_4096_sc_h03_watchmaker/lanczos_c1.webp",
-        "assets/img/zoom/flux1_4096_sc_h03_watchmaker/lanczos_c2.webp",
-        "assets/img/zoom/flux1_4096_sc_h03_watchmaker/lanczos_c3.webp"
+       "method": "sca_v2_prog",
+       "label": "Progressive SCA",
+       "view": "assets/img/zoom/flux1_4096_sc_h03_watchmaker/view.webp",
+       "vs": [
+        1600,
+        1600
        ],
-       "note": "native 1024\u00d71024, upscaled with Lanczos"
+       "ours": true,
+       "rt": [
+        [
+         2304,
+         2688,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_h03_watchmaker/c0.webp"
+        ],
+        [
+         1408,
+         832,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_h03_watchmaker/c1.webp"
+        ],
+        [
+         3072,
+         2816,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_h03_watchmaker/c2.webp"
+        ],
+        [
+         1792,
+         0,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_h03_watchmaker/c3.webp"
+        ]
+       ]
       }
      ]
     },
@@ -692,18 +1103,69 @@ window.SCA_SHOWCASE = {
        "file": "assets/img/zoom/flux1_4096_sc_h01_silver_braids/c3.webp"
       }
      ],
-     "compare": [
+     "compare": [],
+     "regions": [
+      [
+       1792,
+       512,
+       768
+      ],
+      [
+       2368,
+       1280,
+       768
+      ],
+      [
+       2880,
+       3712,
+       768
+      ],
+      [
+       2688,
+       448,
+       768
+      ]
+     ],
+     "panels": [
       {
-       "method": "lanczos",
-       "label": "Native size, upscaled",
-       "view": "assets/img/zoom/flux1_4096_sc_h01_silver_braids/lanczos_view.webp",
-       "crops": [
-        "assets/img/zoom/flux1_4096_sc_h01_silver_braids/lanczos_c0.webp",
-        "assets/img/zoom/flux1_4096_sc_h01_silver_braids/lanczos_c1.webp",
-        "assets/img/zoom/flux1_4096_sc_h01_silver_braids/lanczos_c2.webp",
-        "assets/img/zoom/flux1_4096_sc_h01_silver_braids/lanczos_c3.webp"
+       "method": "sca_v2_prog",
+       "label": "Progressive SCA",
+       "view": "assets/img/zoom/flux1_4096_sc_h01_silver_braids/view.webp",
+       "vs": [
+        1600,
+        1600
        ],
-       "note": "native 1024\u00d71024, upscaled with Lanczos"
+       "ours": true,
+       "rt": [
+        [
+         1408,
+         128,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_h01_silver_braids/c0.webp"
+        ],
+        [
+         1984,
+         896,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_h01_silver_braids/c1.webp"
+        ],
+        [
+         2496,
+         3328,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_h01_silver_braids/c2.webp"
+        ],
+        [
+         2304,
+         64,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_h01_silver_braids/c3.webp"
+        ]
+       ]
       }
      ]
     }
@@ -765,18 +1227,69 @@ window.SCA_SHOWCASE = {
        "file": "assets/img/zoom/flux1_4096_sc_a02_jumping_spider/c3.webp"
       }
      ],
-     "compare": [
+     "compare": [],
+     "regions": [
+      [
+       2048,
+       2048,
+       768
+      ],
+      [
+       1280,
+       2112,
+       768
+      ],
+      [
+       2112,
+       1280,
+       768
+      ],
+      [
+       2816,
+       2176,
+       768
+      ]
+     ],
+     "panels": [
       {
-       "method": "lanczos",
-       "label": "Native size, upscaled",
-       "view": "assets/img/zoom/flux1_4096_sc_a02_jumping_spider/lanczos_view.webp",
-       "crops": [
-        "assets/img/zoom/flux1_4096_sc_a02_jumping_spider/lanczos_c0.webp",
-        "assets/img/zoom/flux1_4096_sc_a02_jumping_spider/lanczos_c1.webp",
-        "assets/img/zoom/flux1_4096_sc_a02_jumping_spider/lanczos_c2.webp",
-        "assets/img/zoom/flux1_4096_sc_a02_jumping_spider/lanczos_c3.webp"
+       "method": "sca_v2_prog",
+       "label": "Progressive SCA",
+       "view": "assets/img/zoom/flux1_4096_sc_a02_jumping_spider/view.webp",
+       "vs": [
+        1600,
+        1600
        ],
-       "note": "native 1024\u00d71024, upscaled with Lanczos"
+       "ours": true,
+       "rt": [
+        [
+         1664,
+         1664,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_a02_jumping_spider/c0.webp"
+        ],
+        [
+         896,
+         1728,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_a02_jumping_spider/c1.webp"
+        ],
+        [
+         1728,
+         896,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_a02_jumping_spider/c2.webp"
+        ],
+        [
+         2432,
+         1792,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_a02_jumping_spider/c3.webp"
+        ]
+       ]
       }
      ]
     },
@@ -832,18 +1345,69 @@ window.SCA_SHOWCASE = {
        "file": "assets/img/zoom/flux1_4096_sc_a06_hummingbird/c3.webp"
       }
      ],
-     "compare": [
+     "compare": [],
+     "regions": [
+      [
+       2560,
+       2304,
+       768
+      ],
+      [
+       2112,
+       1536,
+       768
+      ],
+      [
+       1344,
+       2560,
+       768
+      ],
+      [
+       3328,
+       2112,
+       768
+      ]
+     ],
+     "panels": [
       {
-       "method": "lanczos",
-       "label": "Native size, upscaled",
-       "view": "assets/img/zoom/flux1_4096_sc_a06_hummingbird/lanczos_view.webp",
-       "crops": [
-        "assets/img/zoom/flux1_4096_sc_a06_hummingbird/lanczos_c0.webp",
-        "assets/img/zoom/flux1_4096_sc_a06_hummingbird/lanczos_c1.webp",
-        "assets/img/zoom/flux1_4096_sc_a06_hummingbird/lanczos_c2.webp",
-        "assets/img/zoom/flux1_4096_sc_a06_hummingbird/lanczos_c3.webp"
+       "method": "sca_v2_prog",
+       "label": "Progressive SCA",
+       "view": "assets/img/zoom/flux1_4096_sc_a06_hummingbird/view.webp",
+       "vs": [
+        1600,
+        1600
        ],
-       "note": "native 1024\u00d71024, upscaled with Lanczos"
+       "ours": true,
+       "rt": [
+        [
+         2176,
+         1920,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_a06_hummingbird/c0.webp"
+        ],
+        [
+         1728,
+         1152,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_a06_hummingbird/c1.webp"
+        ],
+        [
+         960,
+         2176,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_a06_hummingbird/c2.webp"
+        ],
+        [
+         2944,
+         1728,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_a06_hummingbird/c3.webp"
+        ]
+       ]
       }
      ]
     }
@@ -905,18 +1469,69 @@ window.SCA_SHOWCASE = {
        "file": "assets/img/zoom/flux1_4096_sc_d01_spice_bazaar/c3.webp"
       }
      ],
-     "compare": [
+     "compare": [],
+     "regions": [
+      [
+       960,
+       2560,
+       768
+      ],
+      [
+       3712,
+       2688,
+       768
+      ],
+      [
+       2944,
+       2496,
+       768
+      ],
+      [
+       1728,
+       2560,
+       768
+      ]
+     ],
+     "panels": [
       {
-       "method": "lanczos",
-       "label": "Native size, upscaled",
-       "view": "assets/img/zoom/flux1_4096_sc_d01_spice_bazaar/lanczos_view.webp",
-       "crops": [
-        "assets/img/zoom/flux1_4096_sc_d01_spice_bazaar/lanczos_c0.webp",
-        "assets/img/zoom/flux1_4096_sc_d01_spice_bazaar/lanczos_c1.webp",
-        "assets/img/zoom/flux1_4096_sc_d01_spice_bazaar/lanczos_c2.webp",
-        "assets/img/zoom/flux1_4096_sc_d01_spice_bazaar/lanczos_c3.webp"
+       "method": "sca_v2_prog",
+       "label": "Progressive SCA",
+       "view": "assets/img/zoom/flux1_4096_sc_d01_spice_bazaar/view.webp",
+       "vs": [
+        1600,
+        1600
        ],
-       "note": "native 1024\u00d71024, upscaled with Lanczos"
+       "ours": true,
+       "rt": [
+        [
+         576,
+         2176,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_d01_spice_bazaar/c0.webp"
+        ],
+        [
+         3328,
+         2304,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_d01_spice_bazaar/c1.webp"
+        ],
+        [
+         2560,
+         2112,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_d01_spice_bazaar/c2.webp"
+        ],
+        [
+         1344,
+         2176,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_d01_spice_bazaar/c3.webp"
+        ]
+       ]
       }
      ]
     },
@@ -972,18 +1587,69 @@ window.SCA_SHOWCASE = {
        "file": "assets/img/zoom/flux1_4096_sc_d03_antique_shop/c3.webp"
       }
      ],
-     "compare": [
+     "compare": [],
+     "regions": [
+      [
+       384,
+       2496,
+       768
+      ],
+      [
+       3392,
+       2560,
+       768
+      ],
+      [
+       2240,
+       3712,
+       768
+      ],
+      [
+       1984,
+       2112,
+       768
+      ]
+     ],
+     "panels": [
       {
-       "method": "lanczos",
-       "label": "Native size, upscaled",
-       "view": "assets/img/zoom/flux1_4096_sc_d03_antique_shop/lanczos_view.webp",
-       "crops": [
-        "assets/img/zoom/flux1_4096_sc_d03_antique_shop/lanczos_c0.webp",
-        "assets/img/zoom/flux1_4096_sc_d03_antique_shop/lanczos_c1.webp",
-        "assets/img/zoom/flux1_4096_sc_d03_antique_shop/lanczos_c2.webp",
-        "assets/img/zoom/flux1_4096_sc_d03_antique_shop/lanczos_c3.webp"
+       "method": "sca_v2_prog",
+       "label": "Progressive SCA",
+       "view": "assets/img/zoom/flux1_4096_sc_d03_antique_shop/view.webp",
+       "vs": [
+        1600,
+        1600
        ],
-       "note": "native 1024\u00d71024, upscaled with Lanczos"
+       "ours": true,
+       "rt": [
+        [
+         0,
+         2112,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_d03_antique_shop/c0.webp"
+        ],
+        [
+         3008,
+         2176,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_d03_antique_shop/c1.webp"
+        ],
+        [
+         1856,
+         3328,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_d03_antique_shop/c2.webp"
+        ],
+        [
+         1600,
+         1728,
+         768,
+         768,
+         "assets/img/zoom/flux1_4096_sc_d03_antique_shop/c3.webp"
+        ]
+       ]
       }
      ]
     }
