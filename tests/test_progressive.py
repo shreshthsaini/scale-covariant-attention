@@ -186,3 +186,65 @@ def test_contexts_pick_scale_per_stage():
     ctxs, info = sp.build_contexts(args, sp.make_plan(args))
     assert ctxs[0] is None and [x["pi_scale"] for x in info["stages"]] == [2, 4]
     assert [x["gate_sigma"] for x in info["stages"]] == [0.89, 0.89]
+
+
+def test_on_step_hook_sees_every_step_and_leaves_the_image_unchanged():
+    """The trace hook (scripts/sample_trace.py) runs once per step with the stage, the raw x0 and the stage context; it
+    does not touch the RNG, so the image equals the run without the hook."""
+    calls = []
+
+    def hook(s, i, j, sigma, x0, hw, ctx):
+        calls.append((s, i, j, round(sigma, 6), tuple(x0.shape), hw, ctx is None, None if ctx is None else ctx._pi_now))
+    ref = run(0)
+    ctxs = contexts()
+    pipe = tiny_pipe()
+    torch.manual_seed(0)
+    with torch.no_grad():
+        out = sp.generate(pipe, embeds(), torch.Generator().manual_seed(0), sp.Plan(**PLAN), ctxs, on_step=hook)
+    assert torch.equal(out, ref)
+    assert [c[0] for c in calls] == [0] * 6 + [1] * 4 + [2] * 3
+    assert [c[2] for c in calls] == list(range(6)) + [2, 3, 4, 5] + [3, 4, 5]
+    assert [c[5] for c in calls] == [(16, 16)] * 6 + [(32, 32)] * 4 + [(64, 64)] * 3
+    assert all(c[6] for c in calls[:6]) and not any(c[6] for c in calls[6:])
+    assert calls[0][4] == (1, 16, 4) and calls[-1][4] == (1, 256, 4)
+    assert all(c[7] is not None for c in calls[6:] if c[3] <= 0.89)        # pi recorded on every mixed step
+
+
+def test_trace_prog_writes_57_style_trace(tmp_path, monkeypatch):
+    """scripts/sample_trace.py trace_prog on the tiny pipeline: one record per step with stage, phase and pi, previews and
+    crops for every step, the final image equal to the campaign run's."""
+    import sample_trace as st
+    from PIL import Image
+    pipe = tiny_pipe()
+    plan = sp.Plan(**PLAN)
+    monkeypatch.setattr(sp, "load", lambda a: pipe)
+    monkeypatch.setattr(sp, "make_plan", lambda a: plan)
+    monkeypatch.setattr(sp, "build_contexts", lambda a, p, v=8: (contexts(), {"stages": [{"pi_scale": None}] * 2,
+                                                                                  "pi_table_sha256": None}))
+    monkeypatch.setattr(sp, "encode_text", lambda pipe, prompt, device: embeds())
+    with torch.no_grad():
+        torch.manual_seed(5)
+        ref = pipe.image_processor.postprocess(sp.generate(pipe, embeds(), torch.Generator().manual_seed(5), plan,
+                                                           contexts()), output_type="pil")[0]
+    camp = tmp_path / "camp.png"
+    ref.save(camp)
+    run_ = {"method": "sca_v2_prog", "sid": "t", "label": "sca_v2_prog", "prompt_id": "p0", "prompt": "x",
+            "selection_label": None, "role": None, "seed": 0, "derived_seed": 5, "res": "64x64", "box_xys": [16, 8, 32],
+            "campaign_png": str(camp), "campaign_json": "", "out": tmp_path / "trace",
+            "campaign_record": {"config": {}, "png_sha256": None}}
+    monkeypatch.setattr(st, "image_seed", lambda pid, seed: 5, raising=False)
+    import sca.runtime as rt
+    monkeypatch.setattr(rt, "image_seed", lambda pid, seed: 5)
+    monkeypatch.setattr(st, "config_check", lambda a, b: {"match": True, "differing_settings": []})
+    args = SimpleNamespace(prompts=tmp_path / "p.jsonl", device="cpu", preview=32, crop=32, webp_quality=90,
+                           allow_mismatch=False)
+    st.trace_prog(args, [run_])
+    meta = json.loads((tmp_path / "trace/trace.json").read_text())
+    steps = meta["steps"]
+    assert meta["steps_total"] == 13 and [s["stage"] for s in steps] == [0] * 6 + [1] * 4 + [2] * 3
+    assert steps[0]["phase"] == "native" and steps[0]["crop_scale"] == 4.0 and steps[-1]["crop_scale"] == 1.0
+    assert all(s["phase"] in ("global", "mixed") for s in steps[6:]) and all(s["phase_rule_agrees"] for s in steps[6:])
+    assert meta["final"]["pixels_identical"] is True
+    assert st.trace_complete(tmp_path / "trace")
+    with Image.open(tmp_path / "trace/steps/crop_00.png") as im:
+        assert im.size == (32, 32)

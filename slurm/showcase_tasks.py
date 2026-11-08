@@ -68,7 +68,8 @@ def task(name, minutes, comment, code, cmd, dry, need=60, polls=40, wait=None, p
     text = (f"#!/bin/bash\n# SCA_MIN_SECONDS: {int(minutes * 60)}\n# showcase (slurm/showcase_tasks.py): {comment}\n" + ENV
             + "set -uo pipefail\n" + (WAIT.format(path=wait, name=name, pending=f"{S}/taskq/pending") if wait else "")
             + GUARD.format(need=need, out=OUT, polls=polls, name=name, pending=f"{S}/taskq/pending")
-            + f"cd {code}\n" + f"C=\"{cmd}\"\n" + "$C || { sleep 30; $C; }; rc=$?\nsnap end >> $LOG/" + name + ".apps\n"
+            + f"cd {code}\n" + f"C=\"{cmd}\"\n" + f"echo \"cmd $C\" >> $LOG/{name}.apps\n"
+            + "$C || { sleep 30; $C; }; rc=$?\nsnap end >> $LOG/" + name + ".apps\n"
             + "[ $rc -eq 0 ] || exit $rc\n" + post + f"mkdir -p {OUT}/_done && touch {OUT}/_done/{name}\nexit 0\n")
     path = Path(f"{S}/taskq/pending/{name}")
     if Path(f"{OUT}/_done/{name}").exists():

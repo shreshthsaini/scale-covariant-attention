@@ -68,6 +68,17 @@ CAMPAIGN = {
 # campaign images are the round-6 runs in r6/out/r6_ctw (46-prompt subset plus the traced prompts)
 CAMPAIGN["r6_ctw"] = {"dir": SCRATCH / "r6/out/r6_ctw" / RES, "label": "r6_ctw",
                       "argv": [a if a != "sca_v2" else "r6_ctw" for a in CAMPAIGN["sca_v2"]["argv"]] + ["--text-mode", "ctw"]}
+# GPU showcase (HANDOVER Section 32): progressive SCA, the paper's headline (out/showcase, flags of
+# slurm/showcase_tasks.py), traced through scripts/sample_progressive.py's own stage loop (30 native steps at 1024^2
+# with the stock processors, then 17 at 2048^2 and 10 at 4096^2 with SCA: 57 steps), and the matching AReA runs.
+CAMPAIGN["sca_v2_prog"] = {"dir": SCRATCH / "out/showcase/flux1_sca_v2_prog" / RES, "label": "sca_v2_prog",
+                           "argv": ["--seed", str(SEED), "--pi-table", str(PI_TABLE), "--gate-sigma", str(GATE_SIGMA),
+                                    "--bridge-cells", "8", "--bridge-k", "16",
+                                    "--win-sched", "0.88:128,0.86:112,0.84:96,0.82:80", "--win-pi-match",
+                                    "--win-pi-interp", "--label", "sca_v2_prog"]}
+CAMPAIGN["area_sc"] = {"dir": SCRATCH / "out/showcase/flux1_area" / RES, "label": "area",
+                       "argv": ["--res", RES, "--seed", str(SEED), "--guidance", str(GUIDANCE)]}
+PROG_METHODS = ("sca_v2_prog",)                         # built by scripts/sample_progressive.py
 SCA_METHODS = ("sca", "sca_v2", "r6_ctw")               # built by scripts/sample.py; the rest through run_area.py
 IGNORED = ("implementation_sha256", "code_revision")   # differ by construction: frozen tree with this file
 VERSIONS = ("diffusers", "torch")                       # reported, not fatal
@@ -148,6 +159,9 @@ def sampler_args(method, args, run):
     if method in SCA_METHODS:
         import sample
         return sample.parser().parse_args(argv)
+    if method in PROG_METHODS:
+        import sample_progressive
+        return sample_progressive.parser().parse_args(argv)
     import run_area
     return run_area.parser().parse_args(argv)
 
@@ -272,6 +286,7 @@ def trace_complete(out, steps=28):
         data = json.loads(meta.read_text())
     except ValueError:
         return False
+    steps = int(data.get("steps_total", steps))          # 57 for a progressive trace
     files = [out / "final.png"] + [out / f.format(i) for i in range(steps) for f in STEP_FILES]
     return bool(data.get("complete")) and all(p.exists() for p in files)
 
@@ -591,6 +606,144 @@ def trace_area(args, runs):
         runner.close()
 
 
+class ProgTracer:
+    """Per-step hook for scripts/sample_progressive.generate: decodes the model's raw x0 prediction of every step at
+    the stage's resolution (the pipeline's tiled VAE path), saves the 1024 px preview and the crop of the 4096^2 box
+    scaled to the stage (Lanczos back to the box size; crop_scale = 4096 / stage width), and records stage, sigma, phase
+    and the [57, 24] per-head weights SCAContext._pi_now the processors multiplied into the mix."""
+
+    def __init__(self, pipe, run, plan, args, final_hw):
+        self.pipe, self.run, self.plan, self.args = pipe, run, plan, args
+        self.final_hw = final_hw
+        self.records, self.futures, self.n = [], [], plan.total_steps()
+        self.decode_seconds, self.last_image, self.last_x0_equals_final_latents = 0.0, None, None
+        self.pool = ThreadPoolExecutor(max_workers=2)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def step(self, s, i, j, sigma, x0, hw, ctx):
+        import numpy as np
+        import torch
+        h, w = hw
+        k = len(self.records)
+        start = time.perf_counter()
+        image = decode(self.pipe, x0.to(self.pipe.vae.dtype), h, w)
+        seconds = time.perf_counter() - start
+        self.decode_seconds += seconds
+        H, W = self.final_hw
+        f = w / W
+        x, y, b = self.run["box_xys"]
+        box = (round(x * f), round(y * f), round(x * f) + max(1, round(b * f)), round(y * f) + max(1, round(b * f)))
+        rec = {"index": k, "step": k + 1, "stage": s, "stage_res": f"{h}x{w}", "stage_step": i, "schedule_index": j,
+               "sigma": sigma, "preview": STEP_FILES[0].format(k), "crop": STEP_FILES[1].format(k),
+               "crop_scale": round(1 / f, 6), "decode_seconds": round(seconds, 3)}
+        if ctx is None:
+            rec.update(phase="native", pi=None, attention="stock FLUX.1-dev processors at the native stage")
+        else:
+            p = ctx._pi_now
+            gated = ctx.gate_sigma > 0 and float(ctx.sigma) > ctx.gate_sigma
+            rec["sca_sigma"] = float(ctx.sigma)
+            if p is None:
+                rec.update(phase="global", pi=None)
+            else:
+                pi = p.detach().to(torch.float32).cpu().numpy()
+                win = int(ctx.window_now())
+                rec.update(phase="window" if win != ctx.base_window() else "mixed", window=win,
+                           bridge_per_cell=ctx.bridge_now()[1], pi=np.round(pi.astype(np.float64), 6).tolist(),
+                           pi_mean=float(pi.astype(np.float64).mean()))
+            rec["phase_rule_agrees"] = (p is None) == gated
+        if k == self.n - 1:
+            self.last_image = None      # the final image is the guided last step, decoded by the sampler
+        self.futures.append(self.pool.submit(self.save, image, k, box))
+        self.records.append(rec)
+        print(f"step {k + 1:02d}/{self.n} stage={s} {h}x{w} sigma={sigma:.4f} phase={rec['phase']} "
+              f"decode={seconds:.1f}s", flush=True)
+
+    def save(self, image, k, box):
+        from PIL import Image
+        out, a = self.run["out"], self.args
+        size = (a.preview, round(a.preview * image.height / image.width))
+        prev = image if image.size == size else image.resize(size, Image.Resampling.LANCZOS)
+        atomic_save(prev, out / STEP_FILES[0].format(k), format="WEBP", quality=a.webp_quality, method=6)
+        crop = image.crop(box)
+        side = self.run["box_xys"][2]
+        if crop.size != (side, side):
+            crop = crop.resize((side, side), Image.Resampling.LANCZOS)
+        atomic_save(crop, out / STEP_FILES[1].format(k), format="PNG")
+
+    def wait(self):
+        for future in self.futures:
+            future.result()
+        self.pool.shutdown()
+
+
+def trace_prog(args, runs):
+    import diffusers
+    import torch
+    import sample_progressive as sp
+    from sca.runtime import image_seed, implementation_hash, runtime_environment
+    a = sampler_args(runs[0]["method"], args, runs[0])
+    runtime_environment()
+    plan = sp.make_plan(a)
+    t0 = time.perf_counter()
+    pipe = sp.load(a)
+    contexts, info = sp.build_contexts(a, plan, pipe.vae_scale_factor)
+    print(f"model ready in {time.perf_counter() - t0:.1f}s", flush=True)
+    impl = implementation_hash()
+    cuda = torch.cuda.is_available()
+    sync = torch.cuda.synchronize if cuda else None
+    for run in runs:
+        row = {"id": run["prompt_id"], "prompt": run["prompt"]}
+        config = sp.make_config(a, plan, row, info, (diffusers.__version__, torch.__version__),
+                                dict(pipe.scheduler.config), impl)
+        check = config_check(config, run["campaign_record"]["config"])
+        guard(check, args, run)
+        (run["out"] / "steps").mkdir(parents=True, exist_ok=True)
+        for ctx in contexts:
+            if ctx is not None:
+                ctx.pi_trace.clear()
+                ctx.log.clear()
+        derived = image_seed(run["prompt_id"], a.seed)
+        torch.manual_seed(derived)            # global RNG: GaussianBlur sigma, as sample_progressive.main
+        if cuda:
+            torch.cuda.manual_seed_all(derived)
+        generator = torch.Generator(device="cpu").manual_seed(derived)
+        tracer = ProgTracer(pipe, run, plan, args, plan.stages[-1])
+        record = {}
+        if cuda:
+            torch.cuda.synchronize()
+            torch.cuda.reset_peak_memory_stats()
+        start = time.perf_counter()
+        with torch.inference_mode():
+            embeds = sp.encode_text(pipe, run["prompt"], pipe._execution_device)
+            tensor = sp.generate(pipe, embeds, generator, plan, contexts, a.native_attention, sync, record,
+                                 on_step=tracer.step)
+            image = pipe.image_processor.postprocess(tensor, output_type="pil")[0]
+        if cuda:
+            torch.cuda.synchronize()
+        seconds = time.perf_counter() - start
+        trace = [dict(t, stage=s) for s, ctx in enumerate(contexts) if ctx is not None for t in ctx.pi_trace]
+        extra = {"guidance": list(plan.guidance), "progressive": plan.describe(), "gate_sigma": contexts[-1].gate_sigma,
+                 "win_sched": [list(x) for x in contexts[-1].win_sched], "win_pi_match": contexts[-1].win_pi_match,
+                 "win_pi_interp": contexts[-1].win_pi_interp, "bridge_cells": contexts[-1].bridge_cells,
+                 "bridge_k": contexts[-1].bridge_k, "stage_seconds": record.get("stage_seconds"),
+                 "blur_sigmas": record.get("blur_sigmas"),
+                 "blur_sigmas_match_campaign": record.get("blur_sigmas") == run["campaign_record"].get("blur_sigmas"),
+                 "phase_rule": "native: stage 0 with the stock processors; global: SCA stage with sigma > gate_sigma "
+                               "(global branch only, pi unused); window: the wider windows of the schedule after the "
+                               "gate; mixed: pi * O_loc + (1 - pi) * O_glob per head at the native window",
+                 "pi_info": {"source": PI_SOURCE_RUN, "shape": [contexts[-1].n_layers, 24], "table": str(a.pi_table),
+                             "table_sha256": info["pi_table_sha256"],
+                             "scales": [st.get("pi_scale") for st in info["stages"]]},
+                 "pi_trace": trace, "pi_trace_matches_campaign": trace == run["campaign_record"].get("pi_trace"),
+                 "sca_log": sorted({x for c in contexts if c for x in c.log})}
+        finish(run, tracer, image, config, check, args, seconds, extra)
+
+
 def main(argv=None):
     args = parser().parse_args(argv)
     from sca.runtime import read_prompts
@@ -598,13 +751,15 @@ def main(argv=None):
     prompts = {row["id"]: row for row in read_prompts(args.prompts)}
     runs = [resolve(args.method, sid, args, selection, prompts) for sid in dict.fromkeys(args.sid)]
     if args.dry_run:
+        if args.method in PROG_METHODS:
+            raise SystemExit("--dry-run plans single-pass and AReA traces only")
         return dry_run(args, runs)
     todo = [r for r in runs if args.force or not trace_complete(r["out"])]
     for r in runs:
         if r not in todo:
             print(f"skip {r['method']} {r['sid']}: complete trace in {r['out']}", flush=True)
     if todo:
-        (trace_sca if args.method in SCA_METHODS else trace_area)(args, todo)
+        (trace_sca if args.method in SCA_METHODS else trace_prog if args.method in PROG_METHODS else trace_area)(args, todo)
     return 0
 
 

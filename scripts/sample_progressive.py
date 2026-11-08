@@ -186,11 +186,14 @@ def hrdit_schedule(pipe, base_steps, base_hw, device):
     return pipe.scheduler.timesteps.clone(), pipe.scheduler.sigmas.clone(), float(mu)
 
 
-def generate(pipe, embeds, generator, plan, contexts, native="stock", sync=None, record=None):
+def generate(pipe, embeds, generator, plan, contexts, native="stock", sync=None, record=None, on_step=None):
     """Run every stage and return the decoded image tensor in [-1, 1] (before postprocessing).
 
     embeds = (prompt_embeds, pooled_prompt_embeds, text_ids). contexts[s] is the SCAContext for stage s >= 1
-    (contexts[0] is used only with native='sca_full'). The caller seeds the global Torch RNG (blur sigma)."""
+    (contexts[0] is used only with native='sca_full'). The caller seeds the global Torch RNG (blur sigma).
+    on_step(stage, i, j, sigma, x0, (h, w), ctx), if given, runs after every denoising step with the model's raw x0
+    prediction x_t - sigma_t v (packed latents, before structure guidance) and the stage's SCA context (None at a stock
+    native stage); it must not touch the global Torch RNG (scripts/sample_trace.py decodes and saves previews)."""
     import torch
     from diffusers.utils.torch_utils import randn_tensor
     from sca.attn import install
@@ -259,6 +262,8 @@ def generate(pipe, embeds, generator, plan, contexts, native="stock", sync=None,
                                               mask, a, b, state)
                     latents = latents.to(dtype)
                 pred_x0[j] = (x0, (h, w))
+                if on_step is not None:
+                    on_step(s, i, j, float(sigmas[j]), x0, (h, w), ctx)
         finally:
             if uninstall is not None:
                 uninstall()
