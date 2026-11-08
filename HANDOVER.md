@@ -1455,3 +1455,37 @@ Rubric self-score (gold-standard 22 items, 0/1/2): abstract 1, hero 2, footnotes
 and bullets 2, sentence length 1, method diagram 2, equations 1, algorithms 2, setup run-ins 1, main table 2, finding
 paragraphs 2, ablations 1, plots under 6 pt 1, qualitative grid 2, limitations 2, reproducibility 2, appendix 2,
 float placement 1, captions 1, colours 1, dashes and section symbol 1. Mean 1.45 (32/22), no zero.
+
+## 32. 2026-11-07 night: GPU showcase campaign (showcase owner; log .agent/notes/showcase_20261107.md)
+Goal (user, via lead): SCA on FLUX.1-dev, FLUX.2-dev and Qwen-Image at 4096 to 6144 px with zoom-ins and per-example
+"how it works" videos for the web page and paper. Ideogram has no weights: skipped (web placeholder stays).
+- Spool: the 81 not-yet-started review-round tasks (r1_*, r2_*, r3_*) moved to taskq/hold_paused_20261107b (README
+  has the one-line restore). Nothing deleted, no job cancelled. Showcase tasks are named 00s* so they sort first.
+- Prompts: web/build/showcase_prompts.jsonl, 40 prompts (12 product, 10 landscape and architecture, 8 portrait, 6
+  animal, 4 dense), fields id, category, orient, title; no brands, no characters, text-free labels; themes avoid the
+  calibration prompts. Scratch copies prompts/showcase40{,_land,_port}.jsonl (25 landscape, 15 portrait).
+- Tasks: slurm/showcase_tasks.py GROUP ... (flux1, area, ...); outputs out/showcase/<model>_<method>/<HxW>/ (PNG +
+  sidecar); completion markers out/showcase/_done/<task>; per-task GPU co-tenant log out/showcase/_gpu/<task>.apps.
+  Every task waits for its free-memory need and otherwise puts itself back in pending for another worker.
+- Configurations. FLUX.1-dev: progressive SCA (sca_v2_prog, PROG_FLAGS of slurm/prog_headline_tasks.py, code/7bd64c0)
+  at 4096^2; single-pass sca_v2 (the paper's flags, guidance 4.5) at 5120^2 and at 4096x6144 (landscape prompts) or
+  6144x4096 (portrait prompts); native full attention (guidance 3.5, 28 steps) at 1024^2 and 1024x1536 / 1536x1024 for
+  the Lanczos reference; AReA (flux1 defaults) at the same three sizes. FLUX.2-dev: the review-round flux2_sca_v2 flags
+  (gate 0.959) at 4096^2 and 5120^2, full attention at both, native 1024^2. Qwen-Image: see the port below.
+- Fleets: SCS1 (1129438) and SCS2 (1129439), gh 4 nodes x 10 h each, slurm/fleet_SCS{1,2}.sbatch, submitted 21:31
+  (SU 9,164 available). gh-dev backfill is not possible: qdevelopment allows 3 submitted jobs per user and TLT-dev,
+  BL23 and V2P1 (other projects) hold all three.
+- Finding: within minutes of the review tasks being paused, other projects' processes (JLD w4sr.train and
+  encode_latents, looped-distill-video score.py, run_video.py) started on all four SCA22 GPUs (20 to 62 GB each).
+  Twelve showcase tasks died of OOM and were rewritten with the memory guard (old scripts in taskq/superseded_showcase).
+  Timings from shared GPUs are flagged from the _gpu logs; clean batch-1 timings come from a separate timing pass.
+- Qwen-Image port (sca/qwen.py, scripts/sample_qwen.py, scripts/calibrate_qwen.py, tests/test_qwen.py, 16 CPU tests
+  pass): one processor for the 60 MMDiT blocks; MSRoPE converted once per call to diffusers' real interleaved RoPE
+  (exactly the complex product); text sits at max(H/2, W/2) + j, so the global branch's coarse ids are centred like a
+  native Hc x Wc image and shifted by M - Mc, which makes every offset of the global branch that of a native image of
+  the coarse grid's size (brute-force test). Native 1328^2 has a prime grid (83), so the table is fit at 1344^2 (84 x
+  84, ratios 2 and 4 tile it); inference n0 = 83 (5312^2 = 4 x native gives a coarse grid of exactly 83 x 83). Model
+  card sampling: true CFG 4, negative " ", 50 steps; mu of the native sequence (pipeline extrapolation would give 3.8).
+  Gate and window schedule in noise level as FLUX.1-dev (gate 0.89; windows 2, 1.75, 1.5, 1.25 x n0 = 166, 145, 124,
+  104 while sigma > 0.88, 0.86, 0.84, 0.82; 11 global steps of 50); bridge 1,024 tokens (8 x 16 at 4096^2, 4 x 64 at
+  5312^2 where 8 cells do not divide 332).
