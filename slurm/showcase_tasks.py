@@ -195,9 +195,30 @@ def flux2_full(dry, code):
                  f"--prompts {PROMPTS} --out {OUT}/flux2_full/{size} --start {a} --end {b}", dry, need=90)
 
 
+def pairs(dry, code, a=0, b=3):
+    """First FLUX.2-dev and Qwen-Image pairs at the largest sizes (SCA and full attention on the same prompts), ahead of
+    every other task (000p): prompts [a, b) of showcase40.jsonl, the ones paper/figures/src/fig_showcase_models.py
+    takes first. Qwen full attention at 5312^2 runs one prompt per task (about 31 min each)."""
+    f2 = f"PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True {PY} scripts/sample_flux2.py"
+    rng = f"--prompts {PROMPTS} --start {a} --end {b}"
+    task(f"000p_a_qsca5312_{a:02d}_{b:02d}.sh", 45, "first pairs: Qwen-Image single-pass SCA at 5312^2", code,
+         f"{PY} scripts/sample_qwen.py {QWEN_SCA} --pi-table {QWEN_TABLE} --bridge-cells 4 --bridge-k 64 --label qwen_sca "
+         f"--res 5312x5312 {rng} --out {OUT}/qwen_sca/5312x5312", dry, need=60, wait=QWEN_TABLE[:-4] + ".json")
+    task(f"000p_b_f2sca5120_{a:02d}_{b:02d}.sh", 30, "first pairs: FLUX.2-dev single-pass SCA at 5120^2", code,
+         f"{f2} {FLUX2_SCA} --label flux2_sca_v2 --res 5120x5120 {rng} --out {OUT}/flux2_sca_v2/5120x5120", dry, need=90)
+    task(f"000p_c_f2full5120_{a:02d}_{b:02d}.sh", 55, "first pairs: FLUX.2-dev full attention at 5120^2", code,
+         f"{f2} --steps 28 --guidance 4.0 --mu-mode native --method full --label flux2_full --res 5120x5120 {rng} "
+         f"--out {OUT}/flux2_full/5120x5120", dry, need=90)
+    for k in range(a, b):
+        task(f"000p_d_qfull5312_{k:02d}_{k + 1:02d}.sh", 40, "first pairs: Qwen-Image full attention at 5312^2", code,
+             f"{PY} scripts/sample_qwen.py --method full --steps 50 --true-cfg 4.0 --mu-mode native --label qwen_full "
+             f"--res 5312x5312 --prompts {PROMPTS} --start {k} --end {k + 1} --out {OUT}/qwen_full/5312x5312", dry, need=60)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("groups", nargs="+", choices=("prompts", "flux1", "area", "qwen", "qwenfull", "flux2", "flux2full"))
+    p.add_argument("groups", nargs="+", choices=("prompts", "flux1", "area", "qwen", "qwenfull", "flux2", "flux2full",
+                                                 "pairs"))
     p.add_argument("--code", help="Frozen code tree (default: code/7bd64c0 for FLUX.1-dev groups)")
     p.add_argument("--dry", action="store_true")
     a = p.parse_args()
@@ -215,7 +236,7 @@ def main():
         flux1(a.dry, a.code or FLUX1_CODE)
     if "area" in a.groups:
         area(a.dry, AREA_CODE)
-    for g, fn in (("qwen", qwen), ("qwenfull", qwen_full), ("flux2", flux2), ("flux2full", flux2_full)):
+    for g, fn in (("qwen", qwen), ("qwenfull", qwen_full), ("flux2", flux2), ("flux2full", flux2_full), ("pairs", pairs)):
         if g in a.groups:
             if not a.code:
                 raise SystemExit(f"--code (a frozen tree with sca/qwen.py) is required for {g}")
