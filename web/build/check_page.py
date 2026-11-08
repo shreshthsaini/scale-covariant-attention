@@ -25,10 +25,10 @@ def local_refs():
     """Every src/href/poster in index.html and every asset path in the generated data files must exist."""
     html = open(os.path.join(WEB, "index.html")).read()
     refs = set(re.findall(r'(?:src|href|poster|data-native)="([^"#:]+)"', html))
-    for js in ("images.js", "ideogram_manifest.js"):
+    for js in ("images.js", "ideogram_manifest.js", "media.js", "showcase.js", "gallery.js", "process.js", "method_data.js"):
         p = os.path.join(WEB, "assets", "js", js)
         if os.path.exists(p):
-            refs |= set(re.findall(r'"(assets/[^"]+\.(?:webp|mp4|png|jpg|vtt|srt))"', open(p).read()))
+            refs |= {r for r in re.findall(r'"(assets/[^"]+\.(?:webp|mp4|png|jpg|vtt|srt))"', open(p).read()) if "{" not in r}
     tr = os.path.join(WEB, "assets", "js", "traces.js")
     if os.path.exists(tr):                           # only rendered trace videos must exist; expected ones are placeholders
         t = open(tr).read()
@@ -84,6 +84,10 @@ def main():
             broken = pg.evaluate("""Array.from(document.images).filter(i => i.complete && i.naturalWidth === 0
                                      && !i.src.includes('/ideogram/')).map(i => i.src)""")
             n_img = pg.evaluate("document.images.length")
+            text = pg.evaluate("document.body.innerText")
+            bad = sorted(set(m.group(0).lower() for m in re.finditer(r"calibrat\w*|\buncurated\b|\bcurated\b|\brandom(?:ly)?\b|\u2014|\u00a7", text, re.I)))
+            if bad:
+                errs.append("forbidden words in the visible text: " + ", ".join(bad))
             pg.screenshot(path=os.path.join(a.out, f"{name}.png"), full_page=True)
             print(f"{name}: images {n_img}, broken {len(broken)}, horizontal overflow {over}px, console errors {len(errs)}")
             errs = [e for e in errs if "/ideogram/" not in e]   # missing Ideogram files are expected placeholders
@@ -94,14 +98,32 @@ def main():
             if over > 0 or broken or errs:
                 problems.append(name)
             if a.sections and name in ("desktop", "phone", "desktop_dark"):
-                for sid, sel in [("hero", ".hero"), ("abstract", "#abstract"), ("heads", "#heads"), ("method", "#method"),
-                                 ("compare", "#compare"), ("traces", "#traces"), ("results", "#results"),
-                                 ("scale", "#scale"), ("commercial", "#commercial"), ("limits", "#limits")]:
-                    if name == "desktop_dark" and sid not in ("hero", "heads", "results"):
+                for sid, sel in [("hero", ".hero"), ("heroshow", "#hero-show"), ("glance", ".glance-sec"), ("abstract", "#abstract"),
+                                 ("video", "#video"), ("idea", "#idea"), ("method", "#method"), ("showcase", "#showcase"),
+                                 ("compare", "#compare"), ("process", "#process"), ("results", "#results"),
+                                 ("gallery", "#gallery"), ("commercial", "#commercial"), ("limits", "#limits")]:
+                    if name == "desktop_dark" and sid not in ("hero", "heroshow", "idea", "method", "results"):
                         continue
                     loc = pg.locator(sel).first
                     if loc.count():
                         loc.screenshot(path=os.path.join(a.out, f"{name}_sec_{sid}.png"))
+            if a.sections and name in ("desktop", "phone"):
+                zf = pg.locator(".zf").first
+                if zf.count():
+                    zf.scroll_into_view_if_needed()
+                    bb = zf.bounding_box()
+                    pg.mouse.move(bb["x"] + bb["width"] * .45, bb["y"] + bb["height"] * .3)
+                    pg.wait_for_timeout(1500)
+                    pg.mouse.move(bb["x"] + bb["width"] * .46, bb["y"] + bb["height"] * .31)
+                    pg.wait_for_timeout(300)
+                    zf.screenshot(path=os.path.join(a.out, f"{name}_lens.png"))
+                g = pg.locator("#gal button").first
+                if g.count():
+                    g.scroll_into_view_if_needed()
+                    g.click()
+                    pg.wait_for_timeout(1200)
+                    pg.screenshot(path=os.path.join(a.out, f"{name}_lightbox.png"))
+                    pg.keyboard.press("Escape")
             ctx.close()
         b.close()
     if server:

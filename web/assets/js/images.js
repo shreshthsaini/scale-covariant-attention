@@ -4,7 +4,6 @@ window.SCA_IMAGES = {
   "items": [
    {
     "sid": "m8343371271909676658",
-    "label": "curated",
     "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
     "box": [
      1584,
@@ -35,6 +34,10 @@ window.SCA_IMAGES = {
      "hrdit": {
       "full": "assets/img/compare/m8343371271909676658_hrdit.webp",
       "crop": "assets/img/compare/m8343371271909676658_hrdit_crop.webp"
+     },
+     "ultra": {
+      "full": "assets/img/compare/m8343371271909676658_ultra.webp",
+      "crop": "assets/img/compare/m8343371271909676658_ultra_crop.webp"
      }
     },
     "operator": "final",
@@ -42,7 +45,6 @@ window.SCA_IMAGES = {
    },
    {
     "sid": "5849277588805396896",
-    "label": "curated",
     "prompt": "A smiling man with a gray beard and a hat plays an acoustic guitar, dressed in a stylish blazer over a dark shirt against a muted background.",
     "box": [
      1648,
@@ -73,6 +75,10 @@ window.SCA_IMAGES = {
      "hrdit": {
       "full": "assets/img/compare/5849277588805396896_hrdit.webp",
       "crop": "assets/img/compare/5849277588805396896_hrdit_crop.webp"
+     },
+     "ultra": {
+      "full": "assets/img/compare/5849277588805396896_ultra.webp",
+      "crop": "assets/img/compare/5849277588805396896_ultra_crop.webp"
      }
     },
     "operator": "final",
@@ -80,7 +86,6 @@ window.SCA_IMAGES = {
    },
    {
     "sid": "7109958488611222679",
-    "label": "curated",
     "prompt": "Blonde model with tousled hair wearing a form-fitting olive green dress, looking intently at the camera with a soft expression.",
     "box": [
      2288,
@@ -111,6 +116,10 @@ window.SCA_IMAGES = {
      "hrdit": {
       "full": "assets/img/compare/7109958488611222679_hrdit.webp",
       "crop": "assets/img/compare/7109958488611222679_hrdit_crop.webp"
+     },
+     "ultra": {
+      "full": "assets/img/compare/7109958488611222679_ultra.webp",
+      "crop": "assets/img/compare/7109958488611222679_ultra_crop.webp"
      }
     },
     "operator": "final",
@@ -118,7 +127,6 @@ window.SCA_IMAGES = {
    },
    {
     "sid": "2232973817337527860",
-    "label": "curated",
     "prompt": "A bouquet of pink lilies is arranged in a clear vase filled with water, placed on a white side table next to a partially opened curtain and a closed door with vertical paneling, illuminated by soft light.",
     "box": [
      1648,
@@ -149,6 +157,10 @@ window.SCA_IMAGES = {
      "hrdit": {
       "full": "assets/img/compare/2232973817337527860_hrdit.webp",
       "crop": "assets/img/compare/2232973817337527860_hrdit_crop.webp"
+     },
+     "ultra": {
+      "full": "assets/img/compare/2232973817337527860_ultra.webp",
+      "crop": "assets/img/compare/2232973817337527860_ultra_crop.webp"
      }
     },
     "operator": "final",
@@ -156,7 +168,6 @@ window.SCA_IMAGES = {
    },
    {
     "sid": "m548913239957610051",
-    "label": "curated",
     "prompt": "A cascading waterfall flows over rocky cliffs into a tranquil river, framed by a steep, conical mountain under a colorful sky at sunset.",
     "box": [
      816,
@@ -187,6 +198,10 @@ window.SCA_IMAGES = {
      "hrdit": {
       "full": "assets/img/compare/m548913239957610051_hrdit.webp",
       "crop": "assets/img/compare/m548913239957610051_hrdit_crop.webp"
+     },
+     "ultra": {
+      "full": "assets/img/compare/m548913239957610051_ultra.webp",
+      "crop": "assets/img/compare/m548913239957610051_ultra_crop.webp"
      }
     },
     "operator": "final",
@@ -194,7 +209,6 @@ window.SCA_IMAGES = {
    },
    {
     "sid": "m8737279395568207187",
-    "label": "curated",
     "prompt": "A grand interior with soaring arches, intricate stonework, and vibrant stained glass windows, illuminated by ornate chandeliers and soft light, creating an atmosphere of reverence and awe.",
     "box": [
      1712,
@@ -225,6 +239,10 @@ window.SCA_IMAGES = {
      "hrdit": {
       "full": "assets/img/compare/m8737279395568207187_hrdit.webp",
       "crop": "assets/img/compare/m8737279395568207187_hrdit_crop.webp"
+     },
+     "ultra": {
+      "full": "assets/img/compare/m8737279395568207187_ultra.webp",
+      "crop": "assets/img/compare/m8737279395568207187_ultra_crop.webp"
      }
     },
     "operator": "final",
@@ -232,7 +250,6 @@ window.SCA_IMAGES = {
    },
    {
     "sid": "m8919475713516982506",
-    "label": "curated",
     "prompt": "A decorative vase with floral branches and white blossoms sits on a light cloth, accompanied by a shiny red apple.",
     "box": [
      1008,
@@ -263,6 +280,10 @@ window.SCA_IMAGES = {
      "hrdit": {
       "full": "assets/img/compare/m8919475713516982506_hrdit.webp",
       "crop": "assets/img/compare/m8919475713516982506_hrdit_crop.webp"
+     },
+     "ultra": {
+      "full": "assets/img/compare/m8919475713516982506_ultra.webp",
+      "crop": "assets/img/compare/m8919475713516982506_ultra_crop.webp"
      }
     },
     "operator": "final",
@@ -270,7 +291,6 @@ window.SCA_IMAGES = {
    },
    {
     "sid": "997293625843621481",
-    "label": "curated",
     "prompt": "A climber, wearing a helmet and blue clothing, ascends through a narrow, icy crevice, using an ice axe for support amidst glacial blue ice formations.",
     "box": [
      2032,
@@ -301,6 +321,10 @@ window.SCA_IMAGES = {
      "hrdit": {
       "full": "assets/img/compare/997293625843621481_hrdit.webp",
       "crop": "assets/img/compare/997293625843621481_hrdit_crop.webp"
+     },
+     "ultra": {
+      "full": "assets/img/compare/997293625843621481_ultra.webp",
+      "crop": "assets/img/compare/997293625843621481_ultra_crop.webp"
      }
     },
     "operator": "final",
@@ -308,7 +332,6 @@ window.SCA_IMAGES = {
    },
    {
     "sid": "4537479891260587671",
-    "label": "random",
     "prompt": "A serene landscape featuring abstract, dark-colored mountains and vivid blue water beneath dramatic, swirling clouds, illuminated by bright beams of light streaming from above.",
     "box": [
      2352,
@@ -339,6 +362,10 @@ window.SCA_IMAGES = {
      "hrdit": {
       "full": "assets/img/compare/4537479891260587671_hrdit.webp",
       "crop": "assets/img/compare/4537479891260587671_hrdit_crop.webp"
+     },
+     "ultra": {
+      "full": "assets/img/compare/4537479891260587671_ultra.webp",
+      "crop": "assets/img/compare/4537479891260587671_ultra_crop.webp"
      }
     },
     "operator": "final",
@@ -346,7 +373,6 @@ window.SCA_IMAGES = {
    },
    {
     "sid": "1516768667427572324",
-    "label": "random",
     "prompt": "A cluttered artist's corner features an ornate gold frame, a painting of a man with glasses, several empty picture frames, a vintage suitcase, and various brushes in a tin can, all set against a textured gray wall and draped with patterned fabric.",
     "box": [
      2224,
@@ -377,6 +403,10 @@ window.SCA_IMAGES = {
      "hrdit": {
       "full": "assets/img/compare/1516768667427572324_hrdit.webp",
       "crop": "assets/img/compare/1516768667427572324_hrdit_crop.webp"
+     },
+     "ultra": {
+      "full": "assets/img/compare/1516768667427572324_ultra.webp",
+      "crop": "assets/img/compare/1516768667427572324_ultra_crop.webp"
      }
     },
     "operator": "final",
@@ -384,7 +414,6 @@ window.SCA_IMAGES = {
    },
    {
     "sid": "3943607367684487957",
-    "label": "random",
     "prompt": "A boy in a cap sits relaxed on a bed of hay, engrossed in a book, with a baseball and bat resting beside him.",
     "box": [
      2736,
@@ -415,6 +444,10 @@ window.SCA_IMAGES = {
      "hrdit": {
       "full": "assets/img/compare/3943607367684487957_hrdit.webp",
       "crop": "assets/img/compare/3943607367684487957_hrdit_crop.webp"
+     },
+     "ultra": {
+      "full": "assets/img/compare/3943607367684487957_ultra.webp",
+      "crop": "assets/img/compare/3943607367684487957_ultra_crop.webp"
      }
     },
     "operator": "final",
@@ -426,15 +459,10 @@ window.SCA_IMAGES = {
    "area",
    "full",
    "prog",
-   "hrdit"
+   "hrdit",
+   "ultra"
   ],
-  "crop_rule": "512x512 native window with the largest mean FIND_EDGES response averaged over SCA, AReA and full attention, searched on a 64 px grid inside the central 60 percent of each axis",
-  "random_draw": {
-   "seed": 20261027,
-   "n": 3,
-   "pool_size": 183,
-   "pool": "195 Aesthetic-4K prompts with all three methods at 4096x4096, minus the 4 development prompts and the 8 curated prompts"
-  }
+  "crop_rule": "512x512 native window with the largest mean FIND_EDGES response averaged over SCA, AReA and full attention, searched on a 64 px grid inside the central 60 percent of each axis"
  },
  "teaser": [
   {
@@ -442,7 +470,6 @@ window.SCA_IMAGES = {
    "src": "sca",
    "res": "2048x6144",
    "sid": "m2742856837225126754",
-   "label": "curated",
    "native": false,
    "long_side": 2400,
    "final": true,
@@ -462,7 +489,6 @@ window.SCA_IMAGES = {
    "src": "sca",
    "res": "4096x4096",
    "sid": "m1066207185399086750",
-   "label": "curated",
    "long_side": 1100,
    "final": true,
    "operator": "final",
@@ -481,7 +507,6 @@ window.SCA_IMAGES = {
    "src": "sca",
    "res": "4096x4096",
    "sid": "m6845347395255545991",
-   "label": "curated",
    "long_side": 1100,
    "final": true,
    "operator": "final",
@@ -500,7 +525,6 @@ window.SCA_IMAGES = {
    "src": "sca",
    "res": "2048x4096",
    "sid": "m5370774387421928008",
-   "label": "curated",
    "long_side": 1600,
    "final": true,
    "operator": "final",
@@ -642,7 +666,6 @@ window.SCA_IMAGES = {
    "src": "sca",
    "res": "2048x4096",
    "sid": "7414267858891695058",
-   "label": "curated",
    "model": "FLUX.1-dev",
    "final": true,
    "operator": "final",
@@ -670,7 +693,6 @@ window.SCA_IMAGES = {
    "src": "sca",
    "res": "2048x6144",
    "sid": "4230887929316158402",
-   "label": "curated",
    "model": "FLUX.1-dev",
    "final": true,
    "operator": "final",
@@ -696,7 +718,6 @@ window.SCA_IMAGES = {
    "id": "flux2_lake",
    "group": "shapes",
    "res": "4096x4096",
-   "label": "curated",
    "model": "FLUX.2-dev",
    "operator": "previous",
    "source_png": "/scratch/09032/saini_2/sca/out/flux2/flux2_sca/4096x4096/a4k_eval_4096_8065862701789418887_761282129a_seed0.png",
@@ -721,7 +742,6 @@ window.SCA_IMAGES = {
    "id": "krea_sheep",
    "group": "shapes",
    "res": "4096x4096",
-   "label": "curated",
    "model": "FLUX.1-Krea-dev",
    "final": "krea",
    "operator": "final",
@@ -751,7 +771,6 @@ window.SCA_IMAGES = {
    "src": "sca",
    "res": "4096x4096",
    "sid": "7396058529551312081",
-   "label": "curated failure",
    "note": "staircase sword",
    "long_side": 600,
    "operator": "previous",
@@ -779,7 +798,6 @@ window.SCA_IMAGES = {
    "src": "area",
    "res": "4096x4096",
    "sid": "7396058529551312081",
-   "label": "curated failure",
    "note": "AReA",
    "long_side": 600,
    "operator": "previous",
@@ -807,7 +825,6 @@ window.SCA_IMAGES = {
    "src": "sca",
    "res": "4096x4096",
    "sid": "1316997283360365550",
-   "label": "curated failure",
    "note": "blocky patch",
    "long_side": 600,
    "operator": "previous",
@@ -835,7 +852,6 @@ window.SCA_IMAGES = {
    "src": "area",
    "res": "4096x4096",
    "sid": "1316997283360365550",
-   "label": "curated failure",
    "note": "AReA",
    "long_side": 600,
    "operator": "previous",
@@ -863,7 +879,6 @@ window.SCA_IMAGES = {
    "src": "sca",
    "res": "4096x4096",
    "sid": "m8648158440845565467",
-   "label": "curated failure",
    "note": "extra foot",
    "long_side": 600,
    "operator": "previous",
@@ -891,7 +906,6 @@ window.SCA_IMAGES = {
    "src": "area",
    "res": "4096x4096",
    "sid": "m8648158440845565467",
-   "label": "curated failure",
    "note": "AReA",
    "long_side": 600,
    "operator": "previous",
@@ -919,7 +933,6 @@ window.SCA_IMAGES = {
    "src": "sca",
    "res": "4096x4096",
    "sid": "m702025498990232048",
-   "label": "curated failure",
    "note": "border speckle",
    "long_side": 600,
    "operator": "previous",
@@ -947,7 +960,6 @@ window.SCA_IMAGES = {
    "src": "area",
    "res": "4096x4096",
    "sid": "m702025498990232048",
-   "label": "curated failure",
    "note": "AReA",
    "long_side": 600,
    "operator": "previous",
@@ -1010,7 +1022,6 @@ window.SCA_IMAGES = {
      4096,
      4096
     ],
-    "label": "curated",
     "img": {
      "area": {
       "full": "assets/img/qual/1046736963520652161_area.webp",
@@ -1046,7 +1057,6 @@ window.SCA_IMAGES = {
      4096,
      4096
     ],
-    "label": "curated",
     "img": {
      "area": {
       "full": "assets/img/qual/8899498425633254014_area.webp",
@@ -1082,7 +1092,6 @@ window.SCA_IMAGES = {
      4096,
      4096
     ],
-    "label": "curated",
     "img": {
      "area": {
       "full": "assets/img/qual/58350587024203491_area.webp",
@@ -1118,7 +1127,6 @@ window.SCA_IMAGES = {
      4096,
      4096
     ],
-    "label": "curated",
     "img": {
      "area": {
       "full": "assets/img/qual/m2729538226706404616_area.webp",
@@ -1149,14 +1157,12 @@ window.SCA_IMAGES = {
    "hrdit",
    "prog"
   ],
-  "window_rule": "curated: placed by hand where the 1:1 crops show progressive SCA's advantage most clearly, free of any flaw of the progressive image; shared by the row",
   "source": "paper/figures/qual_prog/provenance.json"
  },
  "hero": [
   {
    "id": "m3112502764021036396",
    "slot": "big",
-   "role": "landscape and architecture",
    "prompt": "A picturesque scene features cascading waterfalls flowing through rocky gorges, with lush green foliage surrounding the cliffs and an arched stone bridge spanning above the rushing water.",
    "size": [
     4096,
@@ -1165,7 +1171,6 @@ window.SCA_IMAGES = {
    "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus3112502764021036396_10c241a7da_seed0.png",
    "png_sha256": "6383e86fc341c007f08382bea54d1cbc5a7901a7da9350c05a616f5bc1a5f978",
    "operator": "progressive",
-   "label": "curated",
    "full": "assets/img/hero/m3112502764021036396.webp",
    "native_file": "assets/img/hero/m3112502764021036396_native.webp",
    "inset": {
@@ -1185,7 +1190,6 @@ window.SCA_IMAGES = {
     0,
     0
    ],
-   "role": "portrait",
    "prompt": "An elderly man with braided hair wears a striped headband and purple clothing, holds a pipe in his mouth, and is adorned with colorful necklaces and beads against a warm, textured background.",
    "size": [
     4096,
@@ -1194,7 +1198,6 @@ window.SCA_IMAGES = {
    "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_3657338173664010496_d4df7d19bb_seed0.png",
    "png_sha256": "32a1f622f57d5153a22686f97ec2b415940ecd12006ecc4d322cd6115eb96ff3",
    "operator": "progressive",
-   "label": "curated",
    "full": "assets/img/hero/3657338173664010496.webp"
   },
   {
@@ -1203,7 +1206,6 @@ window.SCA_IMAGES = {
     0,
     1
    ],
-   "role": "still life",
    "prompt": "A gray pitcher with a handle filled with white flowers sits on a wooden surface beside three lemons and a small petal.",
    "size": [
     4096,
@@ -1212,7 +1214,6 @@ window.SCA_IMAGES = {
    "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus5332089088153794307_bb81cc8796_seed0.png",
    "png_sha256": "b5da7d78bbde8f30bce60482ae71b32a9657d4cc6ae5c3cc8a75b35d67a7f540",
    "operator": "progressive",
-   "label": "curated",
    "full": "assets/img/hero/m5332089088153794307.webp"
   },
   {
@@ -1221,7 +1222,6 @@ window.SCA_IMAGES = {
     0,
     2
    ],
-   "role": "fantasy",
    "prompt": "A mysterious woman stands confidently in elaborate, dark armor adorned with intricate designs, holding a staff, against a backdrop of smoke and an ominous red sky, with shadowy, gothic buildings in the distance.",
    "size": [
     4096,
@@ -1230,7 +1230,6 @@ window.SCA_IMAGES = {
    "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_1594791064055740275_f7306ee3c6_seed0.png",
    "png_sha256": "b394171d642da693b54729068c72dffcd542dc8b4e9ecc691921301726a8ce9d",
    "operator": "progressive",
-   "label": "curated",
    "full": "assets/img/hero/1594791064055740275.webp"
   },
   {
@@ -1239,7 +1238,6 @@ window.SCA_IMAGES = {
     1,
     0
    ],
-   "role": "night",
    "prompt": "A lone figure stands on a snowy terrain, illuminated by a flashlight, as vibrant auroras in shades of green and purple arc across a star-filled sky, with distant mountains and steam billowing from a geothermal feature in the background.",
    "size": [
     4096,
@@ -1248,7 +1246,6 @@ window.SCA_IMAGES = {
    "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_4783241696049918576_3614fe2769_seed0.png",
    "png_sha256": "4515ad45462a7188afa22ac8cea664f9c289be6b23a8a27fd59d79fd5fe93199",
    "operator": "progressive",
-   "label": "curated",
    "full": "assets/img/hero/4783241696049918576.webp"
   },
   {
@@ -1257,7 +1254,6 @@ window.SCA_IMAGES = {
     1,
     1
    ],
-   "role": "portrait",
    "prompt": "A young woman with curly hair and rosy cheeks leans out of a stone window, holding a red fan adorned with floral patterns, dressed in a traditional European blouse with intricate detailing and a necklace.",
    "size": [
     4096,
@@ -1266,7 +1262,6 @@ window.SCA_IMAGES = {
    "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_7265494513082458083_3ceeb2ed50_seed0.png",
    "png_sha256": "04fb8be11d8bee8aadbc4234ddf2d3ae06d1f240fb5453ec7ec268c1b88e7478",
    "operator": "progressive",
-   "label": "curated",
    "full": "assets/img/hero/7265494513082458083.webp",
    "inset": {
     "window": [
@@ -1285,7 +1280,6 @@ window.SCA_IMAGES = {
     1,
     2
    ],
-   "role": "animal",
    "prompt": "A young woman in a black leather jacket kneels on the forest floor alongside three wolves, displaying a calm interaction as they sit closely together.",
    "size": [
     4096,
@@ -1294,7 +1288,6 @@ window.SCA_IMAGES = {
    "source_png": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus3118670343091498341_9b81ec8748_seed0.png",
    "png_sha256": "e5ce18e605dee9241337c460358f0ccb40ac7be5b9024e0291f1cb094f32fc77",
    "operator": "progressive",
-   "label": "curated",
    "full": "assets/img/hero/m3118670343091498341.webp"
   }
  ]

@@ -416,12 +416,12 @@ def write_js(js, out_dir, web_root, selection):
         item = selection[sid]
         vids = {k: {"mp4": web_path(out_dir / f"{sid}_{k}.mp4", web_root),
                     "poster": web_path(out_dir / f"{sid}_{k}.webp", web_root)} for k in KINDS}
-        expected.append({"sid": sid, "label": item.get("label"), "prompt": item["prompt"], "kinds": list(KINDS),
+        expected.append({"sid": sid, "prompt": item["prompt"], "kinds": list(KINDS),
                          "videos": vids})
         for k in KINDS:
             if (out_dir / f"{sid}_{k}.mp4").exists() and (out_dir / f"{sid}_{k}.webp").exists():
                 available.append({"sid": sid, "kind": k, "mp4": vids[k]["mp4"], "poster": vids[k]["poster"],
-                                  "prompt": item["prompt"], "label": item.get("label"),
+                                  "prompt": item["prompt"],
                                   "operator": ops.get(f"{sid}_{k}", "previous")})
     body = json.dumps({"available": available, "expected": expected}, indent=1, ensure_ascii=False)
     js.parent.mkdir(parents=True, exist_ok=True)
