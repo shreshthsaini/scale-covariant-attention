@@ -1749,3 +1749,5 @@ reach emulation; then (coordinator) slots for FLUX.2-dev, Qwen-Image and Ideogra
   a real-data explanation figure (above the bar for "data flowing through" figures).
 - Pending: switches stay off until FLUX.2-dev / Qwen-Image showcase images and Ideogram 4 results land (all GPU work
   waits on SCS1/SCS2/SCSd).
+
+Addendum 2026-11-08 10:30 (lead, after crash): lead session restarted on controller i614-062 (job 1129781, ends 11-10 about 02:45). gpu_watch.sh running here (log logs/gpu_watch_i614-062.log) and on i617-052 (job 1126651, ends about 16:00). Overnight dev fleet SCSd (1129746) completed Ideogram 00a1 check (identity passes both passes, rel L2 at noise floor), 2048/4096 fits and merges, plus 19 showcase tasks. New dev fleet 1130161 submitted; SCS1/SCS2 pending. Showcase agent resumed. 187 tasks pending.
