@@ -29,7 +29,7 @@ from matplotlib.lines import Line2D  # noqa: E402
 ROOT = HERE.parents[2]
 R = ROOT / "results"
 OUT = ROOT / "paper" / "figures" / "paired_area"
-W, H = 2.53, 2.55
+W, H = 2.53, 2.16
 UNRESOLVED = "#8A939C"
 GROUPS = [
     [("ir", "ImageReward"), ("aesthetic", "Aesthetic"), ("clip", "CLIP score"), ("pickscore", "PickScore"),

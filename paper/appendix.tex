@@ -12,6 +12,9 @@
 % Text that names a progressive gallery appears only once its snippet exists (figure agent).
 \newcommand{\ifprogGallery}[1]{\IfFileExists{figures/snippets/gallery_prog.tex}{#1}{}}
 \newcommand{\ifprogSixteen}[1]{\IfFileExists{figures/snippets/gallery_prog16.tex}{#1}{}}
+% Newer models (switches in main.tex): the contents line exists only when a model is switched on.
+\newcommand{\newmodelsline}{}
+\ifanynewmodel\renewcommand{\newmodelsline}{\appline{app:newer}{Newer models}}\fi
 {\small\setlength{\tabcolsep}{3pt}
 \noindent\begin{minipage}[t]{0.485\linewidth}
 \begin{tabular}[t]{@{}l >{\raggedright\arraybackslash}p{0.88\linewidth}@{}}
@@ -37,6 +40,7 @@
 \appline{app:phase2}{Additional paired intervals}
 \appline{app:budget}{SigMa, sampling budgets, and guidance}
 \appline{app:8k}{Exploratory $8192^2$ comparison}
+\newmodelsline
 \appline{app:ps2}{Reach table at non-square sizes}
 \multicolumn{2}{@{}l}{\textbf{Compute and impact}}\\
 \appline{app:compute}{Compute and reproducibility}
@@ -92,7 +96,14 @@ Any rule that assigns one weight per cell is a feasible $\pi'$ in every cell. Ex
 \section{Reach emulation: details and statistics}
 \label{app:emulation}
 
-This section expands Section~\ref{sec:analysis} and Figure~\ref{fig:heads}. Table~\ref{tab:variance_split} backs the section's first finding, that reach varies by head and not by step. Figure~\ref{fig:reach_tables} shows the reach tables, and Figure~\ref{fig:pi_heads} every head's $\pih$ with the split-half agreement. Figures~\ref{fig:relerr} and~\ref{fig:pisigma} give the output errors per rule and per noise level, and Figure~\ref{fig:heatmap} every head's weight per block.
+This section expands Section~\ref{sec:analysis} and Figure~\ref{fig:focus}c. Figure~\ref{fig:heads} relates each head's measured reach to its fitted weight over all 1368 heads, and Table~\ref{tab:variance_split} backs the section's first finding, that reach varies by head and not by step. Figure~\ref{fig:reach_tables} shows the reach tables, and Figure~\ref{fig:pi_heads} every head's $\pih$ with the split-half agreement. Figures~\ref{fig:relerr} and~\ref{fig:pisigma} give the output errors per rule and per noise level, and Figure~\ref{fig:heatmap} every head's weight per block.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/heads_view.pdf}
+  \caption{\textbf{Measured reach tracks the fitted $\pi_h$.} (a)~Local window (amber) and every fourth block-centre key per axis (blue) on a $4096^2$ output; (b)~full-attention mass density of three heads at $1024^2$ and $\sigma=0.62$, with each head's share within 16 tokens. (c)~Their $\pi_h$ with the median and interquartile range of all 1368 heads; (d)~$\pi_h$ against that share (Pearson $\rho=0.77$).}
+  \label{fig:heads}
+\end{figure}
 
 \input{figures/snippets/app_tables/variance_split.tex}
 
@@ -209,6 +220,8 @@ This section expands Section~\ref{sec:branches} and Figure~\ref{fig:method}. Fig
   \caption{\textbf{The operators at component level.} On a toy grid ($H=24$, $s=4$, $n_0=6$, $t=2$), (a)~the global operator keys each block by its centre token. (b)~A query tile attends to the text keys, the bridge tokens (dots), and a clamped window whose side shrinks from $2n_0$ to $n_0$, shown with its block mask (Equations~\ref{eq:glob} to~\ref{eq:bridge}). (c)~One head mixes the two by $\pi_{lh}$ (solid: $r=4$; dashed: $r=2$; amber: wide-window steps; Equation~\ref{eq:mix}). (d)~The $r=4$ table holds all $57\times24$ heads by 14 noise bins.}
   \label{fig:method_zoom}
 \end{figure}
+
+\paragraph{Design choices.} A block centre is a real token, so the global branch attends to keys and values the model produced; mean pooling does worse (Section~\ref{sec:ablations}). Native windows keep offsets in the trained range, so \sca{} keeps FLUX.1's RoPE and softmax scale; text keys sit at position 0 in both branches (Remark~\ref{rem:text}). Bridge keys keep their true positions and windows wider than $n_0$ reach offsets up to $w-1$, so the local operator leaves the trained range for 1,024 keys and during the four wide-window steps. FLUX.1 also rounds positions in bf16 beyond 256 tokens per axis (``Position ids in bf16'' below).
 
 \paragraph{FlexAttention window.} Image tokens are reordered tile-major, so that a sparse block is a small spatial tile. Query blocks cover $8\times16$ tokens (128 queries) and key blocks $8\times8$ (64 keys), shifted so that unclamped windows start on a block edge. The $T$ text keys and the 1,024 bridge keys come first, as a prefix of $T+1{,}024$ keys shared by every query; the bridge keys keep their true positions. The wider windows of the four steps after the opening use the same tiling with more key blocks per query block. The mask function states window membership per query-key pair, so the result does not depend on the block layout, only the amount of skipped work does. For the operator without the schedule on GH200, $8\times16$ query blocks with $8\times8$ key blocks were fastest at $2048^2$, $4096^2$, and $2048\times6144$. RoPE, subsampling, both branches, and the mix compile into one graph per layer; the mix is in fp32.
 
@@ -773,6 +786,19 @@ All 8K scores were computed on CPU (Table~\ref{tab:e2_8192_per_image} notes the 
 \begingroup\let\scaOrigTable\table\renewcommand{\table}[1][]{\scaOrigTable[!htbp]}%
 \snippet{e2_8192_tables}{}
 \endgroup
+
+% Newer models: each block appears only when its switch is on in main.tex (snippets written by the run owners).
+\ifanynewmodel
+\FloatBarrier
+\section{Newer models}
+\label{app:newer}
+
+This section expands the newer-model paragraphs of Section~\ref{sec:generality}.\ifresfluxtwo{} Figure~\ref{fig:showcase_flux2} shows \sca{} on FLUX.2-dev.\fi\ifresqwen{} Figure~\ref{fig:showcase_qwen} shows \sca{} on Qwen-Image.\fi\ifresideogram{} Figure~\ref{fig:ideogram4} shows \sca{} on Ideogram~4 at $8192^2$.\fi
+
+\ifresfluxtwo\snippet{showcase_flux2}{}\fi
+\ifresqwen\snippet{showcase_qwen}{}\fi
+\ifresideogram\snippet{ideogram4}{}\fi
+\fi
 
 \FloatBarrier
 \section{Reach table at non-square sizes}

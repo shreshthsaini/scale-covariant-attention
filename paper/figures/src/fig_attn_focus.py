@@ -231,7 +231,7 @@ def draw(fig, d, th, px=512):
     zs = px / w
     zqy, zqx = (qr - r0 + 0.5) * zs, (qc - c0 + 0.5) * zs
     # Geometry (inches).
-    left, tile, gap, top_title = 0.31, 0.835, 0.04, 0.17
+    left, tile, gap, top_title = 0.31, 0.79, 0.04, 0.17
     y_top = H - top_title
     rows = ("near", "far")
     for ri, tag_ in enumerate(rows):
@@ -362,7 +362,7 @@ def main():
         extract()
         return
     d = load_drawn()
-    H = 1.93
+    H = 1.84
     sf.use_style()
     sf.script_floor(sf.FS_SMALL)
     fig = plt.figure(figsize=(sf.TEXT, H))
@@ -387,6 +387,23 @@ def main():
                                                         method=6)
         web.append(WEB / f"attn_focus_{name}.webp")
         plt.close(fig)
+    # The numbers the text quotes, as macros (two decimals, as the figure prints them).
+    snip = FIGS / "snippets" / "attn_focus_numbers.tex"
+    hn, hf = (int(h) + 1 for h in d["heads"])
+    snip.write_text("\n".join([
+        "% Written by paper/figures/src/fig_attn_focus.py from results/attn_focus/attn_focus.npz; do not edit by hand.",
+        "\\newcommand{\\hlFocusBlock}{%d}" % (int(d["block"]) + 1),
+        "\\newcommand{\\hlFocusHeadNear}{%d}" % hn,
+        "\\newcommand{\\hlFocusHeadFar}{%d}" % hf,
+        "\\newcommand{\\hlFocusSigma}{%.2f}" % float(d["sigma"]),
+        "\\newcommand{\\hlFocusNearM}{%.2f}" % float(d["near_m"]),
+        "\\newcommand{\\hlFocusFarM}{%.2f}" % float(d["far_m"]),
+        "\\newcommand{\\hlFocusNearPi}{%.2f}" % float(d["near_pi"]),
+        "\\newcommand{\\hlFocusFarPi}{%.2f}" % float(d["far_pi"]),
+        "\\newcommand{\\hlFocusNearShare}{%.2f}" % float(d["share16"][0]),
+        "\\newcommand{\\hlFocusFarShare}{%.2f}" % float(d["share16"][1]),
+        "\\newcommand{\\hlFocusNearMLo}{%.2f}" % float(min(d["near_m_extra"].min(), d["near_m"])),
+        "\\newcommand{\\hlFocusFarMHi}{%.3f}" % float(max(d["far_m_extra"].max(), d["far_m"])), ""]))
     prov = json.loads((RES / "summary.json").read_text())
     prov["draw"] = {"script": "paper/figures/src/fig_attn_focus.py", "variance_split": str(VARSPLIT.relative_to(ROOT)),
                     "variance_split_sha256": sha256(VARSPLIT), "var_head": d["var_head"], "var_step": d["var_step"],

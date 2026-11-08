@@ -195,7 +195,7 @@ def draw_time(fig, box, d, th, fs_scale=1.0):
     """Panel (a) in the figure-fraction rectangle box = (x0, y0, w, h): the upper axis holds every method from AReA up;
     a lower strip on its own scale holds SEGA, DyPE and full attention, whose ImageReward is far lower."""
     x0, y0, w, h = box
-    gap, lo_h = 0.05 * h, 0.27 * h
+    gap, lo_h = 0.045 * h, 0.235 * h
     ax_lo = fig.add_axes([x0, y0, w, lo_h])
     ax_hi = fig.add_axes([x0, y0 + lo_h + gap, w, h - lo_h - gap], sharex=ax_lo)
     t, ir, sp = times(d), d["ir"], d["speed"]
@@ -210,7 +210,7 @@ def draw_time(fig, box, d, th, fs_scale=1.0):
         ax.xaxis.set_major_locator(FixedLocator([50, 100, 200, 400]))
         ax.xaxis.set_minor_locator(NullLocator())
         style_axes(ax, th, fsl)
-    ax_hi.set_ylim(0.80, 1.555)
+    ax_hi.set_ylim(0.80, 1.585)
     ax_hi.yaxis.set_major_locator(FixedLocator([0.9, 1.1, 1.3, 1.5]))
     ax_hi.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda v, _: f"{v:.1f}"))
     ax_lo.set_ylim(-2.6, 1.05)
@@ -242,49 +242,59 @@ def draw_time(fig, box, d, th, fs_scale=1.0):
     P = (t["sca_v2_prog"], ir["sca_v2_prog"])
     lw = 1.6 * fs_scale
     arrow(ax_hi, (t["hrdit_dev_author"], ir["hrdit_dev_author"]), P, th["sca"], lw, rad=0.0)
-    arrow(ax_hi, (t["ultraimage"], ir["ultraimage"]), P, th["sca"], lw, rad=0.26)
+    arrow(ax_hi, (t["ultraimage"], ir["ultraimage"]), P, th["sca"], lw, rad=0.19)
     arrow(ax_hi, (t["area"], ir["area"]), P, th["sca"], lw, rad=0.0)
 
-    # Direct labels: each method's name; bold green numbers give progressive SCA's speedup over the arrow's source.
+    # Direct labels: each method's name, then progressive SCA's speedup over it (bold green where an arrow is drawn,
+    # grey otherwise). The arrows themselves carry no text, so no label sits on a line.
     nk = dict(fontsize=fss, zorder=9)
-    rk = dict(fontsize=fs, fontweight="bold", color=th["sca"], zorder=9)
+    rk = dict(fontsize=fss + 0.5, fontweight="bold", color=th["sca"], zorder=9)
+    fig.canvas.draw()
+    rend = fig.canvas.get_renderer()
+
+    def name_ratio(ax, m, dx, dy, name_kw, ratio_kw, ratio_text, ha="left"):
+        """Name at (dx, dy) points from the marker, ratio right after it; ha='right' puts the pair left of it."""
+        xy = (t[m], ir[m])
+        if ha == "left":
+            tn = ax.annotate(NAME[m], xy, xytext=off(dx, dy), textcoords="offset points", ha="left", va="center",
+                             **name_kw)
+            wpt = tn.get_window_extent(rend).width * 72 / fig.dpi
+            ax.annotate(ratio_text, xy, xytext=off(dx, dy) if False else (off(dx, dy)[0] + wpt + 2.5 * fs_scale,
+                                                                          off(dx, dy)[1]),
+                        textcoords="offset points", ha="left", va="center", **ratio_kw)
+        else:
+            tr = ax.annotate(ratio_text, xy, xytext=off(dx, dy), textcoords="offset points", ha="right", va="center",
+                             **ratio_kw)
+            wpt = tr.get_window_extent(rend).width * 72 / fig.dpi
+            ax.annotate(NAME[m], xy, xytext=(off(dx, dy)[0] - wpt - 2.5 * fs_scale, off(dx, dy)[1]),
+                        textcoords="offset points", ha="right", va="center", **name_kw)
+
     # Progressive SCA: to the left of the star.
     ax_hi.annotate("Progressive\nSCA", P, xytext=off(-7.5, 0), textcoords="offset points", ha="right", va="center",
                    color=th["sca"], fontweight="bold", linespacing=1.0, **nk)
     ax_hi.annotate("Single-pass SCA", (t["sca_v2"], ir["sca_v2"]), xytext=off(4.5, -0.5), textcoords="offset points",
                    ha="left", va="center", color=th["sca"], **nk)
-    # HRDiT: name and ratio to the right of its marker.
-    ax_hi.annotate("HRDiT", (t["hrdit_dev_author"], ir["hrdit_dev_author"]), xytext=off(4.5, 0),
-                   textcoords="offset points", ha="left", va="center", color=th["ink"], **nk)
-    ax_hi.annotate(f"{sp['hrdit_dev_author'][0]:.1f}×", (t["hrdit_dev_author"], ir["hrdit_dev_author"]),
-                   xytext=off(-16, 3.2), textcoords="offset points", ha="center", va="bottom", **rk)
-    # UltraImage: name below, ratio on the arc.
+    name_ratio(ax_hi, "hrdit_dev_author", 4.5, 0, dict(color=th["ink"], **nk), rk,
+               f"{sp['hrdit_dev_author'][0]:.1f}\u00d7")
+    name_ratio(ax_hi, "area", 4.5, 0, dict(color=th["area"], fontweight="bold", **nk), rk, f"{sp['area'][0]:.1f}\u00d7")
+    # UltraImage: name below the marker, its campaign-time ratio under the name.
     ax_hi.annotate("UltraImage", (t["ultraimage"], ir["ultraimage"]), xytext=off(0, -5.0), textcoords="offset points",
                    ha="center", va="top", color=th["ink"], **nk)
-    ax_hi.annotate(f"{sp['ultraimage'][0]:.1f}×", (152, 1.465), ha="center", va="center",
-                   bbox=dict(boxstyle="round,pad=0.10", fc=th["mask"], ec="none"), **rk)
-    ax_hi.annotate("campaign", (152, 1.465), xytext=off(12.5, 0), textcoords="offset points", ha="left", va="center",
-                   color=th["sca"], fontsize=fss, zorder=9)
-    # AReA: name right of the marker, ratio on the arrow.
-    ax_hi.annotate("AReA", (t["area"], ir["area"]), xytext=off(4.5, 0), textcoords="offset points", ha="left",
-                   va="center", color=th["area"], fontweight="bold", **nk)
-    mid_x = (t["area"] * P[0]) ** 0.5 * 1.18
-    frac = (np.log(t["area"]) - np.log(mid_x)) / (np.log(t["area"]) - np.log(P[0]))
-    mid_y = ir["area"] + frac * (P[1] - ir["area"])
-    ax_hi.annotate(f"{sp['area'][0]:.1f}×", (mid_x, mid_y), xytext=off(5.5, -5.0), textcoords="offset points",
-                   ha="left", va="top", **rk)
+    ax_hi.annotate(f"{sp['ultraimage'][0]:.1f}\u00d7", (t["ultraimage"], ir["ultraimage"]), xytext=off(-1.5, -13.5),
+                   textcoords="offset points", ha="right", va="top", **rk)
+    ax_hi.annotate("campaign", (t["ultraimage"], ir["ultraimage"]), xytext=off(1.0, -13.8), textcoords="offset points",
+                   ha="left", va="top", color=th["sca"], **nk)
     # Lower strip: names and ratios in grey (SEGA to the left, so that it clears DyPE).
-    for m, side in (("sega_official", "left"), ("dype", "right"), ("full", "right")):
-        dx = -5.0 if side == "left" else 5.0
-        ax_lo.annotate(f"{NAME[m]}  {sp[m][0]:.1f}\u00d7", (t[m], ir[m]), xytext=off(dx, 0),
-                       textcoords="offset points", ha="right" if side == "left" else "left", va="center",
-                       color=th["mid"], **nk)
-    # Marker key above the axes, outside the data area: filled = clean batch-1 median, hollow = campaign mean.
+    gk = dict(color=th["mid"], **nk)
+    name_ratio(ax_lo, "sega_official", -5.0, 0, gk, gk, f"{sp['sega_official'][0]:.1f}\u00d7", ha="right")
+    name_ratio(ax_lo, "dype", 5.0, 0, gk, gk, f"{sp['dype'][0]:.1f}\u00d7")
+    name_ratio(ax_lo, "full", 5.0, 0, gk, gk, f"{sp['full'][0]:.1f}\u00d7")
+    # Marker key in the strip's empty left side: filled = clean batch-1 median, hollow = campaign mean.
     handles = [Line2D([], [], marker="o", ls="none", ms=ms * 0.85, color=th["mid"], mew=0.6),
                Line2D([], [], marker="o", ls="none", ms=ms * 0.85, color=th["mid"], mfc=th["mask"], mew=1.0)]
-    leg = ax_hi.legend(handles, ["clean batch-1 median", "campaign mean"], loc="lower right", ncol=2,
-                       bbox_to_anchor=(1.0, 1.0), frameon=False, fontsize=fss, handlelength=0.7, handletextpad=0.35,
-                       columnspacing=1.0, borderaxespad=0.15, borderpad=0.0, labelcolor=th["mid"])
+    leg = ax_lo.legend(handles, ["clean batch-1 median", "campaign mean"], loc="center left",
+                       bbox_to_anchor=(0.0, 0.5), frameon=False, fontsize=fss, handlelength=0.7, handletextpad=0.35,
+                       borderaxespad=0.2, borderpad=0.0, labelspacing=0.2, labelcolor=th["mid"])
     leg.set_zorder(9)
     # One y label for both strips, centred on their combined height; the strip below carries the same text hidden,
     # so that each axes reports its label to the figure audit.
@@ -310,7 +320,7 @@ def draw_latency(fig, box, d, th, fs_scale=1.0):
     ax.set_xscale("log", base=2)
     ax.set_yscale("log")
     ax.set_xlim(1800, 9400)
-    ax.set_ylim(11, 2600)
+    ax.set_ylim(8, 4200)
     ax.xaxis.set_major_locator(FixedLocator(list(SIDES)))
     ax.xaxis.set_minor_locator(NullLocator())
     ax.xaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda v, _: f"{int(v)}"))
@@ -350,7 +360,7 @@ def draw_latency(fig, box, d, th, fs_scale=1.0):
     return ax
 
 
-LAYOUT = dict(W=sf.TEXT, H=1.88, bottom=0.34, top=0.17, a=(0.46, 3.00), b=(4.02, 1.43))
+LAYOUT = dict(W=sf.TEXT, H=1.52, bottom=0.33, top=0.165, a=(0.46, 3.00), b=(4.02, 1.43))
 
 
 def build(d, th, panel_letter_color):

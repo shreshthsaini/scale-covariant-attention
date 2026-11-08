@@ -568,7 +568,7 @@ def table3_rows(label, ncell, dd, n):
         v, lo, hi = dd[k]
         top.append(paint(sgn(sc * v, d), sig(dd[k], lower=False) or ""))
         low.append(rf"\scriptsize $[{sc * lo:.{d}f}, {sc * hi:.{d}f}]$".replace("[-", "[{-}").replace(", -", ", {-}"))
-    return [" & ".join(top) + r" \\", " & ".join(low) + r" \\[1.5pt]"]
+    return [" & ".join(top) + r" \\", " & ".join(low) + r" \\[0.5pt]"]
 
 
 def table_generality():
@@ -593,7 +593,7 @@ def table_generality():
     label, ncell, rel, method, reference = GEN_FLUX2
     dd, n = V.paired_csv(rel, method, reference)
     body += table3_rows(label, ncell, dd, n)
-    body[-1] = body[-1].replace(r" \\[1.5pt]", r" \\")
+    body[-1] = body[-1].replace(r" \\[0.5pt]", r" \\")
     PENDING["tab_generality"] = bool(pending)
     NOTES.append(f"Table 3 progressive rows pending: {pending or 'none'}")
     return tabular(r"\setlength{\tabcolsep}{2.0pt}", "@{}lrrr@{}",
