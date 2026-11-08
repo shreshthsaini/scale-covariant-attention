@@ -1556,3 +1556,24 @@ selection phrase (figures state prompt set and seed; random galleries keep a neu
   Figure 2. Open by choice: Figure T.1 size, free space on gallery pages, and the code release's calib file names
   (sca/calib.py, scripts/calibrate.py, scripts/calib_prompts.jsonl, calib/), which the paper no longer prints.
 - Rubric self-score (Section 31 values) unchanged: method diagram 2 (15 words, 4 hues, real data, appendix zoom).
+
+## 34. 2026-11-07 night: project page v3, live on GitHub Pages (web owner; state in .agent/notes/web_v3_20261107.md)
+Site: https://shreshthsaini.github.io/scale-covariant-attention/ (gh-pages, built from web/ on origin/main by
+`bash web/build/publish_pages.sh`; run it after every web/ push and check the URL). The script now leaves out
+web/build and web/README.md and refuses to publish internal paths or calibration/curation wording.
+- Page rebuilt around progressive SCA (Source Serif 4 and Inter, light and dark): title and teaser loops (deep zoom,
+  1,368-head curves; the three-stage loop waits for a progressive trace), hero with a native-pixel lens, headline
+  numbers, abstract, explainer video (116 s, render_explainer.py), observation (full attention at 4096^2, variance
+  split, interactive 1,368-head chart, paper heads_view), method (paper method_v3, then interactive figures from real
+  data: near/far rings, the two views to scale, reach emulation, the closed-form parabola of three heads, the reach
+  table explorer, both schedules), showcase (cards from build/showcase_manifest.json via build_showcase_page.py,
+  four native windows each, compare with AReA and Lanczos), comparisons (15 prompts, six methods incl. UltraImage,
+  synced full and 1:1 sliders), per-example videos (single-pass until the progressive ones exist), results (three
+  seeds, HRGen-1K, time bars, Table 1, charts), gallery (first 12 evaluation prompts, fixed rule), the lead's
+  96-prompt page web/review/ (restyled, linked from nav, results and gallery), Ideogram placeholders, limitations.
+- Wording: paper terms (reach emulation, reach table); no curated/random labels (build_images.py strips them);
+  numbers only through build_numbers.py (172 keys, all present).
+- Pending: hero 5120^2 and 6144x4096 images and more showcase cards as build_showcase.py exports them (rerun
+  build_showcase_page.py, which cuts lens tiles for the hero), FLUX.2-dev and Qwen-Image pairs, progressive
+  per-example videos and the stages loop (render_process_videos.py from trace_showcase), then drop the 44 MB of
+  single-pass trace videos. Size: web/ without review/ about 80 MB; review/ adds 114 MB.
