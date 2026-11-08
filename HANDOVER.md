@@ -1695,3 +1695,57 @@ SEGA, full attention and 4096^2; NTK and YaRN on 3; seed 0; cut full attention t
   once the web owner agrees on their size).
 
 Addendum 2026-11-08 02:50 (lead): controller i615-091 (job 1125760, also this lead session) ends 04:58. gpu_watch.sh now also runs on i617-052 (job 1126651, ends about 16:00); a fresh 48 h controller job 1129781 is queued. Resume from a new session on whichever controller is up: "continue SCA from HANDOVER". In flight: showcase campaign (FLUX.1 progressive, FLUX.2, Qwen-Image; Sections 32-33), Ideogram 4 at 8192^2 (Section 36, 50 tasks queued), paper figure pass (Section 34), web page live via web/build/publish_pages.sh. All wait on SCS1/SCS2/SCSd (pending, gh saturated).
+
+## 37. 2026-11-08: speed headline, attention-focus figure, newer-model switches (paper owner; notes .agent/notes/paper_v4_20261108.md)
+User requests (via lead): speed as the headline visual beside or under the hero; replace the 1,368-curve explanation
+visuals with a figure of what attention looks at on a real image; Sections 1-2 walk through near view, far view, reach,
+reach emulation; then (coordinator) slots for FLUX.2-dev, Qwen-Image and Ideogram 4, each off behind a switch.
+- Delivery: /scratch/09032/saini_2/sca/paper_builds/delivery_gvyduue4 (commit in this section's push), 55 pp, main text pages 1-10 (about 4 spare lines with the switches
+  off), 0 overfull, 0 undefined, fresh unzip builds to the same pages; hashes in .agent/notes/latest_delivery.md.
+- Figure 2, fig:speed (paper/figures/src/fig_speed.py), under the hero on page 1 (hero now 0.9 text width):
+  (a) ImageReward against seconds per image at 4096^2 (log), every Table 1 method at seed 0; filled = clean batch-1
+  median, hollow = campaign mean (UltraImage, DyPE, SEGA have no clean time); broken y axis (strip for SEGA, DyPE, full
+  attention); bold arrows from AReA, HRDiT and UltraImage to progressive SCA; each marker carries progressive SCA's
+  speedup: AReA 4.1x and HRDiT 2.2x clean over clean (prog_latency sweep 3), full attention 3.8x clean, UltraImage
+  6.1x, DyPE 3.9x, SEGA 3.8x campaign over campaign (50.7 s for progressive). (b) clean seconds against image side,
+  single-pass SCA, AReA, full attention, progressive star at 4096^2, single-pass over AReA along the top (2.1, 2.6,
+  2.6, 2.8, 3.1). The script stops unless every value matches Table 1, Appendix D and headline.tex (half-up rounding,
+  as gen_main_tables.py); snippets/speed_numbers.tex holds \hlSpeedProgUltraCamp and the other ratios.
+- Figure 3, fig:focus (fig_attn_focus.py, attn_focus_data.py): the 1024^2 image is progressive SCA's first stage for
+  a4k_eval_4096_minus8343371271909676658, seed 0 (sheep and church), re-run on CPU in bf16 by scripts/attn_focus.py
+  (25 min, 112 threads at nice 19 on i615-091), which stores q,k of all 57 blocks at steps 8, 20, 26 (sigma 0.897,
+  0.612, 0.327) in /scratch/09032/saini_2/sca/out/attn_focus/sheep_church_seed0 (9.7 GB, purge-eligible; the figure
+  reads only results/attn_focus/ and paper/figures/attn_focus/). Heads by rule: block 12 (Figure 4c's block), highest
+  and lowest share within 16 tokens in k1_1024.npz at bin 8: heads 4 (share 0.92, pi 0.93) and 7 (0.02, 0.00). Query:
+  the leftmost sheep's face. Panels: full attention (amber inside the r = 4 window, blue outside), near part zoomed
+  (m_i 0.96 and 0.00), far part, SCA's window and block-centre grid faded by pi_h; (b) reach emulation on the same
+  image (4096^2 output with its 64-token window and 64^2 grid, the 1024^2 image with 16 and 16^2); (c) one bar, head
+  97.5% and noise level 2.5%. Head 7 attends to the other sheep. Text numbers via snippets/attn_focus_numbers.tex.
+- heads_view (the curve bundle and the 1,368-head scatter) moved to Appendix B as Figure B.1.
+- Text: abstract cites Figure 2 (49.2 s, 4.1x AReA, 2.2x HRDiT); introduction: question, near/far split and the two
+  heads (Figure 3a), 97.5%/2.5% (3c), prior fixes, SCA's two views (Figure 4a), reach emulation (3b), progressive SCA
+  with the speed sentence (6.1x UltraImage in campaign time), results; two bullets. Section 2: 2.1 split (Lemma 1),
+  2.2 "Near view and far view" (local operator first, then global), 2.3 reach emulation (the mix stated as the head's
+  reach; scale covariance folded in), 2.4 single-pass sampling (inference interpolation moved here; sigma bins point
+  to Table F.1), 2.5 progressive. "Design choices" moved to Appendix D. Many sentences tightened; Table 3's interval
+  rows got 0.5 pt spacing (generator change only); Figure 5 regenerated 2.16 in tall. Number audit: the only numbers
+  that left the main text (0.22, 42, 56) are in the appendix; every new number comes from Figures 2 and 3.
+- Switches (main.tex preamble, all false): \resfluxtwo, \resqwen, \resideogram. Snippets: fig_showcase_models.py
+  --model FLUX.2-dev | Qwen-Image writes showcase_{flux2,qwen}.tex (fig:showcase_{flux2,qwen}) and *_text.tex
+  (sizes); Section 36's gen_ideogram4_table.py and fig_ideogram4.py write ideogram4.tex (tab:ideogram4) and
+  ideogram4_fig.tex (fig:ideogram4); optional one-sentence results flux2_result_text.tex (\fluxTwoResult),
+  qwen_result_text.tex (\qwenResult), ideogram4_text.tex (\ideogramResult). On: the abstract's single-pass sentence
+  swaps "keeps more fine detail" for the model list, Section 4.4 gets one run-in per model with its pointers, the
+  conclusion the same swap, and the appendix a "Newer models" section with a contents line. Tested with fake snippets
+  (all on; Qwen only without a result sentence): Figure 2 stays on page 1, main text ends on page 10 (about 0.3 line
+  spare with all three on), 0 overfull, 0 undefined. Longer result sentences need a trim elsewhere.
+- Web exports for the web owner: web/assets/img/figs/{speed,speed_time,speed_latency,attn_focus}_{light,dark}.
+  {svg,png,webp} (transparent backgrounds; dark uses the page's dark palette).
+- Render review: two cycles. Cycle 1: main pages by the paper owner (3 MUST: the 2.5 heading stranded at the bottom of page 5, fixed with needspace; Figure 5's caption overlapping text after the wrap shrank, fixed with a 21-line wrap; nested parentheses in related work); appendix by two reviewer subagents (MUST: Figure D.1 cited Equations 4 to 3 after the operator reorder, now 2 and 3 with 4 for panel a; 'randomly drawn' in Appendix L, gallery and FLUX.2 body text, reworded, captions keep the neutral 'drawn at random (selection seed 0)'; prompts recurring between Figures S.2/S.3 and the seeded galleries, now stated: the sixteen prompts were set later, so a prompt can appear in more than one figure). Also fixed: Figure B.1 caption (gate line and band explained), Figure D.1 placed after its section opening, Figure N.1 caption sign, FLUX.2 portrait phrasing, Figure 2 caption ties 195 prompts to ImageReward. Cycle 2 (paper owner: main pages and appendix pages 15, 19, 32, 40): no MUST item. Open SHOULD items, all pre-existing: blank space under Algorithms 4-5 (p22) and on some table and gallery pages, Table L.1 at 6 pt and 'MUSIQ, crops', Table D.1's first column, Table K.5 caption clause, Figure S.2 says sixteen prompts while showing eight (eight more in S.3), a results/ path in Appendix N prose, mathtext glyphs that copy as fractions in Figures B.1-B.3.
+- Rubric self-score (gold standard, 0/1/2): abstract 1, hero 2, footnotes 1, question and wrap 1, introduce and
+  bullets 1, sentence length 1, method diagram 2, equations 1, algorithms 2, setup run-ins 1, main table 2, finding
+  paragraphs 2, ablations 1, plots under 6 pt 1, qualitative grid 2, limitations 2, reproducibility 2, appendix 2,
+  float placement 1, captions 1, colours 1, dashes and section symbol 1. Mean 1.41 (31/22), no zero. Plots now add
+  a real-data explanation figure (above the bar for "data flowing through" figures).
+- Pending: switches stay off until FLUX.2-dev / Qwen-Image showcase images and Ideogram 4 results land (all GPU work
+  waits on SCS1/SCS2/SCSd).

@@ -7,7 +7,8 @@ emulation", its output the "reach table", weights are "fitted"), no "curated"/"u
 dashes or section symbols. Main text at most 10 pages.
 
 ## Status and next action
-- Paper v4 (HANDOVER Section 37): speed figure (Figure 2) under the hero on page 1; attention-focus figure (Figure 3,
+- Paper v4 delivered: /scratch/09032/saini_2/sca/paper_builds/delivery_gvyduue4 (55 pp, main text 1-10, 0 overfull,
+  fresh unzip passes; HANDOVER Section 37): speed figure (Figure 2) under the hero on page 1; attention-focus figure (Figure 3,
   real CPU attention capture of FLUX.1-dev at 1024^2); Sections 1-2 ordered near view, far view, reach, reach
   emulation; heads_view moved to Appendix B; newer-model switches wired and off.
 - Next for the paper: when FLUX.2-dev / Qwen-Image showcase images or Ideogram 4 results land, run their snippet
