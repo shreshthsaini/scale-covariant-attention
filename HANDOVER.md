@@ -1517,6 +1517,23 @@ Goal (user, via lead): SCA on FLUX.1-dev, FLUX.2-dev and Qwen-Image at 4096 to 6
   SCA and full attention, prompts 0-2 of showcase40 (sc_p01..p03, the ones fig_showcase_models.py takes first). Then:
   manifest (build_showcase.py), backbones entries in web/build/showcase_page.json, build_showcase_page.py, paper snippets
   (fig_showcase_models.py --model FLUX.2-dev / Qwen-Image; switches stay off for the paper owner).
+- 2026-11-08 13:00, first pairs on the page (dev fleet 1130161 from 11:59): Qwen-Image 5312^2 SCA for sc_p01..p03
+  (806, 748 s and the third; peak 52 GB) and full attention for sc_p01 (1,858 s clean), sc_p02/p03 finishing; FLUX.2-dev
+  5120^2 SCA for sc_p01..p03 (397 s, peak 92 GB) and full attention for sc_p01, sc_p02/p03 running. Full attention at
+  these sizes breaks the composition (Qwen: two small repeated watches on an empty canvas; FLUX.2: a tiled pattern of
+  watch faces); SCA keeps one coherent close-up. Page: web/build/set_showcase_backbones.py fills showcase_page.json's
+  backbones with complete pairs (largest size, first three prompts), then build_showcase_page.py; check_page.py --http
+  PASS; commit 7e3d6f6. The live site was not republished: publish_pages.sh was refused by the session's permission
+  classifier (public surface), so the web owner or the user runs it. Paper: fig_showcase_models.py --model Qwen-Image and
+  --model FLUX.2-dev wrote paper/figures/showcase_{qwen,flux2}/ and snippets/showcase_{qwen,flux2}{,_text}.tex
+  (5312^2 and 5120^2); switches stay off; a scratch build with both on gives 56 pp, 0 overfull, 0 undefined.
+- Co-tenants again: looped-distill-video score.py processes joined the Qwen full-attention GPUs on c642-002 and c642-092
+  about 30 s after those tasks started (76 s per step instead of 36); their timings are flagged gpu_shared by the end
+  snapshot. FLUX.2 commands had an env prefix inside $C that bash ran as a command (fixed in the generator, 13:00).
+- Queue after the pairs: Ideogram 00a1_3x (sca8k), 00s1a1, then 00s2 FLUX.1 rest, 00s3 FLUX.2 encode and smokes, 00s4
+  Qwen/FLUX.2 SCA (all prompts), AReA (00s4_f traced prompts, 00s6/7), traces 00s5, FLUX.2 full 00s8, Qwen full 00s9.
+  To refresh the page as pairs land: build_showcase.py, set_showcase_backbones.py, build_showcase_page.py, check_page.py
+  --http, commit web/, then publish_pages.sh (needs approval in agent sessions).
 
 ## 33. 2026-11-07 night: no "calibration", no curation language, new method figure (paper owner)
 User directives (via lead): (1) drop "calibration" and its forms everywhere in the paper (text, figures, tables,
