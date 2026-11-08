@@ -283,7 +283,8 @@
     return el("div", { class: "meta" }, bits.filter(Boolean).map(function (b, i) { return el("span", { class: i === 0 && oursFirst ? "m-ours" : null, text: b }); }));
   }
   function itemMeta(it) {
-    return metaRow([it.config || "Progressive SCA", it.model || "FLUX.1-dev", sizeLabel(it.size), it.steps ? it.steps + " steps" : null, "seed " + (it.seed === undefined ? 0 : it.seed)], true);
+    var steps = it.config === "Progressive SCA" ? STEPS.prog : it.steps;
+    return metaRow([it.config || "Progressive SCA", it.model || "FLUX.1-dev", sizeLabel(it.size), steps ? steps + " steps" : null, "seed " + (it.seed === undefined ? 0 : it.seed)], true);
   }
   (function hero() {
     var host = $("#hero-figure"); if (!host) return;
@@ -665,20 +666,24 @@
     var host = $("#showcase-body"); if (!host) return;
     var groups = SHOW.groups || [];
     if (!groups.length) {
-      host.appendChild(el("div", { class: "sc-group" }, [ph("Showcase images in preparation", "5120&nbsp;&times;&nbsp;5120 and 4096&nbsp;&times;&nbsp;6144 images, product shots, landscapes, architecture, portraits and animals, each with a native-pixel lens.")]));
+      host.appendChild(el("div", { class: "sc-group" }, [ph("Showcase images in preparation", "5120&nbsp;&times;&nbsp;5120 and 6144&nbsp;&times;&nbsp;4096 images, product shots, landscapes, architecture, portraits and animals, each with native-pixel crops and the same windows of AReA and of the native image upscaled.")]));
     }
-    groups.forEach(function (g) {
-      var sec = el("div", { class: "sc-group", id: g.id ? "sc-" + g.id : null });
-      if (g.title) sec.appendChild(el("h3", { text: g.title }));
-      if (g.note) sec.appendChild(el("p", { text: g.note }));
-      var grid = el("div", { class: "sc-grid" + (g.layout === "big" ? " big" : "") });
-      (g.items || []).forEach(function (it) {
-        var spec = heroSpec(it, false);
-        grid.appendChild(el("figure", { class: "sc-card" }, [ZoomFrame(spec), el("figcaption", {}, [el("span", { class: "sc-title", text: it.title || "" }), itemMeta(it), el("p", { class: "prompt" }, [el("q", { text: it.prompt })])])]));
+    if (groups.length) {
+      var all = [], chips = el("div", { class: "seg sc-filter", role: "group", "aria-label": "Category" }), grid = el("div", { class: "sc-grid three" });
+      groups.forEach(function (g) { (g.items || []).forEach(function (it) { all.push([g.id, showCard(it)]); }); });
+      var cats = [["all", "All"]].concat(groups.map(function (g) { return [g.id, g.title]; }));
+      cats.forEach(function (c) {
+        var b = el("button", { type: "button", "aria-pressed": String(c[0] === "all"), text: c[1] });
+        b.addEventListener("click", function () {
+          Array.prototype.forEach.call(chips.querySelectorAll("button"), function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+          all.forEach(function (a) { a[1].hidden = !(c[0] === "all" || a[0] === c[0]); });
+        });
+        chips.appendChild(b);
       });
-      sec.appendChild(grid);
-      host.appendChild(sec);
-    });
+      all.forEach(function (a) { grid.appendChild(a[1]); });
+      if (cats.length > 2) host.appendChild(el("div", { class: "sc-filter-row" }, [chips]));
+      host.appendChild(el("div", { class: "sc-group" }, [grid]));
+    }
     /* one prompt at five sizes, single pass (from the timing runs) */
     var sizes = (IM.scale || []).filter(function (d) { return d.group === "sizes"; });
     if (sizes.length) {
@@ -699,21 +704,62 @@
     }
   })();
 
-  /* ---------------------------------------------------------------- other backbones: SCA beside native resolution or full attention */
+  /* a showcase card: the overview with its crop windows, the native crops, a button to compare */
+  function boxStyle(b, size) {
+    return "left:" + (b[0] / size[0] * 100).toFixed(3) + "%;top:" + (b[1] / size[1] * 100).toFixed(3) + "%;width:" + (b[2] / size[0] * 100).toFixed(3) + "%;height:" + (b[2] / size[1] * 100).toFixed(3) + "%";
+  }
+  function showCard(it) {
+    var fr = el("div", { class: "sc-frame tile" }, [img(it.view, it.config + ", " + sizeLabel(it.size) + ": " + it.prompt, { width: it.view_size[0], height: it.view_size[1] })]);
+    (it.crops || []).forEach(function (c, k) { fr.appendChild(el("span", { class: "win", style: boxStyle(c.box, it.size), "aria-hidden": "true" }, [el("i", { text: String(k + 1) })])); });
+    fr.appendChild(el("span", { class: "badge", text: sizeLabel(it.size) }));
+    var crops = el("div", { class: "sc-crops" }, (it.crops || []).map(function (c, k) { return el("div", { class: "tile" }, [img(c.file, "Native pixels, window " + (k + 1)), el("span", { class: "n", text: String(k + 1) })]); }));
+    var btn = it.compare && it.compare.length ? el("button", { type: "button", class: "pill sc-cmp", text: "Compare with " + it.compare.map(function (c) { return c.label; }).join(" and ") }) : null;
+    var open = function () { openCompare(it, 0); };
+    if (btn) btn.addEventListener("click", open);
+    fr.addEventListener("click", open); fr.style.cursor = btn ? "zoom-in" : "default";
+    return el("figure", { class: "sc-card" }, [fr, crops, el("figcaption", {}, [el("span", { class: "sc-title", text: it.title || "" }), itemMeta(it), el("p", { class: "prompt" }, [el("q", { text: it.prompt })]), btn])]);
+  }
+  function openCompare(it, k) {
+    if (!it.compare || !it.compare.length) return;
+    lightbox(function (body) {
+      var c = it.compare[k], grp = { p: 50, members: [] };
+      var seg = el("div", { class: "seg lb-seg", role: "group", "aria-label": "Compare with" });
+      it.compare.forEach(function (o, j) {
+        var b = el("button", { type: "button", "aria-pressed": String(j === k), text: o.label });
+        b.addEventListener("click", function () { openCompare(it, j); });
+        seg.appendChild(b);
+      });
+      var crops = el("div", { class: "lb-crops" });
+      (it.crops || []).forEach(function (cr, j) {
+        if (!c.crops[j]) return;
+        crops.appendChild(BA({ left: { src: cr.file, label: it.config, ours: true }, right: { src: c.crops[j], label: c.label }, w: cr.box[2], h: cr.box[2], crop: true, alt: "native window " + (j + 1) }, grp));
+      });
+      body.appendChild(el("div", { class: "lb-grid" }, [
+        BA({ left: { src: it.view, label: it.config, ours: true }, right: { src: c.view, label: c.label }, w: it.size[0], h: it.size[1], vw: it.view_size[0], vh: it.view_size[1], alt: it.prompt }, grp),
+        el("div", {}, [seg, crops, metaRow([it.model, sizeLabel(it.size), "seed " + it.seed, c.note], false), el("p", { class: "prompt" }, [el("q", { text: it.prompt })])])]));
+    });
+  }
+
+  /* ---------------------------------------------------------------- other backbones: SCA beside full attention or the native image */
   (function backbones() {
     var host = $("#backbones-body"); if (!host) return;
     var B = SHOW.backbones || [];
     if (!B.length) {
-      host.appendChild(ph("FLUX.2-dev and Qwen-Image comparisons in preparation", "Each pair: SCA at the target size beside the same model at its native resolution or with full attention at the target, with synced native crops."));
+      host.appendChild(ph("FLUX.2-dev and Qwen-Image comparisons in preparation", "Each pair: SCA at the target size beside the same model with full attention at the target, or at its native resolution upscaled with Lanczos, with synced native crops."));
       return;
     }
-    B.forEach(function (b) {
+    B.forEach(function (it) {
+      var cmp = (it.compare || []).filter(function (c) { return c.method !== "lanczos"; })[0] || (it.compare || [])[0];
+      if (!cmp) { host.appendChild(showCard(it)); return; }
       var grp = { p: 50, members: [] };
-      var main = BA({ left: { src: b.left.view, label: b.left.label, ours: true }, right: { src: b.right.view, label: b.right.label }, w: b.size[0], h: b.size[1], vw: b.view_size ? b.view_size[0] : null, vh: b.view_size ? b.view_size[1] : null, win: b.box, alt: b.prompt }, grp);
-      var side = el("div", {}, [
-        b.box && b.left.crop && b.right.crop ? BA({ left: { src: b.left.crop, label: b.left.label, ours: true }, right: { src: b.right.crop, label: b.right.label }, w: b.box[2], h: b.box[2], crop: true, alt: "native 1:1 crop" }, grp) : null,
-        el("div", { class: "cmp-meta" }, [metaRow([b.model, sizeLabel(b.size), b.left.label + " vs " + b.right.label, b.seed !== undefined ? "seed " + b.seed : null], false), el("p", { class: "prompt" }, [el("q", { text: b.prompt })]), b.note ? el("p", { class: "small muted", text: b.note }) : null])]);
-      host.appendChild(el("div", { class: "bb" }, [main, side]));
+      var main = BA({ left: { src: it.view, label: it.config, ours: true }, right: { src: cmp.view, label: cmp.label }, w: it.size[0], h: it.size[1], vw: it.view_size[0], vh: it.view_size[1], alt: it.prompt }, grp);
+      var crops = el("div", { class: "lb-crops" });
+      (it.crops || []).slice(0, 2).forEach(function (cr, j) {
+        if (cmp.crops[j]) crops.appendChild(BA({ left: { src: cr.file, label: it.config, ours: true }, right: { src: cmp.crops[j], label: cmp.label }, w: cr.box[2], h: cr.box[2], crop: true, alt: "native window " + (j + 1) }, grp));
+      });
+      var more = it.compare.length > 1 ? el("button", { type: "button", class: "pill", text: "All comparisons" }) : null;
+      if (more) more.addEventListener("click", function () { openCompare(it, 0); });
+      host.appendChild(el("div", { class: "bb" }, [main, el("div", {}, [crops, el("div", { class: "cmp-meta" }, [metaRow([it.model, sizeLabel(it.size), "seed " + it.seed, it.steps ? it.steps + " steps" : null], false), el("p", { class: "prompt" }, [el("q", { text: it.prompt })]), it.note ? el("p", { class: "small muted", text: it.note }) : null, more])])]));
     });
   })();
 

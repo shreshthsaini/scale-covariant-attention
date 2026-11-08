@@ -1,26 +1,27 @@
-"""Page side of the showcase (the manifest and the WebP files come from build_showcase.py, the showcase owner's
-script): native-pixel lens tiles, display views and comparison pairs, written to
-web/assets/img/showcase/ and web/assets/js/showcase.js (window.SCA_SHOWCASE).
+"""Page side of the showcase: web/assets/js/showcase.js (window.SCA_SHOWCASE) from web/build/showcase_manifest.json.
 
-Input: web/build/showcase_manifest.json (written by the showcase generation agent) and the PNGs it points to.
-Without a manifest the script writes an empty SCA_SHOWCASE and the page shows labelled placeholders.
+The manifest and the WebP files under web/assets/img/showcase/<group>/ come from build_showcase.py (the showcase
+campaign, HANDOVER Section 32): per image an overview (2400 px long side) and four 768 px native-pixel crops at the
+group's shared windows. This script only reads them, plus the native PNGs of the hero images, for which it cuts
+native-pixel lens tiles into web/assets/img/zoom/<group>_<prompt>/ (512 px WebP tiles, loaded under the lens only).
 
-Per image the page gets
-  view   a display WebP, long side VIEW px (or the native size if smaller), quality 82;
-  tiles  the native image cut into TILE x TILE WebP tiles (quality 80), loaded by the page's lens on demand, so a
-         5120 x 5120 image costs only the tiles under the lens;
-  meta   title, prompt, model, configuration, size (width x height), seed, steps.
-Comparison pairs (other backbones against native resolution or full attention) get two views and a shared native crop.
+Page sections it fills
+  hero       the images named in web/build/showcase_page.json "hero" (group and prompt id), else the first exported
+             image of flux1_5120 and of flux1_aspect: overview, lens tiles, the four native crops;
+  groups     FLUX.1-dev SCA images by prompt category (products, landscapes and architecture, portraits, animals,
+             dense scenes): overview, four native crops, and the same views of AReA and of the native image upscaled
+             with Lanczos when exported (compared on the page with synced sliders);
+  backbones  FLUX.2-dev and Qwen-Image SCA beside full attention at the target (or the native image with Lanczos).
+Only images that build_showcase.py exported ("web" in the manifest entry) are used. Sizes are width x height on the
+page; the manifest's "size" is "HxW".
 
-Run (repository root, CPU; decoding large PNGs takes a few seconds each):
-  nice -n 19 /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/build_showcase_page.py [--procs 6]
+Run (repository root, CPU, a few seconds per hero image):
+  nice -n 19 /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/build_showcase_page.py [--no-tiles]
+Writes an empty SCA_SHOWCASE when the manifest does not exist.
 """
 import argparse
-import hashlib
 import json
 import os
-import sys
-from multiprocessing import Pool
 
 from PIL import Image
 
@@ -28,93 +29,135 @@ Image.MAX_IMAGE_PIXELS = None
 HERE = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.dirname(HERE)
 MANIFEST = os.path.join(HERE, "showcase_manifest.json")
-IMG = os.path.join(WEB, "assets", "img", "zoom")   # lens tiles and views; build_showcase.py owns assets/img/showcase
+PAGE_CFG = os.path.join(HERE, "showcase_page.json")
+ZOOM = os.path.join(WEB, "assets", "img", "zoom")   # lens tiles; build_showcase.py owns assets/img/showcase
 JS = os.path.join(WEB, "assets", "js", "showcase.js")
-VIEW, TILE, CROP = 2000, 512, 512
+TILE = 512
+SCA_METHODS = ("sca_v2_prog", "sca_v2", "flux2_sca_v2", "qwen_sca")
+CATS = [("product", "Products and materials"), ("landscape", "Landscapes"), ("architecture", "Architecture"),
+        ("portrait", "Portraits"), ("animal", "Animals"), ("dense", "Dense scenes")]
+CONFIG = {"sca_v2_prog": "Progressive SCA", "sca_v2": "Single-pass SCA", "flux2_sca_v2": "SCA, single pass",
+          "qwen_sca": "SCA, single pass", "area": "AReA", "flux2_full": "Full attention", "qwen_full": "Full attention",
+          "lanczos": "Native + Lanczos"}
 
 
 def rel(p):
     return os.path.relpath(p, WEB).replace(os.sep, "/")
 
 
-def sha(path):
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
+def wh(size):
+    h, w = (int(v) for v in size.lower().split("x"))
+    return [w, h]
 
 
-def zoom_record(src, key, view_long=VIEW, tiles=True):
-    """Display view plus native tiles of one PNG; returns the page record (paths relative to web/)."""
-    im = Image.open(src).convert("RGB")
-    W, H = im.size
-    out = os.path.join(IMG, key)
-    os.makedirs(out, exist_ok=True)
-    s = min(1.0, view_long / max(W, H))
-    v = im if s >= 1 else im.resize((round(W * s), round(H * s)), Image.LANCZOS)
-    vp = os.path.join(out, "view.webp")
-    v.save(vp, "WEBP", quality=82, method=6)
-    tp = os.path.join(out, "thumb.webp")
-    v.resize((640, round(640 * v.size[1] / v.size[0])), Image.LANCZOS).save(tp, "WEBP", quality=78, method=6)
-    rec = {"size": [W, H], "view": rel(vp), "view_size": list(v.size), "thumb": rel(tp), "source_png": src, "png_sha256": sha(src)}
-    if tiles:
-        cols, rows = -(-W // TILE), -(-H // TILE)
-        td = os.path.join(out, "t")
-        os.makedirs(td, exist_ok=True)
+def tiles(png, key):
+    """Native-pixel lens tiles of one PNG (skipped when they already exist and are newer than the PNG)."""
+    out = os.path.join(ZOOM, key)
+    im = None
+    with Image.open(png) as probe:
+        W, H = probe.size
+    cols, rows = -(-W // TILE), -(-H // TILE)
+    last = os.path.join(out, f"{cols - 1}_{rows - 1}.webp")
+    if not (os.path.exists(last) and os.path.getmtime(last) > os.path.getmtime(png)):
+        os.makedirs(out, exist_ok=True)
+        im = Image.open(png).convert("RGB")
         for r in range(rows):
             for c in range(cols):
                 box = (c * TILE, r * TILE, min(W, (c + 1) * TILE), min(H, (r + 1) * TILE))
-                im.crop(box).save(os.path.join(td, f"{c}_{r}.webp"), "WEBP", quality=80, method=4)
-        rec["tiles"] = {"path": rel(os.path.join(td, "{c}_{r}.webp")), "size": TILE, "cols": cols, "rows": rows}
+                im.crop(box).save(os.path.join(out, f"{c}_{r}.webp"), "WEBP", quality=80, method=4)
+    return {"path": rel(os.path.join(out, "{c}_{r}.webp")), "size": TILE, "cols": cols, "rows": rows}
+
+
+def view_size(path):
+    with Image.open(os.path.join(WEB, path)) as im:
+        return list(im.size)
+
+
+def item(e, others, with_tiles):
+    w = e["web"]
+    rec = {"id": f"{e['group']}_{e['prompt_id']}", "group": e["group"], "prompt_id": e["prompt_id"], "title": e["title"],
+           "category": e["category"], "prompt": e["prompt"], "model": e["model"],
+           "config": CONFIG.get(e["method"], e.get("method_name", e["method"])), "size": wh(e["size"]),
+           "seed": e.get("seed", 0), "steps": e.get("steps"), "view": w["overview"], "view_size": view_size(w["overview"]),
+           "crops": [{"box": b, "file": f} for b, f in zip(e["crops"], w["crops"])], "compare": []}
+    for o in others:
+        if o.get("web"):
+            rec["compare"].append({"method": o["method"], "label": CONFIG.get(o["method"], o.get("method_name", o["method"])),
+                                   "view": o["web"]["overview"], "crops": o["web"]["crops"],
+                                   "note": ("native " + "x".join(reversed(o["native_size"].split("x"))) + ", upscaled with Lanczos")
+                                   if o["method"] == "lanczos" and o.get("native_size") else None})
+    if with_tiles:
+        rec["tiles"] = tiles(e["png"], rec["id"])
     return rec
-
-
-def pair_record(left_png, right_png, key, box=None):
-    """Two images of one prompt (SCA left) at display size plus the same native crop of each."""
-    L, R = Image.open(left_png).convert("RGB"), Image.open(right_png).convert("RGB")
-    out = os.path.join(IMG, key)
-    os.makedirs(out, exist_ok=True)
-    W, H = L.size
-    rec = {"size": [W, H]}
-    if box is None:
-        box = [(W - CROP) // 2, (H - CROP) // 2, CROP]
-    for side, im in (("left", L), ("right", R)):
-        w, h = im.size
-        s = min(1.0, 1600 / max(W, H))
-        # the right image may be smaller (native resolution): show it at the left image's display size
-        v = im.resize((round(W * s), round(H * s)), Image.LANCZOS)
-        vp = os.path.join(out, f"{side}.webp")
-        v.save(vp, "WEBP", quality=82, method=6)
-        kx, ky = w / W, h / H
-        cb = (round(box[0] * kx), round(box[1] * ky), round((box[0] + box[2]) * kx), round((box[1] + box[2]) * ky))
-        c = im.crop(cb)
-        if c.size != (box[2], box[2]):
-            c = c.resize((box[2], box[2]), Image.LANCZOS)   # upsampled for display only; the page says so
-        cp = os.path.join(out, f"{side}_crop.webp")
-        c.save(cp, "WEBP", quality=86, method=6)
-        rec[side] = {"view": rel(vp), "crop": rel(cp), "native_size": [w, h], "source_png": (left_png, right_png)[side == "right"]}
-        rec["view_size"] = list(v.size)
-    rec["box"] = box
-    return rec
-
-
-def empty():
-    with open(JS, "w") as f:
-        f.write("// Generated by web/build/build_showcase_page.py; do not edit. Empty until web/build/showcase_manifest.json exists.\n")
-        f.write("window.SCA_SHOWCASE = {};\n")
-    print("no manifest: wrote an empty", JS)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--procs", type=int, default=6)
+    ap.add_argument("--no-tiles", action="store_true", help="skip cutting lens tiles for the hero images")
     a = ap.parse_args()
     if not os.path.exists(MANIFEST):
-        empty()
+        with open(JS, "w") as f:
+            f.write("// Generated by web/build/build_showcase_page.py; do not edit. Empty until web/build/showcase_manifest.json exists.\n")
+            f.write("window.SCA_SHOWCASE = {};\n")
+        print("no manifest: wrote an empty", JS)
         return
     man = json.load(open(MANIFEST))
-    sys.exit("build_showcase_page.py: the manifest schema is not mapped yet; see convert() (manifest has keys: %s)" % sorted(man)[:20])
+    cfg = json.load(open(PAGE_CFG)) if os.path.exists(PAGE_CFG) else {}
+    by = {}
+    for e in man.get("images", []):
+        by.setdefault((e["group"], e["prompt_id"]), []).append(e)
+
+    def sca_of(key):
+        es = by.get(key, [])
+        s = [e for e in es if e["method"] in SCA_METHODS and e.get("web")]
+        return (s[0], [e for e in es if e is not s[0]]) if s else (None, es)
+
+    hero_keys = [(h["group"], h["prompt_id"]) for h in cfg.get("hero", [])]
+    if not hero_keys:
+        for g in ("flux1_5120", "flux1_aspect"):
+            ks = [k for k in by if k[0] == g and sca_of(k)[0]]
+            hero_keys += ks[:1]
+    hero = []
+    for k in hero_keys:
+        s, others = sca_of(k)
+        if s:
+            hero.append(item(s, others, not a.no_tiles))
+    used = set(hero_keys)
+
+    groups = []
+    order = cfg.get("group_order", ["flux1_4096", "flux1_5120", "flux1_aspect"])
+    for cat, title in CATS:
+        items = []
+        for g in order:
+            for k in sorted(by, key=lambda k: k[1]):
+                if k[0] != g or k in used:
+                    continue
+                s, others = sca_of(k)
+                if s and s["category"] == cat:
+                    items.append(item(s, others, False))
+                    used.add(k)
+        if items:
+            groups.append({"id": cat, "title": title, "items": items})
+
+    backbones = []
+    for g in ("flux2_5120", "flux2_4096", "qwen_5312", "qwen_4096"):
+        for k in sorted(by, key=lambda k: k[1]):
+            if k[0] != g:
+                continue
+            s, others = sca_of(k)
+            if not s:
+                continue
+            it = item(s, others, False)
+            it["note"] = cfg.get("backbone_notes", {}).get(k[1])
+            backbones.append(it)
+
+    data = {"source": "web/build/showcase_manifest.json", "crop_rule": man.get("crop_rule"), "hero": hero,
+            "groups": groups, "backbones": backbones}
+    with open(JS, "w") as f:
+        f.write("// Generated by web/build/build_showcase_page.py from web/build/showcase_manifest.json; do not edit.\n")
+        f.write("window.SCA_SHOWCASE = " + json.dumps(data, indent=1) + ";\n")
+    n = sum(len(g["items"]) for g in groups)
+    print(f"wrote {JS}: hero {len(hero)}, {n} images in {len(groups)} groups, {len(backbones)} backbone pairs")
 
 
 if __name__ == "__main__":
