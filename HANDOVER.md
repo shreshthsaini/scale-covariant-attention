@@ -1581,3 +1581,19 @@ web/build and web/README.md and refuses to publish internal paths or calibration
   manifest lists them), FLUX.2-dev and Qwen-Image pairs (add to showcase_page.json backbones), the progressive
   traces: then render_process_videos.py process and stages, build_media.py, and drop the remaining 22 MB of
   single-pass videos. Size: web/ without review/ 85 MB; review/ adds 114 MB.
+- 2026-11-08 01:40 user directive (lead relay): compare only against methods, not native-resolution images upscaled
+  with Lanczos. The unrun native tasks (FLUX.2 1024^2, Qwen 1328^2) moved to taskq/hold_showcase_dropped (README); the
+  FLUX.1 natives (out/showcase/flux1_full) and their Lanczos upscales (out/showcase/flux1_lanczos) already existed and
+  stay on scratch, unpublished; build_showcase.py lists and exports no Lanczos entries (--lanczos restores them). The
+  FLUX.2 native task was replaced by 00s3_c_f2encode (Mistral embeddings for the 40 prompts). Comparisons kept: AReA on
+  FLUX.1-dev, full attention at the target size on FLUX.2-dev and Qwen-Image.
+- AReA on FLUX.2 or Qwen-Image (directive: only if the released code supports it without porting): the pinned copy
+  (9e38ec2) has FLUX.1 only. Upstream HEAD 3efb7e5 (github.com/KooroshRH/AReA) lists Qwen-Image as available (family
+  qwen-image: 40 steps, true CFG 4, negative "", its own shift mu 2 at 4096^2, switch sigma 0.87, a quality suffix
+  appended to prompts) and FLUX.2 as coming soon; it pins diffusers 0.40 (sca env has 0.39, which does ship the Qwen
+  and Ideogram 4 modules it imports). Running that newly fetched code was refused by the session's permission
+  classifier, so AReA-Qwen is not run; it needs the user's approval to vet and pin 3efb7e5.
+- Compute: SCA22 ended 22:55 with 4 shared GPUs (co-tenants on all four). SCS1/SCS2 still pending (test-only estimate
+  2026-11-13); gh-dev backfill SCSd (1129746, 4 x 2 h) submitted 01:38 once TLT-dev freed the qdevelopment slot. Spool
+  order: 00s0 Qwen GPU check and calibration, 00s2 FLUX.1 sca_v2 rest, 00s3 FLUX.2 encode and 5120^2 smokes, 00s4 Qwen
+  and FLUX.2 SCA plus AReA on the traced prompts, 00s5 traces, 00s6/7 AReA, 00s8 FLUX.2 full, 00s9 Qwen full.

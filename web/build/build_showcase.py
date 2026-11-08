@@ -6,8 +6,8 @@ Reads the showcase outputs /scratch/09032/saini_2/sca/out/showcase/<model>_<meth
 prompt, written by scripts/sample.py, sample_progressive.py, sample_flux2.py, sample_qwen.py and run_area.py) and the
 prompts web/build/showcase_prompts.jsonl, and writes:
 
-  out/showcase/<model>_lanczos/<HxW>/<stem>.png   each model's native image upscaled to the showcase size with PIL
-                                                  LANCZOS (the reference baseline), once per (model, size, prompt)
+  out/showcase/<model>_lanczos/<HxW>/<stem>.png   only with --lanczos: the native image upscaled with PIL LANCZOS (dropped
+                                                  from the showcase by user directive 2026-11-08: methods only)
   web/build/showcase_manifest.json                one entry per image: prompt, model, method, size, seed, seconds (from
                                                   the sidecar), whether other processes shared the GPU during the task
                                                   (out/showcase/_gpu/<task>.apps), scratch paths, SHA-256, crop boxes
@@ -19,9 +19,9 @@ Crop boxes: per (group, prompt), the four non-overlapping 768 px windows with th
 image (mean |dx| + |dy| of the luminance on a 2x box-downsampled copy, windows on a 64 px stride), ordered by energy; the
 comparison images of the group get the same boxes, so crops line up.
 
-Groups: flux1_4096 (progressive SCA vs AReA vs FLUX.1-dev 1024^2 + Lanczos), flux1_5120 and flux1_aspect (single-pass
-SCA vs AReA vs Lanczos), flux2_4096 and flux2_5120 (SCA vs full attention vs 1024^2 + Lanczos), qwen_4096 and qwen_5312
-(SCA vs full attention vs 1328^2 + Lanczos).
+Groups: flux1_4096 (progressive SCA vs AReA), flux1_5120 and flux1_aspect (single-pass SCA vs AReA), flux2_4096 and
+flux2_5120 (SCA vs full attention at the same size), qwen_4096 and qwen_5312 (SCA vs full attention, and AReA's released
+qwen-image code when present).
 
 Usage: build_showcase.py [--web GROUP[/METHOD+METHOD]:PROMPTS ...] [--budget-mb 60] [--dry]
   --web flux1_4096/sca_v2_prog:all --web qwen_5312:sc_p01_skeleton_watch,sc_l01_fjord_village
@@ -189,7 +189,8 @@ def main(argv=None):
     p.add_argument("--budget-mb", type=float, default=60.0)
     p.add_argument("--quality-overview", type=int, default=80)
     p.add_argument("--quality-crop", type=int, default=88)
-    p.add_argument("--no-lanczos", action="store_true", help="skip writing Lanczos references (manifest only lists them)")
+    p.add_argument("--lanczos", action="store_true", help="also write and list the native + Lanczos references (not "
+                   "published: user directive 2026-11-08, the showcase compares against methods only)")
     p.add_argument("--dry", action="store_true")
     a = p.parse_args(argv)
     rows = [json.loads(l) for l in PROMPTS.read_text().splitlines() if l.strip()]
@@ -224,14 +225,12 @@ def main(argv=None):
                     missing.append(f"{g}/{row['id']}/{method}")
                 else:
                     members.append((method, cp, crec))
-            nrec = record(native_png)
-            if nrec is None:
-                missing.append(f"{g}/{row['id']}/lanczos")
-            else:
+            nrec = record(native_png) if a.lanczos else None
+            if nrec is not None:
                 lz = OUT / f"{model}_lanczos" / size / f"{st}.png"
-                if not a.dry and not a.no_lanczos:
+                if a.lanczos and not a.dry:    # off by default: user directive 2026-11-08, compare against methods only
                     lanczos(native_png, size, lz)
-                members.append(("lanczos", lz, nrec))
+                    members.append(("lanczos", lz, nrec))
             boxes = old_boxes.get((g, row["id"]))
             img_sca = None
             if boxes is None or (g, row["id"]) in want:

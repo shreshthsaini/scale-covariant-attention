@@ -3,13 +3,13 @@
 
 Groups (task names sort ahead of every other spool task with the 00s prefix; lower digit runs first):
   flux1   FLUX.1-dev: progressive SCA (sca_v2_prog, the paper's headline) at 4096^2; single-pass SCA (sca_v2) at
-          5120^2 and at 4096x6144 (landscape prompts) or 6144x4096 (portrait prompts); native full attention at 1024^2
-          and 1024x1536 / 1536x1024 (Lanczos reference). Tree code/7bd64c0, the tree of the paper's sca_v2 and
-          sca_v2_prog runs, with their exact flags.
+          5120^2 and at 4096x6144 (landscape prompts) or 6144x4096 (portrait prompts). Tree code/7bd64c0, the tree of
+          the paper's sca_v2 and sca_v2_prog runs, with their exact flags. (Native-resolution references for a Lanczos
+          comparison ran on 2026-11-07 and were then dropped by user directive: compare against methods only.)
   area    AReA on FLUX.1-dev at the same three sizes (4096^2, 5120^2, aspect), AReA flux1 defaults (run_area.py).
-  flux2   FLUX.2-dev: single-pass SCA at 4096^2 and 5120^2 (the review-round flux2_sca_v2 flags), native 1024^2.
+  flux2   FLUX.2-dev: single-pass SCA at 4096^2 and 5120^2 (the review-round flux2_sca_v2 flags).
   flux2full  FLUX.2-dev full attention at 4096^2 and 5120^2.
-  qwen    Qwen-Image: single-pass SCA at 4096^2 and 5312^2 (4x native), native 1328^2.
+  qwen    Qwen-Image: single-pass SCA at 4096^2 and 5312^2 (4x native).
   qwenfull   Qwen-Image full attention at 4096^2 and 5312^2.
 Outputs: /scratch/09032/saini_2/sca/out/showcase/<model>_<method>/<HxW>/ (PNG + JSON sidecar per prompt).
 Usage: slurm/showcase_tasks.py GROUP [GROUP ...] [--code DIR] [--dry]
@@ -103,12 +103,7 @@ def flux1(dry, code):
         task(f"00s1_prog4096_{a:02d}_{b:02d}.sh", 12, "FLUX.1-dev progressive SCA (sca_v2_prog) at 4096^2", code,
              f"{PY} scripts/sample_progressive.py --prompts {PROMPTS} --seed 0 --out {OUT}/flux1_sca_v2_prog/4096x4096 "
              f"--start {a} --end {b} {SCA_V2} --label sca_v2_prog", dry, need=46)
-    native = (f"{PY} scripts/sample.py --method full --seed 0 --guidance 3.5 --steps 28 --label full")
-    task("00s1_native_flux1_sq.sh", 10, "FLUX.1-dev full attention at 1024^2 (Lanczos reference)", code,
-         f"{native} --res 1024x1024 --prompts {PROMPTS} --out {OUT}/flux1_full/1024x1024", dry, need=36)
-    for tag, prompts, res in (("land", LAND, "1024x1536"), ("port", PORT, "1536x1024")):
-        task(f"00s1_native_flux1_{tag}.sh", 8, f"FLUX.1-dev full attention at {res} (Lanczos reference)", code,
-             f"{native} --res {res} --prompts {prompts} --out {OUT}/flux1_full/{res}", dry, need=36)
+    # native-resolution references dropped (user directive 2026-11-08: compare against methods only)
     sca = f"{PY} scripts/sample.py --method sca --seed 0 --guidance 4.5 {SCA_V2} --label sca_v2"
     for a, b in chunks(count(PROMPTS), 5):
         task(f"00s2_sca5120_{a:02d}_{b:02d}.sh", 15, "FLUX.1-dev single-pass SCA (sca_v2) at 5120^2", code,
@@ -162,10 +157,6 @@ def qwen(dry, code):
              f"{PY} scripts/sample_qwen.py {QWEN_SCA} --pi-table {QWEN_TABLE} --bridge-cells 4 --bridge-k 64 "
              f"--label qwen_sca --res 5312x5312 --prompts {PROMPTS} --out {OUT}/qwen_sca/5312x5312 --start {a} --end {b}",
              dry, need=75, wait=QWEN_TABLE[:-4] + ".json")
-    for a, b in chunks(count(PROMPTS), 20):
-        task(f"00s4_c_qnative_{a:02d}_{b:02d}.sh", 30, "Qwen-Image at its native 1328^2 (Lanczos reference)", code,
-             f"{PY} scripts/sample_qwen.py --method full --steps 50 --true-cfg 4.0 --mu-mode native --label qwen_full "
-             f"--res 1328x1328 --prompts {PROMPTS} --out {OUT}/qwen_full/1328x1328 --start {a} --end {b}", dry, need=60)
 
 
 def qwen_full(dry, code):
@@ -178,9 +169,8 @@ def qwen_full(dry, code):
 
 def flux2(dry, code):
     base = f"PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True {PY} scripts/sample_flux2.py"
-    task("00s3_c_f2native.sh", 40, "FLUX.2-dev at its native 1024^2 (Lanczos reference; fills the Mistral embedding cache)",
-         code, f"{base} --method full --steps 28 --guidance 4.0 --mu-mode native --label flux2_full --res 1024x1024 "
-         f"--prompts {PROMPTS} --out {OUT}/flux2_full/1024x1024", dry, need=88)
+    task("00s3_c_f2encode.sh", 15, "FLUX.2-dev Mistral prompt embeddings for the 40 prompts (cache, sca/flux2.py)", code,
+         f"{base} --encode-only --prompts {PROMPTS}", dry, need=60)
     for m, flags in (("sca", FLUX2_SCA + " --label flux2_sca_v2"),
                      ("full", "--steps 28 --guidance 4.0 --mu-mode native --method full --label flux2_full")):
         task(f"00s3_d_f2smoke5120_{m}.sh", 20, f"FLUX.2-dev {m} memory smoke at 5120^2 (2 steps, one prompt)", code,
