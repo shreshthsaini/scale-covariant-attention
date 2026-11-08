@@ -1682,10 +1682,16 @@ SEGA, full attention and 4096^2; NTK and YaRN on 3; seed 0; cut full attention t
   per prompt; tiles are about 0.2 MB each, so 36 grids at 8192^2 come to several hundred MB, check the budget);
   paper/figures/src/gen_ideogram4_table.py (snippets/ideogram4.tex, tab:ideogram4) and paper/figures/src/fig_ideogram4.py
   (snippets/ideogram4_fig.tex, fig:ideogram4, first prompts in order with all of SCA, full attention and SEGA).
-- Status 02:45: all tasks enqueued; no SCA GPU job running (SCSd, SCS1, SCS2 pending; gh 570 of 577 nodes busy;
-  qdevelopment allows 3 submitted jobs per user and SCSd, BL23, V2P1 hold them, so no extra gh-dev job is possible).
-  Next: read /scratch/09032/saini_2/sca/ideogram4/check/check.json when it lands (identity on GPU, flex options, step
-  cost; decide 5 or 10 full-attention prompts), report the first SCA image's seconds and peak memory, then after the
-  evaluations run the web export and the two paper scripts, commit results/ideogram4_8k.
+- After each evaluation the task also runs web/build/build_ideogram4.py (16 processes) and, after the final one, the
+  paper table and figure scripts, all in the live repo as new untracked files: web/assets/img/ideogram4,
+  web/build/ideogram4_manifest.json, web/assets/js/ideogram4.js, paper/figures/snippets/ideogram4{,_fig}.tex,
+  paper/figures/ideogram4/. Nothing is committed or published by a task.
+- Status 02:55: all tasks enqueued (check on tree ideogram4_bf3d92d, the rest on ideogram4_227a086); nothing has run.
+  SCSd's estimated start is 07:30; SCS1 and SCS2 have no estimate; gh 570 of 577 nodes are busy; qdevelopment allows 3
+  submitted jobs per user and SCSd, BL23 and V2P1 hold them. For whoever picks this up: read
+  /scratch/09032/saini_2/sca/ideogram4/check/check.json first (identity on GPU, flex options, step cost; cut full
+  attention to 5 prompts if 48 x (cond + uncond) seconds exceed 3 h), report the first SCA sidecar's seconds and peak
+  memory, then after 00z_a1_90 commit results/ideogram4_8k, the snippets and figures/ideogram4 (and the web assets
+  once the web owner agrees on their size).
 
 Addendum 2026-11-08 02:50 (lead): controller i615-091 (job 1125760, also this lead session) ends 04:58. gpu_watch.sh now also runs on i617-052 (job 1126651, ends about 16:00); a fresh 48 h controller job 1129781 is queued. Resume from a new session on whichever controller is up: "continue SCA from HANDOVER". In flight: showcase campaign (FLUX.1 progressive, FLUX.2, Qwen-Image; Sections 32-33), Ideogram 4 at 8192^2 (Section 36, 50 tasks queued), paper figure pass (Section 34), web page live via web/build/publish_pages.sh. All wait on SCS1/SCS2/SCSd (pending, gh saturated).
