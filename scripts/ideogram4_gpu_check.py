@@ -7,7 +7,7 @@
    branch only), pi = 1 (flex local branch only) and pi = 0.5. Noise floor: the stock model with SDPA's flash kernel
    against its memory-efficient kernel (the same exact attention summed in another order).
 2. Identity, whole trajectory: 1024^2, 48 steps, stock against SCA pi = 1 and pi = 0 (final latent and image PSNR).
-3. Flex kernel options at the 8192^2 geometry (head_dim 256, window 256, tile 8, 600 text tokens): time and peak memory
+3. (runs last) Flex kernel options at the 8192^2 geometry (head_dim 256, window 256, tile 8, 600 text tokens): time and peak memory
    of one local-branch call per option, next to SDPA full attention and the global branch.
 4. Real per-step cost at 8192^2: one conditional and one unconditional transformer call each for full attention and
    for SCA's three step kinds (global only, 512 window, native 256 window, sca_v2 bridge); a per-image estimate.
@@ -61,7 +61,7 @@ def main(argv=None):
     from sca.attn import PiTable
     from sca.ideogram4 import (GUIDANCE_SCHEDULE, Ideogram4SCAContext, gate_from_steps, install, load_pipeline,
                                packed_inputs, sigma_schedule, transformers_of)
-    parts = {int(x) for x in args.parts.split(",")}
+    want = {int(x) for x in args.parts.split(",")}
     args.out.mkdir(parents=True, exist_ok=True)
     res = {"gpu": torch.cuda.get_device_name(), "torch": torch.__version__}
     path = args.out / "check.json"
@@ -73,6 +73,9 @@ def main(argv=None):
     pipe = load_pipeline(args.device)
     res["load_seconds"] = time.perf_counter() - t0
     tfs = dict(transformers_of(pipe))
+    done_key = {1: "identity_one_step_2048", 2: "identity_trajectory_1024", 3: "flex_bench_8192", 4: "estimate_8192_seconds"}
+    parts = {k for k in want if done_key[k] not in res}   # a retry resumes after the last saved part
+    print("parts to run:", sorted(parts, key=(1, 2, 4, 3).index), flush=True)
 
     def call(name, x, ctx=None):
         tf = tfs[name]
@@ -142,6 +145,44 @@ def main(argv=None):
         print("trajectory", json.dumps(traj), flush=True)
         save()
 
+    if 4 in parts:
+        H = W = 8192
+        s = sigma_schedule(48, H, W)
+        gate = gate_from_steps(s, 14)
+        g = torch.Generator("cpu").manual_seed(2)
+        lat = torch.randn(1, (H // 16) * (W // 16), 128, generator=g)
+        steps = {}
+        cond, uncond = packed_inputs(pipe, PROMPT, H, W, lat, 0.5)
+        for name, x in (("cond", cond), ("uncond", uncond)):
+            _, t, m = timed(lambda: call(name, x), sync)
+            steps[f"full_{name}"] = {"seconds": t, "peak_gb": m}
+            print("full", name, t, m, flush=True)
+        save()
+        steps["schedule"] = {"gate_sigma_14_global_steps": gate, "sigma_first": float(s[0]), "sigma_30": float(s[30])}
+        for kind, sigma, win in (("global", float(s[0]), None), ("win512", float(s[30]), 512),
+                                 ("win256", float(s[30]), None)):
+            for name, x in (("cond", cond), ("uncond", uncond)):
+                kw = dict(mode="sca", n0=256, tile=8, pi=PiTable("const", value=0.5), gate_sigma=gate,
+                          bridge_cells=8, bridge_k=16)
+                if win:
+                    kw["window"] = win
+                y = dict(x, timestep=torch.full_like(x["timestep"], 1 - sigma))
+                ctx = Ideogram4SCAContext(**kw)
+                _, tc, _ = timed(lambda: call(name, y, ctx), sync)    # compiles this layout
+                _, t, m = timed(lambda: call(name, y, ctx), sync)     # same context: cached layout, warm graph
+                steps[f"sca_{kind}_{name}"] = {"seconds": t, "first_call_seconds": tc, "peak_gb": m}
+                print("sca", kind, name, t, tc, m, flush=True)
+            save()
+        full = 48 * (steps["full_cond"]["seconds"] + steps["full_uncond"]["seconds"])
+        both = lambda k: steps[f"sca_{k}_cond"]["seconds"] + steps[f"sca_{k}_uncond"]["seconds"]
+        # sca_v2 step mix at 48 steps: 14 global, 8 scheduled-window steps (bounded by the 512 window), 26 native window
+        sca = 14 * both("global") + 8 * both("win512") + 26 * both("win256")
+        res["step_cost_8192"] = steps
+        res["estimate_8192_seconds"] = {"full_attention_denoise": full, "sca_v2_denoise_upper": sca,
+                                        "note": "transformer calls only; text encoding and VAE decode extra"}
+        print("estimate", json.dumps(res["estimate_8192_seconds"]), flush=True)
+        save()
+
     if 3 in parts:
         from sca.attn import flex_layout, local_branch_flex, sdpa
         Hg = Wg = 512
@@ -174,45 +215,6 @@ def main(argv=None):
         del q, k, v, kc, vc
         torch.cuda.empty_cache()
         save()
-
-    if 4 in parts:
-        H = W = 8192
-        s = sigma_schedule(48, H, W)
-        gate = gate_from_steps(s, 14)
-        g = torch.Generator("cpu").manual_seed(2)
-        lat = torch.randn(1, (H // 16) * (W // 16), 128, generator=g)
-        steps = {}
-        cond, uncond = packed_inputs(pipe, PROMPT, H, W, lat, 0.5)
-        for name, x in (("cond", cond), ("uncond", uncond)):
-            _, t, m = timed(lambda: call(name, x), sync)
-            steps[f"full_{name}"] = {"seconds": t, "peak_gb": m}
-            print("full", name, t, m, flush=True)
-        save()
-        steps["schedule"] = {"gate_sigma_14_global_steps": gate, "sigma_first": float(s[0]), "sigma_30": float(s[30])}
-        for kind, sigma, win in (("global", float(s[0]), None), ("win512", float(s[30]), 512),
-                                 ("win256", float(s[30]), None)):
-            for name, x in (("cond", cond), ("uncond", uncond)):
-                kw = dict(mode="sca", n0=256, tile=8, pi=PiTable("const", value=0.5), gate_sigma=gate,
-                          bridge_cells=8, bridge_k=16)
-                if win:
-                    kw["window"] = win
-                y = dict(x, timestep=torch.full_like(x["timestep"], 1 - sigma))
-                ctx = Ideogram4SCAContext(**kw)
-                _, tc, _ = timed(lambda: call(name, y, ctx), sync)
-                _, t, m = timed(lambda: call(name, y, Ideogram4SCAContext(**kw)), sync)
-                steps[f"sca_{kind}_{name}"] = {"seconds": t, "first_call_seconds": tc, "peak_gb": m}
-                print("sca", kind, name, t, tc, m, flush=True)
-            save()
-        full = 48 * (steps["full_cond"]["seconds"] + steps["full_uncond"]["seconds"])
-        both = lambda k: steps[f"sca_{k}_cond"]["seconds"] + steps[f"sca_{k}_uncond"]["seconds"]
-        # sca_v2 step mix at 48 steps: 14 global, 8 scheduled-window steps (bounded by the 512 window), 26 native window
-        sca = 14 * both("global") + 8 * both("win512") + 26 * both("win256")
-        res["step_cost_8192"] = steps
-        res["estimate_8192_seconds"] = {"full_attention_denoise": full, "sca_v2_denoise_upper": sca,
-                                        "note": "transformer calls only; text encoding and VAE decode extra"}
-        print("estimate", json.dumps(res["estimate_8192_seconds"]), flush=True)
-        save()
-
 
 if __name__ == "__main__":
     main()
