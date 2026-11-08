@@ -1,0 +1,92 @@
+{
+  "figure": "fig:focus",
+  "script": "paper/figures/src/fig_attn_focus.py --extract",
+  "capture": {
+    "dir": "/scratch/09032/saini_2/sca/out/attn_focus/sheep_church_seed0",
+    "meta": {
+      "prompt_id": "a4k_eval_4096_minus8343371271909676658",
+      "prompt": "A group of sheep stands in a snow-covered landscape in front of an ornate stone church with a spire, framed by colorful trees and quaint houses in the background.",
+      "seed": 0,
+      "derived_seed": 2871010701233903344,
+      "steps": 30,
+      "guidance": 3.5,
+      "mu": 1.15,
+      "capture_steps": [
+        8,
+        20,
+        26
+      ],
+      "device": "cpu",
+      "code_revision": "505fd14c9daae926c64b075e59e6920f34d74e72"
+    },
+    "image_1024_sha256": "df0f1b9f8a6d1ab5361a000be0aa290a80649cf34c3c70224326205a79bf3dd5",
+    "qk_files": {
+      "qk_step20.pt": {
+        "sigma": 0.6122673153877258,
+        "bytes": 3228071676
+      },
+      "qk_step08.pt": {
+        "sigma": 0.896747887134552,
+        "bytes": 3228071676
+      },
+      "qk_step26.pt": {
+        "sigma": 0.3269962668418884,
+        "bytes": 3228071676
+      }
+    }
+  },
+  "target_4096": {
+    "path": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.png",
+    "sha256": "492b215e90bfef31847ac9883d234fe93ab3f21e1b96b2ecc0dd1ed17f0b16f3"
+  },
+  "archive": {
+    "path": "results/evidence/calib/k1_1024.npz",
+    "sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47"
+  },
+  "rules": {
+    "block": "block 12 one-based (zero-based 11), the block of Figure 2c",
+    "heads": "argmax and argmin over the block's 24 heads of the share of image attention within 16 tokens, mass_mean[4] / (1 - mass_mean[0]) at noise bin 8 (centre 0.618), 32 prompts",
+    "query": "token (row 43, col 11), pixel centre (184, 696): the face of the leftmost sheep",
+    "window": "emulated local window at r = 4: side 16 tokens around the query's 2 x 2 tile (attn_focus_data.Capture.window, as sca/attn.py window_index)",
+    "split": "near = image keys inside the window, far = the other image keys; m = near share of the image attention; text keys (both operators keep them) are not drawn"
+  },
+  "values": {
+    "heads_one_based": [
+      4,
+      7
+    ],
+    "share16": [
+      0.9248861318608621,
+      0.019014686207488824
+    ],
+    "pi_r4": [
+      0.9284449112138194,
+      0.0
+    ],
+    "sigma": 0.6122673153877258,
+    "sigma_bin_centre": 0.618160605430603,
+    "m": {
+      "near": 0.9554552296715771,
+      "far": 0.0004993566990191567
+    },
+    "text_mass": {
+      "near": 0.0002109676669057592,
+      "far": 0.0006954750137140309
+    },
+    "m_other_steps": {
+      "near": {
+        "0.8967": 0.8403801391818668,
+        "0.3270": 0.9151679667332545
+      },
+      "far": {
+        "0.8967": 0.00015053466731834058,
+        "0.3270": 0.0016838046187045781
+      }
+    }
+  },
+  "outputs": {
+    "results/attn_focus/attn_focus.npz": "fcce03a4f6e91b0d8f7215b866f25457f4403a0d378c3e0c57782c6ae45f1f81",
+    "paper/figures/attn_focus/image_1024.png": "df0f1b9f8a6d1ab5361a000be0aa290a80649cf34c3c70224326205a79bf3dd5",
+    "paper/figures/attn_focus/target_4096_at1024.jpg": "21729b227d3a24b47ad6418371fa71f704cf48465e2da5308157250dbd2435dc"
+  }
+}
