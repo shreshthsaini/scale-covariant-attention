@@ -1420,7 +1420,7 @@ and 4096^2 stages; HRDiT credited) is the headline and single-pass SCA the fast 
 .agent/notes/positioning_20261105/recommendation.md (a head's reach is a property of the head; variance split as the
 hook); no duplication content anywhere in paper or web except the one dictated limitations sentence; later priorities
 (protocol in one place, paired margins first, curated qualitative evidence, rebuilt method diagram, interim PDF).
-- Delivery: /scratch/09032/saini_2/sca/paper_builds/delivery_fwhllii_ (commit c9dd2e9), 54 pp, main text pages 1-10,
+- Delivery (first final): /scratch/09032/saini_2/sca/paper_builds/delivery_fwhllii_ (commit c9dd2e9), 54 pp, main text pages 1-10,
   0 overfull, 0 undefined, fresh unzip builds to 54 pp; hashes in .agent/notes/latest_delivery.md. Interim delivery
   delivery_ru0txknm (80078a9) went to the lead earlier.
 - Source: paper/main.tex (preamble + main text) and paper/appendix.tex (\input after the bibliography). New title
@@ -1444,9 +1444,10 @@ hook); no duplication content anywhere in paper or web except the one dictated l
   and examples removed; build_numbers.py strict check 348/349 quotes match, 0 mismatches; web/ 69 MB.
 - Results folded in: prog195_vs_baselines (+cfid), prog195_pairs, prog_latency (sweep 3, half-up rounding of 49.15 to
   49.2 from raw median 49.153 s), prog195_s1, prog195_s2 (+ corrected_fidp_ci).
-- PENDING: progressive HRGen-1K (results/prog_hrgen1k, expected about 21:30): gen_main_tables.py already reads
-  prog_hrgen1k/sca_v2_prog_vs_area.csv into Table 3 and the seed macros; rerun it, update the "HRGen-1K is pending"
-  sentences in Section 4.4 and the Table 3 caption, rebuild with paper/build_delivery.py, and refresh the web numbers.
+- 21:00 progressive HRGen-1K landed (results/prog_hrgen1k): all ten per-image wins over AReA (IR +0.90 [0.84, 0.96],
+  PickScore +1.40 [1.33, 1.46]); folded into Table 3, abstract, introduction, Section 4.4, conclusion, Appendix L and
+  the web page. Final delivery /scratch/09032/saini_2/sca/paper_builds/delivery_rjy3ai7t (54 pp, main text 1-10,
+  0 overfull, 0 undefined, fresh unzip passes). Nothing pending.
 - Notes for the lead: the code URL in the abstract names the author (swap before a double-blind submission); faint
   tiled-VAE seams (1-2 grey levels) and an 8 px lattice harmonic are visible at 1:1 in some progressive images
   (invisible at print); Krea runs single-pass only.
