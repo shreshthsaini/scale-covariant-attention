@@ -1656,5 +1656,344 @@ window.SCA_SHOWCASE = {
    ]
   }
  ],
- "backbones": []
+ "backbones": [
+  {
+   "id": "qwen_5312_sc_p01_skeleton_watch",
+   "title": "Skeleton watch",
+   "category": "product",
+   "prompt": "Macro studio product photograph of a mechanical skeleton wristwatch resting on dark walnut wood, the open dial reveals brushed steel gear trains, tiny ruby jewel bearings, a blued hairspring and a balance wheel, domed sapphire crystal with a faint reflection, polished rose-gold case with a knurled crown, chestnut leather strap with fine saddle stitching, soft key light and a thin rim light, shallow depth of field, no text, no logo",
+   "model": "Qwen-Image",
+   "config": "SCA, single pass",
+   "size": [
+    5312,
+    5312
+   ],
+   "seed": 0,
+   "steps": 50,
+   "view": "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/view.webp",
+   "view_size": [
+    1600,
+    1600
+   ],
+   "crops": [
+    {
+     "box": [
+      1792,
+      2688,
+      768
+     ],
+     "file": "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/c0.webp"
+    },
+    {
+     "box": [
+      2560,
+      2240,
+      768
+     ],
+     "file": "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/c1.webp"
+    },
+    {
+     "box": [
+      704,
+      3776,
+      768
+     ],
+     "file": "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/c2.webp"
+    },
+    {
+     "box": [
+      3328,
+      2048,
+      768
+     ],
+     "file": "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/c3.webp"
+    }
+   ],
+   "compare": [
+    {
+     "method": "qwen_full",
+     "label": "Full attention",
+     "view": "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/qwen_full_view.webp",
+     "crops": [
+      "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/qwen_full_c0.webp",
+      "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/qwen_full_c1.webp",
+      "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/qwen_full_c2.webp",
+      "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/qwen_full_c3.webp"
+     ]
+    }
+   ],
+   "regions": [
+    [
+     2176,
+     3072,
+     768
+    ],
+    [
+     2944,
+     2624,
+     768
+    ],
+    [
+     1088,
+     4160,
+     768
+    ],
+    [
+     3712,
+     2432,
+     768
+    ]
+   ],
+   "panels": [
+    {
+     "method": "qwen_sca",
+     "label": "SCA, single pass",
+     "view": "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/view.webp",
+     "vs": [
+      1600,
+      1600
+     ],
+     "ours": true,
+     "rt": [
+      [
+       1792,
+       2688,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/c0.webp"
+      ],
+      [
+       2560,
+       2240,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/c1.webp"
+      ],
+      [
+       704,
+       3776,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/c2.webp"
+      ],
+      [
+       3328,
+       2048,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/c3.webp"
+      ]
+     ]
+    },
+    {
+     "method": "qwen_full",
+     "label": "Full attention",
+     "view": "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/qwen_full_view.webp",
+     "vs": [
+      1600,
+      1600
+     ],
+     "rt": [
+      [
+       1792,
+       2688,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/qwen_full_c0.webp"
+      ],
+      [
+       2560,
+       2240,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/qwen_full_c1.webp"
+      ],
+      [
+       704,
+       3776,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/qwen_full_c2.webp"
+      ],
+      [
+       3328,
+       2048,
+       768,
+       768,
+       "assets/img/zoom/qwen_5312_sc_p01_skeleton_watch/qwen_full_c3.webp"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "flux2_5120_sc_p01_skeleton_watch",
+   "title": "Skeleton watch",
+   "category": "product",
+   "prompt": "Macro studio product photograph of a mechanical skeleton wristwatch resting on dark walnut wood, the open dial reveals brushed steel gear trains, tiny ruby jewel bearings, a blued hairspring and a balance wheel, domed sapphire crystal with a faint reflection, polished rose-gold case with a knurled crown, chestnut leather strap with fine saddle stitching, soft key light and a thin rim light, shallow depth of field, no text, no logo",
+   "model": "FLUX.2-dev",
+   "config": "SCA, single pass",
+   "size": [
+    5120,
+    5120
+   ],
+   "seed": 0,
+   "steps": 28,
+   "view": "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/view.webp",
+   "view_size": [
+    1600,
+    1600
+   ],
+   "crops": [
+    {
+     "box": [
+      2112,
+      2176,
+      768
+     ],
+     "file": "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/c0.webp"
+    },
+    {
+     "box": [
+      2880,
+      2112,
+      768
+     ],
+     "file": "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/c1.webp"
+    },
+    {
+     "box": [
+      1344,
+      2176,
+      768
+     ],
+     "file": "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/c2.webp"
+    },
+    {
+     "box": [
+      3648,
+      2496,
+      768
+     ],
+     "file": "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/c3.webp"
+    }
+   ],
+   "compare": [
+    {
+     "method": "flux2_full",
+     "label": "Full attention",
+     "view": "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/flux2_full_view.webp",
+     "crops": [
+      "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/flux2_full_c0.webp",
+      "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/flux2_full_c1.webp",
+      "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/flux2_full_c2.webp",
+      "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/flux2_full_c3.webp"
+     ]
+    }
+   ],
+   "regions": [
+    [
+     2496,
+     2560,
+     768
+    ],
+    [
+     3264,
+     2496,
+     768
+    ],
+    [
+     1728,
+     2560,
+     768
+    ],
+    [
+     4032,
+     2880,
+     768
+    ]
+   ],
+   "panels": [
+    {
+     "method": "flux2_sca_v2",
+     "label": "SCA, single pass",
+     "view": "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/view.webp",
+     "vs": [
+      1600,
+      1600
+     ],
+     "ours": true,
+     "rt": [
+      [
+       2112,
+       2176,
+       768,
+       768,
+       "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/c0.webp"
+      ],
+      [
+       2880,
+       2112,
+       768,
+       768,
+       "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/c1.webp"
+      ],
+      [
+       1344,
+       2176,
+       768,
+       768,
+       "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/c2.webp"
+      ],
+      [
+       3648,
+       2496,
+       768,
+       768,
+       "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/c3.webp"
+      ]
+     ]
+    },
+    {
+     "method": "flux2_full",
+     "label": "Full attention",
+     "view": "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/flux2_full_view.webp",
+     "vs": [
+      1600,
+      1600
+     ],
+     "rt": [
+      [
+       2112,
+       2176,
+       768,
+       768,
+       "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/flux2_full_c0.webp"
+      ],
+      [
+       2880,
+       2112,
+       768,
+       768,
+       "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/flux2_full_c1.webp"
+      ],
+      [
+       1344,
+       2176,
+       768,
+       768,
+       "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/flux2_full_c2.webp"
+      ],
+      [
+       3648,
+       2496,
+       768,
+       768,
+       "assets/img/zoom/flux2_5120_sc_p01_skeleton_watch/flux2_full_c3.webp"
+      ]
+     ]
+    }
+   ]
+  }
+ ]
 };
