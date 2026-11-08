@@ -51,6 +51,12 @@
 \newcommand{\ifhrgenfull}[2]{\ifnum\nhrgen=1000\relax #1\else #2\fi}
 \newcommand{\ifseedfull}[2]{\ifnum\nseed=195\relax #1\else #2\fi}
 
+% New-model showcase (FLUX.2-dev and Qwen-Image at 4096^2 and above). Off by default. To switch it on, run
+% figures/src/fig_showcase_models.py, which turns web/build/showcase_manifest.json into figures/showcase_models/ and
+% figures/snippets/showcase_models.tex, then set \showcasetrue; the figure opens the galleries of the appendix.
+\newif\ifshowcase
+\showcasefalse
+
 % Code and project link; swap for an anonymous mirror at submission time.
 \newcommand{\codeurl}{\href{https://github.com/shreshthsaini/scale-covariant-attention}{\mbox{github.com/shreshthsaini/scale-covariant-attention}}}
 % Python-like listings in the paper palette: keywords blue, function names dark amber, comments green.
@@ -156,7 +162,7 @@
 \newtheorem{argument}{Argument}
 \newtheorem{remark}{Remark}
 
-\title{Scale-Covariant Attention:\\Per-Head Receptive Fields Calibrated at the Training Resolution}
+\title{Scale-Covariant Attention:\\Per-Head Receptive Fields Measured at the Training Resolution}
 
 \author{Anonymous authors}
 
@@ -168,20 +174,20 @@
 \suppressfloats[t]
 
 \begin{abstract}
-Diffusion transformers trained near one megapixel fail at $4096^2$: attention meets token counts and position offsets it never saw, at 256 times the cost. Training-free fixes set how far each head looks by hand or per target size, because at the target full attention fails and cannot serve as a reference. At the training resolution, where full attention is still valid, reach is a property of the head. After the first steps, the head explains \hlVarHead\% of the variance in how much attention stays near the query, and the noise level \hlVarStep\%. We introduce Scale-Covariant Attention (\sca{}), which gives each head its own mix of a native-size window and a native-size grid over the whole image. Shrinking both views at $1024^2$ to the target's image-to-window ratio lets the model's own full attention fit each mix in closed form, once for every size. Inside HRDiT's three-stage schedule, \sca{} on FLUX.1-dev at $4096^2$ beats AReA on all ten per-image metrics for each of three seeds and on HRGen-1K at $\hlSpeedProgArea\times$ its speed, and matches HRDiT's preference scores in \hlSecProg{} against \hlSecHrditThree\,s per image. A single-pass mode keeps more fine detail and runs in \hlSecSca\,s, $\hlSpeedArea\times$ faster than AReA. Code: \codeurl.
+Diffusion transformers trained near one megapixel fail at $4096^2$: attention meets token counts and position offsets it never saw, at 256 times the cost. Training-free fixes set how far each head looks by hand or per target size, because at the target full attention fails and cannot serve as a reference. At the training resolution, where full attention is still valid, reach is a property of the head. After the first steps, the head explains \hlVarHead\% of the variance in how much attention stays near the query, and the noise level \hlVarStep\%. We introduce Scale-Covariant Attention (\sca{}), which gives each head its own mix of a native-size window and a native-size grid over the whole image. Reach emulation shrinks both views at $1024^2$ to the target's image-to-window ratio, so that the model's own full attention fits each mix in closed form, once for every size. Inside HRDiT's three-stage schedule, \sca{} on FLUX.1-dev at $4096^2$ beats AReA on all ten per-image metrics for each of three seeds and on HRGen-1K at $\hlSpeedProgArea\times$ its speed, and matches HRDiT's preference scores in \hlSecProg{} against \hlSecHrditThree\,s per image. A single-pass mode keeps more fine detail and runs in \hlSecSca\,s, $\hlSpeedArea\times$ faster than AReA. Code: \codeurl.
 \end{abstract}
 
 \begin{center}
   \vspace{-4pt}
   \includegraphics[width=\linewidth]{figures/hero_prog.pdf}
-  \captionof{figure}{\textbf{Progressive \sca{} at $4096^2$.} FLUX.1-dev with HRDiT's three-stage schedule and \sca{} attention, curated from the 195 evaluation prompts at seed 0; insets show native pixels. Figure~\ref{fig:gallery_prog} shows uncurated samples beside AReA, HRDiT, and single-pass \sca{}.}
+  \captionof{figure}{\textbf{Progressive \sca{} at $4096^2$.} FLUX.1-dev with HRDiT's three-stage schedule and \sca{} attention, Aesthetic-4K evaluation prompts at seed 0; insets show native pixels. Figure~\ref{fig:gallery_prog} shows more samples beside AReA, HRDiT, and single-pass \sca{}.}
   \label{fig:prog_hero}
 \end{center}
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures/method_v2.pdf}
-  \caption{\textbf{Calibrate once, then mix per head.} (a)~AReA gives every head one schedule, weight 0 on its windows above $\sigma=0.89$ and 1 below; \sca{} gives each of FLUX.1-dev's 1,368 heads its own, nearly flat weight $\pi_h$ (ratio 4). (b)~At $1024^2$, shrinking a native window and a native grid of block centres to the target's image-to-window ratio $r$ lets full attention fix each $\pi_h$ in closed form, so one table serves every size. (c)~Progressive \sca{} keeps HRDiT's schedule of 30, 17, and 10 steps, with full attention at $1024^2$ and the per-head mix at $2048^2$ and $4096^2$; Figure~\ref{fig:method_zoom} draws the operators at component level.}
+  \includegraphics[width=\linewidth]{figures/method_v3.pdf}
+  \caption{\textbf{Each head's mix, fitted once at $1024^2$.} (a)~Full attention splits exactly into outputs over near and far keys, mixed by each query's near mass $m_i$. \sca{} uses a local window and a grid of block centres over the whole image, mixed by one weight $\pi_h$ per head. (b)~Reach emulation shrinks both views by the target's image-to-window ratio $r$ onto $1024^2$ images of its own prompts. (c)~The squared error $J(\pi)$ against full attention is quadratic, so $\pi^\star=\clip(B/A,0,1)$ fills the reach table (three heads, rescaled). (d)~Progressive \sca{} reads the table at $r=2$ and $r=4$ in HRDiT's upper two stages; Figure~\ref{fig:method_zoom} draws the operators at component level.}
   \label{fig:method}
 \end{figure}
 
@@ -191,16 +197,16 @@ Diffusion transformers trained near one megapixel fail at $4096^2$: attention me
 
 Diffusion transformers~\citep{peebles2022dit} such as FLUX.1~\citep{flux2024} and Stable Diffusion~3~\citep{esser2024sd3} are trained near one megapixel. At $4096\times4096$ the image has 16 times as many tokens, full attention costs about 256 times as much, and every layer meets token counts and position offsets it never saw in training. Full attention then returns stripes or a flat field (Figure~\ref{fig:teaser}). Fixes that restrict attention must decide how far each head looks, and at the target nothing can check that decision, because full attention there is the failure. We ask whether the decision can be measured where full attention is still correct, at the training resolution.
 
-Some fixes edit the positional encoding~\citep{zhuo2024lumina,issachar2025dype,zhao2025ultraimage,rajabi2026sega}; others restrict the keys each query sees~\citep{zhang2023hidiffusion,ma2025resdit,xue2026hrdit,rajabi2026area}. AReA~\citep{rajabi2026area} finds that attention narrows during denoising, averaged over heads, and gives every head one schedule: pooled keys for 8 of 28 steps, then windows that shrink to native size. HRDiT searches per-head scopes for each target size, and UltraImage types heads at run time~\citep{xue2026hrdit,zhao2025ultraimage}. Measured head by head at $1024^2$, reach varies far more between heads than between steps (Figure~\ref{fig:method}a). After the first 8 steps, the head accounts for \hlVarHead\% of the variance in the share of attention a query keeps within 16 tokens, and the noise level for \hlVarStep\%.
+Some fixes edit the positional encoding~\citep{zhuo2024lumina,issachar2025dype,zhao2025ultraimage,rajabi2026sega}; others restrict the keys each query sees~\citep{zhang2023hidiffusion,ma2025resdit,xue2026hrdit,rajabi2026area}. AReA~\citep{rajabi2026area} finds that attention narrows during denoising, averaged over heads, and gives every head one schedule: pooled keys for 8 of 28 steps, then windows that shrink to native size. HRDiT searches per-head scopes for each target size, and UltraImage types heads at run time~\citep{xue2026hrdit,zhao2025ultraimage}. Measured head by head at $1024^2$, reach varies far more between heads than between steps (Figure~\ref{fig:heads}c). After the first 8 steps, the head accounts for \hlVarHead\% of the variance in the share of attention a query keeps within 16 tokens, and the noise level for \hlVarStep\%.
 
-We introduce Scale-Covariant Attention (\sca{}), which gives each head its own reach, calibrated once at the training resolution (Figure~\ref{fig:method}). Each head mixes two views that keep the training geometry: an exact native-size window around the query, and a native-size grid of block-centre keys over the whole image. We fit the mix by emulation. At $1024^2$, shrinking the window and the grid to the target's image-to-window ratio lets the model's own full attention score both views, and the best weight has a closed form. One calibration pass serves every target size. We call this scale covariance: the weight depends on the head and the image-to-window ratio, not on the absolute size.
+We introduce Scale-Covariant Attention (\sca{}), which gives each head its own reach, measured once at the training resolution (Figure~\ref{fig:method}). Each head mixes two views that keep the training geometry: an exact native-size window around the query, and a native-size grid of block-centre keys over the whole image. We fit the mix by \emph{reach emulation}. At $1024^2$, shrinking the window and the grid to the target's image-to-window ratio lets the model's own full attention score both views, and the best weight has a closed form. One emulation pass fills the \emph{reach table}, one weight per block, head, noise level, and ratio, which serves every target size. We call this scale covariance: the weight depends on the head and the image-to-window ratio, not on the absolute size.
 
-\sca{} replaces only the attention, so it runs inside any sampler. Our main configuration keeps HRDiT's released three-stage schedule~\citep{xue2026hrdit}, which sets the layout at $1024^2$ and refines it at $2048^2$ and $4096^2$, and swaps HRDiT's four attention changes for \sca{}. We call it progressive \sca{}; the schedule is HRDiT's (Section~\ref{sec:progressive}). A single-pass mode samples at the target in 28 steps: it opens with the global view for 8 steps, as AReA does, then shrinks a window to native size over four steps. The opening, the window sizes, and 1,024 bridge tokens that show each window the whole image are set by hand; only the weights are calibrated (Table~\ref{tab:handset}).
+\sca{} replaces only the attention, so it runs inside any sampler. Our main configuration keeps HRDiT's released three-stage schedule~\citep{xue2026hrdit}, which sets the layout at $1024^2$ and refines it at $2048^2$ and $4096^2$, and swaps HRDiT's four attention changes for \sca{}. We call it progressive \sca{}; the schedule is HRDiT's (Section~\ref{sec:progressive}). A single-pass mode samples at the target in 28 steps: it opens with the global view for 8 steps, as AReA does, then shrinks a window to native size over four steps. The opening, the window sizes, and 1,024 bridge tokens that show each window the whole image are set by hand; only the weights are fitted (Table~\ref{tab:handset}).
 
-The calibrated weights are stable across disjoint prompts (correlation 0.99), track each head's attention mass within 16 tokens ($\rho=0.77$), and transfer across ratios and resolutions (Section~\ref{sec:analysis}). At $4096^2$ on FLUX.1-dev, progressive \sca{} beats AReA on all ten per-image metrics for each of three seeds and on HRGen-1K, at $\hlSpeedProgArea\times$ its speed; at seed 0 ImageReward rises from \hlAreaIrAbs{} to \hlProgIrAbs. On set-level scores it is level with AReA on FID, and its patch FID is higher at two of three seeds. It matches HRDiT on ImageReward, HPSv2.1, and PickScore in \hlProgHrditPct\% of HRDiT's time, and trails it on KID and patch FID. Against single-pass \sca{} it gains preference and loses fine detail, with MUSIQ on $1024^2$ crops $\hlProgScaMusiqc$ and patch FID $\hlProgScaFidP$.
+The fitted weights are stable across disjoint prompts (correlation 0.99), track each head's attention mass within 16 tokens ($\rho=0.77$), and transfer across ratios and resolutions (Section~\ref{sec:analysis}). At $4096^2$ on FLUX.1-dev, progressive \sca{} beats AReA on all ten per-image metrics for each of three seeds and on HRGen-1K, at $\hlSpeedProgArea\times$ its speed; at seed 0 ImageReward rises from \hlAreaIrAbs{} to \hlProgIrAbs. On set-level scores it is level with AReA on FID, and its patch FID is higher at two of three seeds. It matches HRDiT on ImageReward, HPSv2.1, and PickScore in \hlProgHrditPct\% of HRDiT's time, and trails it on KID and patch FID. Against single-pass \sca{} it gains preference and loses fine detail, with MUSIQ on $1024^2$ crops $\hlProgScaMusiqc$ and patch FID $\hlProgScaFidP$.
 \begin{itemize}
   \item We show that the reach of attention heads, measured at the training resolution, varies far more between heads than between denoising steps, on FLUX.1-dev, FLUX.1-Krea-dev, and FLUX.2-dev (Section~\ref{sec:analysis}).
-  \item We calibrate each head's mix of a native window and a whole-image view once at $1024^2$, in closed form, by emulating the target's image-to-window ratio against the model's own full attention (Section~\ref{sec:calib}).
+  \item We fit each head's mix of a native window and a whole-image view once at $1024^2$, in closed form, by emulating the target's image-to-window ratio against the model's own full attention (Section~\ref{sec:emulation}).
   \item We show that at $4096^2$ progressive \sca{} beats AReA on all ten per-image metrics for three seeds at $\hlSpeedProgArea\times$ its speed and matches HRDiT in less than half its time (Section~\ref{sec:main}).
 \end{itemize}
 
@@ -209,7 +215,7 @@ The calibrated weights are stable across disjoint prompts (correlation 0.99), tr
 % =====================================================================================
 \section{Scale-Covariant Attention}
 \label{sec:method}
-Each head gets two views of the image that keep the training geometry, and one weight for how much of its output comes from each. Only the weight is measured: it is fitted at $1024^2$ (Section~\ref{sec:calib}) and read at the target's image-to-window ratio (Section~\ref{sec:sched}).
+Each head gets two views of the image that keep the training geometry, and one weight for how much of its output comes from each. Only the weight is measured: it is fitted at $1024^2$ (Section~\ref{sec:emulation}) and read at the target's image-to-window ratio (Section~\ref{sec:sched}).
 
 \subsection{Setting and notation}
 \label{sec:setting}
@@ -261,13 +267,13 @@ Per head and layer, full attention scores $(N+T)^2$ query-key pairs, the global 
   \centering
   \begin{minipage}[t]{0.48\linewidth}
     \hrule height 0.6pt\vspace{2pt}
-    \captionof{algorithm}{\textbf{Calibration}, once per model}
-    \label{alg:calib}
+    \captionof{algorithm}{\textbf{Reach emulation}, once per model}
+    \label{alg:emulate}
     \vspace{-4pt}
-\begin{lstlisting}[style=scacode, emph={calibrate,attn,global_branch,local_branch,clip,fill_empty_bins}]
+\begin{lstlisting}[style=scacode, emph={emulate,attn,global_branch,local_branch,clip,fill_empty_bins}]
 # Input: prompts; full-attention sampler at (*@$1024^2$@*)
 # Output: pi*[s_c, l, h, beta]; full in App. (*@\ref{app:code}@*)
-def calibrate(q, k, v, l, sigma):  # every block
+def emulate(q, k, v, l, sigma):    # every block
   O_full = attn(q, k, v)        # Eq. (*@\ref{eq:attn}@*), all keys
   beta = min(int(14 * sigma), 13)    # noise bin
   for s_c in (2, 4):            # r = n / w = s_c
@@ -315,21 +321,21 @@ return cat(O_glob[:T], O_img)     # text: O_glob
 
 \subsection{Single-pass sampling: from the global view to the native window}
 \label{sec:sched}
-Calibration (Section~\ref{sec:calib}; Algorithm~\ref{alg:calib}) gives each head $h$ of block $l$ a weight $\pi_{lh}(\sigma;r)$ for every noise level and emulated image-to-window ratio $r\in\{2,4\}$. At the target (Algorithm~\ref{alg:sample}), a window schedule $w(\sigma)$ sets the ratio $r(\sigma)=\max(H,W)/w(\sigma)$, and an image query takes
+The reach table (Section~\ref{sec:emulation}; Algorithm~\ref{alg:emulate}) gives each head $h$ of block $l$ a weight $\pi_{lh}(\sigma;r)$ for every noise level and emulated image-to-window ratio $r\in\{2,4\}$. At the target (Algorithm~\ref{alg:sample}), a window schedule $w(\sigma)$ sets the ratio $r(\sigma)=\max(H,W)/w(\sigma)$, and an image query takes
 \begin{equation}
   O_i \;=\; \begin{cases} \Oglob_i & \sigma>\sigma_g,\\ \pi\,\Oloc_i\big(w(\sigma)\big) + (1-\pi)\,\Oglob_i & \text{otherwise,}\end{cases}\qquad \pi=\pi_{lh}\big(\sigma;r(\sigma)\big),
   \label{eq:mix}
 \end{equation}
-where $\sigma_g$ is the gate and text queries take $\Oglob_i$. Between calibrated ratios, $\pi$ is linear in $\log r$:
+where $\sigma_g$ is the gate and text queries take $\Oglob_i$. Between ratios 2 and 4, $\pi$ is linear in $\log r$:
 \begin{equation}
   \pi_{lh}(\sigma;r)=(1-\lambda)\,\pi_{lh}(\sigma;2)+\lambda\,\pi_{lh}(\sigma;4),\qquad \lambda=\clip(\log_2 r-1,\,0,\,1).
   \label{eq:sched}
 \end{equation}
-We use $\sigma_g=0.89$, the first 8 of 28 steps at maximum shift as in AReA. The windows are $w=128$, 112, 96, and 80 tokens for $\sigma$ in $(0.88,0.89]$, $(0.86,0.88]$, $(0.84,0.86]$, and $(0.82,0.84]$, then $w=n_0$. At $4096^2$ these are the four steps after the opening, at ratios 2, 2.29, 2.67, and 3.2, and the last 16 steps run at ratio 4. Setting $w=n_0$ after the gate and dropping the bridge gives a one-step switch, our first operator, which we call \sca{} without the schedule. The four sizes and their $\sigma$ bins were set by hand, and each bin holds one step only for the 28-step sampler; only the weights are calibrated (Table~\ref{tab:handset}). The 42- and 56-step runs of Appendix~\ref{app:budget} therefore use \sca{} without the schedule.
+We use $\sigma_g=0.89$, the first 8 of 28 steps at maximum shift as in AReA. The windows are $w=128$, 112, 96, and 80 tokens for $\sigma$ in $(0.88,0.89]$, $(0.86,0.88]$, $(0.84,0.86]$, and $(0.82,0.84]$, then $w=n_0$. At $4096^2$ these are the four steps after the opening, at ratios 2, 2.29, 2.67, and 3.2, and the last 16 steps run at ratio 4. Setting $w=n_0$ after the gate and dropping the bridge gives a one-step switch, our first operator, which we call \sca{} without the schedule. The four sizes and their $\sigma$ bins were set by hand, and each bin holds one step only for the 28-step sampler; only the weights are fitted (Table~\ref{tab:handset}). The 42- and 56-step runs of Appendix~\ref{app:budget} therefore use \sca{} without the schedule.
 
-\subsection{Calibration by output matching}
-\label{sec:calib}
-On an in-distribution $n\times n$ grid ($n=64$ at $1024^2$), emulated ratio $r$ uses subsampling factor $r$, window side $n/r$, and tile side $\mathrm{round}(tn/(rn_0))$. The grid-to-window ratio is then $r$, as at a target of scale $r$. The sampler runs unmodified full attention (Algorithm~\ref{alg:calib}), and at every block and step both emulated operators see the same queries, keys, and values. For block $l$, head $h$, noise bin $\beta$, and ratio $r$, sums over prompts, steps with $\sigma\in\beta$, image queries, and channels give
+\subsection{Reach emulation}
+\label{sec:emulation}
+On an in-distribution $n\times n$ grid ($n=64$ at $1024^2$), emulated ratio $r$ uses subsampling factor $r$, window side $n/r$, and tile side $\mathrm{round}(tn/(rn_0))$. The grid-to-window ratio is then $r$, as at a target of scale $r$. The sampler runs unmodified full attention (Algorithm~\ref{alg:emulate}), and at every block and step both emulated operators see the same queries, keys, and values. For block $l$, head $h$, noise bin $\beta$, and ratio $r$, sums over prompts, steps with $\sigma\in\beta$, image queries, and channels give
 \begin{equation}
   A=\textstyle\sum\|\Oloc-\Oglob\|^2,\quad
   B=\sum\langle \Ofull-\Oglob,\,\Oloc-\Oglob\rangle,\quad
@@ -338,7 +344,7 @@ On an in-distribution $n\times n$ grid ($n=64$ at $1024^2$), emulated ratio $r$ 
 \end{equation}
 where the emulated $\Oloc,\Oglob$ omit the bridge. Weight $\pi$ has squared error $J(\pi)=E-2\pi B+\pi^2A$.
 
-\begin{proposition}[Closed-form calibration and transfer cost]
+\begin{proposition}[Closed-form fit and transfer cost]
 \label{prop:opt}
 In each cell $(l,h,\beta,r)$, $J$ is minimized on $[0,1]$ by $\pi^\star=\clip(B/A,0,1)$, with $\pi^\star=1$ if $A=0$. Any other weight $\pi'\in[0,1]$ constant in the cell has $J(\pi')-J(\pi^\star)\ge A(\pi'-\pi^\star)^2$, with equality when $0<\pi^\star<1$. This covers weights fitted at another ratio or resolution, per layer, or shared, and a hard switch.
 \end{proposition}
@@ -370,7 +376,7 @@ return decode(x)              # (*@$4096^2$@*) image
   \end{minipage}
   \wrapbot
 \end{wrapfigure}
-Replacing only the attention, \sca{} fits inside a multi-stage sampler. HRDiT's released code~\citep{xue2026hrdit} denoises at $1024^2$ for 30 steps with the model's own attention. It then decodes, upsamples, sharpens, re-encodes, and re-noises the image. It runs the last 17 steps of its schedule again at $2048^2$ and the last 10 at $4096^2$, guided toward the low frequencies of the previous stage. Progressive \sca{} keeps all of this, including guidance and seeds, and replaces HRDiT's four attention changes (NTK-scaled RoPE, a proportional attention scale, per-head key pruning, and position alignment) with \sca{} (Algorithm~\ref{alg:prog_main}). One table serves both stages: the $2048^2$ stage reads ratio 2 and the $4096^2$ stage ratio 4. The stages re-enter at $\sigma=0.81$ and $0.61$, below the gate and the last wide window. They run the native window, the bridge, and the calibrated mix, and the $1024^2$ stage takes the place of the global opening.
+Replacing only the attention, \sca{} fits inside a multi-stage sampler. HRDiT's released code~\citep{xue2026hrdit} denoises at $1024^2$ for 30 steps with the model's own attention. It then decodes, upsamples, sharpens, re-encodes, and re-noises the image. It runs the last 17 steps of its schedule again at $2048^2$ and the last 10 at $4096^2$, guided toward the low frequencies of the previous stage. Progressive \sca{} keeps all of this, including guidance and seeds, and replaces HRDiT's four attention changes (NTK-scaled RoPE, a proportional attention scale, per-head key pruning, and position alignment) with \sca{} (Algorithm~\ref{alg:prog_main}). One reach table serves both stages: the $2048^2$ stage reads ratio 2 and the $4096^2$ stage ratio 4. The stages re-enter at $\sigma=0.81$ and $0.61$, below the gate and the last wide window. They run the native window, the bridge, and the fitted per-head mix, and the $1024^2$ stage takes the place of the global opening.
 
 % =====================================================================================
 \section{Reach is set by the head}
@@ -379,10 +385,10 @@ Replacing only the attention, \sca{} fits inside a multi-stage sampler. HRDiT's 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/heads_view.pdf}
-  \caption{\textbf{Measured reach tracks calibrated $\pi_h$.} (a)~Local window (amber) and every fourth block-centre key per axis (blue) on a $4096^2$ output; (b)~full-attention mass density of three heads at $1024^2$ and $\sigma=0.62$, with each head's share within 16 tokens. (c)~Their $\pi_h$ with the median and interquartile range of all 1368 heads; (d)~$\pi_h$ against that share (Pearson $\rho=0.77$).}
+  \caption{\textbf{Measured reach tracks the fitted $\pi_h$.} (a)~Local window (amber) and every fourth block-centre key per axis (blue) on a $4096^2$ output; (b)~full-attention mass density of three heads at $1024^2$ and $\sigma=0.62$, with each head's share within 16 tokens. (c)~Their $\pi_h$ with the median and interquartile range of all 1368 heads; (d)~$\pi_h$ against that share (Pearson $\rho=0.77$).}
   \label{fig:heads}
 \end{figure}
-We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $1280^2$, disjoint from the evaluation sets. Errors are relative, $\sum J/\sum\|\Ofull\|^2$, pooled over blocks, heads, and steps.
+Reach emulation on FLUX.1-dev uses 32 purpose-written prompts at $1024^2$ and 16 at $1280^2$, none from the evaluation sets. Errors are relative, $\sum J/\sum\|\Ofull\|^2$, pooled over blocks, heads, and steps.
 
 \paragraph{Reach varies by head, not by step.} For 256 random queries per block and step we record the share of each head's image attention within 16 tokens of the query. After the first 8 steps, the head accounts for \hlVarHead\% of the variance in this share, and the noise level for \hlVarStep\%. Most of the head's part lies between heads of the same block. The head-averaged curve accounts for \hlVarAvg\%: it rises from \hlVarCurveLo{} to \hlVarCurveHi{} as denoising proceeds, the narrowing AReA reports. FLUX.1-Krea-dev and FLUX.2-dev give \hlVarHeadKrea\% and \hlVarHeadFluxTwo\% for the head (Table~\ref{tab:variance_split}).
 
@@ -405,7 +411,7 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
 
 \paragraph{Prompts and seeds.} We follow the field's protocol at $4096^2$: the full 195-prompt Aesthetic-4K evaluation split with its 4K references~\citep{zhang2025diffusion4k}, which AReA, DyPE, TIDE, and SigMa report~\citep{rajabi2026area,issachar2025dype,liu2026tide,zhao2026sigma}, and all \nhrgen{} HRGen-1K prompts, as AReA does. Seeds hash the prompt id and a seed label shared by all methods; labels 0, 1, and 2 each cover all \nmain{} prompts. Four prompts (\devprompts) were used in development, which favours \sca{} slightly, and a fixed \nabl-prompt subset, chosen before any ablation ran, serves the ablations. Other sizes are $2048\times4096$ and $2048\times6144$ (height$\times$width), plus $6144^2$ and $8192^2$ without the schedule.
 
-\paragraph{Configurations and baselines.} The main model is FLUX.1-dev~\citep{flux2024}, and every baseline runs from its released code. Progressive \sca{} runs HRDiT's recipe of 30, 17, and 10 steps at $1024^2$, $2048^2$, and $4096^2$ with guidance 3.5, 4.5, and 6.0, and \sca{} at the upper two stages (Section~\ref{sec:progressive}). Single-pass \sca{}, full attention, AReA (Appendix~\ref{app:area}), DyPE~\citep{issachar2025dype}, SEGA~\citep{rajabi2026sega}, and SigMa~\citep{zhao2026sigma} share AReA's sampler: 28 Euler flow-matching steps at guidance 4.5, shift $\mu=1.15$, bf16, and tiled VAE decoding. The multi-stage methods UltraImage~\citep{zhao2025ultraimage} (30 steps per stage) and HRDiT~\citep{xue2026hrdit} use their own recipes (Appendix~\ref{app:additional_protocols}). FLUX.1-Krea-dev (\nkrea{} prompts, single-pass \sca{} against AReA) and FLUX.2-dev (50 prompts, against full attention, without the schedule) test other checkpoints, each calibrated on 16 prompts at $1024^2$. One calibrated table per checkpoint serves every size and both configurations (Table~\ref{tab:hparams}).
+\paragraph{Configurations and baselines.} The main model is FLUX.1-dev~\citep{flux2024}, and every baseline runs from its released code. Progressive \sca{} runs HRDiT's recipe of 30, 17, and 10 steps at $1024^2$, $2048^2$, and $4096^2$ with guidance 3.5, 4.5, and 6.0, and \sca{} at the upper two stages (Section~\ref{sec:progressive}). Single-pass \sca{}, full attention, AReA (Appendix~\ref{app:area}), DyPE~\citep{issachar2025dype}, SEGA~\citep{rajabi2026sega}, and SigMa~\citep{zhao2026sigma} share AReA's sampler: 28 Euler flow-matching steps at guidance 4.5, shift $\mu=1.15$, bf16, and tiled VAE decoding. The multi-stage methods UltraImage~\citep{zhao2025ultraimage} (30 steps per stage) and HRDiT~\citep{xue2026hrdit} use their own recipes (Appendix~\ref{app:additional_protocols}). FLUX.1-Krea-dev (\nkrea{} prompts, single-pass \sca{} against AReA) and FLUX.2-dev (50 prompts, against full attention, without the schedule) test other checkpoints, each with its own reach table from 16 prompts at $1024^2$. One reach table per checkpoint serves every size and both configurations (Table~\ref{tab:hparams}).
 
 \begin{wrapfigure}[23]{r}{0.46\linewidth}
   \wraptop
@@ -431,7 +437,7 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/qual_prog.pdf}
-  \caption{\textbf{Progressive \sca{} against AReA, UltraImage, and HRDiT at $4096^2$.} Four prompts at seed~0, curated where the difference is clearest after viewing every candidate at native resolution; every baseline image is at or above its own 10th percentile of ImageReward. Each image is followed by a 1:1 crop of the outlined window, and UltraImage's layouts match progressive \sca{}'s. Figures~\ref{fig:gallery_prog_curated} and~\ref{fig:gallery_prog} show more curated and uncurated samples.}
+  \caption{\textbf{Progressive \sca{} against AReA, UltraImage, and HRDiT at $4096^2$.} Four Aesthetic-4K evaluation prompts at seed~0. Each image is followed by a 1:1 crop of the outlined window, and UltraImage's layouts match progressive \sca{}'s. Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog} show more samples.}
   \label{fig:qual_prog}
 \end{figure}
 
@@ -453,7 +459,7 @@ We calibrate FLUX.1-dev on 32 purpose-written prompts at $1024^2$ and 16 at $128
     \input{figures/snippets/main_tables/tab_ablation.tex}
   \end{minipage}\hfill
   \begin{minipage}[t]{0.465\linewidth}
-    \caption{\textbf{Generality.} Paired differences at $4096^2$ over $n$ prompts, 95\% intervals below them; HPS is HPSv2.1 $\times100$, Pick PickScore. The progressive sampler does not run FLUX.1-Krea-dev. Tables~\ref{tab:krea_6144} and~\ref{tab:phase2_general} add all metrics, Table~\ref{tab:phase2_sensitivity} the calibration and gate checks. Key result: both configurations beat AReA at all three seeds and on HRGen-1K; on Krea, single-pass ImageReward is unresolved.}
+    \caption{\textbf{Generality.} Paired differences at $4096^2$ over $n$ prompts, 95\% intervals below them; HPS is HPSv2.1 $\times100$, Pick PickScore. The progressive sampler does not run FLUX.1-Krea-dev. Tables~\ref{tab:krea_6144} and~\ref{tab:phase2_general} add all metrics, Table~\ref{tab:phase2_sensitivity} the emulation-budget and gate checks. Key result: both configurations beat AReA at all three seeds and on HRGen-1K; on Krea, single-pass ImageReward is unresolved.}
     \label{tab:generality}
     \centering\footnotesize
     \input{figures/snippets/main_tables/tab_generality.tex}
@@ -468,26 +474,26 @@ Table~\ref{tab:ablation} changes one component of single-pass \sca{} at a time (
 \subsection{Generality and sensitivity}
 \label{sec:generality}
 
-\textbf{Progressive \sca{} on more seeds and prompts.} With seeds 1 and 2 and on all \nhrgen{} HRGen-1K prompts, progressive \sca{} again beats AReA on all ten per-image metrics, on HRGen-1K with ImageReward $\hlProgHrgenAreaIr$ $[\hlProgHrgenAreaIrLo,\hlProgHrgenAreaIrHi]$ (Table~\ref{tab:generality}). \textbf{Single-pass \sca{} on FLUX.1-dev.} Gains over AReA hold with seeds 1 and 2 and on \nhrgen{} HRGen-1K prompts (Tables~\ref{tab:generality} and~\ref{tab:phase2_general}). \textbf{FLUX.1-Krea-dev, AReA's checkpoint, single pass: quality on par in a third of the time.} Over \nkrea{} prompts single-pass \sca{} wins \hlKreaWinsWord{} of ten per-image metrics and loses none, ImageReward is unresolved ($+0.020$ $[-0.020,0.063]$), and patch FID is worse ($+3.4$ $[1.6,7.1]$; Table~\ref{tab:krea_6144}). \textbf{FLUX.2-dev, without the schedule.} \sca{} beats full attention on nine of ten per-image metrics in half the time. \textbf{Sensitivity, without the schedule.} Calibrating on 4 to 16 prompts moves ImageReward by ${\le}\,0.012$ (Table~\ref{tab:phase2_sensitivity}).
+\textbf{Progressive \sca{} on more seeds and prompts.} With seeds 1 and 2 and on all \nhrgen{} HRGen-1K prompts, progressive \sca{} again beats AReA on all ten per-image metrics, on HRGen-1K with ImageReward $\hlProgHrgenAreaIr$ $[\hlProgHrgenAreaIrLo,\hlProgHrgenAreaIrHi]$ (Table~\ref{tab:generality}). \textbf{Single-pass \sca{} on FLUX.1-dev.} Gains over AReA hold with seeds 1 and 2 and on HRGen-1K (Tables~\ref{tab:generality} and~\ref{tab:phase2_general}). \textbf{FLUX.1-Krea-dev, AReA's checkpoint, single pass: quality on par in a third of the time.} Over \nkrea{} prompts single-pass \sca{} wins \hlKreaWinsWord{} of ten per-image metrics and loses none, ImageReward is unresolved ($+0.020$ $[-0.020,0.063]$), and patch FID is worse ($+3.4$ $[1.6,7.1]$; Table~\ref{tab:krea_6144}). \textbf{FLUX.2-dev, without the schedule.} \sca{} beats full attention on nine of ten per-image metrics in half the time. \ifshowcase Figure~\ref{fig:showcase_models} shows samples on FLUX.2-dev and Qwen-Image. \fi\textbf{Sensitivity, without the schedule.} Reach tables fitted on 4 to 16 prompts move ImageReward by ${\le}\,0.012$ (Table~\ref{tab:phase2_sensitivity}).
 
 % =====================================================================================
 \section{Related work}
 \label{sec:related}
 \paragraph{Training-free high-resolution sampling.} Methods alter convolutions, spectra, or attention temperature~\citep{he2023scalecrafter,zhang2023hidiffusion,huang2024fouriscale,jin2023training}. Others fuse global and patch paths~\citep{du2023demofusion,yang2024fam}, by frequency in FreeScale~\citep{qiu2024freescale}. Others add native-resolution guidance~\citep{du2024imax,bu2025hiflow,koh2025scalediff} or adapt RoPE~(\citealp{zhuo2024lumina,issachar2025dype,zhao2026sigma,rajabi2026sega}; \mbox{\citealp{liu2026tide}}). Multi-stage samplers draw the image at native size first and refine it at larger sizes~\citep{du2023demofusion,xue2026hrdit}; progressive \sca{} uses HRDiT's schedule as released and changes only its attention. Of the closest methods (Table~\ref{tab:related}, Appendix~\ref{app:related}), AReA~\citep{rajabi2026area} sets one schedule for all heads by hand and adds bridge tokens; \sca{} borrows its opening, block-centre keys, and bridge selection rule. In \sca{}'s notation AReA's phases set every head's window weight to 0, then 1. ResDiT fuses position-scaled global and native-size patch attention between global-only and local-only phases~\citep{ma2025resdit}.
 
-\paragraph{Head- and layer-specific attention.} HRDiT searches per-head scopes under a cost budget for each target size~\citep{xue2026hrdit}; UltraImage types heads by entropy at run time and noted stable local and global head roles before us~\citep{zhao2025ultraimage}. Sparse attention varies windows, spans, or key scales per layer or head in diffusion transformers~\citep{yuan2024ditfastattn,xi2025svg,zhang2025sta}, language models~\citep{fu2024moa,xiao2024duoattention}, and vision transformers~\citep{pan2022hilo}. These settings are often fitted against dense attention at the size where it runs, which at $4096^2$ is the failure; \sca{} fits at the training resolution instead, once for every size. Our local branch is neighbourhood attention~\citep{hassani2022nat}. Head roles, two branches, a global opening, and shrinking windows have precedents; the calibration by emulation and the measured comparison of heads and steps are ours.
+\paragraph{Head- and layer-specific attention.} HRDiT searches per-head scopes under a cost budget for each target size~\citep{xue2026hrdit}; UltraImage types heads by entropy at run time and noted stable local and global head roles before us~\citep{zhao2025ultraimage}. Sparse attention varies windows, spans, or key scales per layer or head in diffusion transformers~\citep{yuan2024ditfastattn,xi2025svg,zhang2025sta}, language models~\citep{fu2024moa,xiao2024duoattention}, and vision transformers~\citep{pan2022hilo}. These settings are often fitted against dense attention at the size where it runs, which at $4096^2$ is the failure; \sca{} fits once, at the training resolution. Our local branch is neighbourhood attention~\citep{hassani2022nat}. Head roles, two branches, a global opening, and shrinking windows have precedents; reach emulation and the measured comparison of heads and steps are ours.
 
 % =====================================================================================
 \section{Limitations and conclusion}
 \label{sec:limits}
-\paragraph{Limitations.} \textbf{Fidelity.} Progressive \sca{} trades fine detail for preference against single-pass \sca{} (MUSIQ$_\text{c}$ $\hlProgScaMusiqc$, patch FID $\hlProgScaFidP$). Its patch FID and patch KID are worse than HRDiT's, and its patch FID is higher than AReA's at two of three seeds (Section~\ref{sec:main}). In single-pass mode, small additional figures occasionally appear in scenes with people or animals; the progressive configuration reduces this to the level of the multi-stage baselines. \textbf{Hand-set settings.} The opening, window sizes, and bridge are set by hand because output error cannot see layout: fitted on output error alone, the best hard switch is local attention from the first step. We chose the window sizes on the 46-prompt subset, part of the evaluation set. \textbf{Other limits.} Progressive \sca{} depends on HRDiT's schedule, and its sampler does not support FLUX.1-Krea-dev. The $6144^2$, $8192^2$, FLUX.2-dev, and sensitivity results use \sca{} without the schedule. Calibration omits the bridge and sees 16 times fewer keys per branch than the target; the deployed operator's error is untested. Metrics are automatic; intervals ignore multiple comparisons.
+\paragraph{Limitations.} \textbf{Fidelity.} Progressive \sca{} trades fine detail for preference against single-pass \sca{} (MUSIQ$_\text{c}$ $\hlProgScaMusiqc$, patch FID $\hlProgScaFidP$). Its patch FID and patch KID are worse than HRDiT's, and its patch FID is higher than AReA's at two of three seeds (Section~\ref{sec:main}). In single-pass mode, small additional figures occasionally appear in scenes with people or animals; the progressive configuration reduces this to the level of the multi-stage baselines. \textbf{Hand-set settings.} The opening, window sizes, and bridge are set by hand because output error cannot see layout: fitted on output error alone, the best hard switch is local attention from the first step. We chose the window sizes on the 46-prompt subset, part of the evaluation set. \textbf{Other limits.} Progressive \sca{} depends on HRDiT's schedule, and its sampler does not support FLUX.1-Krea-dev. The $6144^2$, $8192^2$, FLUX.2-dev, and sensitivity results use \sca{} without the schedule. Reach emulation omits the bridge and sees 16 times fewer keys per branch than the target; the deployed operator's error is untested. Metrics are automatic; intervals ignore multiple comparisons.
 
-\paragraph{Conclusion.} A head's reach can be measured once at the training resolution, where full attention is still correct, by shrinking the window to the target's image-to-window ratio. Measured this way, reach varies far more between heads than between steps, so \sca{} gives each head its own calibrated mix where AReA gives all heads one schedule. Inside HRDiT's schedule, \sca{} beats AReA on all ten per-image metrics at $4096^2$ for three seeds and on HRGen-1K at $\hlSpeedProgArea\times$ its speed and matches HRDiT's preference scores in less than half its time. In one pass it runs $\hlSpeedArea\times$ faster than AReA and keeps more fine detail. Code: \codeurl.
+\paragraph{Conclusion.} A head's reach can be measured once at the training resolution, where full attention is still correct, by shrinking both views to the target's image-to-window ratio. Measured this way, reach varies far more between heads than between steps, so \sca{} gives each head its own fitted mix where AReA gives all heads one schedule. Inside HRDiT's schedule, \sca{} beats AReA on all ten per-image metrics at $4096^2$ for three seeds and on HRGen-1K at $\hlSpeedProgArea\times$ its speed and matches HRDiT's preference scores in less than half its time. In one pass it runs $\hlSpeedArea\times$ faster than AReA and keeps more fine detail. Code: \codeurl.
 
 % Section 6 ends the main text; the statement starts the next page with natural spacing above.
 \newpage
 \section*{Reproducibility statement}
-Section~\ref{sec:experiments} states the protocol, including timing (Section~\ref{sec:sizes}), and Appendix~\ref{app:metrics} defines every metric and interval. Appendix~\ref{app:calib} gives the calibration geometry, statistics, and noise bins; Algorithms~\ref{alg:calib}, \ref{alg:sample}, and~\ref{alg:prog_main} give the procedures, and Appendix~\ref{app:code} gives them in full. Appendix~\ref{app:prog} gives the progressive protocol and every paired comparison of progressive \sca{}. Appendix~\ref{app:hparams} lists every hyperparameter, including the window schedule, and Appendix~\ref{app:impl} the kernel layout, numerical checks, and position rounding. Appendices~\ref{app:area} and~\ref{app:additional_protocols} give each baseline's code revision, recipe, and seeds, and Appendix~\ref{app:compute} the hardware and logged compute. Code, calibration table, per-image metrics, and the paired-difference files behind every table will be released in the code repository (link in the abstract).
+Section~\ref{sec:experiments} states the protocol, including timing (Section~\ref{sec:sizes}), and Appendix~\ref{app:metrics} defines every metric and interval. Appendix~\ref{app:emulation} gives the reach-emulation geometry, statistics, and noise bins; Algorithms~\ref{alg:emulate}, \ref{alg:sample}, and~\ref{alg:prog_main} give the procedures, and Appendix~\ref{app:code} gives them in full. Appendix~\ref{app:prog} gives the progressive protocol and every paired comparison of progressive \sca{}. Appendix~\ref{app:hparams} lists every hyperparameter, including the window schedule, and Appendix~\ref{app:impl} the kernel layout, numerical checks, and position rounding. Appendices~\ref{app:area} and~\ref{app:additional_protocols} give each baseline's code revision, recipe, and seeds, and Appendix~\ref{app:compute} the hardware and logged compute. Code, reach tables, per-image metrics, and the paired-difference files behind every table will be released in the code repository (link in the abstract).
 
 % Appendix: allow tall top floats.
 \renewcommand{\topfraction}{0.95}

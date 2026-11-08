@@ -702,8 +702,8 @@ def table_variance_split():
            r"8 or 16 tokens of the query (Chebyshev distance), over all (block, head, noise bin) cells. It is split into "
            r"the head (between blocks plus between heads of one block) and the noise level within a head; the two "
            r"sum to 100\%. Avg.\ is the variance of the head-averaged curve over noise levels, the part one schedule shared "
-           r"by all heads could follow. 256 random queries per block and step, full attention at the calibration "
-           r"size. AReA's statistic is the distance to dominant keys; ours is the mass share, which sets the output "
+           r"by all heads could follow. 256 random queries per block and step, full attention at each row's "
+           r"resolution. AReA's statistic is the distance to dominant keys; ours is the mass share, which sets the output "
            r"by Lemma~\ref{lem:split}. Key result: after the gate the head carries at least "
            + f"{100 * min_head:.1f}" + r"\% of the variance in every model and size.}")
     text = "\n".join([

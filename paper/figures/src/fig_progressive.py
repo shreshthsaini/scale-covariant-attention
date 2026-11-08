@@ -273,7 +273,7 @@ def main() -> None:
     n_camp = secs["sca_v2_prog"]["n"]
     caption = (
         r"\textbf{Progressive \sca{} keeps a large subject, as HRDiT does; single-pass \sca{} draws it smaller.} "
-        r"Two prompts drawn at random from the fixed %d-prompt ablation subset; same 1:1 ${%d\times%d}$ crop per "
+        r"Two prompts drawn at random from the fixed %d-prompt ablation subset, seed~0; same 1:1 ${%d\times%d}$ crop per "
         r"row; "
         r"times in Table~\ref{tab:main}."
         % (n_panel, CROP, CROP))

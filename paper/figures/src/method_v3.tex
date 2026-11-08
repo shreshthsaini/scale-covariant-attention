@@ -1,0 +1,85 @@
+% Method figure v3 (fig:method), chosen on 2026-11-07 from two candidates scored against the gold-standard diagram
+% recipe (critique in .agent/notes/method_figure_v3.md): candidate A (method_v3a.tex), an aligned two-line picture
+% equation (a) beside the emulation mapping (b) and the closed-form fit (c), with the progressive stages (d) below.
+% Candidate B (method_v3b.tex) set (a) on one line and (b), (c) side by side.
+% Panels: (a) O_full = m_i O_near + (1 - m_i) O_far (Lemma 1), then SCA's pi_h O_loc + (1 - pi_h) O_glob, on the
+% 1024^2 canvas at r = 4; (b) the 4096^2 target's native window and block-centre grid shrunk by r onto the 1024^2
+% canvas; (c) three real quadratics J(pi) of block 12 at sigma = 0.618, rescaled, with pi* = clip(B/A, 0, 1), and the
+% reach-table cards; (d) HRDiT's stages with the per-head mix at r = 2 and r = 4.
+% Data assets: fig_method_v3.py (../method_v3/, provenance.json there).
+% Build from this directory:  ~/.local/bin/tectonic --outdir .. method_v3.tex   (writes ../method_v3.pdf)
+\input{method_v3_common.tex}
+\begin{document}
+\begin{tikzpicture}[x=1pt, y=1pt]
+\useasboundingbox (0,0) rectangle (397.48,196);
+
+% ================================================================== (a) split, then mix per head
+\node[anchor=north west] at (0,195.8) {\ttl (a) Split, then mix per head};
+\def\ra{143}\def\rb{93}\def\ts{32}
+% exact split of full attention at every query i (Lemma 1)
+\Cv{0}{\ra}{\ts}{0}
+\node at (39,{\ra+0.5*\ts}) {\bigsym $=$};
+\node at (50.3,{\ra+0.5*\ts}) {\mtb $m_i$};
+\Cv{58}{\ra}{\ts}{1}
+\node at (96.3,{\ra+0.5*\ts}) {\mth $+$};
+\node at (118,{\ra+0.5*\ts}) {\mtb $(1-m_i)$};
+\Cv{137}{\ra}{\ts}{2}
+\node[anchor=north] at (16,\ra-1.8) {\mth $O^{\mathrm{full}}_i$};
+\node[anchor=north] at (74,\ra-1.8) {\mth $O^{\mathrm{near}}_i$};
+\node[anchor=north] at (153,\ra-1.8) {\mth $O^{\mathrm{far}}_i$};
+% SCA: two native views, one weight per head
+\node[text=scaAccent] at (16,{\rb+0.5*\ts}) {\lab\bfseries SCA};
+\node at (39,{\rb+0.5*\ts}) {\bigsym $\approx$};
+\node at (50,{\rb+0.5*\ts}) {\mtb $\pi_h$};
+\Cv{58}{\rb}{\ts}{1}
+\node at (96.3,{\rb+0.5*\ts}) {\mth $+$};
+\node at (118,{\rb+0.5*\ts}) {\mtb $(1-\pi_h)$};
+\Cv{137}{\rb}{\ts}{3}
+\node[anchor=north, text=scaLocalText] at (74,\rb-1.8) {\mth $O^{\mathrm{loc}}_i$};
+\node[anchor=north, text=scaGlobalText] at (153,\rb-1.8) {\mth $O^{\mathrm{glob}}_i$};
+
+% ================================================================== (b) emulate the target's ratio at 1024^2
+\node[anchor=north west] at (182,195.8) {\ttl (b) Emulate at 1024\textsuperscript{2}};
+\Tg{182}{122}{56}
+\node[anchor=north, text=scaMid] at (210,120.2) {\sml 4096\textsuperscript{2}};
+\fill[scaGrid] (239.5,178) -- (257.5,164) -- (257.5,136) -- (239.5,122) -- cycle;
+\node at (248.5,150) {\mth $\div r$};
+\Em{258}{136}{28}
+\node[anchor=north, text=scaMid] at (272,134.2) {\sml 1024\textsuperscript{2}};
+\node at (236,100) {\mth $r=\frac{n}{w}=\frac{256}{64}=\frac{64}{16}$};
+
+% ================================================================== (c) fit each weight in closed form
+\node[anchor=north west] at (302,195.8) {\ttl (c) Closed-form fit};
+\node at (350,180) {\mts $J(\pi)=E-2\pi B+\pi^2 A$};
+\Quad{316}{138}{64}{32}
+\node at (350,117) {\mts $\pi^\star=\mathrm{clip}(B/A,0,1)$};
+\draw[arr] (321,111) -- (321,104.5);
+\Cards{306}{78}{30}{22}
+\node[anchor=west] at (346,98) {\sml reach};
+\node[anchor=west] at (346,90) {\sml table};
+\node[anchor=west] at (346,80.5) {\mts $\pi_{lh}(\sigma;r)$};
+
+% ================================================================== (d) sample progressively
+\node[anchor=north west] at (0,74) {\ttl (d) Sample progressively};
+\def\cy{14}
+\node[anchor=south west] at (0,\cy+2) {\includegraphics[width=26pt]{../method_v3/noise.png}};
+\draw[arr] (28,\cy+15) -- (36,\cy+15);
+\draw[nblk] (38,\cy+3) rectangle ++(24,24);
+\node at (50,\cy+15) {\sml full};
+\node[anchor=north, text=scaMid] at (50,\cy) {\sml 1024\textsuperscript{2}};
+\draw[arr] (64,\cy+15) -- (76,\cy+15);
+\node[anchor=south, text=scaMid] at (70,\cy+16.5) {\mts $\times2$};
+\SCAStage{78}{\cy}{112}{2}
+\node[anchor=north, text=scaMid] at (134,\cy-1.2) {\sml 2048\textsuperscript{2}, \mts$r=2$};
+\draw[arr] (192,\cy+15) -- (204,\cy+15);
+\node[anchor=south, text=scaMid] at (198,\cy+16.5) {\mts $\times2$};
+\SCAStage{206}{\cy}{112}{4}
+\node[anchor=north, text=scaMid] at (262,\cy-1.2) {\sml 4096\textsuperscript{2}, \mts$r=4$};
+\draw[arr] (320,\cy+15) -- (328,\cy+15);
+\node[anchor=south west] at (330,\cy-9) {\includegraphics[width=50pt]{../method_v3/target_4096.jpg}};
+% the reach table feeds both SCA stages
+\draw[line width=0.6pt, scaInk] (321,78) -- (321,56) -- (134,56);
+\draw[arr] (134,56.3) -- (134,\cy+30.6);
+\draw[arr] (262,56) -- (262,\cy+30.6);
+\end{tikzpicture}
+\end{document}

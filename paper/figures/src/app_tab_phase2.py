@@ -273,7 +273,8 @@ def krea_6144():
                rf"metrics; {claim}.}} Method minus AReA with 95\% paired intervals over "
                + (r"100 prompts at $6144^2$ and for DyPE and SEGA, which ran only those, and all 195 for single-pass \sca{} on "
                   r"FLUX.1-Krea-dev. The first column is " if late.KREA195 else "100 prompts each. The first column is ")
-               + r"FLUX.1-dev at $6144^2$, the others FLUX.1-Krea-dev at $4096^2$ with a Krea-calibrated \sca{} table. "
+               + r"FLUX.1-dev at $6144^2$, the others FLUX.1-Krea-dev at $4096^2$ with a reach table fitted on "
+               r"FLUX.1-Krea-dev. "
                + intervals + r". Lower is better for FID, KID, their patch versions, and time. \up{Blue} / \dn{orange}: "
                r"significantly better / worse than AReA. Time is the campaign mean on shared GH200 nodes." + "\\" + note
                + "}")

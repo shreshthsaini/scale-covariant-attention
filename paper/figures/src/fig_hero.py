@@ -368,7 +368,7 @@ def main() -> None:
     caption = (
         r"\textbf{\sca{} keeps layout and fine detail at $4096^2$ and $2048\times6144$ without "
         r"training.} "
-        + r"Top: curated \sca{} outputs with native-pixel insets. Bottom: one curated prompt at "
+        + r"Top: \sca{} outputs with native-pixel insets. Bottom: one prompt at "
         r"$4096^2$, each full image above the same 1:1 crop; UltraImage uses its own two-stage "
         r"recipe.")
     SNIPPET.write_text("\n".join([

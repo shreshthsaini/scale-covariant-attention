@@ -1,10 +1,10 @@
-"""Calibrated mixing weights pi_h(sigma) and how well a table transfers across scale and resolution.
+"""Reach tables: fitted mixing weights pi_h(sigma) and how well a table transfers across scale and resolution.
 
 (a-c) pi_h(sigma) of the scale-4 table used at inference, three sigma bins below the gate.
-(d)   Mean and interquartile range of pi over all 57 x 24 heads against sigma, three calibrations.
-(e)   Relative output error of each table on each calibration target, as excess over the
-      target's own per-head table, with the target's own per-layer fit as a reference. Each bar
-      carries its value (%, one decimal, 6.5 pt) above it, the lowest of each target in bold.
+(d)   Mean and interquartile range of pi over all 57 x 24 heads against sigma, three reach tables.
+(e)   Relative output error of each table on each emulated setting, as excess over the
+      setting's own per-head table, with the setting's own per-layer fit as a reference. Each bar
+      carries its value (%, one decimal, 6.5 pt) above it, the lowest of each setting in bold.
 Panels (d) and (e) carry thin light-grey horizontal gridlines behind the data (plot standard of
 2026-10-19); the heatmaps (a-c) carry none.
 
@@ -16,7 +16,7 @@ Data (compact copies, so the figure does not depend on scratch):
     json keeps res, n_prompts, sigma_centers, populated_bins, scales, settings, transfer.
 Every error shown is recomputed from the per-cell statistics and asserted against the reports.
 
-Regenerate: <sca env python> paper/figures/src/fig_calib.py
+Regenerate: <sca env python> paper/figures/src/fig_reach_tables.py
 """
 
 import json
@@ -215,10 +215,10 @@ def main():
     eax.set_xlim(-0.5, len(CONFIGS) - 0.5)
     eax.set_ylim(0, top * E_HEADROOM)
     sf.value_grid(eax, "y")
-    eax.set_xlabel("calibration target")
+    eax.set_xlabel("emulated setting")
     eax.set_ylabel("excess error (%)")
     letter(fig, eax, "e")
-    sf.save(fig, os.path.join(FIGDIR, "calib"))
+    sf.save(fig, os.path.join(FIGDIR, "reach_tables"))
 
     print("heatmap scale", HEAT_SCALE, "bins", [f"{sig[b]:.3f}" for b in heat_bins])
     for key, _, _ in CONFIGS:

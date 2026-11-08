@@ -409,7 +409,7 @@ def plot(d: dict, img_a: np.ndarray, img_b: np.ndarray) -> tuple:
     cx.text(0.40, 0.715, "median", color=sf.SCA, va="top", **lab)
     cx.text(0.10, 0.47, "mid", color=sf.INK, va="top", **lab)
     cx.text(0.20, 0.13, "global", color=GLOBAL_TEXT, va="bottom", **lab)
-    title(fig, xc - 0.33, y_title, r"(c) Calibrated $\pi_h$")
+    title(fig, xc - 0.33, y_title, r"(c) Fitted $\pi_h$")
 
     # (d) pi against the share within 16 tokens
     dx = fig.add_axes([xd / W, yc / H, wd / W, hc / H], sharey=cx)

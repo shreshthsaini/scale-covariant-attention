@@ -1,6 +1,6 @@
 """Per-head mixing weight pi_h(sigma) at three noise levels (emulated scale 2).
 
-Same visual language as fig_calib.py: the pi colormap (blue = global at 0, amber = local at 1),
+Same visual language as fig_reach_tables.py: the pi colormap (blue = global at 0, amber = local at 1),
 a subtle white line between double- and single-stream blocks, and one slim colourbar.
 
 Regenerate: <sca env python> paper/figures/src/fig_pi_heatmap.py
@@ -25,7 +25,7 @@ W, H = sf.TEXT, 0.40 + 3 * (0.62 + 0.15) + 0.05
 
 
 def pi_colorbar(fig, cax, image):
-    """Slim pi colorbar whose ends read global (0) and local (1), as in fig_calib.py."""
+    """Slim pi colorbar whose ends read global (0) and local (1), as in fig_reach_tables.py."""
     cb = fig.colorbar(image, cax=cax, ticks=[0, 0.5, 1])
     cb.ax.set_yticklabels(["0", "0.5", "1"])
     cb.outline.set_visible(False)

@@ -822,7 +822,8 @@ def published_hrgen(B, pub, ours, pending):
         "\\begin{table}[!htbp]",
         "  \\caption{\\textbf{HRGen-1K: AReA's published Table~2 next to our runs.} All 1000 prompts at $4096^2$, no "
         "reference images. Top: AReA's Table~2 (``FLUX.1'', which its released code runs as FLUX.1-Krea-dev). Bottom: "
-        "single-pass \\sca{} with a Krea-calibrated table on FLUX.1-Krea-dev (28 steps, guidance 4.5), and our paired "
+        "single-pass \\sca{} on FLUX.1-Krea-dev with its own reach table (28 steps, guidance 4.5), "
+        "and our paired "
         "FLUX.1-dev runs of AReA and single-pass \\sca{}. HPSv2 $\\times100$; IS: Inception score; MUSIQ on the full image. "
         "\\textbf{Bold} / \\underline{underline}: best / second best among the "
         "published rows and our FLUX.1-Krea-dev row. Table~\\ref{tab:published_compare} holds the Aesthetic-4K "

@@ -98,7 +98,7 @@ def krea_6144_table():
              r"\begin{table}[!htbp]",
              r"\caption{\textbf{At $6144^2$ \sca{} beats AReA on 14 of 15 metrics; on FLUX.1-Krea-dev it wins six "
              r"metrics and loses ImageReward and patch FID, in a third of the time.} Method minus AReA with 95\% paired intervals over " + ("100 prompts at $6144^2$ and for DyPE and SEGA, which ran only those, and all 195 for \\sca{} on FLUX.1-Krea-dev; first column " if KREA195 else "100 prompts each; first column ") +
-             r"FLUX.1-dev at $6144^2$, others FLUX.1-Krea-dev at $4096^2$ with a Krea-calibrated \sca{} table. Per-image "
+             r"FLUX.1-dev at $6144^2$, others FLUX.1-Krea-dev at $4096^2$ with its own reach table. Per-image "
              r"intervals use 1000 prompt draws; FID, KID, and their patch versions resample prompts and reference-image "
              r"clusters. Lower is better for FID, KID, their patch versions, and time. \up{Blue} / \dn{orange}: "
              r"significantly better / worse than AReA. Time is the campaign mean on shared GH200 nodes.}",

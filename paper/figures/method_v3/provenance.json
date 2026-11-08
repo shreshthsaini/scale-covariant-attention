@@ -1,0 +1,90 @@
+{
+  "figure": "fig:method v3; TikZ sources paper/figures/src/method_v3a.tex, method_v3b.tex, method_v3.tex",
+  "script": "paper/figures/src/fig_method_v3.py",
+  "inputs": {
+    "reach_statistics": {
+      "path": "results/evidence/calib/k1_1024.npz",
+      "sha256": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+      "keys": [
+        "stats",
+        "s2_pi_head",
+        "s4_pi_head",
+        "populated",
+        "sigma_centers"
+      ],
+      "stats_order": [
+        "A",
+        "B",
+        "E_fg",
+        "E_fl",
+        "F2",
+        "count"
+      ]
+    },
+    "images": {
+      "canvas_1024.jpg": {
+        "source": "paper/figures/method_flow/calib.jpg",
+        "sha256": "6fc896dd6f285941477a536620f4f3f540bb9e7e0087cfbbb0d0ed94edd8df40"
+      },
+      "target_4096.jpg": {
+        "source": "paper/figures/method_flow/output_prog.jpg",
+        "sha256": "81baf770d84e5e3e439d14a3ce8a0277d72d6e83273be854247fd2b91c0f9c00"
+      },
+      "noise.png": {
+        "source": "paper/figures/method_flow/noise.png",
+        "sha256": "df46ae933c95b9a5660328099e86071c9044ad74d0361e7c4cda2e09dc8ca08c"
+      }
+    },
+    "image_notes": {
+      "canvas_1024.jpg": "stand-in for the 1024^2 canvas: emulation prompt 1, seed 0, rendered by SCA at 2048^2 and resized (method_provenance.json, calibration_image)",
+      "target_4096.jpg": "progressive SCA output, 4096^2, prompt a4k_eval_4096_minus8343371271909676658, seed 0 (method_provenance.json, output_image_progressive)",
+      "noise.png": "icon, numpy default_rng(20261102) (method_provenance.json, noise)"
+    }
+  },
+  "panel_c": {
+    "sigma_centre": 0.618160605430603,
+    "block_one_based": 12,
+    "ratio": 4,
+    "median_B_over_A": 0.7266514560293595,
+    "heads": {
+      "glob": {
+        "head_one_based": 7,
+        "A": 21818034.828125,
+        "B": -4045958.9633789062,
+        "E": 21815112.0625,
+        "B_over_A": -0.1854410351459966,
+        "pi_star": 0.0
+      },
+      "mid": {
+        "head_one_based": 14,
+        "A": 19328759.1875,
+        "B": 14475081.5625,
+        "E": 14305259.3125,
+        "B_over_A": 0.7488882975923826,
+        "pi_star": 0.7488882975923826
+      },
+      "loc": {
+        "head_one_based": 9,
+        "A": 27776064.25,
+        "B": 28249862.78125,
+        "E": 37982159.96875,
+        "B_over_A": 1.0170577993694696,
+        "pi_star": 1.0
+      }
+    },
+    "rule": "J(pi) = E - 2 pi B + pi^2 A per head (E = E_fg); rescaled per head to [0, 1] over pi in [0, 1]; heads: lowest B/A, highest B/A, and closest to the block median B/A"
+  },
+  "rules": {
+    "table_cards": "block 12, 24 heads sorted by mean ratio-4 weight (local on top) x 13 occupied noise bins, sigma falling left to right, scafig.PI_CMAP, 16x nearest upscale",
+    "key_maps": "vector, drawn to scale: 1024^2 canvas = 64 x 64 tokens with a 16-token window and a 16 x 16 block-centre grid at r = 4; 4096^2 target = 256 x 256 tokens with a 64-token window and a 64 x 64 block-centre grid",
+    "stage_tiles": "schematic (no intermediate stage images were saved)"
+  },
+  "outputs": {
+    "canvas_1024.jpg": "6fc896dd6f285941477a536620f4f3f540bb9e7e0087cfbbb0d0ed94edd8df40",
+    "data.tex": "372f6bde6f004b180a60dd72641a000650aa0f3588cf63678e6f5c63035e725c",
+    "noise.png": "df46ae933c95b9a5660328099e86071c9044ad74d0361e7c4cda2e09dc8ca08c",
+    "table_r2.png": "88a03f054fa4c6cdf850e8248a1906b2900b83f900744184d00d9179a6a88a38",
+    "table_r4.png": "389e564edc54b1e9bcc8c30497255633455cf7706870ac6adc6d7020916ceaee",
+    "target_4096.jpg": "81baf770d84e5e3e439d14a3ce8a0277d72d6e83273be854247fd2b91c0f9c00"
+  }
+}

@@ -62,7 +62,7 @@ def main():
         r'\setlength{\tabcolsep}{1.6pt}\begin{tabular}{@{}cccccc@{}}', *rows,
         r'\end{tabular}',
         r'\captionof{figure}{\textbf{Global composition and fine detail at $4096^2$.} '
-        r'One curated evaluation prompt across six methods: full images above, identical '
+        r'One evaluation prompt across six methods: full images above, identical '
         r'$768\times768$ crop coordinates below. The portrait and crop were already present '
         r'in our earlier hero selection. FLUX.1-dev and seed label 0; Full attention, DyPE, '
         r'SEGA, AReA and SCA share 28 steps and guidance 4.5. $^*$UltraImage uses its '

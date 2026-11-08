@@ -56,7 +56,7 @@ SPECS = {
         captions=[
             r"\textbf{At $4096^2$ single-pass SCA keeps texture that AReA blurs or grids.} "
             r"Prompts one to five of 32 drawn at random; 1:1 crops follow.",
-            r"\textbf{At $4096^2$, continued: five more uncurated prompts, AReA against single-pass SCA.} Prompts "
+            r"\textbf{At $4096^2$, continued: five more prompts, AReA against single-pass SCA.} Prompts "
             r"six to ten of the random draw in Figure~\ref{fig:gallery_4096}.",
         ]),
     "gallery_4096x2048": dict(k=2, captions=[

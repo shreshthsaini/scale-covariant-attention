@@ -536,7 +536,7 @@ def fig_main(a):
            r"artifacts, and SCA keeps both layout and fine detail.} FLUX.1-dev, same prompt and seed (0) per "
            r"column pair; each full image is followed by a 1:1 crop of its outlined 512$\times$512 window. "
            r"Crop windows are chosen automatically as the region with the most edge energy averaged over the "
-           r"three methods. Prompts were picked for variety from the 191 evaluation prompts; uncurated random "
+           r"three methods. Prompts come from the 191 evaluation prompts; more "
            r"samples are in Figure~\ref{fig:gallery_4096}.")
     snippet("qual_main", lines, cap, "fig:qual_main", comments=prompt_comments([("sca", res, s) for s in MAIN]))
 
@@ -629,7 +629,7 @@ def fig_gallery_square(a):
             for j, s in enumerate(page[i:i + per_row]):
                 cells += ([G_BLOCK] if j else []) + pair_cells(t, s, methods, box[s], res)
             rows.append((g_row(cells), G_ROW))
-        cap = rf"\textbf{{Uncurated samples at {wxh(res)}: {vs}{', continued' if pi else ''}.}} "
+        cap = rf"\textbf{{Samples at {wxh(res)}: {vs}{', continued' if pi else ''}.}} "
         if pi == 0:
             cap += (rf"{count_word(len(ids))} evaluation prompts drawn at random (selection seed~{a.seed}), excluding "
                     rf"development and main-text prompts. {FLUX1}. Each image is followed by a native-pixel crop of "
@@ -674,7 +674,7 @@ def fig_gallery_wide(a):
         rows = [(g_row(pair_heads(methods, asp)), G_ROW)]
         rows += [(g_row(pair_cells(t, s, methods, box[s], res)), G_ROW) for s in ids]
         vs = " and ".join(r"\textbf{SCA (ours)}" if m in ACCENT else NAMES.get(m, m) for m in methods)
-        cap = (rf"\textbf{{Uncurated samples at {w}$\times${h} (width$\times$height): {vs}.}} "
+        cap = (rf"\textbf{{Samples at {w}$\times${h} (width$\times$height): {vs}.}} "
                rf"{count_word(len(ids))} evaluation prompts drawn at random, disjoint from the other galleries, "
                rf"excluding development and main-text prompts. {FLUX1}. Each image is followed by a native-pixel "
                r"crop of its outlined 512$\times$512 window of highest edge energy averaged over the methods.")
@@ -714,8 +714,9 @@ def fig_ablation(a):
             full += ([G_GROUP] if k else []) + [t_full(t[f"{s}_{m}"]["full"], b, res)]
             crop += ([G_GROUP] if k else []) + [t_crop(t[f"{s}_{m}"]["crop"])]
         rows += [(g_row(full), G_PAIR), (g_row(crop), G_SECTION)]
-    cap = (r"\textbf{Without the opening phase subjects shrink to a small scale; global only leaves the pooled "
-           r"branch's coarse grid; mean pooling loses the layout.} Four curated prompts at $4096^2$, variants of SCA "
+    cap = (r"\textbf{Without the opening phase, subjects shrink to a small scale; global only leaves the pooled "
+           r"branch's coarse grid; mean pooling loses the layout.} Four of the 46 ablation prompts at $4096^2$ "
+           r"and seed~0, variants of SCA "
            r"without the schedule "
            r"(Table~\ref{tab:ablation}); 1:1 crops below.")
     grid_snippet("ablation", geo, rows, cap, "fig:ablation_grid",
@@ -773,8 +774,9 @@ def fig_failures(a):
         rows.append((g_row(cells, label=lab), G_ROW))
     # Audited 2026-10-20 at 1:1: the dancer window holds an extra raised foot, not a foot replacing an arm; none of
     # the four named errors appears in AReA's windows.
-    cap = (r"\textbf{Local errors of \sca{} without the schedule.} Four curated prompts at $4096^2$, each full image "
-           r"with its window, then the window at 1:1, showing a staircase sword, a blocky patch, a malformed foot, and border"
+    cap = (r"\textbf{Local errors of \sca{} without the schedule.} Four Aesthetic-4K evaluation prompts at $4096^2$ "
+           r"and seed~0, each full image "
+           r"with its window, then the window at 1:1, showing a staircase sword, a blocky patch, a malformed foot, and border "
            r"speckle. AReA's same windows (top row) show none of them.")
     # below the section text (a top float after \clearpage would sit above the section heading)
     grid_snippet("failures", geo, rows, cap, "fig:failures", env="figure", placement="!hb", pre_geo=FAIL_LABEL_PRE,

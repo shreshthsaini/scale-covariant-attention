@@ -76,11 +76,13 @@ def main():
         inputs.append(path)
     manifest = {str(p.relative_to(paper)): sha256(p) for p in inputs}
     warnings = compile_paper(paper, build / "primary")
-    # Ship only the figure assets the build actually read: unused renders, previews (.svg) and
-    # superseded image sets stay in the repository but not in the portable ZIP.
+    # Ship only the figure assets and LaTeX files the build actually read: unused renders, previews (.svg),
+    # superseded image sets and unused snippets stay in the repository but not in the portable ZIP.
     used = used_files(build / "primary")
-    asset = {".pdf", ".png", ".jpg", ".jpeg", ".svg"}
-    inputs = [p for p in inputs if p.suffix.lower() not in asset or str(p.relative_to(paper)) in used]
+    if "main.tex" not in used:
+        raise RuntimeError("deps.mk does not list main.tex; cannot tell which sources the build read")
+    read_only_if_used = {".pdf", ".png", ".jpg", ".jpeg", ".svg", ".tex"}
+    inputs = [p for p in inputs if p.suffix.lower() not in read_only_if_used or str(p.relative_to(paper)) in used]
     manifest = {str(p.relative_to(paper)): sha256(p) for p in inputs}
     if any(sha256(p) != manifest[str(p.relative_to(paper))] for p in inputs):
         raise RuntimeError("Paper sources changed during the primary build; rerun after edits finish")
