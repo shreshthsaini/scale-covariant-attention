@@ -1413,3 +1413,44 @@ Addendum 2026-11-06 (lead): user directive: do not cancel any job; use every GPU
   self-releasing 0a0_eval_prog_hrgen1k writes results/prog_hrgen1k (with SHA256SUMS) and eval/prog_hrgen1k/DONE,
   expected about 21:30. Commit results/prog_hrgen1k when DONE appears. Nothing of the method owner's is left
   running on i615-091.
+
+## 31. 2026-11-07 evening: paper and web rewritten with progressive SCA as the headline (paper owner)
+User decisions (binding, via lead): progressive SCA (HRDiT's three-stage schedule with sca_v2 attention at the 2048^2
+and 4096^2 stages; HRDiT credited) is the headline and single-pass SCA the fast mode; framing per
+.agent/notes/positioning_20261105/recommendation.md (a head's reach is a property of the head; variance split as the
+hook); no duplication content anywhere in paper or web except the one dictated limitations sentence; later priorities
+(protocol in one place, paired margins first, curated qualitative evidence, rebuilt method diagram, interim PDF).
+- Delivery: /scratch/09032/saini_2/sca/paper_builds/delivery_fwhllii_ (commit c9dd2e9), 54 pp, main text pages 1-10,
+  0 overfull, 0 undefined, fresh unzip builds to 54 pp; hashes in .agent/notes/latest_delivery.md. Interim delivery
+  delivery_ru0txknm (80078a9) went to the lead earlier.
+- Source: paper/main.tex (preamble + main text) and paper/appendix.tex (\input after the bibliography). New title
+  "Scale-Covariant Attention: Per-Head Receptive Fields Calibrated at the Training Resolution".
+- Main text: abstract with the hook (97.5% head, 2.5% noise level) and headline (all ten per-image metrics against
+  AReA at each of three seeds, 4.1x its speed; HRDiT's preference scores in 49.2 against 107.0 s). Figure 1 curated
+  progressive hero (fig_hero_prog.py). Figure 2 (method_v2, chosen from two candidates against the gold-standard
+  recipe): (a) AReA's one switch vs 1,368 per-head curves, (b) calibration picture equation, (c) progressive stages.
+  Section 2.5 + Algorithm 3 for progressive SCA. Section 3 opens with the variance split (Table B.1). Section 4 opens
+  with the protocol in one place (195 Aesthetic-4K prompts as AReA, DyPE, TIDE, SigMa; 1000 HRGen-1K as AReA; three
+  seed labels; 2000-draw paired intervals, 1000-draw set-level with reference clusters; FID at 299^2; released code;
+  clean timing sweep 3). Table 1 has progressive SCA as the headline row and colours every other row against it;
+  Figure 4 both modes minus AReA; Figure 5 curated grid AReA / UltraImage / HRDiT / progressive with 1:1 crops.
+  The fidelity trade-off against single-pass SCA (MUSIQ_c -6.0, patch FID +9.2) and the patch FID gap to AReA
+  (significant at seeds 0 and 2, not 1) and to HRDiT are stated in results, introduction and limitations; the HRDiT
+  comparison names its confound (fp16 runner vs our bf16).
+- Appendix: duplication appendix, band guard, frequency argument, repeated-subject failures and Dup. columns removed;
+  Appendix L progressive SCA (protocol, Table L.1 against every baseline, L.2, Figures L.1 and L.2); galleries open
+  with a curated two-page progressive gallery and the uncurated progressive gallery; configuration named everywhere.
+- Web: progressive hero, concept chart, four-method curated block, method_v2, three seeds, 49.2 s; duplication section
+  and examples removed; build_numbers.py strict check 348/349 quotes match, 0 mismatches; web/ 69 MB.
+- Results folded in: prog195_vs_baselines (+cfid), prog195_pairs, prog_latency (sweep 3, half-up rounding of 49.15 to
+  49.2 from raw median 49.153 s), prog195_s1, prog195_s2 (+ corrected_fidp_ci).
+- PENDING: progressive HRGen-1K (results/prog_hrgen1k, expected about 21:30): gen_main_tables.py already reads
+  prog_hrgen1k/sca_v2_prog_vs_area.csv into Table 3 and the seed macros; rerun it, update the "HRGen-1K is pending"
+  sentences in Section 4.4 and the Table 3 caption, rebuild with paper/build_delivery.py, and refresh the web numbers.
+- Notes for the lead: the code URL in the abstract names the author (swap before a double-blind submission); faint
+  tiled-VAE seams (1-2 grey levels) and an 8 px lattice harmonic are visible at 1:1 in some progressive images
+  (invisible at print); Krea runs single-pass only.
+Rubric self-score (gold-standard 22 items, 0/1/2): abstract 1, hero 2, footnotes 1, question and wrap 1, introduce
+and bullets 2, sentence length 1, method diagram 2, equations 1, algorithms 2, setup run-ins 1, main table 2, finding
+paragraphs 2, ablations 1, plots under 6 pt 1, qualitative grid 2, limitations 2, reproducibility 2, appendix 2,
+float placement 1, captions 1, colours 1, dashes and section symbol 1. Mean 1.45 (32/22), no zero.
