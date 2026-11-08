@@ -1626,3 +1626,47 @@ reach emulation with the new attention-focus figures instead of the curve bundle
   its data file, the head-curve teaser loop, the heads_view figure and the rings and emulation diagrams are off the page.
 - Checks: check_page.py PASS on desktop, phone, light and dark and on web/review/ (wheel, drag, synthetic pinch,
   double-click, auto zoom, pause); file:// works on both pages; live site checked headless after each publish.
+
+## 36. 2026-11-08: Ideogram 4 at 8192^2 (Ideogram owner; log .agent/notes/ideogram4_20261108.md)
+Goal (user, via lead): SCA on Ideogram 4 at 8192^2 (twice its native 4096^2) against full attention, SEGA, NTK and YaRN at
+8192^2, with Ideogram 4 at 4096^2 shown separately as the native reference (no upscale comparison); results go to the
+web page (synced-zoom grids) and the paper (generality row, figure). Scope (lead, 2026-11-08 02:10): 10 prompts for SCA,
+SEGA, full attention and 4096^2; NTK and YaRN on 3; seed 0; cut full attention to 5 prompts if it costs over 3 GPU-h.
+- Weights: ideogram-ai/ideogram-4-nf4-diffusers snapshot 1874bc70 (gated; the user accepted the terms 2026-11-08) and
+  diffusers/qwen3-vl-8b-instruct-lm-head 9728767e (caption upsampling) in HF_HOME=/scratch/09032/saini_2/tmp/hf; all
+  16 files match the Hub SHA256. Env: the sca env (diffusers 0.39, torch 2.11, bitsandbytes 0.50.2); no new env.
+- One code path: every method runs the pinned SEGA copy third_party/sega/ideogram4_sega (pipeline + transformer;
+  diffusers 0.39's built-in Ideogram 4 lacks its padding trim and maskless path, without which a dense mask over more
+  than 65,536 tokens corrupts the bottom rows). NTK / YaRN / SEGA are its set_rope_scaling methods (train grid 256);
+  full attention and SCA run with RoPE scaling off. Defaults kept: 48 steps, guidance 7.0 x 45 then 3.0 x 3, dual CFG
+  (separate unconditional transformer), logit-normal schedule of the run's size, bf16 on nf4.
+- Port (sca/ideogram4.py, 619d0cd + bf2d882): 34 single-stream blocks, 18 heads x 256. Interleaved M-RoPE (h comb
+  1, 4, ..., 58; w comb 2, 5, ..., 59; t the other 88; text at (j, j, j), image at 65536 + (0, r, c)) is applied in the
+  rotate-half layout; the processor permutes q / k channels into adjacent pairs once per call, so sca/attn.py's kernels
+  run unchanged. The global branch's coarse ids change only the h / w combs (65536 + r // f); t and text keep their
+  positions, so every text-image phase is that of a native image. Both transformers run SCA, each with its own reach
+  table (the unconditional pass has no text, L = 0; sca.attn.rope now passes empty inputs through). n0 = 256.
+- Tests: tests/test_ideogram4.py, 14 CPU tests (full mode bit-identical to stock; SCA at native extent equals full
+  attention for pi 0, 1, 0.37, flex and gather, with and without text; brute-force native geometry of the global branch;
+  only h / w combs move; layout checks; the scripts end to end on a tiny pipeline). The 63 Qwen / FLUX.2 / SCA / dedup
+  tests still pass.
+- Scripts: scripts/ideogram4_captions.py (JSON captions once per prompt, seeded, shared by every method and size),
+  scripts/calibrate_ideogram4.py (reach emulation, ratio 2, one table per transformer, 28 sigma bins because the
+  logit-normal schedule keeps 17 of 48 steps above sigma 0.93 at 4096^2), scripts/sample_ideogram4.py,
+  scripts/ideogram4_gpu_check.py (identity on GPU, flex kernel options at head_dim 256, step cost at 8192^2),
+  slurm/ideogram4_tasks.py (spool tasks; frozen tree /scratch/09032/saini_2/sca/code/ideogram4_bf2d882).
+- SCA configuration (sca_v2 mapped to 48 steps like the Qwen port): 14 global steps (gate 0.97444), then windows 512,
+  448, 384, 320 for two steps each (win-sched 0.96957:512,0.96413:448,0.95802:384,0.95112:320, win-pi-match and interp;
+  below the fitted scale 2 the scale-2 table is used), native 256 after; bridge 8 x 16; tile 8; reach tables
+  /scratch/09032/saini_2/sca/calib/ideogram4_4096_{cond,uncond}.npz (2048^2 fit as a transfer check).
+- Prompts: the 10 prompts the page already features in the four categories (web/build/ideogram4_prompts.jsonl, order =
+  priority): p01 watch, l04 hillside town, h01 silver braids, l06 atoll, l03 opera house, p08 ring, h03 watchmaker,
+  l05 palm house, p09 necklace, p11 honey jars; NTK / YaRN on the first 3.
+- Spool (lead's order): 00a1_00 check, 00a1_01 captions (releases the fits), 00a1_10/11 fits at 2048^2 and 4096^2,
+  00a1_28/29 merges, 00a1_3x SCA at 8192^2 (released by the 4096^2 merge); 00s1a1_2x SEGA and 00s1a1_5x 4096^2 after
+  the Qwen check; 00z_a1_* full attention, NTK and YaRN last. Held tasks wait in taskq/hold_ideogram4. Outputs
+  /scratch/09032/saini_2/sca/out/ideogram4/ideogram4_<method>/<HxW>/, markers out/ideogram4/_done, GPU logs _gpu.
+- Status 02:40: all tasks enqueued; no SCA GPU job running (SCSd, SCS1, SCS2 pending; gh 570 of 577 nodes busy).
+  Next: read check.json when it lands (identity, step cost; decide 5 or 10 full-attention prompts), then eval
+  (results/ideogram4_8k), web export (web/assets/img/ideogram4, web/build/ideogram4_manifest.json), paper snippet and
+  figure script (paper/figures/snippets/ideogram4.tex, paper/figures/fig_ideogram4.py).
