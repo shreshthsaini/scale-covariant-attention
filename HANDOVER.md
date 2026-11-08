@@ -1687,3 +1687,5 @@ SEGA, full attention and 4096^2; NTK and YaRN on 3; seed 0; cut full attention t
   Next: read /scratch/09032/saini_2/sca/ideogram4/check/check.json when it lands (identity on GPU, flex options, step
   cost; decide 5 or 10 full-attention prompts), report the first SCA image's seconds and peak memory, then after the
   evaluations run the web export and the two paper scripts, commit results/ideogram4_8k.
+
+Addendum 2026-11-08 02:50 (lead): controller i615-091 (job 1125760, also this lead session) ends 04:58. gpu_watch.sh now also runs on i617-052 (job 1126651, ends about 16:00); a fresh 48 h controller job 1129781 is queued. Resume from a new session on whichever controller is up: "continue SCA from HANDOVER". In flight: showcase campaign (FLUX.1 progressive, FLUX.2, Qwen-Image; Sections 32-33), Ideogram 4 at 8192^2 (Section 36, 50 tasks queued), paper figure pass (Section 34), web page live via web/build/publish_pages.sh. All wait on SCS1/SCS2/SCSd (pending, gh saturated).
