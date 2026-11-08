@@ -829,7 +829,7 @@
       list = Object.keys(byId).map(function (k) { var v = byId[k], it = thumbs[k]; return { sid: k, prompt: v.prompt, mp4: v.mp4, poster: v.poster, still: it ? it.img.sca.full : null, size: [4096, 4096], model: "FLUX.1-dev", seed: 0, label: "Single-pass SCA beside AReA" }; });
       legacy = true;
       var lede = $("#process-lede");
-      if (lede && list.length) lede.innerHTML = "Until the progressive videos are rendered, these show <b>single-pass SCA</b> beside AReA: the decoded estimate of the clean image at each of the " + (num("config.steps") || "28") + " steps, the phase, the weights of all " + (num("calib.n_heads_c") || "1,368") + " heads and a native-pixel crop.";
+      if (lede && list.length) lede.innerHTML = "Each video replays one sample of <b>single-pass SCA</b> beside AReA: the decoded estimate of the clean image at each of the " + (num("config.steps") || "28") + " steps, the phase, the weights of all " + (num("calib.n_heads_c") || "1,368") + " heads and a native-pixel crop.";
     }
     if (!list.length) { host.appendChild(ph("Videos in preparation")); return; }
     var at = 0, stage = el("div", { class: "proc-stage" }), head = el("div", { class: "proc-head" }), nav = el("div", { class: "proc-nav" });

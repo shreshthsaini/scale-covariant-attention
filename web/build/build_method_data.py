@@ -79,8 +79,8 @@ def main():
         examples.append(ex)
 
     data = {
-        "source": {"npz": NPZ, "npz_sha256": sha(NPZ), "rings": "results/heads_view/rings.csv",
-                   "rings_sha256": sha(RINGS)},
+        "source": {"table": "FLUX.1-dev reach table at 1024^2 (k1_1024.npz)", "table_sha256": sha(NPZ),
+                   "rings": "results/heads_view/rings.csv", "rings_sha256": sha(RINGS)},
         "blocks": 57, "heads": 24, "sigma": [round(float(s), 4) for s in sig[bins]], "mid": int(np.flatnonzero(bins == MID_BIN)[0]),
         "table": tables, "order": order, "examples": examples, "rings": rings,
     }

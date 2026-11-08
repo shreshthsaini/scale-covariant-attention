@@ -57,7 +57,7 @@ def one(job):
     sid, method, src = job
     im = Image.open(src).convert("RGB")
     W, H = im.size
-    rec = {"source_png": src, "png_sha256": sha(src), "size": [W, H]}
+    rec = {"png_sha256": sha(src), "size": [W, H]}
     v = im.resize((VIEW, round(VIEW * H / W)), Image.LANCZOS)
     p = os.path.join(IMG, f"{sid}_{method}.webp")
     v.save(p, "WEBP", quality=78, method=6)

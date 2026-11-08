@@ -144,7 +144,7 @@
 
     <figure class="paper-fig" id="method-fig">
       <button class="pf" type="button" aria-label="Open the method figure full size"><img src="assets/img/method/method_v3.webp" width="2400" height="1184" loading="lazy" alt="Method figure in four panels: full attention split exactly into near and far outputs, and SCA's per-head mix of a local window and a global grid; reach emulation at 1024 squared with the same image-to-window ratio; the closed-form fit of the weight; progressive sampling from 1024 squared to 4096 squared."></button>
-      <figcaption><b>The method in one figure</b> (from the paper). (a) Full attention splits exactly into outputs over near and far keys, mixed by each query's near mass <i>m</i><sub><i>i</i></sub>; SCA mixes a local window and a grid of block centres with one weight &pi;<sub><i>h</i></sub> per head. (b) Reach emulation shrinks both views by the target's ratio <i>r</i> onto 1024&sup2; images. (c) The error is quadratic in &pi;, so &pi;* = clip(B/A, 0, 1) fills the reach table. (d) Progressive SCA reads the table at <i>r</i> = 2 and 4 in HRDiT's upper two stages. The rows below take each step apart with the real numbers.</figcaption>
+      <figcaption><b>The method in one figure</b> (from the paper). (a) Full attention splits exactly into outputs over near and far keys, mixed by each query's near mass <i>m</i><sub><i>i</i></sub>. SCA mixes a local window and a grid of block centres with one weight &pi;<sub><i>h</i></sub> per head. (b) Reach emulation shrinks both views by the target's ratio <i>r</i> onto 1024&sup2; images. (c) The error is quadratic in &pi;, so &pi;* = clip(B/A, 0, 1) fills the reach table. (d) Progressive SCA reads the table at <i>r</i> = 2 and 4 in HRDiT's upper two stages. The rows below take each step apart with the real numbers.</figcaption>
     </figure>
 
     <div class="step-row">
@@ -391,7 +391,7 @@
       <h2 id="h-commercial">Ideogram 4.0 at the same prompts</h2>
       <p class="lede-c">Progressive SCA on FLUX.1-dev, one GPU and no training, beside Ideogram 4.0 on six prompts, with 512&nbsp;&times;&nbsp;512 native crops centred on the same point of each scene. Ideogram generates up to about 4 megapixels and reaches 4096&sup2; only through an upscaler; SCA samples 4096&sup2; directly.</p>
     </div>
-    <p class="note-box"><b>Placeholder.</b> The Ideogram images have not been added. Generate each prompt once with Ideogram 4.0 at 1:1 and the largest size offered, without prompt expansion or style presets, keep the first result, save it as <code>web/assets/ideogram/&lt;prompt_id&gt;.png</code> and run <code>web/build/build_ideogram.py</code>. The steps are in <code>web/README.md</code>.</p>
+    <p class="note-box"><b>Placeholder.</b> The Ideogram 4.0 images are not in yet. Each will be generated once from the prompt text as written, at 1:1 and the largest size Ideogram offers, without prompt expansion or style presets, and the first result kept. Until then the right-hand panels stay empty.</p>
     <div class="vs-grid" id="vs-grid"></div>
   </div>
 </section>
@@ -430,7 +430,7 @@
 
 <footer>
   <div class="wrap prose">
-    <p>Every number on this page is read from <code>results/</code> by <code>web/build/build_numbers.py</code>. Images are FLUX.1-dev at seed label 0 unless noted. Progressive SCA runs HRDiT's <span data-num="main.prog.steps">30+17+10</span> steps at guidance <span data-num="prog.cfg.guidance">3.5, 4.5 and 6.0</span>; single-pass SCA and AReA run <span data-num="config.steps">28</span> steps at guidance <span data-num="config.guidance">4.5</span>. Image sizes are width &times; height.</p>
+    <p>Every number on this page is generated from the result files behind the paper's tables. Images are FLUX.1-dev at seed label 0 unless noted. Progressive SCA runs HRDiT's <span data-num="main.prog.steps">30+17+10</span> steps at guidance <span data-num="prog.cfg.guidance">3.5, 4.5 and 6.0</span>; single-pass SCA and AReA run <span data-num="config.steps">28</span> steps at guidance <span data-num="config.guidance">4.5</span>. Image sizes are width &times; height.</p>
   </div>
 </footer>
 
