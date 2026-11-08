@@ -56,8 +56,8 @@ snap start >> $LOG/{name}.apps
 """
 
 
-WAIT = """for i in $(seq 1 20); do [ -s {path} ] && break; sleep 30; done
-if [ ! -s {path} ]; then echo "$(date +%FT%T) {path} not there yet; requeue {name}"; cp "$0" {pending}/{name}; sleep 60; exit 0; fi
+WAIT = """for i in $(seq 1 20); do [ -e {path} ] && break; sleep 30; done
+if [ ! -e {path} ]; then echo "$(date +%FT%T) {path} not there yet; requeue {name}"; cp "$0" {pending}/{name}; sleep 60; exit 0; fi
 """
 
 
