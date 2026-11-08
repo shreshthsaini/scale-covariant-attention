@@ -1505,6 +1505,18 @@ Goal (user, via lead): SCA on FLUX.1-dev, FLUX.2-dev and Qwen-Image at 4096 to 6
   and 1f (aspect, FLUX.2 4096, Qwen 4096); sync_hf.py uploads them under the 97 GB cap (85.9 GB used on 2026-11-06),
   comparison sets stay on scratch. No sync loop was running at 22:10; run repro/migration/sync_incremental.sh once the
   sets are complete.
+- 2026-11-08 morning, Qwen-Image port verified on GPU (SCSd 1129746; out/showcase/_checks/qwen_gpu_check.json): one
+  transformer call at 1328^2 against the stock processors, rel L2 0.0028 (sigma 0.95) and 0.0038 (0.5) in mode full,
+  0.0027/0.0035 with the mix off (pi 0, global branch only), 0.0029/0.0039 with pi 1, all below the bf16 floor of
+  perturbing the input by one ulp (0.0070/0.0077); max abs 0.031. Cost per call (cond, text 34 tokens): 4096^2 full 7.5 s,
+  SCA 2.5 s global, 6.4 s widest window, 3.7 s native window; 5312^2 full 18.7 s, SCA 4.5 / 13.1 / 7.2 s; peak 48 and 52 GB;
+  compile warm-up 10 to 20 s per text length and window. Per-head table calib/qwen_1344.npz (16 prompts, 1344^2):
+  relative error per head 0.063 at ratio 2 and 0.180 at ratio 4 (global only 0.36 and 0.74, local only 0.082 and 0.216),
+  split-half correlation 0.97.
+- First pairs tranche at the spool head (000p_*, slurm/showcase_tasks.py pairs): FLUX.2-dev 5120^2 and Qwen-Image 5312^2,
+  SCA and full attention, prompts 0-2 of showcase40 (sc_p01..p03, the ones fig_showcase_models.py takes first). Then:
+  manifest (build_showcase.py), backbones entries in web/build/showcase_page.json, build_showcase_page.py, paper snippets
+  (fig_showcase_models.py --model FLUX.2-dev / Qwen-Image; switches stay off for the paper owner).
 
 ## 33. 2026-11-07 night: no "calibration", no curation language, new method figure (paper owner)
 User directives (via lead): (1) drop "calibration" and its forms everywhere in the paper (text, figures, tables,
