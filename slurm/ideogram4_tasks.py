@@ -6,7 +6,8 @@ step cost), captions, the reach tables (2048^2 and 4096^2, ratio 2) and single-p
 SEGA at 8192^2 and Ideogram 4 at its native 4096^2 run as 00s1a1_* (after the Qwen check 00s0); full attention (10
 prompts), NTK and YaRN (3 prompts) at 8192^2 run last as 00z_a1_*. Dependencies by release: the caption task moves
 the held reach-emulation tasks from taskq/hold_ideogram4 into pending; the last part of each table moves its merge
-task (00a1_28, 00a1_29); the 4096^2 merge moves the SCA tasks. Every task waits for its free-memory need and otherwise requeues itself
+task (00a1_28, 00a1_29); the 4096^2 merge moves the SCA tasks; the generation tasks release
+the evaluations (00a1_40 after SCA and SEGA, 00z_a1_90 after everything). Every task waits for its free-memory need and otherwise requeues itself
 (other projects' processes share some GPUs); co-tenant logs go to out/ideogram4/_gpu/<task>.apps.
 Outputs: /scratch/09032/saini_2/sca/out/ideogram4/ideogram4_<method>/<HxW>/ (PNG + JSON sidecar per prompt).
 Usage: slurm/ideogram4_tasks.py GROUP [GROUP ...] --code DIR [--dry]   (groups: prompts, a1, s1, z)
@@ -38,6 +39,9 @@ ENV = ("export HF_HOME=/scratch/09032/saini_2/tmp/hf TORCH_HOME=/scratch/09032/s
 SCA_V2 = ("--method sca --n0 256 --tile 8 --gate-sigma 0.97444 --bridge-cells 8 --bridge-k 16 "
           "--win-sched 0.96957:512,0.96413:448,0.95802:384,0.95112:320 --win-pi-match --win-pi-interp "
           f"--pi-table {TABLE}_cond.npz --pi-table-uncond {TABLE}_uncond.npz")
+EVAL = f"{PY} scripts/ideogram4_eval.py --results {P}/results/ideogram4_8k"
+STAGE1 = ("00a1_3", "00s1a1_2")                  # SCA and SEGA at 8192^2
+STAGE2 = ("00a1_3", "00s1a1_2", "00s1a1_5", "00z_a1_")   # every generation task
 GEN = f"{PY} scripts/sample_ideogram4.py --prompts {PROMPTS} --captions {CAPTIONS} --seed 0"
 
 GUARD = """G=${{CUDA_VISIBLE_DEVICES:-0}}; G=${{G%%,*}}; NEED={need}; LOG={out}/_gpu; mkdir -p $LOG
@@ -61,6 +65,15 @@ if [ ! -e {path} ]; then echo "$(date +%FT%T) {path} not there yet; requeue {nam
 def release(pattern):
     """Shell lines moving held tasks matching pattern into pending (atomic rename; a task already moved is skipped)."""
     return f"for t in {HOLD}/{pattern}; do [ -e \"$t\" ] && mv -n \"$t\" {PENDING}/ && echo \"released $(basename $t)\"; done\n"
+
+
+def gate(me, patterns, target):
+    """Shell lines releasing the held evaluation task `target` once no task matching `patterns` is left in pending,
+    running or the hold folder (the calling task `me`, still in running, excluded). A failed generation task does not
+    block: the evaluation scores what exists and pairs on common prompts."""
+    pat = "|".join(patterns)
+    return (f"left=$(ls {PENDING} {S}/taskq/running {HOLD} 2>/dev/null | grep -E '^({pat})' | grep -v '^{me}' | wc -l)\n"
+            f"if [ \"$left\" -eq 0 ]; then\n" + release(target) + "fi\n")
 
 
 def parts_done(stem, n):
@@ -137,30 +150,36 @@ def group_a1(dry, code):
     for k, pid in enumerate(ORDER):
         task(f"00a1_3{k}_sca8k_{pid}", 120, f"single-pass SCA (sca_v2) at 8192^2, {pid}", code,
              f"{GEN} --res 8192x8192 --ids {pid} {SCA_V2} --out {OUT}/ideogram4_sca/8192x8192", dry, need=72,
-             wait=f"{TABLE}_uncond.npz", hold=True)
+             wait=f"{TABLE}_uncond.npz", hold=True,
+             post=gate(f"00a1_3{k}_", STAGE1, "00a1_40_eval8k") + gate(f"00a1_3{k}_", STAGE2, "00z_a1_90_eval8k_all"))
+    task("00a1_40_eval8k", 60, "evaluate SCA and SEGA at 8192^2 (+ whatever else exists), archive results/ideogram4_8k",
+         code, f"{EVAL}", dry, need=40, hold=True)
 
 
 def group_s1(dry, code):
     for k, pid in enumerate(ORDER):
         task(f"00s1a1_2{k}_sega8k_{pid}", 180, f"SEGA at 8192^2 (train grid 256), {pid}", code,
              f"{GEN} --res 8192x8192 --ids {pid} --method sega --train-grid 256 --out {OUT}/ideogram4_sega/8192x8192",
-             dry, need=72, wait=CAPTIONS)
+             dry, need=72, wait=CAPTIONS,
+             post=gate(f"00s1a1_2{k}_", STAGE1, "00a1_40_eval8k") + gate(f"00s1a1_2{k}_", STAGE2, "00z_a1_90_eval8k_all"))
     for a, b in ((0, 5), (5, 10)):
         task(f"00s1a1_5{a // 5}_nat4k_{a:02d}_{b:02d}", 75, f"Ideogram 4 at its native 4096^2, prompts {a}-{b}", code,
              f"{GEN} --res 4096x4096 --start {a} --end {b} --method full --out {OUT}/ideogram4_full/4096x4096", dry,
-             need=50, wait=CAPTIONS)
+             need=50, wait=CAPTIONS, post=gate(f"00s1a1_5{a // 5}_", STAGE2, "00z_a1_90_eval8k_all"))
 
 
 def group_z(dry, code):
     for k, pid in enumerate(ORDER):
         task(f"00z_a1_3{k}_full8k_{pid}", 180, f"full attention at 8192^2, {pid}", code,
              f"{GEN} --res 8192x8192 --ids {pid} --method full --out {OUT}/ideogram4_full/8192x8192", dry, need=72,
-             wait=CAPTIONS)
+             wait=CAPTIONS, post=gate(f"00z_a1_3{k}_", STAGE2, "00z_a1_90_eval8k_all"))
     for m, tag in (("ntk", "40"), ("yarn", "41")):
         for k, pid in enumerate(ROPE_IDS):
             task(f"00z_a1_{tag}{k}_{m}8k_{pid}", 180, f"{m.upper()} at 8192^2 (train grid 256), {pid}", code,
                  f"{GEN} --res 8192x8192 --ids {pid} --method {m} --train-grid 256 --out {OUT}/ideogram4_{m}/8192x8192",
-                 dry, need=72, wait=CAPTIONS)
+                 dry, need=72, wait=CAPTIONS, post=gate(f"00z_a1_{tag}{k}_", STAGE2, "00z_a1_90_eval8k_all"))
+    task("00z_a1_90_eval8k_all", 60, "evaluate every 8192^2 set and the 4096^2 references, archive results/ideogram4_8k",
+         code, f"{EVAL}", dry, need=40, hold=True)
 
 
 def main():
