@@ -234,3 +234,73 @@ def test_valid_caption():
             '"elements":[{"type":"obj","desc":"A steel watch."}]}}')
     assert valid_caption(good)
     assert not valid_caption(good[:-1]) and not valid_caption('{"high_level_description":"x"}')
+
+
+# ----------------------------------------------------------------------------- scripts end to end on a tiny pipeline
+
+def tiny_pipeline(device="cpu", guidance_mode="dual"):
+    """The pinned SEGA Ideogram4Pipeline with tiny random components: 2-block transformers, an 8-channel
+    AutoencoderKLFlux2 (16 px per token, as the real one) and an encode_prompt that packs random text features."""
+    from diffusers.models.autoencoders import AutoencoderKLFlux2
+    from diffusers.schedulers import FlowMatchEulerDiscreteScheduler
+    torch.manual_seed(0)
+    vae = AutoencoderKLFlux2(block_out_channels=(8, 8, 8, 8), latent_channels=32, norm_num_groups=4,
+                             layers_per_block=1).eval()
+    tf = lambda seed: (torch.manual_seed(seed), T.Ideogram4Transformer2DModel(
+        in_channels=128, num_layers=2, attention_head_dim=DH, num_attention_heads=HEADS, intermediate_size=64,
+        adaln_dim=32, llm_features_dim=LLM).eval())[1]
+    pipe = P.Ideogram4Pipeline(scheduler=FlowMatchEulerDiscreteScheduler(), vae=vae, text_encoder=None,
+                               tokenizer=None, transformer=tf(1), unconditional_transformer=tf(2))
+
+    def encode_prompt(prompt, grid_h, grid_w, max_sequence_length, device):
+        n = 3 + len(prompt) % 5
+        g = torch.Generator().manual_seed(len(prompt))
+        feats = torch.zeros(1, max_sequence_length, LLM)
+        feats[:, -n:] = torch.randn(1, n, LLM, generator=g)
+        return (feats, *P.Ideogram4Pipeline._prepare_ids([n], grid_h, grid_w, max_sequence_length, device))
+    pipe.encode_prompt = encode_prompt
+    return pipe
+
+
+def test_scripts_cpu(tmp_path, monkeypatch):
+    import json
+    import sca.ideogram4 as I
+    from PIL import Image
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    import calibrate_ideogram4
+    import sample_ideogram4
+    monkeypatch.setattr(I, "load_pipeline", tiny_pipeline)
+    monkeypatch.setattr(I, "snapshot", lambda repo=I.REPO: tmp_path / "snapshot0")
+    cap = ('{"high_level_description":"A thing.","compositional_deconstruction":{"background":"Plain.",'
+           '"elements":[{"type":"obj","desc":"A thing."}]}}')
+    prompts, captions = tmp_path / "p.jsonl", tmp_path / "c.jsonl"
+    rows = [{"id": f"x{i}", "prompt": f"prompt number {i}" + "!" * i} for i in range(3)]
+    prompts.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    captions.write_text("".join(json.dumps({"id": r["id"], "prompt": r["prompt"], "valid": True, "caption": cap,
+                                            "caption_sha256": "0" * 64}) + "\n" for r in rows))
+    stem = tmp_path / "calib" / "tiny"
+    calibrate_ideogram4.main(["--prompts", str(prompts), "--captions", str(captions), "--count", "2",
+                              "--res", "256x256", "--steps", "4", "--out", str(stem), "--device", "cpu",
+                              "--local-impl", "gather", "--mass-queries", "4", "--tile", "2"])
+    for name in ("cond", "uncond"):
+        z = np.load(f"{stem}_{name}.npz")
+        assert z["s2_pi_head"].shape[:2] == (2, HEADS) and int(z["n_prompts"]) == 2
+        assert json.loads(Path(f"{stem}_{name}.json").read_text())["transformer"] == name
+    out = tmp_path / "out"
+    base = ["--prompts", str(prompts), "--captions", str(captions), "--res", "256x256", "--steps", "4",
+            "--device", "cpu", "--end", "2"]
+    sca = ["--method", "sca", "--pi-table", f"{stem}_cond.npz", "--pi-table-uncond", f"{stem}_uncond.npz",
+           "--n0", "8", "--tile", "2", "--gate-sigma", "0.9", "--bridge-cells", "2", "--bridge-k", "2",
+           "--win-sched", "0.6:16,0.5:12", "--win-pi-match", "--win-pi-interp"]
+    sample_ideogram4.main(base + sca + ["--out", str(out / "sca")])
+    sample_ideogram4.main(base + ["--method", "sega", "--train-grid", "8", "--out", str(out / "sega")])
+    for d in ("sca", "sega"):
+        metas = sorted((out / d).glob("*.json"))
+        assert len(metas) == 2
+        m = json.loads(metas[0].read_text())
+        assert m["complete"] and m["config"]["res"] == "256x256" and m["caption"] == cap
+        assert Image.open(m["image"]).size == (256, 256)
+    m = json.loads(sorted((out / "sca").glob("*.json"))[0].read_text())
+    assert set(m["pi_trace"]) == {"cond", "uncond"} and m["config"]["sca"]["cond"]["pool_factors"] == [2, 2]
+    assert json.loads(sorted((out / "sega").glob("*.json"))[0].read_text())["config"]["rope_scaling"]["method"] == "sega"
+    sample_ideogram4.main(base + sca + ["--out", str(out / "sca")])   # resume: all present

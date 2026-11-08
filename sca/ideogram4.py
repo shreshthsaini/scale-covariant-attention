@@ -157,9 +157,21 @@ class Ideogram4SCAContext(SCAContext):
         self.forward_id = 0
         self.text_len = 0
         self.rope_dtype = torch.bfloat16
+        # flex kernel options of the local branch. sca/attn.py forces BLOCK_M 128 / BLOCK_N 64 with TMA, tuned for
+        # head_dim 128 (FLUX); at head_dim 256 those tiles can exceed shared memory, so {} keeps torch's own
+        # head-dim-256 configurations (their tiles divide the 128 x 64 sparse blocks). Same attention either way.
+        self.flex_kernel = {}
         self._rot = None
         self._raw = {}
         self._perm = {}
+
+    def flex_layout(self, L, tile, win, device):
+        """sca/attn.py flex_layout with this context's kernel options, cached per (prefix, grid, tile, window)."""
+        from sca.attn import flex_layout
+        key = (L, self.grid, tuple(tile), tuple(win), str(device))
+        if key not in self._flex_cache:
+            self._flex_cache[key] = flex_layout(L, self.grid, tile, win, device, kernel_options=self.flex_kernel)
+        return self._flex_cache[key]
 
     def grid_ids(self, H, W):
         if (H, W) not in self._raw:
@@ -336,6 +348,29 @@ def load_pipeline(device="cuda", guidance_mode="dual"):
         unconditional_transformer=load("unconditional_transformer") if guidance_mode == "dual" else None,
         prompt_enhancer_head=None)
     return pipe.to(device)
+
+
+@torch.no_grad()
+def packed_inputs(pipe, prompt, height, width, latents, t_model):
+    """(cond kwargs, uncond kwargs) of one transformer step exactly as Ideogram4Pipeline.__call__ builds them for a
+    single prompt (encode, trim the shared padding, image-only slices for the unconditional pass); latents [1, N, 128]
+    float32, t_model the model time in [0, 1] (0 = noise)."""
+    device = pipe._execution_device
+    gh, gw = height // 16, width // 16
+    feats, pos, seg, ind = pipe.encode_prompt(prompt=prompt, grid_h=gh, grid_w=gw, max_sequence_length=MAX_TEXT,
+                                              device=device)
+    first = int((seg != -1).any(dim=0).to(torch.long).argmax())
+    feats, pos, seg, ind = feats[:, first:], pos[:, first:], seg[:, first:], ind[:, first:]
+    n = gh * gw
+    L = pos.shape[1] - n
+    dt = pipe.transformer.dtype
+    t = torch.full((1,), float(t_model), device=device).to(dt)
+    z = torch.cat([torch.zeros(1, L, latents.shape[-1], device=device), latents.to(device)], 1).to(dt)
+    cond = dict(hidden_states=z, timestep=t, encoder_hidden_states=feats.to(dt), position_ids=pos, segment_ids=seg,
+                indicator=ind, return_dict=False)
+    uncond = dict(hidden_states=latents.to(device).to(dt), timestep=t, encoder_hidden_states=None,
+                  position_ids=pos[:, -n:], segment_ids=seg[:, -n:], indicator=ind[:, -n:], return_dict=False)
+    return cond, uncond
 
 
 def transformers_of(pipe):
