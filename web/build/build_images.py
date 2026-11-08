@@ -173,7 +173,7 @@ SCRATCH = "/scratch/09032/saini_2/sca/web_assets/build"
 
 
 def pdf_to_webp(pdf, out_id, width_px=2400):
-    """Rasterise page 1 of a paper figure PDF with PyMuPDF, then save it as WebP on a white ground."""
+    """Rasterise page 1 of a paper figure PDF with PyMuPDF (fitz), then save it as WebP on a white ground."""
     os.makedirs(SCRATCH, exist_ok=True)
     png = os.path.join(SCRATCH, out_id + ".png")
     code = ("import fitz,sys; d=fitz.open(sys.argv[1]); p=d[0]; z=float(sys.argv[3])/p.rect.width; "
@@ -246,7 +246,7 @@ def qual():
 def method():
     figs = os.path.join(REPO, "paper", "figures")
     DATA["method"] = {}
-    for name in ("method_v2", "method_zoom", "pi_heads"):
+    for name in ("method_v3", "method_zoom", "pi_heads", "heads_view"):
         path, size = pdf_to_webp(os.path.join(figs, name + ".pdf"), name)
         DATA["method"][name] = dict(file=path, size=size, source="paper/figures/%s.pdf" % name)
         print("method", name, size)

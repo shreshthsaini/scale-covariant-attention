@@ -73,7 +73,7 @@
       <div class="g"><div class="g-big"><span data-num="prog.clean.prog">49.2</span><small> s</small></div><p>per 4096&sup2; image on one GH200, against <span data-num="prog.clean.hrdit">107.0</span>&nbsp;s for HRDiT and <span data-num="prog.clean.area">202.4</span>&nbsp;s for AReA</p></div>
       <div class="g"><div class="g-big"><span data-num="prog.vs.area.n_better">10</span><small> of <span data-num="prog.vs.area.n_total">10</span></small></div><p>per-image metrics better than AReA, at each of <span data-num="prog.seeds.n_word">three</span> seeds and on <span data-num="prog.later.hrgen.n">1000</span> HRGen-1K prompts</p></div>
       <div class="g"><div class="g-big"><span data-num="heads.var.head">97.5</span><small>%</small></div><p>of the variance in how far attention reaches is set by the head; the noise level sets <span data-num="heads.var.noise">2.5</span>%</p></div>
-      <div class="g"><div class="g-big">1<small> table</small></div><p>per model, fit in closed form at 1024&sup2; in one pass over <span data-num="calib.n_prompts">32</span> prompts; it serves every target size</p></div>
+      <div class="g"><div class="g-big">1<small> reach table</small></div><p>per model, filled in closed form by one emulation pass over <span data-num="calib.n_prompts">32</span> prompts at 1024&sup2;; it serves every target size</p></div>
     </div>
   </div>
 </section>
@@ -83,7 +83,7 @@
   <div class="wrap prose">
     <p class="kicker">Abstract</p>
     <h2 id="h-abstract" class="sr-only">Abstract</h2>
-    <p class="abstract">Diffusion transformers trained near one megapixel fail at 4096&sup2;: attention meets token counts and position offsets it never saw, at <span data-num="config.cost_x_4096">256</span> times the cost. Training-free fixes set how far each head looks by hand or per target size, because at the target full attention fails and cannot serve as a reference. At the training resolution, where full attention is still valid, reach is a property of the head. After the first steps, the head explains <span data-num="heads.var.head">97.5</span>% of the variance in how much attention stays near the query, and the noise level <span data-num="heads.var.noise">2.5</span>%. We introduce Scale-Covariant Attention (SCA), which gives each head its own mix of a native-size window and a native-size grid over the whole image. Shrinking both views at 1024&sup2; to the target's image-to-window ratio lets the model's own full attention fit each mix in closed form, once for every size. Inside HRDiT's three-stage schedule, SCA on FLUX.1-dev at 4096&sup2; beats AReA on <span data-num="prog.seeds.all_word">all ten</span> per-image metrics for each of <span data-num="prog.seeds.n_word">three</span> seeds and on HRGen-1K at <span data-num="prog.clean.area_x">4.1×</span> its speed, and matches HRDiT's preference scores in <span data-num="prog.clean.prog">49.2</span> against <span data-num="prog.clean.hrdit">107.0</span>&nbsp;s per image. A single-pass mode keeps more fine detail and runs in <span data-num="speed.sca_s">77.1</span>&nbsp;s, <span data-num="speed.ratio">2.63×</span> faster than AReA.</p>
+    <p class="abstract">Diffusion transformers trained near one megapixel fail at 4096&sup2;: attention meets token counts and position offsets it never saw, at <span data-num="config.cost_x_4096">256</span> times the cost. Training-free fixes set how far each head looks by hand or per target size, because at the target full attention fails and cannot serve as a reference. At the training resolution, where full attention is still valid, reach is a property of the head. After the first steps, the head explains <span data-num="heads.var.head">97.5</span>% of the variance in how much attention stays near the query, and the noise level <span data-num="heads.var.noise">2.5</span>%. We introduce Scale-Covariant Attention (SCA), which gives each head its own mix of a native-size window and a native-size grid over the whole image. Reach emulation shrinks both views at 1024&sup2; to the target's image-to-window ratio, so that the model's own full attention fits each mix in closed form, once for every size. Inside HRDiT's three-stage schedule, SCA on FLUX.1-dev at 4096&sup2; beats AReA on <span data-num="prog.seeds.all_word">all ten</span> per-image metrics for each of <span data-num="prog.seeds.n_word">three</span> seeds and on HRGen-1K at <span data-num="prog.clean.area_x">4.1×</span> its speed, and matches HRDiT's preference scores in <span data-num="prog.clean.prog">49.2</span> against <span data-num="prog.clean.hrdit">107.0</span>&nbsp;s per image. A single-pass mode keeps more fine detail and runs in <span data-num="speed.sca_s">77.1</span>&nbsp;s, <span data-num="speed.ratio">2.63×</span> faster than AReA.</p>
   </div>
 </section>
 
@@ -126,6 +126,10 @@
         <figcaption><b>One switch for every head, or one mix per head.</b> In SCA's notation AReA sets every head's window weight to 0 above &sigma; = <span data-num="config.gate_sigma">0.89</span> and to 1 below (dashed). Each line is one of FLUX.1-dev's <span data-num="calib.n_heads_c">1,368</span> heads at ratio <span data-num="config.native_ratio">4</span>, coloured by its mean weight: blue global, amber local, green the median.</figcaption>
       </figure>
     </div>
+    <figure class="paper-fig wide-fig">
+      <button class="pf" type="button" aria-label="Open the figure full size"><img src="assets/img/method/heads_view.webp" width="2400" height="707" loading="lazy" alt="Four panels: the local window and the global keys on a 4096 squared image; the measured attention mass of three heads at 1024 squared; their fitted weights against noise level with the median of all heads; and the fitted weight of every head against its measured share within 16 tokens, correlation 0.77."></button>
+      <figcaption><b>Measured reach tracks the fitted weight</b> (from the paper). (b) Full-attention mass of three heads at 1024&sup2;, with each head's share within 16 tokens. (c) Their fitted &pi;<sub><i>h</i></sub> at ratio 2 beside the median and interquartile range of all heads. (d) Every head's &pi;<sub><i>h</i></sub> against its share within 16 tokens (&rho; = 0.77).</figcaption>
+    </figure>
   </div>
 </section>
 
@@ -138,6 +142,11 @@
       <p class="lede-c">SCA replaces only the attention, so it runs inside any sampler. Each head mixes two views that keep the training geometry. The weight of the mix is fit once at 1024&sup2; and read at every size through the image-to-window ratio.</p>
     </div>
 
+    <figure class="paper-fig" id="method-fig">
+      <button class="pf" type="button" aria-label="Open the method figure full size"><img src="assets/img/method/method_v3.webp" width="2400" height="1184" loading="lazy" alt="Method figure in four panels: full attention split exactly into near and far outputs, and SCA's per-head mix of a local window and a global grid; reach emulation at 1024 squared with the same image-to-window ratio; the closed-form fit of the weight; progressive sampling from 1024 squared to 4096 squared."></button>
+      <figcaption><b>The method in one figure</b> (from the paper). (a) Full attention splits exactly into outputs over near and far keys, mixed by each query's near mass <i>m</i><sub><i>i</i></sub>; SCA mixes a local window and a grid of block centres with one weight &pi;<sub><i>h</i></sub> per head. (b) Reach emulation shrinks both views by the target's ratio <i>r</i> onto 1024&sup2; images. (c) The error is quadratic in &pi;, so &pi;* = clip(B/A, 0, 1) fills the reach table. (d) Progressive SCA reads the table at <i>r</i> = 2 and 4 in HRDiT's upper two stages. The rows below take each step apart with the real numbers.</figcaption>
+    </figure>
+
     <div class="step-row">
       <div class="step-text">
         <p class="step-n">1 &middot; Near and far</p>
@@ -148,7 +157,7 @@
       </div>
       <figure class="step-fig">
         <div class="rings" id="rings"></div>
-        <figcaption>Attention mass around a query at 1024&sup2; (&sigma; &asymp; <span id="rings-sigma">0.62</span>) for three FLUX.1-dev heads, in square rings of 2, 4, 8 and 16 tokens. Darker is denser. The frame marks 16 tokens.</figcaption>
+        <figcaption>Attention mass around a query at 1024&sup2; (&sigma; &asymp; <span id="rings-sigma">0.62</span>) for three FLUX.1-dev heads, in square rings of 2, 4, 8 and 16 tokens; darker is denser. <i>m</i> is the share within the 16-token frame and &pi; the head's fitted weight at ratio 2. Across all heads the two correlate at &rho; = 0.77.</figcaption>
       </figure>
     </div>
 
@@ -168,10 +177,10 @@
 
     <div class="step-row">
       <div class="step-text">
-        <p class="step-n">3 &middot; Emulation</p>
+        <p class="step-n">3 &middot; Reach emulation</p>
         <h3>Measured where full attention still works</h3>
-        <p>At 4096&sup2; full attention is the failure, so it cannot judge &pi;<sub><i>h</i></sub>. At 1024&sup2; it can. We shrink the window to <i>n</i>/<i>r</i> tokens and subsample the global grid by <i>r</i>. The image-to-window ratio is then <i>r</i>, as at a target <i>r</i> times larger, and the model's own full attention and both shrunken views see the same queries, keys and values.</p>
-        <p class="small muted">Ratio 2 stands for 2048&sup2;, ratio 4 for 4096&sup2;. The weights depend mainly on the ratio: the 1024&sup2; table scored at 1280&sup2; is as good as one fit there.</p>
+        <p>At 4096&sup2; full attention is the failure, so it cannot judge &pi;<sub><i>h</i></sub>. At 1024&sup2; it can. We fit the mix by reach emulation: shrink the window to <i>n</i>/<i>r</i> tokens and subsample the global grid by <i>r</i>. The image-to-window ratio is then <i>r</i>, as at a target <i>r</i> times larger, and the model's own full attention and both shrunken views see the same queries, keys and values.</p>
+        <p class="small muted">Ratio 2 stands for 2048&sup2;, ratio 4 for 4096&sup2;. The weights depend mainly on the ratio: the 1024&sup2; reach table scored at 1280&sup2; is as good as one fitted there.</p>
       </div>
       <figure class="step-fig">
         <div class="emu" id="emu"></div>
@@ -185,17 +194,17 @@
         <h3>The best weight is one division</h3>
         <p>For each block, head, noise level and ratio, three sums over prompts, steps, queries and channels give the squared error of any weight:</p>
         <p class="eq">J(&pi;) = E &minus; 2&pi;B + &pi;<sup>2</sup>A, &nbsp;&nbsp; &pi;* = clip(B&thinsp;/&thinsp;A, 0, 1),</p>
-        <p>with A = &Sigma;&#8214;O<sub>loc</sub> &minus; O<sub>glob</sub>&#8214;<sup>2</sup>, B = &Sigma;&#10216;O<sub>full</sub> &minus; O<sub>glob</sub>, O<sub>loc</sub> &minus; O<sub>glob</sub>&#10217; and E = &Sigma;&#8214;O<sub>full</sub> &minus; O<sub>glob</sub>&#8214;<sup>2</sup>. One pass over <span data-num="calib.n_prompts">32</span> prompts fills the tables for ratios 2 and 4. Tables fit on disjoint halves of the prompts correlate at <span data-num="calib.split_half.s2">0.989</span>.</p>
+        <p>with A = &Sigma;&#8214;O<sub>loc</sub> &minus; O<sub>glob</sub>&#8214;<sup>2</sup>, B = &Sigma;&#10216;O<sub>full</sub> &minus; O<sub>glob</sub>, O<sub>loc</sub> &minus; O<sub>glob</sub>&#10217; and E = &Sigma;&#8214;O<sub>full</sub> &minus; O<sub>glob</sub>&#8214;<sup>2</sup>. One emulation pass over <span data-num="calib.n_prompts">32</span> prompts fills the reach table for ratios 2 and 4. Reach tables fitted on disjoint halves of the prompts correlate at <span data-num="calib.split_half.s2">0.989</span>.</p>
       </div>
       <figure class="step-fig">
         <div class="parab" id="parab"></div>
-        <figcaption>The relative error of three real heads as a function of their weight, from the stored sums. Drag the marker; the dot is the closed-form optimum. &pi; = 0 is the global view alone, &pi; = 1 the window alone.</figcaption>
+        <figcaption>The relative error of three real heads as a function of their weight, from the sums the emulation pass stored. Drag the marker; the dot is the closed-form optimum. &pi; = 0 is the global view alone, &pi; = 1 the window alone.</figcaption>
       </figure>
     </div>
 
     <figure class="table-fig">
       <div class="ptable" id="ptable"></div>
-      <figcaption><b>The per-head table.</b> The fitted weight of all <span data-num="calib.n_heads_c">1,368</span> heads, one row per block (<span data-num="config.blocks">57</span>) and one column per head, sorted within each block. Move the noise level or switch the ratio: most heads keep their colour.</figcaption>
+      <figcaption><b>The reach table.</b> The fitted weight of all <span data-num="calib.n_heads_c">1,368</span> heads, one row per block (<span data-num="config.blocks">57</span>) and one column per head, sorted within each block. Move the noise level or switch the ratio: most heads keep their colour.</figcaption>
     </figure>
 
     <div class="step-row stages-row">
@@ -203,7 +212,7 @@
         <p class="step-n">5 &middot; Sampling</p>
         <h3>Progressive SCA, the headline</h3>
         <p>We keep HRDiT's released three-stage schedule as is: <span data-num="prog.cfg.base_steps">30</span> steps at 1024&sup2; with the model's own attention set the layout. The image is then decoded, upsampled, sharpened, re-encoded and re-noised for the last <span data-num="prog.cfg.steps_2048">17</span> steps at 2048&sup2; and the last <span data-num="prog.cfg.steps_4096">10</span> at 4096&sup2;. SCA replaces HRDiT's attention changes at both upper stages, reading ratio <span data-num="prog.cfg.ratio_2048">2</span> and then <span data-num="prog.cfg.ratio_4096">4</span> from one table.</p>
-        <p><b>Single-pass SCA</b> is the fast mode: all <span data-num="config.steps">28</span> steps at the target, the global view alone for the first <span data-num="config.opening_steps">8</span> as in AReA, then windows of <span data-num="config.win_sched">128, 112, 96, 80</span> tokens before the native <span data-num="config.window">64</span>. The opening, the window sizes and the bridge are set by hand; only the weights are measured.</p>
+        <p><b>Single-pass SCA</b> is the fast mode: all <span data-num="config.steps">28</span> steps at the target, the global view alone for the first <span data-num="config.opening_steps">8</span> as in AReA, then windows of <span data-num="config.win_sched">128, 112, 96, 80</span> tokens before the native <span data-num="config.window">64</span>. The opening, the window sizes and the bridge are set by hand; only the weights are fitted.</p>
       </div>
       <div class="step-fig sched-col">
         <div class="sched"><p class="sched-t">Progressive SCA, <span data-num="prog.cfg.total_steps">57</span> steps</p><div class="sched-bar" id="sched-prog"></div></div>
@@ -396,7 +405,7 @@
       <li><b>Fine detail.</b> Progressive SCA trades fine detail for preference against single-pass SCA (MUSIQ on 1024&sup2; crops <span data-num="prog.vs.sca.musiqc.delta">−6.0</span>, patch FID <span data-num="prog.set.sca.fidp.delta">+9.2</span>). Its patch FID and patch KID are worse than HRDiT's, and its patch FID is higher than AReA's at <span data-num="prog.seeds.fidp_n_worse_word">two</span> of <span data-num="prog.seeds.n_word">three</span> seeds.</li>
       <li><b>Hand-set parts.</b> The single-pass opening, the window sizes and the bridge are set by hand, because output error cannot see layout. The window sizes were chosen on the <span data-num="abl.n_prompts">46</span>-prompt ablation subset, which is part of the evaluation set.</li>
       <li><b>Dependence on HRDiT.</b> Progressive SCA uses HRDiT's schedule, and that sampler does not run FLUX.1-Krea-dev.</li>
-      <li><b>The fit.</b> The table is fit without the bridge and with <span data-num="calib.key_ratio">16</span> times fewer keys per branch than the target; the error of the deployed operator is not measured.</li>
+      <li><b>The fit.</b> The reach table is fitted without the bridge and with <span data-num="calib.key_ratio">16</span> times fewer keys per branch than the target; the error of the deployed operator is not measured.</li>
       <li><b>Metrics.</b> All metrics are automatic and the intervals ignore multiple comparisons. FID at 299&sup2; sees little of the 4K detail.</li>
       <li><b>Other sizes.</b> At 2048&nbsp;&times;&nbsp;4096 single-pass SCA loses <span data-num="sizes.2048x4096.n_worse">3</span> metrics to AReA. At 8192&sup2; grid and stripe artifacts remain in both SCA and AReA. Faint tiled-VAE seams can show at 1:1 in some images.</li>
     </ul>

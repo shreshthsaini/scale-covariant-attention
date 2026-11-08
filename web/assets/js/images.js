@@ -983,13 +983,13 @@ window.SCA_IMAGES = {
   }
  ],
  "method": {
-  "method_v2": {
-   "file": "assets/img/method/method_v2.webp",
+  "method_v3": {
+   "file": "assets/img/method/method_v3.webp",
    "size": [
     2400,
-    1226
+    1184
    ],
-   "source": "paper/figures/method_v2.pdf"
+   "source": "paper/figures/method_v3.pdf"
   },
   "method_zoom": {
    "file": "assets/img/method/method_zoom.webp",
@@ -1006,6 +1006,14 @@ window.SCA_IMAGES = {
     533
    ],
    "source": "paper/figures/pi_heads.pdf"
+  },
+  "heads_view": {
+   "file": "assets/img/method/heads_view.webp",
+   "size": [
+    2400,
+    707
+   ],
+   "source": "paper/figures/heads_view.pdf"
   }
  },
  "qual": {

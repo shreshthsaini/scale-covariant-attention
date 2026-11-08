@@ -444,7 +444,7 @@
       var share = R.rings.reduce(function (a, q) { return a + q.share; }, 0), e = ex[ro[0]];
       s.appendChild(svg("text", { x: x0 + cell / 2, y: y0 - 11, "text-anchor": "middle", "font-size": 14, "font-weight": 600, fill: "var(--ink)" }, ro[1]));
       s.appendChild(svg("text", { x: x0 + cell / 2, y: y0 + cell + 22, "text-anchor": "middle", "font-size": 14, fill: "var(--ink)" }, "m = " + share.toFixed(2)));
-      if (e) s.appendChild(svg("text", { x: x0 + cell / 2, y: y0 + cell + 42, "text-anchor": "middle", "font-size": 13, fill: "var(--accent-ink)" }, "\u03c0 = " + e.r4.pistar.toFixed(2) + " (ratio 4)"));
+      if (e) s.appendChild(svg("text", { x: x0 + cell / 2, y: y0 + cell + 42, "text-anchor": "middle", "font-size": 13, fill: "var(--accent-ink)" }, "\u03c0 = " + e.r2.pistar.toFixed(2) + " (ratio 2)"));
       s.appendChild(svg("text", { x: x0 + cell / 2, y: y0 + cell + 62, "text-anchor": "middle", "font-size": 12, fill: "var(--faint)" }, "block " + R.block + ", head " + R.head));
       if (e) { var se = $("#rings-sigma"); if (se) se.textContent = e.sigma.toFixed(2); }
     });
@@ -980,6 +980,17 @@
     }
     build(window.SCA_IDEOGRAM || { items: [] });
   })();
+
+  /* ---------------------------------------------------------------- paper figures open full size */
+  $$(".paper-fig .pf").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var im = $("img", b), cap = b.parentNode.querySelector("figcaption");
+      lightbox(function (body) {
+        body.appendChild(el("div", { class: "lb-fig" }, [el("img", { src: im.getAttribute("src"), alt: im.getAttribute("alt") })]));
+        if (cap) body.appendChild(el("p", { class: "prompt", html: cap.innerHTML }));
+      });
+    });
+  });
 
   /* ---------------------------------------------------------------- BibTeX copy */
   $$(".copy").forEach(function (b) {
