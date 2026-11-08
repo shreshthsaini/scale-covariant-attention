@@ -1573,7 +1573,11 @@ web/build and web/README.md and refuses to publish internal paths or calibration
   96-prompt page web/review/ (restyled, linked from nav, results and gallery), Ideogram placeholders, limitations.
 - Wording: paper terms (reach emulation, reach table); no curated/random labels (build_images.py strips them);
   numbers only through build_numbers.py (172 keys, all present).
-- Pending: hero 5120^2 and 6144x4096 images and more showcase cards as build_showcase.py exports them (rerun
-  build_showcase_page.py, which cuts lens tiles for the hero), FLUX.2-dev and Qwen-Image pairs, progressive
-  per-example videos and the stages loop (render_process_videos.py from trace_showcase), then drop the 44 MB of
-  single-pass trace videos. Size: web/ without review/ about 80 MB; review/ adds 114 MB.
+- 23:45 showcase in: hero = single-pass SCA at 5120^2 (sc_l04_hillside_town) and 6144x4096 (sc_p01_skeleton_watch)
+  with native lens tiles; 12 progressive SCA 4096^2 cards with four native windows each and the native image
+  upscaled as comparison (selection in web/build/showcase_page.json; build_showcase_page.py renders from the
+  manifest's PNGs). Unused single-pass SCA-only trace videos removed (23 MB).
+- Pending (GPU queue; fleets SCS1/SCS2 still waiting): AReA showcase runs (they appear as a comparison when the
+  manifest lists them), FLUX.2-dev and Qwen-Image pairs (add to showcase_page.json backbones), the progressive
+  traces: then render_process_videos.py process and stages, build_media.py, and drop the remaining 22 MB of
+  single-pass videos. Size: web/ without review/ 85 MB; review/ adds 114 MB.
