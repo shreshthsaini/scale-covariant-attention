@@ -321,7 +321,8 @@ def free_cuda():
 
 
 def load_text_encoder(device="cuda"):
-    """(tokenizer, nf4 Qwen3-VL text encoder) as run_ideogram4.py loads them, moved to `device`."""
+    """(tokenizer, nf4 Qwen3-VL text encoder) as run_ideogram4.py loads them; the bitsandbytes quantizer puts the
+    pre-quantized weights on the current CUDA device at load (device_map {"": cuda}), `.to(device)` keeps them there."""
     from transformers import AutoTokenizer, Qwen3VLModel
     src = snapshot()
     tok = AutoTokenizer.from_pretrained(str(src / "tokenizer"), local_files_only=True)
@@ -338,7 +339,7 @@ def load_pipeline(device="cuda", guidance_mode="dual"):
     if str(device).startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError("CUDA is required for Ideogram 4 inference; use pytest for CPU checks")
     src = snapshot()
-    tok, te = load_text_encoder("cpu")
+    tok, te = load_text_encoder(device)   # bnb places the nf4 weights on the current GPU at load; no CPU round trip
     load = lambda sub: T.Ideogram4Transformer2DModel.from_pretrained(str(src / sub), torch_dtype=torch.bfloat16,
                                                                      local_files_only=True)
     pipe = P.Ideogram4Pipeline(
