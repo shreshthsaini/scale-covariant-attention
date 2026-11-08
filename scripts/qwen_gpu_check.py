@@ -119,14 +119,14 @@ def main(argv=None):
         h, w = (int(v) for v in size.split("x"))
         H, W = h // 16, w // 16
         cells, per = (8, 16) if H % 8 == 0 and W % 8 == 0 else (4, 64)
-        sca = dict(n0=83, tile=8, pool="center", gate_sigma=0.89, bridge_cells=cells, bridge_k=per,
-                   win_sched=((0.88, 166), (0.86, 145), (0.84, 124), (0.82, 104)), win_pi_match=True,
+        sca = dict(n0=83, tile=8, pool="center", gate_sigma=0.85799, bridge_cells=cells, bridge_k=per,
+                   win_sched=((0.83248, 166), (0.80553, 145), (0.77701, 124), (0.74679, 104)), win_pi_match=True,
                    win_pi_interp=True, pi=PiTable("const", value=0.5))
         for name, ctx in (("full", QwenSCAContext(mode="full")), ("sca", QwenSCAContext(mode="sca", **sca))):
             undo = install(tr, ctx)
             try:
                 for label, emb in (("cond", cond), ("neg", neg)):
-                    for sigma in ((0.5,) if name == "full" else (0.95, 0.87, 0.5)):
+                    for sigma in ((0.5,) if name == "full" else (0.95, 0.84, 0.5)):
                         call(H, W, emb, sigma)   # warm-up (compiles the flex layout for this text length)
                         torch.cuda.synchronize()
                         torch.cuda.reset_peak_memory_stats()

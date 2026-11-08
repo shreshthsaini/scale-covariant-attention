@@ -1486,6 +1486,7 @@ Goal (user, via lead): SCA on FLUX.1-dev, FLUX.2-dev and Qwen-Image at 4096 to 6
   the coarse grid's size (brute-force test). Native 1328^2 has a prime grid (83), so the table is fit at 1344^2 (84 x
   84, ratios 2 and 4 tile it); inference n0 = 83 (5312^2 = 4 x native gives a coarse grid of exactly 83 x 83). Model
   card sampling: true CFG 4, negative " ", 50 steps; mu of the native sequence (pipeline extrapolation would give 3.8).
-  Gate and window schedule in noise level as FLUX.1-dev (gate 0.89; windows 2, 1.75, 1.5, 1.25 x n0 = 166, 145, 124,
-  104 while sigma > 0.88, 0.86, 0.84, 0.82; 11 global steps of 50); bridge 1,024 tokens (8 x 16 at 4096^2, 4 x 64 at
-  5312^2 where 8 cells do not divide 332).
+  Gate and window schedule matched in unshifted time (the FLUX.2 port's rule, 8 of 28 steps global then 4 window
+  steps): 14 of 50 steps global (gate 0.85799), then windows 2, 1.75, 1.5, 1.25 x n0 = 166, 145, 124, 104 for two steps
+  each (--win-sched 0.83248:166,0.80553:145,0.77701:124,0.74679:104), native 83 after; bridge 1,024 tokens (8 x 16 at
+  4096^2, 4 x 64 at 5312^2 where 8 cells do not divide 332).

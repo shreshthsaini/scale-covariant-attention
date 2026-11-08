@@ -133,8 +133,11 @@ def area(dry, code):
 
 
 QWEN_TABLE = f"{S}/calib/qwen_1344.npz"
-QWEN_SCA = ("--method sca --steps 50 --true-cfg 4.0 --mu-mode native --n0 83 --gate-sigma 0.89 "
-            "--win-sched 0.88:166,0.86:145,0.84:124,0.82:104 --win-pi-match --win-pi-interp")
+# Gate and window schedule matched in unshifted time t (fraction of the trajectory), as the FLUX.2 port's gate rule (8
+# of 28 steps global, windows on the next 4): 14 of 50 steps global, then windows 2, 1.75, 1.5, 1.25 x n0 for two steps
+# each (sca/qwen.py gate_from_steps(s, 14), win_sched_from_steps(s, 14, (166, 145, 124, 104), 2) at mu native).
+QWEN_SCA = ("--method sca --steps 50 --true-cfg 4.0 --mu-mode native --n0 83 --gate-sigma 0.85799 "
+            "--win-sched 0.83248:166,0.80553:145,0.77701:124,0.74679:104 --win-pi-match --win-pi-interp")
 
 
 def qwen(dry, code):
