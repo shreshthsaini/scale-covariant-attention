@@ -266,12 +266,14 @@
       ["stages", "<b>Three stages.</b> Layout at 1024&sup2;, refined at 2048&sup2; and 4096&sup2;", "One sample through the three stages"],
       ["heads", "<b>" + (num("calib.n_heads_c") || "1,368") + " heads.</b> Each with its own weight on the window", "The per-head weights of FLUX.1-dev"]
     ];
-    slots.forEach(function (s) {
+    var ready = slots.filter(function (s) { return T[s[0]] && T[s[0]].mp4; });
+    (ready.length ? ready : slots).forEach(function (s) {
       var m = T[s[0]], box = el("div", { class: "lbox" });
       if (m && m.mp4) box.appendChild(loopVideo(m.mp4, m.poster, s[2]));
       else box.appendChild(ph("Video in preparation", s[2] + "."));
       host.appendChild(el("figure", { class: "loop" }, [box, el("figcaption", { html: s[1] })]));
     });
+    if (ready.length && ready.length < 3) host.classList.add("n" + ready.length);
   })();
 
   /* ---------------------------------------------------------------- hero */
