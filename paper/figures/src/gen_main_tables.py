@@ -839,7 +839,8 @@ def prog_macros(clean):
                     (f"hlProg{nm}WinsAreaWord", word(w), "the same count as a word", False)]
             triple(out, f"hlProg{nm}AreaIr", dd["ir"], 1, 2, f"results/{rel}, metric ir")
             triple(out, f"hlProg{nm}AreaPick", dd["pickscore"], 1, 2, f"results/{rel}, metric pickscore")
-            check(w == 10, f"text 'all ten per-image metrics for each of three seeds': {label} wins {w}")
+            if label.startswith("Seed"):
+                check(w == 10, f"text 'all ten per-image metrics for each of three seeds': {label} wins {w}")
             # patch FID against AReA at this seed (files hold AReA minus progressive): interval if the 1000-draw
             # cluster bootstrap has landed (corrected_fidp_ci), else the point and the word "pending"
             run_dir = rel.split("/")[0]
