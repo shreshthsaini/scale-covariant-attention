@@ -1505,3 +1505,54 @@ Goal (user, via lead): SCA on FLUX.1-dev, FLUX.2-dev and Qwen-Image at 4096 to 6
   and 1f (aspect, FLUX.2 4096, Qwen 4096); sync_hf.py uploads them under the 97 GB cap (85.9 GB used on 2026-11-06),
   comparison sets stay on scratch. No sync loop was running at 22:10; run repro/migration/sync_incremental.sh once the
   sets are complete.
+
+## 33. 2026-11-07 night: no "calibration", no curation language, new method figure (paper owner)
+User directives (via lead): (1) drop "calibration" and its forms everywhere in the paper (text, figures, tables,
+algorithm names, section titles, appendix, file names in the source zip); (2) drop "curated", "uncurated" and every
+selection phrase (figures state prompt set and seed; random galleries keep a neutral line on how prompts were drawn);
+(3) redraw the main method figure as a mathematical picture; (4) leave room for a new-model showcase figure.
+- Delivery: /scratch/09032/saini_2/sca/paper_builds/delivery_mqhyl3id (commit b131b66), 54 pp, main text pages 1-10
+  (two spare lines on page 10), 0 overfull, 0 undefined, fresh unzip builds to the same 54 pages; hashes in .agent/notes/latest_delivery.md. PDF text has no
+  calib*, curat*, hand-pick*, "picked by eye", em dash, section symbol or "??".
+- Terms, defined once in the introduction and used everywhere: the procedure is *reach emulation* (each head's reach is
+  measured once at 1024^2 by shrinking the native window and the native block-centre grid to the target's
+  image-to-window ratio; the per-head weight is fitted in closed form against the model's own full attention), its
+  output the *reach table*, weights are "fitted". New title: "Scale-Covariant Attention: Per-Head Receptive Fields
+  Measured at the Training Resolution". Section 2.4 "Reach emulation"; Algorithm 1 "Reach emulation, once per model"
+  (function emulate); Proposition 3 "Closed-form fit and transfer cost"; Appendix B "Reach emulation: details and
+  statistics", C "Emulation prompts", O "Reach table at non-square sizes"; labels sec:emulation, alg:emulate,
+  alg:emulate_full, app:emulation, fig:reach_tables. File paths with "calib" are no longer printed (sca/calib.py,
+  scripts/calib_prompts.jsonl, calib/k1_1024.npz now appear as sca/ and k1_1024.npz).
+- Figure 2 is new (figures/method_v3.pdf; TikZ src/method_v3.tex + method_v3_common.tex, assets
+  src/fig_method_v3.py -> figures/method_v3/). (a) picture equation O_full = m_i O_near + (1 - m_i) O_far stacked over
+  SCA's pi_h O_loc + (1 - pi_h) O_glob on the 1024^2 canvas; (b) the 4096^2 target's window and 64^2 grid shrunk by r
+  onto the 1024^2 canvas, r = n/w = 256/64 = 64/16; (c) three real quadratics J(pi) of block 12 at sigma 0.618, r = 4
+  (pi* = 0, 0.749, 1), pi* = clip(B/A, 0, 1), reach-table cards; (d) HRDiT's stages with the per-head mix at r = 2, 4.
+  Candidates A and B and the critique against the gold-standard recipe: .agent/notes/method_figure_v3.md (A chosen;
+  15 words, 4 hues). The intro's head-versus-step pointer moved from the old Figure 2a to Figure 3c.
+- Regenerated in place: heads_view.pdf "(c) Fitted pi_h"; method_zoom.pdf "(d) Reach table at r = 4"; calib.pdf ->
+  reach_tables.pdf (src/fig_reach_tables.py, axis "emulated setting"). Text diffs against HEAD show only those words.
+- Curation: the captions of the hero (Figure 1), the four-method grid (Figure 5), zoom4k, the six-method teaser, the
+  single-pass hero, the ablation grid, the failure cases and the progressive galleries now give prompt set and seed
+  only; the 10th-percentile sentences are gone; random galleries keep "drawn at random (selection seed 0)".
+  The six-method teaser moved ahead of the progressive galleries (it fills the first gallery page).
+  gallery_prog_curated was renamed gallery_prog16 (image folder, snippet, src/fig_gallery_prog16.py, labels fig:gallery_prog16 and fig:gallery_prog16b).
+  Generator scripts carry the same caption strings, so regeneration reproduces the snippets.
+- Showcase slot: main.tex has \newif\ifshowcase, \showcasefalse. src/fig_showcase_models.py turns
+  web/build/showcase_manifest.json (generic schema: model, file, prompt, seed, optional method, prompt_set,
+  crop_center, status) into figures/showcase_models/ and snippets/showcase_models.tex; set \showcasetrue and the
+  figure opens Appendix S with a one-sentence pointer in Section 4.4. Tested on a fake manifest in
+  /scratch/09032/saini_2/tmp/showcase_test and showcase_test2 (both manifest schemas; main text still ends on page
+  10, 0 overfull). At delivery the manifest held 23 FLUX.1-dev images and no FLUX.2-dev or Qwen-Image image, so the
+  switch stays off: run the script and set \showcasetrue when they land.
+- build_delivery.py now ships only the .tex files the build read (unused snippets with old wording stay out of the zip).
+- Web: the web owner already uses method_v3 and the new terms (fc200a7). paper/figures/method_v2.pdf (still printing
+  "Calibrate once") is superseded and no longer read by the paper; heads_view.pdf and method_zoom.pdf were regenerated
+  in place under their old names.
+- Render review, two cycles (main pages by the paper owner, appendix pages by two reviewer subagents per cycle):
+  cycle 1 found 3 MUST items on pages 11 to 32 (Table B.1 resolution wording, a --pi-table path that did not exist
+  as printed in Table F.2, a missing seed in Figure L.1) and 16 SHOULD items; cycle 2 found no MUST item. Every
+  number in the PDF matches the previous delivery except counts removed with the selection clauses and the old
+  Figure 2. Open by choice: Figure T.1 size, free space on gallery pages, and the code release's calib file names
+  (sca/calib.py, scripts/calibrate.py, scripts/calib_prompts.jsonl, calib/), which the paper no longer prints.
+- Rubric self-score (Section 31 values) unchanged: method diagram 2 (15 words, 4 hues, real data, appendix zoom).
