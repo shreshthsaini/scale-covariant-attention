@@ -15,7 +15,8 @@ order; rows identical to showcase40.jsonl, so ids, stems and derived seeds match
              global opening covers 11 steps (14 of 50 scales to 11.2) and the windows 166, 166, 145, 124, 124, 104,
              104 cover the same noise range as at 50 steps; outputs out/showcase/qwen_sca40/5312x5312
   000q_z     evaluation (scripts/qwen_area_eval.py -> results/qwen_5312_vs_area); kept in taskq/hold_area_qwen and
-             moved to pending by the last generation task to finish
+             moved to pending by the last generation task to finish; then slurm/area_qwen_finish.sh refreshes the page
+             data and the Qwen-Image paper snippets in the live repository (nothing committed)
 AReA runs scripts/run_area_qwen.py from the frozen tree --code (third_party/AReA_3efb7e5 inside it); SCA runs
 code/fa20267, the tree of every Qwen-Image SCA image so far. Outputs out/showcase/qwen_{area,sca}/<HxW>/.
 
@@ -141,7 +142,7 @@ def main():
         task(name, minutes, comment, code, cmd, a.dry, need=need, extra_env=env, post=release)
     task("000q_z_eval.sh", 40, "evaluation: SCA vs AReA on Qwen-Image (scripts/qwen_area_eval.py)", a.code,
          f"{PY} scripts/qwen_area_eval.py --prompts {PROMPTS15} --results {RESULTS}", a.dry, need=40, folder=HOLD,
-         exclusive=False)
+         exclusive=False, post=f"bash {st.P}/slurm/area_qwen_finish.sh\n")
 
 
 if __name__ == "__main__":
