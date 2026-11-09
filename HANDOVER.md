@@ -1834,5 +1834,7 @@ paper/figures/snippets/showcase_qwen.tex with AReA (switch \resqwen stays off; t
   the caption names steps and settings and, once results exist, median seconds. Compiled in a minimal tectonic test.
 - Refresh recipe after the 000q images: build_showcase.py, set_showcase_backbones.py, build_showcase_page.py,
   check_page.py --http, fig_showcase_models.py --model Qwen-Image, commit web/ and paper/figures; the lead publishes.
-- Status 12:50: 11 generation tasks at the head of the spool (code/b8e55fe for AReA, code/fa20267 for SCA),
-  000q_z_eval.sh in taskq/hold_area_qwen. SCSd 1132074 (gh-dev 4 x 2 h) estimated start 19:50.
+- Status 13:10: 11 generation tasks at the head of the spool (code/535523d for AReA and the evaluation, code/fa20267
+  for SCA; the AReA implementation hash 4cbf0ba5 is the same in 8b6a7e9, b8e55fe and 535523d), 000q_z_eval.sh in
+  taskq/hold_area_qwen. Evaluator smoke-tested on CPU (two prompts, stand-in AReA images): every metric tool, the paired
+  bootstrap, timing and SHA256SUMS ran. SCSd 1132074 (gh-dev 4 x 2 h) estimated start 19:50.
