@@ -19,3 +19,6 @@ fi
 git init -q -b gh-pages && git add -A && git -c user.name=shreshthsaini -c user.email=shreshthfeel@gmail.com commit -q -m "Project page $(date +%F)"
 git remote add origin git@github.com:shreshthsaini/scale-covariant-attention.git && git push -q -f origin gh-pages
 echo "published $(date +%FT%T)"
+
+# Deploy through the workflow (60 min timeout) rather than the legacy branch build.
+gh workflow run pages.yml --repo shreshthsaini/scale-covariant-attention --ref main && echo "deploy workflow started"
