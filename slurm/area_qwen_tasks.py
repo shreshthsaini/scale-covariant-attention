@@ -10,6 +10,10 @@ order; rows identical to showcase40.jsonl, so ids, stems and derived seeds match
   000q_c     SCA at 4096^2 on prompts 1-3 (same tree and flags as the queued 00s4_a tasks, which then skip them)
   000q_<k>1  AReA at 5312^2 on prompts 4-15, three per task
   000q_<k>2  SCA at 5312^2 on the same three (same tree and flags as 00s4_b; outputs shared with it)
+  000q_z_sca40  SCA at 5312^2 with 40 steps, AReA's step count (lead, 2026-11-09), on all 15 prompts, three per task;
+             every other flag as 000q_<k>2. SCA's gate and window thresholds are noise levels, so at 40 steps the
+             global opening covers 11 steps (14 of 50 scales to 11.2) and the windows 166, 166, 145, 124, 124, 104,
+             104 cover the same noise range as at 50 steps; outputs out/showcase/qwen_sca40/5312x5312
   000q_z     evaluation (scripts/qwen_area_eval.py -> results/qwen_5312_vs_area); kept in taskq/hold_area_qwen and
              moved to pending by the last generation task to finish
 AReA runs scripts/run_area_qwen.py from the frozen tree --code (third_party/AReA_3efb7e5 inside it); SCA runs
@@ -124,6 +128,12 @@ def main():
                    f"single-pass SCA at 5312^2, prompts {s + 1}-{e} (00s4_b flags)", SCA_CODE,
                    f"{sca} {bridge['5312x5312']} --res 5312x5312 --start {s} --end {e} --out {OUT}/qwen_sca/5312x5312",
                    60, "")]
+    sca40 = sca.replace("--steps 50 ", "--steps 40 ").replace("--label qwen_sca ", "--label qwen_sca40 ")
+    assert sca40.count("--steps 40 ") == 1 and "--label qwen_sca40 " in sca40
+    for s, e in ((0, 3), (3, 6), (6, 9), (9, 12), (12, 15)):
+        specs.append((f"000q_z_sca40_{s:02d}_{e:02d}.sh", 40, f"single-pass SCA at 5312^2, 40 steps, prompts {s + 1}-{e}",
+                      SCA_CODE, f"{sca40} {bridge['5312x5312']} --res 5312x5312 --start {s} --end {e} "
+                      f"--out {OUT}/qwen_sca40/5312x5312", 60, ""))
     # the evaluation waits in the hold folder; the generation task that completes the set moves it to pending
     release = RELEASE.format(pending=f"{S}/taskq/pending", hold=HOLD, gen=" ".join(x[0] for x in specs),
                              done=f"{OUT}/_done")
