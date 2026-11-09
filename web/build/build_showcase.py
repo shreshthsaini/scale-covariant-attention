@@ -20,8 +20,8 @@ image (mean |dx| + |dy| of the luminance on a 2x box-downsampled copy, windows o
 comparison images of the group get the same boxes, so crops line up.
 
 Groups: flux1_4096 (progressive SCA vs AReA), flux1_5120 and flux1_aspect (single-pass SCA vs AReA), flux2_4096 and
-flux2_5120 (SCA vs full attention at the same size), qwen_4096 and qwen_5312 (SCA vs full attention, and AReA's released
-qwen-image code when present).
+flux2_5120 (SCA vs full attention at the same size), qwen_4096 and qwen_5312 (SCA vs AReA's released Qwen-Image code,
+scripts/run_area_qwen.py, and full attention at the same size).
 
 Usage: build_showcase.py [--web GROUP[/METHOD+METHOD]:PROMPTS ...] [--budget-mb 60] [--dry]
   --web flux1_4096/sca_v2_prog:all --web qwen_5312:sc_p01_skeleton_watch,sc_l01_fjord_village
@@ -49,8 +49,8 @@ WEB = REPO / "web/assets/img/showcase"
 OVERVIEW, CROP, NCROP, STRIDE = 2400, 768, 4, 64
 MODELS = {"flux1": "FLUX.1-dev", "flux2": "FLUX.2-dev", "qwen": "Qwen-Image"}
 NAMES = {"sca_v2_prog": "progressive SCA", "sca_v2": "SCA (single pass)", "flux2_sca_v2": "SCA (single pass)",
-         "qwen_sca": "SCA (single pass)", "area": "AReA", "flux2_full": "full attention", "qwen_full": "full attention",
-         "lanczos": "native + Lanczos"}
+         "qwen_sca": "SCA (single pass)", "area": "AReA", "qwen_area": "AReA", "flux2_full": "full attention",
+         "qwen_full": "full attention", "lanczos": "native + Lanczos"}
 
 
 def aspect(row, land, port):
@@ -65,8 +65,10 @@ GROUPS = {
                      lambda r: "flux1_full/" + aspect(r, "1024x1536", "1536x1024")),
     "flux2_4096": ("flux2", lambda r: "4096x4096", "flux2_sca_v2", [("flux2_full", "flux2_full")], lambda r: "flux2_full/1024x1024"),
     "flux2_5120": ("flux2", lambda r: "5120x5120", "flux2_sca_v2", [("flux2_full", "flux2_full")], lambda r: "flux2_full/1024x1024"),
-    "qwen_4096": ("qwen", lambda r: "4096x4096", "qwen_sca", [("qwen_full", "qwen_full")], lambda r: "qwen_full/1328x1328"),
-    "qwen_5312": ("qwen", lambda r: "5312x5312", "qwen_sca", [("qwen_full", "qwen_full")], lambda r: "qwen_full/1328x1328"),
+    "qwen_4096": ("qwen", lambda r: "4096x4096", "qwen_sca", [("qwen_area", "qwen_area"), ("qwen_full", "qwen_full")],
+                  lambda r: "qwen_full/1328x1328"),
+    "qwen_5312": ("qwen", lambda r: "5312x5312", "qwen_sca", [("qwen_area", "qwen_area"), ("qwen_full", "qwen_full")],
+                  lambda r: "qwen_full/1328x1328"),
 }
 
 

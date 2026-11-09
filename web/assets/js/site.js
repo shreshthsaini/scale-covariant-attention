@@ -492,6 +492,62 @@
     host.appendChild(grid);
   })();
 
+  /* ---------------------------------------------------------------- Qwen-Image: SCA beside AReA's released code (and full attention where it ran) */
+  (function qwenArea() {
+    var block = $("#qa-block"), host = $("#qa-zoom"), thumbs = $("#qa-thumbs"), chips = $("#qa-methods"), meta = $("#qa-meta"), sum = $("#qa-summary");
+    var Q = SHOW.qwen_area || {}, Z = (Q.items || []).filter(function (it) { return it.panels && it.panels.length > 1; });
+    if (!block || !host || !Z.length || !ZG) return;      /* the block stays hidden until its images exist */
+    block.hidden = false;
+    var ORDER = [], seen = {}, on = {}, cur = null, at = 0;
+    Z.forEach(function (z) { z.panels.forEach(function (p) { if (!seen[p.m]) { seen[p.m] = 1; ORDER.push([p.m, p.label, !!p.ours]); } }); });
+    ORDER.forEach(function (o) {
+      on[o[0]] = true;
+      var b = el("button", { type: "button", "aria-pressed": "true", text: o[1], class: o[2] ? "ours" : null });
+      b.addEventListener("click", function () {
+        if (on[o[0]] && ORDER.filter(function (k) { return on[k[0]]; }).length <= 2) return;   /* keep two methods at least */
+        on[o[0]] = !on[o[0]]; b.setAttribute("aria-pressed", String(on[o[0]])); render();
+      });
+      chips.appendChild(b);
+    });
+    Z.forEach(function (z, i) {
+      var b = el("button", { type: "button", "aria-label": "Prompt " + (i + 1) + ": " + (z.title || short(z.prompt, 80)) }, [img(z.thumb || z.panels[0].view, "")]);
+      b.addEventListener("click", function () { if (at !== i) { at = i; render(); } });
+      thumbs.appendChild(b);
+    });
+    function secs(z, p) {
+      var t = (z.timing || {})[p.m];
+      return t && t.seconds ? p.label + ": " + Math.round(t.seconds) + " s, " + t.steps + " steps" + (t.shared ? " (GPU shared)" : "") : null;
+    }
+    function render() {
+      var z = Z[at], ps = z.panels.filter(function (p) { return on[p.m]; });
+      if (ps.length < 2) ps = z.panels;
+      if (cur) { cur.destroy(); cur = null; }
+      host.innerHTML = ""; meta.innerHTML = "";
+      $$("button", thumbs).forEach(function (b, i) { b.setAttribute("aria-pressed", String(i === at)); });
+      cur = zgrid({ size: z.size, panels: ps, regions: z.regions, alt: z.prompt, minW: 220, label: "Qwen-Image methods on one prompt; zoom moves every panel" });
+      host.appendChild(cur.el);
+      meta.appendChild(metaRow(["Prompt " + (at + 1) + " of " + Z.length, z.title, "Qwen-Image", sizeLabel(z.size), "seed " + (z.seed || 0)], false));
+      meta.appendChild(metaRow(z.panels.map(function (p) { return secs(z, p); }), false));
+      meta.appendChild(el("p", { class: "prompt" }, [el("q", { text: z.prompt })]));
+    }
+    render();
+    var R = Q.results;
+    if (!sum || !R || !R.metrics || !R.metrics.length) return;
+    function fx(x) { return x === null || x === undefined ? "" : Math.abs(x) >= 10 ? x.toFixed(2) : x.toFixed(3); }
+    function sx(x) { return (x > 0 ? "+" : x < 0 ? "−" : "") + fx(Math.abs(x)); }
+    var rows = R.metrics.map(function (m) {
+      var sig = m.lo > 0 || m.hi < 0;
+      return el("tr", {}, [el("td", { text: m.name }), el("td", { text: fx(m.sca) }), el("td", { text: fx(m.area) }),
+        el("td", {}, [el(sig ? "b" : "span", { text: sx(m.delta) }), el("span", { class: "faint", text: " [" + fx(m.lo) + ", " + fx(m.hi) + "]" })])]);
+    });
+    var T = R.timing || {}, tl = [["qwen_sca", "SCA"], ["qwen_area", "AReA"], ["qwen_full", "full attention"]].filter(function (k) { return T[k[0]] && T[k[0]].median_clean; })
+      .map(function (k) { var t = T[k[0]]; return k[1] + " " + Math.round(t.median_clean) + " s over " + t.n_clean + " of " + t.n + " images (" + t.steps + " steps)"; });
+    sum.appendChild(el("div", { class: "qa-sum" }, [
+      el("p", { class: "muted", html: "Mean over the " + R.n_prompts + " prompts both methods share at 5312&nbsp;&times;&nbsp;5312, and SCA minus AReA with a 95% bootstrap interval over prompts (bold where the interval excludes zero). Higher is better for every metric; each scores the prompt as written." }),
+      el("table", { class: "mini" }, [el("thead", {}, [el("tr", {}, [el("th", { text: "Metric" }), el("th", { text: "SCA" }), el("th", { text: "AReA" }), el("th", { text: "SCA minus AReA" })])]), el("tbody", {}, rows)]),
+      tl.length ? el("p", { class: "muted", text: "Median seconds per image on one GH200 with no other process on it: " + tl.join("; ") + "." }) : null]));
+  })();
+
   /* ---------------------------------------------------------------- comparisons at 4096^2: every method in one synced zoom grid */
   (function compare() {
     var host = $("#cmp-zoom"), thumbs = $("#cmp-thumbs"), chips = $("#cmp-methods"), meta = $("#cmp-meta");

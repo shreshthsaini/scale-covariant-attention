@@ -115,7 +115,8 @@ def merge(rows, ids):
     for r in rows:
         k = (r["method"], r["prompt_id"])
         merged.setdefault(k, {"method": r["method"], "res": r.get("res"), "prompt_id": r["prompt_id"]})
-        merged[k].update({c: v for c, v in r.items() if c not in ("path", "seconds", "seed")})
+        merged[k].update({c: v for c, v in r.items()
+                          if c not in ("path", "seconds", "seed") and not c.startswith("eval_seconds")})
     per = sorted(merged.values(), key=lambda r: (METHODS.index(r["method"]), ids.index(r["prompt_id"])))
     fields = sorted({c for r in per for c in r} - {"method", "res", "prompt_id"})
     return per, ["method", "res", "prompt_id", *fields]

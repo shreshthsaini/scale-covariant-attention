@@ -2,8 +2,10 @@
 
 Inputs (read only): web/build/showcase_manifest.json (build_showcase.py, the showcase campaign of HANDOVER Section 32:
 one entry per image with prompt, model, method, size "HxW", seed, steps, PNG path and four crop windows shared by the
-group's images) and web/build/showcase_page.json (which images the page shows: "hero", "cards", "backbones", each a
-list of {group, prompt_id}). The PNGs are decoded here; nothing depends on which files build_showcase.py exported.
+group's images) and web/build/showcase_page.json (which images the page shows: "hero", "cards", "backbones", "qwen_area", each a
+list of {group, prompt_id}). "qwen_area" is the Qwen-Image block (one synced grid and a prompt strip: SCA beside AReA's
+released Qwen-Image code and, where it exists, full attention); its summary numbers come from
+results/qwen_5312_vs_area (scripts/qwen_area_eval.py) when that exists. The PNGs are decoded here; nothing depends on which files build_showcase.py exported.
 
 Outputs, per shown image, in web/assets/img/zoom/<group>_<prompt id>/:
   view.webp            display view (hero 2000 px, cards 1600 px on the long side)
@@ -24,6 +26,7 @@ Run (repository root, CPU; about a minute):
 Writes an empty SCA_SHOWCASE when the manifest does not exist.
 """
 import argparse
+import csv
 import json
 import os
 from multiprocessing import Pool
@@ -37,6 +40,11 @@ MANIFEST = os.path.join(HERE, "showcase_manifest.json")
 PAGE_CFG = os.path.join(HERE, "showcase_page.json")
 ZOOM = os.path.join(WEB, "assets", "img", "zoom")
 JS = os.path.join(WEB, "assets", "js", "showcase.js")
+QA_RESULTS = os.path.join(os.path.dirname(WEB), "results", "qwen_5312_vs_area")
+THUMB = 176
+METRIC_NAMES = (("ir", "ImageReward"), ("hpsv21", "HPSv2.1"), ("hpsv2", "HPSv2"), ("pickscore", "PickScore"),
+                ("aesthetic", "Aesthetic"), ("clip", "CLIP score"), ("clipiqa", "CLIP-IQA"), ("arniqa", "ARNIQA"),
+                ("musiq_crop1024", "MUSIQ, crops"), ("musiq_4096", "MUSIQ"))
 TILE = 512
 SCA_METHODS = ("sca_v2_prog", "sca_v2", "flux2_sca_v2", "qwen_sca")
 CONFIG = {"sca_v2_prog": "Progressive SCA", "sca_v2": "Single-pass SCA", "flux2_sca_v2": "SCA, single pass",
@@ -102,6 +110,43 @@ def render(job):
     return rec
 
 
+def thumb(view, out, px=THUMB):
+    """Small WebP of a view for a prompt strip; rewritten when older than the view."""
+    if not fresh(out, view):
+        with Image.open(view) as v:
+            s = px / max(v.size)
+            v.convert("RGB").resize((max(1, round(v.size[0] * s)), max(1, round(v.size[1] * s))), Image.LANCZOS).save(
+                out, "WEBP", quality=78, method=6)
+    return rel(out)
+
+
+def qa_results(path=QA_RESULTS):
+    """Compact numbers of results/qwen_5312_vs_area for the page: per-method means over the prompts both methods have,
+    SCA minus AReA with its 95% bootstrap interval, and the clean median seconds per image. None until it exists."""
+    rows = lambda name: list(csv.DictReader(open(os.path.join(path, name)))) if os.path.exists(os.path.join(path, name)) else []
+    means = {r["method"]: r for r in rows("summary_5312_paired_prompts.csv")}
+    pairs = {r["metric"]: r for r in rows("sca_minus_area_5312.csv")}
+    timing = {(r["method"], r["res"]): r for r in rows("timing_summary.csv")}
+    if not means or not pairs:
+        return None
+    f = lambda x: None if x in (None, "") else float(x)
+    metrics = []
+    for key, name in METRIC_NAMES:
+        if key in pairs and key in means.get("qwen_sca", {}) and key in means.get("qwen_area", {}):
+            d = pairs[key]
+            metrics.append({"key": key, "name": name, "sca": f(means["qwen_sca"][key]), "area": f(means["qwen_area"][key]),
+                            "delta": f(d["delta"]), "lo": f(d["ci_low"]), "hi": f(d["ci_high"]), "n": int(d["n_prompts"])})
+    times = {}
+    for m in ("qwen_sca", "qwen_area", "qwen_full"):
+        r = timing.get((m, "5312x5312"))
+        if r:
+            times[m] = {"steps": int(r["steps"]), "n": int(r["n"]), "n_clean": int(r["n_clean"]),
+                        "median_clean": f(r["median_seconds_clean"]), "median_all": f(r["median_seconds_all"]),
+                        "per_step_clean": f(r["median_seconds_per_step_clean"])}
+    return {"n_prompts": max((m["n"] for m in metrics), default=0), "metrics": metrics, "timing": times,
+            "source": "results/qwen_5312_vs_area"}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--procs", type=int, default=6)
@@ -113,13 +158,14 @@ def main():
         print("no manifest: wrote an empty", JS)
         return
     man = json.load(open(MANIFEST))
-    cfg = json.load(open(PAGE_CFG)) if os.path.exists(PAGE_CFG) else {"hero": [], "cards": [], "backbones": []}
+    cfg = json.load(open(PAGE_CFG)) if os.path.exists(PAGE_CFG) else {"hero": [], "cards": [], "backbones": [],
+                                                                        "qwen_area": []}
     by = {}
     for e in man.get("images", []):
         by.setdefault((e["group"], e["prompt_id"]), []).append(e)
 
     jobs, plan = [], []
-    for role in ("hero", "cards", "backbones"):
+    for role in ("hero", "cards", "backbones", "qwen_area"):
         for sel in cfg.get(role, []):
             key = (sel["group"], sel["prompt_id"])
             es = by.get(key, [])
@@ -139,7 +185,7 @@ def main():
     with Pool(a.procs) as pool:
         results = pool.map(render, jobs)
     it = iter(results)
-    data = {"hero": [], "groups": [], "backbones": []}
+    data = {"hero": [], "groups": [], "backbones": [], "qwen_area": {"items": [], "results": qa_results()}}
     cards = {}
     for role, s, members in plan:
         recs = [next(it) for _ in members]
@@ -153,7 +199,8 @@ def main():
         item["regions"] = [[b[0] + b[2] // 2, b[1] + b[2] // 2, b[2]] for b in s["crops"]]
         item["panels"] = []
         for (o, _), r in zip(members, recs):
-            pan = {"method": o["method"], "label": CONFIG.get(o["method"], o["method"]), "view": r["view"], "vs": r["view_size"]}
+            pan = {"method": o["method"], "m": o["method"], "label": CONFIG.get(o["method"], o["method"]), "view": r["view"],
+                   "vs": r["view_size"]}
             if o is s:
                 pan["ours"] = True
             if "tiles" in r:
@@ -163,7 +210,12 @@ def main():
             item["panels"].append(pan)
             if o is not s:
                 item["compare"].append({"method": o["method"], "label": pan["label"], "view": r["view"], "crops": r["crops"]})
-        if role == "hero":
+        if role == "qwen_area":
+            item["thumb"] = thumb(os.path.join(WEB, r0["view"]), os.path.join(WEB, os.path.dirname(r0["view"]), "thumb.webp"))
+            item["timing"] = {o["method"]: {"seconds": None if o.get("seconds") is None else round(o["seconds"], 1),
+                                            "steps": o.get("steps"), "shared": o.get("gpu_shared")} for o, _ in members}
+            data["qwen_area"]["items"].append(item)
+        elif role == "hero":
             data["hero"].append(item)
         elif role == "cards":
             cards.setdefault(s["category"], []).append(item)
@@ -177,7 +229,8 @@ def main():
         f.write("window.SCA_SHOWCASE = " + json.dumps(data, indent=1) + ";\n")
     total = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, fs in os.walk(ZOOM) for f in fs) if os.path.isdir(ZOOM) else 0
     print(f"wrote {JS}: hero {len(data['hero'])}, cards {sum(len(g['items']) for g in data['groups'])}, "
-          f"backbones {len(data['backbones'])}; assets/img/zoom {total / 1e6:.1f} MB")
+          f"backbones {len(data['backbones'])}, qwen_area {len(data['qwen_area']['items'])} "
+          f"(results {'yes' if data['qwen_area']['results'] else 'not yet'}); assets/img/zoom {total / 1e6:.1f} MB")
 
 
 if __name__ == "__main__":
