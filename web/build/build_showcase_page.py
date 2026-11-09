@@ -42,13 +42,14 @@ ZOOM = os.path.join(WEB, "assets", "img", "zoom")
 JS = os.path.join(WEB, "assets", "js", "showcase.js")
 QA_RESULTS = os.path.join(os.path.dirname(WEB), "results", "qwen_5312_vs_area")
 THUMB = 176
+QA_BASE = {"qwen_sca": "SCA", "qwen_sca40": "SCA", "qwen_area": "AReA", "qwen_full": "Full attention"}
 METRIC_NAMES = (("ir", "ImageReward"), ("hpsv21", "HPSv2.1"), ("hpsv2", "HPSv2"), ("pickscore", "PickScore"),
                 ("aesthetic", "Aesthetic"), ("clip", "CLIP score"), ("clipiqa", "CLIP-IQA"), ("arniqa", "ARNIQA"),
                 ("musiq_crop1024", "MUSIQ, crops"), ("musiq_4096", "MUSIQ"))
 TILE = 512
 SCA_METHODS = ("sca_v2_prog", "sca_v2", "flux2_sca_v2", "qwen_sca")
 CONFIG = {"sca_v2_prog": "Progressive SCA", "sca_v2": "Single-pass SCA", "flux2_sca_v2": "SCA, single pass",
-          "qwen_sca": "SCA, single pass", "area": "AReA", "qwen_area": "AReA", "flux2_full": "Full attention",
+          "qwen_sca": "SCA, single pass", "qwen_sca40": "SCA, 40 steps", "area": "AReA", "qwen_area": "AReA", "flux2_full": "Full attention",
           "qwen_full": "Full attention"}
 NOT_SHOWN = ("lanczos",)    # user directive 2026-11-08: compare against methods only
 CATS = {"product": "Products", "landscape": "Landscapes", "architecture": "Architecture", "portrait": "Portraits",
@@ -121,30 +122,37 @@ def thumb(view, out, px=THUMB):
 
 
 def qa_results(path=QA_RESULTS):
-    """Compact numbers of results/qwen_5312_vs_area for the page: per-method means over the prompts both methods have,
-    SCA minus AReA with its 95% bootstrap interval, and the clean median seconds per image. None until it exists."""
+    """Compact numbers of results/qwen_5312_vs_area for the page: per-method means over the prompts that SCA (50 and
+    40 steps) and AReA share, SCA minus AReA at each step count with its 95% bootstrap interval, the clean median
+    seconds per image, and the step-matched timing (SCA and AReA both at 40 steps). None until it exists."""
     rows = lambda name: list(csv.DictReader(open(os.path.join(path, name)))) if os.path.exists(os.path.join(path, name)) else []
     means = {r["method"]: r for r in rows("summary_5312_paired_prompts.csv")}
     pairs = {r["metric"]: r for r in rows("sca_minus_area_5312.csv")}
+    pairs40 = {r["metric"]: r for r in rows("sca40_minus_area_5312.csv")}
     timing = {(r["method"], r["res"]): r for r in rows("timing_summary.csv")}
+    matched = {r["prompt_id"]: r for r in rows("timing_step_matched.csv")}.get("median")
     if not means or not pairs:
         return None
     f = lambda x: None if x in (None, "") else float(x)
+    d = lambda r: None if r is None else {"delta": f(r["delta"]), "lo": f(r["ci_low"]), "hi": f(r["ci_high"]),
+                                          "n": int(r["n_prompts"])}
     metrics = []
     for key, name in METRIC_NAMES:
         if key in pairs and key in means.get("qwen_sca", {}) and key in means.get("qwen_area", {}):
-            d = pairs[key]
             metrics.append({"key": key, "name": name, "sca": f(means["qwen_sca"][key]), "area": f(means["qwen_area"][key]),
-                            "delta": f(d["delta"]), "lo": f(d["ci_low"]), "hi": f(d["ci_high"]), "n": int(d["n_prompts"])})
+                            "sca40": f(means.get("qwen_sca40", {}).get(key)), "d50": d(pairs[key]),
+                            "d40": d(pairs40.get(key)), "n": int(pairs[key]["n_prompts"])})
     times = {}
-    for m in ("qwen_sca", "qwen_area", "qwen_full"):
+    for m in ("qwen_sca", "qwen_sca40", "qwen_area", "qwen_full"):
         r = timing.get((m, "5312x5312"))
         if r:
             times[m] = {"steps": int(r["steps"]), "n": int(r["n"]), "n_clean": int(r["n_clean"]),
                         "median_clean": f(r["median_seconds_clean"]), "median_all": f(r["median_seconds_all"]),
                         "per_step_clean": f(r["median_seconds_per_step_clean"])}
+    step = None if not matched else {"n": int(matched["both_clean"]), "sca40": f(matched["sca40_seconds"]),
+                                     "area": f(matched["area_seconds"]), "ratio": f(matched["area_over_sca40"])}
     return {"n_prompts": max((m["n"] for m in metrics), default=0), "metrics": metrics, "timing": times,
-            "source": "results/qwen_5312_vs_area"}
+            "step_matched": step, "source": "results/qwen_5312_vs_area"}
 
 
 def qa_image_flags(path=QA_RESULTS):
@@ -212,7 +220,9 @@ def main():
         for (o, _), r in zip(members, recs):
             pan = {"method": o["method"], "m": o["method"], "label": CONFIG.get(o["method"], o["method"]), "view": r["view"],
                    "vs": r["view_size"]}
-            if o is s:
+            if role == "qwen_area" and o["method"] in QA_BASE:      # the Qwen block names each panel's step count
+                pan["label"] = QA_BASE[o["method"]] + (f", {o['steps']} steps" if o.get("steps") else "")
+            if o is s or (role == "qwen_area" and o["method"] == "qwen_sca40"):
                 pan["ours"] = True
             if "tiles" in r:
                 pan["tiles"] = r["tiles"]

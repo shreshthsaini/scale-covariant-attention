@@ -46,6 +46,7 @@ PER_MODEL = 3   # builder schema: prompts per model
 # comparison columns left of SCA, per model: (manifest method, header)
 COMPARE = {"Qwen-Image": (("qwen_full", "Full attention"), ("qwen_area", "AReA"))}
 QA_TIMING = ROOT / "results" / "qwen_5312_vs_area" / "timing_summary.csv"
+SCA_VARIANTS = {"qwen_sca40"}   # step-count controls; the figure's SCA column is the model's default configuration
 
 
 def sha256(path: Path) -> str:
@@ -82,7 +83,7 @@ def builder_items(man: dict, prompts: Path) -> list[dict]:
     order = [json.loads(line)["id"] for line in prompts.read_text().splitlines() if line.strip()]
     best: dict[tuple[str, str], tuple[int, dict]] = {}
     for e in man["images"]:
-        if e.get("model") not in MODELS or "SCA" not in str(e.get("method_name", "")):
+        if e.get("model") not in MODELS or "SCA" not in str(e.get("method_name", "")) or e.get("method") in SCA_VARIANTS:
             continue
         w, h = (int(v) for v in str(e["size"]).lower().split("x"))
         key = (e["model"], e["prompt_id"])
@@ -184,8 +185,9 @@ def compare_figure(args, man, items, key, out_dir, snippet) -> bool:
     timing = ""
     if QA_TIMING.exists():
         tr = {r["method"]: r for r in csv.DictReader(open(QA_TIMING)) if r["res"] == "5312x5312"}
-        bits = [f"{lab} {round(float(tr[m]['median_seconds_clean']))}~s" for m, lab in
-                (("qwen_sca", r"\sca{}"), ("qwen_area", "AReA"), ("qwen_full", "full attention"))
+        bits = [f"{lab} {round(float(tr[m]['median_seconds_clean']))}~s at {tr[m]['steps']} steps" for m, lab in
+                (("qwen_sca40", r"\sca{}"), ("qwen_sca", r"\sca{}"), ("qwen_area", "AReA"),
+                 ("qwen_full", "full attention"))
                 if m in tr and tr[m].get("median_seconds_clean")]
         if bits:
             timing = " Median seconds per image on one GH200 with no other process on it: " + ", ".join(bits) + "."

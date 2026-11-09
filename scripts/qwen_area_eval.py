@@ -2,17 +2,20 @@
 """Score Qwen-Image SCA against AReA's released Qwen-Image code (HANDOVER Section 38); archive in
 results/qwen_5312_vs_area.
 
-Images: /scratch/09032/saini_2/sca/out/showcase/qwen_{sca,area,full}/<HxW>/ (sample_qwen.py and run_area_qwen.py
+Images: /scratch/09032/saini_2/sca/out/showcase/qwen_{sca,sca40,area,full}/<HxW>/ (sample_qwen.py and run_area_qwen.py
 sidecars), restricted to the prompts of --prompts (15: the first three of each prompt group of
-web/build/showcase_prompts.jsonl). 5312^2 is the comparison (SCA and AReA on all 15, full attention on the first 3);
+web/build/showcase_prompts.jsonl). 5312^2 is the comparison: SCA at Qwen-Image's default 50 steps, SCA at AReA's 40
+steps (qwen_sca40, the step-matched control the lead asked for) and AReA on all 15, full attention on the first 3;
 4096^2 (first 3 prompts) is scored and summarized apart.
 
 Metrics, the project's set (as scripts/ideogram4_eval.py): ImageReward, aesthetic, HPSv2, HPSv2.1, CLIP-IQA, ARNIQA
 (scripts/eval_extra.py, sca-metrics env; IQA inputs capped at a 1024 long side), CLIP score and PickScore
 (constancy_rope eval.py, sca env), MUSIQ_c on four fixed 1024^2 native crops and full-image MUSIQ on a 4096 px
 downscale (scripts/ideogram4_musiq.py). Every metric scores the benchmark prompt; AReA's quality suffix is part of its
-conditioning only. Paired bootstrap (scripts/paired_bootstrap.py, 2000 draws, seed 0) of SCA minus AReA over the
-prompts both have (and minus full attention when at least --min-pairs prompts are common).
+conditioning only. Paired bootstrap (scripts/paired_bootstrap.py, 2000 draws, seed 0) over the prompts both have:
+SCA (50 steps) minus AReA, SCA (40 steps) minus AReA, and SCA minus full attention when at least --min-pairs prompts
+are common. summary_5312_paired_prompts.csv holds the means over the prompts that SCA at both step counts and AReA
+share; timing_step_matched.csv compares SCA at 40 steps with AReA (40 steps) prompt by prompt.
 
 Timing: per image from the sidecars (seconds: denoising and VAE decode, prompt embeddings precomputed, for both
 methods). An image is shared when another process held its GPU while it was generated: AReA sidecars record this
@@ -40,7 +43,7 @@ OUT = S / "out" / "showcase"
 PY = "/work/09032/saini_2/vista/library/uv-envs/sca/bin/python"
 PYM = "/work/09032/saini_2/vista/library/uv-envs/sca-metrics/bin/python"
 CROPE = "/work/09032/saini_2/vista/Projects/Exploration/constancy_rope"
-METHODS = ("qwen_sca", "qwen_area", "qwen_full")
+METHODS = ("qwen_sca", "qwen_sca40", "qwen_area", "qwen_full")
 EXTRA = "ir,aesthetic,hpsv2,hpsv21,clipiqa,arniqa"
 SIZES = ("5312x5312", "4096x4096")
 
@@ -256,6 +259,26 @@ def timing_summary(rows):
     return out
 
 
+def step_matched(rows, res="5312x5312"):
+    """SCA at 40 steps against AReA (40 steps), prompt by prompt: seconds, whether both images were generated without
+    another process on the GPU, and AReA / SCA; a last row "median" over the prompts where both were clean."""
+    by = {(r["method"], r["prompt_id"]): r for r in rows if r["res"] == res}
+    out = []
+    for pid in sorted({p for (m, p) in by if m == "qwen_sca40"} & {p for (m, p) in by if m == "qwen_area"}):
+        a, s = by[("qwen_area", pid)], by[("qwen_sca40", pid)]
+        s50 = by.get(("qwen_sca", pid))
+        out.append({"prompt_id": pid, "sca40_seconds": s["seconds"], "area_seconds": a["seconds"],
+                    "sca50_seconds": s50["seconds"] if s50 else "", "both_clean": not (a["gpu_shared"] or s["gpu_shared"]),
+                    "area_over_sca40": round(a["seconds"] / s["seconds"], 3)})
+    clean = [r for r in out if r["both_clean"]]
+    if clean:
+        med = lambda k: round(statistics.median(float(r[k]) for r in clean if r[k] != ""), 1)
+        out.append({"prompt_id": "median", "sca40_seconds": med("sca40_seconds"), "area_seconds": med("area_seconds"),
+                    "sca50_seconds": med("sca50_seconds") if any(r["sca50_seconds"] != "" for r in clean) else "",
+                    "both_clean": len(clean), "area_over_sca40": round(statistics.median(r["area_over_sca40"] for r in clean), 3)})
+    return out
+
+
 # ----------------------------------------------------------------------------- main
 
 def main(argv=None):
@@ -300,21 +323,23 @@ def main(argv=None):
     rows5 = read_rows(files["5312x5312"])
     have = {m: {r["prompt_id"] for r in rows5 if r["method"] == m} for m in METHODS}
     pairs = []
-    for ref in ("qwen_area", "qwen_full"):
-        common = have["qwen_sca"] & have[ref]
+    for meth, ref, name in (("qwen_sca", "qwen_area", "sca_minus_area"), ("qwen_sca40", "qwen_area", "sca40_minus_area"),
+                            ("qwen_sca", "qwen_full", "sca_minus_full")):
+        common = have[meth] & have[ref]
         if len(common) < args.min_pairs:
-            print(f"no bootstrap against {ref}: {len(common)} common prompts", flush=True)
+            print(f"no bootstrap of {meth} against {ref}: {len(common)} common prompts", flush=True)
             continue
-        sub = subset(files["5312x5312"], {"qwen_sca", ref}, common, E / "pairs_tmp")
-        q = E / "paired" / f"sca_minus_{ref.split('_')[1]}_5312.csv"
-        run([PY, "-I", str(P / "scripts/paired_bootstrap.py"), "--method", "qwen_sca", "--reference", ref,
+        sub = subset(files["5312x5312"], {meth, ref}, common, E / "pairs_tmp")
+        q = E / "paired" / f"{name}_5312.csv"
+        run([PY, "-I", str(P / "scripts/paired_bootstrap.py"), "--method", meth, "--reference", ref,
              "--draws", "2000", "--out", str(q), *sub], log)
         pairs.append(q)
     per5, f5 = merge(rows5, ids)
     write_csv(R / "per_image_5312.csv", per5, f5)
     write_csv(R / "summary_5312.csv", summarize(per5))
-    sca_area = sorted(have["qwen_sca"] & have["qwen_area"], key=ids.index)
-    common_rows = [r for r in per5 if r["prompt_id"] in sca_area and r["method"] in ("qwen_sca", "qwen_area")]
+    trio = ("qwen_sca", "qwen_sca40", "qwen_area") if have["qwen_sca40"] else ("qwen_sca", "qwen_area")
+    sca_area = sorted(set.intersection(*(have[m] for m in trio)), key=ids.index)
+    common_rows = [r for r in per5 if r["prompt_id"] in sca_area and r["method"] in trio]
     write_csv(R / "summary_5312_paired_prompts.csv", summarize(common_rows))
     if "4096x4096" in files:
         rows4 = read_rows(files["4096x4096"])
@@ -327,8 +352,11 @@ def main(argv=None):
     t = timing("5312x5312", found["5312x5312"]) + timing("4096x4096", found["4096x4096"])
     write_csv(R / "timing.csv", t)
     write_csv(R / "timing_summary.csv", timing_summary(t))
+    matched = step_matched(t)
+    write_csv(R / "timing_step_matched.csv", matched)
     area = next((d for (m, _), (d, _) in sorted(found["5312x5312"].items()) if m == "qwen_area"), None)
     sca = next((d for (m, _), (d, _) in sorted(found["5312x5312"].items()) if m == "qwen_sca"), None)
+    sca40 = next((d for (m, _), (d, _) in sorted(found["5312x5312"].items()) if m == "qwen_sca40"), None)
     about = {"prompts": [x for x in ids], "paired_prompts_5312": sca_area,
              "images": {res: {m: sorted(pid for (mm, pid) in found[res] if mm == m) for m in METHODS} for res in SIZES},
              "area": None if area is None else {k: area["config"].get(k) for k in
@@ -338,6 +366,8 @@ def main(argv=None):
              "sca": None if sca is None else {k: sca["config"].get(k) for k in
                                               ("steps", "true_cfg_scale", "negative_prompt", "mu_mode", "mu", "sca",
                                                "implementation_sha256", "diffusers", "torch")},
+             "sca40": None if sca40 is None else {k: sca40["config"].get(k) for k in ("steps", "sca", "mu")},
+             "step_matched": next((r for r in matched if r["prompt_id"] == "median"), None),
              "metrics": "ImageReward, aesthetic, HPSv2, HPSv2.1, CLIP-IQA, ARNIQA (eval_extra.py); CLIP, PickScore "
                         "(constancy_rope eval.py); MUSIQ_c on four 1024^2 crops and MUSIQ on a 4096 px downscale",
              "bootstrap": "scripts/paired_bootstrap.py, prompts resampled, 2000 draws, seed 0, 95% percentile CI"}

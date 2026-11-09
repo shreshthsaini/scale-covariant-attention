@@ -1838,3 +1838,18 @@ paper/figures/snippets/showcase_qwen.tex with AReA (switch \resqwen stays off; t
   for SCA; the AReA implementation hash 4cbf0ba5 is the same in 8b6a7e9, b8e55fe and 535523d), 000q_z_eval.sh in
   taskq/hold_area_qwen. Evaluator smoke-tested on CPU (two prompts, stand-in AReA images): every metric tool, the paired
   bootstrap, timing and SHA256SUMS ran. SCSd 1132074 (gh-dev 4 x 2 h) estimated start 19:50.
+- 2026-11-09 15:40, lead: the 50 vs 40 step mismatch confounds timing and quality, so SCA also runs at AReA's 40
+  steps on the same 15 prompts at 5312^2 (000q_z_sca40_00_03 ... _12_15, after the other 000q tasks; label
+  qwen_sca40, out/showcase/qwen_sca40/5312x5312; code/fa20267, flags of 000q_<k>2 with --steps 40). SCA's gate and
+  window thresholds are noise levels, so at 40 steps the global opening covers 11 steps (14 of 50 scaled is 11.2) and
+  the windows 166, 166, 145, 124, 124, 104, 104 cover the same noise range (sigma 0.858 to 0.747), native 83 after.
+  The evaluation waits for these too. qwen_area_eval.py adds sca40_minus_area_5312.csv (paired bootstrap of SCA at 40
+  steps minus AReA), means over the prompts all three share (summary_5312_paired_prompts.csv) and
+  timing_step_matched.csv (per prompt, SCA 40 vs AReA 40, both-clean flag, median row). Page: the Qwen grid gains an
+  "SCA, 40 steps" panel (every panel label names its steps) and the table shows AReA, SCA 40 with its difference and
+  SCA 50 with its difference, plus the step-matched median seconds. gen_qwen_area_text.py reports both comparisons and
+  the step-matched seconds; the paper figure keeps SCA at 50 steps beside full attention and AReA, and its caption
+  lists median seconds for all four. All re-tested on stand-in images (CPU evaluator, tectonic, check_page).
+- First timings (all clean, GH200): AReA 4096^2 420 (first in process), 370, 370 s (40 steps); SCA 4096^2 468 (first),
+  401, 401 s (50 steps); AReA 5312^2 762 s (sc_p01, first) and 760 s (sc_l01, first), peak 55.8 GB, against SCA
+  5312^2 748 s warm (50 steps).

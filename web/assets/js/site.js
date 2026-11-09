@@ -516,7 +516,7 @@
     });
     function secs(z, p) {
       var t = (z.timing || {})[p.m];
-      return t && t.seconds ? p.label + ": " + Math.round(t.seconds) + " s, " + t.steps + " steps" + (t.shared ? " (GPU shared)" : "") : null;
+      return t && t.seconds ? p.label + ": " + Math.round(t.seconds) + " s" + (t.shared ? " (GPU shared)" : "") : null;
     }
     function render() {
       var z = Z[at], ps = z.panels.filter(function (p) { return on[p.m]; });
@@ -535,17 +535,27 @@
     if (!sum || !R || !R.metrics || !R.metrics.length) return;
     function fx(x) { return x === null || x === undefined ? "" : Math.abs(x) >= 10 ? x.toFixed(2) : x.toFixed(3); }
     function sx(x) { return (x > 0 ? "+" : x < 0 ? "−" : "") + fx(Math.abs(x)); }
+    function dcell(d) {
+      if (!d || d.delta === null || d.delta === undefined) return el("td", { text: "" });
+      var sig = d.lo > 0 || d.hi < 0;
+      return el("td", {}, [el(sig ? "b" : "span", { text: sx(d.delta) }), el("span", { class: "faint ci", text: "[" + fx(d.lo) + ", " + fx(d.hi) + "]" })]);
+    }
+    var has40 = R.metrics.some(function (m) { return m.d40; });
     var rows = R.metrics.map(function (m) {
-      var sig = m.lo > 0 || m.hi < 0;
-      return el("tr", {}, [el("td", { text: m.name }), el("td", { text: fx(m.sca) }), el("td", { text: fx(m.area) }),
-        el("td", {}, [el(sig ? "b" : "span", { text: sx(m.delta) }), el("span", { class: "faint", text: " [" + fx(m.lo) + ", " + fx(m.hi) + "]" })])]);
+      var cells = [el("td", { text: m.name }), el("td", { text: fx(m.area) })];
+      if (has40) cells.push(el("td", { text: fx(m.sca40) }), dcell(m.d40));
+      cells.push(el("td", { text: fx(m.sca) }), dcell(m.d50));
+      return el("tr", {}, cells);
     });
-    var T = R.timing || {}, tl = [["qwen_sca", "SCA"], ["qwen_area", "AReA"], ["qwen_full", "full attention"]].filter(function (k) { return T[k[0]] && T[k[0]].median_clean; })
-      .map(function (k) { var t = T[k[0]]; return k[1] + " " + Math.round(t.median_clean) + " s over " + t.n_clean + " of " + t.n + " images (" + t.steps + " steps)"; });
+    var head = ["Metric", "AReA, 40 steps"].concat(has40 ? ["SCA, 40 steps", "SCA 40 minus AReA"] : []).concat(["SCA, 50 steps", "SCA 50 minus AReA"]);
+    var T = R.timing || {}, tl = [["qwen_area", "AReA"], ["qwen_sca40", "SCA"], ["qwen_sca", "SCA"], ["qwen_full", "full attention"]].filter(function (k) { return T[k[0]] && T[k[0]].median_clean; })
+      .map(function (k) { var t = T[k[0]]; return k[1] + " at " + t.steps + " steps " + Math.round(t.median_clean) + " s (" + t.n_clean + " of " + t.n + " images)"; });
+    var M = R.step_matched, ms = M && M.sca40 && M.area ? "Step-matched, both at 40 steps, over the " + M.n + " prompts where both ran alone: median " + Math.round(M.sca40) + " s per image for SCA and " + Math.round(M.area) + " s for AReA." : null;
     sum.appendChild(el("div", { class: "qa-sum" }, [
-      el("p", { class: "muted", html: "Mean over the " + R.n_prompts + " prompts both methods share at 5312&nbsp;&times;&nbsp;5312, and SCA minus AReA with a 95% bootstrap interval over prompts (bold where the interval excludes zero). Higher is better for every metric; each scores the prompt as written." }),
-      el("table", { class: "mini" }, [el("thead", {}, [el("tr", {}, [el("th", { text: "Metric" }), el("th", { text: "SCA" }), el("th", { text: "AReA" }), el("th", { text: "SCA minus AReA" })])]), el("tbody", {}, rows)]),
-      tl.length ? el("p", { class: "muted", text: "Median seconds per image on one GH200 with no other process on it: " + tl.join("; ") + "." }) : null]));
+      el("p", { class: "muted", html: "Means over the " + R.n_prompts + " prompts at 5312&nbsp;&times;&nbsp;5312, and SCA minus AReA with a 95% bootstrap interval over prompts (bold where the interval excludes zero), for SCA at AReA&rsquo;s 40 steps and at Qwen-Image&rsquo;s default 50. Higher is better for every metric; each scores the prompt as written." }),
+      el("div", { class: "qa-scroll" }, [el("table", { class: "mini" }, [el("thead", {}, [el("tr", {}, head.map(function (h) { return el("th", { text: h }); }))]), el("tbody", {}, rows)])]),
+      tl.length ? el("p", { class: "muted", text: "Median seconds per image on one GH200 with no other process on it: " + tl.join("; ") + "." }) : null,
+      ms ? el("p", { class: "muted", text: ms }) : null]));
   })();
 
   /* ---------------------------------------------------------------- comparisons at 4096^2: every method in one synced zoom grid */
