@@ -1780,3 +1780,42 @@ reach emulation; then (coordinator) slots for FLUX.2-dev, Qwen-Image and Ideogra
   waits on SCS1/SCS2/SCSd).
 
 Addendum 2026-11-08 10:30 (lead, after crash): lead session restarted on controller i614-062 (job 1129781, ends 11-10 about 02:45). gpu_watch.sh running here (log logs/gpu_watch_i614-062.log) and on i617-052 (job 1126651, ends about 16:00). Overnight dev fleet SCSd (1129746) completed Ideogram 00a1 check (identity passes both passes, rel L2 at noise floor), 2048/4096 fits and merges, plus 19 showcase tasks. New dev fleet 1130161 submitted; SCS1/SCS2 pending. Showcase agent resumed. 187 tasks pending.
+
+## 38. 2026-11-09: AReA's released Qwen-Image code against SCA (AReA-Qwen owner; log .agent/notes/area_qwen_20261109.md)
+Goal (user approval relayed by the lead): run AReA's upstream release on Qwen-Image at its own recommended settings on
+the three Qwen showcase prompts (5312^2, and 4096^2, which its README targets), then SCA and AReA on 12 more prompts
+for a 15-prompt comparison with the project's metrics, AReA as a column of the page's Qwen grids, and
+paper/figures/snippets/showcase_qwen.tex with AReA (switch \resqwen stays off; the lead decides).
+- Source: github.com/KooroshRH/AReA at 3efb7e57 ("Add Qwen-Image support", 2026-10-30), the showcase agent's clone,
+  vendored unmodified as third_party/AReA_3efb7e5 (no .git, no README images; row and audit note in
+  third_party/README.md). Audit: the area package imports only the standard library, numpy, torch and diffusers; no
+  network call, no file write, all randomness from seeded numpy generators. Its requirements pin diffusers 0.40; the
+  sca env (0.39) is used because every file on the Qwen path is numerically identical on CUDA (diffed against the
+  flashart env's 0.40: Neuron RoPE and tensor-parallel plans, removed VAE helpers, user-timestep branch of the
+  scheduler; dispatch_attention_fn and native SDPA byte-identical). No new env.
+- Settings, read from the vendored generate.py at run time (scripts/run_area_qwen.py): 40 steps, true CFG 4.0, negative
+  prompt "" (empty), its quality suffix QWEN_SUFFIX appended to every prompt (", Ultra HD, 4K, cinematic composition,
+  faithful to the described content, ..."), VAE tiling; AReA() defaults: switch sigma 0.87, subsample pooling, Halo 8,
+  bridge 0.5, AReA seed = run seed 0. The backbone sets its own shift: mu 2.0 at 4096^2 (Phase II from step 20 of 40,
+  as its README says), 2.26 at 5312^2 (22 coarse steps, f 4 then 2, then windows 234 down to 64 over 18 steps).
+  Harness (not method) differences from generate.py: CPU generator with the per-prompt derived seed (same initial
+  noise as SCA and full attention), prompt embeddings precomputed through QwenImagePipeline.encode_prompt (sca/qwen.py
+  cache) with the text encoder freed, so the timed scope equals sample_qwen.py's (denoising + VAE decode). Sidecar
+  "prompt" is the benchmark prompt (metrics score it); config.conditioning_prompt has the suffix.
+- SCA side unchanged: code/fa20267 and the QWEN_SCA flags of every Qwen SCA image so far (50 steps, CFG 4, negative
+  " ", mu native 0.834).
+- Prompts: /scratch/09032/saini_2/sca/prompts/qwen_area15.jsonl = the first three prompts of each of the five groups
+  of showcase_prompts.jsonl (p01-p03, l01-l03, h01-h03, a01-a03, d01-d03); rows identical to showcase40.jsonl.
+- Tasks (slurm/area_qwen_tasks.py --code code/<commit>): 000q_a AReA 5312^2 prompts 1-3; 000q_b AReA 4096^2 1-3;
+  000q_c SCA 4096^2 1-3 (00s4_a flags, so 00s4_a later skips them); 000q_{d,e,f,g}1 AReA 5312^2 and
+  000q_{d,e,f,g}2 SCA 5312^2 on prompts 4-15, three per task (00s4_b flags, outputs shared). Outputs
+  out/showcase/qwen_{area,sca}/<HxW>/. Every generation task waits up to 5 min for an exclusive GPU, then polls
+  nvidia-smi every 15 s and appends other processes to out/showcase/_gpu/<task>.apps as "poll <epoch> ..." lines;
+  run_area_qwen.py also polls in-process and writes gpu_cotenants, gpu_shared and first_call_in_process to the sidecar.
+  The task that completes the set moves taskq/hold_area_qwen/000q_z_eval.sh to pending.
+- Evaluation (scripts/qwen_area_eval.py -> results/qwen_5312_vs_area with SHA256SUMS): ImageReward, aesthetic,
+  HPSv2, HPSv2.1, CLIP-IQA, ARNIQA, CLIP, PickScore, MUSIQ_c (four 1024^2 crops) and MUSIQ on a 4096 px downscale;
+  paired bootstrap of SCA minus AReA (2000 draws, seed 0) on common prompts; per-image timing with shared and
+  first-in-process flags; medians over all, clean, and clean non-first images.
+- Tests: tests/test_area_qwen.py (5 CPU tests: generate.py defaults parsed, README schedule, end-to-end on a tiny
+  pipeline at 1344^2 with both AReA phases on both CFG passes, resume, detach).
