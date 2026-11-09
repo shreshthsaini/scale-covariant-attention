@@ -1819,3 +1819,20 @@ paper/figures/snippets/showcase_qwen.tex with AReA (switch \resqwen stays off; t
   first-in-process flags; medians over all, clean, and clean non-first images.
 - Tests: tests/test_area_qwen.py (5 CPU tests: generate.py defaults parsed, README schedule, end-to-end on a tiny
   pipeline at 1344^2 with both AReA phases on both CFG passes, resume, detach).
+- Page (b8e55fe, code only; data rebuilt once AReA images land): build_showcase.py lists qwen_area in the qwen_4096 and
+  qwen_5312 groups (members SCA, AReA, full attention; crop boxes stay the SCA image's). A new block "Qwen-Image beside
+  AReA" under Other backbones (index.html #qa-block, site.js qwenArea): prompt strip, method chips, one synced zoom grid
+  (zoomgrid.js) per prompt with SCA, AReA and, for prompts 1-3, full attention; per-image seconds; a table of the ten
+  metric means and SCA minus AReA with 95% intervals plus clean median seconds, read by build_showcase_page.py from
+  results/qwen_5312_vs_area. The block stays hidden until showcase.js has qwen_area items, so the committed page renders
+  as before with the current data. set_showcase_backbones.py now fills "backbones" with FLUX.2-dev pairs only and
+  "qwen_area" with the 15-prompt set (SCA and AReA both present). Smoke test on a scratch copy of web/ with stand-in
+  AReA images: check_page --http passes (desktop and phone, 0 console errors, 0 overflow) except the copy's missing
+  paper PDF.
+- Paper: fig_showcase_models.py --model Qwen-Image writes a comparison grid (columns full attention, AReA, SCA (ours),
+  each image with its native crop of the same window; rows = prompts 1-3) whenever the manifest has those images, and
+  the caption names steps and settings and, once results exist, median seconds. Compiled in a minimal tectonic test.
+- Refresh recipe after the 000q images: build_showcase.py, set_showcase_backbones.py, build_showcase_page.py,
+  check_page.py --http, fig_showcase_models.py --model Qwen-Image, commit web/ and paper/figures; the lead publishes.
+- Status 12:50: 11 generation tasks at the head of the spool (code/b8e55fe for AReA, code/fa20267 for SCA),
+  000q_z_eval.sh in taskq/hold_area_qwen. SCSd 1132074 (gh-dev 4 x 2 h) estimated start 19:50.
