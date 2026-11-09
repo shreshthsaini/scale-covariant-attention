@@ -1853,3 +1853,17 @@ paper/figures/snippets/showcase_qwen.tex with AReA (switch \resqwen stays off; t
 - First timings (all clean, GH200): AReA 4096^2 420 (first in process), 370, 370 s (40 steps); SCA 4096^2 468 (first),
   401, 401 s (50 steps); AReA 5312^2 762 s (sc_p01, first) and 760 s (sc_l01, first), peak 55.8 GB, against SCA
   5312^2 748 s warm (50 steps).
+- 15:55 status: SCSd 1132074 (c642-022/031/032/082, ends about 17:13) has finished 000q_b (AReA 4096^2: 420 s first in
+  process, 370, 370 s; 40 steps; peak 49.8 GB) and 000q_c (SCA 4096^2: 468 s first, 401, 401 s; 50 steps; 47.7 GB) and
+  is running 000q_a, d1, d2, e1. AReA 5312^2 so far 762 and 760 s (first in process), 688 and 690 s warm, 40 steps,
+  peak 55.8 GB, i.e. 17.2 s per step against SCA's 15.0 (748 s warm at 50 steps); no other process on any GPU so far.
+  Visual check of the first real images: AReA and SCA both give one coherent watch at 5312^2 (full attention breaks
+  it into two small watches); native crops clean in both. Ten 000q tasks still pending (e2, f1, f2, g1, g2 and the
+  five sca40 tasks); whatever is running at the walltime goes back to pending and resumes per image on the next dev
+  fleet (dev_resubmit.sh). Code: AReA and the evaluation on code/5e945ef, SCA on code/fa20267.
+- Finish path: when every generation marker exists, the last task moves 000q_z_eval.sh to pending; after scoring it
+  runs slurm/area_qwen_finish.sh (live repo, CPU, nice): build_showcase.py, set_showcase_backbones.py,
+  build_showcase_page.py, fig_showcase_models.py --model Qwen-Image, gen_qwen_area_text.py and check_page --http
+  (screenshots in /scratch/09032/saini_2/sca/web_assets/check_area_qwen, log logs/area_qwen_finish.log). Nothing is
+  committed or published: review results/qwen_5312_vs_area, the screenshots and the diff, commit web/,
+  paper/figures and results/qwen_5312_vs_area, then the lead publishes. Done marker: out/showcase/_done/000q_z_eval.sh.
