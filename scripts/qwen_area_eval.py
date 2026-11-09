@@ -53,9 +53,9 @@ def run(cmd, log):
         raise SystemExit(f"step failed rc={rc}: {' '.join(cmd)} (log {log})")
 
 
-def sidecars(res, ids, out=OUT):
+def sidecars(res, ids, out=None):
     """{(method, prompt id): (sidecar dict, png path)} of complete images of the requested prompts."""
-    found = {}
+    out, found = out or OUT, {}
     for m in METHODS:
         for meta in sorted(glob.glob(str(out / m / res / "*.json"))):
             try:
@@ -143,10 +143,10 @@ def summarize(per_image):
 
 # ----------------------------------------------------------------------------- GPU sharing per image
 
-def task_records(out=OUT):
+def task_records(out=None):
     """[(task, image keys (out dir, prompt id), snapshot_shared, polled, poll epochs)] from out/showcase/_gpu/*.apps."""
     recs = []
-    for f in sorted((out / "_gpu").glob("*.apps")):
+    for f in sorted(((out or OUT) / "_gpu").glob("*.apps")):
         lines = [x for x in f.read_text().splitlines() if x.strip()]
         cmds = [x[4:] for x in lines if x.startswith("cmd ")]
         if not cmds:
@@ -266,7 +266,10 @@ def main(argv=None):
     p.add_argument("--min-pairs", type=int, default=5, help="Bootstrap a pair only with at least this many prompts")
     p.add_argument("--device", default="cuda")
     p.add_argument("--skip-metrics", action="store_true", help="Reuse the per-image CSVs already in --eval")
+    p.add_argument("--outputs", type=Path, default=OUT, help="Generation root (qwen_<method>/<HxW>; tests)")
+    p.add_argument("--musiq-long-side", type=int, default=4096, help="Full-image MUSIQ downscale (tests use less)")
     args = p.parse_args(argv)
+    globals()["OUT"] = args.outputs          # every helper reads the module's OUT
     ids = [json.loads(x)["id"] for x in open(args.prompts) if x.strip()]
     E, R = args.eval, args.results
     for d in (E / "paired", E / "pairs_tmp", R):
@@ -291,7 +294,7 @@ def main(argv=None):
                  "--reference-method", "qwen_area", "--res", res, "--out", str(E / f"base{tag}"), "--metrics",
                  "clip,pickscore", "--device", args.device, "--no-wandb"], log)
             run([PY, str(P / "scripts/ideogram4_musiq.py"), "--root", str(root), "--out", str(E / f"musiq{tag}.csv"),
-                 "--long-side", "4096", "--device", args.device], log)
+                 "--long-side", str(args.musiq_long_side), "--device", args.device], log)
         files[res] = [str(E / f"extra{tag}/extra_per_image.csv"), str(E / f"base{tag}/per_image.csv"),
                       str(E / f"musiq{tag}.csv")]
     rows5 = read_rows(files["5312x5312"])
@@ -328,11 +331,11 @@ def main(argv=None):
     sca = next((d for (m, _), (d, _) in sorted(found["5312x5312"].items()) if m == "qwen_sca"), None)
     about = {"prompts": [x for x in ids], "paired_prompts_5312": sca_area,
              "images": {res: {m: sorted(pid for (mm, pid) in found[res] if mm == m) for m in METHODS} for res in SIZES},
-             "area": None if area is None else {k: area["config"][k] for k in
+             "area": None if area is None else {k: area["config"].get(k) for k in
                                                 ("area", "steps", "true_cfg_scale", "negative_prompt", "prompt_suffix",
                                                  "mu_rule", "implementation_sha256", "diffusers", "torch")},
              "area_schedule_5312": None if area is None else area.get("area_schedule"),
-             "sca": None if sca is None else {k: sca["config"][k] for k in
+             "sca": None if sca is None else {k: sca["config"].get(k) for k in
                                               ("steps", "true_cfg_scale", "negative_prompt", "mu_mode", "mu", "sca",
                                                "implementation_sha256", "diffusers", "torch")},
              "metrics": "ImageReward, aesthetic, HPSv2, HPSv2.1, CLIP-IQA, ARNIQA (eval_extra.py); CLIP, PickScore "

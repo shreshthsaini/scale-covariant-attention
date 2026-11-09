@@ -147,6 +147,16 @@ def qa_results(path=QA_RESULTS):
             "source": "results/qwen_5312_vs_area"}
 
 
+def qa_image_flags(path=QA_RESULTS):
+    """{(method, prompt id): gpu_shared} per 5312^2 image from results/qwen_5312_vs_area/timing.csv (the evaluator
+    times each image against the task's co-tenant polls; the manifest flags whole tasks). Empty until it exists."""
+    f = os.path.join(path, "timing.csv")
+    if not os.path.exists(f):
+        return {}
+    return {(r["method"], r["prompt_id"]): r["gpu_shared"] == "True" for r in csv.DictReader(open(f))
+            if r["res"] == "5312x5312"}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--procs", type=int, default=6)
@@ -186,6 +196,7 @@ def main():
         results = pool.map(render, jobs)
     it = iter(results)
     data = {"hero": [], "groups": [], "backbones": [], "qwen_area": {"items": [], "results": qa_results()}}
+    qa_flags = qa_image_flags()
     cards = {}
     for role, s, members in plan:
         recs = [next(it) for _ in members]
@@ -213,7 +224,9 @@ def main():
         if role == "qwen_area":
             item["thumb"] = thumb(os.path.join(WEB, r0["view"]), os.path.join(WEB, os.path.dirname(r0["view"]), "thumb.webp"))
             item["timing"] = {o["method"]: {"seconds": None if o.get("seconds") is None else round(o["seconds"], 1),
-                                            "steps": o.get("steps"), "shared": o.get("gpu_shared")} for o, _ in members}
+                                            "steps": o.get("steps"),
+                                            "shared": qa_flags.get((o["method"], o["prompt_id"]), o.get("gpu_shared"))}
+                              for o, _ in members}
             data["qwen_area"]["items"].append(item)
         elif role == "hero":
             data["hero"].append(item)
