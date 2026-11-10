@@ -2123,3 +2123,12 @@ contributions, captions of at most three lines, a leaner Table 1, and redesigned
 - A (reach-annealed hand-off): kill criterion met (Section 40), so results/ra195 will not exist and \resra stays off.
   ra_p19 and ra_p22 stay staged in taskq/hold_ra, not released. Progressive SCA remains the headline.
 - Before submitting: anonymize the code URL macro (unchanged open item).
+
+## 43. 2026-11-10: version 6, full presentation revamp (lead; brief .agent/notes/paper_v6/BRIEF.md)
+User, 10:05: the v5.1 presentation is "still very subpar"; full revamp for version 6 (text, tables, figures, images,
+method-figure design, qualitative design, examples), best-paper level in rigour, clarity and claim.
+- Lead read all main pages and the appendix sheets (/scratch/09032/saini_2/sca/paper_builds/v6_review_v51) and wrote
+  the brief: critique, one story spine, target structure, fixed figure stems (paper/figures/v6/), design system,
+  hard rules, ownership. v5.1 tagged paper-v5.1.
+- 10:20 five Opus workers launched in parallel: text, appendix, methodfigs, visuals, tablesplots (notes files in
+  .agent/notes/paper_v6/). No result changes; no GPU work planned.

@@ -1,4 +1,4 @@
-# SCA live state, 2026-11-10 04:00 CST (paper owner; HANDOVER.md Sections 31 to 42 are the log)
+# SCA live state, 2026-11-10 10:25 CST (paper owner; HANDOVER.md Sections 31 to 42 are the log)
 
 ## Goal
 Submission-ready SCA paper that sells: measurement-first story (observation, two views, reach emulation, use,
@@ -7,14 +7,21 @@ calibration/calibrate/calibrated, no curated/uncurated, no "random" as selection
 Main text at most 10 pages (now 9).
 
 ## Status and next action
-- Paper v5.1 delivered (HANDOVER Section 42; hashes in .agent/notes/latest_delivery.md, build delivery_5revguaf):
-  55 pp, main text pages 1 to 9, 0 overfull, 0 undefined, fresh unzip builds to the same pages.
-- \resprogabl is ON: Table 2 progressive group, Section 4.2 sentences (\progAblResult), appendix Table L.3
-  (tab:prog_abl_all). Result: shared and per-layer weights lose to per-head weights on 10 of 10 per-image metrics
-  (IR -0.014 and -0.012), window only on 8; patch FID is lower with shared (-7.3 [-10.3, -5.2]) and per-layer
-  (-6.4 [-8.8, -4.8]) and higher with window only (+6.0 [3.9, 9.9]).
-- \resra stays OFF for good: the reach-annealed screen met its kill criterion (HANDOVER 40, results/ra_screen).
-- NEXT: nothing in flight. Before submitting, anonymize the code URL macro.
+- v5.1 is the last delivered paper (tag paper-v5.1, HANDOVER 42, .agent/notes/latest_delivery.md).
+- IN FLIGHT since 2026-11-10 10:20: version 6, a full presentation revamp the user asked for ("best paper at ICLR":
+  all text, tables, figures, method and qualitative design). Lead brief: .agent/notes/paper_v6/BRIEF.md (story spine,
+  figure stems under paper/figures/v6/, design system, hard rules, one writer per file).
+- Five Opus workers (background agents of the lead session), each with a notes file in .agent/notes/paper_v6/:
+  text (main.tex), appendix (appendix.tex), methodfigs (observation, method, emulation figures, appendix zoom),
+  visuals (hero, qualitative, all sample pages), tablesplots (generators, Tables 1 to 3, gains and scaling plots,
+  Holm-adjusted significance). Workers do not commit; the lead commits.
+- NEXT: when workers report, read their notes, have text and appendix integrate the new figures and captions,
+  build, review every page against the gold-standard rubric (lead reads the renders), send corrections, repeat until
+  no rubric item scores 0. Then paper/build_delivery.py, latest_delivery.md, HANDOVER Section 43, commit, push,
+  sync, and send the user a reading PDF under 30 MiB (PyMuPDF rewrite_images, see share_20261110).
+- If the session restarts mid-way: the workers die with it. Read each notes file for progress, check
+  paper/figures/v6/ and git status, and relaunch only the unfinished roles with the same brief.
+- \resra stays OFF for good (HANDOVER 40). Before submitting, anonymize the code URL macro.
 
 ## Map
 | file | read it when |
