@@ -55,7 +55,7 @@
 \section{Proofs}
 \label{app:proofs}
 
-This section proves Lemma~\ref{lem:split} and Propositions~\ref{prop:range} to~\ref{prop:opt} of Section~\ref{sec:method} and treats text-image offsets in Remark~\ref{rem:text}.
+This section proves Lemma~\ref{lem:split} (Section~\ref{sec:observation}) and Proposition~\ref{prop:opt} (Section~\ref{sec:emulation}), states and proves the two properties of the views cited in Section~\ref{sec:branches} (Propositions~\ref{prop:range} and~\ref{prop:cost}), and treats text-image offsets in Remark~\ref{rem:text}.
 
 \begin{lemma}[Softmax split]
 \label{lem:split}
@@ -66,6 +66,10 @@ Write $Z^{\mathrm{near}}=\sum_{j\in\Kset^{\mathrm{near}}}e^{\ell_j}$, so that $Z
 \end{proof}
 The lemma motivates the two-branch form; \sca{}'s key sets are not a partition. Block centres can fall inside the window, text keys enter both branches, and a bridge token inside the window appears twice in the local softmax, which doubles its weight there.
 
+\begin{proposition}[Trained position range]
+\label{prop:range}
+Assume exact integer positions and $t\le n_0\le\min(H,W)$. Every query-key offset of the global operator, and every offset between an image query and a key of its native window $\Win_{n_0}(i)$ (bridge keys and wider windows excluded), is at most $n_0-1$ per axis. Each global-operator query sees the native $T+n_0^2$ keys.
+\end{proposition}
 \begin{proof}[Proof of Proposition~\ref{prop:range}]
 \emph{Global operator.} Image queries sit at $c(p_i)\in\Gnat=[n_0]^2$ and text queries at $0\in\Gnat$; subsampled keys sit at $b\in\Gnat$ and text keys at $0$. Any two points of $[n_0]^2$ differ by at most $n_0-1$ per axis. The key count is $T+|\Gnat|=T+n_0^2$.
 
@@ -77,6 +81,10 @@ The lemma motivates the two-branch form; \sca{}'s key sets are not a partition. 
 FLUX.1 places all text tokens at position 0, so the offset between an image query at $p_i$ and a text key is $p_i$. In the global operator the query sits at $c(p_i)\in[n_0]^2$, inside the trained range. In the local operator it keeps $p_i$, up to $sn_0-1$ per axis, exactly as in full attention and AReA's windows at the target. Mapping text offsets through $c(\cdot)$ in the local operator is a possible refinement that we have not tested.
 \end{remark}
 
+\begin{proposition}[Cost]
+\label{prop:cost}
+Per head and layer, full attention scores $(N+T)^2$ query-key pairs, the global operator $(N+T)(T+N_0)$ with $N_0=|\Gnat|=n_0^2$, and the local operator $N(T+R+w^2)$ with $R=|\mathcal{B}|$. For fixed $n_0$, $w$, $R$, and $T$ the total is $O\big(N(T+R+w^2+N_0)\big)$, linear in $N$.
+\end{proposition}
 \begin{proof}[Proof of Proposition~\ref{prop:cost}]
 Full attention scores every query against every key, $(N+T)^2$ pairs. The global operator scores $N+T$ queries against $T+|\Gnat|$ keys with $|\Gnat|=N/(s_Hs_W)=n_0^2$. The local operator scores $N$ image queries against $T$ text keys, $R$ bridge keys, and $w^2$ window keys. The sum is at most $(2N+T)(T+R+w^2+N_0)$, which is $O(N(T+R+w^2+N_0))$ for fixed $n_0$, $w$, $R$, and $T$. Value aggregation has the same pair counts. In the opening phase the local term is absent. The FlexAttention kernel visits whole blocks and masks the extra pairs. A query block of $8\times16$ tokens spans two tiles whose windows are 8 columns apart, so it visits a $64\times72$ key region, 12.5\% more than one window, plus partial blocks at clamped borders. This changes the constant, not the order.
 \end{proof}
@@ -96,7 +104,7 @@ Any rule that assigns one weight per cell is a feasible $\pi'$ in every cell. Ex
 \section{Reach emulation: details and statistics}
 \label{app:emulation}
 
-This section expands Section~\ref{sec:analysis} and Figure~\ref{fig:focus}c. Figure~\ref{fig:heads} relates each head's measured reach to its fitted weight over all 1368 heads, and Table~\ref{tab:variance_split} backs the first finding of Section~\ref{sec:analysis}, that reach varies by head and not by step. Figure~\ref{fig:reach_tables} shows the reach tables, and Figure~\ref{fig:pi_heads} every head's $\pih$ with the split-half agreement. Figures~\ref{fig:relerr} and~\ref{fig:pisigma} give the output errors per rule and per noise level, and Figure~\ref{fig:heatmap} every head's weight per block.
+This section expands Section~\ref{sec:observation}, Figure~\ref{fig:observation}, and Section~\ref{sec:emulation}. Table~\ref{tab:variance_split} backs the observation of Section~\ref{sec:observation}, that reach varies by head and not by step, and Figure~\ref{fig:heads} relates each head's measured reach to its fitted weight over all 1368 heads. Figure~\ref{fig:reach_tables} shows the reach tables, and Figure~\ref{fig:pi_heads} every head's $\pih$ with the split-half agreement. Figures~\ref{fig:relerr} and~\ref{fig:pisigma} give the output errors per rule and per noise level, and Figure~\ref{fig:heatmap} every head's weight per block.
 
 \begin{figure}[!htbp]
   \centering
@@ -275,7 +283,7 @@ This section expands Section~\ref{sec:branches} and Figure~\ref{fig:method}. Fig
 \section{Algorithms in full}
 \label{app:code}
 
-Algorithms~\ref{alg:emulate_full} and~\ref{alg:sample_full} expand Algorithms~\ref{alg:emulate} and~\ref{alg:sample} to every step the code performs, and Algorithm~\ref{alg:prog} does so for Algorithm~\ref{alg:prog_main}, progressive \sca{} (Section~\ref{sec:progressive}). Each step follows the statistics and attention modules in \texttt{sca/} or \texttt{scripts/sample\_progressive.py} in the code repository (link in the abstract), and each comment names the equation or setting that a line implements.
+Algorithms~\ref{alg:emulate_full} and~\ref{alg:sample_full} expand Algorithms~\ref{alg:emulate} and~\ref{alg:sample} to every step the code performs, and Algorithm~\ref{alg:prog} writes out progressive \sca{} (Section~\ref{sec:progressive}). Each step follows the statistics and attention modules in \texttt{sca/} or \texttt{scripts/sample\_progressive.py} in the code repository (link in the abstract), and each comment names the equation or setting that a line implements.
 
 \begin{figure}[tp]
 \noindent\begin{minipage}[t]{0.48\linewidth}

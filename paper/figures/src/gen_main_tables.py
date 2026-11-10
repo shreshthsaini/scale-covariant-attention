@@ -11,6 +11,11 @@ Outputs, in paper/figures/snippets/:
       the \\setlength{\\tabcolsep} line and the tabular of main-text Tables tab:main, tab:ablation and
       tab:generality. The float, caption, label and font line stay in main.tex, which \\input's the file in place
       of the tabular. Each file ends in "\\end{tabular}%" so the \\input adds no extra space.
+  main_tables/tab_main_compact.tex, tab_ablation_compact.tex (2026-11-10)
+      the main text's lean Table 1 (time, IR, HPSv2.1, PickScore, MUSIQ_c, patch FID; bold best per group) and
+      ablation (reach weights, then views); tab_main.tex and tab_ablation.tex keep the full versions.
+      tab_ablation_compact_prog.tex adds the progressive-schedule rows of results/prog195_ablation/ and is written
+      only once that folder has SHA256SUMS (main.tex switch \\ifresprogabl).
   main_tables/tab_panel46.tex
       the tabular of appendix Table tab:panel46 (SigMa and the sampling budgets of the operator without the
       schedule); its float and caption live in appendix.tex.
@@ -441,6 +446,50 @@ def table_main(clean):
     return tabular(r"\setlength{\tabcolsep}{3.1pt}", r"@{}lcrr*{7}{r}@{}", HEAD11 + [r"\midrule"], body, "  ")
 
 
+# Compact main-text Table 1 (2026-11-10 rewrite): the columns that carry the argument (clean time, the three
+# preference scores, crop-level detail, patch FID). Bold marks the best printed value within each group; no underline
+# and no significance colour (the appendix Table tab:all_metrics and Figure paired_area carry the intervals). The full
+# table (steps, campaign time, CLIP, FID) stays in tab_main.tex for the appendix.
+COMPACT = ("clean", "ir", "hpsv21", "pickscore", "musiq_crop1024", "patch_fid")
+HEAD_COMPACT = [r"\toprule",
+                r"Method & Time (s)$\downarrow$ & IR$\uparrow$ & HPS$\uparrow$ & Pick$\uparrow$ & "
+                r"M$_\text{c}\!\uparrow$ & FID$_\text{p}^{\dagger}\!\downarrow$ \\"]
+GROUPS_COMPACT = ("Single pass, shared sampler (28 steps)", "Multi-stage, own recipe")
+
+
+def table_main_compact(clean):
+    flat = table_rows(TAB_MAIN, clean)
+    idx = [j for j, c in enumerate(COLS) if c[0] in COMPACT]
+    check([COLS[j][0] for j in idx] == list(COMPACT), "compact Table 1 column order")
+    cells = [[r[6][j] for j in idx] for r in flat]
+    k0 = 0
+    for _, group in TAB_MAIN:
+        a, b = k0, k0 + len(group)
+        k0 = b
+        for jj, j in enumerate(idx):
+            for i, r in ranks([c[jj] for c in cells[a:b]], COLS[j][3]).items():
+                if r == "best":
+                    cells[a + i][jj] = rf"\textbf{{{cells[a + i][jj]}}}"
+    for i, row in enumerate(flat):
+        for jj, j in enumerate(idx):
+            cells[i][jj] = "--" if cells[i][jj] == "n/m" else pend(cells[i][jj], row[7][j])
+    body, i = [], 0
+    ncol = 1 + len(COMPACT)
+    for g, (_, group) in enumerate(TAB_MAIN):
+        body += ([r"\midrule"] if g else []) + [rf"\multicolumn{{{ncol}}}{{@{{}}l}}{{\emph{{{GROUPS_COMPACT[g]}}}}} \\"]
+        for _ in group:
+            shade = SHADE if flat[i][0] in ("sca", "prog") else ""
+            body.append(shade + " & ".join([flat[i][3]] + cells[i]) + r" \\")
+            i += 1
+    # caption claims of the compact table: progressive SCA prints the best time and HPS of the multi-stage group and
+    # single-pass SCA every best value of the single-pass group
+    single = flat[:len(TAB_MAIN[0][1])]
+    s = [r[0] for r in single].index("sca")
+    lost = [COLS[j][0] for j in idx if ranks([r[6][j] for r in single], COLS[j][3]).get(s) != "best"]
+    check(not lost, f"compact Table 1: single-pass SCA is not best among single-pass rows on {lost}")
+    return tabular(r"\setlength{\tabcolsep}{3.4pt}", r"@{}l*{6}{r}@{}", HEAD_COMPACT + [r"\midrule"], body, "  ")
+
+
 def table_panel(clean):
     flat = table_rows(TAB_PANEL, clean)
     cells = [list(r[6]) for r in flat]
@@ -527,6 +576,66 @@ def table_ablation():
               f"Table 2 caption: '{label}' does not significantly lower both HPSv2.1 and PickScore")
         body.append(" & ".join([label] + delta_cells(dd)) + r" \\")
     PENDING["tab_ablation"] = False  # rows of runs not yet landed are left out, never shown grey
+    return tabular(r"\setlength{\tabcolsep}{2.4pt}", "@{}lrrrr@{}",
+                   [r"\toprule", r"Variant & IR & HPS & Pick & M$_\text{c}$ \\", r"\midrule"], body, "  ")
+
+
+# Compact main-text ablation (2026-11-10 rewrite): the measurement rows first (shared and per-layer weights against
+# per-head weights), then the views; the schedule and bridge rows stay in the appendix (Table tab:app_abl).
+# Progressive-schedule rows (results/prog195_ablation/, method agent) fold in only when that folder has SHA256SUMS:
+# then tab_ablation_compact_prog.tex is written as well, and main.tex's switch \ifresprogabl selects it.
+# Expected files: results/prog195_ablation/*.csv in the paired format of results/prog195_sca_v2/sca_v2_prog_vs_*.csv
+# (method,reference,metric,delta,ci_low,ci_high,n_prompts,...), each row a variant minus progressive SCA.
+PROG_ABL_DIR = RES / "prog195_ablation"
+PROG_ABL_REFS = ("sca_v2_prog",)
+PROG_ABL_LABELS = (("uniform", r"shared $\pi(\sigma)$"), ("shared", r"shared $\pi(\sigma)$"),
+                   ("layer", r"per-layer $\pi_\ell(\sigma)$"), ("switch", "hard switch"), ("hard", "hard switch"))
+ABL_COMPACT_GROUPS = [(r"Reach weights, against per-head $\pi_h$", ("abl_uniform_nb", "abl_layer_nb")),
+                      ("Views", ("abl_v0", "abl_localonly_nb", "abl_globalonly", "abl_mean_nb"))]
+
+
+def prog_ablation_rows():
+    """[(label, dd, n)] of the progressive-schedule ablation, or None while results/prog195_ablation/ lacks
+    SHA256SUMS. Every CSV in the folder must be in the paired format with progressive SCA as the reference."""
+    if not (PROG_ABL_DIR / "SHA256SUMS").exists():
+        return None
+    out = {}
+    for path in sorted(PROG_ABL_DIR.glob("*.csv")):
+        table = list(csv.DictReader(open(path)))
+        if not table or not {"method", "reference", "metric", "delta", "ci_low", "ci_high"} <= set(table[0]):
+            NOTES.append(f"prog195_ablation: {path.name} is not a paired file; skipped")
+            continue
+        for r in table:
+            if r["reference"] not in PROG_ABL_REFS:
+                continue
+            d = out.setdefault(r["method"], {"n": r.get("n_prompts", "")})
+            d[r["metric"]] = (float(r["delta"]), float(r["ci_low"]), float(r["ci_high"]))
+    rows_ = []
+    for method, dd in sorted(out.items()):
+        if not all(k in dd for k, _, _ in ABL_COLS):
+            NOTES.append(f"prog195_ablation: {method} lacks one of {[k for k, _, _ in ABL_COLS]}; skipped")
+            continue
+        label = next((lab for key, lab in PROG_ABL_LABELS if key in method),
+                     method.replace("_", r"\_"))
+        rows_.append((label, dd, dd["n"]))
+        NOTES.append(f"prog195_ablation row '{label}' ({method}, n {dd['n']}): " +
+                     ", ".join(f"{k} {sc * dd[k][0]:+.3f}" for k, sc, _ in ABL_COLS))
+    return rows_
+
+
+def table_ablation_compact(prog_rows=None):
+    S46 = V.summary46(DEFAULT46)
+    sca = [num(sc * S46[k], d) for k, sc, d in ABL_COLS]
+    body = [SHADE + r"Single-pass \sca{} & " + " & ".join(sca) + r" \\"]
+    labels = {m: lab for lab, m, _ in ABL_ROWS}
+    for heading, methods in ABL_COMPACT_GROUPS:
+        body += [r"\midrule", rf"\multicolumn{{5}}{{@{{}}l}}{{\emph{{{heading}}}}} \\"]
+        for method in methods:
+            body.append(" & ".join([labels[method]] + delta_cells(ablation_deltas(method))) + r" \\")
+        if prog_rows and heading.startswith("Reach weights"):
+            body.append(rf"\multicolumn{{5}}{{@{{}}l}}{{\emph{{Progressive \sca{{}}, against per-head $\pi_h$}}}} \\")
+            for label, dd, _ in prog_rows:
+                body.append(" & ".join([r"\quad " + label] + delta_cells(dd)) + r" \\")
     return tabular(r"\setlength{\tabcolsep}{2.4pt}", "@{}lrrrr@{}",
                    [r"\toprule", r"Variant & IR & HPS & Pick & M$_\text{c}$ \\", r"\midrule"], body, "  ")
 
@@ -1041,9 +1150,23 @@ def main():
     check_runs()
     clean = clean_seconds()
     OUT.mkdir(parents=True, exist_ok=True)
-    files = {OUT / "tab_main.tex": table_main(clean), OUT / "tab_panel46.tex": table_panel(clean),
+    files = {OUT / "tab_main.tex": table_main(clean), OUT / "tab_main_compact.tex": table_main_compact(clean),
+             OUT / "tab_panel46.tex": table_panel(clean),
+             OUT / "tab_ablation_compact.tex": table_ablation_compact(),
              OUT / "tab_ablation.tex": table_ablation(), OUT / "tab_generality.tex": table_generality(),
              OUT_APP / "prog_all.tex": table_prog_all(), OUT_APP / "variance_split.tex": table_variance_split()}
+    prog_abl = prog_ablation_rows()
+    if prog_abl:
+        files[OUT / "tab_ablation_compact_prog.tex"] = table_ablation_compact(prog_abl)
+        # one neutral sentence for Section 4.3 (\progAblResult): each variant's ImageReward change with its interval
+        parts = [rf"{label} weights change ImageReward by {sgn(dd['ir'][0], 2)} "
+                 rf"$[{dd['ir'][1]:.2f},{dd['ir'][2]:.2f}]$".replace("[-", "[{-}").replace(",-", ",{-}")
+                 for label, dd, _ in prog_abl]
+        sentence = ("In the progressive sampler, " + "; ".join(parts) +
+                    r" against per-head weights (Table~\ref{tab:ablation}).")
+        files[OUT / "prog_abl_text.tex"] = "\n".join([HEADER, rf"\newcommand{{\progAblResult}}{{{sentence}}}"]) + "\n"
+    print("progressive ablation: " + ("waiting for results/prog195_ablation/SHA256SUMS" if prog_abl is None
+                                       else f"{len(prog_abl)} rows -> tab_ablation_compact_prog.tex"))
     macros = headline(clean)
     lines = [HEADER, "% Headline numbers the prose repeats; each prints exactly the literal used in the text.",
              "% Fallback grey for values of runs that have not landed; main.tex defines \\pend after this file.",

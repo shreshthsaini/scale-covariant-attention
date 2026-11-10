@@ -2,14 +2,15 @@
 
 (a) Every 4096^2 method of Table 1 at seed 0 over the 195 Aesthetic-4K prompts: ImageReward (y) against seconds per
     image (x, log). Filled markers sit at the clean batch-1 median on an idle GH200; hollow markers at the campaign mean
-    on shared nodes, for the three methods that have no clean time (UltraImage, DyPE, SEGA). Bold green arrows run from
-    AReA, HRDiT and UltraImage to progressive SCA and carry progressive SCA's speedup over each: clean over clean
-    (sweep 3, the back-to-back timing of AReA, HRDiT and progressive SCA) or campaign over campaign (UltraImage),
-    never mixed. Full attention, DyPE and SEGA carry the same ratio as a grey number beside their name. The y axis is
-    broken: the lower strip holds DyPE and full attention, whose ImageReward falls far below the rest.
+    on shared nodes, for the three methods that have no clean time (UltraImage, DyPE, SEGA). Two bold green arrows run
+    from AReA and HRDiT to progressive SCA and carry its speedup over each, clean over clean (sweep 3, the back-to-back
+    timing of AReA, HRDiT and progressive SCA). Every other method carries its name only. The y axis is broken: the
+    lower strip holds SEGA, DyPE and full attention, whose ImageReward falls far below the rest, and a two-entry key
+    (filled: clean, hollow: campaign) in its empty left side.
 (b) Clean batch-1 seconds per image against image side for single-pass SCA (latency_curve_v2), AReA and full attention
-    (latency_curve_summary, plus full attention at 6144^2 from latency_curve_batch1), log-log; progressive SCA and
-    HRDiT at 4096^2 from sweep 3. Green numbers above AReA: single-pass SCA's speedup over AReA at that size.
+    (latency_curve_summary, plus full attention at 6144^2 from latency_curve_batch1), log-log; the star is progressive
+    SCA at 4096^2 from sweep 3. Green arrows at 4096^2 and 8192^2 run from AReA to single-pass SCA and carry
+    single-pass SCA's speedup over AReA at that size.
 
 Inputs (paths relative to the repository root; every value is read here, none typed):
   results/a4k195_main/{base,extra}_summary.csv        campaign seconds and ImageReward: full, dype, sega_official,
@@ -28,10 +29,11 @@ Outputs:
   paper/figures/speed.pdf, .svg                  the paper figure, 5.5 in wide (TEXT), included at natural size
   paper/figures/snippets/speed_numbers.tex      the ratios the text quotes (\\hlSpeedProgUltraCamp and others)
   paper/figures/speed_provenance.json           inputs with sha256, every plotted value, outputs with sha256
-  web/assets/img/figs/speed_{light,dark}.{svg,png,webp}           the same figure for the project page
-  web/assets/img/figs/speed_time_{light,dark}.{svg,png,webp}      panel (a) alone, 4.6 x 2.9 in
-  web/assets/img/figs/speed_latency_{light,dark}.{svg,png,webp}   panel (b) alone, 4.6 x 2.9 in
-Web files have transparent backgrounds; the dark variant uses the page's dark palette (web/assets/css).
+  web/assets/img/figs/speed_v5_{light,dark}.{svg,png,webp}           the same figure for the project page
+  web/assets/img/figs/speed_v5_time_{light,dark}.{svg,png,webp}      panel (a) alone, 4.6 x 2.9 in
+  web/assets/img/figs/speed_v5_latency_{light,dark}.{svg,png,webp}   panel (b) alone, 4.6 x 2.9 in
+Web files have transparent backgrounds; the dark variant uses the page's dark palette (web/assets/css). The v5 stems
+leave the earlier web/assets/img/figs/speed_*.{svg,png,webp} (the live page's images) untouched until the page switches.
 
 Regenerate on a compute node: <sca env python> paper/figures/src/fig_speed.py
 """
@@ -64,6 +66,7 @@ import v2swap  # noqa: E402
 ROOT = HERE.parents[2]
 FIGS = ROOT / "paper" / "figures"
 WEB = ROOT / "web" / "assets" / "img" / "figs"
+WEB_STEM = "speed_v5"  # new stems: the live page keeps speed_*.webp until the web owner switches
 HEADLINE = FIGS / "snippets" / "main_tables" / "headline.tex"
 RES = "4096x4096"
 
@@ -81,6 +84,8 @@ SIDES = (2048, 3072, 4096, 6144, 8192)
 NAME = {"full": "Full attention", "dype": "DyPE", "sega_official": "SEGA", "area": "AReA", "sca_v2": "Single-pass SCA",
         "ultraimage": "UltraImage", "hrdit_dev_author": "HRDiT", "sca_v2_prog": "Progressive SCA"}
 CAMPAIGN_ONLY = ("ultraimage", "dype", "sega_official")
+ARROWS_A = ("hrdit_dev_author", "area")  # panel (a): the only speedup arrows, both clean over clean
+ARROW_SIDES_B = (4096, 8192)             # panel (b): single-pass SCA over AReA at these sides
 
 # Paper palette (scafig) and the project page's dark palette (web/assets/css: --accent, --area, --ink, --muted, ...).
 THEMES = {
@@ -162,6 +167,8 @@ def load() -> dict:
     curve_ratio = {s: curve[("area", s)] / curve[("sca_v2", s)] for s in SIDES}
     if f"{curve_ratio[4096]:.2f}" != headline_macro("hlSpeedArea") or f"{curve_ratio[8192]:.2f}" != "3.07":
         bad.append(f"single-pass ratios {curve_ratio[4096]:.3f}, {curve_ratio[8192]:.3f} vs the text's 2.63 and 3.07")
+    # The figure only draws an arrow for a ratio of two clean times.
+    bad += [f"panel (a) arrow from {m} is not clean over clean" for m in ARROWS_A if speed[m][1] != "clean"]
     if bad:
         raise SystemExit("fig_speed.py: values differ from the paper:\n  " + "\n  ".join(bad))
     return dict(ir=ir, camp=camp, clean=clean, curve=curve, speed=speed, curve_ratio=curve_ratio)
@@ -195,7 +202,7 @@ def draw_time(fig, box, d, th, fs_scale=1.0):
     """Panel (a) in the figure-fraction rectangle box = (x0, y0, w, h): the upper axis holds every method from AReA up;
     a lower strip on its own scale holds SEGA, DyPE and full attention, whose ImageReward is far lower."""
     x0, y0, w, h = box
-    gap, lo_h = 0.045 * h, 0.235 * h
+    gap, lo_h = 0.045 * h, 0.29 * h
     ax_lo = fig.add_axes([x0, y0, w, lo_h])
     ax_hi = fig.add_axes([x0, y0 + lo_h + gap, w, h - lo_h - gap], sharex=ax_lo)
     t, ir, sp = times(d), d["ir"], d["speed"]
@@ -206,14 +213,14 @@ def draw_time(fig, box, d, th, fs_scale=1.0):
         return (dx * fs_scale, dy * fs_scale)
     for ax in (ax_hi, ax_lo):
         ax.set_xscale("log")
-        ax.set_xlim(26, 480)
+        ax.set_xlim(23, 480)
         ax.xaxis.set_major_locator(FixedLocator([50, 100, 200, 400]))
         ax.xaxis.set_minor_locator(NullLocator())
         style_axes(ax, th, fsl)
-    ax_hi.set_ylim(0.80, 1.585)
-    ax_hi.yaxis.set_major_locator(FixedLocator([0.9, 1.1, 1.3, 1.5]))
+    ax_hi.set_ylim(0.80, 1.44)
+    ax_hi.yaxis.set_major_locator(FixedLocator([0.9, 1.1, 1.3]))
     ax_hi.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda v, _: f"{v:.1f}"))
-    ax_lo.set_ylim(-2.6, 1.05)
+    ax_lo.set_ylim(-2.95, 1.0)
     ax_lo.yaxis.set_major_locator(FixedLocator([-2.0, 0.0]))
     ax_lo.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda v, _: "−2" if v < 0 else "0"))
     ax_hi.spines["bottom"].set_visible(False)
@@ -238,63 +245,47 @@ def draw_time(fig, box, d, th, fs_scale=1.0):
                 zorder=8 if m == "sca_v2_prog" else 6, mfc=th["mask"] if hollow else color[m], mec=color[m],
                 mew=1.0 if hollow else (0.6 if m != "sca_v2_prog" else 0.0))
 
-    # Bold arrows from AReA, HRDiT and UltraImage to progressive SCA.
+    # Two bold arrows, from AReA and from HRDiT to progressive SCA: clean over clean only.
     P = (t["sca_v2_prog"], ir["sca_v2_prog"])
-    lw = 1.6 * fs_scale
-    arrow(ax_hi, (t["hrdit_dev_author"], ir["hrdit_dev_author"]), P, th["sca"], lw, rad=0.0)
-    arrow(ax_hi, (t["ultraimage"], ir["ultraimage"]), P, th["sca"], lw, rad=0.19)
-    arrow(ax_hi, (t["area"], ir["area"]), P, th["sca"], lw, rad=0.0)
+    for m in ARROWS_A:
+        arrow(ax_hi, (t[m], ir[m]), P, th["sca"], 1.5 * fs_scale)
 
-    # Direct labels: each method's name, then progressive SCA's speedup over it (bold green where an arrow is drawn,
-    # grey otherwise). The arrows themselves carry no text, so no label sits on a line.
+    # Direct labels. The two arrow sources carry their name, then progressive SCA's speedup over them in bold green;
+    # every other method carries its name only. The arrows themselves carry no text, so no label sits on a line.
     nk = dict(fontsize=fss, zorder=9)
     rk = dict(fontsize=fss + 0.5, fontweight="bold", color=th["sca"], zorder=9)
     fig.canvas.draw()
     rend = fig.canvas.get_renderer()
 
-    def name_ratio(ax, m, dx, dy, name_kw, ratio_kw, ratio_text, ha="left"):
-        """Name at (dx, dy) points from the marker, ratio right after it; ha='right' puts the pair left of it."""
+    def name_ratio(ax, m, dx, dy, name_kw, ratio_text):
+        """Name at (dx, dy) points right of the marker, the ratio right after it."""
         xy = (t[m], ir[m])
-        if ha == "left":
-            tn = ax.annotate(NAME[m], xy, xytext=off(dx, dy), textcoords="offset points", ha="left", va="center",
-                             **name_kw)
-            wpt = tn.get_window_extent(rend).width * 72 / fig.dpi
-            ax.annotate(ratio_text, xy, xytext=off(dx, dy) if False else (off(dx, dy)[0] + wpt + 2.5 * fs_scale,
-                                                                          off(dx, dy)[1]),
-                        textcoords="offset points", ha="left", va="center", **ratio_kw)
-        else:
-            tr = ax.annotate(ratio_text, xy, xytext=off(dx, dy), textcoords="offset points", ha="right", va="center",
-                             **ratio_kw)
-            wpt = tr.get_window_extent(rend).width * 72 / fig.dpi
-            ax.annotate(NAME[m], xy, xytext=(off(dx, dy)[0] - wpt - 2.5 * fs_scale, off(dx, dy)[1]),
-                        textcoords="offset points", ha="right", va="center", **name_kw)
+        tn = ax.annotate(NAME[m], xy, xytext=off(dx, dy), textcoords="offset points", ha="left", va="center",
+                         **name_kw)
+        wpt = tn.get_window_extent(rend).width * 72 / fig.dpi
+        ax.annotate(ratio_text, xy, xytext=(off(dx, dy)[0] + wpt + 2.5 * fs_scale, off(dx, dy)[1]),
+                    textcoords="offset points", ha="left", va="center", **rk)
 
-    # Progressive SCA: to the left of the star.
     ax_hi.annotate("Progressive\nSCA", P, xytext=off(-7.5, 0), textcoords="offset points", ha="right", va="center",
                    color=th["sca"], fontweight="bold", linespacing=1.0, **nk)
     ax_hi.annotate("Single-pass SCA", (t["sca_v2"], ir["sca_v2"]), xytext=off(4.5, -0.5), textcoords="offset points",
                    ha="left", va="center", color=th["sca"], **nk)
-    name_ratio(ax_hi, "hrdit_dev_author", 4.5, 0, dict(color=th["ink"], **nk), rk,
-               f"{sp['hrdit_dev_author'][0]:.1f}\u00d7")
-    name_ratio(ax_hi, "area", 4.5, 0, dict(color=th["area"], fontweight="bold", **nk), rk, f"{sp['area'][0]:.1f}\u00d7")
-    # UltraImage: name below the marker, its campaign-time ratio under the name.
+    name_ratio(ax_hi, "hrdit_dev_author", 4.5, 0, dict(color=th["ink"], **nk), f"{sp['hrdit_dev_author'][0]:.1f}\u00d7")
+    name_ratio(ax_hi, "area", 4.5, 0, dict(color=th["area"], fontweight="bold", **nk), f"{sp['area'][0]:.1f}\u00d7")
     ax_hi.annotate("UltraImage", (t["ultraimage"], ir["ultraimage"]), xytext=off(0, -5.0), textcoords="offset points",
                    ha="center", va="top", color=th["ink"], **nk)
-    ax_hi.annotate(f"{sp['ultraimage'][0]:.1f}\u00d7", (t["ultraimage"], ir["ultraimage"]), xytext=off(-1.5, -13.5),
-                   textcoords="offset points", ha="right", va="top", **rk)
-    ax_hi.annotate("campaign", (t["ultraimage"], ir["ultraimage"]), xytext=off(1.0, -13.8), textcoords="offset points",
-                   ha="left", va="top", color=th["sca"], **nk)
-    # Lower strip: names and ratios in grey (SEGA to the left, so that it clears DyPE).
-    gk = dict(color=th["mid"], **nk)
-    name_ratio(ax_lo, "sega_official", -5.0, 0, gk, gk, f"{sp['sega_official'][0]:.1f}\u00d7", ha="right")
-    name_ratio(ax_lo, "dype", 5.0, 0, gk, gk, f"{sp['dype'][0]:.1f}\u00d7")
-    name_ratio(ax_lo, "full", 5.0, 0, gk, gk, f"{sp['full'][0]:.1f}\u00d7")
-    # Marker key in the strip's empty left side: filled = clean batch-1 median, hollow = campaign mean.
+    # Lower strip: names only, in grey (SEGA to the left, so that it clears DyPE).
+    gk = dict(textcoords="offset points", va="center", color=th["mid"], **nk)
+    ax_lo.annotate(NAME["sega_official"], (t["sega_official"], ir["sega_official"]), xytext=off(-5.0, 0), ha="right",
+                   **gk)
+    ax_lo.annotate(NAME["dype"], (t["dype"], ir["dype"]), xytext=off(5.0, 0), ha="left", **gk)
+    ax_lo.annotate(NAME["full"], (t["full"], ir["full"]), xytext=off(5.0, 0.5), ha="left", **gk)
+    # Marker key in the strip's empty left side: filled = clean batch-1 median, hollow = campaign mean (caption).
     handles = [Line2D([], [], marker="o", ls="none", ms=ms * 0.85, color=th["mid"], mew=0.6),
                Line2D([], [], marker="o", ls="none", ms=ms * 0.85, color=th["mid"], mfc=th["mask"], mew=1.0)]
-    leg = ax_lo.legend(handles, ["clean batch-1 median", "campaign mean"], loc="center left",
-                       bbox_to_anchor=(0.0, 0.5), frameon=False, fontsize=fss, handlelength=0.7, handletextpad=0.35,
-                       borderaxespad=0.2, borderpad=0.0, labelspacing=0.2, labelcolor=th["mid"])
+    leg = ax_lo.legend(handles, ["clean", "campaign"], loc="center left", bbox_to_anchor=(0.0, 0.5), ncol=2,
+                       frameon=False, fontsize=fss, handlelength=0.7, handletextpad=0.35, columnspacing=0.9,
+                       borderaxespad=0.2, borderpad=0.0, labelcolor=th["mid"])
     leg.set_zorder(9)
     # One y label for both strips, centred on their combined height; the strip below carries the same text hidden,
     # so that each axes reports its label to the figure audit.
@@ -303,12 +294,12 @@ def draw_time(fig, box, d, th, fs_scale=1.0):
     ax_hi.yaxis.set_label_coords(-0.34 * fs_scale / (w * fig.get_figwidth()), 0.5 - (lo_h + gap) / (2 * hi_h))
     ax_lo.set_ylabel("ImageReward ↑", fontsize=fs)
     ax_lo.yaxis.label.set_visible(False)
-    ax_lo.set_xlabel(r"Seconds per image at $4096^2$, log scale $\downarrow$", fontsize=fs, color=th["ink"],
-                     labelpad=2)
+    ax_lo.set_xlabel(r"Seconds per image at $4096^2$ $\downarrow$", fontsize=fs, color=th["ink"], labelpad=2)
     return ax_hi, ax_lo
 
 
-def draw_latency(fig, box, d, th, fs_scale=1.0):
+def draw_latency(fig, box, d, th, fs_scale=1.0, star_label=False):
+    """Panel (b). The star is labelled only when the panel stands alone; in the paper figure panel (a) names it."""
     x0, y0, w, h = box
     ax = fig.add_axes([x0, y0, w, h])
     fs, fsl, fss = sf.FS * fs_scale, sf.FS_TICK * fs_scale, sf.FS_SMALL * fs_scale
@@ -320,14 +311,17 @@ def draw_latency(fig, box, d, th, fs_scale=1.0):
     ax.set_xscale("log", base=2)
     ax.set_yscale("log")
     ax.set_xlim(1800, 9400)
-    ax.set_ylim(8, 4200)
-    ax.xaxis.set_major_locator(FixedLocator(list(SIDES)))
-    ax.xaxis.set_minor_locator(NullLocator())
+    ax.set_ylim(7, 1600)
+    # Tick labels at the powers of two only; 3072 and 6144 keep an unlabelled tick (their labels would collide).
+    ax.xaxis.set_major_locator(FixedLocator([s for s in SIDES if s & (s - 1) == 0]))
+    ax.xaxis.set_minor_locator(FixedLocator([s for s in SIDES if s & (s - 1)]))
     ax.xaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda v, _: f"{int(v)}"))
-    ax.yaxis.set_major_locator(FixedLocator([20, 50, 100, 200, 500, 1000]))
+    ax.xaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+    ax.yaxis.set_major_locator(FixedLocator([10, 30, 100, 300, 1000]))
     ax.yaxis.set_minor_locator(NullLocator())
     ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda v, _: f"{v:g}"))
     style_axes(ax, th, fsl)
+    ax.tick_params(axis="x", which="minor", colors=th["ink"], length=2.5, width=0.6)
     xs = list(SIDES)
     sca = [cv[("sca_v2", s)] for s in xs]
     area = [cv[("area", s)] for s in xs]
@@ -339,10 +333,14 @@ def draw_latency(fig, box, d, th, fs_scale=1.0):
     ax.plot(xs, sca, color=th["sca"], lw=1.5 * fs_scale, marker="o", ms=ms, zorder=5)
     ax.plot([4096], [d["clean"]["sca_v2_prog"]], marker="*", ms=ms * 2.3, color=th["sca"], ls="none", zorder=7,
             mew=0.0)
-    # Single-pass SCA's speedup over AReA, one number per size along the top.
-    for s in xs:
-        ax.text(s, 0.975, f"{d['curve_ratio'][s]:.1f}×", transform=ax.get_xaxis_transform(), ha="center",
-                va="top", color=th["sca"], fontsize=fsl, fontweight="bold", zorder=7)
+    # Single-pass SCA's speedup over AReA at two sides: an arrow from AReA down to single-pass SCA, the ratio to its
+    # right (at 4096^2 in the upper half of the gap, clear of both lines; at 8192^2 past the last tick).
+    for s, frac, dy in zip(ARROW_SIDES_B, (0.70, 0.5), (-1.5, 0.0)):
+        hi, lo = cv[("area", s)], cv[("sca_v2", s)]
+        arrow(ax, (s, hi), (s, lo), th["sca"], 1.1 * fs_scale, shrink=(3.6, 3.2), z=6)
+        ax.annotate(f"{d['curve_ratio'][s]:.1f}\u00d7", (s, lo * (hi / lo) ** frac), xytext=off(3.0, dy),
+                    textcoords="offset points", ha="left", va="center", color=th["sca"], fontsize=fss + 0.5,
+                    fontweight="bold", zorder=8, annotation_clip=False)
     nk = dict(fontsize=fss, zorder=8)
     # Line labels.
     ax.annotate("AReA", (3072, cv[("area", 3072)]), xytext=off(-3, 4.5), textcoords="offset points", ha="right",
@@ -351,16 +349,16 @@ def draw_latency(fig, box, d, th, fs_scale=1.0):
                 ha="right", va="bottom", color=th["mid"], **nk)
     ax.annotate("Single-pass SCA", (2048, cv[("sca_v2", 2048)]), xytext=off(3, -4.5), textcoords="offset points",
                 ha="left", va="top", color=th["sca"], **nk)
-    ax.annotate("Progressive\nSCA", (4096, d["clean"]["sca_v2_prog"]), xytext=off(6.5, -1), textcoords="offset points",
-                ha="left", va="center", color=th["sca"], fontweight="bold", linespacing=1.0, **nk)
-    ax.text(1.0, 1.01, "single-pass SCA over AReA", transform=ax.transAxes, ha="right", va="bottom",
-            color=th["sca"], fontsize=fss, style="italic", zorder=8)
-    ax.set_xlabel("Image side (px), log scale", fontsize=fs, color=th["ink"], labelpad=2)
+    if star_label:
+        ax.annotate("Progressive\nSCA", (4096, d["clean"]["sca_v2_prog"]), xytext=off(6.5, -1),
+                    textcoords="offset points", ha="left", va="center", color=th["sca"], fontweight="bold",
+                    linespacing=1.0, **nk)
+    ax.set_xlabel("Image side (px)", fontsize=fs, color=th["ink"], labelpad=2)
     ax.set_ylabel("Seconds per image ↓", fontsize=fs, color=th["ink"], labelpad=2)
     return ax
 
 
-LAYOUT = dict(W=sf.TEXT, H=1.52, bottom=0.33, top=0.165, a=(0.46, 3.00), b=(4.02, 1.43))
+LAYOUT = dict(W=sf.TEXT, H=1.52, bottom=0.33, top=0.15, a=(0.46, 2.85), b=(3.90, 1.40))
 
 
 def build(d, th, panel_letter_color):
@@ -384,7 +382,7 @@ def paper_figure(d):
 
 
 def web_figures(d, out: Path):
-    """Transparent SVG, PNG (300 dpi) and WebP of the figure and of each panel, light and dark."""
+    """Transparent SVG, PNG (300 dpi) and WebP of the figure and of each panel, light and dark, under WEB_STEM."""
     from PIL import Image
     out.mkdir(parents=True, exist_ok=True)
     written = []
@@ -402,14 +400,14 @@ def web_figures(d, out: Path):
         sf.use_style()
         sf.script_floor(sf.FS_TICK)
         mpl.rcParams.update({"text.color": th["ink"], "axes.labelcolor": th["ink"]})
-        emit(build(d, th, th["ink"]), f"speed_{name}")
+        emit(build(d, th, th["ink"]), f"{WEB_STEM}_{name}")
         W, H = 4.6, 2.9
         fig = plt.figure(figsize=(W, H))
         draw_time(fig, (0.62 / W, 0.48 / H, 3.85 / W, 2.18 / H), d, th, fs_scale=1.15)
-        emit(fig, f"speed_time_{name}")
+        emit(fig, f"{WEB_STEM}_time_{name}")
         fig = plt.figure(figsize=(W, H))
-        draw_latency(fig, (0.72 / W, 0.48 / H, 3.75 / W, 2.18 / H), d, th, fs_scale=1.15)
-        emit(fig, f"speed_latency_{name}")
+        draw_latency(fig, (0.72 / W, 0.48 / H, 3.75 / W, 2.18 / H), d, th, fs_scale=1.15, star_label=True)
+        emit(fig, f"{WEB_STEM}_latency_{name}")
     return written
 
 
@@ -452,9 +450,17 @@ def main():
             "speedup_of_progressive": {m: {"ratio": v, "basis": b} for m, (v, b) in d["speed"].items()},
             "single_pass_over_area": {str(s): v for s, v in d["curve_ratio"].items()},
         },
+        "drawn": {
+            "panel_a_arrows": {m: round(d["speed"][m][0], 1) for m in ARROWS_A},
+            "panel_b_arrows": {str(s): round(d["curve_ratio"][s], 1) for s in ARROW_SIDES_B},
+            "name_only": [m for m in NAME if m not in ARROWS_A],
+        },
         "rules": ["x of panel (a): clean batch-1 median where measured, else campaign mean (hollow marker)",
                   "ratios: clean over clean (sweep 3 for AReA and HRDiT, sweeps 1 and 3 for full attention) or "
-                  "campaign over campaign (UltraImage, DyPE, SEGA)"],
+                  "campaign over campaign (UltraImage, DyPE, SEGA)",
+                  "drawn ratios: panel (a) arrows only from AReA and HRDiT (clean over clean, sweep 3); panel (b) "
+                  "arrows only at 4096^2 and 8192^2 (single-pass SCA over AReA, clean sweeps 1 and 2); every other "
+                  "ratio feeds speed_numbers.tex only"],
         "outputs": {str(p.relative_to(ROOT)): sha256(p) for p in
                     [stem.with_suffix(".pdf"), stem.with_suffix(".svg"), snip] + web},
     }

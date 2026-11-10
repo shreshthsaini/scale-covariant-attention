@@ -1,0 +1,158 @@
+{
+  "figure": "fig:observation",
+  "script": "paper/figures/src/fig_observation.py",
+  "variant": "b",
+  "size_in": [
+    5.5,
+    1.8
+  ],
+  "inputs": {
+    "calib/k1_1024.npz": "7c54b727b75f4680264a98082db814974282108c58470804a2348025dfde0a47",
+    "results/heads_view/variance_split.csv": "0a37842e50c1a0b9281a521dc783badce68d514bad61308bf57b31ee5cd0e8f7",
+    "paper/figures/snippets/main_tables/headline.tex": "3afc899702f6db80c983dec37d912b241e4dd203a76c6420ff06ff1e0600ff08",
+    "results/attn_focus/attn_focus.npz": "fcce03a4f6e91b0d8f7215b866f25457f4403a0d378c3e0c57782c6ae45f1f81",
+    "paper/figures/attn_focus/image_1024.png": "df0f1b9f8a6d1ab5361a000be0aa290a80649cf34c3c70224326205a79bf3dd5"
+  },
+  "rules": {
+    "share": "mass_mean[radii.index(16) + 1] / clip(1 - mass_mean[0], 1e-6), as scripts/variance_split.py",
+    "bins": "populated and sigma_centers < 0.89 (post-gate), columns ordered by sigma descending",
+    "rows": "57 blocks x 24 heads, sorted by the mean share over the post-gate bins, descending (stable)",
+    "variance": "variance_split.csv row flux1_dev, 1024x1024, post_gate, image_share, radius 16; head = 1 - noise_within_head, noise level = noise_within_head, shared curve = head_avg_curve; recomputed from the archive (|diff| <= 1e-6) and checked half-up against headline.tex",
+    "panel_a": "fig_attn_focus.py full-attention rendering of results/attn_focus/attn_focus.npz on paper/figures/attn_focus/image_1024.png; window = emulated r = 4 window",
+    "colour": "scafig.PI_CMAP, 0 (far, blue) to 1 (near, amber)"
+  },
+  "values": {
+    "n_heads": 1368,
+    "n_bins": 11,
+    "sigma_columns": [
+      0.829486,
+      0.758865,
+      0.68729,
+      0.618161,
+      0.535504,
+      0.462748,
+      0.407078,
+      0.344849,
+      0.274828,
+      0.195455,
+      0.104721
+    ],
+    "variance_percent_printed": {
+      "head": "97.5",
+      "step": "2.5",
+      "avg": "0.7"
+    },
+    "noise_within_head": 0.025007,
+    "head_avg_curve": 0.006517,
+    "head_avg_curve_values": [
+      0.565642,
+      0.581403,
+      0.590581,
+      0.597829,
+      0.604198,
+      0.609142,
+      0.611952,
+      0.614923,
+      0.618379,
+      0.621582,
+      0.623916
+    ],
+    "row_mean_share": {
+      "min": 0.02343868042355012,
+      "median": 0.6219081297739164,
+      "max": 0.9931562630560321
+    },
+    "row_range_over_bins": {
+      "median": 0.0768269708324878,
+      "p90": 0.19423838004073066,
+      "max": 0.3759738909702458
+    },
+    "matrix_min": 0.01027924182674228,
+    "matrix_max": 0.9942256575436413,
+    "panel_a": {
+      "block_one_based": 12,
+      "heads_one_based": [
+        4,
+        7
+      ],
+      "m_i": {
+        "near": 0.955455,
+        "far": 0.000499
+      },
+      "sigma_of_map": 0.6122673153877258,
+      "rank_one_based_of_1368": {
+        "near": 82,
+        "far": 1368
+      },
+      "row_share": {
+        "near": [
+          0.926661,
+          0.926736,
+          0.925671,
+          0.924886,
+          0.92356,
+          0.921923,
+          0.920441,
+          0.920877,
+          0.91979,
+          0.920953,
+          0.919521
+        ],
+        "far": [
+          0.010279,
+          0.013149,
+          0.016294,
+          0.019015,
+          0.021752,
+          0.02493,
+          0.026889,
+          0.029041,
+          0.031089,
+          0.03254,
+          0.032847
+        ]
+      }
+    }
+  },
+  "text_in_figure": [
+    "$m_i=0.96$",
+    "$m_i=0.00$",
+    "1,368 heads, sorted",
+    "noise level $\\sigma$",
+    "0.83",
+    "0.69",
+    "0.54",
+    "0.41",
+    "0.27",
+    "0.10",
+    "mean",
+    "0",
+    "0.5",
+    "1",
+    "head 97.5%",
+    "noise level 2.5%",
+    "Head 4",
+    "Head 7",
+    "0.7% of variance",
+    "far",
+    "near",
+    "share within 16 tokens",
+    "variance of the share",
+    "a",
+    "b"
+  ],
+  "words_in_figure": 21,
+  "audit": "clean",
+  "outputs": {
+    "paper/figures/candidates/observation_a.pdf": "6799aecfccba9435ef3ecb62007c3979da25a1954eeec3be55bf897b34fa4fc5",
+    "paper/figures/candidates/observation_b.pdf": "3f6f1ffdbabc3c8c74770e4852bf224e83130722d391c5346f10a293d3b633db",
+    "paper/figures/observation.pdf": "3f6f1ffdbabc3c8c74770e4852bf224e83130722d391c5346f10a293d3b633db",
+    "paper/figures/observation.svg": "15fee64162d27716510247aa5814bd3570ec26fb23b1399d96e4b4133cb00217",
+    "web/assets/img/figs/observation_light.svg": "cda4e9aa085aec70074c5219c8980224dbfa9a362a1cddf1737e3095358b604e",
+    "web/assets/img/figs/observation_light.png": "30ce540406b33b6645a24cc1f35f811a63475ede4f4c6d179df591195812d30b",
+    "web/assets/img/figs/observation_light.webp": "ff7ddd10696f87f3fd3e02f0b0be6925073fa65f8b6048f4fcc790d746c6cf38",
+    "web/assets/img/figs/observation_dark.svg": "be207d4ff270853a7d170c772a5b4a4b3f680e4eeccf22775491a4e9ac1d033e",
+    "web/assets/img/figs/observation_dark.png": "d5b874f9d34756fb58232d6b30c54fca9c68d3bc6051e316dfaafe1c2df779cc",
+    "web/assets/img/figs/observation_dark.webp": "a48b47a73736b38a51776f7203abbed87ba0b33a99756e5c297d20892a8ba3a4"
+  }
+}
