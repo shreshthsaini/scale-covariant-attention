@@ -5,7 +5,7 @@ matter inside the progressive schedule). Prefix 000a_ (A) and 000b_ (B) so they 
 Never overwrites a task (dup_tasks.write). Every task runs the frozen tree --code.
 
 A  a-screen: every variant on copyprone21 (r7/copyprone21.jsonl, chunks of 7, 000a_a<k>NN_<label>) with a GPU detector
-   triage and a blind label packet r7/label/pRA_<label> released by the last chunk (000a_0a1_tri_<label>), and on the
+   triage and a blind label packet r7/label/pRA1..pRA5 released by the last chunk (000a_0a1_tri_<label>), and on the
    46-prompt subset (round7_tasks.abl46: chunks of 8, 000a_b<k>NN_<label>, evaluation 000a_0a0_eval_<label> ->
    eval/r7_46_<label>, released by the last chunk). Each evaluation then copies the 195 gate 000a_0a2_gate195 into
    pending; the gate decides once every candidate's 46-prompt evaluation is DONE (see GATE_RULE) and releases the staged
@@ -51,6 +51,7 @@ A_VARIANTS = {
     "ra_t60": (f"--gate-sigma 0.5896 --scale-fixed 0.0:2 {OP}", False, False),
 }
 PACKET_SEED = {"ra_fixed": 4101, "ra_m": 4102, "ra_t40": 4103, "ra_t50": 4104, "ra_t60": 4105}
+PACKET = {"ra_fixed": "pRA1", "ra_m": "pRA2", "ra_t40": "pRA3", "ra_t50": "pRA4", "ra_t60": "pRA5"}  # neutral names: labelers stay blind to the variant
 HOLD_RA = f"{Q}/hold_ra"            # gate template and parked runs
 HOLD_195 = f"{Q}/hold_ra195"        # staged 195-prompt runs, one directory per candidate
 GATE_NAME = "000a_0a2_gate195.sh"
@@ -92,7 +93,7 @@ def triage_task(code, label, dry):
     name = f"000a_0a1_tri_{label}.sh"
     O = f"{S}/r7/cpu_det/{label}"
     out = f"{S}/r7/out/{label}/4096x4096"
-    text = rt.header(name, f"detector triage of {label} on copyprone21 (GPU) and its blind label packet pRA_{label}", 1200) + f"""set -uo pipefail
+    text = rt.header(name, f"detector triage of {label} on copyprone21 (GPU) and its blind label packet {PACKET[label]}", 1200) + f"""set -uo pipefail
 O={O}; mkdir -p $O/imgs
 n=$({PY} -c "import glob,json; ids=[json.loads(l)['id'] for l in open('{C21}') if l.strip()]; print(sum(1 for i in ids for f in glob.glob('{out}/'+glob.escape(i)+'_*.json') if json.load(open(f)).get('complete')))")
 [ "$n" -ge 21 ] || {{ echo "only $n of 21 images"; exit 5; }}
@@ -109,7 +110,7 @@ PYEOF
 {PY} scripts/dup_detect.py --subjects {SUB} --device cuda --threads 8 --sides 800,1333 --out $O/det --dirs {label}=$O/imgs > $O/detect.log 2>&1 || {{ echo "detector failed"; tail -5 $O/detect.log; exit 4; }}
 {PY} scripts/dup_rate.py --dets {S}/eval/dup_detect_20261027 {S}/eval/a4k195_main_sca_v2/det $O/det --subjects {SUB} --ids {C21} --thr 0.35 --kinds person,animal --methods {label},sca_v2,area --ref sca_v2 --per-image $O/per_image_people.csv --out $O/rates_people.csv | tee $O/rates_people.txt
 echo "$(date +%H:%M) $(head -1 $O/rates_people.txt)" >> {S}/r7/cpu_det/auto_triage.log
-bash {S}/r7/label_people.sh pRA_{label} {PACKET_SEED[label]} {label}={out}:{C21} > {S}/r7/label/pRA_{label}.log 2>&1 && echo "packet r7/label/pRA_{label} built" || echo "WARNING packet build failed (see r7/label/pRA_{label}.log)"
+bash {S}/r7/label_people.sh {PACKET[label]} {PACKET_SEED[label]} {label}={out}:{C21} > {S}/r7/label/{PACKET[label]}.log 2>&1 && echo "packet r7/label/{PACKET[label]} built" || echo "WARNING packet build failed (see r7/label/{PACKET[label]}.log)"
 exit 0
 """
     dt.write(Path(dt.EVAL_HOLD) / name, text, dry)

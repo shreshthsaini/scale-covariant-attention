@@ -1947,7 +1947,7 @@ step below runs from the spool without a controller.
   leave the 4 x 4 block mosaic of the early gate-0.80 test).
 - Spool (slurm/reach_anneal_tasks.py, enqueued 00:27): copyprone21 (000a_a<k>NN, 3 chunks per variant, out
   r7/out/<label>/4096x4096); each variant's last chunk releases 000a_0a1_tri_<label> (GPU detector triage into
-  r7/cpu_det/<label>, line in r7/cpu_det/auto_triage.log, and the blind packet r7/label/pRA_<label>). The 46
+  r7/cpu_det/<label>, line in r7/cpu_det/auto_triage.log, and the blind packet r7/label/pRA1 to pRA5 in the order ra_fixed, ra_m, ra_t40, ra_t50, ra_t60). The 46
   (000a_b<k>NN, 6 chunks) release 000a_0a0_eval_<label> (eval/r7_46_<label>); each evaluation then queues the gate
   000a_0a2_gate195 (template taskq/hold_ra/gate195.template). Once the four 46-prompt evaluations are DONE the gate runs
   r7_decide and writes eval/ra_gate195/{decision.txt,DECIDED}: a variant is released for the provisional 195-prompt run
@@ -1964,7 +1964,7 @@ step below runs from the spool without a controller.
   evaluation 000b_0a0_eval_prog195_ablation -> eval/prog195_ablation and results/prog195_ablation (15 metrics,
   corrected FID / patch FID, paired bootstraps vs sca_v2_prog and vs HRDiT, detector); clean batch-1 timing
   000b_0a1_latency_prog_ablation -> results/prog195_ablation/latency.csv.
-- Next (whoever holds this section): blind-label every copyprone21 packet r7/label/pRA_<label> with the round-7
+- Next (whoever holds this section): blind-label every copyprone21 packet r7/label/pRA1 to pRA5 with the round-7
   protocol (one Opus labeler per batch file, prompt_NN.txt), collect with scripts/r7_label_collect.py; kill criterion:
   no variant at <= 8 of 21 without core losses -> stop and report. For a variant that holds, label its 26 person/animal
   images on the 46 (r7/label_people.sh with the default prompt set) and run r7_decide; if the gate already released
