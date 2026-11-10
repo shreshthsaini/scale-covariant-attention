@@ -181,7 +181,7 @@ def build(layout_name: str, out_dir: Path | None) -> dict:
     if out_dir:
         assets, pdf = out_dir / f"hero_{layout_name}", out_dir / f"hero_{layout_name}.pdf"
     else:
-        assets, pdf = vc.V6 / "hero", vc.V6 / "hero.pdf"
+        assets, pdf = vc.ASSETS / "hero", vc.V6 / "hero.pdf"
     picks = draw()
     roles = {"A": picks["portrait"]}
     if layout_name == "A":
@@ -256,7 +256,9 @@ def build(layout_name: str, out_dir: Path | None) -> dict:
                crop_rule="native windows of fixed size at the highest mean edge energy of the image, non-overlapping",
                panel=pinfo, jpeg=dict(full=f"Lanczos to {vc.THUMB_DPI} ppi, q {vc.THUMB_Q}, 4:4:4",
                                       crop=f"native pixels, q {vc.CROP_Q}, 4:4:4"))
-    (assets / "provenance.json").write_text(json.dumps(rec, indent=1) + "\n")
+    prov = (out_dir / f"hero_{layout_name}_provenance.json") if out_dir else vc.V6 / "hero_provenance.json"
+    rec["assets"] = str(assets)
+    prov.write_text(json.dumps(rec, indent=1) + "\n")
     print(f"{pdf}: {pdf.stat().st_size / 1e6:.2f} MB, {W / 72.27:.2f} x {H / 72.27:.2f} in")
     return rec
 

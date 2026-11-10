@@ -110,7 +110,7 @@ def run_grid(stem, exs, methods, full_h, n_per_band, blocks, out_dir, crop_ppi=2
     assert crop_w >= 72.0, (stem, crop_w)
     crop_px = (round(crop_ppi * crop_w / 72.27) // 8 * 8, round(crop_ppi * full_h / 72.27) // 8 * 8)
     vg.windows(exs, crop_px, check_noise=check_noise)
-    assets = (out_dir or vc.V6) / stem
+    assets = (out_dir or vc.ASSETS) / stem
     pdf = (out_dir or vc.V6) / f"{stem}.pdf"
     rec = vg.build(exs, methods, labels or LAB, "rows", assets, pdf, stem, full_h=full_h, crop_w=crop_w,
                    label_w=LW, ours=ours(methods), blocks=blocks, thumb_dpi=APP_DPI, crop_q=APP_CROP_Q)
@@ -201,7 +201,7 @@ def fig_prog16(out_dir):
         recs.append((stem, rec, assets))
     rule = ("random.Random(16).sample(sorted(eligible), 18); eligible = the 195 evaluation prompts minus the four "
             "development prompts, the two prompts of Figure 5 and the six of fig:gallery_prog")
-    cap = (r"\textbf{Progressive \sca{} against AReA, UltraImage and HRDiT at $4096^2$, prompts %d to %d of 18.} "
+    cap = (r"\textbf{Progressive \sca{} keeps the native detail that AReA and UltraImage blur (prompts %d to %d of 18).} "
            r"Evaluation prompts outside Figures~\ref{fig:qual_prog} and~\ref{fig:gallery_prog}, chosen by a fixed seed "
            r"(seed 16); seed 0 for every image. " + CROPS % "the four methods")
     floats = [("gallery_prog16", cap % (1, 9) + r" Figure~\ref{fig:gallery_prog16b} continues.", "fig:gallery_prog16"),
@@ -230,7 +230,7 @@ def fig_zoom(out_dir):
     methods = ["area", "ultraimage", "hrdit_dev_author", "sca_v2", "sca_v2_prog"]
     src = {s: {m: pool[m][s]["path"] for m in methods} for s in ids}
     rec, assets = run_grid("crops4k", examples(ids, src, methods), methods, 45.5, 3, 1, out_dir)
-    cap = (r"\textbf{Crop by crop at $4096^2$.} Three evaluation prompts %s, chosen by a fixed seed (seed 4) outside "
+    cap = (r"\textbf{At 1:1, AReA's crops carry a fine hatch that the other methods avoid.} Three evaluation prompts %s, chosen by a fixed seed (seed 4) outside "
            r"the other progressive figures; seed 0 for every image. " % PF + CROPS % "the five methods")
     return [("crops4k", rec, assets)], [("crops4k", cap, "fig:qual_main")], dict(
         rule="random.Random(4).sample(sorted(person-free eligible minus Figure 5, gallery_prog, gallery_prog16), 3)",
@@ -249,8 +249,7 @@ def fig_aspect(out_dir):
     h = (W - 2 * G) / 6               # square h, 2:1 2h, 3:1 3h
     ch = 52.0                          # crop strip height
     H = len(ids) * (h + G + ch) + (len(ids) - 1) * GG
-    out = out_dir or vc.V6
-    assets, pdf = out / "aspect", out / "aspect.pdf"
+    assets, pdf = (out_dir or vc.ASSETS) / "aspect", (out_dir or vc.V6) / "aspect.pdf"
     cv = vc.Canvas(W, H, assets)
     rec = dict(examples=[])
     from multiprocessing import Pool
@@ -283,6 +282,8 @@ def fig_aspect(out_dir):
                 hh, ww = r.split("x")
                 cv.text(x + 3, y + 3, r"%s\,\texttimes\,%s" % (hh, ww), size=vc.FS_TAG, chip=True)
             rec["examples"].append(dict(key=s, res=r, window_px=list(win), source=paths[r][s],
+                                        sha256=json.loads(Path(paths[r][s]).with_suffix(".json").read_text())[
+                                            "png_sha256"],
                                         crop_ppi=round(win[2] / (cw / 72.27), 1)))
             x += fw + G
     cv.compile(pdf, "aspect")
@@ -310,7 +311,7 @@ def fig_4096(out_dir):
     for stem, part in (("gallery_4096", ids[:8]), ("gallery_4096_p2", ids[8:16])):
         rec, assets = run_grid(stem, examples(part, src, methods), methods, 63.5, 2, 4, out_dir)
         out.append((stem, rec, assets))
-    cap = (r"\textbf{Single-pass \sca{} against AReA at $4096^2$, prompts %d to %d of 16.} Evaluation prompts " + PF +
+    cap = (r"\textbf{Single-pass \sca{} is sharper than AReA at $4096^2$ (prompts %d to %d of 16).} Evaluation prompts " + PF +
            r" not shown in an earlier sample figure, chosen by a fixed seed (seed 0); seed 0 for every image. " + CROPS % "both methods")
     floats = [("gallery_4096", cap % (1, 8), "fig:gallery_4096"),
               ("gallery_4096_p2", cap % (9, 16), "fig:gallery_4096_p2")]
@@ -330,8 +331,10 @@ def fig_wide(out_dir, res):
     aspect = 2.0 if res == "2048x4096" else 3.0
     rec, assets = run_grid(g, examples(ids, src, methods), methods, 64.0, 1, 4, out_dir, aspect=aspect)
     hh, ww = res.split("x")
-    cap = (r"\textbf{Single-pass \sca{} against AReA at $%s\times%s$.} Four evaluation prompts %s, chosen by a fixed "
-           r"seed (seed %d); seed 0 for every image. " % (hh, ww, PF, seed) + CROPS % "both methods")
+    lead = ("both methods keep the layout" if res == "2048x4096" else
+            r"single-pass \sca{} keeps finer texture than AReA")
+    cap = (r"\textbf{At $%s\times%s$ %s.} Four evaluation prompts %s, chosen by a fixed seed (seed %d); seed 0 for every "
+           r"image. " % (hh, ww, lead, PF, seed) + CROPS % "both methods")
     label = "fig:gallery_4096x2048" if res == "2048x4096" else "fig:gallery_6144x2048"
     return [(g, rec, assets)], [(g, cap, label)], dict(rule=f"random.Random({seed}).sample(person-free, 4)",
                                                         seed=seed, draw=ids)
@@ -362,8 +365,10 @@ def fig_ablation(out_dir):
     src = {s: {m: idx[m][s] for m in roots} for s in ids}
     methods = list(roots)
     rec, assets = run_grid("ablation", examples(ids, src, methods), methods, 85.0, 2, 1, out_dir)
-    cap = (r"\textbf{Both views are needed.} Two of the \nabl{} ablation prompts %s, chosen by a fixed seed (seed 46); "
-           r"$4096^2$, seed 0. Each row is \sca{} without the schedule with one part changed (Table~\ref{tab:ablation}). "
+    cap = (r"\textbf{Each view alone fails in its own way; the per-head mix stays clean.} Two of the \nabl{} ablation "
+           r"prompts %s, chosen by a fixed seed (seed 46); $4096^2$, seed 0. Rows change one part of \sca{} without the "
+           r"schedule (Table~\ref{tab:ablation}): local only flattens texture into blocks, global only leaves a grid, "
+           r"mean pooling moves the layout. "
            % PF + CROPS % "the five variants")
     return [("ablation", rec, assets)], [("ablation", cap, "fig:ablation_grid")], dict(
         rule="random.Random(46).sample(sorted(person-free ablation prompts), 2); the opening ablation is in the table "
@@ -387,7 +392,7 @@ def fig_showcase_models(out_dir):
     for e in rec["examples"]:
         pr = {vc.sidecar(p)["config"]["prompt"] for p in e["sources"].values()}
         assert len(pr) == 1, e["key"]
-    cap = (r"\textbf{The same six prompts on three models at $4096^2$.} Progressive \sca{} on FLUX.1-dev (as in "
+    cap = (r"\textbf{\sca{} carries native detail to FLUX.2-dev and Qwen-Image.} $4096^2$; progressive \sca{} on FLUX.1-dev (as in "
            r"Figure~\ref{fig:prog_hero}) and single-pass \sca{} on FLUX.2-dev and Qwen-Image; one showcase prompt per "
            r"category drawn with seed 0, seed 0 for every image. " + CROPS % "the three models")
     return [("showcase_models", rec, assets)], [("showcase_models", cap, "fig:showcase_models")], dict(
@@ -400,7 +405,8 @@ def fig_all_methods(out_dir):
     methods = ["full", "dype", "sega_official", "area", "ultraimage", "hrdit_dev_author", "sca_v2", "sca_v2_prog"]
     src = {s: {m: pool[m][s]["path"] for m in methods} for s in ids}
     rec, assets = run_grid("all_methods", examples(ids, src, methods), methods, 66.0, 2, 1, out_dir)
-    cap = (r"\textbf{Every $4096^2$ method on the same two prompts.} Evaluation prompts %s not shown in an "
+    cap = (r"\textbf{Full attention loses the scene and DyPE and SEGA overlay a lattice; the other five keep it.} $4096^2$, "
+           r"evaluation prompts %s not shown in an "
            r"earlier sample figure, chosen by a fixed seed (seed 8); seed 0 for every image. " % PF + CROPS % "the eight methods")
     return [("all_methods", rec, assets)], [("all_methods", cap, "fig:teaser")], dict(
         rule="random.Random(8).sample(sorted(person-free non-development prompts not shown before), 2)", seed=8, draw=ids)
@@ -412,7 +418,8 @@ def fig_baselines(out_dir):
     methods = ["area", "dype", "sega_official", "ultraimage", "sca_v2"]
     src = {s: {m: pool[m][s]["path"] for m in methods} for s in ids}
     rec, assets = run_grid("gallery_baselines", examples(ids, src, methods), methods, 45.5, 3, 1, out_dir)
-    cap = (r"\textbf{Single-pass \sca{} against the other baselines at $4096^2$.} Three evaluation prompts %s not shown "
+    cap = (r"\textbf{Single-pass \sca{} keeps layout and texture beside the other single-pass baselines.} $4096^2$, three "
+           r"evaluation prompts %s not shown "
            r"in an earlier sample figure, chosen by a fixed seed (seed 17); seed 0 for every image. UltraImage runs its two-stage defaults. " % PF
            + CROPS % "the five methods")
     return [("gallery_baselines", rec, assets)], [("gallery_baselines", cap, "fig:gallery_baselines")], dict(
@@ -429,7 +436,7 @@ def fig_krea(out_dir):
     src = {s: {k: paths[k][s] for k in keys} for s in ids}
     methods = list(keys)
     rec, assets = run_grid("gallery_krea_complete", examples(ids, src, methods), methods, 63.5, 2, 1, out_dir)
-    cap = (r"\textbf{FLUX.1-Krea-dev at $4096^2$.} Two evaluation prompts %s, chosen by a fixed seed (seed 17); seed 0 "
+    cap = (r"\textbf{A reach table fitted on FLUX.1-Krea-dev carries \sca{} to that checkpoint.} $4096^2$, two evaluation prompts %s, chosen by a fixed seed (seed 17); seed 0 "
            r"for every image, with a reach table fitted on FLUX.1-Krea-dev. " % PF + CROPS % "the four methods")
     return [("gallery_krea_complete", rec, assets)], [("gallery_krea_complete", cap, "fig:gallery_krea_complete")], \
         dict(rule="random.Random(17).sample(sorted(person-free prompts of the Krea run), 2)", seed=17, draw=ids)
@@ -446,9 +453,11 @@ def fig_big(out_dir, side):
     src = {s: {m: idx[m][s] for m in idx} for s in ids}
     methods = ["area", "sca_nb"]
     rec, assets = run_grid(g, examples(ids, src, methods), methods, 63.5, 2, 2, out_dir)
-    cap = (r"\textbf{Exploratory $%d^2$ generation.} AReA and \sca{} without the schedule on four evaluation prompts %s, "
+    lead = (r"\sca{} without the schedule keeps the layout but shows block artifacts in places" if side == 6144 else
+            r"both methods show grid and stripe artifacts")
+    cap = (r"\textbf{At $%d^2$ %s.} AReA and \sca{} without the schedule on four evaluation prompts %s, "
            r"chosen by a fixed seed (seed 17) from the %d completed ones; seed 0 for every image. "
-           % (side, PF, len(cand)) + CROPS % "both methods")
+           % (side, lead, PF, len(cand)) + CROPS % "both methods")
     return [(g, rec, assets)], [(g, cap, f"fig:{g}")], dict(
         rule=f"random.Random(17).sample(sorted(person-free completed prompts at {res}), 4)", seed=17, draw=ids)
 
@@ -483,7 +492,7 @@ def fig_failures(out_dir):
     src = {s: {m: png[(m, s)] for m in methods} for s in ids}
     rec, assets = run_grid("failures", examples(ids, src, methods), methods, 63.5, 2, 2, out_dir)
     rec["imagereward_gap_area_minus_sca"] = {s: round(gap[s], 4) for s in ids}
-    cap = (r"\textbf{Where \sca{} without the schedule trails AReA most.} The four evaluation prompts %s with the "
+    cap = (r"\textbf{The four largest ImageReward deficits of \sca{} without the schedule against AReA.} The four evaluation prompts %s with the "
            r"largest ImageReward deficit against AReA; $4096^2$, seed 0. " % PF + CROPS % "both methods")
     return [("failures", rec, assets)], [("failures", cap, "fig:failures")], dict(
         rule="the four person-free non-development prompts with the largest ImageReward(AReA) - ImageReward(SCA w/o "
@@ -513,7 +522,9 @@ def main():
         for name, rec, assets in parts:
             rec.update(selection=sel, script="paper/figures/src/v6_gallery.py",
                        crop_rule="fixed-size window at the highest mean edge energy averaged over the methods shown")
-            (assets / "provenance.json").write_text(json.dumps(rec, indent=1) + "\n")
+            rec["assets"] = str(assets)
+            prov = (a.out_dir or vc.V6) / f"{name}_provenance.json"
+            prov.write_text(json.dumps(rec, indent=1) + "\n")
             print(f"{name}: {rec['pdf_bytes'] / 1e6:.2f} MB, {rec['size_in'][0]:.2f} x {rec['size_in'][1]:.2f} in, "
                   f"crop ppi {sorted({e.get('crop_ppi') for e in rec['examples']})}")
         if a.out_dir is None:

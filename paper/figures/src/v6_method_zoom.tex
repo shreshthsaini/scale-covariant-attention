@@ -5,7 +5,7 @@
 %   (b) Near view on the same grid (tile t = 2): two query tiles, their windows (w = n0 filled; w = 2 n0 dotted; the
 %       border clamp dashed), the bridge tokens (dark amber, schematic: one per cell of a 4 x 4 partition), and the
 %       block mask of the first tile (text keys grey, bridge dark amber, window amber).
-%   (c) Gate and mix: the weight of head 24 of block 12 (fig_method_zoom.py's example, chosen there for its large
+%   (c) Gate and mix (sigma falls left to right): the weight of head 24 of block 12 (fig_method_zoom.py's example, chosen there for its large
 %       r = 2 vs r = 4 gap; head 10 of Figure 3 is nearly flat in sigma) at r = 2 (dashed) and r = 4 (solid); dots:
 %       the weight single-pass sampling applies at its 20 post-gate steps at 4096^2 (amber: the four wide-window
 %       steps read between the tables; green: native steps at r = 4); grey: sigma > sigma_g, far view only. Below,
@@ -20,6 +20,10 @@
 \newcommand{\polyline}[2]{%
   \gdef\plfirst{1}%
   \foreach \s/\p in #2 {\ifnum\plfirst=1 \xdef\placc{(\s,\p)}\gdef\plfirst{0}\else\xdef\placc{\placc -- (\s,\p)}\fi}%
+  \draw[#1] \placc;}
+\newcommand{\polylineflip}[2]{%
+  \gdef\plfirst{1}%
+  \foreach \s/\p in #2 {\ifnum\plfirst=1 \xdef\placc{({1-\s},\p)}\gdef\plfirst{0}\else\xdef\placc{\placc -- ({1-\s},\p)}\fi}%
   \draw[#1] \placc;}
 \newcommand{\Oglob}{O^{\mathrm{far}}}
 \newcommand{\Oloc}{O^{\mathrm{near}}}
@@ -86,22 +90,23 @@
 
 % =============================================================== (c) gate and mix
 \node[anchor=base west] at (296,237) {\ttl (c) Gate and mix};
-\begin{scope}[shift={(310,180)}, x=62bp, y=42bp]
-  \fill[scaGrid] (0.89,0) rectangle (1,1);
+\begin{scope}[shift={(308,180)}, x=62bp, y=42bp]
+  % sigma falls left to right (u = 1 - sigma), as in Figure 2 and Appendix B
+  \fill[scaGrid] (0,0) rectangle (0.11,1);
   \draw[axis] (0,1) -- (0,0) -- (1,0);
-  \foreach \v/\t in {0/0,0.5/0.5,1/1}{\draw[axis] (\v,0) -- (\v,-0.05);
+  \foreach \v/\t in {0/1,0.5/0.5,1/0}{\draw[axis] (\v,0) -- (\v,-0.05);
      \node[anchor=north, text=scaMid] at (\v,-0.08) {\sml\t};}
   \foreach \v in {0,1}{\draw[axis] (0,\v) -- (-0.03,\v); \node[anchor=east, text=scaMid] at (-0.05,\v) {\sml\v};}
-  \draw[line width=0.6pt, scaMid, dash pattern=on 1.6pt off 1.1pt] (0.89,0) -- (0.89,1);
-  \polyline{line width=0.8pt, scaInk, dash pattern=on 2pt off 1.2pt}{\extwo}
-  \polyline{line width=0.9pt, scaInk}{\exfour}
-  \foreach \k/\s/\p/\w in \applied{\ifnum\w=1 \fill[scaLocal] (\s,\p) circle[radius=1.6bp];\else
-      \fill[scaAccent] (\s,\p) circle[radius=1.2bp];\fi}
-  \node[anchor=south] at (0.89,1.02) {\mts$\sigma_g$};
-  \node[anchor=west] at (1.03,0.0) {\mth$\sigma$};
+  \draw[line width=0.6pt, scaMid, dash pattern=on 1.6pt off 1.1pt] (0.11,0) -- (0.11,1);
+  \polylineflip{line width=0.8pt, scaInk, dash pattern=on 2pt off 1.2pt}{\extwo}
+  \polylineflip{line width=0.9pt, scaInk}{\exfour}
+  \foreach \k/\s/\p/\w in \applied{\ifnum\w=1 \fill[scaLocal] ({1-\s},\p) circle[radius=1.6bp];\else
+      \fill[scaAccent] ({1-\s},\p) circle[radius=1.2bp];\fi}
+  \node[anchor=south] at (0.11,1.02) {\mts$\sigma_g$};
+  \node[anchor=north] at (0.5,-0.30) {\mts$\sigma\ \rightarrow$ denoising};
   \node[anchor=south east] at (-0.05,0.55) {\mth$\pi$};
-  \node[anchor=west, text=scaMid] at (1.03,0.95) {\mts$r=4$};
-  \node[anchor=west, text=scaMid] at (1.03,0.67) {\mts$r=2$};
+  \node[anchor=west, text=scaMid] at (1.02,0.27) {\mts$r=4$};
+  \node[anchor=west, text=scaMid] at (1.02,0.06) {\mts$r=2$};
 \end{scope}
 \node[anchor=west, text=scaMid] at (380,224) {};
 \node[gblk, minimum width=30bp, minimum height=14bp] (og) at (316,142) {\mth$\Oglob_i$};

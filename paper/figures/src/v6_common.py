@@ -42,6 +42,8 @@ ImageFile.MAXBLOCK = max(ImageFile.MAXBLOCK, 1 << 24)
 HERE = Path(__file__).resolve().parent
 FIG = HERE.parent
 V6 = FIG / "v6"
+# Build assets (JPEG tiles, standalone TikZ) live on scratch; the repo keeps the PDF, the snippet and the provenance.
+ASSETS = Path(os.environ.get("V6_ASSETS", "/scratch/09032/saini_2/sca/paper_builds/v6_visuals_assets"))
 REPO = FIG.parent.parent
 TECTONIC = shutil.which("tectonic") or os.path.expanduser("~/.local/bin/tectonic")
 EVAL = Path("/scratch/09032/saini_2/sca/eval")
@@ -211,6 +213,28 @@ def best_windows(maps: list, w: int, h: int, k: int = 1, f: int = 8, margin_frac
     return out
 
 
+def best_windows_maximin(maps: list, w: int, h: int, k: int = 1, f: int = 8, margin_frac: float = 1 / 16) -> list:
+    """Like-for-like crop windows: the k non-overlapping w x h windows (native px) that maximise the SMALLEST mean edge
+    energy over `maps` (one map per method), so every method's crop of a shared window has content. Same border margin
+    and non-overlap rule as best_windows."""
+    kw, kh = w // f, h // f
+    sums = []
+    for a in maps:
+        ii = np.pad(a.cumsum(0).cumsum(1), ((1, 0), (1, 0)))
+        sums.append(ii[kh:, kw:] - ii[:-kh, kw:] - ii[kh:, :-kw] + ii[:-kh, :-kw])
+    s = np.min(sums, axis=0)
+    a0 = maps[0]
+    my, mx = max(1, round(a0.shape[0] * margin_frac)), max(1, round(a0.shape[1] * margin_frac))
+    s[:my, :] = s[-my:, :] = -np.inf
+    s[:, :mx] = s[:, -mx:] = -np.inf
+    out = []
+    for _ in range(k):
+        y, x = np.unravel_index(np.argmax(s), s.shape)
+        out.append((int(x * f), int(y * f), w, h))
+        s[max(0, y - kh + 1): y + kh, max(0, x - kw + 1): x + kw] = -np.inf
+    return out
+
+
 # ------------------------------------------------------------------------------------------------ tiles
 def thumb(img: Image.Image, w_pt: float, h_pt: float | None = None, dpi: int = THUMB_DPI) -> Image.Image:
     """Lanczos-downscale to dpi pixels per printed inch at w_pt x h_pt (never upscale)."""
@@ -273,7 +297,7 @@ class Canvas:
     def text(self, x, y, s, size=FS_LABEL, anchor="north west", color=INK, bold=False, rotate=0, chip=False):
         font = r"\sffamily%s\fontsize{%.1f}{%.1f}\selectfont" % (r"\bfseries" if bold else "", size, size * 1.2)
         if chip:
-            style = (r"fill=black,fill opacity=0.55,text opacity=1,text=white,rounded corners=1pt,"
+            style = (r"fill=%s,text=white,rounded corners=1pt," % self.c(INK) +
                      r"inner xsep=1.6pt,inner ysep=1.0pt")
         else:
             style = r"inner sep=0pt,text=%s" % self.c(color)

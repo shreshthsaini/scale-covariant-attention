@@ -14,6 +14,7 @@ side from every border. Images of one example must share prompt and initial nois
 """
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass, field
 from multiprocessing import Pool
@@ -70,9 +71,13 @@ def windows(examples: list[Example], crop_px: tuple[int, int], check_noise: bool
     for ex in examples:
         assert len(sizes[ex.key]) == 1, (ex.key, sizes[ex.key])
         if check_noise:
-            ex.meta.update(vc.same_prompt_and_noise(ex.paths))
+            ex.meta.update(vc.same_prompt_and_noise(ex.paths))  # verifies every sidecar hash against its PNG
+            ex.meta["sha256"] = {m: json.loads(Path(q).with_suffix(".json").read_text())["png_sha256"]
+                                 for m, q in ex.paths.items()}
+        else:
+            ex.meta["sha256"] = {m: vc.sidecar(q)["png_sha256"] for m, q in ex.paths.items()}
         ex.meta["size"] = list(next(iter(sizes[ex.key])))
-        ex.window = vc.best_windows(maps[ex.key], crop_px[0], crop_px[1], k=1)[0]
+        ex.window = vc.best_windows_maximin(maps[ex.key], crop_px[0], crop_px[1], k=1)[0]
 
 
 def build(examples: list[Example], methods: list[str], labels: dict, orient: str, assets: Path, pdf: Path,
@@ -154,7 +159,8 @@ def build(examples: list[Example], methods: list[str], labels: dict, orient: str
                                         crop_ppi=round(bw / (w2 / 72.27), 1), full_tile_pt=[round(w, 2), round(h, 2)],
                                         prompt=ex.meta.get("prompt"), prompt_id=ex.meta.get("prompt_id"),
                                         derived_seed=ex.meta.get("derived_seed"),
-                                        sources={mm: str(p) for mm, p in ex.paths.items()}))
+                                        sources={mm: str(p) for mm, p in ex.paths.items()},
+                                        sources_sha256=ex.meta.get("sha256")))
     cv.compile(pdf, stem)
     rec.update(thumb_dpi=thumb_dpi, crop_jpeg_q=crop_q)
     rec.update(pdf=str(pdf), pdf_bytes=pdf.stat().st_size, size_pt=[round(width, 2), round(cv.h, 2)],

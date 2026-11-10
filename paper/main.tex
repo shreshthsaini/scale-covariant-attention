@@ -329,14 +329,14 @@ Diffusion transformers trained near one megapixel can generate 4K images without
 \section{Introduction}
 \label{sec:intro}
 
-Diffusion transformers~\citep{peebles2022dit} such as FLUX.1~\citep{flux2024} are trained near one megapixel. At $4096^2$ an image has 16 times as many tokens, full attention costs about 256 times as much, and every layer meets position offsets it never saw. Full attention then returns stripes or a flat field (Figure~\ref{fig:teaser}). Training-free methods therefore change the attention, and each must decide how far every head looks at the target size, which we call the head's \emph{reach}. AReA~\citep{rajabi2026area} sees head-averaged attention narrow during denoising and gives all heads one schedule; HRDiT~\citep{xue2026hrdit} searches per-head scopes for each target size; UltraImage~\citep{zhao2025ultraimage} types heads at run time. None of these choices can be checked at the target, where full attention fails. We ask whether reach can be measured where full attention still works, at the training resolution, and reused at any size.
+Diffusion transformers~\citep{peebles2022dit} such as FLUX.1~\citep{flux2024} are trained near one megapixel. At $4096^2$ an image has 16 times as many tokens, full attention costs about 256 times as much, and every layer meets unseen position offsets. Full attention then returns stripes or a flat field (Figure~\ref{fig:teaser}). Training-free methods therefore change the attention and must decide how far each head looks at the target size, which we call its \emph{reach}. AReA~\citep{rajabi2026area} sees head-averaged attention narrow during denoising and gives all heads one schedule; HRDiT~\citep{xue2026hrdit} searches per-head scopes for each target size; UltraImage~\citep{zhao2025ultraimage} types heads at run time. None of these choices can be checked at the target, where full attention fails. We ask whether reach can be measured where full attention works, at the training resolution, and reused at any size.
 
 % Figure 2. v6: observation.pdf (methodfigs); v5.1 fallback otherwise.
 \begin{figure}[t]
   \centering
   \ifvsix{observation}{\vsixinc{observation}}{\includegraphics[width=\linewidth]{figures/observation.pdf}}
   \ifvsix{observation}{%
-  \caption{\textbf{Each head keeps its reach across denoising steps.} (a)~Full attention of heads \hlFocusHeadNear{} and \hlFocusHeadFar{} of block \hlFocusBlock{} at one query of a $1024^2$ image, at three noise levels: amber within 16 tokens (dashed), blue beyond, with that near share. (b)~Near share of all 1,368 FLUX.1-dev heads after the first 8 steps, 32 prompts; black: head average. (c)~Variance of the near share (Table~\ref{tab:variance_split}).}%
+  \caption{\textbf{Each head keeps its reach across denoising steps.} (a)~Full attention of heads \hlFocusHeadNear{} and \hlFocusHeadFar{} of block \hlFocusBlock{} at one query of a $1024^2$ image at three noise levels: amber within 16 tokens (dashed), blue beyond. (b)~Near share of all 1,368 FLUX.1-dev heads after the first 8 steps, 32 prompts; black: head average. (c)~Variance of the near share (Table~\ref{tab:variance_split}).}%
   }{%
   \caption{\textbf{Each head keeps its reach across denoising steps.} (a)~Full attention of two heads of block \hlFocusBlock{} at one query of a $1024^2$ FLUX.1-dev image; $m_i$ is the share inside the $r=4$ window. (b)~Share of image attention within 16 tokens for all 1,368 heads (rows, sorted by mean) after the first 8 steps; strip: head average (Table~\ref{tab:variance_split}).}%
   }
@@ -345,15 +345,15 @@ Diffusion transformers~\citep{peebles2022dit} such as FLUX.1~\citep{flux2024} ar
 
 At the training resolution, reach is a property of the head (Figure~\ref{fig:observation}). Over 32 prompts at $1024^2$, we record each of FLUX.1-dev's 1,368 heads' share of image attention within 16 tokens of the query at every noise level after the first 8 steps. The head explains \hlVarHead\% of the variance of this share and the noise level \hlVarStep\%. The curve shared by all heads, all that one schedule for every head can follow, explains \hlVarAvg\%. UltraImage noted that heads keep stable local and global roles~\citep{zhao2025ultraimage}; we give the first decomposition of reach variance into heads and steps.
 
-We introduce Scale-Covariant Attention (\sca{}; Figure~\ref{fig:method}), in which each head mixes a native-size window around the query, for detail, and a native-size grid of keys over the whole image, for layout, with one number, its reach $\pi_h\in[0,1]$. \emph{Reach emulation} fits $\pi_h$ at $1024^2$: shrinking both views by the target's image-to-window ratio $r$ reproduces the target's proportions, and the model's own full attention there is a valid reference. The best weight has a closed form, and one pass fills a \emph{reach table} for every size that repeats on disjoint prompt halves (correlation \hlEmuSplitHalfTwo). To our knowledge, no prior method measures per-head reach once at the training resolution and reuses it at any size.
+We introduce Scale-Covariant Attention (\sca{}; Figure~\ref{fig:method}). Each head mixes a native-size window around the query, for detail, and a native-size grid of keys over the whole image, for layout, with one number: its reach $\pi_h\in[0,1]$. \emph{Reach emulation} fits $\pi_h$ at $1024^2$: shrinking both views by the target's image-to-window ratio $r$ reproduces the target's proportions, and the model's own full attention there is a valid reference. The best weight has a closed form, and one pass fills a \emph{reach table} for every size that repeats on disjoint prompt halves (correlation \hlEmuSplitHalfTwo). To our knowledge, no prior method measures per-head reach once at the training resolution and reuses it at any size.
 
 Inside HRDiT's three-stage sampler, progressive \sca{} makes a $4096^2$ FLUX.1-dev image in \hlSecProg\,s on one GH200, $\hlSpeedProgArea\times$ faster than AReA and $\hlSpeedProgHrdit\times$ faster than HRDiT (Figure~\ref{fig:prog_hero}). It beats AReA on all ten per-image metrics at each of three seeds and on HRGen-1K, with ImageReward rising from \hlAreaIrAbs{} to \hlProgIrAbs{} ($\hlProgAreaIr$ $[\hlProgAreaIrLo,\hlProgAreaIrHi]$, $n=\nmain$, seed 0). Against HRDiT, its ImageReward, HPSv2.1, and PickScore are statistically indistinguishable (every 95\% interval includes zero) in \hlProgHrditPct\% of HRDiT's time. A single-pass mode is $\hlSpeedArea\times$ faster than AReA and keeps the most crop-level detail; the progressive schedule costs patch-level fidelity, where HRDiT and single-pass \sca{} lead.
 
 \noindent\begin{minipage}{\linewidth}
 We make three contributions.
 \begin{itemize}[leftmargin=1.3em,itemsep=1pt,topsep=3pt]
-  \item We decompose the variance of reach at the training resolution of three FLUX checkpoints and find that the head explains \hlVarHead\% to \hlVarHeadFluxTwo\% of it (Section~\ref{sec:observation}).
-  \item We introduce \sca{} and reach emulation, which fits each head's mix of a native window and a native grid once at $1024^2$, in closed form, for every target size and sampler (Section~\ref{sec:method}).
+  \item We find that heads explain \hlVarHead--\hlVarHeadFluxTwo\% of reach variance in three FLUX models (Section~\ref{sec:observation}).
+  \item We introduce \sca{} and reach emulation, a closed-form per-head fit at $1024^2$ (Section~\ref{sec:method}).
   \item We show that progressive \sca{} is $\hlSpeedProgArea\times$ faster than AReA at $4096^2$ and better on all ten per-image metrics at three seeds, and that per-head weights beat per-layer and shared ones (Section~\ref{sec:experiments}).
 \end{itemize}
 \end{minipage}
@@ -364,9 +364,9 @@ We make three contributions.
 
 A head that attends near the query at one denoising step does so at the others, and a head that looks across the image keeps looking across it.
 
-\paragraph{Reach.} FLUX.1 applies joint attention to text and image tokens in 57 blocks of 24 heads and is trained near $1024^2$ pixels, a grid of $64\times64$ image tokens. For one head and a query $i$, split the keys into a near set around the query and a far set. The output then splits exactly as $\Ofull_i=m_i\,O^{\mathrm{near}}_i+(1-m_i)\,O^{\mathrm{far}}_i$, where $O^{\mathrm{near}}_i$ and $O^{\mathrm{far}}_i$ attend only to their own set and $m_i$ is the near set's softmax mass (Lemma~\ref{lem:split}). This near share is the head's reach at that query: near 1 for a head that looks near, near 0 for one that looks far (Figure~\ref{fig:observation}a). We record it within 16 tokens for 256 seeded queries per block and step, over 32 purpose-written prompts at $1024^2$ that are not in the evaluation sets (Appendix~\ref{app:prompts}).
+\paragraph{Reach.} FLUX.1 applies joint attention to text and image tokens in 57 blocks of 24 heads and is trained near $1024^2$ pixels, a grid of $64\times64$ image tokens. For one head and a query $i$, split the keys into a near set around the query and a far set. The output splits exactly as $\Ofull_i=m_i\,O^{\mathrm{near}}_i+(1-m_i)\,O^{\mathrm{far}}_i$, where $O^{\mathrm{near}}_i$ and $O^{\mathrm{far}}_i$ attend only to their own set and $m_i$ is the near set's softmax mass (Lemma~\ref{lem:split}). This near share is the head's reach at that query: near 1 for a head that looks near, near 0 for one that looks far (Figure~\ref{fig:observation}a). We record it within 16 tokens for 256 seeded queries per block and step, over 32 purpose-written prompts at $1024^2$ outside the evaluation sets (Appendix~\ref{app:prompts}).
 
-\paragraph{The head sets the reach.} After the first 8 steps (noise level $\sigma<0.89$), the head explains \hlVarHead\% of the variance of this share over the 1,368 heads and the noise levels, and the noise level within a head \hlVarStep\% (Figure~\ref{fig:observation}b,c). The head-averaged curve rises from \hlVarCurveLo{} to \hlVarCurveHi{}, the narrowing AReA reports, yet explains only \hlVarAvg\%; no schedule shared by all heads can explain more. FLUX.1-Krea-dev~\citep{krea2025flux} and FLUX.2-dev~\citep{flux2_2025} give \hlVarHeadKrea\% and \hlVarHeadFluxTwo\% for the head (Table~\ref{tab:variance_split}). One number per head thus captures nearly all of the variation and, because it barely moves with the step, can be measured once.
+\paragraph{The head sets the reach.} After the first 8 steps (noise level $\sigma<0.89$), the head explains \hlVarHead\% of the variance of this share over all heads and noise levels. The noise level within a head explains \hlVarStep\% (Figure~\ref{fig:observation}b,c). The head-averaged curve rises from \hlVarCurveLo{} to \hlVarCurveHi{}, the narrowing AReA reports, yet explains only \hlVarAvg\%; no schedule shared by all heads can explain more. FLUX.1-Krea-dev~\citep{krea2025flux} and FLUX.2-dev~\citep{flux2_2025} give \hlVarHeadKrea\% and \hlVarHeadFluxTwo\% for the head (Table~\ref{tab:variance_split}). One number per head thus captures nearly all of the variation and, because it barely moves with the step, can be measured once.
 
 % =====================================================================================
 % Figure 3, full width at the top of Section 3. v6: method.pdf (methodfigs); v5.1 fallback method_v4.pdf.
@@ -374,7 +374,7 @@ A head that attends near the query at one denoising step does so at the others, 
   \centering
   \ifvsix{method}{\vsixinc{method}}{\includegraphics[width=\linewidth]{figures/method_v4.pdf}}
   \ifvsix{method}{%
-  \caption{\textbf{One number per head, measured once at $1024^2$.} (a)~A head mixes a native-size window (amber) and a native-size grid (blue) by its reach $\pi_h$; $4096^2$ output of progressive \sca{}. (b)~On the $1024^2$ stage of the same run, both views shrink by the ratio $r$ and the mix is fitted to the model's own full attention; the error is a parabola in $\pi$. (c)~$\pi^\star$ fills one cell of the reach table, which each stage reads at its own $r$. Figure~\ref{fig:method_zoom} draws the operators.}%
+  \caption{\textbf{One number per head, measured once at $1024^2$.} (a)~A head mixes a native-size window (amber) and a native-size grid (blue) by its reach $\pi_h$; $4096^2$ output of progressive \sca{}. (b)~At the $1024^2$ stage of the same run, both views shrink by $r$ and the mix is fitted to full attention, a parabola in $\pi$. (c)~$\pi^\star$ fills one cell of the reach table, which each stage reads at its own $r$. Figure~\ref{fig:method_zoom} draws the operators.}%
   }{%
   \caption{\textbf{One number per head, measured once at $1024^2$.} (a)~Each head mixes a native-size window and a native-size grid with its reach $\pi_h$. (b)~Reach emulation shrinks both views by the target ratio $r$ at $1024^2$, where full attention is the reference, and fits $\pi^\star=\clip(B/A,0,1)$. (c)~Every sampler stage reads the same reach table at its ratio. Figure~\ref{fig:method_zoom} draws the operators.}%
   }
@@ -387,9 +387,9 @@ A head that attends near the query at one denoising step does so at the others, 
 \subsection{Two native-size views}
 \label{sec:setting}\label{sec:branches}
 
-On its native grid the model saw position offsets of at most 63 tokens per axis and $64^2$ image keys per query. \sca{} keeps both at any size: an image query $i$ of head $h$ mixes a near view $\Oloc_i$, a native-size window around the query, and a far view $\Oglob_i$, a native-size grid over the whole image, as $O_i=\pi_h\Oloc_i+(1-\pi_h)\Oglob_i$ with the head's reach $\pi_h\in[0,1]$ (Figure~\ref{fig:method}a).
+On its native grid the model saw position offsets of at most 63 tokens per axis and $64^2$ image keys per query. \sca{} keeps both at any size with two views: a near view $\Oloc_i$, a native-size window around the query, and a far view $\Oglob_i$, a native-size grid over the whole image. An image query $i$ of head $h$ mixes them as $O_i=\pi_h\Oloc_i+(1-\pi_h)\Oglob_i$, with the head's reach $\pi_h\in[0,1]$ (Figure~\ref{fig:method}a).
 
-\paragraph{Setting.} A multimodal diffusion transformer such as FLUX.1 concatenates $T$ text tokens $\Tset$ with $N=HW$ image tokens on the grid $\Gset=[H]\times[W]$, where $[n]=\{0,\dots,n-1\}$; at $1024^2$ the grid is $n_0\times n_0$ with $n_0=64$. Rotary embeddings~\citep{su2021roformer} give token $j$ a position $p_j\in\mathbb{Z}^2$ (text tokens at $0$) and a rotation $R_p$ with $R_p^\top R_{p'}=R_{p'-p}$. For one head, a pre-rotation query $q$ placed at $u$, and a set $\Kset$ of (key, value, key position) triples, attention is
+\paragraph{Setting.} A multimodal diffusion transformer such as FLUX.1 concatenates $T$ text tokens $\Tset$ with $N=HW$ image tokens on the grid $\Gset=[H]\times[W]$, where $[n]=\{0,\dots,n-1\}$. At $1024^2$ the grid is $n_0\times n_0$ with $n_0=64$. Rotary embeddings~\citep{su2021roformer} give token $j$ a position $p_j\in\mathbb{Z}^2$ (text tokens at $0$) and a rotation $R_p$ with $R_p^\top R_{p'}=R_{p'-p}$. For one head, a pre-rotation query $q$ placed at $u$, and a set $\Kset$ of (key, value, key position) triples, attention is
 \begin{equation}
   \Attn(q,u;\Kset) \;=\; \textstyle\sum_{(k,v,u')\in\Kset} \operatorname{softmax}_{\Kset}\!\big(q^\top R_{u'-u}\,k/\sqrt d\big)\; v ,
   \label{eq:attn}
@@ -402,7 +402,7 @@ where $d$ is the head dimension. Full attention $\Ofull_i$ attends to all keys a
   \Oloc_i(w)=\Attn\big(q_i,\,p_i;\,\Kset^{\mathrm{loc}}_i(w)\big),
   \label{eq:loc}
 \end{equation}
-where $\Kset^{\mathrm{loc}}_i(w)$ is the local key set; one FlexAttention call computes it~\citep{dong2024flex}. The bridge lets each window see the whole image. In each cell $c$ of an $8\times8$ partition of the grid, it keeps the 16 tokens whose pre-rotation keys lie farthest from the mean image key, by AReA's rule~\citep{rajabi2026area}:
+where $\Kset^{\mathrm{loc}}_i(w)$ is the local key set; one FlexAttention call computes it~\citep{dong2024flex}. The bridge lets each window see the whole image. In each cell $c$ of an $8\times8$ partition, it keeps the 16 tokens whose pre-rotation keys lie farthest from the mean image key (AReA's rule;~\citealp{rajabi2026area}):
 \begin{equation}
   \mathcal{B}=\textstyle\bigcup_{c}\operatorname{top}_{16}\big\{\sum_{h}\|k^{h}_j-\bar k^{h}\|^2 : j\in c\big\},
   \label{eq:bridge}
@@ -415,7 +415,7 @@ where $\bar k^{h}$ is the mean image key of head $h$. With $w=n_0$ the window is
   \Oglob_i=\Attn\big(q_i,\,c(p_i);\,\Kset^{\mathrm{glob}}\big),
   \label{eq:glob}
 \end{equation}
-where text queries sit at $c(p_i)=0$. This is AReA's first phase at pooling factor $s$, one native canvas for content that spans a fixed fraction of the image, such as layout. Every offset of the grid and of the native window stays in the trained range, and the cost is linear in $N$ (Propositions~\ref{prop:range} and~\ref{prop:cost}); at $4096^2$, \sca{} scores \hlWorkedPairsRatio{} times fewer query-key pairs than full attention (Table~\ref{tab:flops}).
+where text queries sit at $c(p_i)=0$. This is AReA's first phase at pooling factor $s$, for content that spans a fixed fraction of the image, such as layout. Every offset of the grid and of the native window stays in the trained range, and the cost is linear in $N$ (Propositions~\ref{prop:range} and~\ref{prop:cost}). At $4096^2$, \sca{} scores \hlWorkedPairsRatio{} times fewer query-key pairs than full attention (Table~\ref{tab:flops}).
 
 \subsection{Reach emulation}
 \label{sec:emulation}
@@ -462,7 +462,7 @@ One pass collects ratios 2 and 4 and fills the reach table $\pi_{lh}(\sigma;r)$;
 \begin{lstlisting}[style=scaalg, emph={emulate,attn,noise_bin,window,grid,clip,sample}]
 # Input: emulation prompts, model at (*@$1024^2$@*)
 # Output: reach table (*@$\pi$@*)[r, l, h, (*@$\beta$@*)]; App. (*@\ref{app:code}@*)
-def emulate(q, k, v, l, sigma):  # every block
+def emulate(q, k, v, l, sigma):  # attention hook
   O_full = attn(q, k, v)       # Eq. (*@\ref{eq:attn}@*), all keys
   beta = noise_bin(sigma)      # 14 bins, App. (*@\ref{app:emulation}@*)
   for r in (2, 4):             # r times larger
@@ -471,8 +471,7 @@ def emulate(q, k, v, l, sigma):  # every block
     D, F = O_loc - O_glob, O_full - O_glob
     A[r, l, :, beta] += sum(D * D)   # Eq. (*@\ref{eq:stats}@*)
     B[r, l, :, beta] += sum(F * D)   # per head
-  return O_full                # sampler as is
-sample(prompts, attention=emulate)
+  return O_full                # sampler unchanged
 pi = clip(B / A, 0, 1)         # Prop. (*@\ref{prop:opt}@*)
 \end{lstlisting}
     \vspace{-2pt}\hrule height 0.6pt
@@ -483,9 +482,8 @@ pi = clip(B / A, 0, 1)         # Prop. (*@\ref{prop:opt}@*)
     \label{alg:sample}
     \vspace{-5pt}\hrule height 0.4pt
 \begin{lstlisting}[style=scaalg, emph={attn,centres,bridge,window,window_side,interp,flex_attention}]
-# Input: q, k, v of T text, H x W image tokens;
-#   block l, noise level (*@$\sigma$@*), reach table (*@$\pi$@*)
-# Output: output of all T + HW queries; App. (*@\ref{app:code}@*)
+# Input: q, k, v (T text, H x W image), l, (*@$\sigma$@*), (*@$\pi$@*)
+# Output: all T + HW outputs; full code App. (*@\ref{app:code}@*)
 Kg = text + centres(k, v, H // n0)  # Eq. (*@\ref{eq:glob}@*)
 O_glob = attn(q, Kg, at=c(p))  # coarse grid
 if sigma > sigma_g:            # opening steps
@@ -509,7 +507,7 @@ return [O_glob[txt], O]        # text: global
 
 \paragraph{Single-pass mode.} \sca{} also samples at the target in one pass of 28 steps. A window schedule $w(\sigma)$ sets the ratio $r(\sigma)=\max(H,W)/w(\sigma)$, and an image query takes
 \begin{equation}
-  O_i \;=\; \begin{cases} \Oglob_i & \sigma>\sigma_g,\\ \pi\,\Oloc_i\big(w(\sigma)\big) + (1-\pi)\,\Oglob_i & \text{otherwise,}\end{cases}\qquad \pi=\pi_{lh}\big(\sigma;r(\sigma)\big),
+  O_i \;=\; \pi\,\Oloc_i\big(w(\sigma)\big) + (1-\pi)\,\Oglob_i \;\text{ if } \sigma\le\sigma_g,\qquad O_i=\Oglob_i \;\text{ if } \sigma>\sigma_g,\qquad \pi=\pi_{lh}\big(\sigma;r(\sigma)\big),
   \label{eq:mix}
 \end{equation}
 where $\sigma_g=0.89$ and text queries take $\Oglob_i$. Between ratios 2 and 4, $\pi$ is linear in $\log r$, and in $\sigma$ it is interpolated between occupied noise bins:
@@ -529,7 +527,7 @@ where $\lambda$ is the weight of the ratio-4 table. The global view runs alone f
 
 % Table 1 at the top of the page where Section 4 starts (tablesplots: full width, Holm record column).
 \begin{table}[t]
-  \caption{\textbf{Main comparison at $4096^2$.} FLUX.1-dev, \nmain{} Aesthetic-4K prompts, seed 0; HPSv2.1 $\times100$; M$_\text{c}$: MUSIQ on $1024^2$ crops; FID$_\text{p}$: patch FID$^\dagger$. Time: clean batch-1 median on one GH200 ($^\ddagger$campaign mean), and its ratio to progressive \sca{}'s time of the same kind. $+/-$: per-image metrics, of ten, on which progressive \sca{} is significantly better\,/\,worse than the row after Holm's correction. Bold: best; underline: second per group; shaded: ours. Table~\ref{tab:all_metrics} gives every metric. Key result: progressive \sca{} is the fastest method, and no baseline is significantly better on any per-image metric.\pendTabMain{}}
+  \caption{\textbf{Main comparison at $4096^2$.} FLUX.1-dev, \nmain{} Aesthetic-4K prompts, seed 0; HPSv2.1 $\times100$; M$_\text{c}$: MUSIQ on $1024^2$ crops; FID$_\text{p}$: patch FID$^\dagger$. Time: clean batch-1 median on one GH200 ($^\ddagger$campaign mean) and its ratio to progressive \sca{}'s of the same kind. $+/-$: per-image metrics, of ten, on which progressive \sca{} is significantly better\,/\,worse than the row after Holm's correction. Bold: best, underline: second per group; shaded: ours; Table~\ref{tab:all_metrics} has every metric. Key result: progressive \sca{} is the fastest method, and no baseline is significantly better on any per-image metric.\pendTabMain{}}
   \label{tab:main}
   \centering\small
   \input{figures/snippets/main_tables/tab_main_compact.tex}
@@ -537,99 +535,101 @@ where $\lambda$ is the weight of the ratio-4 table. The global view runs alone f
 
 \paragraph{Data.} We follow the field's protocol at $4096^2$: the 195-prompt Aesthetic-4K split with its 4K references~\citep{zhang2025diffusion4k}, as in AReA, DyPE, TIDE, and SigMa~\citep{rajabi2026area,issachar2025dype,liu2026tide,zhao2026sigma}, and the \nhrgen{} HRGen-1K prompts. Seed labels 0, 1, and 2 are shared by all methods. Four prompts (\devprompts) were used in development, which favours \sca{} slightly; a fixed \nabl-prompt subset chosen before any ablation serves the ablations.
 
-\paragraph{Models and baselines.} The main model is FLUX.1-dev, and every baseline runs from its released code. Single-pass \sca{}, full attention, AReA, DyPE~\citep{issachar2025dype}, SEGA~\citep{rajabi2026sega}, and SigMa~\citep{zhao2026sigma} share AReA's sampler, 28 Euler steps at guidance 4.5 (Appendix~\ref{app:area}); our AReA run reproduces its published FLUX.1-Krea-dev scores within \hlAreaReproGap{} (Table~\ref{tab:published_compare}). Progressive \sca{}, UltraImage, and HRDiT use multi-stage recipes (Appendix~\ref{app:additional_protocols}). One reach table per checkpoint (32 prompts for FLUX.1-dev, 16 for the others) serves every size and both modes (Table~\ref{tab:hparams}).
+\paragraph{Models and baselines.} The main model is FLUX.1-dev, and every baseline runs from its released code. Single-pass \sca{}, full attention, AReA, DyPE, SEGA~\citep{rajabi2026sega}, and SigMa share AReA's sampler, 28 Euler steps at guidance 4.5 (Appendix~\ref{app:area}); our AReA run reproduces its published FLUX.1-Krea-dev scores within \hlAreaReproGap{} (Table~\ref{tab:published_compare}). Progressive \sca{}, UltraImage, and HRDiT use multi-stage recipes (Appendix~\ref{app:additional_protocols}). One reach table per checkpoint (32 prompts for FLUX.1-dev, 16 for the others) serves every size and both modes (Table~\ref{tab:hparams}).
 
-\paragraph{Metrics and timing.} The ten per-image metrics are ImageReward, HPSv2, HPSv2.1, PickScore, CLIP score, aesthetic score~\citep{xu2023imagereward,wu2023hpsv2,kirstain2023pickapic,radford2021clip,schuhmann2022aesthetic}, MUSIQ on the full image and over four $1024^2$ crops (MUSIQ$_\text{c}$), CLIP-IQA, and ARNIQA~\citep{ke2021musiq,wang2022clipiqa,agnolucci2024arniqa}. FID and KID use all 195 references at $299^2$, as in AReA~\citep{heusel2017fid}; patch FID and KID use the same crops, and patch FID is our own definition. Intervals are 95\% paired percentile bootstraps over prompts (Appendix~\ref{app:intervals}). A method beats another on a metric when that interval excludes zero, which tables mark \up{blue} in the row's favour and \dn{orange} against it; Holm's correction over the ten per-image metrics leaves every ``all ten'' claim intact (\holmref). Clean latency is the batch-1 median of three prompts on one idle GH200 after a warm-up image, a point estimate, and a speed ratio divides two times of the same kind (Appendix~\ref{app:timing}).
+\paragraph{Metrics and timing.} The ten per-image metrics are ImageReward, HPSv2, HPSv2.1, PickScore, CLIP score, aesthetic score~\citep{xu2023imagereward,wu2023hpsv2,kirstain2023pickapic,radford2021clip,schuhmann2022aesthetic}, MUSIQ on the full image and over four $1024^2$ crops (MUSIQ$_\text{c}$), CLIP-IQA, and ARNIQA~\citep{ke2021musiq,wang2022clipiqa,agnolucci2024arniqa}. FID and KID use all 195 references at $299^2$, as in AReA~\citep{heusel2017fid}; patch FID and KID use the same crops, and patch FID is our own definition. Intervals are 95\% paired percentile bootstraps over prompts (Appendix~\ref{app:intervals}). A method beats another on a metric when that interval excludes zero, which tables mark \up{blue} in the row's favour and \dn{orange} against it. Holm's correction over the ten per-image metrics leaves every ``all ten'' claim intact (\holmref). Clean latency is the batch-1 median of three prompts on one idle GH200 after a warm-up image, a point estimate, and a speed ratio divides two times of the same kind (Appendix~\ref{app:timing}).
 
 \subsection{Main results}
 \label{sec:main}
 
-% Figure 5, full width. v6: qual_main.pdf (visuals); fallback qual_prog.pdf.
-\begin{figure}[t]
-  \centering
-  \ifvsix{qual_main}{\vsixinc{qual_main}}{\includegraphics[width=0.9\linewidth]{figures/qual_prog.pdf}}
-  \caption{\textbf{At $4096^2$, progressive \sca{} keeps native detail that AReA loses.} Over all \nmain{} prompts, MUSIQ$_\text{c}$ differs from AReA by $\hlProgAreaMusiqc$ $[\hlProgAreaMusiqcLo,\hlProgAreaMusiqcHi]$. Shown: one portrait and one landscape Aesthetic-4K prompt, each drawn from its category by a fixed seed (development prompts excluded); seed 0 for every method. Each box marks the 1:1 crop beside it, placed where edge energy averaged over the four methods is highest. Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog} show more.\pendImgQual{}}
-  \label{fig:qual_prog}
-\end{figure}
-
-% Figure 6 (paired gains), wrapped at the start of Section 4.1. v6: gains.pdf (tablesplots, 0.48 wrap).
-\begin{wrapfigure}{R}{0.48\linewidth}
-  \wraptop
-  \centering
-  \ifvsix{gains}{\vsixinc{gains}}{\includegraphics[width=\linewidth]{figures/paired_area.pdf}}
-  \ifvsix{gains}{%
-  \caption{\textbf{Both modes beat AReA on every per-image metric, and HRDiT beats progressive \sca{} on none.} Paired differences at $4096^2$ over the standard deviation of the per-prompt differences, with 95\% intervals ($n=\nmain$); filled: significant after Holm's correction. (a)~Against AReA. (b)~Against HRDiT. Table~\ref{tab:prog_deltas} lists the values.}%
-  }{%
-  \caption{\textbf{Both modes beat AReA on every per-image metric.} Paired difference from AReA at $4096^2$ in percent of AReA's mean, with 95\% intervals ($n=\nmain$); right is better. Table~\ref{tab:prog_deltas} lists the values.}%
-  }
-  \label{fig:paired_area}
-  \wrapbot
-\end{wrapfigure}
-\paragraph{Progressive \sca{} beats AReA on all ten per-image metrics at $\hlSpeedProgArea\times$ its speed.} ImageReward rises from \hlAreaIrAbs{} to \hlProgIrAbs{} ($\hlProgAreaIr$ $[\hlProgAreaIrLo,\hlProgAreaIrHi]$), PickScore by $\hlProgAreaPick$ $[\hlProgAreaPickLo,\hlProgAreaPickHi]$, and HPSv2.1 by $\hlProgAreaHps$ $[\hlProgAreaHpsLo,\hlProgAreaHpsHi]$ ($n=\nmain$; Table~\ref{tab:main}, Figures~\ref{fig:qual_prog} and~\ref{fig:paired_area}). Seeds 1 and 2 repeat the result on all ten (ImageReward $\hlProgSeedOneAreaIr$ $[\hlProgSeedOneAreaIrLo,\hlProgSeedOneAreaIrHi]$ and $\hlProgSeedTwoAreaIr$ $[\hlProgSeedTwoAreaIrLo,\hlProgSeedTwoAreaIrHi]$), and so does HRGen-1K ($\hlProgHrgenAreaIr$ $[\hlProgHrgenAreaIrLo,\hlProgHrgenAreaIrHi]$, $n=\nhrgen$; Table~\ref{tab:generality}). Progressive \sca{} also beats DyPE, SEGA, and full attention on all ten and UltraImage on \hlProgWinsUltraWord{} (Table~\ref{tab:prog_all}), in \hlSecProg\,s per image against AReA's \hlSecAreaThree\,s.
-
-\paragraph{Against HRDiT, progressive \sca{} is statistically indistinguishable on three preference scores in \hlProgHrditPct\% of its time.} Both follow HRDiT's schedule, guidance, and seeds and differ in attention, precision (fp16 for HRDiT's runner, bf16 for ours), and runner. The differences are $\hlProgHrditIr$ $[\hlProgHrditIrLo,\hlProgHrditIrHi]$ in ImageReward, $\hlProgHrditHps$ $[\hlProgHrditHpsLo,\hlProgHrditHpsHi]$ in HPSv2.1, and $\hlProgHrditPick$ $[\hlProgHrditPickLo,\hlProgHrditPickHi]$ in PickScore ($n=\nmain$); intervals that include zero do not establish equivalence. After Holm's correction over the ten metrics, progressive \sca{} remains better on HPSv2 ($\hlProgHrditHpsTwo$ $[\hlProgHrditHpsTwoLo,\hlProgHrditHpsTwoHi]$) and ARNIQA ($\hlProgHrditArniqa$ $[\hlProgHrditArniqaLo,\hlProgHrditArniqaHi]$) and is worse on none; \holmProgHrditDropped{} differ only before the correction (\holmref).
-
-\paragraph{Single-pass \sca{} is $\hlSpeedArea\times$ faster than AReA and keeps the most crop-level detail.} It beats AReA on \hlWinsArea{} of \hlMetricsArea{} metrics, all ten per-image ones among them, with ImageReward $\hlIrDelta$ $[\hlIrLo,\hlIrHi]$ and FID from \hlFidAreaAbs{} to \hlFidScaAbs{} ($\hlFidDelta$ $[\hlFidLo,\hlFidHi]$). KID, patch FID, and IS are unresolved (Table~\ref{tab:app_4k}). Its MUSIQ$_\text{c}$ is the highest in Table~\ref{tab:main}, and DyPE and SEGA trail it on all ten per-image metrics, SigMa on every one it was scored on (Tables~\ref{tab:phase2_baselines} and~\ref{tab:panel46}).
-
-\paragraph{The progressive schedule trades patch-level fidelity for preference.} Against single-pass \sca{}, progressive \sca{} gains ImageReward ($\hlProgScaIr$ $[\hlProgScaIrLo,\hlProgScaIrHi]$) but loses MUSIQ$_\text{c}$ ($\hlProgScaMusiqc$ $[\hlProgScaMusiqcLo,\hlProgScaMusiqcHi]$) and patch FID ($\hlProgScaFidP$ $[\hlProgScaFidPLo,\hlProgScaFidPHi]$). Its patch FID is also higher than HRDiT's ($\hlProgHrditFidP$ $[\hlProgHrditFidPLo,\hlProgHrditFidPHi]$) and, at two of three seeds, than AReA's (Tables~\ref{tab:prog_all} and~\ref{tab:prog_deltas}).
-
-\subsection{The measured reach carries the gain}
-\label{sec:ablations}
-
-% Table 2, full width (tablesplots: the ablation table no longer fits a 0.48 minipage).
+% Gains figure (gains.pdf, tablesplots) beside the generality table (tablesplots): both report paired differences.
 \begin{table}[t]
-  \caption{\textbf{Ablations at $4096^2$.} Each group opens with its shaded per-head reference in absolute values; the rows below give the variant minus that reference (views: minus the first shaded row), coloured as in Section~\ref{sec:experiments}; \nabl-prompt FID$_\text{p}$ values are point estimates. $+/-$: per-image metrics, of ten, on which per-head weights are significantly better\,/\,worse after Holm's correction. Tables~\ref{tab:app_abl}\ifresprogabl{} and~\ref{tab:prog_abl_all}\fi{} give every metric. Key result: per-head weights win every per-image comparison with coarser weights in both samplers; inside the progressive sampler, the coarser weights have lower patch FID.\pendTabAbl{}}
-  \label{tab:ablation}
-  \centering\footnotesize
-  \ifresprogabl\snippet{main_tables/tab_ablation_compact_prog}{\input{figures/snippets/main_tables/tab_ablation_compact.tex}}\else\input{figures/snippets/main_tables/tab_ablation_compact.tex}\fi
-\end{table}
-
-\paragraph{Per-head weights fit full attention better than coarser rules.} In emulation at ratio 4, the per-head mix has relative error \hlEmuErrHeadFour, per-layer weights \hlEmuErrLayerFour, one weight per noise level \hlEmuErrSharedFour, and the best hard switch between the views \hlEmuErrSwitchFour. Ratio 2 keeps the order (\hlEmuErrHeadTwo, \hlEmuErrLayerTwo, \hlEmuErrSharedTwo, \hlEmuErrSwitchTwo; Figure~\ref{fig:emulation}b). By Proposition~\ref{prop:opt}, a coarser rule pays at least $\sum A(\pi'-\pi^\star)^2$, which grows with the spread of reach among the heads it merges.
-
-\paragraph{The same order holds in images.} At $4096^2$, one shared weight per noise level changes ImageReward by $\hlAblSharedIr$ $[\hlAblSharedIrLo,\hlAblSharedIrHi]$ and MUSIQ$_\text{c}$ by $\hlAblSharedMusiqc$, and per-layer weights still lose \holmAblLayerWorseWord{} of ten per-image metrics (Table~\ref{tab:ablation}).\ifresprogabl{} Inside the progressive sampler the gaps are smaller but point the same way: per-head weights beat shared and per-layer ones on all \holmProgAblSharedWorseWord{} per-image metrics after Holm's correction, while the coarser weights have lower patch FID.\fi
-
-\paragraph{Both views and the opening are needed.} Local-only attention in the last 20 steps changes ImageReward by $\hlAblLocalIr$ $[\hlAblLocalIrLo,\hlAblLocalIrHi]$, global-only attention loses all ten per-image metrics, and mean pooling in place of block centres changes ImageReward by $\hlAblMeanIr$. Output error cannot see layout. Fitted on it alone, the best hard switch is local attention from the first step, yet dropping the opening changes ImageReward by $\hlAblNoOpenIr$ $[\hlAblNoOpenIrLo,\hlAblNoOpenIrHi]$. The global opening, or the $1024^2$ stage of progressive \sca{}, therefore sets the layout. Without the hand-set schedule and bridge, MUSIQ$_\text{c}$ changes by $\hlAblNoSchedMusiqc$ and no other column moves significantly (Table~\ref{tab:app_abl}).
-
-\subsection{Generality, other sizes, and latency}
-\label{sec:generality}\label{sec:sizes}
-
-% Table 3 and Figure 7 side by side (tablesplots plan): generality at 0.48 width, seconds against image side at 0.48.
-\begin{table}[t]
+  \begin{minipage}[t]{0.48\linewidth}
+    \vspace{0pt}\centering
+    \ifvsix{gains}{\vsixinc{gains}}{\includegraphics[width=\linewidth]{figures/paired_area.pdf}}
+    \ifvsix{gains}{%
+    \captionof{figure}{\textbf{Both modes beat AReA on every per-image metric; HRDiT beats progressive \sca{} on none.} Paired differences over the SD of the per-prompt differences, 95\% intervals ($n=\nmain$); filled: significant after Holm's correction. (a)~Against AReA. (b)~Against HRDiT. Values: Table~\ref{tab:prog_deltas}.}%
+    }{%
+    \captionof{figure}{\textbf{Both modes beat AReA on every per-image metric.} Paired difference from AReA at $4096^2$ in percent of AReA's mean, with 95\% intervals ($n=\nmain$); right is better. Table~\ref{tab:prog_deltas} lists the values.}%
+    }
+    \label{fig:paired_area}
+  \end{minipage}\hfill
   \begin{minipage}[t]{0.48\linewidth}
     \vspace{0pt}
     \caption{\textbf{Generality.} Paired differences at $4096^2$ (HPS: HPSv2.1$\times100$), coloured as in Section~\ref{sec:experiments}. Holm $+/-$: per-image metrics, of ten, on which the first-named method is significantly better\,/\,worse. Table~\ref{tab:gen_all} gives every metric with intervals. Key result: no setting is significantly worse on any metric.}
     \label{tab:generality}
     \centering\footnotesize
     \input{figures/snippets/main_tables/tab_generality.tex}
-  \end{minipage}\hfill
-  \begin{minipage}[t]{0.48\linewidth}
-    \vspace{0pt}
-    \centering
-    \ifvsix{scaling}{\vsixinc{scaling}}{\includegraphics[width=\linewidth]{figures/latency_wrap.pdf}}
-    \captionof{figure}{\textbf{Single-pass \sca{}'s time grows linearly with pixel count.} Clean seconds per image on one GH200; exponents fit seconds $\propto N^b$. Table~\ref{tab:latency} lists every time.}
-    \label{fig:scaling}
   \end{minipage}
 \end{table}
 
-\paragraph{Gains hold across seeds, prompt sets, and checkpoints.} Single-pass \sca{}'s gains over AReA hold at seeds 1 and 2 and on HRGen-1K (Table~\ref{tab:generality}), and reach tables fitted on 4 to 16 prompts move ImageReward by at most $\hlEmuBudgetIrMax$ without the schedule (Table~\ref{tab:phase2_sensitivity}). On FLUX.1-Krea-dev, AReA's own checkpoint, single-pass \sca{} wins \hlKreaWinsWord{} of ten per-image metrics and loses none. Its ImageReward is unresolved ($\hlKreaIr$ $[\hlKreaIrLo,\hlKreaIrHi]$) and its patch FID is worse ($\hlKreaFidP$ $[\hlKreaFidPLo,\hlKreaFidPHi]$; Table~\ref{tab:krea_6144}). On FLUX.2-dev\ifresfluxtwo{} (Figure~\ref{fig:showcase_flux2})\fi, \sca{} without the schedule beats full attention on \hlFluxTwoWinsWord{} of ten.\ifresfluxtwo\ifdefined\fluxTwoResult{} \fluxTwoResult\fi\fi{} \ifresqwen\textbf{Qwen-Image (Figure~\ref{fig:showcase_qwen}).} \ifdefined\qwenResult\qwenResult\else\sca{} runs at \showcaseQwenSizes.\fi{} \fi\ifresideogram\textbf{Ideogram~4 (\ideogramRefs).} \ifdefined\ideogramResult\ideogramResult\else\sca{} runs at $8192^2$.\fi{} \fi\ifshowcase Figure~\ref{fig:showcase_models} shows samples on FLUX.2-dev and Qwen-Image. \fi
+\paragraph{Progressive \sca{} beats AReA on all ten per-image metrics at $\hlSpeedProgArea\times$ its speed.} ImageReward rises from \hlAreaIrAbs{} to \hlProgIrAbs{} ($\hlProgAreaIr$ $[\hlProgAreaIrLo,\hlProgAreaIrHi]$), PickScore by $\hlProgAreaPick$ $[\hlProgAreaPickLo,\hlProgAreaPickHi]$, and HPSv2.1 by $\hlProgAreaHps$ $[\hlProgAreaHpsLo,\hlProgAreaHpsHi]$ ($n=\nmain$; Table~\ref{tab:main}, Figure~\ref{fig:paired_area}). Seeds 1 and 2 repeat the result on all ten (ImageReward $\hlProgSeedOneAreaIr$ $[\hlProgSeedOneAreaIrLo,\hlProgSeedOneAreaIrHi]$ and $\hlProgSeedTwoAreaIr$ $[\hlProgSeedTwoAreaIrLo,\hlProgSeedTwoAreaIrHi]$), and so does HRGen-1K ($\hlProgHrgenAreaIr$ $[\hlProgHrgenAreaIrLo,\hlProgHrgenAreaIrHi]$, $n=\nhrgen$; Table~\ref{tab:generality}). Progressive \sca{} also beats DyPE, SEGA, and full attention on all ten and UltraImage on \hlProgWinsUltraWord{} (Table~\ref{tab:prog_all}).
 
-\paragraph{Time grows linearly with pixel count.} Single-pass \sca{} is faster than every baseline we timed at every size (Figure~\ref{fig:scaling}). Fitting clean seconds $\propto N^b$ gives $b=\hlLatExpSca$ against $\hlLatExpArea$ for AReA, and at $8192^2$ \sca{} takes \hlLatEightSca\,s against AReA's \hlLatEightArea\,s (Table~\ref{tab:latency}).
+\paragraph{Against HRDiT, progressive \sca{} is statistically indistinguishable on three preference scores in \hlProgHrditPct\% of its time.} Both follow HRDiT's schedule, guidance, and seeds and differ in attention, precision (fp16 for HRDiT's runner, bf16 for ours), and runner. The differences are $\hlProgHrditIr$ $[\hlProgHrditIrLo,\hlProgHrditIrHi]$ in ImageReward, $\hlProgHrditHps$ $[\hlProgHrditHpsLo,\hlProgHrditHpsHi]$ in HPSv2.1, and $\hlProgHrditPick$ $[\hlProgHrditPickLo,\hlProgHrditPickHi]$ in PickScore ($n=\nmain$); intervals that include zero do not establish equivalence. After Holm's correction over the ten metrics, progressive \sca{} remains better on HPSv2 ($\hlProgHrditHpsTwo$ $[\hlProgHrditHpsTwoLo,\hlProgHrditHpsTwoHi]$) and ARNIQA ($\hlProgHrditArniqa$ $[\hlProgHrditArniqaLo,\hlProgHrditArniqaHi]$) and is worse on none. \holmProgHrditDropped{} differ only before the correction (\holmref).
 
-\paragraph{Quality depends on the aspect ratio.} Single-pass \sca{} beats AReA on \hlWideSixWins{} metrics at $2048\times6144$ but wins \hlWideFourWinsWord{} and loses \hlWideFourLossesWord{} at $2048\times4096$ (Table~\ref{tab:app_wide}). Without the schedule it wins \hlSixKWins{} of 15 at $6144^2$ (Table~\ref{tab:krea_6144}) and is favoured on \hlEightKFavWord{} of ten scores at $8192^2$ over 12 exploratory prompts, with grid artifacts (Appendix~\ref{app:8k}).
+% Qualitative figure, full width (first cited at the end of Section 4.1). v6: qual_main.pdf (visuals); fallback qual_prog.pdf.
+\begin{figure}[t]
+  \centering
+  \ifvsix{qual_main}{\vsixinc{qual_main}}{\includegraphics[width=0.9\linewidth]{figures/qual_prog.pdf}}
+  \caption{\textbf{At $4096^2$, progressive \sca{} keeps native detail that AReA loses.} Over all \nmain{} prompts, MUSIQ$_\text{c}$ gains $\hlProgAreaMusiqc$ $[\hlProgAreaMusiqcLo,\hlProgAreaMusiqcHi]$ over AReA. One portrait and one landscape prompt, each drawn from its Aesthetic-4K category by a fixed seed (development prompts excluded); seed 0. Boxes mark the 1:1 crops, placed where the four methods' mean edge energy is highest. Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog} show more.\pendImgQual{}}
+  \label{fig:qual_prog}
+\end{figure}
+
+\paragraph{Single-pass \sca{} is $\hlSpeedArea\times$ faster than AReA and keeps the most crop-level detail.} It beats AReA on \hlWinsArea{} of \hlMetricsArea{} metrics, all ten per-image ones among them, with ImageReward $\hlIrDelta$ $[\hlIrLo,\hlIrHi]$ and FID from \hlFidAreaAbs{} to \hlFidScaAbs{} ($\hlFidDelta$ $[\hlFidLo,\hlFidHi]$). KID, patch FID, and IS are unresolved (Table~\ref{tab:app_4k}). DyPE and SEGA trail it on all ten per-image metrics, and SigMa on every one it was scored on (Tables~\ref{tab:phase2_baselines} and~\ref{tab:panel46}).
+
+\paragraph{The progressive schedule trades patch-level fidelity for preference.} Against single-pass \sca{}, progressive \sca{} gains ImageReward ($\hlProgScaIr$ $[\hlProgScaIrLo,\hlProgScaIrHi]$) but loses MUSIQ$_\text{c}$ ($\hlProgScaMusiqc$ $[\hlProgScaMusiqcLo,\hlProgScaMusiqcHi]$) and patch FID ($\hlProgScaFidP$ $[\hlProgScaFidPLo,\hlProgScaFidPHi]$). Its patch FID is also higher than HRDiT's ($\hlProgHrditFidP$ $[\hlProgHrditFidPLo,\hlProgHrditFidPHi]$) and, at two of three seeds, than AReA's (Tables~\ref{tab:prog_all} and~\ref{tab:prog_deltas}). At native resolution it still keeps the detail that AReA loses (Figure~\ref{fig:qual_prog}).
+
+\subsection{Generality, other sizes, and latency}
+\label{sec:generality}\label{sec:sizes}
+
+
+% Figure 7 (scaling.pdf, tablesplots) with its caption beside it.
+\begin{figure}[tb]
+  \centering
+  \begin{minipage}[c]{0.48\linewidth}
+    \centering
+    \ifvsix{scaling}{\vsixinc{scaling}}{\includegraphics[width=\linewidth]{figures/latency_wrap.pdf}}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.48\linewidth}
+    \caption{\textbf{Single-pass \sca{}'s time grows linearly with pixel count.} Clean seconds per image (batch 1, 28 steps, one GH200) against image side. Lines fit seconds $\propto N^b$ over the $N$ image tokens, with $b$ beside each method; the bottom row gives single-pass \sca{}'s speedup over AReA at each size. Progressive \sca{} and HRDiT were timed at $4096^2$, and full attention was not run at $8192^2$. Table~\ref{tab:latency} lists every time.}
+    \label{fig:scaling}
+  \end{minipage}
+\end{figure}
+
+\paragraph{Gains hold across seeds, prompt sets, and checkpoints.} Single-pass \sca{}'s gains over AReA hold at seeds 1 and 2 and on HRGen-1K (Table~\ref{tab:generality}). Reach tables fitted on 4 to 16 prompts move ImageReward by at most $\hlEmuBudgetIrMax$ without the schedule (Table~\ref{tab:phase2_sensitivity}). On FLUX.1-Krea-dev, AReA's own checkpoint, single-pass \sca{} wins \hlKreaWinsWord{} of ten per-image metrics and loses none. Its ImageReward is unresolved ($\hlKreaIr$ $[\hlKreaIrLo,\hlKreaIrHi]$) and its patch FID is worse ($\hlKreaFidP$ $[\hlKreaFidPLo,\hlKreaFidPHi]$; Table~\ref{tab:krea_6144}). On FLUX.2-dev\ifresfluxtwo{} (Figure~\ref{fig:showcase_flux2})\fi, \sca{} without the schedule beats full attention on \hlFluxTwoWinsWord{} of ten.\ifresfluxtwo\ifdefined\fluxTwoResult{} \fluxTwoResult\fi\fi{} \ifresqwen\textbf{Qwen-Image (Figure~\ref{fig:showcase_qwen}).} \ifdefined\qwenResult\qwenResult\else\sca{} runs at \showcaseQwenSizes.\fi{} \fi\ifresideogram\textbf{Ideogram~4 (\ideogramRefs).} \ifdefined\ideogramResult\ideogramResult\else\sca{} runs at $8192^2$.\fi{} \fi\ifshowcase Figure~\ref{fig:showcase_models} shows samples on FLUX.2-dev and Qwen-Image. \fi
+
+\paragraph{Time grows linearly with pixel count; quality depends on the aspect ratio.} Single-pass \sca{} is faster than every baseline we timed at every size (Figure~\ref{fig:scaling}). Fitting clean seconds $\propto N^b$ gives $b=\hlLatExpSca$ against $\hlLatExpArea$ for AReA, and at $8192^2$ \sca{} takes \hlLatEightSca\,s against AReA's \hlLatEightArea\,s (Table~\ref{tab:latency}). Quality depends on the aspect ratio: single-pass \sca{} beats AReA on \hlWideSixWins{} metrics at $2048\times6144$ but wins \hlWideFourWinsWord{} and loses \hlWideFourLossesWord{} at $2048\times4096$ (Table~\ref{tab:app_wide}).
+
+\subsection{The measured reach carries the gain}
+\label{sec:ablations}
+
+% Table 2, full width (tablesplots: the ablation table no longer fits a 0.48 minipage).
+\begin{table}[t]
+  \caption{\textbf{Ablations at $4096^2$.} Each group opens with its shaded per-head reference (absolute values), and rows below give the variant minus it (views: minus the first shaded row), coloured as in Section~\ref{sec:experiments}. \nabl-prompt FID$_\text{p}$ values are point estimates. $+/-$: per-image metrics, of ten, on which per-head weights are significantly better\,/\,worse after Holm's correction. Tables~\ref{tab:app_abl}\ifresprogabl{} and~\ref{tab:prog_abl_all}\fi{} give every metric. Key result: per-head weights beat coarser ones on per-image metrics in both samplers but have higher patch FID inside the progressive one.\pendTabAbl{}}
+  \label{tab:ablation}
+  \centering\footnotesize
+  \ifresprogabl\snippet{main_tables/tab_ablation_compact_prog}{\input{figures/snippets/main_tables/tab_ablation_compact.tex}}\else\input{figures/snippets/main_tables/tab_ablation_compact.tex}\fi
+\end{table}
+
+\paragraph{Per-head weights fit full attention better than coarser rules.} In emulation at ratio 4, the per-head mix has relative error \hlEmuErrHeadFour, per-layer weights \hlEmuErrLayerFour, one weight per noise level \hlEmuErrSharedFour, and the best hard switch between the views \hlEmuErrSwitchFour. Ratio 2 keeps the order (Figure~\ref{fig:emulation}b). By Proposition~\ref{prop:opt}, a coarser rule pays at least $\sum A(\pi'-\pi^\star)^2$, which grows with the spread of reach among merged heads.
+
+\paragraph{The same order holds in images.} At $4096^2$, one shared weight per noise level changes ImageReward by $\hlAblSharedIr$ $[\hlAblSharedIrLo,\hlAblSharedIrHi]$ and MUSIQ$_\text{c}$ by $\hlAblSharedMusiqc$, and per-layer weights still lose \holmAblLayerWorseWord{} of ten per-image metrics (Table~\ref{tab:ablation}).\ifresprogabl{} Inside the progressive sampler, per-head weights still win all \holmProgAblSharedWorseWord{} per-image metrics against both after Holm's correction, by smaller margins, but have higher patch FID.\fi
+
+\paragraph{Both views and the opening are needed.} Local-only attention in the last 20 steps changes ImageReward by $\hlAblLocalIr$ $[\hlAblLocalIrLo,\hlAblLocalIrHi]$, global-only attention loses all ten per-image metrics, and mean pooling in place of block centres changes ImageReward by $\hlAblMeanIr$. Output error cannot see layout. Fitted on it alone, the best hard switch is local attention from the first step, yet dropping the opening changes ImageReward by $\hlAblNoOpenIr$ $[\hlAblNoOpenIrLo,\hlAblNoOpenIrHi]$. The global opening, or the $1024^2$ stage of progressive \sca{}, therefore sets the layout. Without the hand-set schedule and bridge, MUSIQ$_\text{c}$ changes by $\hlAblNoSchedMusiqc$ and no other column moves significantly (Table~\ref{tab:app_abl}).
 
 % =====================================================================================
 \section{Related work}
 \label{sec:related}
 \paragraph{Training-free high-resolution sampling.} Methods alter convolutions, spectra, or attention temperature~\citep{he2023scalecrafter,zhang2023hidiffusion,huang2024fouriscale,jin2023training}, fuse global and patch paths~\citep{du2023demofusion,yang2024fam} or split them by frequency~\citep{qiu2024freescale}, add native-resolution guidance~\citep{du2024imax,bu2025hiflow,koh2025scalediff}, or adapt RoPE~(\citealp{zhuo2024lumina,issachar2025dype,zhao2026sigma,rajabi2026sega}; \mbox{\citealp{liu2026tide}}). AReA~\citep{rajabi2026area} sets one schedule for all heads by hand, in our notation a window weight of 0 and then 1 for every head; \sca{} borrows its opening, block-centre keys, and bridge selection (Table~\ref{tab:related}). ResDiT also mixes position-scaled global and native-size patch attention~\citep{ma2025resdit}.
 
-\paragraph{Head-specific attention.} HRDiT searches per-head scopes under a cost budget for each target size~\citep{xue2026hrdit}, and UltraImage types heads by entropy at run time and noted stable local and global head roles~\citep{zhao2025ultraimage}. Sparse attention varies windows, spans, or key scales per layer or head in diffusion transformers~\citep{yuan2024ditfastattn,xi2025svg,zhang2025sta}, language models~\citep{fu2024moa,xiao2024duoattention}, and vision transformers~\citep{pan2022hilo}. These settings are fitted against dense attention at the size where they run, which at $4096^2$ is the failure. Head roles, two branches (our local branch is neighbourhood attention;~\citealp{hassani2022nat}), a global opening, and shrinking windows have precedents; the decomposition of reach variance into heads and steps and reach emulation are ours.
+\paragraph{Head-specific attention.} HRDiT searches per-head scopes under a cost budget for each target size~\citep{xue2026hrdit}, and UltraImage types heads by entropy at run time and noted stable local and global head roles~\citep{zhao2025ultraimage}. Sparse attention varies windows, spans, or key scales per layer or head in diffusion transformers~\citep{yuan2024ditfastattn,xi2025svg,zhang2025sta}, language models~\citep{fu2024moa,xiao2024duoattention}, and vision transformers~\citep{pan2022hilo}. These settings are fitted against dense attention at the size where they run, which at $4096^2$ is the failure. Head roles, two branches (our local branch is neighbourhood attention;~\citealp{hassani2022nat}), a global opening, and shrinking windows have precedents.
 
 % =====================================================================================
 \section{Limitations and conclusion}
 \label{sec:limits}
 \paragraph{Limitations.} Progressive \sca{}'s patch FID is higher than HRDiT's and single-pass \sca{}'s, and inside its sampler coarser weights have lower patch FID than per-head weights. In single-pass mode, small additional figures occasionally appear in scenes with people or animals; the progressive configuration reduces this to the level of the multi-stage baselines. The opening, window sizes, and bridge are set by hand, and the window sizes were chosen on the 46-prompt subset, part of the evaluation set. Progressive \sca{} depends on HRDiT's sampler, which does not support FLUX.1-Krea-dev, so the $6144^2$, $8192^2$, FLUX.2-dev, and sensitivity results use \sca{} without the schedule. Reach emulation omits the bridge and sees 16 times fewer keys per view than the target, so the deployed operator's output error is untested. All metrics are automatic.
 
-\paragraph{Conclusion.} Reach is a property of the head, so it can be measured once at the training resolution, where full attention is still correct, and reused at any size. \sca{} turns it into one number per head, fitted in closed form. Inside HRDiT's sampler it is $\hlSpeedProgArea\times$ faster than AReA at $4096^2$, better on all ten per-image metrics at three seeds and on HRGen-1K, and statistically indistinguishable from HRDiT on three preference scores in \hlProgHrditPct\% of HRDiT's time\ifanynewmodel; it also runs on \newmodelList\fi. Code: \codeurl.
+\paragraph{Conclusion.} Reach is a property of the head, so \sca{} fits it once per head at the training resolution, where full attention is still correct, and reuses it at any size. Inside HRDiT's sampler it is $\hlSpeedProgArea\times$ faster than AReA at $4096^2$, better on all ten per-image metrics at three seeds, and statistically indistinguishable from HRDiT on three preference scores in \hlProgHrditPct\% of HRDiT's time\ifanynewmodel; it also runs on \newmodelList\fi. Code: \codeurl.
 
 % Section 6 ends the main text; the statement starts the next page with natural spacing above.
 \newpage

@@ -167,7 +167,7 @@ def render(d):
     # (b) the error of each rule per noise bin
     xb = 3.42
     title(fig, xb - 0.38, ty, "b", "Error per noise level")
-    bx = axes_in(fig, xb, bottom, 5.06 - xb, ph)
+    bx = axes_in(fig, xb, bottom, 4.98 - xb, ph)
     items = []
     for name, e, col, lw in d["err"]:
         bx.plot(sig, e, color=col, lw=lw, solid_capstyle="round", zorder=3 if name == "per head" else 2)
@@ -175,7 +175,7 @@ def render(d):
     sigma_axis(bx, d)
     bx.set_ylim(0, None)
     bx.set_yticks([0, 0.1, 0.2, 0.3], ["0", "0.1", "0.2", "0.3"])
-    bx.set_ylabel(r"relative output error $\downarrow$", fontsize=FS_L, labelpad=2)
+    bx.set_ylabel("relative output error", fontsize=FS_L, labelpad=2)  # no arrow: rotated, it would point right
     sf.value_grid(bx, "y")
     clean(bx)
     end_labels(fig, bx, items, FS_S)

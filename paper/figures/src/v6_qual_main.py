@@ -61,7 +61,7 @@ def main():
         tag = f"{a.layout}{a.n}" if a.layout == "rows" else a.layout
         assets, pdf = a.out_dir / f"qual_main_{tag}", a.out_dir / f"qual_main_{tag}.pdf"
     else:
-        assets, pdf = vc.V6 / "qual_main", vc.V6 / "qual_main.pdf"
+        assets, pdf = vc.ASSETS / "qual_main", vc.V6 / "qual_main.pdf"
     W, G, GG, LW = vc.TEXT_PT, vc.G, vc.GG, 19.0
     if a.layout == "rows":
         n = len(exs)
@@ -93,7 +93,9 @@ def main():
                crop_rule="fixed-size window at the highest mean edge energy averaged over the four methods",
                per_image={e.key: {m: dict(ir=pool[m][e.key]["ir"], musiq_c=pool[m][e.key]["musiq_c"])
                                   for m in METHODS} for e in exs})
-    (assets / "provenance.json").write_text(json.dumps(rec, indent=1) + "\n")
+    rec["assets"] = str(assets)
+    prov = (a.out_dir / f"qual_main_{tag}_provenance.json") if a.out_dir else vc.V6 / "qual_main_provenance.json"
+    prov.write_text(json.dumps(rec, indent=1) + "\n")
     print(f"{pdf}: {pdf.stat().st_size / 1e6:.2f} MB, {rec['size_in'][0]:.2f} x {rec['size_in'][1]:.2f} in; "
           f"crop {crop_px} px; examples {[e['key'] for e in rec['examples']]}; crop ppi "
           f"{[e['crop_ppi'] for e in rec['examples']]}")

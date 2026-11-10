@@ -39,9 +39,16 @@ Not generated, because no cell can ever switch honestly:
                            intervals; the sca_v2 runs have no corrected_fidp_ci and these baselines are in another
                            run, so only interval-free cross-run points would exist. Its caption needs "without the
                            schedule" when the paper switches.
-  tab:phase2_sensitivity   calibration-budget and gate variants exist only for published SCA (46 prompts).
+  tab:phase2_sensitivity   reach-emulation budget and gate variants exist only for published SCA (46 prompts).
   tab:phase2_budget        56-step and guidance-7 runs exist only for published SCA.
 Warnings are computed only for columns whose run has landed.
+
+Paper v6 layout (2026-11-10; numbers, intervals and colours unchanged): 7 pt, the shared macros of
+main_tables/tabstyle.tex, no \\resizebox. krea_6144, phase2_baselines, phase2_general and panel46_deltas put the
+comparisons in rows (ours shaded) and stack one panel per metric family, each estimate above its grey interval;
+prog_deltas keeps one row per metric with each difference beside its interval. The float captions (krea_6144,
+prog_deltas) follow the v6 order: lead, what they expand, setup, marks, one key-result sentence computed from the
+cells. The tabular captions live in appendix.tex; the checks here cover the claims proposed for them.
 """
 from __future__ import annotations
 
@@ -67,6 +74,11 @@ PER_IMAGE = [("ir", "ImageReward", 1, 3), ("aesthetic", "Aesthetic", 1, 2), ("cl
              ("musiq_crop1024", r"MUSIQ$_\text{c}$", 1, 1), ("clipiqa", r"CLIP-IQA ($\times100$)", 100, 1),
              ("arniqa", r"ARNIQA ($\times100$)", 100, 1)]
 PREFERENCE = ("ir", "aesthetic", "pickscore", "hpsv2", "hpsv21")
+# the stacked panels of the v6 tables with comparisons as rows: one per metric family
+PANELS = [("(a) Preference", ["ir", "aesthetic", "clip", "pickscore", "hpsv2", "hpsv21"]),
+          ("(b) Image quality", ["musiq", "musiq_crop1024", "clipiqa", "arniqa"])]
+HEADS = {k: (k, label, scale, d, True) for k, label, scale, d in PER_IMAGE}  # column heads keep their x100 units
+assert sorted(k for _, keys in PANELS for k in keys) == sorted(HEADS)
 NAMES = {"ir": "ImageReward", "aesthetic": "Aesthetic", "clip": "CLIP score", "pickscore": "PickScore",
          "hpsv2": "HPSv2", "hpsv21": "HPSv2.1", "musiq": "MUSIQ", "musiq_crop": r"MUSIQ$_\text{c}$",
          "musiq_crop1024": r"MUSIQ$_\text{c}$", "clipiqa": "CLIP-IQA", "arniqa": "ARNIQA", "fid": "FID",
@@ -285,6 +297,16 @@ def sig_counts(v, spec):
 
 # ---------------------------------------------------------------- krea_6144 -----------------------------------------
 KREA_RUN = "krea195_sca_v2"
+# column heads of the stacked panels (gen_late_tables keys: musiq_crop is MUSIQ on the 1024^2 crops)
+PANEL_HEAD = {"ir": "ImageReward", "aesthetic": "Aesthetic", "clip": "CLIP score", "pickscore": "PickScore",
+              "hpsv2": r"HPSv2 ($\times100$)", "hpsv21": r"HPSv2.1 ($\times100$)", "musiq": "MUSIQ",
+              "musiq_crop": r"MUSIQ$_\text{c}$", "clipiqa": r"CLIP-IQA ($\times100$)", "arniqa": r"ARNIQA ($\times100$)",
+              "fid": r"FID $\downarrow$", "kid": r"KID ($\times\smash{10^3}$) $\downarrow$",
+              "patch_fid": r"FID$_\text{p}$ $\downarrow$", "patch_kid": r"KID$_\text{p}$ ($\times\smash{10^3}$) $\downarrow$",
+              "is": r"IS $\uparrow$", "seconds": r"Time (s) $\downarrow$"}
+KREA_PANELS = [("(a) Preference", ["ir", "aesthetic", "clip", "pickscore", "hpsv2", "hpsv21"]),
+               ("(b) Image quality", ["musiq", "musiq_crop", "clipiqa", "arniqa"]),
+               ("(c) Set level and time", ["fid", "kid", "patch_fid", "patch_kid", "is", "seconds"])]
 
 
 def krea_v2():
@@ -326,7 +348,7 @@ def krea_claim(v, secs):
 
 def krea_6144():
     landed = v2swap.landed(KREA_RUN)
-    cols = [("e2_6144", "sca_nb", rf"\sca{{}} {WOS_SHORT}"), ("e9_krea", "sca_krea", r"Single-pass \sca{}"),
+    cols = [("e2_6144", "sca_nb", r"\sca{} w/o schedule"), ("e9_krea", "sca_krea", r"Single-pass \sca{}"),
             ("e9_krea", "dype", "DyPE"), ("e9_krea", "sega_official", "SEGA")]
     data = [late.load_deltas(f, m) for f, m, _ in cols]
     sources = ["results/e2_6144", "results/e9_krea"]
@@ -360,35 +382,36 @@ def krea_6144():
                       r"whose patch versions have no interval")
     # Key result (v6): what the two Krea baselines do against AReA under the same protocol, from the colours
     others = []
-    for (_, _, name), x in zip(cols[2:], data[2:]):
+    for i, ((_, _, name), x) in enumerate(zip(cols[2:], data[2:])):
         better, worse = sig_counts(x, spec)
-        others.append(f"{name} wins {WORDS[len(better)]} and loses {WORDS[len(worse)]}")
-    key = ("under the same protocol on FLUX.1-Krea-dev, " + join(others)
-           + f" of the {WORDS[len(spec)]} metrics against AReA")
+        of = f" of the {len(spec)} metrics" if i == 0 else ""
+        others.append(f"{name} wins {WORDS[len(better)]}{of} and loses {WORDS[len(worse)]}")
+    key = "against AReA on FLUX.1-Krea-dev, " + (", and ".join(others) if len(others) == 2 else join(others))
     pending_key = False  # DyPE and SEGA never switch
     caption = (rf"\caption{{\textbf{{At $6144^2$ \sca{{}} without the schedule beats AReA on {wins6144} of {len(spec)} "
                rf"metrics; {claim}.}} Expands the FLUX.1-Krea-dev row of Table~\ref{{tab:generality}} and the $6144^2$ "
                r"result of Section~\ref{sec:sizes}. Each cell is the method minus AReA with its 95\% paired "
-               r"percentile-bootstrap interval in grey. First column: FLUX.1-dev at $6144^2$, 100 prompts. Other "
-               r"columns: FLUX.1-Krea-dev at $4096^2$ with a reach table fitted on that checkpoint, "
+               r"percentile-bootstrap interval below it in grey. First row: FLUX.1-dev at $6144^2$, 100 prompts. Other "
+               r"rows: FLUX.1-Krea-dev at $4096^2$ with a reach table fitted on that checkpoint, "
                + (r"on all 195 prompts for single-pass \sca{} and on the 100 that DyPE and SEGA ran. " if late.KREA195
                   else r"on 100 prompts each. ")
-               + intervals + r". Time is the campaign mean on shared GH200 nodes. \up{Blue} / \dn{orange}: "
+               + intervals + r". IS: Inception score; time: campaign mean on shared GH200 nodes. \up{Blue} / \dn{orange}: "
                r"significantly better / worse than AReA; for FID, KID, their patch versions, and time, lower is better. "
                r"Key result: " + v2swap.pend(key, pending_key) + "." + "\\" + note + "}")
     pend_flags = [False, not landed, False, False]
-    keys = [k for k, *_ in late.PER_IMAGE + late.DIST]
-    fmt = {k: (scale, d, higher) for k, _, scale, d, higher in late.PER_IMAGE + late.DIST}
-    body = metric_rows(keys, 9, lambda k: pair_cells(data, k, *fmt[k][:2], pend_flags, fmt[k][2]))
-    head = [r"\toprule",
-            r" & \multicolumn{2}{c}{FLUX.1-dev, $6144^2$} & \multicolumn{6}{c}{FLUX.1-Krea-dev, $4096^2$} \\",
-            r"\cmidrule(lr){2-3}\cmidrule(l){4-9}",
-            "Metric & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{c[2]}}}" for c in cols) + r" \\",
-            r"\midrule"]
+    # v6: the four comparisons as rows (ours shaded), one panel per metric family, each estimate above its interval;
+    # side by side with their intervals the four columns are 23 pt wider than the text at 7 pt
+    heads = {k: (k, PANEL_HEAD[k], scale, d, higher) for k, _, scale, d, higher in late.PER_IMAGE + late.DIST}
+    rows = [(c[2], x, p) for c, x, p in zip(cols, data, pend_flags)]
+    groups = [(r"FLUX.1-dev, $6144^2$", rows[:1]), (r"FLUX.1-Krea-dev, $4096^2$", rows[1:])]
     lines = [header(sources), STYLE, v2swap.PEND_FALLBACK, r"\begin{table}[!htbp]", caption, r"\label{tab:krea_6144}",
-             r"\centering\scriptsize", rf"\scaFitTab{{l{PAIR_GAP}{PAIR * 3}}}{{5}}{{%"]
-    lines += ["  " + x for x in head + body + [r"\bottomrule"]] + ["}", r"\end{table}"]
-    subs = [(rf"\sca{{}} {WOS}", r"\sca{}"),
+             r"\centering\scriptsize"]
+    lines += stack(*[panel(title, [heads[k] for k in keys], groups, r"Method $-$ AReA", shade=(cols[0][2], cols[1][2]))
+                     for title, keys in KREA_PANELS])
+    lines += [r"\end{table}"]
+    if sorted(k for _, keys in KREA_PANELS for k in keys) != sorted(heads):
+        raise ValueError("krea_6144: the panels do not cover every metric")
+    subs = [(r"\sca{} w/o schedule", r"\sca{}"),
             (r"At $6144^2$ \sca{} without the schedule beats", r"At $6144^2$ \sca{} beats"),
             (r"on FLUX.1-Krea-dev \sca{} wins", r"on FLUX.1-Krea-dev it wins")]
     return {"name": "krea_6144", "kind": "float", "label": "tab:krea_6144", "old": "krea_6144.tex", "runs": [KREA_RUN],
@@ -406,15 +429,16 @@ def phase2_baselines():
         cols = [derived(run, m, MAIN_V2, "sca_v2") for _, run, m in BASELINE_COLS]
     else:
         cols = [pair_file(run, m, "sca_nb", n=195, seed=0) for _, run, m in BASELINE_COLS]
-    lines = [v2swap.PEND_FALLBACK,
-             header(["results/a4k195_main", "results/a4k195_panel"]
+    # v6: baselines as rows, grouped like Table tab:main; one panel per metric family
+    rows = {name: (name, c, not landed) for (name, _, _), c in zip(BASELINE_COLS, cols)}
+    groups = [("Single pass, shared sampler", [rows["DyPE"], rows["SEGA"]]),
+              ("Multi-stage, own recipe", [rows["UltraImage"], rows["HRDiT"]])]
+    assert sum(len(g[1]) for g in groups) == len(BASELINE_COLS)
+    lines = [header(["results/a4k195_main", "results/a4k195_panel"]
                     + ([f"per-image CSVs of {MAIN_V2} (sca_v2)"] if landed else [])),
-             r"\centering\scriptsize\setlength{\tabcolsep}{3pt}\let\tiny\scriptsize",
-             r"\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%",
-             r"\begin{tabular}{lcccc}", r"\toprule",
-             "Metric & " + " & ".join(c[0] for c in BASELINE_COLS) + r" \\", r"\midrule"]
-    lines += rows_for(cols, PER_IMAGE, [not landed] * len(cols))
-    lines += [r"\bottomrule", r"\end{tabular}}"]
+             STYLE, v2swap.PEND_FALLBACK, r"\centering\scriptsize"]
+    lines += stack(*[panel(f"{title}: baseline $-$ single-pass \\sca{{}}", [HEADS[k] for k in keys], groups,
+                           "Baseline") for title, keys in PANELS])
     warnings = []
     if landed:
         keys = [k for k, *_ in PER_IMAGE]
@@ -474,33 +498,31 @@ def phase2_general():
     cols.append(flux2())
     flags.append(False)
     sources.append("results/e8_flux2_sca_vs_full.csv")
-    lines = [v2swap.PEND_FALLBACK, header(sources),
-             r"\centering\scriptsize\setlength{\tabcolsep}{2pt}\let\tiny\scriptsize",
-             r"\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%",
-             r"\begin{tabular}{lcccc}", r"\toprule",
-             "Metric & " + " & ".join(c[0] for c in GENERAL_COLS) + rf" & FLUX.2-dev {WOS_SHORT} \\", r"\midrule"]
-    lines += rows_for(cols, PER_IMAGE, flags)
-    lines += [r"\bottomrule", r"\end{tabular}}"]
+    open_ = [k for k, *_ in PER_IMAGE if sig(cols[-1][k]) != 1]
+    if open_ != ["clip"]:
+        warnings.append("caption key result 'only FLUX.2-dev's CLIP score interval includes zero' fails: FLUX.2-dev "
+                        f"is not significantly better on {label_list(open_) or 'none'}")
+    # v6: settings as rows, as in gen_main_tables.py's app_tables/gen_all.tex; one panel per metric family
+    rows = [(name, c, f) for (name, *_), c, f in zip(GENERAL_COLS, cols, flags)]
+    groups = [(r"Single-pass \sca{} $-$ AReA", rows), (rf"\sca{{}} {WOS} $-$ full attention",
+                                                       [("FLUX.2-dev", cols[-1], flags[-1])])]
+    lines = [header(sources), STYLE, v2swap.PEND_FALLBACK, r"\centering\scriptsize"]
+    lines += stack(*[panel(title, [HEADS[k] for k in keys], groups, "Setting") for title, keys in PANELS])
     return {"name": "phase2_general", "kind": "tabular", "label": "tab:phase2_general",
             "runs": [c[2] for c in GENERAL_COLS], "note": "pendAppPhaseGeneral", "tex": "\n".join(lines) + "\n",
-            "subs": [(f"FLUX.2-dev {WOS_SHORT}", "FLUX.2-dev")], "warnings": warnings}
+            "subs": [], "warnings": warnings}
 
 
 # ---------------------------------------------------------------- panel46_deltas ------------------------------------
 PANEL_LABELS = {"hpsv2": "HPSv2", "hpsv21": "HPSv2.1", "clipiqa": "CLIP-IQA", "arniqa": "ARNIQA"}
 PANEL_PER_IMAGE = [(k, PANEL_LABELS.get(k, lab), s, d) for k, lab, s, d in PER_IMAGE]
-PANEL_SET = [("fid", r"FID$\downarrow$", 1, 1), ("kid", r"KID$\downarrow$", 1000, 1),
-             ("patch_fid", r"FID$_\text{p}\downarrow$", 1, 1), ("patch_kid", r"KID$_\text{p}\downarrow$", 1000, 1),
-             ("seconds", r"Time (s)$\downarrow$", 1, 1)]
+PANEL_SET = [("fid", r"FID $\downarrow$", 1, 1), ("kid", r"KID $\downarrow$", 1000, 1),
+             ("patch_fid", r"FID$_\text{p}$ $\downarrow$", 1, 1), ("patch_kid", r"KID$_\text{p}$ $\downarrow$", 1000, 1),
+             ("seconds", r"Time (s) $\downarrow$", 1, 1)]
 SINGLE = [("Full attn.", "a4k195_main", "full"), ("DyPE", "a4k195_main", "dype"),
           ("SigMa", "a4k195_panel", "sigma_dev_matched"), ("SEGA", "a4k195_main", "sega_official"),
           ("AReA", "a4k195_main", "area")]
 MULTI = [("UltraImage", "a4k195_panel", "ultraimage"), ("HRDiT", "a4k195_panel", "hrdit_dev_author")]
-
-
-def panel_group_row(ncols):
-    """Marks the rows that stay against published SCA: set-level intervals across runs do not exist."""
-    return r"\multicolumn{" + str(ncols) + r"}{l}{\emph{Baseline minus \sca{} " + WOS + r"}} \\"
 
 
 def panel46_deltas():
@@ -521,44 +543,50 @@ def panel46_deltas():
         D = loaded[run][1]
         return {k: D[(m, k)] for k, *_ in PANEL_SET}
 
-    lines = [v2swap.PEND_FALLBACK,
-             header(["results/a4k195_main", "results/a4k195_panel"]
+    lines = [header(["results/a4k195_main", "results/a4k195_panel"]
                     + ([f"results/{MAIN_V2} and per-image CSVs of {MAIN_V2} (sca_v2)"] if landed else [])),
-             r"\centering\scriptsize\setlength{\tabcolsep}{2.5pt}\let\tiny\scriptsize"]
-    blocks, warnings, subs = [], [], []
-    for group, cols, spec, title in ((SINGLE, 5, r"l*{5}{Y{62pt}}", r"Single pass, shared sampler"),
-                                     (MULTI, 2, "lcc", r"Multi-stage, own recipe")):
+             STYLE, v2swap.PEND_FALLBACK, r"\centering\scriptsize"]
+    warnings = []
+    # v6: baselines as rows in the two groups of Table tab:main, one panel per metric family; the set-level and time
+    # panel pairs against SCA without the schedule (set-level intervals across runs do not exist), and says so
+    groups_pi, groups_sl = [], []
+    for group, title in ((SINGLE, "Single pass, shared sampler"), (MULTI, "Multi-stage, own recipe")):
         pi = [per_image(run, m) for _, run, m in group]
         sl = [setlevel(run, m) for _, run, m in group]
-        block = [r"\begin{tabular}{" + spec + "}", r"\toprule",
-                 rf" & \multicolumn{{{cols}}}{{c}}{{\emph{{{title}}}}} \\", rf"\cmidrule(l){{2-{cols + 1}}}",
-                 "Metric & " + " & ".join(c[0] for c in group) + r" \\", r"\midrule"]
-        block += rows_for(pi, PANEL_PER_IMAGE, [not landed] * cols)
-        marker = r"\midrule" + "\n" + panel_group_row(cols + 1)
-        block.append(marker)
-        subs.append((marker, ""))
-        block += rows_for(sl, PANEL_SET, [False] * cols, higher=False)
-        block += [r"\bottomrule", r"\end{tabular}"]
-        blocks.append(block)
+        groups_pi.append((title, [(name, c, not landed) for (name, _, _), c in zip(group, pi)]))
+        groups_sl.append((title, [(name, c, False) for (name, _, _), c in zip(group, sl)]))
         if landed:
             keys = [k for k, *_ in PER_IMAGE]
             for (name, _, _), c in zip(group, pi):
-                s = [sig(c[k]) for k in keys]
-                if group is SINGLE and any(x != -1 for x in s):
+                s_ = [sig(c[k]) for k in keys]
+                if group is SINGLE and any(x != -1 for x in s_):
                     warnings.append("caption 'every shared-protocol baseline trails \\sca{} on all ten per-image "
                                     f"metrics' fails: {name} is not significantly worse on "
-                                    + join(NAMES[k] for k, x in zip(keys, s) if x != -1))
+                                    + join(NAMES[k] for k, x in zip(keys, s_) if x != -1))
                 if group is MULTI:
                     lead = [NAMES[k] for k in PREFERENCE if sig(c[k]) == 1]
                     if len(lead) < 2:
                         warnings.append(f"caption 'HRDiT and UltraImage lead on several preference metrics' fails "
                                         f"for {name}: significantly better only on {join(lead) or 'none'}")
-    lines += blocks[0] + ["", r"\medskip"] + blocks[1]
-    # a uniqueness guard for the two marker substitutions: --check undoes them with a plain replace
+    # proposed v6 caption, key result: "both multi-stage recipes are significantly better on Aesthetic, PickScore, and
+    # HPSv2.1 and worse on both MUSIQ scores, and both have higher patch FID and patch KID than SCA without the schedule"
+    for name, pi_c, sl_c in zip([g[0] for g in MULTI], [r[1] for r in groups_pi[1][1]], [r[1] for r in groups_sl[1][1]]):
+        wrong = [NAMES[k] for k in ("aesthetic", "pickscore", "hpsv21") if sig(pi_c[k]) != 1] + \
+            [NAMES[k] for k in ("musiq", "musiq_crop1024") if sig(pi_c[k]) != -1] + \
+            [NAMES[k] for k in ("patch_fid", "patch_kid") if sig(sl_c[k], higher=False) != -1]
+        if wrong:
+            warnings.append(f"caption key result 'both multi-stage recipes ...' fails for {name} on {join(wrong)}")
+    heads_pi = {k: (k, label, scale, d, True) for k, label, scale, d in PANEL_PER_IMAGE}
+    heads_sl = [(k, label, scale, d, False) for k, label, scale, d in PANEL_SET]
+    set_title = r"(c) Set level and time: baseline $-$ \sca{} " + WOS
+    lines += stack(*[panel(f"{title}: baseline $-$ single-pass \\sca{{}}", [heads_pi[k] for k in keys], groups_pi,
+                           "Baseline") for title, keys in PANELS],
+                   panel(set_title, heads_sl, groups_sl, "Baseline"))
+    # the set-level panel title marks the cells that stay against SCA without the schedule; --check removes it
     text = "\n".join(lines) + "\n"
-    for new, _ in subs:
-        if text.count(new) != 1:
-            raise ValueError(f"marker row occurs {text.count(new)} times")
+    subs = [(set_title, "")]
+    if text.count(set_title) != 1:
+        raise ValueError(f"set-level panel title occurs {text.count(set_title)} times")
     return {"name": "panel46_deltas", "kind": "tabular", "label": "tab:panel46_deltas", "runs": [MAIN_V2],
             "note": "pendAppPanelDeltas", "tex": text, "subs": subs, "warnings": warnings}
 
@@ -581,30 +609,39 @@ def prog_deltas():
         sources.append(f"per-image CSVs of {PROG_RUN} and {MAIN_V2}")
     flags = [not prog_landed, not single_landed, False, False]
     note = "pendAppProgDeltas"
-    group = r" & & & \multicolumn{2}{c}{\emph{\sca{} " + WOS + r"}} \\" + "\n" + r"\cmidrule(l){4-5}"
     worse_now = [NAMES[k] for k, *_ in prog.METRICS if prog_landed and data[0][k][2] < 0]
     lead = (rf"Per image, progressive \sca{{}} is significantly worse than HRDiT only on {join(worse_now)}."
             if worse_now else r"Against HRDiT, progressive \sca{} is not significantly worse on any per-image metric; "
             r"single-pass \sca{} without the schedule at 42 steps is.")
+    # Key result (v6): progressive against HRDiT and against single-pass SCA, from the colours of the first two columns
+    keys = [k for k, *_ in prog.METRICS]
+    better_h, _ = sig_counts(data[0], [(k, True) for k in keys])
+    better_s, worse_s = sig_counts(data[1], [(k, True) for k in keys])
+    key = (r"progressive \sca{} is significantly better than HRDiT on "
+           + (label_list(better_h) if better_h else "none of the ten metrics")
+           + rf" and better than single-pass \sca{{}} on {WORDS[len(better_s)]} of {WORDS[len(keys)]}"
+           + (f", but worse on {label_list(worse_s)}" if worse_s else ", and worse on none"))
     caption = (r"\caption{\textbf{" + lead + "}"
-               rf" $4096^2$, {prog.N_PROMPTS} prompts, seed "
-               r"label 0. Per-image differences (first-named setting minus "
-               rf"second) with 95\% paired intervals over {prog.DRAWS} prompt draws; \up{{blue}} / \dn{{orange}}: the "
-               r"interval excludes zero in favour of / against the first-named setting. Progressive: HRDiT's schedule "
-               r"with \sca{} attention (Section~\ref{sec:progressive}). \sca{}: 28 steps, single-pass \sca{} in the "
-               r"second column and \sca{} without the schedule in the third. 42 steps: \sca{} without the schedule "
-               r"at 42 steps, sized to HRDiT's campaign time. Intervals that include zero do not establish "
-               r"equivalence."
-               + "\\" + note + "}")
-    lines = [v2swap.PEND_FALLBACK, header(sources), r"\begin{table}[!htbp]", caption, r"\label{tab:prog_deltas}",
-             r"\centering\scriptsize\setlength{\tabcolsep}{2.4pt}\let\tiny\scriptsize",
-             r"\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%",
-             r"\begin{tabular}{l" + "c" * len(prog.PAIRS) + "}", r"\toprule", group,
-             "Metric & " + " & ".join(p[2] for p in prog.PAIRS) + r" \\", r"\midrule"]
-    for key, label, scale, d in prog.METRICS:
-        lines.append(label + " & " + " & ".join(v2swap.pend(prog.cell(x[key], scale, d), f)
-                                                 for x, f in zip(data, flags)) + r" \\")
-    lines += [r"\bottomrule", r"\end{tabular}}", r"\end{table}"]
+               r" Expands the progressive rows of Table~\ref{tab:main}. FLUX.1-dev at $4096^2$, "
+               rf"{prog.N_PROMPTS} prompts, seed label 0. Each cell is the first-named setting minus the second, with its "
+               rf"95\% paired percentile-bootstrap interval over {prog.DRAWS} prompt draws in grey. \up{{Blue}} / "
+               r"\dn{orange}: the interval excludes zero in favour of / against the first-named setting. Progressive "
+               r"\sca{} runs HRDiT's schedule with \sca{} attention (Section~\ref{sec:progressive}), and single-pass "
+               r"\sca{} takes 28 steps. The last two columns use \sca{} without the schedule, at 42 steps sized to "
+               r"HRDiT's campaign time and at 28. Intervals that include zero do not establish equivalence; "
+               r"Table~\ref{tab:holm} gives the Holm-adjusted calls. Key result: "
+               + v2swap.pend(key, flags[0] or flags[1]) + "." + "\\" + note + "}")
+    head = [r"\toprule",
+            r" & \multicolumn{4}{c}{Progressive \sca{} $-$} & \multicolumn{4}{c}{\sca{} " + WOS + r"} \\",
+            r"\cmidrule(lr){2-5}\cmidrule(l){6-9}",
+            r"Metric & \multicolumn{2}{c}{HRDiT} & \multicolumn{2}{c}{single-pass \sca{}} & "
+            r"\multicolumn{2}{c}{42 $-$ 28 steps} & \multicolumn{2}{c}{HRDiT $-$ 42 steps} \\",
+            r"\midrule"]
+    fmt = {k: (scale, d) for k, _, scale, d in prog.METRICS}
+    body = metric_rows(keys, 9, lambda k: pair_cells(data, k, *fmt[k], flags))
+    lines = [header(sources), STYLE, v2swap.PEND_FALLBACK, r"\begin{table}[!htbp]", caption, r"\label{tab:prog_deltas}",
+             r"\centering\scriptsize", rf"\scaFitTab{{l{PAIR}{PAIR_GAP}{PAIR}{PAIR}}}{{5}}{{%"]
+    lines += ["  " + x for x in head + body + [r"\bottomrule"]] + ["}", r"\end{table}"]
     warnings = []
     if prog_landed:
         worse = [NAMES[k] for k, *_ in prog.METRICS if data[0][k][2] < 0]
@@ -614,9 +651,7 @@ def prog_deltas():
     if single_landed and data[1]["musiq_crop1024"][2] >= 0:
         warnings.append("main.tex paragraph 'Progressive \\sca{} matches HRDiT' says progressive has lower "
                         "MUSIQ$_\\text{c}$ than single-pass \\sca{}; the sca_v2 interval no longer excludes zero")
-    subs = [(group, ""),
-            (r"single-pass \sca{} without the schedule at 42 steps is.", r"single-pass \sca{} with 42 steps is."),
-            (r"42 steps: single-pass \sca{} without the schedule, sized to", r"42 steps: single-pass \sca{} sized to")]
+    subs = [(r"single-pass \sca{} without the schedule at 42 steps is.", r"single-pass \sca{} with 42 steps is.")]
     return {"name": "prog_deltas", "kind": "float", "label": "tab:prog_deltas", "old": "prog_deltas.tex",
             "runs": [PROG_RUN, MAIN_V2], "note": note, "tex": "\n".join(lines) + "\n", "subs": subs,
             "warnings": warnings}

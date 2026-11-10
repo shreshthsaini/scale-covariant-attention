@@ -1,6 +1,10 @@
 # methodfigs (v6): Figures 2, 3, 4, appendix method zoom and analysis plots
 
-Status 2026-11-10: main figures 2, 3, 4 done (kept candidates installed under paper/figures/v6/); appendix in progress.
+Status 2026-11-10: done. Main figures 2, 3, 4, the method zoom and the six Appendix B plots are installed under
+paper/figures/v6/ (same stems). All pass the PyMuPDF check (no span under 6 pt) and were read at print size in an ICLR
+test page (/scratch/09032/saini_2/sca/paper_builds/v6_methodfigs_1/testdoc/test_v6figs.pdf and test_v6app.pdf).
+LIVE NOW: appendix.tex's \apxgraphic already picks up v6/heads_view, pi_heads, pi_heatmap, rel_err, pi_sigma and
+method_zoom, so their v5.1 captions are mismatched until the appendix owner applies the fixes listed below.
 Builds and renders: /scratch/09032/saini_2/sca/paper_builds/v6_methodfigs_1/ (png/, obs/, emu/, tikz/out/, testdoc/).
 
 ## New files (all mine; announce)
@@ -10,8 +14,11 @@ Builds and renders: /scratch/09032/saini_2/sca/paper_builds/v6_methodfigs_1/ (pn
 - Data: paper/figures/src/data/v6_attn_block12.npz + .json (1.1 MB): full-attention rows of all 24 heads of block 12 at
   query (43, 11) of the 1024^2 capture at steps 8, 20, 26 (sigma 0.897, 0.612, 0.327), plus the r = 4 near and far
   views at step 20. Read from the CPU capture /scratch/09032/saini_2/sca/out/attn_focus/sheep_church_seed0 (no GPU).
-- Outputs (paper/figures/v6): observation.pdf, method.pdf, emulation.pdf, observation_provenance.json,
-  emulation_provenance.json, method_assets/ (images, data.tex, provenance.json).
+- Also: v6_method_zoom.tex (zoom TikZ, built by v6_tikz_build.py), v6_app_{heads_view,pi_heads,rel_err,pi_sigma,
+  pi_heatmap,reach_tables}.py (Appendix B plots; each writes v6/<stem>.pdf and v6/<stem>_provenance.json).
+- Outputs (paper/figures/v6): observation.pdf, method.pdf, emulation.pdf, method_zoom.pdf, heads_view.pdf,
+  pi_heads.pdf, rel_err.pdf, pi_sigma.pdf, pi_heatmap.pdf, reach_tables.pdf, their *_provenance.json, and
+  method_assets/ (images, data.tex, picmap.png, provenance.json).
 - Rebuild: `PY=/work/09032/saini_2/vista/library/uv-envs/sca/bin/python; cd paper/figures/src;
   $PY -I v6_observation.py; $PY -I v6_emulation.py; $PY -I v6_method_assets.py; $PY -I v6_tikz_build.py --install`.
 
@@ -103,7 +110,8 @@ New path, same stem (announce: appendix.tex should include figures/v6/method_zoo
 Figure 3's preamble (same fonts, 9 pt titles, query marker, block and arrow styles, near/far vocabulary). Content as
 v5.1 D.1 with fewer in-figure equations: (a) Far view, toy grid -> n0 x n0 keys with kappa(b), c(p); (b) Near view,
 two query tiles, windows (w = n0 filled, 2 n0 dotted, clamp dashed), bridge dots, block mask (text / bridge / window);
-(c) Gate and mix: head 24 of block 12 at r = 2 (dashed) and r = 4 (solid) with the weight applied at the 20 post-gate
+(c) Gate and mix (sigma falls left to right, as everywhere in v6): head 24 of block 12 at r = 2 (dashed) and r = 4
+(solid) with the weight applied at the 20 post-gate
 steps (amber: the four wide-window steps; green: native), grey band sigma > sigma_g, and the mix O^far, O^near -> O_i;
 (d) the r = 4 table of all 57 blocks (fig_method_zoom.py's strip, unchanged) with a raster colour bar (the old TikZ
 shading rendered wrongly in MuPDF). Data: paper/figures/method_zoom/{data.tex, pi_strip.png, block_mask.png} from the
@@ -116,17 +124,56 @@ Proposed caption:
   $t=2$. (a)~The far view keys each block by its centre token (Equation~\ref{eq:glob}). (b)~A query tile's near view:
   text keys, bridge tokens (dots) and a border-clamped window, with its block mask (Equations~\ref{eq:loc}
   and~\ref{eq:bridge}). (c)~Head 24 of block 12 at $r=2$ (dashed) and $r=4$ (solid); dots: the weight applied at each
-  post-gate step at $4096^2$ (amber: wide windows), and the mix (Equation~\ref{eq:mix}). (d)~The $r=4$ table,
-  $57\times24$ heads by 14 noise bins.
+  post-gate step at $4096^2$ (amber: wide windows; $\sigma$ falls left to right), and the mix
+  (Equation~\ref{eq:mix}). (d)~The $r=4$ table, $57\times24$ heads by 14 noise bins.
 Note: the zoom writes O^far, O^near and K^loc; if the text renames the operators, tell me and I will change the labels.
 
-## Requests to other owners
-- text: Figure 4 is new (suggest \label{fig:emulation}, wrapfigure is not advised at 5.5 x 1.6 in; full width beside
-  3.2). Fig 2 caption no longer says "m_i"; panel (a) now uses the share within 16 tokens, the same quantity as (b).
-  Figure 3 and 4 captions above use macros where they exist.
-- tablesplots: none needed (macros exist). If (c) of Figure 4 is quoted in prose, add a macro for the held-out error
-  pair (k1_1024.json scales/2: rel_err/per_head 0.0574 and cross_half_rel_err_per_head 0.0576).
+## Appendix B analysis plots (restyled; same stems under paper/figures/v6/; scripts v6_app_<stem>.py)
+Restyle by a subagent from my brief, reviewed by me (all six read at 300 dpi and in the test page). Data code is the
+old scripts' (imported or copied verbatim, every original assertion kept; no assertion failed); presentation only.
+Common: "(a) Name" titles, near/far wording, "fitted weight pi_h", "near share", ratio r (not "scale"), noise-level
+axes fall left to right with "-> denoising" (as Figure 2), block numbers one-based, values printed, one SCA green.
+| stem | size (in) | words | min pt | change |
+|---|---|---|---|---|
+| heads_view | 5.5 x 1.62 | 25 | 6.47 | near/far chips on the photo; heads near/mid/far; (d) x label "near share" |
+| pi_heads | 5.5 x 1.34 (was 1.22) | 14 | 6.04 | titles "Blocks 1-19 / 20-38 / 39-57" (stream type now only in caption) |
+| rel_err | 5.5 x 1.62 | 21 | 6.5 | "Ratio 2/4"; "per head, other ratio", "near only", "far only"; coarse rules one grey |
+| pi_sigma | 5.5 x 2.05 | 32 | 7.0 | direct labels "per-head mean", "shared", "AReA switch" (AReA purple) |
+| pi_heatmap | 4.95 x 2.78 | 16 | 6.47 | built at 0.9 width (as included); panels now sigma 0.97, 0.54, 0.10 top to bottom |
+| reach_tables | 5.5 x 3.50 (was 3.30) | 46 | 6.04 | (a-c) now sigma 0.83, 0.46, 0.10; (e) grouped bars "scored at ..." instead of rotated labels; "far only" band |
+heads_view note: the old --no-results-csv check compares results/heads_view/SHA256SUMS byte for byte and fails today
+because that file gained two lines on Nov 7; v6_app_heads_view.py recomputes the four CSVs into scratch, requires them
+byte-identical to results/heads_view (they are) and their checksum lines to appear in the archived SHA256SUMS. Nothing
+was written to results/ or to the v5.1 PDFs (mtimes checked).
 
-## Not done yet
-- Appendix: method zoom redraw, analysis plots restyle (heads_view, pi_heads, rel_err, pi_sigma, pi_heatmap,
-  reach_tables).
+## Requests to other owners
+- appendix (live caption mismatches, v6 figures already included):
+  * fig:heads: "Local window (amber)" -> "Near window (amber)"; the blue keys are the far view; "share within 16 tokens"
+    -> "near share"; "global-only opening" -> "far-only opening"; (c) sigma now falls left to right.
+  * fig:pi_heads: "(a to c) ... blocks 1 to 19 (double-stream), 20 to 38 and 39 to 57 (single-stream)"; "scale 2" ->
+    "ratio 2"; rho can be \hlEmuSplitHalfTwo.
+  * fig:relerr: "emulated scales 2 (a) and 4 (b)" -> "ratios 2 (a) and 4 (b)"; "other scale" -> "other ratio";
+    "equals local only" -> "equals near only".
+  * fig:pisigma: "scale 2" -> "ratio 2"; "(b) local beats global everywhere" -> "near beats far everywhere"; sigma now
+    falls left to right (sigma = 1, pure noise, is at the left).
+  * fig:heatmap: "at sigma = 0.10 (a), 0.54 (b), and 0.97 (c)" -> "at sigma = 0.97 (a), 0.54 (b), and 0.10 (c)";
+    "scale-2" -> "ratio-2".
+  * fig:method_zoom: replace the caption with the one proposed above (head 24 named, near/far, sigma direction).
+  * fig:reach_tables: figures/snippets/reach_tables.tex (written by the old fig_reach_tables.py) still includes
+    figures/reach_tables.pdf. Switch it to \apxgraphic{reach_tables} (or edit the path to figures/v6/) and change the
+    caption to: "(a to c)~$\pih$ of the ratio-4 reach table at $\sigma=0.83$, $0.46$, $0.10$; (d)~mean and
+    interquartile range across heads of three tables, shaded: far-only opening. (e)~Excess error over each setting's
+    own table: at most 5.4\% transferred, 12 to 24\% per layer." (the 5.4 and 11.6 to 24.0 are printed in (e)). I did
+    not edit the shared snippet; say if you want me to.
+- text: Figure 4 is new (suggest \label{fig:emulation}; full width beside Section 3.2; a wrapfigure is not advised at
+  5.5 x 1.6 in). Figure 2 panel (a) now shows the share within 16 tokens (same quantity as (b)); the old "m_i" in the
+  caption is gone. Captions above use existing macros (\hlVar*, \hlEmu*). The figures use "near view"/"far view" and
+  the zoom writes O^far, O^near and K^loc; if the text renames the operators, tell me and I relabel.
+- tablesplots: none required. If prose quotes Figure 4(c)'s held-out pair, add macros for k1_1024.json scales/2
+  rel_err/per_head (0.0574) and cross_half_rel_err_per_head (0.0576).
+
+## Not done or not verified
+- Not compiled inside the real main.tex/appendix.tex (owned by others); verified only in my ICLR test pages.
+- Single-pass sampling is not drawn in Figure 3(c) (caption can say it reads r(sigma)); the zoom's (c) shows it.
+- Figure 3 (b) illustrates emulation on the 1024^2 stage of the evaluation prompt; the table itself comes from the 32
+  emulation prompts (the caption must keep "same run" and not imply the table was fitted on this image).

@@ -16,8 +16,17 @@ Since 2026-11-07 (progressive SCA is the paper's headline): the final operator's
 from results/prog195_sca_v2 (prog_rows: clean latency from the third sweep, results/prog_latency; progressive SCA
 marked against AReA from results/prog195_pairs; HRDiT unmarked like the other baselines).
 
+Paper v6 layout (2026-11-10; the numbers, intervals, colours and bold cells of v5.1 are unchanged): every table is set
+at 7 pt with the shared macros of main_tables/tabstyle.tex and no \\resizebox. all_metrics: one table, columns grouped
+by metric family (time, preference, image quality, set level), our rows shaded, second best per column underlined in
+blocks of more than two rows. app_4k, app_wide: one row per metric under family heads, each difference beside its grey
+interval in its own column. latency: same cells. published_*: our rows shaded instead of bold, single-line heads, v6
+captions (lead, what it expands, setup, marks, one key-result sentence), every claim recomputed from the cells.
+--check compared with main.tex regions that moved to appendix.tex; it no longer applies (every run has landed).
+
 Published rendering (every run pending; gen_app_tables.py --check compares it with today's tables):
-  all_metrics  values as printed; bold = best printed value of each column within a size block, ties share.
+  all_metrics  values as printed; bold = best printed value of each column within a size block, ties share;
+               underline = second best in blocks of more than two rows.
                \\up / \\dn (blue / orange, the paper's one significance convention): the 95% paired interval
                against AReA excludes zero in the row's favour / against it (sig_mark gives \\sg / \\sw, which
                am_block maps to the colour wrappers).
@@ -52,6 +61,7 @@ from __future__ import annotations
 
 import ast
 import csv
+import re
 import statistics
 import sys
 from pathlib import Path
@@ -696,6 +706,14 @@ def latency_table():
     if slower:
         warn.append("main text '\\sca{} is the fastest method we timed at every size': sca_v2 is not the fastest at "
                     + ", ".join(slower))
+    # caption key result 'single-pass SCA is 2.6 times faster than AReA at 4096^2', from the printed cells
+    cap = caption("tab:latency")
+    said = re.search(r"([0-9.]+) times faster than AReA at \$4096\^2\$", cap or "")
+    row = next(b for b in body if b.lstrip().startswith("$4096^2$"))
+    printed = [float(x) for x in re.findall(r"(?<![\d.])(\d+\.\d)(?!\d)", row.split("&", 2)[2])]
+    if said and len(printed) == 2 and f"{printed[0] / printed[1]:.1f}" != said.group(1):
+        warn.append(f"tab:latency caption '{said.group(0)}': the printed times give "
+                    f"{printed[0] / printed[1]:.1f} times")
     lines = [HEADER, STYLE, v2swap.PEND_FALLBACK, r"\centering\scriptsize", r"\scaFitTab{lrrr}{4}{%",
              r"  \toprule", r"   & \multicolumn{3}{c}{Seconds per image $\downarrow$} \\", r"  \cmidrule(l){2-4}",
              r"  Size ($N$ tokens) & Full attention & AReA & Single-pass \sca{} \\",
@@ -856,8 +874,9 @@ def compare_text(B, rows):
             names = [pub_name(B, c) for c in cols if keep(delta[c])]
             if names:
                 parts.append(f"{words} {join_words(names)}")
-        key = (f"against our FLUX.1-Krea-dev run of AReA on the same {ours_sca[3]} prompts, single-pass \\sca{{}} is "
-               + join_words(parts), ours_sca[6])
+        # a point-estimate comparison of two of our runs on the same prompts; krea_6144 holds its paired intervals
+        key = ("against our FLUX.1-Krea-dev run of AReA, the point estimates of single-pass \\sca{} are "
+               + join_words(parts) + "; Table~\\ref{tab:krea_6144} gives the paired intervals", ours_sca[6])
     return lead, key
 
 
@@ -891,12 +910,12 @@ def hrgen_text(B, rows, hpub):
         dcols = [c for c in HCOLS if c in dev_area[2] and c in dev_sca[2]]
         up = [c for c in dcols if (shown(c, dev_sca[2][c]) - shown(c, dev_area[2][c])) * (1 if METRICS[c][1] else -1) > 0]
         if len(up) == len(dcols):
-            key += f", and on FLUX.1-dev it scores higher than our AReA run on all {WORDS[len(dcols)]} metrics"
+            key += f"; on FLUX.1-dev its point estimates exceed our AReA run on all {WORDS[len(dcols)]} metrics"
         elif up:
-            key += (f", and on FLUX.1-dev it scores higher than our AReA run on {join_words([pub_name(B, c) for c in up])}"
+            key += (f"; on FLUX.1-dev its point estimates exceed our AReA run on {join_words([pub_name(B, c) for c in up])}"
                     f" of {WORDS[len(dcols)]} metrics")
         else:
-            key += ", and on FLUX.1-dev it scores higher than our AReA run on none of the metrics"
+            key += "; on FLUX.1-dev its point estimates exceed our AReA run on none of the metrics"
         pend = pend or dev_sca[6]
     return (lead, krea[6]), (key, pend)
 
