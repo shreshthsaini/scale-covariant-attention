@@ -31,6 +31,7 @@ from __future__ import annotations
 import gc
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 
@@ -250,16 +251,27 @@ def scheduler_config():
             "use_dynamic_shifting": True, "use_exponential_sigmas": False, "use_karras_sigmas": False}
 
 
+MU_MODES = ("native", "default", "resolution")
+
+
+def resolution_shift(seq_len):
+    """Extra mu of the resolution rule: 0.5 ln(seq / native seq) above the native grid, so e^mu grows with the side
+    length (SD3's resolution-dependent shift; 0.5 ln 16 = ln 4 at 5312^2). 0 at or below native."""
+    return 0.5 * math.log(max(int(seq_len), NATIVE_SEQ) / NATIVE_SEQ)
+
+
 def mu_for(seq_len, mu_mode="native", cfg=None):
-    """mu QwenImagePipeline uses: calculate_shift of the sequence length (native: capped at the 83 x 83 grid)."""
+    """mu QwenImagePipeline uses: calculate_shift of the sequence length. native: capped at the 83 x 83 grid;
+    resolution: the native value plus resolution_shift (0.834 + ln 4 = 2.22 at 5312^2, 1.96 at 4096^2)."""
     from diffusers.pipelines.qwenimage import pipeline_qwenimage as P
     orig = getattr(P, "_sca_orig_shift", P.calculate_shift)
     c = cfg or scheduler_config()
-    if mu_mode not in ("native", "default"):
+    if mu_mode not in MU_MODES:
         raise ValueError(mu_mode)
-    n = min(int(seq_len), NATIVE_SEQ) if mu_mode == "native" else int(seq_len)
-    return float(orig(n, c.get("base_image_seq_len", 256), c.get("max_image_seq_len", 4096), c.get("base_shift", 0.5),
-                      c.get("max_shift", 1.15)))
+    n = int(seq_len) if mu_mode == "default" else min(int(seq_len), NATIVE_SEQ)
+    mu = float(orig(n, c.get("base_image_seq_len", 256), c.get("max_image_seq_len", 4096), c.get("base_shift", 0.5),
+                    c.get("max_shift", 1.15)))
+    return mu + resolution_shift(seq_len) if mu_mode == "resolution" else mu
 
 
 def set_mu(mu_mode):
@@ -270,9 +282,14 @@ def set_mu(mu_mode):
     if mu_mode == "default":
         P.calculate_shift = P._sca_orig_shift
         return
-    if mu_mode != "native":
+    if mu_mode == "native":
+        P.calculate_shift = lambda image_seq_len, *a, **kw: P._sca_orig_shift(min(int(image_seq_len), NATIVE_SEQ), *a,
+                                                                               **kw)
+        return
+    if mu_mode != "resolution":
         raise ValueError(mu_mode)
-    P.calculate_shift = lambda image_seq_len, *a, **kw: P._sca_orig_shift(min(int(image_seq_len), NATIVE_SEQ), *a, **kw)
+    P.calculate_shift = lambda image_seq_len, *a, **kw: (P._sca_orig_shift(min(int(image_seq_len), NATIVE_SEQ), *a, **kw)
+                                                         + resolution_shift(image_seq_len))
 
 
 def sigma_schedule(steps, mu, cfg=None):

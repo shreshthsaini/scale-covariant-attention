@@ -39,8 +39,13 @@ def parser():
     p.add_argument("--true-cfg", type=float, default=4.0, help="True CFG scale (model card 4.0; <= 1 disables CFG)")
     p.add_argument("--negative", default=" ", help="Negative prompt for true CFG (model card: one space)")
     p.add_argument("--out", type=Path)
-    p.add_argument("--mu-mode", choices=("native", "default"), default="native",
-                   help="native: mu of the 1328^2 sequence at every larger size; default: the pipeline's extrapolation")
+    p.add_argument("--mu-mode", choices=("native", "default", "resolution"), default="native",
+                   help="native: mu of the 1328^2 sequence at every larger size; default: the pipeline's extrapolation; "
+                   "resolution: native mu + 0.5 ln(seq / native seq), e^mu growing with the side (SD3's rule)")
+    p.add_argument("--prompt-suffix", choices=("none", "area"), default="none",
+                   help="area: append AReA's Qwen-Image quality suffix (QWEN_SUFFIX, read from the vendored "
+                   "third_party/AReA_3efb7e5/generate.py) to the conditioning prompt; the sidecar prompt stays the "
+                   "benchmark prompt (default none)")
     p.add_argument("--n0", type=int, default=83, help="Native grid side in tokens (1328 / 16)")
     p.add_argument("--tile", type=int, default=8)
     p.add_argument("--window", type=int)
@@ -85,6 +90,18 @@ def build_context(args, grid):
     return ctx, info
 
 
+def prompt_suffix(name):
+    """The conditioning suffix for --prompt-suffix: '' for none; AReA's QWEN_SUFFIX parsed from the vendored
+    generate.py (scripts/run_area_qwen.py upstream_defaults, the same source AReA's runs read) for area."""
+    if name == "none":
+        return ""
+    if name != "area":
+        raise ValueError(name)
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from run_area_qwen import upstream_defaults
+    return upstream_defaults()["suffix"]
+
+
 def main(argv=None):
     args = parser().parse_args(argv)
     runtime_environment()
@@ -93,13 +110,15 @@ def main(argv=None):
     if not 0 <= args.start < end <= len(prompts) or args.steps <= 0:
         raise ValueError("Require 0 <= start < end <= number of prompts and positive steps")
     rows = prompts[args.start:end]
+    suffix = prompt_suffix(args.prompt_suffix)
+    cond = {r["id"]: r["prompt"] + suffix for r in rows}
     import diffusers
     import torch
     from sca.qwen import REPO, encode_prompts, free_cuda, install, load_pipeline, mu_for, set_mu, snapshot
     cache = {"cache": args.embedding_cache} if args.embedding_cache is not None else {}
     cfg_on = args.true_cfg > 1
     if args.encode_only:
-        encode_prompts([r["prompt"] for r in rows] + ([args.negative] if cfg_on else []), args.device, **cache)
+        encode_prompts([cond[r["id"]] for r in rows] + ([args.negative] if cfg_on else []), args.device, **cache)
         print(f"embeddings cached for {len(rows)} prompts", flush=True)
         return
     if args.out is None:
@@ -118,7 +137,7 @@ def main(argv=None):
         return png.exists() and meta.exists() and json.loads(meta.read_text()).get("complete")
     todo = [r for r in rows if not done(r)]
     t0 = time.perf_counter()
-    enc = encode_prompts([r["prompt"] for r in todo] + ([args.negative] if cfg_on else []), args.device, **cache)
+    enc = encode_prompts([cond[r["id"]] for r in todo] + ([args.negative] if cfg_on else []), args.device, **cache)
     neg = enc.pop() if cfg_on else None
     embeds = dict(zip([r["id"] for r in todo], enc))
     encode_seconds = time.perf_counter() - t0
@@ -143,6 +162,8 @@ def main(argv=None):
                       "implementation_sha256": impl, "grid": list(grid), "mu_mode": args.mu_mode, "mu": mu,
                       "text_encoder": "Qwen2.5-VL last hidden state, template tokens dropped, precomputed",
                       "sca": info, "scheduler": dict(pipe.scheduler.config)}
+            if suffix:  # only when set, so the fingerprints of runs without a suffix are unchanged
+                config.update(prompt_suffix=args.prompt_suffix, conditioning_prompt=cond[row["id"]])
             digest = fingerprint(config)
             if png.exists() and meta.exists():
                 saved = json.loads(meta.read_text())
