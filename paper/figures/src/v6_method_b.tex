@@ -1,0 +1,59 @@
+% v6 method figure, candidate B: two rows that rhyme. Top: (a) the head's two native-size views on the 4096^2
+% target, mixed by pi_h. Bottom: (b) the same views shrunk by r = 4 on the 1024^2 stage of the same run, where the
+% model's full attention is the reference; the fit is a parabola with a closed-form minimiser. Right: (c) the
+% measured weight fills one cell of the reach table, which every sampler stage reads at its ratio r.
+% Real data: v6_method_assets.py (method_assets/provenance.json). Build: v6_tikz_build.py.
+\input{v6_method_common.tex}
+\begin{document}
+\begin{tikzpicture}[x=1bp, y=1bp]
+\useasboundingbox (0,0) rectangle (396,165.6);
+
+% ============================================================ (a) at the target
+\node[anchor=base west] at (0,157) {\ttl (a) Two native-size views at 4096\sqt};
+\node[anchor=east] at (13,120) {\mth$\pi_h$};
+\TgNear{16}{92}{56}
+\node at (93,120) {\mth$+\;(1-\pi_h)$};
+\TgFar{114}{92}{56}{0.17}
+% both views shrink by r: one bracket, one arrow (clear of the (b) title)
+\draw[line width=0.5pt, scaMid] (16,88.5) -- (16,86.5) -- (170,86.5) -- (170,88.5);
+\draw[arr, draw=scaMid] (158,86.5) -- (158,67.6);
+\node[anchor=west, text=scaMid] at (161,77.5) {\mts$\div\, r$};
+
+% ============================================================ (b) at the training size
+\node[anchor=base west] at (0,74) {\ttl (b) Reach emulation at 1024\sqt};
+\node[anchor=east] at (13,38) {\mth$\pi$};
+\AtNear{16}{10}{56}
+\node at (93,38) {\mth$+\;(1-\pi)$};
+\AtFar{114}{10}{56}
+\node at (181,38) {\mtl$\approx$};
+\AtFull{192}{10}{56}
+\node[anchor=north, text=scaLocalText] at (44,7.5) {\sml window};
+\node[anchor=north, text=scaGlobalText] at (142,7.5) {\sml grid};
+\node[anchor=north, text=scaMid] at (220,7.5) {\sml full attention};
+% the fit
+\draw[arr] (251,38) -- (261,38);
+\Quad{271}{22}{40}{34}{1}
+\node[anchor=west] at (318,38) {\mth$\pi^\star\!=\mathrm{clip}(B/A,0,1)$};
+
+% ============================================================ (c) one table, any size and sampler
+\node[anchor=base west] at (190,157) {\ttl (c) One table, any size};
+\Cards{194}{92}{26}{50}{5}
+\node[anchor=west] at (230,141) {\mth$\pi_{lh}(\sigma;r)$};
+% the measured value fills its cell
+\draw[garr] (340,47) -- (340,80) -- (207,80) -- (207,91.4);
+% sampler stages: progressive SCA reads ratio 2, then 4
+\draw[nblk] (232,98) rectangle (268,113);
+\node at (250,105.5) {\sml 1024\sq};
+\draw[sblk] (288,98) rectangle (324,113);
+\node at (306,105.5) {\sml 2048\sq};
+\draw[sblk] (344,98) rectangle (380,113);
+\node at (362,105.5) {\sml 4096\sq};
+\draw[arr] (268.4,105.5) -- (287.4,105.5);
+\draw[arr] (324.4,105.5) -- (343.4,105.5);
+\draw[arr, draw=scaAccent] (225,126) -- (306,126) -- (306,113.6);
+\draw[arr, draw=scaAccent] (306,126) -- (362,126) -- (362,113.6);
+\node[anchor=south, text=scaMid] at (306,128.5) {\mts$r=2$};
+\node[anchor=south, text=scaMid] at (362,128.5) {\mts$r=4$};
+\node[anchor=north, text=scaMid] at (250,95.5) {\sml full};
+\end{tikzpicture}
+\end{document}

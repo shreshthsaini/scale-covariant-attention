@@ -1,0 +1,150 @@
+% Shared preamble of the v6 method figure candidates (v6_method_a.tex, v6_method_b.tex) and the v6 method zoom.
+% Units: 1 unit = 1 bp at print size; the figure is built at its final width (5.5 in = 396 bp), so nothing is scaled.
+% Type: labels 7.5 pt sans (Helvetica clone, as the paper's \sffamily), small labels 7 pt, panel titles 9 pt bold,
+% math 8.5 pt in Computer Modern (the paper's math), scripts never under 6 pt (\DeclareMathSizes).
+% Palette (sca_colors.tex, shared with every plot): SCA green, near amber, far blue, neutral greys. Four hues.
+% Assets: ../v6/method_assets (v6_method_assets.py; provenance.json there). Build: v6_method.py.
+\documentclass[border=0pt]{standalone}
+\RequirePackage{fix-cm}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, calc, positioning}
+\DeclareMathSizes{6.5}{6.5}{6.2}{6.2}
+\DeclareMathSizes{7}{7}{6.2}{6.2}
+\DeclareMathSizes{7.5}{7.5}{6.2}{6.2}
+\DeclareMathSizes{8}{8}{6.2}{6.2}
+\DeclareMathSizes{8.5}{8.5}{6.4}{6.2}
+\DeclareMathSizes{9}{9}{6.6}{6.2}
+\DeclareMathSizes{9.5}{9.5}{7}{6.2}
+\DeclareMathSizes{10}{10}{7}{6.2}
+% squared sizes in sans text: the superscript printed at 6.4 pt (\textsuperscript would give 5 to 6 pt)
+\newcommand{\sq}{\textsuperscript{\fontsize{6.4}{7}\selectfont 2}}
+\newcommand{\sqt}{\textsuperscript{\fontsize{6.8}{7}\selectfont 2}}
+\input{sca_colors.tex}
+\input{method_assets/data.tex}
+\definecolor{scaLocalText}{HTML}{A85F12}
+\definecolor{scaGlobalText}{HTML}{245A96}
+\definecolor{scaAccentText}{HTML}{0E6B4C}
+\definecolor{scaPanel}{HTML}{F6F7F8}
+
+\newcommand{\ttl}{\fontsize{9}{10.5}\selectfont\bfseries}
+\newcommand{\lab}{\fontsize{7.5}{9}\selectfont}
+\newcommand{\sml}{\fontsize{7}{8.4}\selectfont}
+\newcommand{\mth}{\fontsize{8.5}{10}\selectfont}
+\newcommand{\mtl}{\fontsize{9.5}{11}\selectfont}
+\newcommand{\mts}{\fontsize{7.5}{9}\selectfont}
+
+\tikzset{
+  every node/.style={inner sep=0pt, outer sep=0pt, text=scaInk},
+  arr/.style={-{Stealth[length=3.4pt, width=3pt]}, line width=0.6pt, draw=scaInk},
+  garr/.style={arr, draw=scaAccent},
+  blk/.style={rounded corners=2pt, line width=0.8pt},
+  sblk/.style={blk, draw=scaAccent, fill=scaAccentLight},
+  nblk/.style={blk, draw=scaFull, fill=white},
+  frame/.style={line width=0.5pt, draw=scaFull},
+  axis/.style={line width=0.5pt, draw=scaMid},
+  wedge/.style={fill=scaGrid},
+}
+
+% ---------------------------------------------------------------------------------------------------- image tiles
+% Fractions in data.tex are measured from the top-left corner; \fp{x}{y}{S} maps them into a tile of side S whose
+% lower-left corner is the scope origin.
+\newcommand{\fp}[3]{({(#1)*(#3)},{(#3)-(#2)*(#3)})}
+% Query marker: the query token, drawn as a 2.6 bp black square with a white rim at its fractional position.
+\newcommand{\QueryMark}[1]{%
+  \pgfmathsetmacro{\qmx}{(\QX+0.5*\QS)*#1}\pgfmathsetmacro{\qmy}{#1-(\QY+0.5*\QS)*#1}%
+  \fill[white] (\qmx-1.7,\qmy-1.7) rectangle ++(3.4,3.4);
+  \fill[scaInk] (\qmx-1.25,\qmy-1.25) rectangle ++(2.5,2.5);}
+% Rectangles of the windows (top-left fraction x, y; side s)
+\newcommand{\FracBox}[4]{\fp{#1}{#2}{#4} rectangle \fp{#1+#3}{#2+#3}{#4}}
+
+% \TgNear{x}{y}{S}: the 4096^2 target with the native 64-token window (outside veiled)
+\newcommand{\TgNear}[3]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \node[anchor=south west] at (0,0) {\includegraphics[width=#3bp,height=#3bp]{method_assets/img4096.jpg}};
+    \fill[white, opacity=0.62, even odd rule] (0,0) rectangle (#3,#3) \FracBox{\NatX}{\NatY}{\NatS}{#3};
+    \draw[line width=1pt, scaLocal] \FracBox{\NatX}{\NatY}{\NatS}{#3};
+    \draw[frame] (0,0) rectangle (#3,#3);
+    \QueryMark{#3}
+  \end{scope}}
+% \TgFar{x}{y}{S}{radius}: the 4096^2 target under the native 64 x 64 grid of block-centre keys (every key drawn)
+\newcommand{\TgFar}[4]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \node[anchor=south west] at (0,0) {\includegraphics[width=#3bp,height=#3bp]{method_assets/img4096.jpg}};
+    \fill[white, opacity=0.55] (0,0) rectangle (#3,#3);
+    \foreach \i in {0,...,63}{\foreach \j in {0,...,63}{
+      \fill[scaGlobal] ({(4*\i+2.5)*#3/256},{#3-(4*\j+2.5)*#3/256}) circle[radius=#4];}}
+    \draw[frame] (0,0) rectangle (#3,#3);
+    \QueryMark{#3}
+  \end{scope}}
+% \AtNear{x}{y}{S}: 1024^2, emulated near view at r = 4 (its attention, amber; outside the window veiled)
+\newcommand{\AtNear}[3]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \node[anchor=south west] at (0,0) {\includegraphics[width=#3bp,height=#3bp]{method_assets/b_near.png}};
+    \draw[line width=1pt, scaLocal] \FracBox{\WinX}{\WinY}{\WinS}{#3};
+    \draw[frame] (0,0) rectangle (#3,#3);
+    \QueryMark{#3}
+  \end{scope}}
+% \AtFar{x}{y}{S}: 1024^2, emulated far view at r = 4: 16 x 16 block-centre keys, dot area = its attention share
+\newcommand{\AtFar}[3]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \node[anchor=south west] at (0,0) {\includegraphics[width=#3bp,height=#3bp]{method_assets/b_far.png}};
+    \foreach \i in {0,...,15}{\foreach \j in {0,...,15}{
+      \fill[scaGlobal!55] ({(4*\i+2.5)*#3/64},{#3-(4*\j+2.5)*#3/64}) circle[radius=0.32];}}
+    \foreach \dx/\dy/\dr in \FarDots{\fill[scaGlobal] \fp{\dx}{\dy}{#3} circle[radius={\dr*#3}];}
+    \draw[frame] (0,0) rectangle (#3,#3);
+    \QueryMark{#3}
+  \end{scope}}
+% \AtFull{x}{y}{S}: 1024^2, the model's full attention (amber inside the r = 4 window, blue outside)
+\newcommand{\AtFull}[3]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \node[anchor=south west] at (0,0) {\includegraphics[width=#3bp,height=#3bp]{method_assets/b_full.png}};
+    \draw[line width=0.6pt, scaLocal, dash pattern=on 1.6pt off 1.2pt] \FracBox{\WinX}{\WinY}{\WinS}{#3};
+    \draw[frame] (0,0) rectangle (#3,#3);
+    \QueryMark{#3}
+  \end{scope}}
+
+% ---------------------------------------------------------------------------------------------------- the fit
+% \Quad{x0}{y0}{w}{h}{which}: J(pi) rescaled to [0, 1] on pi in [0, 1] (data.tex), with its minimiser.
+% which: 1 = the illustrated head only, 3 = far, illustrated and near heads.
+\newcommand{\Quad}[5]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \begin{scope}[xscale=#3, yscale=#4/1.14, shift={(0,0.10)}]
+      \ifnum#5=3
+        \draw[line width=0.8pt, scaGlobal, line join=round] plot coordinates {\JcFar};
+        \draw[line width=0.8pt, scaLocal, line join=round] plot coordinates {\JcNear};
+      \fi
+      \draw[line width=1.0pt, scaInk, line join=round] plot coordinates {\JcMid};
+    \end{scope}
+    \draw[axis] (0,0) -- (#3,0);
+    \draw[axis] (0,0) -- (0,#4);
+    \ifnum#5=3
+      \foreach \p in {\JpFar,\JpNear}{\fill[scaAccent] ({#3*\p},{#4*0.10/1.14}) circle[radius=1.5];}
+    \fi
+    \draw[scaMid, line width=0.4pt, dash pattern=on 1pt off 1pt] ({#3*\JpMid},{#4*0.10/1.14}) -- ({#3*\JpMid},0);
+    \fill[scaAccent] ({#3*\JpMid},{#4*0.10/1.14}) circle[radius=1.8];
+    \foreach \v/\t in {0/0, 1/1}{
+      \draw[axis] ({#3*\v},0) -- ({#3*\v},-1.6);
+      \node[anchor=north, text=scaMid] at ({#3*\v},-2.6) {\sml\t};}
+    \node[anchor=north] at ({#3*\JpMid},-2.0) {\mts$\pi^\star$};
+    \node[anchor=west, text=scaMid] at (#3+2.5,0) {\mth$\pi$};
+    \node[anchor=south east, text=scaMid] at (-2.5,#4-6) {\mth$J$};
+  \end{scope}}
+
+% ---------------------------------------------------------------------------------------------------- the table
+% \Cards{x}{y}{w}{h}{dx}: the r = 2 card behind, the r = 4 card in front (lower-left corner x, y), one block's 24
+% heads (rows) by 13 noise bins (columns, sigma falling left to right); the measured cell is outlined in green.
+\newcommand{\Cards}[5]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \node[anchor=south west] at (#5,#5) {\includegraphics[width=#3bp, height=#4bp]{method_assets/table_r2.png}};
+    \draw[frame] (#5,#5) rectangle ++(#3,#4);
+    \fill[white] (0,0) rectangle (#3,#4);
+    \node[anchor=south west] at (0,0) {\includegraphics[width=#3bp, height=#4bp]{method_assets/table_r4.png}};
+    \draw[frame] (0,0) rectangle (#3,#4);
+    \draw[line width=1pt, scaAccent] ({\TabCol*#3/\TabCols},{#4-(\TabRow+1)*#4/\TabRows}) rectangle
+      ++({#3/\TabCols},{#4/\TabRows});
+  \end{scope}}

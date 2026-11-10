@@ -19,6 +19,10 @@ Main text at most 10 pages (now 9).
   build, review every page against the gold-standard rubric (lead reads the renders), send corrections, repeat until
   no rubric item scores 0. Then paper/build_delivery.py, latest_delivery.md, HANDOVER Section 43, commit, push,
   sync, and send the user a reading PDF under 30 MiB (PyMuPDF rewrite_images, see share_20261110).
+- GitHub checkpoints: `bash scripts/wip_push.sh --loop 15` runs in the lead session (commits paper sources, figures,
+  notes and the handover to origin/main every 15 minutes; stop with `touch
+  /scratch/09032/saini_2/sca/paper_builds/wip_push.stop`). User, 2026-11-10: keep pushing everything so another agent
+  can continue. A new agent starts from origin/main, this file, and .agent/notes/paper_v6/.
 - If the session restarts mid-way: the workers die with it. Read each notes file for progress, check
   paper/figures/v6/ and git status, and relaunch only the unfinished roles with the same brief.
 - \resra stays OFF for good (HANDOVER 40). Before submitting, anonymize the code URL macro.

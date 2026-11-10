@@ -1,0 +1,61 @@
+% v6 method figure, candidate A: three columns, left to right. (a) The head's two native-size views on the 4096^2
+% target, stacked (near over far) and mixed by pi_h. (b) Each view shrunk by r into the 1024^2 stage of the same run
+% (horizontal arrows), mixed by pi against the model's full attention; the three J curves (far, illustrated and near
+% head) and the closed form below. (c) The reach table, read by the sampler stages at their ratio r.
+% Real data: v6_method_assets.py (method_assets/provenance.json). Build: v6_tikz_build.py.
+\input{v6_method_common.tex}
+\begin{document}
+\begin{tikzpicture}[x=1bp, y=1bp]
+\useasboundingbox (0,0) rectangle (396,165.6);
+
+% ============================================================ (a) at the target
+\node[anchor=base west] at (0,157) {\ttl (a) Two native-size views};
+\TgNear{30}{92}{54}
+\TgFar{30}{20}{54}{0.165}
+\node[anchor=east] at (27,119) {\mth$\pi_h$};
+\node[anchor=east] at (27,47) {\mth$1-\pi_h$};
+\node at (16,83) {\mth$+$};
+\node[anchor=north, text=scaMid] at (57,17) {\sml 4096\sq};
+
+% shrink each view by r
+\foreach \y in {119,47}{\draw[arr, draw=scaMid] (87,\y) -- (105.4,\y);}
+\node[anchor=south, text=scaMid] at (96,121.5) {\mts$\div\, r$};
+\node[anchor=south, text=scaMid] at (96,49.5) {\mts$\div\, r$};
+
+% ============================================================ (b) at the training size
+\node[anchor=base west] at (108,157) {\ttl (b) Reach emulation at 1024\sqt};
+\AtNear{108}{92}{54}
+\AtFar{108}{20}{54}
+\node[anchor=west] at (165,119) {\mth$\pi$};
+\node[anchor=west] at (165,47) {\mth$1-\pi$};
+\draw[line width=0.6pt, scaMid] (186,146) -- (189,146) -- (189,20) -- (186,20);
+\node at (197,83) {\mtl$\approx$};
+\AtFull{206}{92}{54}
+\node[anchor=north, text=scaMid] at (233,89.5) {\sml full attention};
+\node[anchor=north, text=scaLocalText] at (135,17) {\sml window};
+\node[anchor=north, text=scaGlobalText] at (135,89.5) {};
+% the fit: J of the far head (blue), the illustrated head (black) and the near head (amber)
+\Quad{214}{30}{44}{32}{3}
+\node[anchor=north] at (238,14) {\mth$\pi^\star\!=\mathrm{clip}(B/A,0,1)$};
+
+% ============================================================ (c) one table, any size and sampler
+\node[anchor=base west] at (291,157) {\ttl (c) One table, any size};
+\Cards{296}{86}{26}{50}{5}
+\node[anchor=west] at (334,133) {\mth$\pi_{lh}(\sigma;r)$};
+\draw[garr] (262,46) -- (281,46) -- (281,78) -- (309,78) -- (309,85.4);
+% sampler stages, top to bottom: progressive SCA reads ratio 2, then 4
+\draw[nblk] (346,62) rectangle (386,76);
+\node at (366,69) {\sml 1024\sq};
+\draw[sblk] (346,38) rectangle (386,52);
+\node at (366,45) {\sml 2048\sq};
+\draw[sblk] (346,14) rectangle (386,28);
+\node at (366,21) {\sml 4096\sq};
+\draw[arr] (366,61.6) -- (366,52.4);
+\draw[arr] (366,37.6) -- (366,28.4);
+\draw[arr, draw=scaAccent] (322,108) -- (336,108) -- (336,45) -- (345.6,45);
+\draw[arr, draw=scaAccent] (336,45) -- (336,21) -- (345.6,21);
+\node[anchor=east, text=scaMid] at (333,52) {\mts$r=2$};
+\node[anchor=east, text=scaMid] at (333,28) {\mts$r=4$};
+\node[anchor=west, text=scaMid] at (387.5,69) {};
+\end{tikzpicture}
+\end{document}
