@@ -2048,3 +2048,4 @@ contributions, captions of at most three lines, a leaner Table 1, and redesigned
 - Mechanism read so far: copies track the native-window (r = 4) phase. Whenever native windows act from step 13 or 14
   on, 12 to 14 of 21 carry copies; with no native window at all (ra_t50) the detector finds 1 of 21, at the price of
   native-resolution detail. The pooled r = 2 view itself does not draw copies.
+- 01:08 ra_m by hand (pRA2): 13 yes, 0 borderline, 8 no of 21. FAIL on the screen bar.
