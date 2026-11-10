@@ -2,7 +2,7 @@
 
 One image flows through the figure: the Aesthetic-4K prompt a4k_eval_4096_minus8343371271909676658, seed 0.
   img4096.jpg     progressive SCA's 4096^2 output (fig_attn_focus.TARGET, stored at 1024 px by fig_attn_focus.py)
-  img1024.jpg     the native 1024^2 stage of the same run (full attention; paper/figures/attn_focus/image_1024.png)
+  (the native 1024^2 stage of the same run, paper/figures/attn_focus/image_1024.png, is the base of the b_* tiles)
 Attention (paper/figures/src/data/v6_attn_block12.npz, written by v6_attn_extract.py from the CPU capture of that
 stage): block 12, head HEAD, query token (43, 11) (the face of the leftmost sheep), step 20 (sigma 0.612), r = 4:
   b_near.png      the emulated near view (window of 16 tokens around the query's tile): its attention, amber
@@ -50,7 +50,7 @@ STEP_INDEX = 1             # step 20 in v6_attn_block12.npz (steps 8, 20, 26)
 RATIO = 4
 N1024, N4096 = 64, 256     # token grid sides
 TILE = 8
-PX = 640                   # raster side of the attention tiles
+PX = 448                   # raster side of the attention tiles (about 600 dpi at 0.75 in)
 DMAX = 100.0               # density (x uniform) at which the heat saturates, as fig_attn_focus.DMAX
 
 NEAR = np.array([int(sf.LOCAL[i:i + 2], 16) / 255 for i in (1, 3, 5)])
@@ -119,9 +119,7 @@ def main() -> None:
     assert W == 64 and (R0, C0) == (4 * r0, 4 * c0), "the r = 4 window at 1024^2 must cover the 4096^2 window"
 
     # images
-    Image.open(IMG4096).convert("RGB").resize((768, 768), Image.LANCZOS).save(OUT / "img4096.jpg", quality=92,
-                                                                              subsampling=0)
-    Image.open(IMG1024).convert("RGB").resize((768, 768), Image.LANCZOS).save(OUT / "img1024.jpg", quality=92,
+    Image.open(IMG4096).convert("RGB").resize((640, 640), Image.LANCZOS).save(OUT / "img4096.jpg", quality=92,
                                                                               subsampling=0)
     img = Image.open(IMG1024)
     base = light_base(img, PX)
@@ -206,6 +204,8 @@ def main() -> None:
     lines.append(r"\def\TabRow{%d}\def\TabCol{%d}\def\TabRows{24}\def\TabCols{%d}" % (head_row, bin_col, len(cols)))
     lines.append(r"\def\SigmaBin{%.2f}" % sig[BIN])
     (OUT / "data.tex").write_text("\n".join(lines) + "\n")
+    grad = sf.PI_CMAP(np.linspace(1, 0, 256))[:, None, :3] * np.ones((1, 8, 1))
+    save_png(grad, OUT / "picmap.png")
 
     prov = {
         "script": rel(Path(__file__)),

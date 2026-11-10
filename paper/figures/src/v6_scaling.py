@@ -241,8 +241,8 @@ def draw_main(fig, ax, cells, expo, fs=sf.FS_TICK):
     for m, dy in (("area", 3.0), ("sca_v2", 1.0)):
         x, y = 8192, cells[m, 8192]["med"]
         nm = "Single pass" if m == "sca_v2" else NAME[m]
-        ax.annotate(nm, (x, y), xytext=(5, dy + 1.0), ha="left", va="bottom", color=COLOR[m],
-                    fontweight="bold" if m == "sca_v2" else "normal", **lab)
+        # regular weight: as in the hero figure, only progressive SCA's name is bold
+        ax.annotate(nm, (x, y), xytext=(5, dy + 1.0), ha="left", va="bottom", color=COLOR[m], **lab)
         ax.annotate(rf"$\propto N^{{{expo[m]:.2f}}}$", (x, y), xytext=(5, dy - 1.5), ha="left", va="top",
                     color=COLOR[m], **lab)
     c = cells["full", 6144]

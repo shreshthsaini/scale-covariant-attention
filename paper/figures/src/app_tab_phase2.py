@@ -76,17 +76,36 @@ WORDS = "no one two three four five six seven eight nine ten eleven twelve thirt
 
 
 # ---------------------------------------------------------------- formatting ----------------------------------------
+# Paper v6 table style (2026-11-10): the shared macros of main_tables/tabstyle.tex (written by gen_main_tables.py).
+# \scaFitTab{colspec}{n}{rows} sets a booktabs tabular at \linewidth; \scaRowOurs shades our rows; colour scaCtx
+# greys intervals. Every table is \scriptsize (7 pt) without \resizebox. Tables with many comparisons put the
+# comparisons in rows and stack one panel per metric family, each estimate above its interval (as gen_main_tables.py's
+# app_tables/gen_all.tex and prog_all.tex); tables with four comparisons keep one row per metric and set each estimate
+# and its interval side by side in two columns 3 pt apart (PAIR).
+STYLE = r"\ifdefined\scaFitTab\else\input{figures/snippets/main_tables/tabstyle.tex}\fi"
+OURS = r"\scaRowOurs "
+PAIR = r"r@{\hspace{3pt}}l"
+PAIR_GAP = r"r@{\hspace{3pt}}l<{\hspace{6pt}}"  # a pair that ends a column group: 6 pt more room after it
+
+
 def signed(x, d):
     """gen_prog_tables.signed: explicit sign, LaTeX {-} for minus, a rounded zero keeps the sign of x."""
     return prog.signed(x, d)
 
 
-def cell(v, scale, d, higher=True):
-    """Delta with its 95% interval; \\up / \\dn when the interval excludes zero in favour of / against the method.
-    No interval (lo or hi None): the point alone, unmarked."""
+def bound(x, d):
+    """An interval bound as the v6 tables print it: signed() without the plus sign (same digits)."""
+    s = signed(x, d)
+    return s[1:] if s.startswith("+") else s
+
+
+def cell_parts(v, scale, d, higher=True):
+    """(estimate, interval) of a delta: the estimate coloured \\up / \\dn when its 95% interval excludes zero in
+    favour of / against the method, the interval in grey. No interval (lo or hi None): the point alone, unmarked,
+    and an empty interval."""
     delta, lo, hi = v
     if lo is None or hi is None:
-        return f"${signed(delta * scale, d)}$"
+        return f"${signed(delta * scale, d)}$", ""
     delta, lo, hi = delta * scale, lo * scale, hi * scale
     body = f"${signed(delta, d)}$"
     good, bad = (lo > 0, hi < 0) if higher else (hi < 0, lo > 0)
@@ -94,7 +113,71 @@ def cell(v, scale, d, higher=True):
         body = r"\up{" + body + "}"
     elif bad:
         body = r"\dn{" + body + "}"
-    return body + r" {\tiny[$" + signed(lo, d) + "$, $" + signed(hi, d) + "$]}"
+    return body, r"{\color{scaCtx}$[" + bound(lo, d) + ", " + bound(hi, d) + r"]$}"
+
+
+def panel(title, heads, groups, label_head, shade=()):
+    """One stacked panel of a table with comparisons as rows: an italic title, then one column per metric, each
+    estimate with its grey interval on the line below (gen_all.tex's layout). heads: [(key, head, scale, decimals,
+    higher)]; groups: [(group head or None, [(row label, {key: (delta, lo, hi)}, pending)])]."""
+    n = len(heads) + 1
+    out = [rf"\textit{{{title}}}\par\smallskip", rf"\scaFitTab{{l*{{{len(heads)}}}{{r}}}}{{{n}}}{{%", r"  \toprule",
+           "  " + label_head + " & " + " & ".join(h[1] for h in heads) + r" \\", r"  \midrule"]
+    for i, (head, rows) in enumerate(groups):
+        if i:
+            out.append(r"  \midrule")
+        if head:
+            out.append(rf"  \multicolumn{{{n}}}{{l}}{{\emph{{{head}}}}} \\")
+        for label, vals, pend in rows:
+            est, low = [], []
+            for key, _, scale, d, higher in heads:
+                e, iv = cell_parts(vals[key], scale, d, higher)
+                est.append(v2swap.pend(e, pend))
+                low.append(v2swap.pend(iv, pend))
+            pre = OURS if label in shade else ""
+            out += ["  " + pre + label + " & " + " & ".join(est) + r" \\",
+                    "  " + pre + " & " + " & ".join(low) + r" \\[1pt]"]
+    return out + [r"  \bottomrule", "}"]
+
+
+def stack(*panels):
+    """Panels one above the other, \\medskip apart."""
+    out = []
+    for i, p in enumerate(panels):
+        out += ([r"\par\medskip"] if i else []) + p
+    return out
+
+
+# Metric families for the tables with one row per metric (krea_6144, prog_deltas); the arrow of a family head holds
+# for its rows, the set-level rows carry their own.
+ROW_FAMILIES = [(r"Preference $\uparrow$", ["ir", "aesthetic", "clip", "pickscore", "hpsv2", "hpsv21"]),
+                (r"Image quality $\uparrow$", ["musiq", "musiq_crop", "musiq_crop1024", "clipiqa", "arniqa"]),
+                ("Set level and time", ["fid", "kid", "patch_fid", "patch_kid", "is", "seconds"])]
+ROW_LABEL = {"ir": "ImageReward", "aesthetic": "Aesthetic", "clip": "CLIP score", "pickscore": "PickScore",
+             "hpsv2": r"HPSv2 ($\times100$)", "hpsv21": r"HPSv2.1 ($\times100$)", "musiq": "MUSIQ",
+             "musiq_crop": r"MUSIQ$_\text{c}$", "musiq_crop1024": r"MUSIQ$_\text{c}$",
+             "clipiqa": r"CLIP-IQA ($\times100$)", "arniqa": r"ARNIQA ($\times100$)", "fid": r"FID $\downarrow$",
+             "kid": r"KID ($\times\smash{10^3}$) $\downarrow$", "patch_fid": r"FID$_\text{p}$ $\downarrow$",
+             "patch_kid": r"KID$_\text{p}$ ($\times\smash{10^3}$) $\downarrow$", "is": r"Inception score $\uparrow$",
+             "seconds": r"Time (s) $\downarrow$"}
+
+
+def metric_rows(keys, ncols, cells_of):
+    """Body of a table with one row per metric, in the order of `keys`, under an italic head per family with
+    \\midrule between families; cells_of(key) gives the row's cells after its label."""
+    out, first = [], True
+    for head, fam in ROW_FAMILIES:
+        rows = [k for k in keys if k in fam]
+        if not rows:
+            continue
+        if not first:
+            out.append(r"\midrule")
+        first = False
+        out.append(rf"\multicolumn{{{ncols}}}{{l}}{{\emph{{{head}}}}} \\")
+        out += [ROW_LABEL[k] + " & " + " & ".join(cells_of(k)) + r" \\" for k in rows]
+    if sorted(k for _, fam in ROW_FAMILIES for k in fam if k in keys) != sorted(keys):
+        raise ValueError(f"metric_rows: keys outside the families: {keys}")
+    return out
 
 
 def sig(v, higher=True):
@@ -185,13 +268,19 @@ def header(sources):
             + "; do not edit by hand.")
 
 
-def rows_for(cols, metrics, pend_flags, higher=True):
-    """Body rows: metric label, then one cell per column; pend_flags[i] wraps column i in \\pend."""
+def pair_cells(cols, key, scale, d, pend_flags, higher=True):
+    """The (estimate, interval) cells of one metric row across comparison columns; pend_flags[i] wraps column i in
+    \\pend."""
     out = []
-    for key, label, scale, d in metrics:
-        cells = [v2swap.pend(cell(c[key], scale, d, higher), p) for c, p in zip(cols, pend_flags)]
-        out.append(label + " & " + " & ".join(cells) + r" \\")
+    for c, p in zip(cols, pend_flags):
+        e, iv = cell_parts(c[key], scale, d, higher)
+        out += [v2swap.pend(e, p), v2swap.pend(iv, p)]
     return out
+
+
+def sig_counts(v, spec):
+    """(better, worse) metric keys of one comparison {key: (delta, lo, hi)} over spec [(key, higher)]."""
+    return ([k for k, h in spec if sig(v[k], h) == 1], [k for k, h in spec if sig(v[k], h) == -1])
 
 
 # ---------------------------------------------------------------- krea_6144 -----------------------------------------
@@ -269,29 +358,37 @@ def krea_6144():
     if landed and not corrected_ci:
         intervals += (r", except for \sca{} on FLUX.1-Krea-dev, whose FID and KID intervals resample prompts only and "
                       r"whose patch versions have no interval")
+    # Key result (v6): what the two Krea baselines do against AReA under the same protocol, from the colours
+    others = []
+    for (_, _, name), x in zip(cols[2:], data[2:]):
+        better, worse = sig_counts(x, spec)
+        others.append(f"{name} wins {WORDS[len(better)]} and loses {WORDS[len(worse)]}")
+    key = ("under the same protocol on FLUX.1-Krea-dev, " + join(others)
+           + f" of the {WORDS[len(spec)]} metrics against AReA")
+    pending_key = False  # DyPE and SEGA never switch
     caption = (rf"\caption{{\textbf{{At $6144^2$ \sca{{}} without the schedule beats AReA on {wins6144} of {len(spec)} "
-               rf"metrics; {claim}.}} Method minus AReA with 95\% paired intervals over "
-               + (r"100 prompts at $6144^2$ and for DyPE and SEGA, which ran only those, and all 195 for single-pass \sca{} on "
-                  r"FLUX.1-Krea-dev. The first column is " if late.KREA195 else "100 prompts each. The first column is ")
-               + r"FLUX.1-dev at $6144^2$, the others FLUX.1-Krea-dev at $4096^2$ with a reach table fitted on "
-               r"FLUX.1-Krea-dev. "
-               + intervals + r". Lower is better for FID, KID, their patch versions, and time. \up{Blue} / \dn{orange}: "
-               r"significantly better / worse than AReA. Time is the campaign mean on shared GH200 nodes." + "\\" + note
-               + "}")
+               rf"metrics; {claim}.}} Expands the FLUX.1-Krea-dev row of Table~\ref{{tab:generality}} and the $6144^2$ "
+               r"result of Section~\ref{sec:sizes}. Each cell is the method minus AReA with its 95\% paired "
+               r"percentile-bootstrap interval in grey. First column: FLUX.1-dev at $6144^2$, 100 prompts. Other "
+               r"columns: FLUX.1-Krea-dev at $4096^2$ with a reach table fitted on that checkpoint, "
+               + (r"on all 195 prompts for single-pass \sca{} and on the 100 that DyPE and SEGA ran. " if late.KREA195
+                  else r"on 100 prompts each. ")
+               + intervals + r". Time is the campaign mean on shared GH200 nodes. \up{Blue} / \dn{orange}: "
+               r"significantly better / worse than AReA; for FID, KID, their patch versions, and time, lower is better. "
+               r"Key result: " + v2swap.pend(key, pending_key) + "." + "\\" + note + "}")
     pend_flags = [False, not landed, False, False]
-    lines = [v2swap.PEND_FALLBACK, header(sources), r"\begin{table}[!htbp]", caption, r"\label{tab:krea_6144}",
-             r"\centering\scriptsize\setlength{\tabcolsep}{2.4pt}\let\tiny\scriptsize",
-             r"\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%",
-             r"\begin{tabular}{lcccc}", r"\toprule",
-             r" & $6144^2$ & \multicolumn{3}{c}{FLUX.1-Krea-dev, $4096^2$} \\", r"\cmidrule(lr){2-2}\cmidrule(l){3-5}",
-             "Metric & " + " & ".join(c[2] for c in cols) + r" \\", r"\midrule"]
-    for key, label, scale, d, higher in late.PER_IMAGE + late.DIST:
-        cells = [v2swap.pend(cell(x[key], scale, d, higher), p) for x, p in zip(data, pend_flags)]
-        lines.append(label + " & " + " & ".join(cells) + r" \\")
-        if key == "arniqa":
-            lines.append(r"\midrule")
-    lines += [r"\bottomrule", r"\end{tabular}}", r"\end{table}"]
-    subs = [(rf"\sca{{}} {WOS_SHORT}", r"\sca{}"),
+    keys = [k for k, *_ in late.PER_IMAGE + late.DIST]
+    fmt = {k: (scale, d, higher) for k, _, scale, d, higher in late.PER_IMAGE + late.DIST}
+    body = metric_rows(keys, 9, lambda k: pair_cells(data, k, *fmt[k][:2], pend_flags, fmt[k][2]))
+    head = [r"\toprule",
+            r" & \multicolumn{2}{c}{FLUX.1-dev, $6144^2$} & \multicolumn{6}{c}{FLUX.1-Krea-dev, $4096^2$} \\",
+            r"\cmidrule(lr){2-3}\cmidrule(l){4-9}",
+            "Metric & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{c[2]}}}" for c in cols) + r" \\",
+            r"\midrule"]
+    lines = [header(sources), STYLE, v2swap.PEND_FALLBACK, r"\begin{table}[!htbp]", caption, r"\label{tab:krea_6144}",
+             r"\centering\scriptsize", rf"\scaFitTab{{l{PAIR_GAP}{PAIR * 3}}}{{5}}{{%"]
+    lines += ["  " + x for x in head + body + [r"\bottomrule"]] + ["}", r"\end{table}"]
+    subs = [(rf"\sca{{}} {WOS}", r"\sca{}"),
             (r"At $6144^2$ \sca{} without the schedule beats", r"At $6144^2$ \sca{} beats"),
             (r"on FLUX.1-Krea-dev \sca{} wins", r"on FLUX.1-Krea-dev it wins")]
     return {"name": "krea_6144", "kind": "float", "label": "tab:krea_6144", "old": "krea_6144.tex", "runs": [KREA_RUN],

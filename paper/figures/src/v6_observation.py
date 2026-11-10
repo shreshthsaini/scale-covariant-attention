@@ -184,7 +184,7 @@ def title(fig, x, y, letter, name):
 
 def panel_tiles(fig, d, x0, y_top, T, gap):
     """(a) rows: heads 4 and 7; columns: the three captured noise levels."""
-    px = 640
+    px = 448
     base = light_base(px)
     n = 64
     qr, qc = d["query"]
@@ -303,8 +303,8 @@ def panel_zoom(fig, d, x, y, w, h):
     ax.set_axis_off()
     p = d["pct"]["flux1_dev"]
     head, step, avg = 100 * p["head_f"], 100 * p["step_f"], 100 * p["avg_f"]
-    bt, bh = h - 0.30, 0.25        # top bar: all of the variance, FLUX.1-dev
-    zt, zh = h - 0.80, 0.25        # zoom bar: the noise-level share
+    bt, bh = h - 0.38, 0.25        # top bar: all of the variance, FLUX.1-dev
+    zt, zh = h - 0.86, 0.25        # zoom bar: the noise-level share
     ax.text(0, bt + bh + 0.035, "FLUX.1-dev", ha="left", va="bottom", fontsize=FS_S, color=sf.MID)
     ax.add_patch(Rectangle((0, bt), head, bh, fc=HEAD_C, ec="none"))
     ax.add_patch(Rectangle((head, bt), step, bh, fc=STEP_C, ec="none"))

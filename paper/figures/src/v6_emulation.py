@@ -295,7 +295,7 @@ def render(d, cand: str):
             (r"$1024^2\to1280^2$", d["res"][0], d["res"][1], "{:.4f}")], key=False)
     else:
         title(fig, 1.62, ty, "b", "Per-head fits best")
-        panel_rules_split(fig, d, 2.24, 0.36, 1.50, 0.98)
+        panel_rules_split(fig, d, 2.22, 0.36, 1.58, 0.98, gap=0.18)
         title(fig, 4.02, ty, "c", "One table transfers")
         pair_rows(fig, d, 4.06, 0.33, 1.38, 1.02, [
             (rf"held-out prompts, $\rho={d['r_half']:.3f}$", d["half"][0], d["half"][1], "{:.4f}"),

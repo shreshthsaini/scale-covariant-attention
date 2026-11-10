@@ -30,12 +30,15 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFile, ImageFilter
 
 import imgsel
 import scafig
 
 Image.MAX_IMAGE_PIXELS = None
+# Pillow sizes the JPEG encoder buffer at width x height bytes when optimize=True and quality < 95; a high-entropy crop
+# (sparks, foliage) compresses to more than that and the save fails with "broken data stream". A 16 MB floor fixes it.
+ImageFile.MAXBLOCK = max(ImageFile.MAXBLOCK, 1 << 24)
 HERE = Path(__file__).resolve().parent
 FIG = HERE.parent
 V6 = FIG / "v6"
@@ -239,6 +242,8 @@ class Canvas:
         self.body: list[str] = []
         self.colors: dict[str, str] = {}
         assets.mkdir(parents=True, exist_ok=True)
+        for old in assets.glob("*.jpg"):  # a figure's asset folder holds only that figure's tiles
+            old.unlink()
 
     def c(self, color: str) -> str:
         """The xcolor name of a hex colour, defined in the preamble."""

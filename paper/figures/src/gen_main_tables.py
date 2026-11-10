@@ -21,6 +21,13 @@ Outputs, in paper/figures/snippets/:
       schedule); its float and caption live in appendix.tex.
   app_tables/prog_all.tex
       the complete float of appendix Table tab:prog_all: progressive SCA minus every 4096^2 baseline on every metric.
+  v6 (2026-11-10, tablesplots owner): main_tables/tabstyle.tex (the shared table macros: \\scaFitTab, \\scaRowOurs,
+      \\camp, \\scaCI, colours scaRowTint and scaCtx; every v6 snippet inputs it once); Table 1 at full width with the
+      speed ratio and the Holm-adjusted ten-metric record; Table 2 at full width with a per-head reference row per
+      group; Table 3 at 0.48 width; appendix floats app_tables/holm.tex (tab:holm, with gen_holm.py), gen_all.tex
+      (tab:gen_all), app_abl.tex, app_ps2.tex, phase2_sensitivity.tex, phase2_budget.tex (generated replacements of
+      tables v5.1 typed into appendix.tex), and the restyled prog_all.tex, prog_abl_all.tex, tab_panel46.tex; headline
+      macros \\holm..., \\hlLat..., and the numbers the v6 text requested (request_macros).
   main_tables/headline.tex
       \\newcommand{\\hl...} macros for the numbers the prose repeats, and the caption notes \\pendTabMain,
       \\pendTabPanel, \\pendTabAbl, \\pendTabGen; \\input it once in the preamble. A comment above each macro names
@@ -1121,8 +1128,21 @@ PROG_ALL_METRICS = [("ir", "ImageReward", 1, 3), ("aesthetic", "Aesthetic", 1, 2
                     ("patch_fid", "Patch FID", 1, 1), ("patch_kid", r"Patch KID ($\times$1000)", 1000, 2)]
 
 
+def bound(x, d, keep_sign):
+    """An interval end at d decimals. With keep_sign (the interval excludes zero), an end that would print as zero
+    gets more decimals (up to d + 3) so that the reader sees it is not zero, as gen_tables.py printed them
+    (e.g. [0.0002, 0.062])."""
+    s = f"{x:.{d}f}"
+    for dd in range(d + 1, d + 4):
+        if not keep_sign or float(s) != 0 or x == 0:
+            break
+        s = f"{x:.{dd}f}"
+    return s
+
+
 def interval(lo, hi, d):
-    return rf"$[{lo:.{d}f}, {hi:.{d}f}]$".replace("[-", "[{-}").replace(", -", ", {-}")
+    k = lo > 0 or hi < 0
+    return rf"$[{bound(lo, d, k)}, {bound(hi, d, k)}]$".replace("[-", "[{-}").replace(", -", ", {-}")
 
 
 # Appendix paired tables in the v6 style: comparisons as rows, metrics as columns, split into stacked panels by metric
@@ -1458,13 +1478,115 @@ def table_app_abl():
     return text + "\n"
 
 
+# ---------------------------------------------------------------- appendix Tables app_ps2, phase2_sensitivity,
+# phase2_budget (v6): generated replacements of three tables v5.1 typed into appendix.tex from gen_tables.py's output.
+# Comparisons as rows, metrics as columns in two panels (preference, image quality), each difference with its 95%
+# paired interval below it in grey (2000 prompt draws, scripts/paired_bootstrap.py files under results/).
+def _per_image_panels(rows_, head):
+    spec = {k: (sc, d) for k, _, sc, d in PROG_ALL_METRICS}
+    out = []
+    for p_i, (title, keys) in enumerate(PANELS_V6[:2]):
+        body = []
+        for label, dd in rows_:
+            top, low = [label], [""]
+            for k in keys:
+                sc, d = spec[k]
+                v, lo, hi = dd[k]
+                top.append(paint(sgn(sc * v, d, "{-}"), sig(dd[k], lower=False) or ""))
+                low.append(rf"{{\color{{scaCtx}}{interval(sc * lo, sc * hi, d)}}}")
+            body += [" & ".join(top) + r" \\", " & ".join(low) + r" \\[1pt]"]
+        out += ([r"\par\medskip"] if p_i else []) + [rf"\textit{{{title}}}\par\smallskip",
+                                                     rf"\scaFitTab{{l*{{{len(keys)}}}{{r}}}}{{{len(keys) + 1}}}{{%"]
+        out += ["  " + x for x in [r"\toprule", head + " & " + " & ".join(SHORT_V6[k] for k in keys) + r" \\",
+                                   r"\midrule"] + body + [r"\bottomrule"]] + ["}"]
+    return out
+
+
+def deltas_csv(rel, method, reference):
+    out = {}
+    for r in rows(rel):
+        assert (r["method"], r["reference"]) == (method, reference), (rel, r)
+        out[r["metric"]] = (float(r["delta"]), float(r["ci_low"]), float(r["ci_high"]))
+    return out
+
+
+def counts(dd):
+    up = [k for k in PER_IMAGE10 if dd[k][1] > 0]
+    dn = [k for k in PER_IMAGE10 if dd[k][2] < 0]
+    return up, dn
+
+
+def float_table(name, label, cap, body):
+    return "\n".join([HEADER.replace("% Generated", f"% Generated (app_tables/{name}.tex)"), TABSTYLE_INPUT,
+                      r"\begin{table}[!htbp]", cap, rf"\label{{{label}}}", r"\centering\scriptsize"] + body +
+                     [r"\end{table}"]) + "\n"
+
+
+def table_app_ps2():
+    ps2 = deltas_csv("ps2_abl_ps2_vs_scanb.csv", "abl_ps2", REF)
+    area = deltas_csv("ps2_area_vs_scanb.csv", "area", REF)
+    up, dn = counts(ps2)
+    sig_ = up + dn
+    big = max(abs(ps2[k][0]) * {"hpsv2": 100, "hpsv21": 100, "clipiqa": 100, "arniqa": 100}.get(k, 1) for k in sig_)
+    check(len(sig_) == 3 and f"{big:.2f}" == "0.17", f"app_ps2 caption: {sig_} significant, largest {big:.3f}")
+    check(not dn, f"app_ps2 caption: the ratio-2 table is worse on {dn}")
+    cap = (r"\caption{\textbf{At $2048\times4096$ the ratio-2 table raises " + word(len(sig_)) + r" metrics "
+           rf"significantly, by at most {big:.2f}, and lowers none.}} Checks the ratio rule of "
+           r"Section~\ref{sec:emulation} at a non-square size. FLUX.1-dev, the \nabl{} ablation prompts, \sca{} without "
+           r"the schedule throughout. Each row is paired against the same operator with the default ratio-4 table: "
+           r"the operator with the ratio-2 table, and AReA (released code) for scale. $^{\times}$: $\times100$. "
+           r"\up{Blue} / \dn{orange}: the 95\% paired interval (2000 prompt draws) excludes zero in favour of / against "
+           r"the row. Key result: the default ratio-4 table trails the ratio-2 table on " + word(len(sig_)) +
+           rf" of ten metrics, by at most {big:.2f}, and leads on none.}}")
+    rows_ = [(r"ratio-2 table", ps2), ("AReA", area)]
+    return float_table("app_ps2", "tab:app_ps2", cap, _per_image_panels(rows_, r"Row $-$ ratio-4 table"))
+
+
+def table_phase2_sensitivity():
+    rows_ = [(f"{n}-prompt table", deltas_csv(f"e6_sca_cal{n}_deltas.csv", f"sca_cal{n}", REF)) for n in (4, 8, 16)]
+    rows_ += [(rf"gate $\sigma_g=0.{g}$", deltas_csv(f"e7_sca_g{g}_deltas.csv", f"sca_g{g}", REF)) for g in (85, 93)]
+    nsig = sum(len(sum(counts(dd), [])) for _, dd in rows_[:3])
+    g85_dn = len(counts(rows_[3][1])[1])
+    musiq_up = [lab for lab, dd in rows_[:3] if dd["musiq"][1] > 0]
+    check(nsig == 1 and musiq_up == ["16-prompt table"] and g85_dn == 7,
+          f"phase2_sensitivity caption: {nsig} significant, MUSIQ up {musiq_up}, gate 0.85 lowers {g85_dn}")
+    cap = (r"\caption{\textbf{Reach tables fitted on 4 to 16 prompts change one of 30 differences significantly; a gate "
+           r"at $\sigma_g=0.85$ lowers " + word(g85_dn) + r" metrics.} Supports the prompt-count check of Section~\ref{sec:generality}. "
+           r"FLUX.1-dev at $4096^2$, the \nabl{} ablation prompts, \sca{} without the schedule throughout. Each row is "
+           r"the variant minus the default (the 32-prompt table, gate $\sigma_g=0.89$). $^{\times}$: $\times100$. "
+           r"\up{Blue} / \dn{orange}: the 95\% paired interval (2000 prompt draws) excludes zero in favour of / against "
+           r"the variant. Key result: tables fitted on 4 to 16 prompts move ImageReward by at most "
+           + f"{max(abs(dd['ir'][0]) for _, dd in rows_[:3]):.3f}" + r", and one of their 30 differences is "
+           r"significant.}")
+    return float_table("phase2_sensitivity", "tab:phase2_sensitivity", cap,
+                       _per_image_panels(rows_, r"Variant $-$ default"))
+
+
+def table_phase2_budget():
+    rows_ = [(r"56 vs.\ 28 steps", data195.pairs(PANEL_RUN, "sca_s56", REF)),
+             (r"guidance 7 vs.\ 4.5", data195.pairs(PANEL_RUN, "sca_g7", REF)),
+             (r"56 steps vs.\ UltraImage", data195.pairs(PANEL_RUN, "sca_s56", "ultraimage"))]
+    up56, dn56 = counts(rows_[0][1])
+    upg, dng = counts(rows_[1][1])
+    up_u, dn_u = counts(rows_[2][1])
+    check(len(up56) == 8 and not dn56 and len(dng) == 7 and upg == ["musiq"],
+          f"phase2_budget caption: 56 steps {up56}/{dn56}, guidance 7 {upg}/{dng}")
+    cap = (r"\caption{\textbf{Doubling the steps raises " + word(len(up56)) + r" metrics; guidance 7 lowers " +
+           word(len(dng)) + r" and raises MUSIQ.} Expands Table~\ref{tab:panel46}. FLUX.1-dev at $4096^2$, \npanel{} "
+           r"prompts, all with \sca{} without the schedule: the first two rows compare with its default 28-step run at "
+           r"guidance 4.5, the last compares its 56-step run with UltraImage. Each row is the first-named setting "
+           r"minus the second. $^{\times}$: $\times100$. \up{Blue} / \dn{orange}: the 95\% paired interval (2000 prompt "
+           r"draws) excludes zero in favour of / against the first-named setting. Key result: at 56 steps \sca{} "
+           r"without the schedule is better than UltraImage on " + word(len(up_u)) + r" metrics and worse on "
+           + word(len(dn_u)) + ".}")
+    return float_table("phase2_budget", "tab:phase2_budget", cap, _per_image_panels(rows_, "Comparison"))
+
+
 # ---------------------------------------------------------------- appendix Table gen_all (v6) -------------------
 # Expands Table 3: every generality comparison on all ten per-image metrics, each difference with its 95% interval
 # on the same line (gen_holm.py's reproduction of the archived paired CSVs, 2000 prompt draws, seed 0).
 def table_gen_all():
-    import gen_holm
     H = holm()
-    lab = dict(gen_holm.METRICS)
     blocks = [("Progressive \\sca{} $-$ AReA", [("prog_area", "Seed 0"), ("prog_area_s1", "Seed 1"),
                                                  ("prog_area_s2", "Seed 2"), ("prog_area_hrgen", "HRGen-1K")]),
               ("Single-pass \\sca{} $-$ AReA", [("sca_area", "Seed 0"), ("sca_area_s1", "Seed 1"),
@@ -1987,7 +2109,9 @@ def main():
              OUT / "tab_ablation.tex": table_ablation(), OUT / "tab_generality.tex": table_generality_v6(),
              OUT_APP / "prog_all.tex": table_prog_all(), OUT_APP / "variance_split.tex": table_variance_split(),
              OUT_APP / "holm.tex": table_holm(), OUT_APP / "gen_all.tex": table_gen_all(),
-             OUT_APP / "app_abl.tex": table_app_abl()}
+             OUT_APP / "app_abl.tex": table_app_abl(), OUT_APP / "app_ps2.tex": table_app_ps2(),
+             OUT_APP / "phase2_sensitivity.tex": table_phase2_sensitivity(),
+             OUT_APP / "phase2_budget.tex": table_phase2_budget()}
     prog_abl = prog_ablation_rows()
     if prog_abl:
         # Section 4.3's sentences (\progAblResult) and the all-metric appendix table (tab:prog_abl_all)

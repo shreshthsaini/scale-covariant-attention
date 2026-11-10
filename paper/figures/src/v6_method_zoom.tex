@@ -1,0 +1,145 @@
+% v6 appendix method zoom (fig:method_zoom): Figure 3's operators at component level, in Figure 3's visual language
+% (v6_method_common.tex: Helvetica labels, Computer Modern math, SCA green, near amber, far blue, greys; 9 pt titles).
+%   (a) Far view on a toy grid (H = 24 tokens, s = 4, n0 = 6): the centre token kappa(b) of each s x s block becomes a
+%       key at coarse position b; the query moves to c(p).
+%   (b) Near view on the same grid (tile t = 2): two query tiles, their windows (w = n0 filled; w = 2 n0 dotted; the
+%       border clamp dashed), the bridge tokens (dark amber, schematic: one per cell of a 4 x 4 partition), and the
+%       block mask of the first tile (text keys grey, bridge dark amber, window amber).
+%   (c) Gate and mix: the weight of head 24 of block 12 (fig_method_zoom.py's example, chosen there for its large
+%       r = 2 vs r = 4 gap; head 10 of Figure 3 is nearly flat in sigma) at r = 2 (dashed) and r = 4 (solid); dots:
+%       the weight single-pass sampling applies at its 20 post-gate steps at 4096^2 (amber: the four wide-window
+%       steps read between the tables; green: native steps at r = 4); grey: sigma > sigma_g, far view only. Below,
+%       the mix itself.
+%   (d) The r = 4 table: 57 blocks x 24 heads (sorted per block) x 14 noise bins, sigma rising upward.
+% Data: method_zoom/{data.tex, pi_strip.png, block_mask.png} (fig_method_zoom.py: bridge dots, block mask, the
+% example head's weights, the table strip; unchanged), method_assets/picmap.png (colour bar, v6_method_assets.py).
+% Build: v6_tikz_build.py.
+\input{v6_method_common.tex}
+\input{method_zoom/data.tex}
+\definecolor{scaBridge}{HTML}{9C5512}
+\newcommand{\polyline}[2]{%
+  \gdef\plfirst{1}%
+  \foreach \s/\p in #2 {\ifnum\plfirst=1 \xdef\placc{(\s,\p)}\gdef\plfirst{0}\else\xdef\placc{\placc -- (\s,\p)}\fi}%
+  \draw[#1] \placc;}
+\newcommand{\Oglob}{O^{\mathrm{far}}}
+\newcommand{\Oloc}{O^{\mathrm{near}}}
+\tikzset{
+  gblk/.style={blk, draw=scaGlobal, fill=scaGlobalLight},
+  lblk/.style={blk, draw=scaLocal, fill=scaLocalLight},
+}
+% query token on a toy grid: black square with a white rim (as Figure 3), unit = one token
+\newcommand{\Qtok}[2]{\fill[white] (#1-0.25,#2-0.25) rectangle (#1+1.25,#2+1.25);
+  \fill[scaInk] (#1,#2) rectangle (#1+1,#2+1);}
+\begin{document}
+\begin{tikzpicture}[x=1bp, y=1bp]
+\useasboundingbox (0,0) rectangle (396,246);
+
+% =============================================================== (a) far view
+\node[anchor=base west] at (0,237) {\ttl (a) Far view};
+\begin{scope}[shift={(2,226)}, x=2.3bp, y=-2.3bp]            % 24 x 24 tokens, rows down
+  \fill[white] (0,0) rectangle (24,24);
+  \foreach \k in {4,8,...,20}{\draw[scaRule, line width=0.4pt] (\k,0) -- (\k,24) (0,\k) -- (24,\k);}
+  \foreach \i in {0,...,5}{\foreach \j in {0,...,5}{\fill[scaGlobal] (4*\i+2.5,4*\j+2.5) circle[radius=0.42];}}
+  \draw[scaGlobal, line width=0.9pt] (12,8) rectangle (16,12);
+  \Qtok{13}{9}
+  \draw[frame] (0,0) rectangle (24,24);
+\end{scope}
+\draw[arr] (61,198) -- (71.4,198);
+\node[anchor=south] at (66.2,200.5) {\mth$\kappa(b)$};
+\begin{scope}[shift={(74,226)}, x=9.2bp, y=-9.2bp]           % n0 x n0 = 6 x 6 keys
+  \fill[white] (0,0) rectangle (6,6);
+  \foreach \k in {1,...,5}{\draw[scaRule, line width=0.4pt] (\k,0) -- (\k,6) (0,\k) -- (6,\k);}
+  \foreach \i in {0,...,5}{\foreach \j in {0,...,5}{\fill[scaGlobal] (\i+0.5,\j+0.5) circle[radius=0.17];}}
+  \fill[white] (2.94,1.94) rectangle (4.06,3.06);
+  \fill[scaInk] (3.08,2.08) rectangle (3.92,2.92);
+  \draw[frame] (0,0) rectangle (6,6);
+\end{scope}
+\node[anchor=north, text=scaMid] at (29.6,168) {\sml$H\times W$ tokens};
+\node[anchor=north, text=scaGlobalText] at (101.6,168) {\sml$n_0\times n_0$ keys};
+\node[anchor=west] at (2,148) {\mts$\kappa(b)=s\,b+\lfloor s/2\rfloor,\quad c(p)=\lfloor p/s\rfloor$};
+
+% =============================================================== (b) near view
+\node[anchor=base west] at (140,237) {\ttl (b) Near view};
+\begin{scope}[shift={(142,226)}, x=2.3bp, y=-2.3bp]
+  \fill[white] (0,0) rectangle (24,24);
+  \foreach \k in {6,12,18}{\draw[scaRule, line width=0.4pt] (\k,0) -- (\k,24) (0,\k) -- (24,\k);}
+  \fill[scaLocalLight] (4,6) rectangle (10,12);
+  \draw[scaLocal, line width=0.9pt] (4,6) rectangle (10,12);
+  \draw[scaLocal, line width=0.7pt, dash pattern=on 0.6pt off 0.9pt] (1,3) rectangle (13,15);
+  \fill[scaLocalLight] (18,18) rectangle (24,24);
+  \draw[scaLocal, line width=0.9pt] (18,18) rectangle (24,24);
+  \draw[scaLocal, line width=0.6pt, dash pattern=on 1.6pt off 1.1pt] (20,20) -- (26,20) -- (26,26) -- (20,26) -- cycle;
+  \foreach \x/\y in \bridgedots{\fill[scaBridge] (\x+0.5,\y+0.5) circle[radius=0.45];}
+  \Qtok{6}{8}\fill[scaInk] (6,8) rectangle (8,10);
+  \Qtok{22}{22}\fill[scaInk] (22,22) rectangle (24,24);
+  \draw[frame] (0,0) rectangle (24,24);
+\end{scope}
+\node[anchor=north west, text=scaMid] at (141,164.5) {\sml clamped windows};
+\draw[arr] (202,198) -- (212.4,198);
+\node[anchor=west] at (215,198) {\includegraphics[width=46bp, height=40bp]{method_zoom/block_mask.png}};
+\draw[frame] (215,178) rectangle (261,218);
+\node[anchor=south west, text=scaMid] at (215,219.5) {\sml text};
+\node[anchor=south west, text=scaBridge] at (233,219.5) {\sml bridge};
+\node[anchor=west, text=scaLocalText] at (263,203) {\sml window};
+\node[anchor=north, text=scaMid] at (238,175.5) {\sml block mask};
+\node[anchor=west] at (142,148) {\mts$\mathcal{K}^{\mathrm{loc}}_i=\mathcal{T}\cup\mathcal{B}\cup W_w(i)$,\quad $w=n_0$ or wider};
+
+% =============================================================== (c) gate and mix
+\node[anchor=base west] at (296,237) {\ttl (c) Gate and mix};
+\begin{scope}[shift={(310,180)}, x=62bp, y=42bp]
+  \fill[scaGrid] (0.89,0) rectangle (1,1);
+  \draw[axis] (0,1) -- (0,0) -- (1,0);
+  \foreach \v/\t in {0/0,0.5/0.5,1/1}{\draw[axis] (\v,0) -- (\v,-0.05);
+     \node[anchor=north, text=scaMid] at (\v,-0.08) {\sml\t};}
+  \foreach \v in {0,1}{\draw[axis] (0,\v) -- (-0.03,\v); \node[anchor=east, text=scaMid] at (-0.05,\v) {\sml\v};}
+  \draw[line width=0.6pt, scaMid, dash pattern=on 1.6pt off 1.1pt] (0.89,0) -- (0.89,1);
+  \polyline{line width=0.8pt, scaInk, dash pattern=on 2pt off 1.2pt}{\extwo}
+  \polyline{line width=0.9pt, scaInk}{\exfour}
+  \foreach \k/\s/\p/\w in \applied{\ifnum\w=1 \fill[scaLocal] (\s,\p) circle[radius=1.6bp];\else
+      \fill[scaAccent] (\s,\p) circle[radius=1.2bp];\fi}
+  \node[anchor=south] at (0.89,1.02) {\mts$\sigma_g$};
+  \node[anchor=west] at (1.03,0.0) {\mth$\sigma$};
+  \node[anchor=south east] at (-0.05,0.55) {\mth$\pi$};
+  \node[anchor=west, text=scaMid] at (1.03,0.95) {\mts$r=4$};
+  \node[anchor=west, text=scaMid] at (1.03,0.67) {\mts$r=2$};
+\end{scope}
+\node[anchor=west, text=scaMid] at (380,224) {};
+\node[gblk, minimum width=30bp, minimum height=14bp] (og) at (316,142) {\mth$\Oglob_i$};
+\node[lblk, minimum width=30bp, minimum height=14bp] (ol) at (316,113) {\mth$\Oloc_i$};
+\node[circle, draw=scaInk, line width=0.8pt, fill=white, minimum size=10bp] (pl) at (358,127.5) {};
+\draw[line width=0.8pt, scaInk] (354.5,127.5) -- (361.5,127.5) (358,124) -- (358,131);
+\draw[arr, draw=scaGlobal] (og.east) -| (pl.north);
+\draw[arr, draw=scaLocal] (ol.east) -| (pl.south);
+\node[anchor=south, text=scaGlobalText] at (344,144) {\mts$1-\pi$};
+\node[anchor=north, text=scaLocalText] at (344,111) {\mts$\pi$};
+\node[sblk, minimum width=22bp, minimum height=14bp] (oi) at (384,127.5) {\mth$O_i$};
+\draw[arr] (pl.east) -- (oi.west);
+
+% =============================================================== (d) the reach table
+\node[anchor=base west] at (0,96) {\ttl (d) Reach table at $\boldsymbol{r=4}$, all 57 blocks};
+\begin{scope}[shift={(22,20)}]
+  \node[anchor=south west] at (0,0) {\includegraphics[width=332bp, height=64bp]{method_zoom/pi_strip.png}};
+  \fill[white, opacity=0.55] (0,{64*0.89}) rectangle (332,64);
+  \draw[scaInk, line width=0.6pt, dash pattern=on 1.6pt off 1.1pt] (0,{64*0.89}) -- (332,{64*0.89});
+  \node[anchor=south east, text=scaMid] at (330,{64*0.89+0.8}) {\sml far view only};
+  \draw[frame] (0,0) rectangle (332,64);
+  \foreach \v/\t in {0/0,0.5/0.5,1/1}{\draw[axis] (0,{64*\v}) -- (-2,{64*\v});
+     \node[anchor=east, text=scaMid] at (-3,{64*\v}) {\sml\t};}
+  \node[anchor=east] at (-3,{64*0.89}) {\mts$\sigma_g$};
+  \node[anchor=east] at (-14,{64*0.25}) {\mth$\sigma$};
+  \pgfmathsetmacro{\bw}{332/57}
+  \draw[scaInk, line width=0.6pt] ({19*\bw},0) -- ({19*\bw},64);
+  \foreach \b in {1,10,19,20,30,40,50,57}{\draw[axis] ({(\b-0.5)*\bw},0) -- ({(\b-0.5)*\bw},-2);}
+  \foreach \b in {1,10,30,40,50,57}{\node[anchor=north, text=scaMid] at ({(\b-0.5)*\bw},-3) {\sml\b};}
+  \node[anchor=north east, text=scaMid] at ({18.6*\bw},-3) {\sml 19};
+  \node[anchor=north west, text=scaMid] at ({19.4*\bw},-3) {\sml 20};
+  \node[anchor=north, text=scaMid] at ({9.5*\bw},-11.5) {\sml double-stream blocks};
+  \node[anchor=north, text=scaMid] at ({38*\bw},-11.5) {\sml single-stream blocks};
+  \node[anchor=south west] at (342,0) {\includegraphics[width=6bp, height=64bp]{method_assets/picmap.png}};
+  \draw[frame] (342,0) rectangle (348,64);
+  \node[anchor=west, text=scaLocalText] at (350,64) {\sml 1 near};
+  \node[anchor=west, text=scaGlobalText] at (350,0) {\sml 0 far};
+  \node[anchor=west] at (350,32) {\mth$\pi$};
+\end{scope}
+\end{tikzpicture}
+\end{document}

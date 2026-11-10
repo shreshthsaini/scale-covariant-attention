@@ -1,19 +1,29 @@
 # Paper v6: tables and plots (role `tablesplots`), 2026-11-10
 
-Status: IN PROGRESS (tables done; Figures 6 and 7 and appendix plots in progress; appendix tables of app_tab_*.py in
-progress). Sections marked FINAL are settled. Generators: run from paper/ with the sca env python; both print
-"checks passed". Builds: /scratch/09032/saini_2/sca/paper_builds/v6_tablesplots_<n>/.
+Status: tables, Holm, macros, Figures 6 and 7 and three appendix plots DONE; appendix tables of app_tab_main.py and
+app_tab_phase2.py in progress (worker). Generators: run from paper/ with the sca env python; each prints "checks
+passed". Builds: /scratch/09032/saini_2/sca/paper_builds/v6_tablesplots_<n>/ (full paper: v6_tablesplots_3).
 
-## 0. Actions for other owners (short list)
-- text: Table 2 (`tab_ablation_compact_prog.tex`) is now FULL WIDTH: take it out of the 0.48 minipage. Table 3
-  (`tab_generality.tex`) fits 0.48 width at \footnotesize; suggested placement beside Figure 7 (0.48) in Section 4.3.
-  Table 1 fills \linewidth by itself at \small. Captions to paste: Section 3. Holm wording: Section 1.
-- text: all 47 \reqnum macros are generated in headline.tex and equal their placeholders; the \providecommand
-  lines can stay (headline.tex is read first and wins) or go.
-- appendix: new float snippets, each with caption and label: app_tables/holm.tex (tab:holm), app_tables/gen_all.tex
-  (tab:gen_all), app_tables/app_abl.tex (tab:app_abl, replaces the hand-typed table of that label: delete the typed
-  float and use \snippetat{!htbp}{app_tables/app_abl}). Restyled in place, same labels: prog_all.tex, prog_abl_all.tex,
-  main_tables/tab_panel46.tex (body). Heights: Section 4.
+## 0. Actions for other owners
+- text (MUST): Figure 6 (fig:paired_area, now paper/figures/v6/gains.pdf) plots STANDARDIZED paired differences
+  (difference / SD of the per-prompt differences) in two panels, (a) vs AReA, (b) vs HRDiT. The caption in main.tex
+  still says "in percent of AReA's mean" and describes one panel: replace it with the caption in Section 6.
+- text: Tables 1 to 3 integrated as intended (seen in the full build, pages 6, 8, 9). Holm wording integrated.
+- text: all 47 \reqnum macros are generated in headline.tex and equal their placeholders.
+- appendix: new float snippets with caption and label: app_tables/holm.tex (tab:holm), gen_all.tex (tab:gen_all),
+  app_abl.tex (tab:app_abl), app_ps2.tex (tab:app_ps2), phase2_sensitivity.tex (tab:phase2_sensitivity),
+  phase2_budget.tex (tab:phase2_budget). The last four REPLACE tables typed by hand in appendix.tex: delete each typed
+  float and use \snippetat{!htbp}{app_tables/<name>} (same labels). Restyled in place, same labels: prog_all.tex,
+  prog_abl_all.tex, main_tables/tab_panel46.tex (body: one time column, the campaign mean; the caption's "clean"
+  remark can go). Plots: v6/latency.pdf, v6/quality_time.pdf (0.5 width), v6/baseline_deltas.pdf (snippet
+  snippets/v6_baseline_deltas.tex with caption); captions in Section 6.
+- methodfigs: (1) rel_err belongs to you (your notes, item 3); a ready v6-style option is on scratch:
+  /scratch/09032/saini_2/sca/paper_builds/v6_tablesplots_figs/rel_err_option/ (v6_rel_err.py, rel_err.pdf). (2) One
+  panel-tag style across owners: hero, gains, scaling and the appendix plots use a bold "(a)" with a regular name and
+  sentence-case axis titles with arrows; emulation.pdf bolds the whole tag and uses lowercase axis titles. Please
+  match, or tell the lead which to keep.
+- full build: main.tex currently halts at appendix.tex:1150 (\snippetat{p}{gallery_6144x2048}, "Missing $
+  inserted"; visuals/appendix, not tables). With -Z continue-on-errors it builds to 63 pages.
 
 ## 1. Holm result (FINAL)
 Module paper/figures/src/gen_holm.py re-runs scripts/paired_bootstrap.py on the archived per-image files (2000 prompt
@@ -125,19 +135,96 @@ intervals. Key result: no setting is significantly worse on any metric.}
 | app_tables/prog_abl_all.tex | tab:prog_abl_all | float (restyled) | same layout, 3 variants | about 0.35 page |
 | main_tables/tab_panel46.tex | tab:panel46 | body (restyled) | one time column (campaign mean, every row has one), grouped heads; caption in appendix.tex should drop "clean" | same height |
 | app_tables/variance_split.tex | tab:variance_split | float | unchanged | |
-Captions of float snippets are generated; each states what it expands and ends with "Key result:".
+| app_tables/app_ps2.tex | tab:app_ps2 | float (new, replaces the typed one) | 2 rows (ratio-2 table, AReA) x ten metrics, two panels | about 0.25 page |
+| app_tables/phase2_sensitivity.tex | tab:phase2_sensitivity | float (new, replaces the typed one) | 5 rows (4/8/16-prompt tables, two gates) | about 0.4 page |
+| app_tables/phase2_budget.tex | tab:phase2_budget | float (new, replaces the typed one) | 3 rows (56 vs 28 steps, guidance 7 vs 4.5, 56 steps vs UltraImage) | about 0.3 page |
+Captions of float snippets are generated; each states what it expands or supports and ends with "Key result:"; each
+claim in a caption is checked against the cells by the generator.
 Pending (worker): all_metrics, app_4k, app_wide, latency, published_compare, published_hrgen, krea_6144,
 phase2_baselines, phase2_general, panel46_deltas, prog_deltas (app_tab_main.py, app_tab_phase2.py).
-Still hand-typed in appendix.tex (numbers typed by hand, not mine to edit): tab:app_ps2, tab:phase2_sensitivity,
-tab:phase2_budget, tab:flops. Generated replacements can follow on request.
+Still typed by hand in appendix.tex: tab:flops (analytic cost; its 4096^2 entries are reproduced by the cost model in
+gen_main_tables.request_macros, so a generated table can follow on request), tab:handset, tab:hparams,
+tab:protocol, tab:related (configuration tables, no results).
 
 ## 5. Number audit (no number changed)
 Script: /scratch/.../scratchpad/tp/numdiff.py compares the multiset of numbers in table rows, old snapshot
 (/scratch/09032/saini_2/sca/paper_builds/v6_tablesplots_base/snippets_orig, = v5.1) against v6:
 tab_main_compact: every v5.1 number present; tab_ablation_compact_prog: every v5.1 number present except the four
 values of the mislabelled shaded row (intended fix above); tab_generality: every v5.1 number present in
-tab_generality + gen_all; prog_all, prog_abl_all: identical numbers and identical \up/\dn sets; app_abl: every number of
-the hand-typed v5.1 table present.
+tab_generality + gen_all; prog_all, prog_abl_all: identical numbers and identical \up/\dn sets; app_abl, app_ps2,
+phase2_sensitivity, phase2_budget: every number of the typed v5.1 tables present. One formatting rule: an interval
+end of a SIGNIFICANT interval that would print as zero gets more decimals (as gen_tables.py did: [0.0002, 0.062]);
+this refines three v5.1 ends that printed as 0.0 (16-prompt MUSIQ lower end, 56 steps vs UltraImage CLIP-IQA lower
+end, window-only ARNIQA upper end in prog_abl_all). No value changed.
 
-## 6. Figures 6 and 7, appendix plots
-In progress (worker); stems paper/figures/v6/gains.pdf and scaling.pdf; rubric and captions to follow here.
+## 6. Figures 6 and 7 and the appendix result plots (FINAL)
+Scripts in paper/figures/src (new, mine): v6_plotkit.py (widths, panel tags, save with the orx audit), v6_gains.py,
+v6_scaling.py, v6_latency.py, v6_quality_time.py, v6_baseline_deltas.py. Each reads results/ (gen_holm.pair for the
+gains), asserts every plotted value against the printed tables and headline macros, and reruns byte-identical
+(checked after the scafig.py change below). Audits clean; smallest text 6.04 pt (math scripts), labels 7 pt or more.
+Two candidates for each main figure; losers in paper/figures/v6/candidates/. PNG renders (300 dpi):
+/scratch/09032/saini_2/sca/paper_builds/v6_tablesplots_figs/final/.
+
+### Figure 6, v6/gains.pdf, 0.48 wrap (2.64 x 2.42 in), label fig:paired_area
+Claim: both modes beat AReA on all ten per-image metrics after Holm; progressive SCA is never significantly worse
+than HRDiT and is better on HPSv2 and ARNIQA. Normalisation: standardized paired effect d_z (difference / SD of the
+195 per-prompt differences; the interval ends divided by the same SD), because percent of AReA's mean put ImageReward
+at +43% and squeezed the rest. Marks: star progressive, circle single pass (as the hero); green = interval excludes
+zero in SCA's favour, orange = against, grey = includes zero; filled = significant after Holm, open = before only.
+Caption (fits a 0.48 wrap):
+\caption{\textbf{Both modes beat AReA on all \holmProgAreaBetterWord{} per-image metrics; progressive \sca{} is worse
+than HRDiT on \holmProgHrditWorseWord{}.} Paired differences at $4096^2$, $n=\nmain$, divided by the standard
+deviation of the per-prompt differences, with 95\% bootstrap intervals. (a)~Progressive (star) and single-pass
+(circle) \sca{} minus AReA; (b)~progressive \sca{} minus HRDiT. Filled: significant after Holm correction; open:
+before it only. Table~\ref{tab:holm} lists the values.}
+| rubric (0/1/2) | A wrap (kept) | B full width 5.5 x 1.85 |
+|---|---|---|
+| one claim at a glance | 2 | 2 |
+| labels >= 7 pt, nothing < 6 | 2 | 2 |
+| <= 4 hues, consistent meanings | 2 | 2 |
+| no title, frameless legend, no top/right spines, light grid | 2 | 2 |
+| direction stated | 2 | 2 |
+| uncertainty shown, n in caption | 2 | 2 |
+| layout density | 2 | 1 (three panels repeat one message, over the 1.5 in budget) |
+| words <= 30 | 2 (22) | 2 (21) |
+| mean | 2.0 | 1.9 |
+
+### Figure 7, v6/scaling.pdf, 0.48 (2.64 x 2.19 in), beside Table 3; label: text owner's choice (fig:scaling)
+Claim: single-pass SCA's time grows linearly with pixel count (b = \hlLatExpSca against \hlLatExpArea for AReA), so
+its lead over AReA widens from \hlSpeedScaAreaLo x to \hlSpeedScaAreaHi x; progressive SCA is faster still at 4096^2.
+Caption:
+\caption{\textbf{Single-pass \sca{}'s time grows linearly with pixel count, so its lead over AReA widens from
+$\hlSpeedScaAreaLo\times$ to $\hlSpeedScaAreaHi\times$.} Clean batch-1 seconds per image on one GH200 against image
+side, log-log; median of three timed images after a warm-up, whiskers min to max. Labels give $b$ of seconds
+$\propto N^b$ ($N$ image tokens, least squares over all sizes); bottom row: AReA's time over single-pass \sca{}'s.
+Progressive \sca{} and HRDiT were timed at $4096^2$ only, full attention not at $8192^2$. Table~\ref{tab:latency}
+lists every time.}
+| rubric (0/1/2) | A one panel + ratio row (kept) | B panel + speed-up bars |
+|---|---|---|
+| one claim, labels, hues, chrome, direction, uncertainty (whiskers, n = 3) | 2 each | 2 each |
+| layout density | 2 | 1 (bars repeat the five ratios, +0.28 in) |
+| words <= 30 | 2 (16) | 2 (15) |
+| mean | 2.0 | 1.9 |
+(The figure prints full attention's exponent 1.60 directly; it has no macro and the text does not quote it.)
+
+### Appendix plots
+- v6/latency.pdf (fig:latency_full), 5.5 x 1.95 in: (a) seconds log-log with exponents, (b) speed-up over AReA
+  (2.07 to 3.07) and over full attention (to 4.36), parity line. Caption: \caption{\textbf{Single-pass \sca{} is the
+  fastest method at every size; its lead over AReA grows to $\hlLatEightRatio\times$ at $8192^2$.} (a)~Median seconds
+  per image of three timed images after one excluded warm-up (batch 1, one GH200, 28 steps including text encoding
+  and VAE decoding), whiskers min to max; labels give $b$ of seconds $\propto N^b$. (b)~Each baseline's median time
+  over single-pass \sca{}'s; dotted: parity. Full attention was not run at $8192^2$. Table~\ref{tab:latency} lists the
+  times.}
+- v6/quality_time.pdf (fig:quality_time), 0.5 width, 2.75 x 1.95 in. Caption: \caption{\textbf{At
+  \hlCampProgHrditPct\% of HRDiT's time, progressive \sca{} is indistinguishable from HRDiT on ImageReward
+  (difference $\hlProgHrditIr$ $[\hlProgHrditIrLo,\hlProgHrditIrHi]$).} ImageReward against campaign seconds per image
+  on shared nodes, $n=\nmain$ prompts at $4096^2$. Star: progressive \sca{}; filled circle: single-pass \sca{}; open
+  circles: \sca{} without the schedule at 28, 42 and 56 steps and at guidance 7; the dashed guide carries the ratio of
+  campaign times. Full attention, DyPE and SigMa fall below the range (Table~\ref{tab:panel46}).}
+- v6/baseline_deltas.pdf (fig:baseline_quality), 5.5 x 1.50 in, with snippets/v6_baseline_deltas.tex (caption
+  inside; the old baseline_deltas.tex is untouched).
+
+### Shared style change (announce)
+scafig.py: added NS = "#828E9A" (not significant, the existing neutral grey) and METHOD_COLOR / METHOD_NAME entries
+for HRDiT ("#56626F", the darkest neutral, as fig_speed.py drew it). No existing hex value changed; every v6 plot
+reran byte-identical.

@@ -9,8 +9,8 @@ value under results/ to the six significant digits it stores; a mismatch fails t
   bootstrap p-value   p = min(1, 2 min(1 + #{b <= 0}, 1 + #{b >= 0}) / (B + 1)), two-sided. It is the p-value
                       that inverts the percentile interval: p < 0.05 when the 95% interval excludes zero (up to one
                       draw of interpolation), so unadjusted calls equal the paper's colour convention.
-  sign-flip p-value   p = (1 + #{|mean(s * d)| >= |mean(d)|}) / (B + 1) over 2000 random sign vectors s (a second
-                      numpy generator seeded 0, metrics in the same order): the paired randomization test, a check.
+  sign-flip p-value   p = (1 + #{|mean(s * d)| >= |mean(d)|}) / (B + 1) over 2000 seeded sign vectors s (a second
+                      numpy generator seeded 0, metrics in the same order): the paired sign-flip test, a check.
 
 Holm's step-down procedure then controls the family-wise error rate at 5% over the ten per-image metrics of each pair
 (adjusted p_(i) = max_{j <= i} min(1, (m - j + 1) p_(j)); significant when the adjusted p is at most 0.05). The

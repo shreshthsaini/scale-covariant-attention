@@ -45,11 +45,15 @@ def _prep(job):
 
 def _tiles(job):
     """Write the thumbnail and the crop of one image; returns file names."""
-    path, thumb_name, crop_name, w_pt, h_pt, box, assets = job
+    path, thumb_name, crop_name, w_pt, h_pt, box, assets, dpi, crop_q = job
     im = Image.open(path).convert("RGB")
-    vc.save_jpeg(vc.thumb(im, w_pt, h_pt), Path(assets) / thumb_name, vc.THUMB_Q)
     x, y, w, h = box
-    vc.save_jpeg(im.crop((x, y, x + w, y + h)), Path(assets) / crop_name, vc.CROP_Q)
+    for img, name, q in ((vc.thumb(im, w_pt, h_pt, dpi=dpi), thumb_name, vc.THUMB_Q),
+                         (im.crop((x, y, x + w, y + h)), crop_name, crop_q)):
+        try:
+            vc.save_jpeg(img, Path(assets) / name, q)
+        except OSError as e:
+            raise OSError(f"{e}: {path} -> {name} {img.size} q {q}") from e
     return thumb_name, crop_name
 
 
@@ -74,7 +78,8 @@ def windows(examples: list[Example], crop_px: tuple[int, int], check_noise: bool
 def build(examples: list[Example], methods: list[str], labels: dict, orient: str, assets: Path, pdf: Path,
           stem: str, full_h: float, crop_w: float, crop_h: float | None = None, label_w: float = 10.0,
           ours: dict | None = None, group_gap: float = vc.GG, head_h: float = 11.0, width: float = vc.TEXT_PT,
-          crop_px: tuple[int, int] | None = None, blocks: int = 1, block_gap: float = 8.0) -> dict:
+          crop_px: tuple[int, int] | None = None, blocks: int = 1, block_gap: float = 8.0,
+          thumb_dpi: int = vc.THUMB_DPI, crop_q: int = vc.CROP_Q) -> dict:
     """Compose the grid, compile it, return the provenance record.
 
     orient "rows": row height full_h; each example column is full (aspect kept) + G + crop_w; `blocks` > 1 stacks the
@@ -129,7 +134,7 @@ def build(examples: list[Example], methods: list[str], labels: dict, orient: str
     for ex, m, full, crop in jobs:
         bx, by, bw, bh = ex.window
         work.append((ex.paths[m], f"{ex.key}_{m}_full.jpg", f"{ex.key}_{m}_crop_{bx}_{by}_{bw}x{bh}.jpg",
-                     full[2], full[3], ex.window, str(assets)))
+                     full[2], full[3], ex.window, str(assets), thumb_dpi, crop_q))
     with Pool(min(WORKERS, len(work))) as pool:
         names = pool.map(_tiles, work)
     seen = set()
@@ -151,6 +156,7 @@ def build(examples: list[Example], methods: list[str], labels: dict, orient: str
                                         derived_seed=ex.meta.get("derived_seed"),
                                         sources={mm: str(p) for mm, p in ex.paths.items()}))
     cv.compile(pdf, stem)
+    rec.update(thumb_dpi=thumb_dpi, crop_jpeg_q=crop_q)
     rec.update(pdf=str(pdf), pdf_bytes=pdf.stat().st_size, size_pt=[round(width, 2), round(cv.h, 2)],
                size_in=[round(width / 72.27, 3), round(cv.h / 72.27, 3)], used_width_pt=round(used_w, 2))
     return rec

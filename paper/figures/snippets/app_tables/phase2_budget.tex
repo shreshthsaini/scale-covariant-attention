@@ -1,0 +1,34 @@
+% Generated (app_tables/phase2_budget.tex) by paper/figures/src/gen_main_tables.py from results/; do not edit by hand.
+\ifdefined\scaFitTab\else\input{figures/snippets/main_tables/tabstyle.tex}\fi
+\begin{table}[!htbp]
+\caption{\textbf{Doubling the steps raises eight metrics; guidance 7 lowers seven and raises MUSIQ.} Expands Table~\ref{tab:panel46}. FLUX.1-dev at $4096^2$, \npanel{} prompts, all with \sca{} without the schedule: the first two rows compare with its default 28-step run at guidance 4.5, the last compares its 56-step run with UltraImage. Each row is the first-named setting minus the second. $^{\times}$: $\times100$. \up{Blue} / \dn{orange}: the 95\% paired interval (2000 prompt draws) excludes zero in favour of / against the first-named setting. Key result: at 56 steps \sca{} without the schedule is better than UltraImage on three metrics and worse on one.}
+\label{tab:phase2_budget}
+\centering\scriptsize
+\textit{(a) Preference}\par\smallskip
+\scaFitTab{l*{6}{r}}{7}{%
+  \toprule
+  Comparison & IR & Aesthetic & CLIP & PickScore & HPSv2$^{\times}$ & HPSv2.1$^{\times}$ \\
+  \midrule
+  56 vs.\ 28 steps & \up{$+0.032$} & \up{$+0.03$} & ${-}0.01$ & \up{$+0.13$} & \up{$+0.32$} & \up{$+0.88$} \\
+   & {\color{scaCtx}$[0.0002, 0.062]$} & {\color{scaCtx}$[0.01, 0.06]$} & {\color{scaCtx}$[{-}0.23, 0.22]$} & {\color{scaCtx}$[0.07, 0.18]$} & {\color{scaCtx}$[0.23, 0.40]$} & {\color{scaCtx}$[0.71, 1.04]$} \\[1pt]
+  guidance 7 vs.\ 4.5 & \dn{${-}0.068$} & \dn{${-}0.10$} & ${-}0.21$ & \dn{${-}0.27$} & \dn{${-}0.25$} & \dn{${-}0.60$} \\
+   & {\color{scaCtx}$[{-}0.115, {-}0.025]$} & {\color{scaCtx}$[{-}0.14, {-}0.07]$} & {\color{scaCtx}$[{-}0.45, 0.03]$} & {\color{scaCtx}$[{-}0.34, {-}0.20]$} & {\color{scaCtx}$[{-}0.35, {-}0.16]$} & {\color{scaCtx}$[{-}0.80, {-}0.41]$} \\[1pt]
+  56 steps vs.\ UltraImage & ${-}0.023$ & ${-}0.03$ & $+0.30$ & \dn{${-}0.11$} & $+0.11$ & ${-}0.22$ \\
+   & {\color{scaCtx}$[{-}0.089, 0.040]$} & {\color{scaCtx}$[{-}0.07, 0.02]$} & {\color{scaCtx}$[{-}0.01, 0.62]$} & {\color{scaCtx}$[{-}0.21, {-}0.01]$} & {\color{scaCtx}$[{-}0.03, 0.26]$} & {\color{scaCtx}$[{-}0.51, 0.05]$} \\[1pt]
+  \bottomrule
+}
+\par\medskip
+\textit{(b) Image quality}\par\smallskip
+\scaFitTab{l*{4}{r}}{5}{%
+  \toprule
+  Comparison & MUSIQ & MUSIQ$_\text{c}$ & CLIP-IQA$^{\times}$ & ARNIQA$^{\times}$ \\
+  \midrule
+  56 vs.\ 28 steps & ${-}0.2$ & \up{$+2.9$} & \up{$+0.9$} & \up{$+1.5$} \\
+   & {\color{scaCtx}$[{-}1.5, 1.0]$} & {\color{scaCtx}$[2.2, 3.6]$} & {\color{scaCtx}$[0.4, 1.4]$} & {\color{scaCtx}$[1.0, 1.9]$} \\[1pt]
+  guidance 7 vs.\ 4.5 & \up{$+1.4$} & $+0.2$ & \dn{${-}1.0$} & \dn{${-}1.2$} \\
+   & {\color{scaCtx}$[0.3, 2.6]$} & {\color{scaCtx}$[{-}0.4, 0.8]$} & {\color{scaCtx}$[{-}1.7, {-}0.4]$} & {\color{scaCtx}$[{-}1.5, {-}0.8]$} \\[1pt]
+  56 steps vs.\ UltraImage & \up{$+11.6$} & \up{$+22.4$} & \up{$+1.1$} & $+0.4$ \\
+   & {\color{scaCtx}$[9.5, 13.6]$} & {\color{scaCtx}$[21.2, 23.6]$} & {\color{scaCtx}$[0.03, 2.1]$} & {\color{scaCtx}$[{-}0.4, 1.2]$} \\[1pt]
+  \bottomrule
+}
+\end{table}

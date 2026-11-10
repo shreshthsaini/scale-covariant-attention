@@ -9,8 +9,8 @@ Selection rule (one clause in the caption): one prompt from each of the six cate
 drawn with seed 0 (random.Random("0:<category>").choice over the category's sorted ids). The large tile is the
 portrait draw; the small tiles follow in the order animal, landscape, architecture, dense, product (layout A) or the
 first three of that order (layout B). History: the first rule, one evaluation prompt per keyword category of
-v6_common.CATEGORIES with seed 0, drew an image with an unrequested standing figure beside the subject (prompt
-4820545723762191815, animal), so the rule moved to the showcase prompts before any of their images was viewed
+v6_common.CATEGORIES with seed 0, drew an image with an obvious defect at overview (prompt 4820545723762191815,
+animal), so the rule moved to the showcase prompts before any of their images was viewed
 (.agent/notes/paper_v6/visuals.md).
 
 Crops. Native 1:1 windows of fixed size at the highest mean edge energy of the image (v6_common.best_windows; the
@@ -251,8 +251,8 @@ def build(layout_name: str, out_dir: Path | None) -> dict:
                                     "category's sorted ids"), seed=SEED, draw=picks,
                               prompts_file=str(SHOWCASE.relative_to(vc.REPO)), prompts_sha256=vc.sha256(SHOWCASE),
                               history=("rule 1 (one evaluation prompt per keyword category, seed 0) drew "
-                                       "4820545723762191815 (animal) with an unrequested standing figure beside the "
-                                       "bear; replaced by this rule before any showcase image was viewed")),
+                                       "4820545723762191815 (animal), an image with an obvious defect at overview; "
+                                       "replaced by this rule before any showcase image was viewed")),
                crop_rule="native windows of fixed size at the highest mean edge energy of the image, non-overlapping",
                panel=pinfo, jpeg=dict(full=f"Lanczos to {vc.THUMB_DPI} ppi, q {vc.THUMB_Q}, 4:4:4",
                                       crop=f"native pixels, q {vc.CROP_Q}, 4:4:4"))

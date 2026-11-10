@@ -4,9 +4,9 @@ prompts and seeds; each example shows the full image with a red 1 pt box and the
 Selection rule (one clause in the caption): one evaluation prompt from each of the portrait, landscape and
 architecture categories (keyword rule on the prompt text, v6_common.CATEGORIES), drawn with seed 0
 (random.Random("0:<category>").choice) from the 191 Aesthetic-4K evaluation prompts outside the four development
-prompts. History: a plain seeded draw of three prompts (random.Random(0).sample) gave three portraits, one of them an
-image whose mirror reflection reads as a second person; stratifying by category (rule above) was fixed before any image
-of its draw was viewed (.agent/notes/paper_v6/visuals.md).
+prompts. History: a plain seeded draw of three prompts (random.Random(0).sample) gave three portraits, one of them with
+an obvious defect at overview; stratifying by category (rule above) was fixed before any image of its draw was viewed
+(.agent/notes/paper_v6/visuals.md).
 
 Crop rule: the window of fixed size with the highest mean edge energy averaged over the four methods (v6_grid).
 

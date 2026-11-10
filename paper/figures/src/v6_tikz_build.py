@@ -32,6 +32,7 @@ def setup(build: Path) -> Path:
     src.mkdir(parents=True, exist_ok=True)
     links = {name: HERE / name for name in SOURCES if (HERE / name).exists()}
     links["method_assets"] = V6 / "method_assets"
+    links["method_zoom"] = FIGS / "method_zoom"        # fig_method_zoom.py rasters and macros (read only)
     for name, target in links.items():
         dst = src / name
         if dst.is_symlink() or dst.exists():
@@ -54,7 +55,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--build", type=Path, default=DEFAULT_BUILD)
     ap.add_argument("--install", action="store_true", help="copy the kept outputs into paper/figures/v6")
-    ap.add_argument("names", nargs="*", default=["v6_method_a", "v6_method_b"])
+    ap.add_argument("names", nargs="*", default=["v6_method_a", "v6_method_b", "v6_method_zoom"])
     a = ap.parse_args()
     src = setup(a.build)
     built = {}

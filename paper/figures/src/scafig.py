@@ -64,11 +64,15 @@ METHOD_COLOR = {
     "sega": "#828E9A",
     "sega_official": "#828E9A",
     "ultraimage": "#56626F",
+    "hrdit": "#56626F",             # v6: the darkest neutral, as fig_speed.py drew it
+    "hrdit_dev_author": "#56626F",
 }
 METHOD_NAME = {
     "sca": "SCA", "area": "AReA", "full": "Full attention", "dype": "DyPE",
     "sega": "SEGA", "sega_official": "SEGA", "ultraimage": "UltraImage",
+    "hrdit": "HRDiT", "hrdit_dev_author": "HRDiT",
 }
+NS = "#828E9A"  # v6: a difference whose interval includes zero (not significant), the neutral grey of SEGA
 
 # pi colormap: global blue -> warm neutral -> local amber, perceptually even
 # in lightness on both sides of 0.5.

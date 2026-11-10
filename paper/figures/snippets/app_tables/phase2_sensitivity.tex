@@ -1,0 +1,42 @@
+% Generated (app_tables/phase2_sensitivity.tex) by paper/figures/src/gen_main_tables.py from results/; do not edit by hand.
+\ifdefined\scaFitTab\else\input{figures/snippets/main_tables/tabstyle.tex}\fi
+\begin{table}[!htbp]
+\caption{\textbf{Reach tables fitted on 4 to 16 prompts change one of 30 differences significantly; a gate at $\sigma_g=0.85$ lowers seven metrics.} Supports the prompt-count check of Section~\ref{sec:generality}. FLUX.1-dev at $4096^2$, the \nabl{} ablation prompts, \sca{} without the schedule throughout. Each row is the variant minus the default (the 32-prompt table, gate $\sigma_g=0.89$). $^{\times}$: $\times100$. \up{Blue} / \dn{orange}: the 95\% paired interval (2000 prompt draws) excludes zero in favour of / against the variant. Key result: tables fitted on 4 to 16 prompts move ImageReward by at most 0.012, and one of their 30 differences is significant.}
+\label{tab:phase2_sensitivity}
+\centering\scriptsize
+\textit{(a) Preference}\par\smallskip
+\scaFitTab{l*{6}{r}}{7}{%
+  \toprule
+  Variant $-$ default & IR & Aesthetic & CLIP & PickScore & HPSv2$^{\times}$ & HPSv2.1$^{\times}$ \\
+  \midrule
+  4-prompt table & $+0.012$ & $+0.01$ & $+0.08$ & ${-}0.01$ & $+0.02$ & ${-}0.02$ \\
+   & {\color{scaCtx}$[{-}0.007, 0.029]$} & {\color{scaCtx}$[{-}0.00, 0.02]$} & {\color{scaCtx}$[{-}0.03, 0.19]$} & {\color{scaCtx}$[{-}0.03, 0.01]$} & {\color{scaCtx}$[{-}0.02, 0.05]$} & {\color{scaCtx}$[{-}0.07, 0.04]$} \\[1pt]
+  8-prompt table & $+0.010$ & $+0.01$ & $+0.05$ & $+0.00$ & $+0.02$ & $+0.01$ \\
+   & {\color{scaCtx}$[{-}0.004, 0.024]$} & {\color{scaCtx}$[{-}0.00, 0.02]$} & {\color{scaCtx}$[{-}0.04, 0.15]$} & {\color{scaCtx}$[{-}0.01, 0.02]$} & {\color{scaCtx}$[{-}0.00, 0.05]$} & {\color{scaCtx}$[{-}0.03, 0.05]$} \\[1pt]
+  16-prompt table & ${-}0.007$ & $+0.00$ & $+0.04$ & $+0.01$ & $+0.00$ & ${-}0.01$ \\
+   & {\color{scaCtx}$[{-}0.020, 0.005]$} & {\color{scaCtx}$[{-}0.01, 0.01]$} & {\color{scaCtx}$[{-}0.04, 0.13]$} & {\color{scaCtx}$[{-}0.01, 0.03]$} & {\color{scaCtx}$[{-}0.02, 0.03]$} & {\color{scaCtx}$[{-}0.05, 0.04]$} \\[1pt]
+  gate $\sigma_g=0.85$ & ${-}0.015$ & \dn{${-}0.19$} & ${-}0.27$ & ${-}0.12$ & \dn{${-}0.48$} & \dn{${-}0.85$} \\
+   & {\color{scaCtx}$[{-}0.098, 0.064]$} & {\color{scaCtx}$[{-}0.26, {-}0.12]$} & {\color{scaCtx}$[{-}0.82, 0.26]$} & {\color{scaCtx}$[{-}0.27, 0.02]$} & {\color{scaCtx}$[{-}0.69, {-}0.28]$} & {\color{scaCtx}$[{-}1.22, {-}0.48]$} \\[1pt]
+  gate $\sigma_g=0.93$ & ${-}0.004$ & $+0.00$ & \dn{${-}0.64$} & \dn{${-}0.22$} & $+0.02$ & ${-}0.15$ \\
+   & {\color{scaCtx}$[{-}0.097, 0.069]$} & {\color{scaCtx}$[{-}0.05, 0.06]$} & {\color{scaCtx}$[{-}1.03, {-}0.29]$} & {\color{scaCtx}$[{-}0.38, {-}0.07]$} & {\color{scaCtx}$[{-}0.16, 0.20]$} & {\color{scaCtx}$[{-}0.56, 0.24]$} \\[1pt]
+  \bottomrule
+}
+\par\medskip
+\textit{(b) Image quality}\par\smallskip
+\scaFitTab{l*{4}{r}}{5}{%
+  \toprule
+  Variant $-$ default & MUSIQ & MUSIQ$_\text{c}$ & CLIP-IQA$^{\times}$ & ARNIQA$^{\times}$ \\
+  \midrule
+  4-prompt table & ${-}0.1$ & $+0.1$ & $+0.2$ & $+0.1$ \\
+   & {\color{scaCtx}$[{-}0.4, 0.3]$} & {\color{scaCtx}$[{-}0.1, 0.3]$} & {\color{scaCtx}$[{-}0.1, 0.4]$} & {\color{scaCtx}$[{-}0.1, 0.3]$} \\[1pt]
+  8-prompt table & ${-}0.1$ & ${-}0.0$ & $+0.2$ & $+0.0$ \\
+   & {\color{scaCtx}$[{-}0.5, 0.2]$} & {\color{scaCtx}$[{-}0.2, 0.1]$} & {\color{scaCtx}$[{-}0.1, 0.4]$} & {\color{scaCtx}$[{-}0.1, 0.2]$} \\[1pt]
+  16-prompt table & \up{$+0.1$} & ${-}0.1$ & ${-}0.1$ & ${-}0.0$ \\
+   & {\color{scaCtx}$[0.0004, 0.3]$} & {\color{scaCtx}$[{-}0.2, 0.0]$} & {\color{scaCtx}$[{-}0.4, 0.1]$} & {\color{scaCtx}$[{-}0.1, 0.1]$} \\[1pt]
+  gate $\sigma_g=0.85$ & \dn{${-}1.9$} & \dn{${-}2.0$} & \dn{${-}3.2$} & \dn{${-}4.0$} \\
+   & {\color{scaCtx}$[{-}3.5, {-}0.2]$} & {\color{scaCtx}$[{-}3.0, {-}1.1]$} & {\color{scaCtx}$[{-}4.8, {-}1.7]$} & {\color{scaCtx}$[{-}5.9, {-}2.3]$} \\[1pt]
+  gate $\sigma_g=0.93$ & $+0.4$ & $+0.6$ & $+0.0$ & \up{$+1.8$} \\
+   & {\color{scaCtx}$[{-}1.0, 2.0]$} & {\color{scaCtx}$[{-}0.4, 1.9]$} & {\color{scaCtx}$[{-}1.2, 1.1]$} & {\color{scaCtx}$[0.7, 3.1]$} \\[1pt]
+  \bottomrule
+}
+\end{table}
