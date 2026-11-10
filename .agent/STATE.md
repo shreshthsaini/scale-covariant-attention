@@ -1,4 +1,4 @@
-# SCA live state, 2026-11-10 00:45 CST (paper owner; HANDOVER.md Sections 31 to 41 are the log)
+# SCA live state, 2026-11-10 04:00 CST (paper owner; HANDOVER.md Sections 31 to 42 are the log)
 
 ## Goal
 Submission-ready SCA paper that sells: measurement-first story (observation, two views, reach emulation, use,
@@ -7,12 +7,14 @@ calibration/calibrate/calibrated, no curated/uncurated, no "random" as selection
 Main text at most 10 pages (now 9).
 
 ## Status and next action
-- Paper v5 delivered (HANDOVER Section 41; hashes in .agent/notes/latest_delivery.md): ICLR 2027 style, 54 pp, main
-  text pages 1 to 9, 0 overfull, 0 undefined, fresh unzip builds to the same pages.
-- Pending results, each behind a switch that stays off until its folder has SHA256SUMS (method owner, HANDOVER 40):
-  results/prog195_ablation/ (\resprogabl) and results/ra195/ (\resra). Recipe in .agent/notes/paper_v5_20261110.md.
-- NEXT: when either folder lands, run the generator named there, set the switch, rebuild with paper/build_delivery.py,
-  check the main text still ends by page 10, update latest_delivery.md, commit, push.
+- Paper v5.1 delivered (HANDOVER Section 42; hashes in .agent/notes/latest_delivery.md, build delivery_5revguaf):
+  55 pp, main text pages 1 to 9, 0 overfull, 0 undefined, fresh unzip builds to the same pages.
+- \resprogabl is ON: Table 2 progressive group, Section 4.2 sentences (\progAblResult), appendix Table L.3
+  (tab:prog_abl_all). Result: shared and per-layer weights lose to per-head weights on 10 of 10 per-image metrics
+  (IR -0.014 and -0.012), window only on 8; patch FID is lower with shared (-7.3 [-10.3, -5.2]) and per-layer
+  (-6.4 [-8.8, -4.8]) and higher with window only (+6.0 [3.9, 9.9]).
+- \resra stays OFF for good: the reach-annealed screen met its kill criterion (HANDOVER 40, results/ra_screen).
+- NEXT: nothing in flight. Before submitting, anonymize the code URL macro.
 
 ## Map
 | file | read it when |
@@ -34,4 +36,4 @@ Main text at most 10 pages (now 9).
 - Web exports use new stems (observation_*, method_v4_*, speed_v5_*); the web owner decides when the page switches.
 
 ## Open questions
-- None blocking the paper. Results of HANDOVER 40 decide whether the two switches turn on.
+- None blocking the paper.

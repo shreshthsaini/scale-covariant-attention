@@ -774,7 +774,7 @@ def prog_ablation_sentence(full):
                      r" (Tables~\ref{tab:ablation} and~\ref{tab:prog_abl_all})." if lower else
                      " Patch FID, a set-level metric, " + joined(bits) +
                      r" (Tables~\ref{tab:ablation} and~\ref{tab:prog_abl_all}).")
-    return sentence
+    return sentence.replace(r") (Tables", "; Tables")  # one bracket, not two in a row
 
 
 def table_ablation_compact(prog_rows=None):

@@ -2097,3 +2097,29 @@ contributions, captions of at most three lines, a leaner Table 1, and redesigned
 - Crux archived: results/ra_screen (frontier_46.csv, split_46.csv, r7_decide_46.txt, sharpness_46.csv,
   handoff_schedule.txt, copyprone21 detector rates, gate decision, timing; SHA256SUMS); hand labels in
   results/dup_audit_20261027/human_labels_r7.csv (packets pRA1 to pRA4) and copyprone21_counts.txt.
+
+## 42. 2026-11-10 early: progressive ablation folded into the paper (v5.1); reach-annealed switch stays off (lead)
+- B landed at 03:14 (results/prog195_ablation, SHA256SUMS). 195 prompts, 4096^2, each variant minus progressive SCA
+  with per-head weights, 2000 prompt draws:
+  - shared pi(sigma) (prog_headmean): loses on 10 of 10 per-image metrics. IR -0.014 [-0.025, -0.004], HPSv2.1 x100
+    -0.38, PickScore -0.07, MUSIQ crop -4.3 [-4.8, -3.8].
+  - per-layer (prog_layermean): loses on 10 of 10. IR -0.012 [-0.021, -0.003], HPSv2.1 -0.39, PickScore -0.07,
+    MUSIQ crop -2.8 [-3.2, -2.4].
+  - window only (prog_win, pi = 1): loses on 8, MUSIQ unresolved, MUSIQ crop +0.5 [0.2, 0.9]. PickScore -0.14.
+  - Detector on the 95 people/animal prompts: 5, 6, 10 flags against 6 (no significant difference; not in the paper).
+  - Clean batch-1: 49.3 to 49.4 s for all four.
+- Set-level intervals (new, CPU bootstrap on the controller, 1000 draws, 168 reference identities, about 10 minutes;
+  results/prog195_ablation/cfid_ci with its own README and SHA256SUMS). Patch FID, variant minus per-head:
+  shared -7.3 [-10.3, -5.2], per-layer -6.4 [-8.8, -4.8], window only +6.0 [3.9, 9.9]. Patch KID agrees in sign and
+  significance. FID and KID are unresolved for all three. So per-head weights win every per-image metric by small
+  margins and lose patch FID to the two coarser rules. The paper says both in the main text.
+- Paper v5.1: \resprogabl ON. Table 2 gains the group "Progressive SCA, against per-head pi_h" (caption clause under
+  the switch), Section 4.2 gains \progAblResult (two generated sentences whose wording follows the intervals),
+  appendix L gains a paragraph and Table L.3 (tab:prog_abl_all, 14 metrics with intervals). gen_main_tables.py writes
+  all of it (prog_ablation_full, table_prog_abl_all, prog_ablation_sentence; \progAblSeconds from latency.csv).
+- Delivery: /scratch/09032/saini_2/sca/paper_builds/delivery_5revguaf, 55 pp, main text pages 1 to 9, 0 overfull,
+  0 undefined, fresh unzip builds to the same 55 pages. PDF SHA256 8af9545fcace9877, ZIP 260d4287aba5968f (full hashes in
+  .agent/notes/latest_delivery.md).
+- A (reach-annealed hand-off): kill criterion met (Section 40), so results/ra195 will not exist and \resra stays off.
+  ra_p19 and ra_p22 stay staged in taskq/hold_ra, not released. Progressive SCA remains the headline.
+- Before submitting: anonymize the code URL macro (unchanged open item).

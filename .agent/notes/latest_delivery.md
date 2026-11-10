@@ -1,24 +1,18 @@
-# Latest verified paper delivery, 2026-11-10 00:42 CST (v5: measurement-first rewrite, ICLR 2027 style)
+# Latest verified paper delivery, 2026-11-10 04:00 CST (v5.1: v5 plus the progressive-schedule ablation)
 
-- [Paper PDF](../../paper/main.pdf), 54 pages: main text pages 1 to 9 (Section 6 ends on page 9, about 40% of the
-  page used), reproducibility statement and references from page 10, appendix after. SHA256
-  e17bc42e8d26b2daeebfc0d42a486cb9d6065e08b94eaa93173ea20b5d4ea690.
-- [Overleaf source ZIP](../../paper/sca_overleaf.zip), 427 source files (main.tex, appendix.tex, iclr2027 style files,
-  and only the snippets and figures the build reads), SHA256
-  ef4f0f5305fc334c0b2ec157c92afe7926c0e45745b1bee13b769c24bf7901d3.
+- [Paper PDF](../../paper/main.pdf), 55 pages: main text pages 1 to 9, reproducibility statement and references from
+  page 10, appendix after. SHA256 8af9545fcace987727fc2c0a78aa07d6f7dc1396c83bca1d9b7c907a14c35a90.
+- [Overleaf source ZIP](../../paper/sca_overleaf.zip), 429 source files, SHA256
+  260d4287aba5968ffd3c1ecef806476b818b250bbb6f03aa1bc338ca6111ac9e.
 - [Build receipt](../../paper/delivery_receipt.json); build and fresh-unzip check in
-  `/scratch/09032/saini_2/sca/paper_builds/delivery_gy4l47kq/`.
+  `/scratch/09032/saini_2/sca/paper_builds/delivery_5revguaf/`.
 
-Both builds: zero overfull boxes, zero undefined references, and the fresh unzip builds on its own to the same 54 pages.
+Both builds: zero overfull boxes, zero undefined references, and the fresh unzip builds on its own to the same 55 pages.
 PDF text has no calib*, curat*, "drawn at random", "random draw", "random quer*", "fixed random", em dash, section
-symbol or "??"; no file name in the ZIP contains calib or curat. Abstract: 150 words (counted from the PDF).
+symbol or "??"; no file name in the ZIP contains calib or curat.
 
-What changed (HANDOVER Section 41; details in .agent/notes/paper_v5_20261110.md): the story now runs observation ->
-two native-size views with one number per head -> reach emulation -> use -> evidence. New Figure 3 (observation:
-two heads' attention beside the 1,368-head by noise-level matrix of near share, with the head-average strip and the
-97.5% / 2.5% split), new three-panel Figure 4 (method, pi* = clip(B/A, 0, 1) at its centre), cleaner Figure 2 (speed:
-arrows only from AReA and HRDiT). Lean Table 1 (time, IR, HPS, Pick, M_c, FID_p; bold best per group) and ablation
-(reach weights, then views). Switches \resprogabl and \resra wired to results/prog195_ablation/ and results/ra195/,
-off; tested on with fake snippets (0 overfull, main text still on 9 pages).
+What changed against v5 (HANDOVER Section 42): switch \resprogabl on. Table 2 has the progressive group (shared,
+per-layer, window only against per-head weights, 195 prompts), Section 4.2 two generated sentences, appendix Table L.3
+all 14 metrics with intervals (set-level ones from results/prog195_ablation/cfid_ci). Switch \resra stays off.
 
-Previous deliveries: `delivery_gvyduue4` (v4, HANDOVER Section 37, 55 pp, main text 1 to 10) and `delivery_yio2nt1w`.
+Previous deliveries: `delivery_gy4l47kq` (v5, HANDOVER Section 41, 54 pp), `delivery_gvyduue4` (v4, Section 37).
