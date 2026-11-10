@@ -1867,3 +1867,28 @@ paper/figures/snippets/showcase_qwen.tex with AReA (switch \resqwen stays off; t
   (screenshots in /scratch/09032/saini_2/sca/web_assets/check_area_qwen, log logs/area_qwen_finish.log). Nothing is
   committed or published: review results/qwen_5312_vs_area, the screenshots and the diff, commit web/,
   paper/figures and results/qwen_5312_vs_area, then the lead publishes. Done marker: out/showcase/_done/000q_z_eval.sh.
+
+## 39. 2026-11-09 night: tuning SCA on Qwen-Image against AReA (Qwen-tune owner; log .agent/notes/qwen_tune_20261109.md)
+Goal (user, via lead): optimize SCA on Qwen-Image, whose settings were carried over from FLUX, then compare the chosen
+configuration with AReA on the 15 TEST prompts at 5312^2; review page web/review_qwen/index.html (not published).
+- Starting point (results/qwen_5312_vs_area): SCA 40 steps vs AReA PickScore -0.26 [-0.46, -0.08], HPSv2.1 -0.016,
+  HPSv2 -0.004 (significant), MUSIQ_c +5.7, CLIP-IQA +0.026; 604 s vs 690 s. HPSv2.1 lower on 13 of 15 prompts.
+- Harness differences found (not the attention operator): AReA's Qwen backbone shifts the schedule with mu 2.0 up to
+  4096^2 and 2.0 + 0.5 ln(tokens / 256^2) above (2.26 at 5312^2), the SD3 resolution rule; SCA ran Qwen's native mu
+  0.834 at every size (11 of 40 steps above sigma 0.858 against AReA's 23). AReA also appends QWEN_SUFFIX and uses the
+  empty negative prompt. Visual: SCA's 5312^2 images are busier and more zoomed in than AReA's.
+- Anti-overfitting protocol: the 15 TEST prompts are never used for choices. TUNE = 12 other showcase prompts by a
+  fixed rule (prompts/qwen_tune12.jsonl: p04-p06, l04-l06, h04-h06, a04-a05, d04). Selection rule fixed before any
+  result: mean d_z (paired mean / SD) over PickScore, HPSv2.1, ImageReward against AReA at the same size on TUNE.
+- Code (a7034a3, frozen code/a7034a3; all new behaviour default-off, 7 new CPU tests, the Qwen/AReA/progressive suites
+  pass): sca/qwen.py mu_mode "resolution" (native mu + 0.5 ln(seq / native seq): 1.96 at 4096^2, 2.22 at 5312^2);
+  sample_qwen.py --mu-mode resolution, --prompt-suffix area (QWEN_SUFFIX read from the vendored generate.py; sidecar
+  prompt stays the benchmark prompt); scripts/sample_progressive_qwen.py (sample_progressive.py's HRDiT design on Qwen:
+  1328^2 stock attention, SCA at 2656^2 and 5312^2, true CFG per stage, Qwen VAE round trip; the native stage is
+  bit-identical to QwenImagePipeline); scripts/qwen_tune_eval.py (66dd2fa; qwen_area_eval.py's metric path, paired
+  bootstrap, timing flags, screen.csv); slurm/qwen_tune_tasks.py (spool tasks 000r_*).
+- Screens queued 22:05-22:15 (outputs out/qwen_tune/<label>/<HxW>): references AReA 4096^2 and 5312^2 on TUNE
+  (qt_area, code/5e945ef); single-pass at 4096^2 qt_sca40 (untuned), qt_mu, qt_sfx, qt_mu_sfx; progressive at 5312^2
+  qt_prog, qt_prog_sfx (30 native steps, 20 at 2656^2 from sigma 0.81, 13 at 5312^2 from sigma 0.62). Full attention
+  for the 12 TEST prompts without it at 5312^2 (000r_h_qfull5312_*, exactly the 00s9_qfull5312 tree and flags, so
+  those skip them), for the review grids.
