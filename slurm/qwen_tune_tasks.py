@@ -16,6 +16,7 @@ Groups (each writes spool tasks; outputs /scratch/09032/saini_2/sca/out/qwen_tun
   area5312   AReA at 5312^2 on TUNE, the reference of the progressive screens (their stage factors are exact there)
   sp4096     single-pass SCA screens at 4096^2 (SP below; 40 steps, the untuned thresholds, which are noise levels)
   prog5312   progressive SCA screens at 5312^2 (PROG below; scripts/sample_progressive_qwen.py)
+  sp5312     a single-pass screen at 5312^2 (the protocol's tie check; then eval5312 --labels ... --tag _sp)
 Configurations (labels are the sidecar methods and output folders):
   qt_sca40     untuned: native mu 0.834, negative " ", no suffix (the TEST comparison's qwen_sca40)
   qt_mu        + resolution time shift (--mu-mode resolution: mu 1.96 at 4096^2, 2.22 at 5312^2; AReA uses 2.0 / 2.26)
@@ -126,6 +127,18 @@ def sp4096(dry, labels=None):
                     f"--out {OUT_TUNE}/{label}/4096x4096", dry, need=55)
 
 
+def sp5312(dry, labels):
+    """The protocol's tie case: when the best single-pass and the best progressive configuration are within 0.10 mean
+    d_z, the single-pass one also runs at 5312^2 on TUNE (against qt_area at 5312^2), three prompts per task."""
+    for label in labels:
+        for a, b in chunks(12, 3):
+            aq.task(f"000r_d_{label[3:]}5312_{a:02d}_{b:02d}.sh", 45, f"TUNE screen: single-pass SCA {label} at "
+                    f"5312^2 (tie check), prompts {a + 1}-{b}", NEW_CODE,
+                    f"{PY} scripts/sample_qwen.py {SP[label]} --pi-table {st.QWEN_TABLE} {BRIDGE['5312x5312']} "
+                    f"--label {label} --res 5312x5312 --prompts {TUNE} --start {a} --end {b} "
+                    f"--out {OUT_TUNE}/{label}/5312x5312", dry, need=60)
+
+
 def prog5312(dry, labels=None):
     for label, flags in PROG.items():
         if labels and label not in labels:
@@ -212,7 +225,7 @@ def eval_test(dry, labels, code):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("groups", nargs="+", choices=("prompts", "area4096", "base4096", "area5312", "sp4096", "prog5312",
-                                                  "full5312", "eval4096", "eval5312", "test", "evaltest"))
+                                                  "sp5312", "full5312", "eval4096", "eval5312", "test", "evaltest"))
     ap.add_argument("--labels", nargs="*", help="Configuration labels (sp4096, prog5312, eval*, test)")
     ap.add_argument("--code", help="Frozen tree for eval*, test (default NEW_CODE)")
     ap.add_argument("--tag", default="", help="Suffix of the evaluation task name (a re-run after more images)")
@@ -223,6 +236,8 @@ def main():
     for g in a.groups:
         if g in ("sp4096", "prog5312"):
             {"sp4096": sp4096, "prog5312": prog5312}[g](a.dry, a.labels)
+        elif g == "sp5312":
+            sp5312(a.dry, a.labels)
         elif g == "eval4096":
             eval_tune(a.dry, "4096x4096", a.labels or ["qt_sca40", *SP], code, a.tag)
         elif g == "eval5312":
