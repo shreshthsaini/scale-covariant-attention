@@ -2074,3 +2074,23 @@ contributions, captions of at most three lines, a leaner Table 1, and redesigned
     steps alone cost adherence and crop detail.
   - ra_t40 (no opening): FAIL, IR -0.48, PickScore -1.01, MUSIQ crop -14.3, every win over AReA lost, 8 flags.
   - Gate: eval/ra_gate195/DECIDED = NONE (every candidate has core losses and > 6 copyprone21 flags). No 195 run.
+- 01:37 ra_t50 on the 46: relaxed bar FAIL with the largest losses of the screen: IR -0.50, PickScore -1.53, HPSv2.1
+  -0.062, MUSIQ crop -19.8 (vs progressive SCA -13.7), patch FID +22.6 [+10.3, +27.3], every win over AReA lost; 1 flag;
+  77.0 s. So the only variant at or below 8 of 21 (ra_t50, 3) has core losses: the kill criterion is met. Screen stopped;
+  no further variant runs without the lead (ra_p19 / ra_p22 stay staged).
+- B status 01:37: clean batch-1 (results/prog195_ablation/latency.csv, one GH200, 3 timed prompts): sca_v2_prog 49.29 s,
+  prog_headmean 49.44, prog_layermean 49.33, prog_win 49.43. Generation 000b_g* running on the fleets (about 02:15),
+  then 000b_0a0_eval_prog195_ablation self-releases (about 1 GPU-h) into results/prog195_ablation with SHA256SUMS.
+  Readout: python3 -I scripts/prog_ablation_summary.py; set-level intervals need the CPU bootstrap afterwards
+  (as results/prog195_vs_baselines/cfid).
+
+### State at 01:40 (method owner hand-back; controller i614-062 ends about 02:45)
+- A: done. copyprone21 by hand (yes of 21, borderline): ra_t50 3 (2), ra_m 13 (0), ra_fixed 14 (3), ra_t40 15 (3),
+  ra_t60 not labeled (pixel mosaic; detector 0); sca_v2 19, AReA 4. All four 46-prompt runs fail the relaxed bar on
+  core losses; the 195 gate decided NONE (eval/ra_gate195). The measured single-tau rule is degenerate (above).
+- Reading: copies follow the native-window phase (none at any step: 3 of 21; native from step 13 or 14: 13 to 15), but
+  the pooled r = 2 view itself costs adherence and crop detail even over 6 steps (ra_fixed IR -0.11, PickScore -0.32,
+  MUSIQ crop -4.4), and over the whole trajectory it leaves a 2 x 2 lattice texture.
+- In flight: B (above). Parked: taskq/hold_ra (gate template, ra_t60's 46, ra_t50's 195, next_ra_p19, next_ra_p22),
+  taskq/hold_ra195/{ra_fixed,ra_m,ra_t40} (staged 195 runs, not needed). Nothing of the method owner runs on the
+  controller.
