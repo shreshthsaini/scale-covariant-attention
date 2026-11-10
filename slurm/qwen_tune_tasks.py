@@ -152,6 +152,8 @@ def prog5312(dry, labels=None):
             continue
         for a, b in chunks(12, 4):
             pre = "000r_0" if (label, a) == ("qt_prog", 0) else "000r_c"   # first GPU run of the new sampler goes first
+            if label in ROUND2:
+                pre = "000r_gz"        # round 2 sorts after the TEST run and its evaluation (000r_f, 000r_g)
             aq.task(f"{pre}_{label[3:]}5312_{a:02d}_{b:02d}.sh", 40, f"TUNE screen: progressive SCA {label} at "
                     f"5312^2, prompts {a + 1}-{b}", NEW_CODE,
                     f"{PY} scripts/sample_progressive_qwen.py {flags} --label {label} --prompts {TUNE} --start {a} "
@@ -179,10 +181,14 @@ EVAL = f"{S}/eval"
 FINISH = f"bash {st.P}/slurm/qwen_review_finish.sh {{name}}\n"
 
 
+ROUND2 = ("qt_prog_deep_sfx",)
+
+
 def eval_tune(dry, res, labels, code, tag=""):
     """Screen evaluation at one size: every label that has a folder there, against AReA (qt_area)."""
     meth = " ".join(f"--method {lab}={OUT_TUNE}/{lab}/{res}" for lab in ["qt_area"] + list(labels))
-    aq.task(f"000r_e_eval_tune{res[:4]}{tag}.sh", 100, f"TUNE screen evaluation at {res} (scripts/qwen_tune_eval.py); "
+    name = f"000r_gz_zeval_tune{res[:4]}{tag}.sh" if set(labels) & set(ROUND2) else f"000r_e_eval_tune{res[:4]}{tag}.sh"
+    aq.task(name, 100, f"TUNE screen evaluation at {res} (scripts/qwen_tune_eval.py); "
             "named to be claimed after every screen task, it scores images as they land until all 12 per method exist",
             code, f"{PY} scripts/qwen_tune_eval.py --prompts {TUNE} --res {res} --reference qt_area {meth} "
             f"--eval {EVAL}/qwen_tune{res[:4]} --results {st.P}/results/qwen_tune/{res[:4]} --expect 12 "

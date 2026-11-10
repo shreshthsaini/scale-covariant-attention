@@ -1,0 +1,543 @@
+{
+ "prompts": [
+  "sc_p04_green_perfume",
+  "sc_p05_leather_sneakers",
+  "sc_p06_headphones",
+  "sc_l04_hillside_town",
+  "sc_l05_palm_house",
+  "sc_l06_atoll",
+  "sc_h04_blacksmith",
+  "sc_h05_textile_artist",
+  "sc_h06_mountaineer",
+  "sc_a04_zebras",
+  "sc_a05_lion_rain",
+  "sc_d04_flower_market"
+ ],
+ "res": "5312x5312",
+ "reference": "qt_area",
+ "images": {
+  "qt_area": [
+   "sc_a04_zebras",
+   "sc_a05_lion_rain",
+   "sc_d04_flower_market",
+   "sc_h04_blacksmith",
+   "sc_h05_textile_artist",
+   "sc_h06_mountaineer",
+   "sc_l04_hillside_town",
+   "sc_l05_palm_house",
+   "sc_l06_atoll",
+   "sc_p04_green_perfume",
+   "sc_p05_leather_sneakers",
+   "sc_p06_headphones"
+  ],
+  "qt_prog": [
+   "sc_a04_zebras",
+   "sc_a05_lion_rain",
+   "sc_d04_flower_market",
+   "sc_h04_blacksmith",
+   "sc_h05_textile_artist",
+   "sc_h06_mountaineer",
+   "sc_l04_hillside_town",
+   "sc_l05_palm_house",
+   "sc_l06_atoll",
+   "sc_p04_green_perfume",
+   "sc_p05_leather_sneakers",
+   "sc_p06_headphones"
+  ],
+  "qt_prog_sfx": [
+   "sc_a04_zebras",
+   "sc_a05_lion_rain",
+   "sc_d04_flower_market",
+   "sc_h04_blacksmith",
+   "sc_h05_textile_artist",
+   "sc_h06_mountaineer",
+   "sc_l04_hillside_town",
+   "sc_l05_palm_house",
+   "sc_l06_atoll",
+   "sc_p04_green_perfume",
+   "sc_p05_leather_sneakers",
+   "sc_p06_headphones"
+  ],
+  "qt_prog_late": [
+   "sc_a04_zebras",
+   "sc_a05_lion_rain",
+   "sc_d04_flower_market",
+   "sc_h04_blacksmith",
+   "sc_h05_textile_artist",
+   "sc_h06_mountaineer",
+   "sc_l04_hillside_town",
+   "sc_l05_palm_house",
+   "sc_l06_atoll",
+   "sc_p04_green_perfume",
+   "sc_p05_leather_sneakers",
+   "sc_p06_headphones"
+  ],
+  "qt_prog_late_sfx": [
+   "sc_a04_zebras",
+   "sc_a05_lion_rain",
+   "sc_d04_flower_market",
+   "sc_h04_blacksmith",
+   "sc_h05_textile_artist",
+   "sc_h06_mountaineer",
+   "sc_l04_hillside_town",
+   "sc_l05_palm_house",
+   "sc_l06_atoll",
+   "sc_p04_green_perfume",
+   "sc_p05_leather_sneakers",
+   "sc_p06_headphones"
+  ]
+ },
+ "configs": {
+  "qt_area": {
+   "method": "qt_area",
+   "steps": 40,
+   "true_cfg_scale": 4.0,
+   "negative_prompt": "",
+   "mu_mode": null,
+   "mu": null,
+   "prompt_suffix": ", Ultra HD, 4K, cinematic composition, faithful to the described content, quantities, style and medium, coherent fine detail, consistent scale, proportion and perspective, believable light and shadow, smooth tonal gradations.",
+   "progressive": null,
+   "sca": null,
+   "area": {
+    "repo": "https://github.com/KooroshRH/AReA",
+    "commit": "3efb7e57effa2f0c0ac0bc78d80d53455bd34cc7",
+    "pooling": "subsample",
+    "switch_sigma": 0.87,
+    "halo": 8,
+    "bridge_ratio": 0.5,
+    "seed": 0,
+    "generate_py_defaults": {
+     "steps": 40,
+     "guidance": 4.0,
+     "guidance_arg": "true_cfg_scale",
+     "negative_prompt": "",
+     "vae_tiling": "always",
+     "checkpoint": "Qwen/Qwen-Image"
+    }
+   },
+   "mu_rule": "AReA Qwen backbone: 2.0 + max(0, 0.5 ln(tokens / 256^2))",
+   "implementation_sha256": "4cbf0ba53ad030d25893568210a251a5cab3214a56af820bc555ea2e145cf099",
+   "attention": "area_official (AReA qwen backbone; diffusers dispatch_attention_fn, default backend)",
+   "folder": "/scratch/09032/saini_2/sca/out/qwen_tune/qt_area/5312x5312"
+  },
+  "qt_prog": {
+   "method": "qt_prog",
+   "steps": 63,
+   "true_cfg_scale": [
+    4.0,
+    4.0,
+    4.0
+   ],
+   "negative_prompt": " ",
+   "mu_mode": "native",
+   "mu": null,
+   "prompt_suffix": null,
+   "progressive": {
+    "stages": [
+     "1328x1328",
+     "2656x2656",
+     "5312x5312"
+    ],
+    "base_steps": 30,
+    "highres_steps": [
+     20,
+     13
+    ],
+    "structure_guidance": "fft",
+    "upsampling_choice": "latent",
+    "flow_choice": "v_theta",
+    "alphas": [
+     1.0,
+     0.25
+    ],
+    "betas": [
+     0.5,
+     0.5
+    ],
+    "filter_ratio": [
+     0.2,
+     0.2
+    ],
+    "butterworth_order": 4,
+    "sharpen_kernel": 3,
+    "sharpen_sigma": [
+     0.1,
+     2.0
+    ],
+    "sharpen_alpha": 1.0,
+    "stage_upsampler": "vae_decode, bicubic pixel upsample, gaussian-blur unsharp mask, vae_encode mode",
+    "renoise": "sigma*noise + (1-sigma)*x at the stage start sigma, noise from the per-prompt generator",
+    "true_cfg": [
+     4.0,
+     4.0,
+     4.0
+    ],
+    "structure_guidance_space": "Qwen-Image VAE latents (16 channels), unpacked per stage",
+    "schedule": "Qwen-Image scheduler at the native stage's sequence (mu native), later stages run its tail"
+   },
+   "sca": {
+    "stages": [
+     {
+      "res": "2656x2656",
+      "n0": 83,
+      "tile": 8,
+      "window": 83,
+      "pool": "center",
+      "chunk": null,
+      "gate_sigma": 0.85799,
+      "pool_factors": [
+       2,
+       2
+      ],
+      "pi_variant": "head",
+      "pi_const": null,
+      "pi_scale": 2,
+      "bridge_cells": 2,
+      "bridge_k": 256
+     },
+     {
+      "res": "5312x5312",
+      "n0": 83,
+      "tile": 8,
+      "window": 83,
+      "pool": "center",
+      "chunk": null,
+      "gate_sigma": 0.85799,
+      "pool_factors": [
+       4,
+       4
+      ],
+      "pi_variant": "head",
+      "pi_const": null,
+      "pi_scale": 4,
+      "bridge_cells": 4,
+      "bridge_k": 64
+     }
+    ],
+    "pi_table_sha256": "3d0bf38435b0df69b9c9d9dadf9f44d69020bc4e561613c86a9ad59daa3e5643",
+    "native_attention": "stock",
+    "bridge_tokens": 1024
+   },
+   "area": null,
+   "mu_rule": null,
+   "implementation_sha256": "13c66d47bdb453af3a9582986cfc752a1b881c0840403b8419802434251cdf06",
+   "attention": "stock@native+sca@highres",
+   "folder": "/scratch/09032/saini_2/sca/out/qwen_tune/qt_prog/5312x5312"
+  },
+  "qt_prog_late": {
+   "method": "qt_prog_late",
+   "steps": 57,
+   "true_cfg_scale": [
+    4.0,
+    4.0,
+    4.0
+   ],
+   "negative_prompt": " ",
+   "mu_mode": "native",
+   "mu": null,
+   "prompt_suffix": null,
+   "progressive": {
+    "stages": [
+     "1328x1328",
+     "2656x2656",
+     "5312x5312"
+    ],
+    "base_steps": 30,
+    "highres_steps": [
+     17,
+     10
+    ],
+    "structure_guidance": "fft",
+    "upsampling_choice": "latent",
+    "flow_choice": "v_theta",
+    "alphas": [
+     1.0,
+     0.25
+    ],
+    "betas": [
+     0.5,
+     0.5
+    ],
+    "filter_ratio": [
+     0.2,
+     0.2
+    ],
+    "butterworth_order": 4,
+    "sharpen_kernel": 3,
+    "sharpen_sigma": [
+     0.1,
+     2.0
+    ],
+    "sharpen_alpha": 1.0,
+    "stage_upsampler": "vae_decode, bicubic pixel upsample, gaussian-blur unsharp mask, vae_encode mode",
+    "renoise": "sigma*noise + (1-sigma)*x at the stage start sigma, noise from the per-prompt generator",
+    "true_cfg": [
+     4.0,
+     4.0,
+     4.0
+    ],
+    "structure_guidance_space": "Qwen-Image VAE latents (16 channels), unpacked per stage",
+    "schedule": "Qwen-Image scheduler at the native stage's sequence (mu native), later stages run its tail"
+   },
+   "sca": {
+    "stages": [
+     {
+      "res": "2656x2656",
+      "n0": 83,
+      "tile": 8,
+      "window": 83,
+      "pool": "center",
+      "chunk": null,
+      "gate_sigma": 0.85799,
+      "pool_factors": [
+       2,
+       2
+      ],
+      "pi_variant": "head",
+      "pi_const": null,
+      "pi_scale": 2,
+      "bridge_cells": 2,
+      "bridge_k": 256
+     },
+     {
+      "res": "5312x5312",
+      "n0": 83,
+      "tile": 8,
+      "window": 83,
+      "pool": "center",
+      "chunk": null,
+      "gate_sigma": 0.85799,
+      "pool_factors": [
+       4,
+       4
+      ],
+      "pi_variant": "head",
+      "pi_const": null,
+      "pi_scale": 4,
+      "bridge_cells": 4,
+      "bridge_k": 64
+     }
+    ],
+    "pi_table_sha256": "3d0bf38435b0df69b9c9d9dadf9f44d69020bc4e561613c86a9ad59daa3e5643",
+    "native_attention": "stock",
+    "bridge_tokens": 1024
+   },
+   "area": null,
+   "mu_rule": null,
+   "implementation_sha256": "13c66d47bdb453af3a9582986cfc752a1b881c0840403b8419802434251cdf06",
+   "attention": "stock@native+sca@highres",
+   "folder": "/scratch/09032/saini_2/sca/out/qwen_tune/qt_prog_late/5312x5312"
+  },
+  "qt_prog_late_sfx": {
+   "method": "qt_prog_late_sfx",
+   "steps": 57,
+   "true_cfg_scale": [
+    4.0,
+    4.0,
+    4.0
+   ],
+   "negative_prompt": "",
+   "mu_mode": "native",
+   "mu": null,
+   "prompt_suffix": "area",
+   "progressive": {
+    "stages": [
+     "1328x1328",
+     "2656x2656",
+     "5312x5312"
+    ],
+    "base_steps": 30,
+    "highres_steps": [
+     17,
+     10
+    ],
+    "structure_guidance": "fft",
+    "upsampling_choice": "latent",
+    "flow_choice": "v_theta",
+    "alphas": [
+     1.0,
+     0.25
+    ],
+    "betas": [
+     0.5,
+     0.5
+    ],
+    "filter_ratio": [
+     0.2,
+     0.2
+    ],
+    "butterworth_order": 4,
+    "sharpen_kernel": 3,
+    "sharpen_sigma": [
+     0.1,
+     2.0
+    ],
+    "sharpen_alpha": 1.0,
+    "stage_upsampler": "vae_decode, bicubic pixel upsample, gaussian-blur unsharp mask, vae_encode mode",
+    "renoise": "sigma*noise + (1-sigma)*x at the stage start sigma, noise from the per-prompt generator",
+    "true_cfg": [
+     4.0,
+     4.0,
+     4.0
+    ],
+    "structure_guidance_space": "Qwen-Image VAE latents (16 channels), unpacked per stage",
+    "schedule": "Qwen-Image scheduler at the native stage's sequence (mu native), later stages run its tail"
+   },
+   "sca": {
+    "stages": [
+     {
+      "res": "2656x2656",
+      "n0": 83,
+      "tile": 8,
+      "window": 83,
+      "pool": "center",
+      "chunk": null,
+      "gate_sigma": 0.85799,
+      "pool_factors": [
+       2,
+       2
+      ],
+      "pi_variant": "head",
+      "pi_const": null,
+      "pi_scale": 2,
+      "bridge_cells": 2,
+      "bridge_k": 256
+     },
+     {
+      "res": "5312x5312",
+      "n0": 83,
+      "tile": 8,
+      "window": 83,
+      "pool": "center",
+      "chunk": null,
+      "gate_sigma": 0.85799,
+      "pool_factors": [
+       4,
+       4
+      ],
+      "pi_variant": "head",
+      "pi_const": null,
+      "pi_scale": 4,
+      "bridge_cells": 4,
+      "bridge_k": 64
+     }
+    ],
+    "pi_table_sha256": "3d0bf38435b0df69b9c9d9dadf9f44d69020bc4e561613c86a9ad59daa3e5643",
+    "native_attention": "stock",
+    "bridge_tokens": 1024
+   },
+   "area": null,
+   "mu_rule": null,
+   "implementation_sha256": "13c66d47bdb453af3a9582986cfc752a1b881c0840403b8419802434251cdf06",
+   "attention": "stock@native+sca@highres",
+   "folder": "/scratch/09032/saini_2/sca/out/qwen_tune/qt_prog_late_sfx/5312x5312"
+  },
+  "qt_prog_sfx": {
+   "method": "qt_prog_sfx",
+   "steps": 63,
+   "true_cfg_scale": [
+    4.0,
+    4.0,
+    4.0
+   ],
+   "negative_prompt": "",
+   "mu_mode": "native",
+   "mu": null,
+   "prompt_suffix": "area",
+   "progressive": {
+    "stages": [
+     "1328x1328",
+     "2656x2656",
+     "5312x5312"
+    ],
+    "base_steps": 30,
+    "highres_steps": [
+     20,
+     13
+    ],
+    "structure_guidance": "fft",
+    "upsampling_choice": "latent",
+    "flow_choice": "v_theta",
+    "alphas": [
+     1.0,
+     0.25
+    ],
+    "betas": [
+     0.5,
+     0.5
+    ],
+    "filter_ratio": [
+     0.2,
+     0.2
+    ],
+    "butterworth_order": 4,
+    "sharpen_kernel": 3,
+    "sharpen_sigma": [
+     0.1,
+     2.0
+    ],
+    "sharpen_alpha": 1.0,
+    "stage_upsampler": "vae_decode, bicubic pixel upsample, gaussian-blur unsharp mask, vae_encode mode",
+    "renoise": "sigma*noise + (1-sigma)*x at the stage start sigma, noise from the per-prompt generator",
+    "true_cfg": [
+     4.0,
+     4.0,
+     4.0
+    ],
+    "structure_guidance_space": "Qwen-Image VAE latents (16 channels), unpacked per stage",
+    "schedule": "Qwen-Image scheduler at the native stage's sequence (mu native), later stages run its tail"
+   },
+   "sca": {
+    "stages": [
+     {
+      "res": "2656x2656",
+      "n0": 83,
+      "tile": 8,
+      "window": 83,
+      "pool": "center",
+      "chunk": null,
+      "gate_sigma": 0.85799,
+      "pool_factors": [
+       2,
+       2
+      ],
+      "pi_variant": "head",
+      "pi_const": null,
+      "pi_scale": 2,
+      "bridge_cells": 2,
+      "bridge_k": 256
+     },
+     {
+      "res": "5312x5312",
+      "n0": 83,
+      "tile": 8,
+      "window": 83,
+      "pool": "center",
+      "chunk": null,
+      "gate_sigma": 0.85799,
+      "pool_factors": [
+       4,
+       4
+      ],
+      "pi_variant": "head",
+      "pi_const": null,
+      "pi_scale": 4,
+      "bridge_cells": 4,
+      "bridge_k": 64
+     }
+    ],
+    "pi_table_sha256": "3d0bf38435b0df69b9c9d9dadf9f44d69020bc4e561613c86a9ad59daa3e5643",
+    "native_attention": "stock",
+    "bridge_tokens": 1024
+   },
+   "area": null,
+   "mu_rule": null,
+   "implementation_sha256": "13c66d47bdb453af3a9582986cfc752a1b881c0840403b8419802434251cdf06",
+   "attention": "stock@native+sca@highres",
+   "folder": "/scratch/09032/saini_2/sca/out/qwen_tune/qt_prog_sfx/5312x5312"
+  }
+ },
+ "screen_rule": "mean d_z over PickScore, HPSv2.1, ImageReward vs the reference; ties within 0.10 to the faster",
+ "metrics": "as results/qwen_5312_vs_area (scripts/qwen_area_eval.py)",
+ "bootstrap": "scripts/paired_bootstrap.py, prompts resampled, 2000 draws, seed 0, 95% percentile CI"
+}

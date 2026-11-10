@@ -65,9 +65,9 @@ def ci_cell(row, d=3):
     if not row:
         return "pending"
     lo, hi = float(row["ci_low"]), float(row["ci_high"])
-    sig = lo > 0 or hi < 0
-    txt = f"{float(row['delta']):+.{d}f} [{lo:+.{d}f}, {hi:+.{d}f}]"
-    return f"<b>{txt}</b>" if sig else txt
+    sig = "pos" if lo > 0 else "neg" if hi < 0 else ""
+    v = f"{float(row['delta']):+.{d}f}"
+    return (f'<b class="{sig}">{v}</b>' if sig else v) + f'<span class="ci">[{lo:+.{d}f}, {hi:+.{d}f}]</span>'
 
 
 def tune_ids():
@@ -123,8 +123,23 @@ def grid_assets(job):
 
 # ----------------------------------------------------------------------------- tables
 
+def guard(pr, base):
+    """The selection rule's guard rail: MUSIQ crops and CLIP-IQA (paired deltas against AReA) no lower than untuned
+    SCA's (qt_sca40 at 4096^2 on TUNE) by more than the configuration's own 95% half-width."""
+    if not pr or not base:
+        return "pending"
+    fails = []
+    for k, name in (("musiq_crop1024", "MUSIQ crops"), ("clipiqa", "CLIP-IQA")):
+        if k in pr and k in base:
+            d = float(pr[k]["delta"]) - float(base[k]["delta"])
+            if d < -(float(pr[k]["ci_high"]) - float(pr[k]["ci_low"])) / 2:
+                fails.append(name)
+    return "fails: " + ", ".join(fails) if fails else "passes"
+
+
 def screen_table(tuned):
     out = []
+    base = paired(P / "results" / "qwen_tune" / "4096", "qt_sca40", "qt_area")
     for res, fam in (("4096", "Single pass, 4096²"), ("5312", "Progressive, 5312²")):
         R = P / "results" / "qwen_tune" / res
         sc = rows(R / "screen.csv")
@@ -135,7 +150,7 @@ def screen_table(tuned):
                         "ir": ci_cell(pr.get("ir")), "dz": f(r["mean_dz"], 2, True),
                         "musiq": f(r["musiq_crop1024_delta"], 1, True), "clipiqa": f(r["clipiqa_delta"], 3, True),
                         "sec": f(r["median_seconds"], 0), "area_sec": f(r["reference_median_seconds"], 0),
-                        "chosen": r["method"] == tuned})
+                        "guard": guard(pr, base), "chosen": r["method"] == tuned})
     return out
 
 
@@ -182,12 +197,15 @@ def timing_table(tuned, also=()):
 
 def auto_summary(tuned, tuned_name):
     """Lead paragraph from the result files (so the page's numbers come from the archived CSVs)."""
-    n_cfg = sum(len(rows(P / "results" / "qwen_tune" / r / "screen.csv")) for r in ("4096", "5312"))
+    T = P / "results" / "qwen_tune"
+    sc = [(res, r) for res in ("4096", "5312") for r in rows(T / res / "screen.csv")]
+    base = paired(T / "4096", "qt_sca40", "qt_area")
+    dz = {r["method"]: float(r["mean_dz"]) for _, r in sc if r["mean_dz"] not in ("", None)}
+    above = [r["method"] for res, r in sc if r["method"] in dz and tuned in dz and dz[r["method"]] > dz[tuned]
+             and guard(paired(T / res, r["method"], "qt_area"), base).startswith("fails")]
     R = P / "results" / "qwen_5312_tuned"
-    pt, pu = paired(R, tuned, "qwen_area"), paired(R, "qwen_sca40", "qwen_area")
+    pt, pu, ptu = paired(R, tuned, "qwen_area"), paired(R, "qwen_sca40", "qwen_area"), paired(R, tuned, "qwen_sca40")
     tm = {r["method"]: r for r in rows(R / "timing_summary.csv")}
-    if not pt:
-        return "Results pending."
 
     def d(pr, k, dd=3):
         r = pr.get(k)
@@ -197,27 +215,36 @@ def auto_summary(tuned, tuned_name):
     def sec(m):
         r = tm.get(m)
         return "pending" if not r or r.get("median_seconds_clean") in ("", None) else f"{float(r['median_seconds_clean']):.0f} s"
-    return (f"SCA's Qwen-Image settings had been carried over from FLUX. {n_cfg} configurations were screened against "
+    text = (f"SCA's Qwen-Image settings had been carried over from FLUX. {len(sc)} configurations were screened against "
             f"AReA (its own defaults) on 12 TUNE prompts, and the selection rule fixed before any run chose "
-            f"<b>{html.escape(tuned_name)}</b>. It then ran once on the 15 held-out TEST prompts at 5312². "
-            f"Against AReA on TEST: PickScore {d(pt, 'pickscore', 2)}, HPSv2.1 {d(pt, 'hpsv21')}, ImageReward "
-            f"{d(pt, 'ir', 2)}, MUSIQ on 1024 px crops {d(pt, 'musiq_crop1024', 1)} (untuned SCA: PickScore "
-            f"{d(pu, 'pickscore', 2)}, HPSv2.1 {d(pu, 'hpsv21')}). Median time per image: {sec(tuned)} against "
-            f"AReA's {sec('qwen_area')} and untuned SCA's {sec('qwen_sca40')} (40 steps).")
+            f"<b>{html.escape(tuned_name)}</b>.")
+    if above:
+        text += (f" {len(above)} progressive configurations ranked higher on the preference metrics but failed the "
+                 f"guard rail on native detail (soft 1024 px crops), so they were not eligible.")
+    if not pt:
+        return text + (" The chosen configuration's run on the 15 held-out TEST prompts at 5312² is queued; the TEST "
+                       "tables fill in when it is done.")
+    return text + (f" The chosen configuration then ran once on the 15 held-out TEST prompts at 5312². Against AReA on "
+                   f"TEST: PickScore "
+                   f"{d(pt, 'pickscore', 2)}, HPSv2.1 {d(pt, 'hpsv21')}, ImageReward {d(pt, 'ir', 2)}, MUSIQ on 1024 px "
+                   f"crops {d(pt, 'musiq_crop1024', 1)}; against untuned SCA: PickScore {d(ptu, 'pickscore', 2)}, "
+                   f"HPSv2.1 {d(ptu, 'hpsv21')} (untuned SCA against AReA: PickScore {d(pu, 'pickscore', 2)}, HPSv2.1 "
+                   f"{d(pu, 'hpsv21')}). Median time per image: {sec(tuned)} against AReA's {sec('qwen_area')} and "
+                   f"untuned SCA's {sec('qwen_sca40')} (40 steps).")
 
 
 # ----------------------------------------------------------------------------- page
 
 CSS = """
 :root{--bg:#FCFCFB;--fg:#1C2024;--muted:#59636D;--faint:#8A939C;--card:#FFFFFF;--line:#E2E5E3;--line2:#D3D8D5;
---surface:#F4F5F4;--accent:#13865F;--accent-ink:#0E6B4C;--on-accent:#fff;--good:#0E6B4C;--sans:-apple-system,
+--surface:#F4F5F4;--accent:#13865F;--accent-ink:#0E6B4C;--on-accent:#fff;--good:#0E6B4C;--bad:#B23A2B;--sans:-apple-system,
 BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--serif:"Iowan Old Style",Palatino,Georgia,serif;
 color-scheme:light}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0D100F;--fg:#E7EAE8;--muted:#A3ACB3;
 --faint:#77818A;--card:#151918;--line:#262C2A;--line2:#323A37;--surface:#151918;--accent:#3DBB8C;--accent-ink:#62D2A7;
---on-accent:#06140E;--good:#62D2A7;color-scheme:dark}}
+--on-accent:#06140E;--good:#62D2A7;--bad:#F2907E;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#0D100F;--fg:#E7EAE8;--muted:#A3ACB3;--faint:#77818A;--card:#151918;--line:#262C2A;
---line2:#323A37;--surface:#151918;--accent:#3DBB8C;--accent-ink:#62D2A7;--on-accent:#06140E;--good:#62D2A7;
+--line2:#323A37;--surface:#151918;--accent:#3DBB8C;--accent-ink:#62D2A7;--on-accent:#06140E;--good:#62D2A7;--bad:#F2907E;
 color-scheme:dark}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.55 var(--sans);
 -webkit-font-smoothing:antialiased}
@@ -242,7 +269,7 @@ td.l,th.l{text-align:left;white-space:normal;min-width:14rem}
 tr:last-child td{border-bottom:0}
 tr.chosen td{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 tr.fam td{background:var(--surface);color:var(--muted);font-weight:600;text-align:left}
-td b{color:var(--good);font-weight:600}
+.tag{display:inline-block;font:600 11px/1.6 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--on-accent);background:var(--accent);border-radius:4px;padding:0 6px;margin-left:4px}td b{font-weight:600}td b.pos{color:var(--good)}td b.neg{color:var(--bad)}.ci{display:block;font-size:11.5px;color:var(--faint)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:16px 0}
 .prompt{font-size:14px;margin:0 0 10px}.prompt b{color:var(--faint);font-weight:500;margin-right:6px}
 .secs{font-size:12.5px;color:var(--muted);margin:8px 0 0}
@@ -279,15 +306,17 @@ def build_html(tuned, tuned_name, items, screen, test, ns, timing, summary_text,
     for r in screen:
         if r["family"] != fam:
             fam = r["family"]
-            sb.append(f'<tr class="fam"><td colspan="11">{fam}, against AReA at the same size</td></tr>')
-        sb.append(tr([f'<td class="l">{html.escape(r["desc"])}</td>', f"<td>{r['n']}</td>", f"<td>{r['pick']}</td>",
+            sb.append(f'<tr class="fam"><td colspan="10">{fam}, against AReA at the same size</td></tr>')
+        mark = ' <span class="tag">chosen</span>' if r["chosen"] else ""
+        sb.append(tr([f'<td class="l">{html.escape(r["desc"])}{mark}</td>', f"<td>{r['pick']}</td>",
                       f"<td>{r['hps']}</td>", f"<td>{r['ir']}</td>", f"<td>{r['dz']}</td>", f"<td>{r['musiq']}</td>",
-                      f"<td>{r['clipiqa']}</td>", f"<td>{r['sec']}</td>", f"<td>{r['area_sec']}</td>",
-                      f"<td>{'chosen' if r['chosen'] else ''}</td>"], "chosen" if r["chosen"] else ""))
-    screen_html = table_html([("Configuration", "l"), ("Prompts", None), ("PickScore", None), ("HPSv2.1", None),
+                      f"<td>{r['clipiqa']}</td>", f"<td>{r['guard']}</td>", f"<td>{r['sec']}</td>",
+                      f"<td>{r['area_sec']}</td>"],
+                     "chosen" if r["chosen"] else ""))
+    screen_html = table_html([("Configuration", "l"), ("PickScore", None), ("HPSv2.1", None),
                               ("ImageReward", None), ("Mean d<sub>z</sub>", None), ("MUSIQ crops", None),
-                              ("CLIP-IQA", None), ("Seconds", None), ("AReA s", None), ("", None)],
-                             "".join(sb) or tr(['<td class="l" colspan="11">pending</td>']))
+                              ("CLIP-IQA", None), ("Guard rail", None), ("Seconds", None), ("AReA s", None)],
+                             "".join(sb) or tr(['<td class="l" colspan="10">pending</td>']))
     tb = "".join(tr([f'<td class="l">{r["metric"]}</td>', f"<td>{r['area']}</td>", f"<td>{r['untuned']}</td>",
                      f"<td>{r['tuned']}</td>", f"<td>{r['d_untuned']}</td>", f"<td>{r['d_tuned']}</td>",
                      f"<td>{r['d_tu']}</td>"]) for r in test)
@@ -335,16 +364,17 @@ def build_html(tuned, tuned_name, items, screen, test, ns, timing, summary_text,
 <h2 id="screen">TUNE screens (12 prompts, used for every choice)</h2>
 <p class="note">Each row is one configuration, scored by paired differences against AReA at its own defaults on the same
 12 TUNE prompts and size (seed 0). Cells give the mean difference and its 95% bootstrap interval (2000 draws over
-prompts); bold intervals exclude zero. Mean d<sub>z</sub> is the selection score fixed before any run: the mean, over
+prompts, under each mean); bold means: the interval excludes zero (green better than AReA, red worse). Mean d<sub>z</sub> is the selection score fixed before any run: the mean, over
 PickScore, HPSv2.1 and ImageReward, of the paired mean divided by the SD of the paired differences; within 0.10 of the
-best, the faster configuration wins. MUSIQ crops scores four 1024 px native crops. Seconds are medians per image on one
-GH200. TUNE prompts: {html.escape(", ".join(tune_ids()))}; none of them is a TEST prompt.</p>
+best, the faster configuration wins. Guard rail, fixed with the rule: MUSIQ crops (four 1024 px native crops) and
+CLIP-IQA no lower than untuned SCA's by more than the configuration's own 95% half-width; configurations that fail it
+are not eligible. Seconds are medians per image on one GH200. TUNE prompts: {html.escape(", ".join(tune_ids()))}; none of them is a TEST prompt.</p>
 {screen_html}
 <h2 id="test">TEST (15 held-out prompts, 5312²)</h2>
 <p class="note">The 15 prompts of the earlier comparison, untouched during tuning; {html.escape(tuned_name)} ran once on
 them. Untuned SCA is the 40-step run of that comparison (step-matched to AReA). Prompts per method: {html.escape(json.dumps(ns))}.
-The three right columns are paired differences over prompts: mean [95% bootstrap interval, 2000 draws]; bold intervals
-exclude zero.</p>
+The three right columns are paired differences over prompts: mean with its 95% bootstrap interval (2000 draws) below;
+bold means the interval excludes zero (green: higher than the method after the minus sign, red: lower).</p>
 {test_html}
 <h2 id="timing">Timing at 5312²</h2>
 <p class="note">Seconds per image cover denoising, any stage transitions and the VAE decode, with prompt embeddings
