@@ -2035,3 +2035,6 @@ contributions, captions of at most three lines, a leaner Table 1, and redesigned
 - 00:45 ra_fixed on copyprone21 complete: 73.0 to 73.9 s per image warm (sca_v2 about 77 s), compositions as sca_v2
   (same opening), native crops clean (r7/preview/ra_fixed). Detector triage 13 of 21 (sca_v2 seed 0 21, seed 1 15;
   r7/cpu_det/ra_fixed). Blind packet pRA1 out to 6 Opus labelers.
+- 00:56 ra_fixed by hand (pRA1, 6 blind Opus labelers): 14 yes, 3 borderline, 4 no of 21 (sca_v2 19, seed-1 control
+  18, AReA 4; detector 13). FAIL on the screen bar (<= 8). The pooled r = 2 stage on steps 8-13 removes about 4 of
+  sca_v2's copies, at 73 s per image. ra_m (opening 0-4, r = 2 on 5-12): detector 12 of 21, labeling as pRA2.
