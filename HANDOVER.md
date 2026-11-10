@@ -2182,3 +2182,19 @@ method-figure design, qualitative design, examples), best-paper level in rigour,
   (E.4), whose group headings named the wrong main tables; they now use \ref (generator HOLM_GROUPS).
 - Open question to the user: should the full edition's appendix interval tables (E.2, E.3, E.5 to E.7, F.1, G.1 to
   G.3, H.1, H.2, H.4) also lose their intervals?
+- 2026-11-10 14:30: **v6.2, more visual results in both editions** (user: "add more visual results in main and appendix
+  for shorter version as well"; the same message answered "No" to removing intervals from the full edition's
+  appendix tables, so those stay). Tag paper-v6.2.
+  - Main text: new Figure 8 (fig:sizes_models, paper/figures/v6/sizes_models.pdf): single-pass SCA at 2048x6144,
+    2048x4096, 4096x6144, FLUX.1-Krea-dev and FLUX.2-dev, native insets. Settings left out for artifacts and named in
+    the caption: 6144x4096, 6144^2, 8192^2. One Limitations sentence added for 6144^2 and 8192^2. The text was
+    tightened to stay within nine pages (ICLR 2027 template: strict 9 pages for the initial submission, 10 for camera
+    ready); Related Work is one paragraph; both algorithms stay. Figure 7 now wraps beside the HRDiT paragraph.
+  - Appendix, both editions: deciles of the ImageReward gain over AReA (two pages; AReA ahead at the 10th percentile,
+    level at the 20th and 30th, gain growing from the 40th), seeds 1 and 2 (no HRDiT column: images do not exist),
+    HRGen-1K samples, a 16-image mosaic. Scripts v6_*.py with provenance files; notes visuals.md "Round: more
+    visual results", appendix.md Section 10, text.md Section 9.
+  - Deliveries: full 67 pp, 23.8 MiB (delivery_9qo2y1mn); short 31 pp, 16.6 MiB (delivery_ccu88_hn). Both: main text
+    pages 1 to 9, 0 overfull, 0 undefined, standalone ZIP builds to the same pages, no banned wording, no interval in
+    any table of the short edition. main_short.tex carries \fullversionpages (67); the short delivery build stops if
+    the full receipt disagrees, so always build the full edition first.
