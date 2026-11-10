@@ -142,6 +142,21 @@ def test_progressive_script_cpu(tmp_path, monkeypatch):
     assert type(pipe.transformer.transformer_blocks[0].attn.processor).__name__ == "QwenDoubleStreamAttnProcessor2_0"
 
 
+def test_progressive_deeper_last_stage_cpu(tmp_path, monkeypatch):
+    """qt_prog_deep_sfx's shape: the last stage starts before the middle one (highres 2,3 of 4), so its first steps take
+    structure guidance from the native stage's x0 (another resolution) and the rest from the middle stage."""
+    from scripts import sample_progressive_qwen as Q
+    patch_loaders(monkeypatch, tmp_path)
+    prompts = write_prompts(tmp_path / "p.jsonl", 1)
+    out = tmp_path / "out"
+    Q.main(["--prompts", str(prompts), "--stages", "64x64,128x128,256x256", "--base-steps", "4", "--highres-steps",
+            "2,3", "--pi-const", "0.5", "--n0", "4", "--tile", "2", "--device", "cpu", "--out", str(out), "--end", "1",
+            "--bridge-tokens", "16", "--label", "qt_prog_deep_sfx", "--prompt-suffix", "area", "--negative="])
+    m = json.loads(sorted(out.glob("*.json"))[0].read_text())
+    assert m["complete"] and m["config"]["steps"] == 4 + 2 + 3
+    assert [len(s) for s in m["stage_sigmas"]] == [4, 2, 3] and m["stage_sigmas"][2][0] == m["stage_sigmas"][0][1]
+
+
 def Image_open(path):
     from PIL import Image
     return Image.open(path)

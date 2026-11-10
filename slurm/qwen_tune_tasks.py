@@ -27,6 +27,7 @@ Configurations (labels are the sidecar methods and output folders):
   qt_prog_sfx  qt_prog with AReA's conditioning
   qt_prog_late qt_prog with HRDiT's FLUX step counts (17 at 2656^2 from sigma 0.74, 10 at 5312^2 from sigma 0.51)
   qt_prog_late_sfx  qt_prog_late with AReA's conditioning (completes the 2 x 2 of stage starts and conditioning)
+  qt_prog_deep_sfx  round 2: qt_prog_sfx with a deeper 5312^2 stage (25 steps from sigma 0.915 instead of 13 from 0.62)
 Usage: slurm/qwen_tune_tasks.py GROUP [GROUP ...] [--dry]
 """
 
@@ -63,6 +64,12 @@ PROG = {"qt_prog": PROG_BASE, "qt_prog_sfx": f"{PROG_BASE} {AREA_COND}",
         "qt_prog_late": PROG_BASE.replace("--highres-steps 20,13 ", "--highres-steps 17,10 ")}
 PROG["qt_prog_late_sfx"] = f"{PROG['qt_prog_late']} {AREA_COND}"
 assert PROG["qt_prog_late"] != PROG_BASE
+# Round 2 (added after the first TUNE evaluation, TEST untouched): the round-1 progressive images are soft at native
+# pixels (MUSIQ_c 7.5 to 13.7 below AReA) because the 5312^2 stage starts at sigma 0.62 or 0.51, which at 4x the native
+# side keeps nearly all of the upsampled image. A deeper last stage: 25 steps from sigma 0.915 (step 5 of 30), still
+# anchored by HRDiT's low-pass structure guidance, with AReA's conditioning (the better progressive variant).
+PROG["qt_prog_deep_sfx"] = PROG_BASE.replace("--highres-steps 20,13 ", "--highres-steps 20,25 ") + f" {AREA_COND}"
+assert "--highres-steps 20,25 " in PROG["qt_prog_deep_sfx"]
 
 
 def tune_prompts(dry):
