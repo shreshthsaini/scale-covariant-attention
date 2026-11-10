@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCA on Qwen-Image: tuning review</title>
+<script>try{var t=localStorage.getItem("sca-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<style>
+:root{--bg:#FCFCFB;--fg:#1C2024;--muted:#59636D;--faint:#8A939C;--card:#FFFFFF;--line:#E2E5E3;--line2:#D3D8D5;
+--surface:#F4F5F4;--accent:#13865F;--accent-ink:#0E6B4C;--on-accent:#fff;--good:#0E6B4C;--bad:#B23A2B;--sans:-apple-system,
+BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--serif:"Iowan Old Style",Palatino,Georgia,serif;
+color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0D100F;--fg:#E7EAE8;--muted:#A3ACB3;
+--faint:#77818A;--card:#151918;--line:#262C2A;--line2:#323A37;--surface:#151918;--accent:#3DBB8C;--accent-ink:#62D2A7;
+--on-accent:#06140E;--good:#62D2A7;--bad:#F2907E;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0D100F;--fg:#E7EAE8;--muted:#A3ACB3;--faint:#77818A;--card:#151918;--line:#262C2A;
+--line2:#323A37;--surface:#151918;--accent:#3DBB8C;--accent-ink:#62D2A7;--on-accent:#06140E;--good:#62D2A7;--bad:#F2907E;
+color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.55 var(--sans);
+-webkit-font-smoothing:antialiased}
+.top{position:sticky;top:0;z-index:6;background:var(--bg);border-bottom:1px solid var(--line)}
+.top .in{max-width:1280px;margin:auto;padding:0 16px;height:52px;display:flex;align-items:center;gap:16px}
+.brand{font:600 18px/1 var(--serif)}.nav{display:flex;gap:14px;margin-left:auto;font-size:14px}
+.nav a{color:var(--muted);text-decoration:none}.nav a:hover{color:var(--fg)}
+.theme{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--muted);
+display:grid;place-items:center;cursor:pointer}.theme svg{width:17px;height:17px}
+header{padding:34px 16px 8px;max-width:1280px;margin:auto}
+.kicker{font:600 12px/1.3 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink);margin:0 0 8px}
+h1{font:600 clamp(26px,3.4vw,38px)/1.15 var(--serif);margin:0 0 10px}
+h2{font:600 22px/1.25 var(--serif);margin:34px 0 8px}
+.lead{color:var(--muted);max-width:60rem;margin:0 0 6px}.lead b{color:var(--fg)}
+main{max-width:1280px;margin:auto;padding:4px 16px 48px}
+.note{color:var(--muted);font-size:13.5px;max-width:62rem;margin:6px 0 10px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{font-weight:600;color:var(--muted);background:var(--surface);position:sticky;top:0}
+td.l,th.l{text-align:left;white-space:normal;min-width:14rem}
+tr:last-child td{border-bottom:0}
+tr.chosen td{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+tr.fam td{background:var(--surface);color:var(--muted);font-weight:600;text-align:left}
+.tag{display:inline-block;font:600 11px/1.6 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--on-accent);background:var(--accent);border-radius:4px;padding:0 6px;margin-left:4px}td b{font-weight:600}td b.pos{color:var(--good)}td b.neg{color:var(--bad)}.ci{display:block;font-size:11.5px;color:var(--faint)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:16px 0}
+.prompt{font-size:14px;margin:0 0 10px}.prompt b{color:var(--faint);font-weight:500;margin-right:6px}
+.secs{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+.zg-btn{background:var(--card)}
+
+/* Synced deep-zoom grids (assets/js/zoomgrid.js), shared by index.html and review/index.html. Uses the pages'
+   colour variables, with fallbacks so the file also stands alone. */
+.zg { position: relative; }
+.zg-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 8px; font: 500 13px/1.3 var(--sans, system-ui, sans-serif); }
+.zg-bar.below, .zg > .zg-grid + .zg-bar { margin: 8px 0 0; }
+.zg-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 5px 12px; border: 1px solid var(--rule-2, var(--line2, #d3d8d5));
+  border-radius: 999px; background: var(--bg, #fff); color: var(--ink, var(--fg, #1c2024)); font: inherit; cursor: pointer; white-space: nowrap; }
+.zg-btn:hover { border-color: var(--accent, #13865f); }
+.zg-btn svg { width: 14px; height: 14px; flex: none; }
+.zg-auto { border-color: var(--accent, #13865f); color: var(--accent-ink, #0e6b4c); font-weight: 600; }
+.zg-auto[aria-pressed="true"] { background: var(--accent, #13865f); color: var(--on-accent, #fff); }
+.zg-read { color: var(--muted, #59636d); font-variant-numeric: tabular-nums; min-width: 9.5em; }
+.zg-hint { color: var(--faint, #8a939c); font-weight: 400; margin-left: auto; font-size: 12.5px; }
+.zg-h-t { display: none; }
+@media (hover: none) { .zg-h-m { display: none; } .zg-h-t { display: inline; } }
+@media (max-width: 560px) { .zg-hint { margin-left: 0; width: 100%; } .zg-read { min-width: 0; } }
+.zg-grid { display: grid; grid-template-columns: repeat(var(--zg-cols, 4), minmax(0, 1fr)); gap: 6px; }
+.zg-p { position: relative; overflow: hidden; border-radius: 8px; background: var(--img-ground, var(--surface, #e8eae8)); touch-action: pan-y;
+  cursor: zoom-in; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.zg-p:focus-visible { outline: 2px solid var(--accent, #13865f); outline-offset: 2px; }
+.zg.zoomed .zg-p { touch-action: none; cursor: grab; }
+.zg.zoomed .zg-p:active { cursor: grabbing; }
+.zg-img, .zg-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.zg-img { object-fit: cover; pointer-events: none; }
+.zg.zoomed .zg-img { visibility: hidden; }
+.zg-tag { position: absolute; left: 6px; top: 6px; z-index: 2; max-width: calc(100% - 12px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 5px 7px; border-radius: 5px; background: rgba(12, 14, 14, .62); color: #fff; font: 600 11.5px/1 var(--sans, system-ui, sans-serif); pointer-events: none; }
+.zg-p.ours .zg-tag { background: var(--accent, #13865f); color: var(--on-accent, #fff); }
+.zg-load { position: absolute; right: 8px; top: 8px; z-index: 2; width: 8px; height: 8px; border-radius: 50%; background: #FFC21A;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .45); opacity: 0; transition: opacity .2s; pointer-events: none; }
+.zg-load.on { opacity: 1; animation: zg-pulse 1s ease-in-out infinite; }
+@keyframes zg-pulse { 50% { transform: scale(.55); } }
+.zg-map { position: absolute; right: 6px; bottom: 6px; z-index: 3; width: clamp(54px, 26%, 128px); border-radius: 4px; overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .75), 0 2px 10px rgba(0, 0, 0, .45); opacity: 0; transition: opacity .2s; pointer-events: none;
+  cursor: crosshair; touch-action: none; background: #222; }
+.zg.zoomed .zg-map { opacity: 1; pointer-events: auto; }
+.zg-map img { display: block; width: 100%; height: auto; opacity: .92; }
+.zg-map-r { position: absolute; border: 1.5px solid #FFC21A; box-shadow: 0 0 0 1px rgba(0, 0, 0, .55); pointer-events: none; min-width: 3px; min-height: 3px; }
+@media (prefers-reduced-motion: reduce) { .zg-load.on { animation: none; } }
+.zg.compact .zg-hint { display: none; }
+.zg.compact .zg-read { min-width: 0; }
+</style>
+</head>
+<body>
+<div class="top"><div class="in"><span class="brand">SCA on Qwen-Image</span><nav class="nav"><a href="#screen">TUNE screens</a>
+<a href="#test">TEST</a><a href="#timing">Timing</a><a href="#grids-h">Side by side</a></nav>
+<button class="theme" id="theme" type="button" aria-label="Switch between light and dark theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg></button></div></div>
+<header>
+<p class="kicker">Review page, not published</p>
+<h1>Tuning SCA on Qwen-Image against AReA</h1>
+<p class="lead">SCA's Qwen-Image settings had been carried over from FLUX. 9 configurations were screened against AReA (its own defaults) on 12 TUNE prompts, and the selection rule fixed before any run chose <b>Single pass with AReA&#x27;s conditioning</b>. 5 progressive configurations ranked higher on the preference metrics but failed the guard rail on native detail (soft 1024 px crops), so they were not eligible. The chosen configuration then ran once on the 15 held-out TEST prompts at 5312². Against AReA on TEST: PickScore -0.11 [-0.40, +0.17], HPSv2.1 -0.009 [-0.015, -0.002], ImageReward +0.03 [-0.09, +0.17], MUSIQ on 1024 px crops +5.4 [+4.2, +6.5]; against untuned SCA: PickScore +0.15 [-0.03, +0.34], HPSv2.1 +0.007 [-0.001, +0.015] (untuned SCA against AReA: PickScore -0.26 [-0.46, -0.08], HPSv2.1 -0.016 [-0.023, -0.010]). Median time per image: 621 s against AReA's 690 s and untuned SCA's 604 s (40 steps).</p>
+</header>
+<main>
+<h2 id="screen">TUNE screens (12 prompts, used for every choice)</h2>
+<p class="note">Each row is one configuration, scored by paired differences against AReA at its own defaults on the same
+12 TUNE prompts and size (seed 0). Cells give the mean difference and its 95% bootstrap interval (2000 draws over
+prompts, under each mean); bold means: the interval excludes zero (green better than AReA, red worse). Mean d<sub>z</sub> is the selection score fixed before any run: the mean, over
+PickScore, HPSv2.1 and ImageReward, of the paired mean divided by the SD of the paired differences; within 0.10 of the
+best, the faster configuration wins. Guard rail, fixed with the rule: MUSIQ crops (four 1024 px native crops) and
+CLIP-IQA no lower than untuned SCA's by more than the configuration's own 95% half-width; configurations that fail it
+are not eligible. Seconds are medians per image on one GH200. TUNE prompts: p04_green_perfume, p05_leather_sneakers, p06_headphones, l04_hillside_town, l05_palm_house, l06_atoll, h04_blacksmith, h05_textile_artist, h06_mountaineer, a04_zebras, a05_lion_rain, d04_flower_market; none of them is a TEST prompt.</p>
+<div class="tw"><table><thead><tr><th class="l">Configuration</th><th>PickScore</th><th>HPSv2.1</th><th>ImageReward</th><th>Mean d<sub>z</sub></th><th>MUSIQ crops</th><th>CLIP-IQA</th><th>Guard rail</th><th>Seconds</th><th>AReA s</th></tr></thead><tbody><tr class="fam"><td colspan="10">Single pass, 4096², against AReA at the same size</td></tr><tr class="chosen"><td class="l">AReA&#x27;s conditioning (its prompt suffix, empty negative prompt), else untuned <span class="tag">chosen</span></td><td><b class="neg">-0.277</b><span class="ci">[-0.473, -0.103]</span></td><td>-0.008<span class="ci">[-0.015, +0.000]</span></td><td>-0.024<span class="ci">[-0.072, +0.023]</span></td><td>-0.55</td><td>+4.6</td><td>+0.047</td><td>passes</td><td>331</td><td>377</td></tr><tr class=""><td class="l">Time shift grown with resolution and AReA&#x27;s conditioning</td><td><b class="neg">-0.417</b><span class="ci">[-0.614, -0.232]</span></td><td><b class="neg">-0.011</b><span class="ci">[-0.020, -0.003]</span></td><td>+0.009<span class="ci">[-0.056, +0.080]</span></td><td>-0.60</td><td>+4.8</td><td>+0.034</td><td>fails: MUSIQ crops</td><td>313</td><td>377</td></tr><tr class=""><td class="l">Untuned: the FLUX-derived settings, 40 steps, native time shift (mu 0.834)</td><td><b class="neg">-0.563</b><span class="ci">[-0.837, -0.318]</span></td><td><b class="neg">-0.018</b><span class="ci">[-0.033, -0.007]</span></td><td>-0.062<span class="ci">[-0.135, +0.013]</span></td><td>-0.78</td><td>+7.2</td><td>+0.037</td><td>passes</td><td>329</td><td>377</td></tr><tr class=""><td class="l">Time shift grown with resolution (mu 1.96 at 4096, 2.22 at 5312), else untuned</td><td><b class="neg">-0.531</b><span class="ci">[-0.754, -0.326]</span></td><td><b class="neg">-0.012</b><span class="ci">[-0.019, -0.005]</span></td><td>-0.055<span class="ci">[-0.153, +0.036]</span></td><td>-0.86</td><td>+6.8</td><td>+0.028</td><td>passes</td><td>299</td><td>377</td></tr><tr class="fam"><td colspan="10">Progressive, 5312², against AReA at the same size</td></tr><tr class=""><td class="l">Progressive with AReA&#x27;s conditioning</td><td><b class="neg">-0.304</b><span class="ci">[-0.570, -0.014]</span></td><td>+0.003<span class="ci">[-0.005, +0.010]</span></td><td>+0.041<span class="ci">[-0.073, +0.172]</span></td><td>-0.07</td><td>-10.3</td><td>-0.012</td><td>fails: MUSIQ crops, CLIP-IQA</td><td>318</td><td>700</td></tr><tr class=""><td class="l">Progressive with HRDiT&#x27;s step counts and AReA&#x27;s conditioning</td><td><b class="neg">-0.358</b><span class="ci">[-0.650, -0.021]</span></td><td>+0.003<span class="ci">[-0.005, +0.010]</span></td><td>+0.037<span class="ci">[-0.062, +0.159]</span></td><td>-0.07</td><td>-13.7</td><td>-0.030</td><td>fails: MUSIQ crops, CLIP-IQA</td><td>268</td><td>700</td></tr><tr class=""><td class="l">Round 2: progressive with AReA&#x27;s conditioning and a deeper 5312 stage (25 steps from sigma 0.91)</td><td>-0.195<span class="ci">[-0.457, +0.083]</span></td><td>-0.005<span class="ci">[-0.014, +0.003]</span></td><td>+0.014<span class="ci">[-0.096, +0.128]</span></td><td>-0.21</td><td>-0.4</td><td>+0.008</td><td>fails: MUSIQ crops, CLIP-IQA</td><td>474</td><td>700</td></tr><tr class=""><td class="l">Progressive: 1328 (stock attention, 30 steps), 2656 (SCA, 20 steps), 5312 (SCA, 13 steps)</td><td><b class="neg">-0.584</b><span class="ci">[-0.922, -0.235]</span></td><td>-0.004<span class="ci">[-0.013, +0.004]</span></td><td>+0.060<span class="ci">[-0.036, +0.162]</span></td><td>-0.28</td><td>-7.5</td><td>-0.001</td><td>fails: MUSIQ crops, CLIP-IQA</td><td>315</td><td>700</td></tr><tr class=""><td class="l">Progressive with HRDiT&#x27;s step counts: 2656 (17 steps from sigma 0.74), 5312 (10 from 0.51)</td><td><b class="neg">-0.647</b><span class="ci">[-1.019, -0.267]</span></td><td>-0.005<span class="ci">[-0.014, +0.002]</span></td><td>+0.042<span class="ci">[-0.046, +0.147]</span></td><td>-0.35</td><td>-9.6</td><td>-0.006</td><td>fails: MUSIQ crops, CLIP-IQA</td><td>261</td><td>700</td></tr></tbody></table></div>
+<h2 id="test">TEST (15 held-out prompts, 5312²)</h2>
+<p class="note">The 15 prompts of the earlier comparison, untouched during tuning; Single pass with AReA&#x27;s conditioning ran once on
+them. Untuned SCA is the 40-step run of that comparison (step-matched to AReA). Prompts per method: {&quot;qwen_area&quot;: &quot;15&quot;, &quot;qwen_sca40&quot;: &quot;15&quot;, &quot;qwen_sca&quot;: &quot;15&quot;, &quot;qwen_full&quot;: &quot;7&quot;, &quot;qt_sfx&quot;: &quot;15&quot;}.
+The three right columns are paired differences over prompts: mean with its 95% bootstrap interval (2000 draws) below;
+bold means the interval excludes zero (green: higher than the method after the minus sign, red: lower).</p>
+<div class="tw"><table><thead><tr><th class="l">Metric (mean over prompts)</th><th>AReA</th><th>SCA, untuned</th><th>SCA, tuned</th><th>Untuned − AReA</th><th>Tuned − AReA</th><th>Tuned − untuned</th></tr></thead><tbody><tr class=""><td class="l">PickScore</td><td>22.687</td><td>22.422</td><td>22.574</td><td><b class="neg">-0.265</b><span class="ci">[-0.461, -0.077]</span></td><td>-0.113<span class="ci">[-0.403, +0.173]</span></td><td>+0.152<span class="ci">[-0.034, +0.341]</span></td></tr><tr class=""><td class="l">HPSv2.1</td><td>0.325</td><td>0.309</td><td>0.316</td><td><b class="neg">-0.016</b><span class="ci">[-0.023, -0.010]</span></td><td><b class="neg">-0.009</b><span class="ci">[-0.015, -0.002]</span></td><td>+0.007<span class="ci">[-0.001, +0.015]</span></td></tr><tr class=""><td class="l">HPSv2</td><td>0.300</td><td>0.296</td><td>0.299</td><td><b class="neg">-0.004</b><span class="ci">[-0.006, -0.002]</span></td><td>-0.001<span class="ci">[-0.005, +0.004]</span></td><td>+0.003<span class="ci">[-0.002, +0.009]</span></td></tr><tr class=""><td class="l">ImageReward</td><td>0.961</td><td>0.878</td><td>0.992</td><td>-0.084<span class="ci">[-0.259, +0.079]</span></td><td>+0.031<span class="ci">[-0.085, +0.166]</span></td><td>+0.115<span class="ci">[-0.043, +0.297]</span></td></tr><tr class=""><td class="l">Aesthetic</td><td>6.189</td><td>6.205</td><td>6.310</td><td>+0.016<span class="ci">[-0.106, +0.143]</span></td><td><b class="pos">+0.122</b><span class="ci">[+0.023, +0.227]</span></td><td><b class="pos">+0.106</b><span class="ci">[+0.033, +0.183]</span></td></tr><tr class=""><td class="l">CLIP score</td><td>29.1</td><td>29.2</td><td>29.2</td><td>+0.1<span class="ci">[-0.7, +1.0]</span></td><td>+0.1<span class="ci">[-0.7, +0.7]</span></td><td>-0.0<span class="ci">[-0.7, +0.6]</span></td></tr><tr class=""><td class="l">CLIP-IQA</td><td>0.649</td><td>0.674</td><td>0.699</td><td><b class="pos">+0.026</b><span class="ci">[+0.003, +0.047]</span></td><td><b class="pos">+0.051</b><span class="ci">[+0.030, +0.072]</span></td><td><b class="pos">+0.025</b><span class="ci">[+0.005, +0.046]</span></td></tr><tr class=""><td class="l">ARNIQA</td><td>0.741</td><td>0.736</td><td>0.740</td><td>-0.005<span class="ci">[-0.018, +0.008]</span></td><td>-0.000<span class="ci">[-0.011, +0.011]</span></td><td>+0.004<span class="ci">[-0.001, +0.009]</span></td></tr><tr class=""><td class="l">MUSIQ, 1024 px crops</td><td>48.7</td><td>54.4</td><td>54.1</td><td><b class="pos">+5.7</b><span class="ci">[+3.7, +7.9]</span></td><td><b class="pos">+5.4</b><span class="ci">[+4.2, +6.5]</span></td><td>-0.3<span class="ci">[-2.0, +1.2]</span></td></tr><tr class=""><td class="l">MUSIQ, 4096 px view</td><td>50.0</td><td>51.8</td><td>51.6</td><td>+1.7<span class="ci">[-1.3, +4.6]</span></td><td>+1.5<span class="ci">[-0.4, +3.6]</span></td><td>-0.2<span class="ci">[-2.4, +2.0]</span></td></tr></tbody></table></div>
+<h2 id="timing">Timing at 5312²</h2>
+<p class="note">Seconds per image cover denoising, any stage transitions and the VAE decode, with prompt embeddings
+computed beforehand, on one GH200. An image counts as without a co-tenant when no other process held its GPU while it
+was generated.</p>
+<div class="tw"><table><thead><tr><th class="l">Method</th><th>Steps</th><th>Images without a GPU co-tenant</th><th>Median s (those images)</th><th>Median s (all)</th><th>Peak GB</th></tr></thead><tbody><tr class=""><td class="l">Full attention</td><td>50</td><td>4 of 7</td><td>1885</td><td>1912</td><td>51.6</td></tr><tr class=""><td class="l">AReA</td><td>40</td><td>15 of 15</td><td>690</td><td>690</td><td>55.8</td></tr><tr class=""><td class="l">SCA, untuned (50 steps)</td><td>50</td><td>15 of 15</td><td>748</td><td>748</td><td>52.3</td></tr><tr class=""><td class="l">SCA, untuned (40 steps)</td><td>40</td><td>15 of 15</td><td>604</td><td>604</td><td>52.3</td></tr><tr class="chosen"><td class="l">SCA, tuned</td><td>40</td><td>15 of 15</td><td>621</td><td>621</td><td>52.3</td></tr></tbody></table></div>
+<h2 id="grids-h">Side by side, 15 TEST prompts at 5312²</h2>
+<p class="note">Full attention, AReA, untuned SCA (40 steps) and tuned SCA from the same prompt and seed. Scroll or
+pinch on any panel to zoom and drag to pan; every panel follows, down to native pixels at four regions picked from
+the edge energy of all four images. Double-click resets; Auto zoom visits the four regions.</p>
+<div id="grids"><noscript><p>The zoom grids need JavaScript.</p></noscript></div>
+</main>
+<script>window.ITEMS = [{"id":"sc_p01_skeleton_watch","prompt":"Macro studio product photograph of a mechanical skeleton wristwatch resting on dark walnut wood, the open dial reveals brushed steel gear trains, tiny ruby jewel bearings, a blued hairspring and a balance wheel, domed sapphire crystal with a faint reflection, polished rose-gold case with a knurled crown, chestnut leather strap with fine saddle stitching, soft key light and a thin rim light, shallow depth of field, no text, no logo","size":[5312,5312],"regions":[[2208,3072,768],[3456,2592,768],[4608,4416,768],[1152,4128,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_p01_skeleton_watch/full/v.webp","vs":[2000,2000],"rt":[[1824,2688,768,768,"img/sc_p01_skeleton_watch/full/r0.webp"],[3072,2208,768,768,"img/sc_p01_skeleton_watch/full/r1.webp"],[4224,4032,768,768,"img/sc_p01_skeleton_watch/full/r2.webp"],[768,3744,768,768,"img/sc_p01_skeleton_watch/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_p01_skeleton_watch/area/v.webp","vs":[2000,2000],"rt":[[1824,2688,768,768,"img/sc_p01_skeleton_watch/area/r0.webp"],[3072,2208,768,768,"img/sc_p01_skeleton_watch/area/r1.webp"],[4224,4032,768,768,"img/sc_p01_skeleton_watch/area/r2.webp"],[768,3744,768,768,"img/sc_p01_skeleton_watch/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_p01_skeleton_watch/sca40/v.webp","vs":[2000,2000],"rt":[[1824,2688,768,768,"img/sc_p01_skeleton_watch/sca40/r0.webp"],[3072,2208,768,768,"img/sc_p01_skeleton_watch/sca40/r1.webp"],[4224,4032,768,768,"img/sc_p01_skeleton_watch/sca40/r2.webp"],[768,3744,768,768,"img/sc_p01_skeleton_watch/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_p01_skeleton_watch/tuned/v.webp","vs":[2000,2000],"rt":[[1824,2688,768,768,"img/sc_p01_skeleton_watch/tuned/r0.webp"],[3072,2208,768,768,"img/sc_p01_skeleton_watch/tuned/r1.webp"],[4224,4032,768,768,"img/sc_p01_skeleton_watch/tuned/r2.webp"],[768,3744,768,768,"img/sc_p01_skeleton_watch/tuned/r3.webp"]]}],"secs":"Full attention: 1858 s \u00b7 AReA: 762 s \u00b7 SCA, untuned: 615 s \u00b7 SCA, tuned: 661 s"},{"id":"sc_p02_dive_watch","prompt":"Product photograph of a titanium dive watch lying on wet black basalt at the shoreline, beads of sea water on the sapphire crystal, a ceramic bezel with engraved minute marks, a deep blue sunburst dial with luminous hour markers and no text, a brushed bracelet with fine machining lines, sea spray frozen in the air, cold morning light, crisp macro detail","size":[5312,5312],"regions":[[1728,3648,768],[1440,2592,768],[3072,2016,768],[4320,3936,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_p02_dive_watch/full/v.webp","vs":[2000,2000],"rt":[[1344,3264,768,768,"img/sc_p02_dive_watch/full/r0.webp"],[1056,2208,768,768,"img/sc_p02_dive_watch/full/r1.webp"],[2688,1632,768,768,"img/sc_p02_dive_watch/full/r2.webp"],[3936,3552,768,768,"img/sc_p02_dive_watch/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_p02_dive_watch/area/v.webp","vs":[2000,2000],"rt":[[1344,3264,768,768,"img/sc_p02_dive_watch/area/r0.webp"],[1056,2208,768,768,"img/sc_p02_dive_watch/area/r1.webp"],[2688,1632,768,768,"img/sc_p02_dive_watch/area/r2.webp"],[3936,3552,768,768,"img/sc_p02_dive_watch/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_p02_dive_watch/sca40/v.webp","vs":[2000,2000],"rt":[[1344,3264,768,768,"img/sc_p02_dive_watch/sca40/r0.webp"],[1056,2208,768,768,"img/sc_p02_dive_watch/sca40/r1.webp"],[2688,1632,768,768,"img/sc_p02_dive_watch/sca40/r2.webp"],[3936,3552,768,768,"img/sc_p02_dive_watch/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_p02_dive_watch/tuned/v.webp","vs":[2000,2000],"rt":[[1344,3264,768,768,"img/sc_p02_dive_watch/tuned/r0.webp"],[1056,2208,768,768,"img/sc_p02_dive_watch/tuned/r1.webp"],[2688,1632,768,768,"img/sc_p02_dive_watch/tuned/r2.webp"],[3936,3552,768,768,"img/sc_p02_dive_watch/tuned/r3.webp"]]}],"secs":"Full attention: 3837 s \u00b7 AReA: 688 s \u00b7 SCA, untuned: 599 s \u00b7 SCA, tuned: 619 s"},{"id":"sc_p03_amber_perfume","prompt":"Luxury product photograph of a faceted crystal perfume bottle filled with amber liquid on a white marble pedestal, a sculpted gold atomizer cap, a blank ivory label, caustic light patterns thrown across the marble, scattered dark red rose petals with fine veins, warm backlight through the glass, soft studio shadows, no text","size":[5312,5312],"regions":[[2592,1440,768],[3264,2304,768],[1920,2304,768],[2208,3360,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_p03_amber_perfume/full/v.webp","vs":[2000,2000],"rt":[[2208,1056,768,768,"img/sc_p03_amber_perfume/full/r0.webp"],[2880,1920,768,768,"img/sc_p03_amber_perfume/full/r1.webp"],[1536,1920,768,768,"img/sc_p03_amber_perfume/full/r2.webp"],[1824,2976,768,768,"img/sc_p03_amber_perfume/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_p03_amber_perfume/area/v.webp","vs":[2000,2000],"rt":[[2208,1056,768,768,"img/sc_p03_amber_perfume/area/r0.webp"],[2880,1920,768,768,"img/sc_p03_amber_perfume/area/r1.webp"],[1536,1920,768,768,"img/sc_p03_amber_perfume/area/r2.webp"],[1824,2976,768,768,"img/sc_p03_amber_perfume/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_p03_amber_perfume/sca40/v.webp","vs":[2000,2000],"rt":[[2208,1056,768,768,"img/sc_p03_amber_perfume/sca40/r0.webp"],[2880,1920,768,768,"img/sc_p03_amber_perfume/sca40/r1.webp"],[1536,1920,768,768,"img/sc_p03_amber_perfume/sca40/r2.webp"],[1824,2976,768,768,"img/sc_p03_amber_perfume/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_p03_amber_perfume/tuned/v.webp","vs":[2000,2000],"rt":[[2208,1056,768,768,"img/sc_p03_amber_perfume/tuned/r0.webp"],[2880,1920,768,768,"img/sc_p03_amber_perfume/tuned/r1.webp"],[1536,1920,768,768,"img/sc_p03_amber_perfume/tuned/r2.webp"],[1824,2976,768,768,"img/sc_p03_amber_perfume/tuned/r3.webp"]]}],"secs":"Full attention: 3808 s \u00b7 AReA: 679 s \u00b7 SCA, untuned: 597 s \u00b7 SCA, tuned: 625 s"},{"id":"sc_l01_fjord_village","prompt":"A deep fjord at sunrise, sheer granite walls streaked with thin waterfalls, a small village of red and ochre wooden houses on the shore, a stone church, fishing boats at a wooden pier, a ferry wake on the glassy water, low clouds clinging to the cliffs, landscape photography, extremely detailed","size":[5312,5312],"regions":[[2688,3840,768],[1728,4416,768],[1152,3456,768],[4128,3552,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_l01_fjord_village/full/v.webp","vs":[2000,2000],"rt":[[2304,3456,768,768,"img/sc_l01_fjord_village/full/r0.webp"],[1344,4032,768,768,"img/sc_l01_fjord_village/full/r1.webp"],[768,3072,768,768,"img/sc_l01_fjord_village/full/r2.webp"],[3744,3168,768,768,"img/sc_l01_fjord_village/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_l01_fjord_village/area/v.webp","vs":[2000,2000],"rt":[[2304,3456,768,768,"img/sc_l01_fjord_village/area/r0.webp"],[1344,4032,768,768,"img/sc_l01_fjord_village/area/r1.webp"],[768,3072,768,768,"img/sc_l01_fjord_village/area/r2.webp"],[3744,3168,768,768,"img/sc_l01_fjord_village/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_l01_fjord_village/sca40/v.webp","vs":[2000,2000],"rt":[[2304,3456,768,768,"img/sc_l01_fjord_village/sca40/r0.webp"],[1344,4032,768,768,"img/sc_l01_fjord_village/sca40/r1.webp"],[768,3072,768,768,"img/sc_l01_fjord_village/sca40/r2.webp"],[3744,3168,768,768,"img/sc_l01_fjord_village/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_l01_fjord_village/tuned/v.webp","vs":[2000,2000],"rt":[[2304,3456,768,768,"img/sc_l01_fjord_village/tuned/r0.webp"],[1344,4032,768,768,"img/sc_l01_fjord_village/tuned/r1.webp"],[768,3072,768,768,"img/sc_l01_fjord_village/tuned/r2.webp"],[3744,3168,768,768,"img/sc_l01_fjord_village/tuned/r3.webp"]]}],"secs":"Full attention: 1856 s \u00b7 AReA: 760 s \u00b7 SCA, untuned: 604 s \u00b7 SCA, tuned: 659 s"},{"id":"sc_l02_lavender_fields","prompt":"Endless rows of blooming lavender converging toward an old stone farmhouse with blue shutters, a line of tall cypress trees, a gravel lane, bees over the flowers, rolling hills and a hazy summer evening sky, warm golden light, landscape photography, fine detail","size":[5312,5312],"regions":[[2592,4608,768],[1728,3552,768],[672,3264,768],[3744,3456,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_l02_lavender_fields/full/v.webp","vs":[2000,2000],"rt":[[2208,4224,768,768,"img/sc_l02_lavender_fields/full/r0.webp"],[1344,3168,768,768,"img/sc_l02_lavender_fields/full/r1.webp"],[288,2880,768,768,"img/sc_l02_lavender_fields/full/r2.webp"],[3360,3072,768,768,"img/sc_l02_lavender_fields/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_l02_lavender_fields/area/v.webp","vs":[2000,2000],"rt":[[2208,4224,768,768,"img/sc_l02_lavender_fields/area/r0.webp"],[1344,3168,768,768,"img/sc_l02_lavender_fields/area/r1.webp"],[288,2880,768,768,"img/sc_l02_lavender_fields/area/r2.webp"],[3360,3072,768,768,"img/sc_l02_lavender_fields/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_l02_lavender_fields/sca40/v.webp","vs":[2000,2000],"rt":[[2208,4224,768,768,"img/sc_l02_lavender_fields/sca40/r0.webp"],[1344,3168,768,768,"img/sc_l02_lavender_fields/sca40/r1.webp"],[288,2880,768,768,"img/sc_l02_lavender_fields/sca40/r2.webp"],[3360,3072,768,768,"img/sc_l02_lavender_fields/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_l02_lavender_fields/tuned/v.webp","vs":[2000,2000],"rt":[[2208,4224,768,768,"img/sc_l02_lavender_fields/tuned/r0.webp"],[1344,3168,768,768,"img/sc_l02_lavender_fields/tuned/r1.webp"],[288,2880,768,768,"img/sc_l02_lavender_fields/tuned/r2.webp"],[3360,3072,768,768,"img/sc_l02_lavender_fields/tuned/r3.webp"]]}],"secs":"Full attention: 1912 s \u00b7 AReA: 690 s \u00b7 SCA, untuned: 598 s \u00b7 SCA, tuned: 620 s"},{"id":"sc_l03_opera_house","prompt":"The empty auditorium of an ornate opera house seen from the stage, tiers of gilded balconies with carved ornaments, rows of red velvet seats, a huge crystal chandelier, a painted ceiling with gold leaf, red curtains and boxes, warm light, symmetrical architectural photography, intricate detail","size":[5312,5312],"regions":[[2688,1536,768],[4032,2304,768],[4128,3456,768],[1152,3456,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_l03_opera_house/full/v.webp","vs":[2000,2000],"rt":[[2304,1152,768,768,"img/sc_l03_opera_house/full/r0.webp"],[3648,1920,768,768,"img/sc_l03_opera_house/full/r1.webp"],[3744,3072,768,768,"img/sc_l03_opera_house/full/r2.webp"],[768,3072,768,768,"img/sc_l03_opera_house/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_l03_opera_house/area/v.webp","vs":[2000,2000],"rt":[[2304,1152,768,768,"img/sc_l03_opera_house/area/r0.webp"],[3648,1920,768,768,"img/sc_l03_opera_house/area/r1.webp"],[3744,3072,768,768,"img/sc_l03_opera_house/area/r2.webp"],[768,3072,768,768,"img/sc_l03_opera_house/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_l03_opera_house/sca40/v.webp","vs":[2000,2000],"rt":[[2304,1152,768,768,"img/sc_l03_opera_house/sca40/r0.webp"],[3648,1920,768,768,"img/sc_l03_opera_house/sca40/r1.webp"],[3744,3072,768,768,"img/sc_l03_opera_house/sca40/r2.webp"],[768,3072,768,768,"img/sc_l03_opera_house/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_l03_opera_house/tuned/v.webp","vs":[2000,2000],"rt":[[2304,1152,768,768,"img/sc_l03_opera_house/tuned/r0.webp"],[3648,1920,768,768,"img/sc_l03_opera_house/tuned/r1.webp"],[3744,3072,768,768,"img/sc_l03_opera_house/tuned/r2.webp"],[768,3072,768,768,"img/sc_l03_opera_house/tuned/r3.webp"]]}],"secs":"Full attention: 1929 s \u00b7 AReA: 685 s \u00b7 SCA, untuned: 619 s \u00b7 SCA, tuned: 622 s"},{"id":"sc_h01_silver_braids","prompt":"Close-up portrait of an elderly woman with long silver hair braided with faded red ribbons, deep laugh lines and fine wrinkles, warm brown eyes, a hand-knitted wool shawl with an intricate cable pattern, soft window light, documentary photography, sharp skin and fabric detail","size":[5312,5312],"regions":[[4608,4320,768],[3648,3744,768],[2016,4320,768],[3552,1632,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_h01_silver_braids/full/v.webp","vs":[2000,2000],"rt":[[4224,3936,768,768,"img/sc_h01_silver_braids/full/r0.webp"],[3264,3360,768,768,"img/sc_h01_silver_braids/full/r1.webp"],[1632,3936,768,768,"img/sc_h01_silver_braids/full/r2.webp"],[3168,1248,768,768,"img/sc_h01_silver_braids/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_h01_silver_braids/area/v.webp","vs":[2000,2000],"rt":[[4224,3936,768,768,"img/sc_h01_silver_braids/area/r0.webp"],[3264,3360,768,768,"img/sc_h01_silver_braids/area/r1.webp"],[1632,3936,768,768,"img/sc_h01_silver_braids/area/r2.webp"],[3168,1248,768,768,"img/sc_h01_silver_braids/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_h01_silver_braids/sca40/v.webp","vs":[2000,2000],"rt":[[4224,3936,768,768,"img/sc_h01_silver_braids/sca40/r0.webp"],[3264,3360,768,768,"img/sc_h01_silver_braids/sca40/r1.webp"],[1632,3936,768,768,"img/sc_h01_silver_braids/sca40/r2.webp"],[3168,1248,768,768,"img/sc_h01_silver_braids/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_h01_silver_braids/tuned/v.webp","vs":[2000,2000],"rt":[[4224,3936,768,768,"img/sc_h01_silver_braids/tuned/r0.webp"],[3264,3360,768,768,"img/sc_h01_silver_braids/tuned/r1.webp"],[1632,3936,768,768,"img/sc_h01_silver_braids/tuned/r2.webp"],[3168,1248,768,768,"img/sc_h01_silver_braids/tuned/r3.webp"]]}],"secs":"Full attention: 1912 s \u00b7 AReA: 758 s \u00b7 SCA, untuned: 612 s \u00b7 SCA, tuned: 649 s"},{"id":"sc_h02_sunflowers","prompt":"Portrait of a young woman with freckles and dark braided hair standing among tall sunflowers at golden hour, backlit flyaway hairs glowing, a mustard linen dress with visible weave, bees on the sunflower heads, warm natural light, shallow depth of field, fine detail","size":[5312,5312],"regions":[[864,1536,768],[2112,1728,768],[2400,672,768],[2304,4320,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_h02_sunflowers/full/v.webp","vs":[2000,2000],"rt":[[480,1152,768,768,"img/sc_h02_sunflowers/full/r0.webp"],[1728,1344,768,768,"img/sc_h02_sunflowers/full/r1.webp"],[2016,288,768,768,"img/sc_h02_sunflowers/full/r2.webp"],[1920,3936,768,768,"img/sc_h02_sunflowers/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_h02_sunflowers/area/v.webp","vs":[2000,2000],"rt":[[480,1152,768,768,"img/sc_h02_sunflowers/area/r0.webp"],[1728,1344,768,768,"img/sc_h02_sunflowers/area/r1.webp"],[2016,288,768,768,"img/sc_h02_sunflowers/area/r2.webp"],[1920,3936,768,768,"img/sc_h02_sunflowers/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_h02_sunflowers/sca40/v.webp","vs":[2000,2000],"rt":[[480,1152,768,768,"img/sc_h02_sunflowers/sca40/r0.webp"],[1728,1344,768,768,"img/sc_h02_sunflowers/sca40/r1.webp"],[2016,288,768,768,"img/sc_h02_sunflowers/sca40/r2.webp"],[1920,3936,768,768,"img/sc_h02_sunflowers/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_h02_sunflowers/tuned/v.webp","vs":[2000,2000],"rt":[[480,1152,768,768,"img/sc_h02_sunflowers/tuned/r0.webp"],[1728,1344,768,768,"img/sc_h02_sunflowers/tuned/r1.webp"],[2016,288,768,768,"img/sc_h02_sunflowers/tuned/r2.webp"],[1920,3936,768,768,"img/sc_h02_sunflowers/tuned/r3.webp"]]}],"secs":"Full attention: 1852 s \u00b7 AReA: 625 s \u00b7 SCA, untuned: 571 s \u00b7 SCA, tuned: 574 s"},{"id":"sc_h03_watchmaker","prompt":"A master watchmaker at his wooden workbench, wearing a jeweler's loupe and a leather apron, holding fine tweezers over an open watch movement, tiny gears, screws and springs arranged on a tray, brass tools and a desk lamp casting warm light, cluttered workshop, documentary photography","size":[5312,5312],"regions":[[3840,4128,768],[2784,3840,768],[1728,4320,768],[2400,1824,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_h03_watchmaker/full/v.webp","vs":[2000,2000],"rt":[[3456,3744,768,768,"img/sc_h03_watchmaker/full/r0.webp"],[2400,3456,768,768,"img/sc_h03_watchmaker/full/r1.webp"],[1344,3936,768,768,"img/sc_h03_watchmaker/full/r2.webp"],[2016,1440,768,768,"img/sc_h03_watchmaker/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_h03_watchmaker/area/v.webp","vs":[2000,2000],"rt":[[3456,3744,768,768,"img/sc_h03_watchmaker/area/r0.webp"],[2400,3456,768,768,"img/sc_h03_watchmaker/area/r1.webp"],[1344,3936,768,768,"img/sc_h03_watchmaker/area/r2.webp"],[2016,1440,768,768,"img/sc_h03_watchmaker/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_h03_watchmaker/sca40/v.webp","vs":[2000,2000],"rt":[[3456,3744,768,768,"img/sc_h03_watchmaker/sca40/r0.webp"],[2400,3456,768,768,"img/sc_h03_watchmaker/sca40/r1.webp"],[1344,3936,768,768,"img/sc_h03_watchmaker/sca40/r2.webp"],[2016,1440,768,768,"img/sc_h03_watchmaker/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_h03_watchmaker/tuned/v.webp","vs":[2000,2000],"rt":[[3456,3744,768,768,"img/sc_h03_watchmaker/tuned/r0.webp"],[2400,3456,768,768,"img/sc_h03_watchmaker/tuned/r1.webp"],[1344,3936,768,768,"img/sc_h03_watchmaker/tuned/r2.webp"],[2016,1440,768,768,"img/sc_h03_watchmaker/tuned/r3.webp"]]}],"secs":"Full attention: 1856 s \u00b7 AReA: 685 s \u00b7 SCA, untuned: 635 s \u00b7 SCA, tuned: 611 s"},{"id":"sc_a01_snow_leopard","prompt":"A snow leopard resting on a rocky ledge in falling snow, thick smoky grey fur with dark rosettes, a long bushy tail curled around its paws, pale green eyes, snowflakes caught in its whiskers, a misty mountain slope behind, wildlife photography, every hair detailed","size":[5312,5312],"regions":[[3744,2304,768],[4128,3744,768],[1920,4320,768],[864,3168,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_a01_snow_leopard/full/v.webp","vs":[2000,2000],"rt":[[3360,1920,768,768,"img/sc_a01_snow_leopard/full/r0.webp"],[3744,3360,768,768,"img/sc_a01_snow_leopard/full/r1.webp"],[1536,3936,768,768,"img/sc_a01_snow_leopard/full/r2.webp"],[480,2784,768,768,"img/sc_a01_snow_leopard/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_a01_snow_leopard/area/v.webp","vs":[2000,2000],"rt":[[3360,1920,768,768,"img/sc_a01_snow_leopard/area/r0.webp"],[3744,3360,768,768,"img/sc_a01_snow_leopard/area/r1.webp"],[1536,3936,768,768,"img/sc_a01_snow_leopard/area/r2.webp"],[480,2784,768,768,"img/sc_a01_snow_leopard/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_a01_snow_leopard/sca40/v.webp","vs":[2000,2000],"rt":[[3360,1920,768,768,"img/sc_a01_snow_leopard/sca40/r0.webp"],[3744,3360,768,768,"img/sc_a01_snow_leopard/sca40/r1.webp"],[1536,3936,768,768,"img/sc_a01_snow_leopard/sca40/r2.webp"],[480,2784,768,768,"img/sc_a01_snow_leopard/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_a01_snow_leopard/tuned/v.webp","vs":[2000,2000],"rt":[[3360,1920,768,768,"img/sc_a01_snow_leopard/tuned/r0.webp"],[3744,3360,768,768,"img/sc_a01_snow_leopard/tuned/r1.webp"],[1536,3936,768,768,"img/sc_a01_snow_leopard/tuned/r2.webp"],[480,2784,768,768,"img/sc_a01_snow_leopard/tuned/r3.webp"]]}],"secs":"Full attention: 1839 s \u00b7 AReA: 754 s \u00b7 SCA, untuned: 605 s \u00b7 SCA, tuned: 649 s"},{"id":"sc_a02_jumping_spider","prompt":"Extreme macro photograph of a jumping spider on a green leaf covered in dew drops, large glossy front eyes reflecting the light, iridescent scales and fine hairs on its body, tiny water droplets magnifying the leaf veins, soft diffused light, shallow depth of field","size":[5312,5312],"regions":[[2688,2496,768],[1536,2592,768],[3360,4032,768],[3936,2592,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_a02_jumping_spider/full/v.webp","vs":[2000,2000],"rt":[[2304,2112,768,768,"img/sc_a02_jumping_spider/full/r0.webp"],[1152,2208,768,768,"img/sc_a02_jumping_spider/full/r1.webp"],[2976,3648,768,768,"img/sc_a02_jumping_spider/full/r2.webp"],[3552,2208,768,768,"img/sc_a02_jumping_spider/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_a02_jumping_spider/area/v.webp","vs":[2000,2000],"rt":[[2304,2112,768,768,"img/sc_a02_jumping_spider/area/r0.webp"],[1152,2208,768,768,"img/sc_a02_jumping_spider/area/r1.webp"],[2976,3648,768,768,"img/sc_a02_jumping_spider/area/r2.webp"],[3552,2208,768,768,"img/sc_a02_jumping_spider/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_a02_jumping_spider/sca40/v.webp","vs":[2000,2000],"rt":[[2304,2112,768,768,"img/sc_a02_jumping_spider/sca40/r0.webp"],[1152,2208,768,768,"img/sc_a02_jumping_spider/sca40/r1.webp"],[2976,3648,768,768,"img/sc_a02_jumping_spider/sca40/r2.webp"],[3552,2208,768,768,"img/sc_a02_jumping_spider/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_a02_jumping_spider/tuned/v.webp","vs":[2000,2000],"rt":[[2304,2112,768,768,"img/sc_a02_jumping_spider/tuned/r0.webp"],[1152,2208,768,768,"img/sc_a02_jumping_spider/tuned/r1.webp"],[2976,3648,768,768,"img/sc_a02_jumping_spider/tuned/r2.webp"],[3552,2208,768,768,"img/sc_a02_jumping_spider/tuned/r3.webp"]]}],"secs":"Full attention: 1849 s \u00b7 AReA: 690 s \u00b7 SCA, untuned: 649 s \u00b7 SCA, tuned: 617 s"},{"id":"sc_a03_owl","prompt":"A great horned owl perched on a mossy oak branch at dusk, intricate barred feathers in brown, buff and cream, tufted ear feathers, piercing amber eyes, lichen on the bark, a softly blurred forest behind, wildlife photography, feather-level detail","size":[5312,5312],"regions":[[2400,2880,768],[3552,3744,768],[2592,4320,768],[2592,1440,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_a03_owl/full/v.webp","vs":[2000,2000],"rt":[[2016,2496,768,768,"img/sc_a03_owl/full/r0.webp"],[3168,3360,768,768,"img/sc_a03_owl/full/r1.webp"],[2208,3936,768,768,"img/sc_a03_owl/full/r2.webp"],[2208,1056,768,768,"img/sc_a03_owl/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_a03_owl/area/v.webp","vs":[2000,2000],"rt":[[2016,2496,768,768,"img/sc_a03_owl/area/r0.webp"],[3168,3360,768,768,"img/sc_a03_owl/area/r1.webp"],[2208,3936,768,768,"img/sc_a03_owl/area/r2.webp"],[2208,1056,768,768,"img/sc_a03_owl/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_a03_owl/sca40/v.webp","vs":[2000,2000],"rt":[[2016,2496,768,768,"img/sc_a03_owl/sca40/r0.webp"],[3168,3360,768,768,"img/sc_a03_owl/sca40/r1.webp"],[2208,3936,768,768,"img/sc_a03_owl/sca40/r2.webp"],[2208,1056,768,768,"img/sc_a03_owl/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_a03_owl/tuned/v.webp","vs":[2000,2000],"rt":[[2016,2496,768,768,"img/sc_a03_owl/tuned/r0.webp"],[3168,3360,768,768,"img/sc_a03_owl/tuned/r1.webp"],[2208,3936,768,768,"img/sc_a03_owl/tuned/r2.webp"],[2208,1056,768,768,"img/sc_a03_owl/tuned/r3.webp"]]}],"secs":"Full attention: 1846 s \u00b7 AReA: 628 s \u00b7 SCA, untuned: 577 s \u00b7 SCA, tuned: 574 s"},{"id":"sc_d01_spice_bazaar","prompt":"A bustling covered spice bazaar, mountains of saffron, turmeric, paprika, cardamom and dried roses in open sacks and brass bowls, hanging brass lanterns, stacked rugs and ceramic plates, shoppers and merchants under a vaulted stone arcade, shafts of light through skylights, vibrant detail, signs without legible text","size":[5312,5312],"regions":[[2592,3840,768],[3648,4224,768],[1440,4032,768],[672,3168,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_d01_spice_bazaar/full/v.webp","vs":[2000,2000],"rt":[[2208,3456,768,768,"img/sc_d01_spice_bazaar/full/r0.webp"],[3264,3840,768,768,"img/sc_d01_spice_bazaar/full/r1.webp"],[1056,3648,768,768,"img/sc_d01_spice_bazaar/full/r2.webp"],[288,2784,768,768,"img/sc_d01_spice_bazaar/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_d01_spice_bazaar/area/v.webp","vs":[2000,2000],"rt":[[2208,3456,768,768,"img/sc_d01_spice_bazaar/area/r0.webp"],[3264,3840,768,768,"img/sc_d01_spice_bazaar/area/r1.webp"],[1056,3648,768,768,"img/sc_d01_spice_bazaar/area/r2.webp"],[288,2784,768,768,"img/sc_d01_spice_bazaar/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_d01_spice_bazaar/sca40/v.webp","vs":[2000,2000],"rt":[[2208,3456,768,768,"img/sc_d01_spice_bazaar/sca40/r0.webp"],[3264,3840,768,768,"img/sc_d01_spice_bazaar/sca40/r1.webp"],[1056,3648,768,768,"img/sc_d01_spice_bazaar/sca40/r2.webp"],[288,2784,768,768,"img/sc_d01_spice_bazaar/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_d01_spice_bazaar/tuned/v.webp","vs":[2000,2000],"rt":[[2208,3456,768,768,"img/sc_d01_spice_bazaar/tuned/r0.webp"],[3264,3840,768,768,"img/sc_d01_spice_bazaar/tuned/r1.webp"],[1056,3648,768,768,"img/sc_d01_spice_bazaar/tuned/r2.webp"],[288,2784,768,768,"img/sc_d01_spice_bazaar/tuned/r3.webp"]]}],"secs":"Full attention: 1918 s \u00b7 AReA: 754 s \u00b7 SCA, untuned: 655 s \u00b7 SCA, tuned: 681 s"},{"id":"sc_d02_container_port","prompt":"Aerial view of a busy container port at sunset, huge cargo ships alongside the quay, rows of towering gantry cranes, thousands of colorful shipping containers stacked in neat blocks, tugboats with white wakes, trucks lining up on the roads, long shadows, ultra-detailed aerial photography, no text","size":[5312,5312],"regions":[[4032,1920,768],[2976,1632,768],[2016,2304,768],[3072,4224,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_d02_container_port/full/v.webp","vs":[2000,2000],"rt":[[3648,1536,768,768,"img/sc_d02_container_port/full/r0.webp"],[2592,1248,768,768,"img/sc_d02_container_port/full/r1.webp"],[1632,1920,768,768,"img/sc_d02_container_port/full/r2.webp"],[2688,3840,768,768,"img/sc_d02_container_port/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_d02_container_port/area/v.webp","vs":[2000,2000],"rt":[[3648,1536,768,768,"img/sc_d02_container_port/area/r0.webp"],[2592,1248,768,768,"img/sc_d02_container_port/area/r1.webp"],[1632,1920,768,768,"img/sc_d02_container_port/area/r2.webp"],[2688,3840,768,768,"img/sc_d02_container_port/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_d02_container_port/sca40/v.webp","vs":[2000,2000],"rt":[[3648,1536,768,768,"img/sc_d02_container_port/sca40/r0.webp"],[2592,1248,768,768,"img/sc_d02_container_port/sca40/r1.webp"],[1632,1920,768,768,"img/sc_d02_container_port/sca40/r2.webp"],[2688,3840,768,768,"img/sc_d02_container_port/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_d02_container_port/tuned/v.webp","vs":[2000,2000],"rt":[[3648,1536,768,768,"img/sc_d02_container_port/tuned/r0.webp"],[2592,1248,768,768,"img/sc_d02_container_port/tuned/r1.webp"],[1632,1920,768,768,"img/sc_d02_container_port/tuned/r2.webp"],[2688,3840,768,768,"img/sc_d02_container_port/tuned/r3.webp"]]}],"secs":"Full attention: 2104 s \u00b7 AReA: 692 s \u00b7 SCA, untuned: 599 s \u00b7 SCA, tuned: 621 s"},{"id":"sc_d03_antique_shop","prompt":"The cluttered interior of an antique shop, walls covered with ticking clocks, shelves of porcelain teacups, brass telescopes and compasses, stacks of old books, framed maps, a cabinet of curiosities with shells and minerals, a dusty chandelier, warm lamp light, highly detailed","size":[5312,5312],"regions":[[2880,3840,768],[960,3648,768],[1056,1824,768],[3456,1056,768]],"panels":[{"m":"full","label":"Full attention","ours":false,"view":"img/sc_d03_antique_shop/full/v.webp","vs":[2000,2000],"rt":[[2496,3456,768,768,"img/sc_d03_antique_shop/full/r0.webp"],[576,3264,768,768,"img/sc_d03_antique_shop/full/r1.webp"],[672,1440,768,768,"img/sc_d03_antique_shop/full/r2.webp"],[3072,672,768,768,"img/sc_d03_antique_shop/full/r3.webp"]]},{"m":"area","label":"AReA","ours":false,"view":"img/sc_d03_antique_shop/area/v.webp","vs":[2000,2000],"rt":[[2496,3456,768,768,"img/sc_d03_antique_shop/area/r0.webp"],[576,3264,768,768,"img/sc_d03_antique_shop/area/r1.webp"],[672,1440,768,768,"img/sc_d03_antique_shop/area/r2.webp"],[3072,672,768,768,"img/sc_d03_antique_shop/area/r3.webp"]]},{"m":"sca40","label":"SCA, untuned","ours":true,"view":"img/sc_d03_antique_shop/sca40/v.webp","vs":[2000,2000],"rt":[[2496,3456,768,768,"img/sc_d03_antique_shop/sca40/r0.webp"],[576,3264,768,768,"img/sc_d03_antique_shop/sca40/r1.webp"],[672,1440,768,768,"img/sc_d03_antique_shop/sca40/r2.webp"],[3072,672,768,768,"img/sc_d03_antique_shop/sca40/r3.webp"]]},{"m":"tuned","label":"SCA, tuned","ours":true,"view":"img/sc_d03_antique_shop/tuned/v.webp","vs":[2000,2000],"rt":[[2496,3456,768,768,"img/sc_d03_antique_shop/tuned/r0.webp"],[576,3264,768,768,"img/sc_d03_antique_shop/tuned/r1.webp"],[672,1440,768,768,"img/sc_d03_antique_shop/tuned/r2.webp"],[3072,672,768,768,"img/sc_d03_antique_shop/tuned/r3.webp"]]}],"secs":"Full attention: 1813 s \u00b7 AReA: 683 s \u00b7 SCA, untuned: 582 s \u00b7 SCA, tuned: 610 s"}];</script>
+<script>/* Synced deep-zoom grids for the SCA pages (index.html and review/). Vanilla JS, no dependencies, works from file://.
+
+   var g = SCAZoom.grid(spec); host.appendChild(g.el);
+   spec  size     [W, H], the native size every panel shares
+         panels   [{label, ours, view, vs: [w, h], tiles: {path "...{c}_{r}.webp", size, cols, rows} | rt: [[x, y, w, h, src]]}]
+         regions  [[cx, cy, span]], the auto-zoom stops in native pixels (built per grid from an edge-energy map)
+         alt      text for the panels' labels; minW, maxCols: panel layout; eager: load the overviews at once
+   Scroll or pinch to zoom and drag to pan on any panel: every panel shows the same region. Double-click or
+   double-tap resets. Auto zoom flies through the stops; any input stops it and leaves the view where it is.
+   At the whole-image view each panel is a plain <img>; canvases exist only while a grid is zoomed, and
+   native-pixel tiles load only when the view needs more pixels than the overview holds. */
+(function () {
+  "use strict";
+  var REDUCED = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var HOLD = 2300;                       /* ms at each stop of the tour */
+
+  function el(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else if (k === "html") e.innerHTML = v;
+      else e.setAttribute(k, v === true ? "" : v);
+    });
+    (kids || []).forEach(function (c) { if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return e;
+  }
+  function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+  function dpr() { return Math.min(2.5, window.devicePixelRatio || 1); }
+  function ease(t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function cosh(x) { x = Math.exp(x); return (x + 1 / x) / 2; }
+  function sinh(x) { x = Math.exp(x); return (x - 1 / x) / 2; }
+  function tanh(x) { x = Math.exp(2 * x); return (x - 1) / (x + 1); }
+
+  /* Smooth zoom and pan along the path of van Wijk and Nuij (2003), as d3's interpolateZoom: p = [cx, cy, width]. */
+  function flight(p0, p1) {
+    var rho = Math.SQRT2, ux0 = p0[0], uy0 = p0[1], w0 = p0[2], ux1 = p1[0], uy1 = p1[1], w1 = p1[2];
+    var dx = ux1 - ux0, dy = uy1 - uy0, d2 = dx * dx + dy * dy, S, f;
+    if (d2 < 1e-6) {
+      S = Math.log(w1 / w0) / rho;
+      f = function (t) { return [ux0 + t * dx, uy0 + t * dy, w0 * Math.exp(rho * t * S)]; };
+    } else {
+      var d1 = Math.sqrt(d2), b0 = (w1 * w1 - w0 * w0 + 4 * d2) / (4 * w0 * d1), b1 = (w1 * w1 - w0 * w0 - 4 * d2) / (4 * w1 * d1);
+      var r0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0), r1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1);
+      S = (r1 - r0) / rho;
+      f = function (t) {
+        var s = t * S, c0 = cosh(r0), u = w0 / (2 * d1) * (c0 * tanh(rho * s + r0) - sinh(r0));
+        return [ux0 + u * dx, uy0 + u * dy, w0 * c0 / cosh(rho * s + r0)];
+      };
+    }
+    f.duration = Math.abs(S) * 1000;
+    return f;
+  }
+
+  var ICON_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>';
+  var ICON_PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z" fill="currentColor"/></svg>';
+  var ICON_RESET = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 15v5h-5M4 4l6 6M20 20l-6-6"/></svg>';
+
+  function grid(spec) {
+    var W = spec.size[0], H = spec.size[1], base = spec.base || "";
+    var regions = (spec.regions || []).filter(function (r) { return r && r.length >= 2; });
+    var st = { cx: W / 2, cy: H / 2, z: 1 };
+    var root = el("div", { class: "zg" + (spec.cls ? " " + spec.cls : ""), role: "group", "aria-label": spec.label || "Zoomable comparison" });
+    var bar = el("div", { class: "zg-bar" });
+    var autoB = el("button", { type: "button", class: "zg-btn zg-auto", "aria-pressed": "false", title: "Fly through the most detailed regions; any input takes over" });
+    var resetB = el("button", { type: "button", class: "zg-btn zg-reset", html: ICON_RESET + "<span>Whole image</span>", title: "Back to the whole image (or double-click a panel)" });
+    var read = el("span", { class: "zg-read", "aria-live": "off" });
+    var hint = el("span", { class: "zg-hint", html: '<span class="zg-h-m">Scroll to zoom, drag to pan, double-click to reset</span><span class="zg-h-t">Pinch to zoom, drag to pan, double-tap to reset</span>' });
+    if (regions.length) bar.appendChild(autoB);
+    bar.appendChild(resetB); bar.appendChild(read); bar.appendChild(hint);
+    var gridEl = el("div", { class: "zg-grid" });
+    gridEl.style.setProperty("--zg-cols", Math.min(spec.panels.length, spec.maxCols || 4));   /* until layout() measures */
+    if (spec.barBelow) { root.appendChild(gridEl); root.appendChild(bar); } else { root.appendChild(bar); root.appendChild(gridEl); }
+    var panels = spec.panels.map(makePanel);
+    var map = el("div", { class: "zg-map", "aria-hidden": "true" }), mapR = el("span", { class: "zg-map-r" });
+    map.appendChild(el("img", { src: base + spec.panels[0].view, alt: "", loading: spec.eager ? "eager" : "lazy", decoding: "async", draggable: "false" }));
+    map.appendChild(mapR);
+    panels[0].box.appendChild(map);
+
+    var zoomed = false, visible = true, raf = 0, anim = null, inflight = 0, queue = [];
+    var tour = { on: false, next: 0, timer: 0 };
+    var ptrs = {}, gest = null, seq = null, lastTap = null, lastDbl = 0, ro = null, io = null, bg = "#888";
+
+    function makePanel(p, i) {
+      var box = el("div", { class: "zg-p" + (p.ours ? " ours" : ""), tabindex: "0", role: "img",
+                            "aria-label": p.label + (spec.alt ? ": " + spec.alt : "") + ". Zoom and pan move every panel of this grid together." });
+      box.style.aspectRatio = W + " / " + H;
+      var im = el("img", { class: "zg-img", src: base + p.view, alt: "", loading: spec.eager ? "eager" : "lazy", decoding: "async",
+                           draggable: "false", width: p.vs ? p.vs[0] : null, height: p.vs ? p.vs[1] : null });
+      box.appendChild(im);
+      box.appendChild(el("span", { class: "zg-tag", text: p.label }));
+      var dot = el("span", { class: "zg-load", "aria-hidden": "true" });
+      box.appendChild(dot);
+      var P = { i: i, p: p, box: box, img: im, dot: dot, cv: null, ctx: null, tiles: {}, pending: 0, pw: 0, ph: 0, ok: !!(im.complete && im.naturalWidth) };
+      im.addEventListener("load", function () { P.ok = true; dirty(); });
+      bind(P);
+      gridEl.appendChild(box);
+      return P;
+    }
+
+    /* ---------------------------------------------------------------- geometry */
+    function measure() {
+      panels.forEach(function (P) {
+        var r = P.box.getBoundingClientRect();
+        P.pw = r.width; P.ph = r.height;
+        if (P.cv) {
+          var d = dpr(), w = Math.max(1, Math.round(r.width * d)), h = Math.max(1, Math.round(r.height * d));
+          if (P.cv.width !== w || P.cv.height !== h) { P.cv.width = w; P.cv.height = h; }
+        }
+      });
+    }
+    function s0(P) { return Math.min(P.pw / W, P.ph / H) || 1e-6; }
+    function zmax() { var P = panels[0]; return Math.max(2, (6 / dpr()) / s0(P)); }
+    function clampSt() {
+      var P = panels[0];
+      st.z = clamp(st.z, 1, zmax());
+      var s = s0(P) * st.z, hw = P.pw / (2 * s), hh = P.ph / (2 * s);
+      st.cx = 2 * hw >= W ? W / 2 : clamp(st.cx, hw, W - hw);
+      st.cy = 2 * hh >= H ? H / 2 : clamp(st.cy, hh, H - hh);
+    }
+    function nativeAt(P, r, X, Y) { var s = s0(P) * st.z; return [st.cx + (X - r.left - P.pw / 2) / s, st.cy + (Y - r.top - P.ph / 2) / s]; }
+    function place(P, r, n, X, Y) {       /* put native point n under screen point (X, Y) */
+      var s = s0(P) * st.z;
+      st.cx = n[0] - (X - r.left - P.pw / 2) / s; st.cy = n[1] - (Y - r.top - P.ph / 2) / s;
+    }
+    function layout() {
+      var w = gridEl.clientWidth || root.clientWidth || 600, n = panels.length, gap = 6;
+      var minW = spec.minW ? (w < 560 ? Math.min(spec.minW, 140) : spec.minW) : (w < 560 ? 140 : 210);
+      var cols = Math.max(1, Math.min(n, spec.maxCols || n, Math.floor((w + gap) / (minW + gap))));
+      cols = Math.ceil(n / Math.ceil(n / cols));
+      gridEl.style.setProperty("--zg-cols", cols);
+    }
+
+    /* ---------------------------------------------------------------- drawing */
+    function setZoomed(on) {
+      if (on === zoomed) return;
+      zoomed = on;
+      if (on) {
+        measure();
+        bg = getComputedStyle(panels[0].box).backgroundColor || "#888";
+        panels.forEach(function (P) {
+          if (!P.cv) {
+            P.cv = el("canvas", { class: "zg-cv", "aria-hidden": "true" });
+            P.box.insertBefore(P.cv, P.img.nextSibling);
+            P.ctx = P.cv.getContext("2d");
+          }
+        });
+        measure();
+        drawAll();
+      } else {
+        panels.forEach(function (P) { if (P.cv) { P.cv.width = P.cv.height = 0; P.box.removeChild(P.cv); P.cv = P.ctx = null; } });
+      }
+      root.classList.toggle("zoomed", on);
+    }
+    function blit(ctx, im, x0, y0, vw, vh, tx, ty, tw, th, sd, snap) {
+      var ix0 = Math.max(x0, tx), iy0 = Math.max(y0, ty), ix1 = Math.min(x0 + vw, tx + tw), iy1 = Math.min(y0 + vh, ty + th);
+      if (ix1 <= ix0 || iy1 <= iy0) return;
+      var kx = im.naturalWidth / tw, ky = im.naturalHeight / th;
+      var dx0 = (ix0 - x0) * sd, dy0 = (iy0 - y0) * sd, dx1 = (ix1 - x0) * sd, dy1 = (iy1 - y0) * sd;
+      if (snap) { dx0 = Math.floor(dx0); dy0 = Math.floor(dy0); dx1 = Math.ceil(dx1); dy1 = Math.ceil(dy1); }
+      var sx = clamp((ix0 - tx) * kx, 0, im.naturalWidth), sy = clamp((iy0 - ty) * ky, 0, im.naturalHeight);
+      var sw = Math.min(im.naturalWidth - sx, (ix1 - ix0) * kx), sh = Math.min(im.naturalHeight - sy, (iy1 - iy0) * ky);
+      if (sw > 0 && sh > 0) ctx.drawImage(im, sx, sy, sw, sh, dx0, dy0, dx1 - dx0, dy1 - dy0);
+    }
+    function tilesIn(P, x0, y0, vw, vh) {
+      var out = [], p = P.p;
+      if (p.tiles) {
+        var g = p.tiles, T = g.size;
+        var c0 = Math.max(0, Math.floor(x0 / T)), c1 = Math.min(g.cols - 1, Math.floor((x0 + vw - 1e-6) / T));
+        var r0 = Math.max(0, Math.floor(y0 / T)), r1 = Math.min(g.rows - 1, Math.floor((y0 + vh - 1e-6) / T));
+        for (var r = r0; r <= r1; r++) for (var c = c0; c <= c1; c++)
+          out.push({ key: c + "_" + r, x: c * T, y: r * T, w: Math.min(T, W - c * T), h: Math.min(T, H - r * T), src: g.path.replace("{c}", c).replace("{r}", r) });
+      } else if (p.rt) {
+        p.rt.forEach(function (q, k) {
+          if (q[0] < x0 + vw && q[0] + q[2] > x0 && q[1] < y0 + vh && q[1] + q[3] > y0) out.push({ key: "r" + k, x: q[0], y: q[1], w: q[2], h: q[3], src: q[4] });
+        });
+      }
+      return out;
+    }
+    function tile(P, t) {
+      var T = P.tiles[t.key];
+      if (!T) {
+        T = P.tiles[t.key] = { img: new Image(), ok: false, started: false, src: base + t.src, P: P };
+        queue.push(T); P.pending++; P.dot.classList.add("on");
+        pump();
+      }
+      return T;
+    }
+    function pump() {
+      while (inflight < 6 && queue.length) {
+        var T = queue.shift();
+        if (T.started) continue;
+        T.started = true; inflight++;
+        (function (T) {
+          T.img.decoding = "async";
+          T.img.onload = function () { T.ok = true; done(T); dirty(); };
+          T.img.onerror = function () { done(T); };
+          T.img.src = T.src;
+        })(T);
+      }
+    }
+    function done(T) { inflight--; T.P.pending--; if (T.P.pending <= 0) { T.P.pending = 0; T.P.dot.classList.remove("on"); } pump(); }
+    function drawPanel(P) {
+      if (!P.cv || !P.pw) return;
+      var ctx = P.ctx, d = P.cv.width / P.pw, s = s0(P) * st.z, sd = s * d;
+      var vw = P.pw / s, vh = P.ph / s, x0 = st.cx - vw / 2, y0 = st.cy - vh / 2;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, P.cv.width, P.cv.height);
+      var k = 0;
+      if (P.ok && P.img.naturalWidth) {
+        k = P.img.naturalWidth / W;
+        ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+        blit(ctx, P.img, x0, y0, vw, vh, 0, 0, W, H, sd, false);
+      }
+      if (sd > k * 1.12) {
+        var list = tilesIn(P, x0, y0, vw, vh);
+        ctx.imageSmoothingEnabled = sd < 2.2;
+        list.forEach(function (t) { var T = tile(P, t); if (T.ok) blit(ctx, T.img, x0, y0, vw, vh, t.x, t.y, t.w, t.h, sd, !!P.p.tiles); });
+      }
+    }
+    function drawAll() {
+      if (!zoomed || !visible) return;
+      panels.forEach(drawPanel);
+    }
+    function ui() {
+      var P = panels[0], s = s0(P) * st.z, vw = P.pw / s, vh = P.ph / s, m = s * dpr();
+      mapR.style.left = ((st.cx - vw / 2) / W * 100).toFixed(2) + "%"; mapR.style.top = ((st.cy - vh / 2) / H * 100).toFixed(2) + "%";
+      mapR.style.width = (vw / W * 100).toFixed(2) + "%"; mapR.style.height = (vh / H * 100).toFixed(2) + "%";
+      read.textContent = st.z < 1.005 ? "" : (m > .92 ? (m < 1.45 ? "native pixels, 1:1" : "native pixels, " + Math.round(m) + ":1") : "zoom " + st.z.toFixed(1) + "×");
+    }
+    function dirty() { if (!raf) raf = requestAnimationFrame(function () { raf = 0; drawAll(); }); }
+    function changed() { setZoomed(st.z > 1.004 || !!anim); ui(); dirty(); }
+
+    /* ---------------------------------------------------------------- the tour and animated moves */
+    function stopView(k) {
+      var P = panels[0], cap = Math.min(W, H), p = P.p;
+      if (p.rt && p.rt.length) cap = Math.min(cap, p.rt[k % p.rt.length][2]);
+      else if (p.tiles) cap = Math.min(cap, 1024);
+      var span = clamp(P.pw * dpr(), Math.min(240, cap), cap), r = regions[k];
+      return [r[0], r[1], span];
+    }
+    function prefetch(v) {
+      var P0 = panels[0], vw = v[2], vh = vw * P0.ph / (P0.pw || 1);
+      panels.forEach(function (P) { tilesIn(P, v[0] - vw / 2, v[1] - vh / 2, vw, vh).forEach(function (t) { tile(P, t); }); });
+    }
+    function cancelAnim() { if (anim) { cancelAnimationFrame(anim.raf); anim = null; } }
+    function animateTo(v, then) {          /* v = [cx, cy, visible width in native px] */
+      cancelAnim();
+      if (v[2] < W) prefetch(v);
+      var f = flight([st.cx, st.cy, W / st.z], v), dur = REDUCED ? 1 : clamp(f.duration * .85, 650, 2400), t0 = performance.now();
+      anim = { raf: 0 };
+      setZoomed(true);
+      var step = function (now) {
+        if (!anim) return;
+        var t = clamp((now - t0) / dur, 0, 1), q = f(ease(t));
+        st.cx = q[0]; st.cy = q[1]; st.z = W / q[2]; clampSt(); ui(); drawAll();
+        if (t < 1) anim.raf = requestAnimationFrame(step);
+        else { anim = null; changed(); if (then) then(); }
+      };
+      anim.raf = requestAnimationFrame(step);
+    }
+    function setAuto() {
+      autoB.setAttribute("aria-pressed", String(tour.on));
+      autoB.innerHTML = tour.on ? ICON_PAUSE + "<span>Pause</span>" : ICON_PLAY + "<span>Auto zoom</span>";
+      root.classList.toggle("touring", tour.on);
+    }
+    function legOf(k) {
+      if (!tour.on) return;
+      if (k >= regions.length) { animateTo([W / 2, H / 2, W], function () { tour.on = false; tour.next = 0; setAuto(); }); return; }
+      animateTo(stopView(k), function () {
+        tour.next = k + 1;
+        tour.timer = setTimeout(function () { legOf(tour.next); }, HOLD);
+      });
+    }
+    function play() { if (!regions.length) return; measure(); tour.on = true; setAuto(); legOf(tour.next % (regions.length + 1)); }
+    function pause() { if (!tour.on && !anim) return; tour.on = false; clearTimeout(tour.timer); cancelAnim(); setAuto(); changed(); }
+    function takeOver() { if (tour.on || anim) pause(); }
+    function resetView() { takeOver(); tour.next = 0; if (st.z > 1.004) animateTo([W / 2, H / 2, W]); }
+    autoB.addEventListener("click", function () { if (tour.on) pause(); else play(); });
+    resetB.addEventListener("click", resetView);
+    setAuto(); ui();
+
+    /* ---------------------------------------------------------------- input */
+    function bind(P) {
+      var box = P.box;
+      box.addEventListener("pointerdown", function (e) {
+        if (e.button) return;
+        if (map.contains(e.target)) return;
+        if (!Object.keys(ptrs).length) seq = { multi: false, moved: false };
+        try { box.setPointerCapture(e.pointerId); } catch (x) { /* old browsers */ }
+        ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+        if (Object.keys(ptrs).length > 1) seq.multi = true;
+        takeOver(); measure(); begin(P);
+        if (e.pointerType === "mouse") e.preventDefault();
+      });
+      box.addEventListener("pointermove", function (e) {
+        var q = ptrs[e.pointerId]; if (!q) return;
+        q.x = e.clientX; q.y = e.clientY; move(P);
+      });
+      var end = function (e) {
+        var q = ptrs[e.pointerId]; if (!q) return;
+        delete ptrs[e.pointerId];
+        var left = Object.keys(ptrs).length;
+        if (!left && e.type === "pointerup" && e.pointerType !== "mouse" && seq && !seq.multi && !seq.moved) {
+          var now = performance.now();
+          if (lastTap && now - lastTap.t < 330 && Math.hypot(q.x - lastTap.x, q.y - lastTap.y) < 32) { lastTap = null; dbl(P, q.x, q.y); }
+          else lastTap = { t: now, x: q.x, y: q.y };
+        }
+        if (left) begin(P); else gest = null;
+      };
+      box.addEventListener("pointerup", end);
+      box.addEventListener("pointercancel", end);
+      box.addEventListener("lostpointercapture", end);
+      box.addEventListener("dblclick", function (e) { e.preventDefault(); if (performance.now() - lastDbl > 600) dbl(P, e.clientX, e.clientY); });
+      box.addEventListener("wheel", function (e) {
+        var dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
+        if (!dy) return;
+        measure();
+        var z1 = clamp(st.z * Math.pow(2, -dy * (e.ctrlKey ? .01 : .002)), 1, zmax());
+        if (Math.abs(z1 - st.z) < 1e-4) return;          /* at a limit: the page scrolls */
+        e.preventDefault(); takeOver();
+        var r = box.getBoundingClientRect(), n = nativeAt(P, r, e.clientX, e.clientY);
+        st.z = z1; place(P, r, n, e.clientX, e.clientY); clampSt(); changed();
+      }, { passive: false });
+      box.addEventListener("keydown", function (e) {
+        var k = e.key, s = s0(P) * st.z, stp = P.pw / s * .12;
+        measure();
+        if (k === "+" || k === "=") st.z *= 1.5; else if (k === "-" || k === "_") st.z /= 1.5;
+        else if (k === "ArrowLeft") st.cx -= stp; else if (k === "ArrowRight") st.cx += stp;
+        else if (k === "ArrowUp") st.cy -= stp; else if (k === "ArrowDown") st.cy += stp;
+        else if (k === "0") { e.preventDefault(); resetView(); return; } else return;
+        if (k.indexOf("Arrow") === 0 && st.z < 1.004) return;     /* at the whole image the arrows scroll the page */
+        e.preventDefault(); takeOver(); clampSt(); changed();
+      });
+    }
+    function begin(P) {
+      var ids = Object.keys(ptrs), a = ptrs[ids[0]], b = ptrs[ids[1]], r = P.box.getBoundingClientRect();
+      var c = b ? [(a.x + b.x) / 2, (a.y + b.y) / 2] : [a.x, a.y];
+      gest = { P: P, r: r, c: c, d: b ? Math.hypot(a.x - b.x, a.y - b.y) : 0, z: st.z, n: nativeAt(P, r, c[0], c[1]) };
+    }
+    function move(P) {
+      if (!gest) return;
+      var ids = Object.keys(ptrs), a = ptrs[ids[0]], b = ptrs[ids[1]], g = gest;
+      var c = b ? [(a.x + b.x) / 2, (a.y + b.y) / 2] : [a.x, a.y];
+      if (!b && !seq.moved && Math.hypot(c[0] - g.c[0], c[1] - g.c[1]) < 4) return;
+      seq.moved = true;
+      if (b && g.d > 0) st.z = clamp(g.z * Math.hypot(a.x - b.x, a.y - b.y) / g.d, 1, zmax());
+      place(g.P, g.r, g.n, c[0], c[1]); clampSt(); changed();
+    }
+    function dbl(P, X, Y) {
+      lastDbl = performance.now(); takeOver(); measure();
+      if (st.z > 1.05) { tour.next = 0; animateTo([W / 2, H / 2, W]); return; }
+      var r = P.box.getBoundingClientRect(), n = nativeAt(P, r, X, Y);
+      animateTo([n[0], n[1], W / Math.min(4, zmax())]);
+    }
+    function mapAt(e) {
+      var r = map.getBoundingClientRect();
+      st.cx = clamp((e.clientX - r.left) / r.width, 0, 1) * W; st.cy = clamp((e.clientY - r.top) / r.height, 0, 1) * H;
+      clampSt(); changed();
+    }
+    var mdrag = false;
+    map.addEventListener("pointerdown", function (e) { e.stopPropagation(); e.preventDefault(); takeOver(); mdrag = true; try { map.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ } mapAt(e); });
+    map.addEventListener("pointermove", function (e) { if (mdrag) mapAt(e); });
+    ["pointerup", "pointercancel"].forEach(function (t) { map.addEventListener(t, function () { mdrag = false; }); });
+    map.addEventListener("dblclick", function (e) { e.stopPropagation(); });
+
+    /* ---------------------------------------------------------------- size and visibility */
+    function onResize() { layout(); measure(); clampSt(); ui(); drawAll(); }
+    if ("ResizeObserver" in window) { ro = new ResizeObserver(function () { onResize(); }); ro.observe(gridEl); }
+    else window.addEventListener("resize", onResize);
+    if ("IntersectionObserver" in window) {
+      io = new IntersectionObserver(function (es) {
+        visible = es[es.length - 1].isIntersecting;
+        if (!visible) { if (tour.on) pause(); if (zoomed) panels.forEach(function (P) { if (P.cv) { P.cv.width = P.cv.height = 0; } }); }
+        else if (zoomed) { measure(); drawAll(); }
+      }, { rootMargin: "400px 0px" });
+      io.observe(root);
+    }
+    requestAnimationFrame(function () { layout(); measure(); ui(); });
+
+    return {
+      el: root,
+      play: play,
+      pause: pause,
+      reset: resetView,
+      flyTo: function (k) { takeOver(); measure(); if (regions[k]) animateTo(stopView(k)); },
+      destroy: function () {
+        pause(); cancelAnim(); if (ro) ro.disconnect(); if (io) io.disconnect();
+        panels.forEach(function (P) { if (P.cv) { P.cv.width = P.cv.height = 0; } });
+        queue.length = 0;
+      }
+    };
+  }
+
+  window.SCAZoom = { grid: grid };
+})();
+</script>
+<script>(function(){
+  var list=document.getElementById('grids'),items=window.ITEMS||[];
+  items.forEach(function(it,n){
+    var c=document.createElement('section');c.className='card';c.id='t'+(n+1);
+    var p=document.createElement('p');p.className='prompt';var b=document.createElement('b');b.textContent='#'+(n+1);
+    p.appendChild(b);p.appendChild(document.createTextNode(it.prompt));c.appendChild(p);
+    c.appendChild(window.SCAZoom.grid({size:it.size,panels:it.panels,regions:it.regions,alt:it.prompt,minW:200,
+      maxCols:4,label:'Four methods on TEST prompt '+(n+1)+'; zoom moves every panel'}).el);
+    var s=document.createElement('p');s.className='secs';s.textContent=it.secs;c.appendChild(s);
+    list.appendChild(c);
+  });
+})();
+document.getElementById('theme').onclick=function(){var r=document.documentElement,t=r.getAttribute('data-theme'),dark=t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches,n=dark?'light':'dark';r.setAttribute('data-theme',n);try{localStorage.setItem('sca-theme',n)}catch(e){}};</script>
+</body>
+</html>

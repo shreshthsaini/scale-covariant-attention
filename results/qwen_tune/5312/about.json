@@ -85,6 +85,20 @@
    "sc_p04_green_perfume",
    "sc_p05_leather_sneakers",
    "sc_p06_headphones"
+  ],
+  "qt_prog_deep_sfx": [
+   "sc_a04_zebras",
+   "sc_a05_lion_rain",
+   "sc_d04_flower_market",
+   "sc_h04_blacksmith",
+   "sc_h05_textile_artist",
+   "sc_h06_mountaineer",
+   "sc_l04_hillside_town",
+   "sc_l05_palm_house",
+   "sc_l06_atoll",
+   "sc_p04_green_perfume",
+   "sc_p05_leather_sneakers",
+   "sc_p06_headphones"
   ]
  },
  "configs": {
@@ -223,6 +237,110 @@
    "implementation_sha256": "13c66d47bdb453af3a9582986cfc752a1b881c0840403b8419802434251cdf06",
    "attention": "stock@native+sca@highres",
    "folder": "/scratch/09032/saini_2/sca/out/qwen_tune/qt_prog/5312x5312"
+  },
+  "qt_prog_deep_sfx": {
+   "method": "qt_prog_deep_sfx",
+   "steps": 75,
+   "true_cfg_scale": [
+    4.0,
+    4.0,
+    4.0
+   ],
+   "negative_prompt": "",
+   "mu_mode": "native",
+   "mu": null,
+   "prompt_suffix": "area",
+   "progressive": {
+    "stages": [
+     "1328x1328",
+     "2656x2656",
+     "5312x5312"
+    ],
+    "base_steps": 30,
+    "highres_steps": [
+     20,
+     25
+    ],
+    "structure_guidance": "fft",
+    "upsampling_choice": "latent",
+    "flow_choice": "v_theta",
+    "alphas": [
+     1.0,
+     0.25
+    ],
+    "betas": [
+     0.5,
+     0.5
+    ],
+    "filter_ratio": [
+     0.2,
+     0.2
+    ],
+    "butterworth_order": 4,
+    "sharpen_kernel": 3,
+    "sharpen_sigma": [
+     0.1,
+     2.0
+    ],
+    "sharpen_alpha": 1.0,
+    "stage_upsampler": "vae_decode, bicubic pixel upsample, gaussian-blur unsharp mask, vae_encode mode",
+    "renoise": "sigma*noise + (1-sigma)*x at the stage start sigma, noise from the per-prompt generator",
+    "true_cfg": [
+     4.0,
+     4.0,
+     4.0
+    ],
+    "structure_guidance_space": "Qwen-Image VAE latents (16 channels), unpacked per stage",
+    "schedule": "Qwen-Image scheduler at the native stage's sequence (mu native), later stages run its tail"
+   },
+   "sca": {
+    "stages": [
+     {
+      "res": "2656x2656",
+      "n0": 83,
+      "tile": 8,
+      "window": 83,
+      "pool": "center",
+      "chunk": null,
+      "gate_sigma": 0.85799,
+      "pool_factors": [
+       2,
+       2
+      ],
+      "pi_variant": "head",
+      "pi_const": null,
+      "pi_scale": 2,
+      "bridge_cells": 2,
+      "bridge_k": 256
+     },
+     {
+      "res": "5312x5312",
+      "n0": 83,
+      "tile": 8,
+      "window": 83,
+      "pool": "center",
+      "chunk": null,
+      "gate_sigma": 0.85799,
+      "pool_factors": [
+       4,
+       4
+      ],
+      "pi_variant": "head",
+      "pi_const": null,
+      "pi_scale": 4,
+      "bridge_cells": 4,
+      "bridge_k": 64
+     }
+    ],
+    "pi_table_sha256": "3d0bf38435b0df69b9c9d9dadf9f44d69020bc4e561613c86a9ad59daa3e5643",
+    "native_attention": "stock",
+    "bridge_tokens": 1024
+   },
+   "area": null,
+   "mu_rule": null,
+   "implementation_sha256": "13c66d47bdb453af3a9582986cfc752a1b881c0840403b8419802434251cdf06",
+   "attention": "stock@native+sca@highres",
+   "folder": "/scratch/09032/saini_2/sca/out/qwen_tune/qt_prog_deep_sfx/5312x5312"
   },
   "qt_prog_late": {
    "method": "qt_prog_late",
@@ -539,5 +657,6 @@
  },
  "screen_rule": "mean d_z over PickScore, HPSv2.1, ImageReward vs the reference; ties within 0.10 to the faster",
  "metrics": "as results/qwen_5312_vs_area (scripts/qwen_area_eval.py)",
- "bootstrap": "scripts/paired_bootstrap.py, prompts resampled, 2000 draws, seed 0, 95% percentile CI"
+ "bootstrap": "scripts/paired_bootstrap.py, prompts resampled, 2000 draws, seed 0, 95% percentile CI",
+ "extra_pairs": []
 }
