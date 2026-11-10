@@ -159,12 +159,12 @@ EVAL = f"{S}/eval"
 
 def eval_tune(dry, res, labels, code, tag=""):
     """Screen evaluation at one size: every label that has a folder there, against AReA (qt_area)."""
-    folders = [lab for lab in ["qt_area"] + list(labels) if lab == "qt_area" or Path(f"{OUT_TUNE}/{lab}/{res}").is_dir()]
-    meth = " ".join(f"--method {lab}={OUT_TUNE}/{lab}/{res}" for lab in folders)
-    aq.task(f"000r_e_eval_tune{res[:4]}{tag}.sh", 45, f"TUNE screen evaluation at {res} (scripts/qwen_tune_eval.py)",
+    meth = " ".join(f"--method {lab}={OUT_TUNE}/{lab}/{res}" for lab in ["qt_area"] + list(labels))
+    aq.task(f"000r_e_eval_tune{res[:4]}{tag}.sh", 100, f"TUNE screen evaluation at {res} (scripts/qwen_tune_eval.py); "
+            "named to be claimed after every screen task, it scores images as they land until all 12 per method exist",
             code, f"{PY} scripts/qwen_tune_eval.py --prompts {TUNE} --res {res} --reference qt_area {meth} "
-            f"--eval {EVAL}/qwen_tune{res[:4]} --results {st.P}/results/qwen_tune/{res[:4]}", dry, need=40,
-            exclusive=False)
+            f"--eval {EVAL}/qwen_tune{res[:4]} --results {st.P}/results/qwen_tune/{res[:4]} --expect 12 "
+            "--wait-max 5400", dry, need=40, exclusive=False)
 
 
 def test5312(dry, labels, code):
@@ -188,9 +188,11 @@ def eval_test(dry, labels, code):
     meth = [f"--method qwen_area={st.OUT}/qwen_area/5312x5312", f"--method qwen_sca40={st.OUT}/qwen_sca40/5312x5312",
             f"--method qwen_sca={st.OUT}/qwen_sca/5312x5312", f"--method qwen_full={st.OUT}/qwen_full/5312x5312"]
     meth += [f"--method {lab}={OUT_TEST}/{lab}/5312x5312" for lab in labels]
-    aq.task("000r_g_eval_test5312.sh", 60, "TEST evaluation at 5312^2 (scripts/qwen_tune_eval.py)", code,
+    aq.task("000r_g_eval_test5312.sh", 120, "TEST evaluation at 5312^2 (scripts/qwen_tune_eval.py); scores images as "
+            "they land until the tuned configuration has all 15", code,
             f"{PY} scripts/qwen_tune_eval.py --prompts {TEST} --res 5312x5312 --reference qwen_area {' '.join(meth)} "
-            f"--eval {EVAL}/qwen_5312_tuned --results {st.P}/results/qwen_5312_tuned", dry, need=40, exclusive=False)
+            f"--eval {EVAL}/qwen_5312_tuned --results {st.P}/results/qwen_5312_tuned --expect 15 --partial qwen_full "
+            "--wait-max 6000", dry, need=40, exclusive=False)
 
 
 def main():

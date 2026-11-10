@@ -25,6 +25,7 @@ import shutil
 import statistics
 import subprocess
 import sys
+import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import qwen_area_eval as qae  # noqa: E402
@@ -107,6 +108,18 @@ def screen(per_image, methods, reference, timing_rows):
     return out
 
 
+def metrics(args, root, E, res, log):
+    """The TEST comparison's metric tools on the eval root (each caches per image, so a re-run scores new images)."""
+    qae.run([PYM, str(P / "scripts/eval_extra.py"), "--root", str(root), "--prompts", str(args.prompts), "--out",
+             str(E / "extra"), "--metrics", qae.EXTRA, "--reference-method", args.reference, "--device",
+             args.device, "--batch-size", "4", "--threads", "8", "--allow-missing"], log)
+    qae.run([PY, f"{CROPE}/scripts/eval.py", "--root", str(root), "--prompts", str(args.prompts),
+             "--reference-method", args.reference, "--res", res, "--out", str(E / "base"), "--metrics",
+             "clip,pickscore", "--device", args.device, "--no-wandb"], log)
+    qae.run([PY, str(P / "scripts/ideogram4_musiq.py"), "--root", str(root), "--out", str(E / "musiq.csv"),
+             "--long-side", str(args.musiq_long_side), "--device", args.device], log)
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--prompts", type=Path, required=True)
@@ -120,6 +133,10 @@ def main(argv=None):
     p.add_argument("--device", default="cuda")
     p.add_argument("--skip-metrics", action="store_true")
     p.add_argument("--musiq-long-side", type=int, default=4096)
+    p.add_argument("--expect", type=int, default=0, help="Wait until every method (but --partial ones) has this many "
+                   "images, scoring the ones that exist meanwhile (0 = score what exists now)")
+    p.add_argument("--partial", nargs="*", default=[], help="Labels exempt from --expect (e.g. full attention)")
+    p.add_argument("--wait-max", type=float, default=3600.0, help="Seconds to wait for --expect at most")
     args = p.parse_args(argv)
     methods = dict(x.split("=", 1) for x in args.method)
     if args.reference not in methods:
@@ -131,23 +148,26 @@ def main(argv=None):
     for d in (E / "paired", E / "pairs_tmp", R):
         d.mkdir(parents=True, exist_ok=True)
     log = E / "run.log"
-    found = load(methods, res, set(ids))
     root = E / "root"
-    link(root, res, found)
-    counts = {m: sum(1 for k in found if k[0] == m) for m in methods}
-    print("images per method:", counts, flush=True)
-    if not counts[args.reference]:
-        raise SystemExit("no reference images")
     os.environ.update({"HF_HOME": "/scratch/09032/saini_2/tmp/hf", "WANDB_MODE": "disabled"})
+    t_end = time.time() + args.wait_max
+    while True:   # with --expect: score what exists, then re-score as images land (metric tools cache per image)
+        found = load(methods, res, set(ids))
+        link(root, res, found)
+        counts = {m: sum(1 for k in found if k[0] == m) for m in methods}
+        print(time.strftime("%H:%M:%S"), "images per method:", counts, flush=True)
+        if not counts[args.reference]:
+            if args.expect and time.time() < t_end:
+                time.sleep(60)
+                continue
+            raise SystemExit("no reference images")
+        complete = all(counts[m] >= min(args.expect, len(ids)) for m in methods if m not in args.partial)
+        if args.skip_metrics or not args.expect or complete or time.time() >= t_end:
+            break
+        metrics(args, root, E, res, log)
+        time.sleep(30)
     if not args.skip_metrics:
-        qae.run([PYM, str(P / "scripts/eval_extra.py"), "--root", str(root), "--prompts", str(args.prompts), "--out",
-                 str(E / "extra"), "--metrics", qae.EXTRA, "--reference-method", args.reference, "--device",
-                 args.device, "--batch-size", "4", "--threads", "8", "--allow-missing"], log)
-        qae.run([PY, f"{CROPE}/scripts/eval.py", "--root", str(root), "--prompts", str(args.prompts),
-                 "--reference-method", args.reference, "--res", res, "--out", str(E / "base"), "--metrics",
-                 "clip,pickscore", "--device", args.device, "--no-wandb"], log)
-        qae.run([PY, str(P / "scripts/ideogram4_musiq.py"), "--root", str(root), "--out", str(E / "musiq.csv"),
-                 "--long-side", str(args.musiq_long_side), "--device", args.device], log)
+        metrics(args, root, E, res, log)
     files = [str(E / "extra/extra_per_image.csv"), str(E / "base/per_image.csv"), str(E / "musiq.csv")]
     rows = qae.read_rows(files)
     have = {m: {r["prompt_id"] for r in rows if r["method"] == m} for m in methods}

@@ -76,3 +76,45 @@ def test_eval_skip_metrics(tmp_path, monkeypatch):
     assert about["reference"] == "ref" and len(about["images"]["good"]) == 6
     sums = (R / "SHA256SUMS").read_text()
     assert "screen.csv" in sums and "per_image.csv" in sums
+
+
+def test_expect_waits_and_rescores(tmp_path, monkeypatch):
+    """--expect: score what exists, wait, re-score once the missing image lands, then archive."""
+    import qwen_area_eval as qae
+    monkeypatch.setattr(qae, "OUT", tmp_path / "showcase")
+    ids = [f"sc_x{i:02d}" for i in range(6)]
+    prompts = tmp_path / "p.jsonl"
+    prompts.write_text("".join(json.dumps({"id": i, "prompt": f"p {i}"}) + "\n" for i in ids))
+    dirs = fake_outputs(tmp_path, ["ref", "good"], ids)
+    late = sorted(dirs["good"].glob("sc_x05*"))
+    hidden = [(p, p.with_name(p.name + ".later")) for p in late]
+    for p, q in hidden:
+        p.rename(q)
+    calls = []
+
+    def fake_metrics(args, root, E, res, log):
+        calls.append(len(list((root / "good" / res).glob("*.png"))))
+        if len(calls) == 1:
+            for p, q in hidden:
+                q.rename(p)
+        rows_e, rows_b, rows_m = [], [], []
+        for m in ("ref", "good"):
+            for i, pid in enumerate(ids):
+                e = 0.01 * ((i * 3 + (m == "good")) % 4) + (0.2 if m == "good" else 0)
+                rows_e.append({"method": m, "res": "64x64", "prompt_id": pid, "seed": 0, "path": "x", "ir": e,
+                               "aesthetic": 6, "hpsv2": 0.3, "hpsv21": 0.3 + e / 10, "clipiqa": 0.6, "arniqa": 0.7})
+                rows_b.append({"clip": 30, "method": m, "path": "x", "pickscore": 22 + e, "prompt_id": pid,
+                               "res": "64x64", "seconds": 1, "seed": 0})
+                rows_m.append({"method": m, "res": "64x64", "prompt_id": pid, "seed": 0, "path": "x",
+                               "musiq_4096": 50, "musiq_crop1024": 50})
+        write(E / "extra/extra_per_image.csv", rows_e)
+        write(E / "base/per_image.csv", rows_b)
+        write(E / "musiq.csv", rows_m)
+    monkeypatch.setattr(T, "metrics", fake_metrics)
+    monkeypatch.setattr(T.time, "sleep", lambda s: None)
+    E, R = tmp_path / "eval", tmp_path / "results"
+    T.main(["--prompts", str(prompts), "--res", "64x64", "--reference", "ref", "--eval", str(E), "--results", str(R),
+            "--expect", "6", "--wait-max", "600"] + [f"--method={m}={d}" for m, d in dirs.items()])
+    assert calls == [5, 6]                     # scored the 5 that existed, then all 6 once the last one landed
+    sc = list(csv.DictReader(open(R / "screen.csv")))
+    assert sc[0]["method"] == "good" and int(sc[0]["n_prompts"]) == 6
