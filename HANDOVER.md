@@ -2038,3 +2038,13 @@ contributions, captions of at most three lines, a leaner Table 1, and redesigned
 - 00:56 ra_fixed by hand (pRA1, 6 blind Opus labelers): 14 yes, 3 borderline, 4 no of 21 (sca_v2 19, seed-1 control
   18, AReA 4; detector 13). FAIL on the screen bar (<= 8). The pooled r = 2 stage on steps 8-13 removes about 4 of
   sca_v2's copies, at 73 s per image. ra_m (opening 0-4, r = 2 on 5-12): detector 12 of 21, labeling as pRA2.
+- 01:02 detector triage on copyprone21: ra_m 12, ra_t40 13, ra_t50 1, ra_t60 0 of 21 (ra_fixed 13). Previews
+  (r7/preview/<label>): ra_t60 has the 4 x 4 pixel mosaic on every image (FAIL on sight, no labels); ra_t50 (no
+  native window at any step) is soft with a 2 x 2 lattice texture and lost hair and suit detail at native resolution
+  (FAIL on sight as a 4K method; labeled anyway as pRA4 because it is the only variant near the copy bar, metrics on the
+  46 run as queued); ra_t40 (no opening) changes compositions (smaller subjects, speckle in dark skies), native detail
+  clean. ra_t50 dropped from the 195 gate (gate195.template cands; its staged run parked in
+  taskq/hold_ra/park195_ra_t50). Labeling: pRA2 (ra_m), pRA3 (ra_t40), pRA4 (ra_t50).
+- Mechanism read so far: copies track the native-window (r = 4) phase. Whenever native windows act from step 13 or 14
+  on, 12 to 14 of 21 carry copies; with no native window at all (ra_t50) the detector finds 1 of 21, at the price of
+  native-resolution detail. The pooled r = 2 view itself does not draw copies.

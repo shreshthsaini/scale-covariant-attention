@@ -47,7 +47,7 @@ A_VARIANTS = {
     "ra_fixed": (f"--gate-sigma 0.89 --scale-fixed 0.77:2 {OP}", True, True),
     "ra_m": (f"--gate-sigma 0.9404 --scale-fixed 0.7892:2 {OP}", True, True),
     "ra_t40": (f"--gate-sigma 0.0 --scale-fixed 0.7892:2 {OP}", True, True),
-    "ra_t50": (f"--gate-sigma 0.9404 --scale-fixed 0.0:2 {OP}", True, True),
+    "ra_t50": (f"--gate-sigma 0.9404 --scale-fixed 0.0:2 {OP}", True, False),   # 195 candidate dropped 01:07: 2 x 2 lattice texture at native resolution
     "ra_t60": (f"--gate-sigma 0.5896 --scale-fixed 0.0:2 {OP}", False, False),
 }
 PACKET_SEED = {"ra_fixed": 4101, "ra_m": 4102, "ra_t40": 4103, "ra_t50": 4104, "ra_t60": 4105}
