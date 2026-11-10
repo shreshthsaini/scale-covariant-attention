@@ -130,6 +130,26 @@
   \end{tabular}
 \end{table}}
 
+% The sample pages of the visuals owner's round "more visual results" (2026-11-10). Each edition places them in
+% its own sections: the deciles in E.2 (full) or E.2 (short), seeds 1 and 2 and HRGen-1K in G.1 (full) or E.2
+% (short), the mosaic among the sample pages. Leads are claims only where the page prints the numbers behind them.
+\newcommand{\apxdeciles}{\apxcap{1}{AReA is ahead at the 10th percentile of progressive \sca{}'s ImageReward gain, the two are level at the 20th and 30th, and from the 40th on progressive \sca{} leads by a growing margin.}{Over all $n=\nmain$ prompts the mean difference is $\hlProgAreaIr$; Figure~\ref{fig:qual_prog} shows the quartiles.}%
+\vsnippetcap{p}{deciles}}
+\newcommand{\apxseedspage}{\apxcap{1}{At seeds 1 and 2 AReA is ahead only at the 10th percentile of progressive \sca{}'s ImageReward gain; the two are level at the 25th, and from the median on progressive \sca{} leads by a growing margin.}{Over all \nseed{} prompts the mean difference is $\hlProgSeedOneAreaIr$ at seed~1 and $\hlProgSeedTwoAreaIr$ at seed~2 (Table~\ref{tab:generality}).}%
+\vsnippetcap{p}{seeds12}}
+\newcommand{\apxhrgenpage}{\apxcap{1}{On HRGen-1K AReA is best only at the 10th percentile of progressive \sca{}'s ImageReward gain; in the other four rows one of the two \sca{} modes is best.}{Over all \nhrgen{} prompts the mean difference is $\hlProgHrgenAreaIr$ (Table~\ref{tab:generality}).}%
+\vsnippetcap{p}{hrgen_samples}}
+\newcommand{\apxmosaic}{\vsnippetcap{p}{mosaic}}
+% \ifgainpages{text}{fallback}: text that cites the seeds and HRGen-1K pages, used only when both snippets exist.
+\newcommand{\ifgainpages}[2]{\ifvsnip{seeds12}{\ifvsnip{hrgen_samples}{#1}{#2}}{#2}}
+
+% Table E.1, shared: the full edition places it in E.1; the short edition right after the heading of E with [!b],
+% so that it sits at the foot of the page that holds the protocol summary and the opening of E.
+\newcommand{\apxallmetricstable}[1]{\begin{table}[#1]
+  \caption{\textbf{Both \sca{} modes beat AReA on all ten per-image metrics at $4096^2$; the non-square sizes are mixed.} Expands Table~\ref{tab:main} to every metric and adds the non-square sizes and $6144^2$. FLUX.1-dev, \nmain{} prompts (100 at $6144^2$, where the row is \sca{} without the schedule); HPS, CLIP-IQA, and ARNIQA $\times100$; AReA runs its released code. \up{Blue} / \dn{orange}: the 95\% paired percentile-bootstrap interval against AReA excludes zero in favour of / against the row. Progressive \sca{} is paired over 2000 prompt draws, and for FID and FID$_\text{p}$ over 1000 draws that also resample reference-image clusters. Full attention's FID and FID$_\text{p}$ are unmarked\fullonly{; Table~\ref{tab:panel46_deltas} pairs DyPE, SEGA, UltraImage, and HRDiT with single-pass \sca{}}. \textbf{Bold} / \underline{underline}: best / second best per size (bold only in the two-row blocks); shaded: ours. Time: batch-1 median of three on an idle GH200 (HRDiT and progressive \sca{}: run T3, Appendix~\ref{app:timing}); $^\ddagger$campaign mean on shared nodes; $^\circ$UltraImage's two-stage defaults. Key result: at $4096^2$ progressive \sca{} is the fastest method (49.2\,s) and best on CLIP, both HPS scores, and ARNIQA; single-pass \sca{} is best on patch FID and both MUSIQ scores.\pendAppAllMetrics}
+  \label{tab:all_metrics}\ifshortversion\label{tab:panel46_deltas}\fi
+  \apxbody{app_tables/all_metrics}
+\end{table}}
 % ---- Contents ----------------------------------------------------------------------------
 % \apxS{label}{title}: a section line; \apxs{label}{title}: a subsection line. Page numbers follow the labels.
 \newcommand{\apxS}[2]{\textbf{\ref{#1}}&\textbf{#2}\nobreak\dotfill\nobreak\textbf{\pageref{#1}}\\}
@@ -652,6 +672,8 @@ This appendix expands the setup of Section~\ref{sec:experiments}. Appendix~\ref{
 \subsection{Protocol and prompts}
 \label{app:protocol}
 
+Table~\ref{tab:protocol} summarizes the protocol.
+
 \apxprotocoltable
 
 \paragraph{Prompts and references.} The Aesthetic-4K evaluation split~\citep{zhang2025diffusion4k} has 195 prompts with 4K reference images. Four of them (\devprompts) were used to choose the opening phase and the native window, and the 46-prompt subset to set the four wide-window sizes. \ifmainfull{They stay in the evaluation set for every method, which favours both \sca{} configurations slightly.}{The four are excluded from generation evaluation, leaving \nmain.} The 195 reference rows hold 168 distinct images, because 27 rows reuse an image under their own caption. Distribution metrics keep the official rows and weights, as Diffusion-4K's statistics do. The \nabl-prompt ablation subset was fixed before any ablation was run. Seeds hash the prompt id and a seed label shared by all methods; labels 0, 1, and 2 each cover all \nmain{} prompts. HRGen-1K~\citep{rajabi2026area} has 1000 prompts and no references; \ifhrgenfull{we use all of them}{we use source rows 0 to 199, with ids \texttt{hrgen\_0000} to \texttt{hrgen\_0199}}. The 48 emulation prompts (Appendix~\ref{app:prompts}) were written for this purpose and share no prompt with Aesthetic-4K; the largest word-set Jaccard overlap with any evaluation prompt is 0.26.
@@ -760,8 +782,9 @@ This subsection gives the settings of the other baselines in Tables~\ref{tab:mai
 \apxbarrier
 \section{\shortalt{Extended results}{Results in detail}}
 \label{app:tables}
+\ifshortversion\apxallmetricstable{!b}\fi
 
-\shortalt{This appendix expands the results of Section~\ref{sec:experiments} to every metric, with intervals. Table~\ref{tab:all_metrics} expands Table~\ref{tab:main} (Appendix~\ref{app:allmetrics}). Tables~\ref{tab:prog_all} and~\ref{tab:app_4k} expand the paired comparisons of Section~\ref{sec:main} and Figure~\ref{fig:paired_area} (Appendix~\ref{app:pairs}), and Table~\ref{tab:panel46_deltas} pairs every baseline with single-pass \sca{} (Appendix~\ref{app:phase2}). Table~\ref{tab:app_abl} expands Table~\ref{tab:ablation} (Appendix~\ref{app:abl}), and Table~\ref{tab:latency} the latency of \iflabel{fig:scaling}{Figure~\ref{fig:scaling}}{Figure~\ref{fig:speed}} (Appendix~\ref{app:latency}). Every table follows the conventions of Appendix~\ref{app:intervals}.}{This appendix adds to Section~\ref{sec:experiments}. Table~\ref{tab:all_metrics} expands Table~\ref{tab:main} to every metric, Table~\ref{tab:holm} gives the Holm-adjusted calls, and \ifvsnip{crops_matched}{Figures~\ref{fig:crops_matched} to~\ref{fig:quality_time} show crop detail, the baseline differences,}{Figures~\ref{fig:baseline_quality} to~\ref{fig:quality_time} show the baseline differences,} latency, and quality against time. Every table follows the conventions of Appendix~\ref{app:intervals}.}
+\shortalt{This appendix expands the results of Section~\ref{sec:experiments} to every metric, with intervals. Table~\ref{tab:all_metrics} expands Table~\ref{tab:main} (Appendix~\ref{app:allmetrics}). Tables~\ref{tab:prog_all} and~\ref{tab:app_4k} expand the paired comparisons of Section~\ref{sec:main} and Figure~\ref{fig:paired_area}\ifvsnip{deciles}{, and Figures~\ref{fig:deciles_a} and~\ref{fig:deciles_b} show whole images at every decile of the ImageReward gain over AReA}{} (Appendix~\ref{app:pairs}). Table~\ref{tab:panel46_deltas} pairs every baseline with single-pass \sca{} (Appendix~\ref{app:phase2}). Table~\ref{tab:app_abl} expands Table~\ref{tab:ablation} (Appendix~\ref{app:abl}), and Table~\ref{tab:latency} the latency of \iflabel{fig:scaling}{Figure~\ref{fig:scaling}}{Figure~\ref{fig:speed}} (Appendix~\ref{app:latency}). Every table follows the conventions of Appendix~\ref{app:intervals}.}{This appendix adds to Section~\ref{sec:experiments}. Table~\ref{tab:all_metrics} expands Table~\ref{tab:main} to every metric,\ifvsnip{deciles}{ Figures~\ref{fig:deciles_a} to~\ifgainpages{\ref{fig:hrgen_samples}}{\ref{fig:deciles_b}} show whole images across the ImageReward gain over AReA,}{} Table~\ref{tab:holm} gives the Holm-adjusted calls, and \ifvsnip{crops_matched}{Figures~\ref{fig:crops_matched} to~\ref{fig:quality_time} show crop detail, the baseline differences,}{Figures~\ref{fig:baseline_quality} to~\ref{fig:quality_time} show the baseline differences,} latency, and quality against time. Every table follows the conventions of Appendix~\ref{app:intervals}.}
 
 % Each subsection of E starts after the floats of the previous one, so its text sits beside its own tables.
 \fullonly{\FloatBarrier}
@@ -770,18 +793,14 @@ This subsection gives the settings of the other baselines in Tables~\ref{tab:mai
 
 Table~\ref{tab:all_metrics} expands Table~\ref{tab:main} to all 14 metrics and adds the two non-square sizes and $6144^2$. Each row is marked against AReA\shortalt{; Appendix~\ref{app:pairs} gives the intervals}{, and the full version gives the intervals}.
 
-\begin{table}[!htbp]
-  \caption{\textbf{Both \sca{} modes beat AReA on all ten per-image metrics at $4096^2$; the non-square sizes are mixed.} Expands Table~\ref{tab:main} to every metric and adds the non-square sizes and $6144^2$. FLUX.1-dev, \nmain{} prompts (100 at $6144^2$, where the row is \sca{} without the schedule); HPS, CLIP-IQA, and ARNIQA $\times100$; AReA runs its released code. \up{Blue} / \dn{orange}: the 95\% paired percentile-bootstrap interval against AReA excludes zero in favour of / against the row. Progressive \sca{} is paired over 2000 prompt draws, and for FID and FID$_\text{p}$ over 1000 draws that also resample reference-image clusters. Full attention's FID and FID$_\text{p}$ are unmarked\fullonly{; Table~\ref{tab:panel46_deltas} pairs DyPE, SEGA, UltraImage, and HRDiT with single-pass \sca{}}. \textbf{Bold} / \underline{underline}: best / second best per size (bold only in the two-row blocks); shaded: ours. Time: batch-1 median of three on an idle GH200 (HRDiT and progressive \sca{}: run T3, Appendix~\ref{app:timing}); $^\ddagger$campaign mean on shared nodes; $^\circ$UltraImage's two-stage defaults. Key result: at $4096^2$ progressive \sca{} is the fastest method (49.2\,s) and best on CLIP, both HPS scores, and ARNIQA; single-pass \sca{} is best on patch FID and both MUSIQ scores.\pendAppAllMetrics}
-  \label{tab:all_metrics}\ifshortversion\label{tab:panel46_deltas}\fi
-  \apxbody{app_tables/all_metrics}
-\end{table}
+\fullonly{\apxallmetricstable{!htbp}}
 
 \ifshortversion\else
 \fullonly{\FloatBarrier}
 \subsection{The headline comparisons with intervals}
 \label{app:pairs}
 
-Table~\ref{tab:prog_all} gives progressive \sca{} minus every $4096^2$ baseline, and Table~\ref{tab:app_4k} single-pass \sca{} minus AReA and full attention, each on every metric. They expand the paired comparisons of Section~\ref{sec:main} and Figure~\ref{fig:paired_area}.
+Table~\ref{tab:prog_all} gives progressive \sca{} minus every $4096^2$ baseline, and Table~\ref{tab:app_4k} single-pass \sca{} minus AReA and full attention, each on every metric. They expand the paired comparisons of Section~\ref{sec:main} and Figure~\ref{fig:paired_area}.\ifvsnip{deciles}{ Figures~\ref{fig:deciles_a} and~\ref{fig:deciles_b} show whole images at every decile of progressive \sca{}'s ImageReward gain over AReA, extending the quartiles of Figure~\ref{fig:qual_prog}.}{}
 
 \paragraph{Progressive \sca{} against AReA.} It is significantly better on all ten per-image metrics. Its FID and KID differences span zero, while its patch FID ($+4.8$ $[0.1,10.6]$) and patch KID are significantly higher. Seeds 1 and 2 and the 1000 HRGen-1K prompts give the same per-image result (Table~\ref{tab:generality}); the patch FID gap is significant at seeds 0 and 2 but not at seed 1. Appendix~\ref{app:prog} compares progressive \sca{} with HRDiT and with single-pass \sca{}.
 
@@ -794,7 +813,20 @@ Table~\ref{tab:prog_all} gives progressive \sca{} minus every $4096^2$ baseline,
   \label{tab:app_4k}
   \apxbody{app_tables/app_4k}
 \end{table}
+\apxdeciles
 
+\fi
+\ifshortversion
+\ifvsnip{deciles}{%
+\subsection{The distribution of the gain over AReA}
+\label{app:gain_images}
+
+Figures~\ref{fig:deciles_a} and~\ref{fig:deciles_b} show whole images at every decile of progressive \sca{}'s ImageReward gain over AReA at seed~0, extending the quartiles of Figure~\ref{fig:qual_prog}.\ifgainpages{ Figures~\ref{fig:seeds12} and~\ref{fig:hrgen_samples} show five percentiles of the same gain at seeds 1 and 2 and on HRGen-1K.}{}
+
+\apxdeciles
+\apxseedspage
+\apxhrgenpage
+}{}
 \fi
 \IfFileExists{figures/snippets/app_tables/holm.tex}{%
 \fullonly{\FloatBarrier}
@@ -924,17 +956,19 @@ Table~\ref{tab:all_metrics} gives the absolute values of progressive \sca{}, Tab
 \section{Generality}
 \label{app:generality}
 
-This appendix expands Table~\ref{tab:generality} and Section~\ref{sec:generality}. Table~\ref{tab:gen_all} expands every row of Table~\ref{tab:generality} to all ten per-image metrics with intervals (Appendix~\ref{app:gen_seeds}). Appendix~\ref{app:gen_krea} covers $6144^2$ and FLUX.1-Krea-dev, Appendix~\ref{app:wide} the non-square sizes, and Appendix~\ref{app:8k} the exploratory $8192^2$ run\ifanynewmodel; Appendix~\ref{app:newer} adds the newer models\fi.
+This appendix expands Table~\ref{tab:generality} and Section~\ref{sec:generality}. Table~\ref{tab:gen_all} expands every row of Table~\ref{tab:generality} to all ten per-image metrics with intervals\ifgainpages{, and Figures~\ref{fig:seeds12} and~\ref{fig:hrgen_samples} show whole images across the ImageReward gain over AReA at seeds 1 and 2 and on HRGen-1K}{} (Appendix~\ref{app:gen_seeds}). Appendix~\ref{app:gen_krea} covers $6144^2$ and FLUX.1-Krea-dev, Appendix~\ref{app:wide} the non-square sizes, and Appendix~\ref{app:8k} the exploratory $8192^2$ run\ifanynewmodel; Appendix~\ref{app:newer} adds the newer models\fi.
 
 \subsection{Seeds, HRGen-1K, and FLUX.2-dev}
 \label{app:gen_seeds}
 
-Table~\ref{tab:gen_all} gives every row of Table~\ref{tab:generality} on all ten per-image metrics with intervals: progressive \sca{} against AReA at three seeds and on HRGen-1K; single-pass \sca{} against AReA on HRGen-1K, at seeds 1 and 2, and on FLUX.1-Krea-dev; and \sca{} without the schedule against full attention on FLUX.2-dev (Appendix~\ref{app:additional_protocols}). Table~\ref{tab:prog_all} expands the progressive row at seed 0 to every metric. Figure~\ref{fig:gallery_flux2} shows four FLUX.2-dev prompts; FLUX.2-dev runs at guidance 4.0 with its own reach table.
+Table~\ref{tab:gen_all} gives every row of Table~\ref{tab:generality} on all ten per-image metrics with intervals: progressive \sca{} against AReA at three seeds and on HRGen-1K; single-pass \sca{} against AReA on HRGen-1K, at seeds 1 and 2, and on FLUX.1-Krea-dev; and \sca{} without the schedule against full attention on FLUX.2-dev (Appendix~\ref{app:additional_protocols}). Table~\ref{tab:prog_all} expands the progressive row at seed 0 to every metric.\ifgainpages{ Figures~\ref{fig:seeds12} and~\ref{fig:hrgen_samples} show whole images at five percentiles of progressive \sca{}'s ImageReward gain over AReA, at seeds 1 and 2 and on HRGen-1K.}{} Figure~\ref{fig:gallery_flux2} shows four FLUX.2-dev prompts; FLUX.2-dev runs at guidance 4.0 with its own reach table.
 
 % tab:phase2_general (v5.1) is retired: Table G.1 holds every one of its numbers. The label stays as an alias.
 \apxalias{tab:gen_all}{tab:phase2_general}
 \snippetat{!htbp}{app_tables/gen_all}
 
+\apxseedspage
+\apxhrgenpage
 \apxcap{1}{FLUX.2-dev at $4096^2$: \sca{} without the schedule against full attention; in the portrait \sca{} distorts facial geometry and fine texture.}{Over the 50 FLUX.2-dev prompts, \sca{} without the schedule is significantly better than full attention on \hlFluxTwoWinsWord{} of ten per-image metrics, both MUSIQ scores among them (Table~\ref{tab:gen_all}).}
 \vsnippetcap{!htbp}{gallery_flux2}
 
@@ -1086,7 +1120,8 @@ We will release the code: the attention processor, reach emulation, single-pass 
 \fi
 \ifshortversion
 % =====================================================================================
-% (no barrier: in the short edition this text may fill the pages of the results floats)
+% Barrier: the limitations start after the results floats, so no paragraph is split by float pages.
+\FloatBarrier
 \section{Limitations and broader impact}
 \label{app:limits}
 
@@ -1201,10 +1236,10 @@ This appendix lists the 48 prompts written for reach emulation (Section~\ref{sec
 \label{app:galleries}
 
 \ifshortversion
-This appendix adds full pages of samples to Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog}; each caption states how its prompts were chosen. Figure~\ref{fig:gallery_prog} sets both modes of \sca{} beside AReA, UltraImage, and HRDiT, and Figure~\ref{fig:teaser} shows eight methods on two more prompts. Figure~\ref{fig:hero} shows single-pass \sca{} at three aspect ratios, Figure~\ref{fig:gallery_4096} sets it beside AReA, and Figure~\ref{fig:ablation_grid} shows the ablation variants of Table~\ref{tab:ablation}.
+This appendix adds full pages of samples to Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog}; each caption states how its prompts were chosen\ifvsnip{deciles}{, and Appendix~\ref{app:gain_images} shows whole images across the ImageReward gain over AReA}{}. Figure~\ref{fig:gallery_prog} sets both modes of \sca{} beside AReA, UltraImage, and HRDiT, Figure~\ref{fig:teaser} shows eight methods on two more prompts\ifvsnip{mosaic}{, and Figure~\ref{fig:mosaic} shows progressive \sca{} on 16 more showcase prompts}{}. Figure~\ref{fig:hero} shows single-pass \sca{} at three aspect ratios, Figure~\ref{fig:gallery_4096} sets it beside AReA, and Figure~\ref{fig:ablation_grid} shows the ablation variants of Table~\ref{tab:ablation}.
 \else
 \ifvsnip{all_methods}{%
-This appendix expands Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog} with full pages of samples; Appendix~\ref{app:samples} gives the selection and crop rules. Figure~\ref{fig:gallery_prog} sets both modes of \sca{} beside AReA, UltraImage, and HRDiT on six prompts, and Figure~\ref{fig:teaser} shows eight methods on two more. Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog16b} set progressive \sca{} beside AReA, UltraImage, and HRDiT on 18 prompts. Figure~\ref{fig:hero} shows single-pass \sca{} at three aspect ratios, and Figures~\ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048} set it beside AReA on 16 prompts at $4096^2$ and four at each wide size.}{%
+This appendix expands Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog} with full pages of samples; Appendix~\ref{app:samples} gives the selection and crop rules. Figure~\ref{fig:gallery_prog} sets both modes of \sca{} beside AReA, UltraImage, and HRDiT on six prompts, and Figure~\ref{fig:teaser} shows eight methods on two more. Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog16b} set progressive \sca{} beside AReA, UltraImage, and HRDiT on 18 prompts\ifvsnip{mosaic}{, and Figure~\ref{fig:mosaic} shows it on 16 more showcase prompts}{}. Figure~\ref{fig:hero} shows single-pass \sca{} at three aspect ratios, and Figures~\ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048} set it beside AReA on 16 prompts at $4096^2$ and four at each wide size.}{%
 This appendix expands Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog} with full pages of samples; Appendix~\ref{app:samples} gives the selection and crop rules. Figure~\ref{fig:gallery_prog} shows six prompts with every method, and Figure~\ref{fig:teaser} six methods on one prompt. Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog16b} set progressive \sca{} beside AReA and HRDiT on sixteen prompts. Figure~\ref{fig:hero} shows single-pass \sca{} at three aspect ratios, and Figures~\ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048} set it beside AReA at $4096^2$, $2048\times4096$, and $2048\times6144$.}\ifshowcase{} Figure~\ref{fig:showcase_models} shows \sca{} on FLUX.2-dev and Qwen-Image.\fi
 \fi
 
@@ -1226,6 +1261,7 @@ This appendix expands Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog} with f
 \apxcap{2}{Progressive \sca{} beside AReA, UltraImage, and HRDiT at $4096^2$, prompts 10 to 18 of 18.}{}
 \vsnippetcap{p}{gallery_prog16}
 \fi
+\apxmosaic
 \apxcap{1}{Single-pass \sca{} at three aspect ratios with one reach table.}{Against AReA, single-pass \sca{} wins \hlWideSixWins{} metrics at $2048\times6144$, and wins \hlWideFourWinsWord{} and loses \hlWideFourLossesWord{} at $2048\times4096$ (\shortalt{Table~\ref{tab:app_wide}}{full version}).}
 \vsnippetcap{p}{hero}
 \ifshowcase\apxcap{1}{The same six prompts on three models.}{}\vsnippetcap{p}{showcase_models}\fi

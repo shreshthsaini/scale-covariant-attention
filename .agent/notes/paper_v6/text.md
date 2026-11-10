@@ -1,8 +1,9 @@
 # Paper v6: main text (role `text`), 2026-11-10
 
-Status: DONE, including the lead-review pass of 2026-11-10 ~11:40 (Section 8). Owner of paper/main.tex only (no git
-command run, no other file edited).
-Last verified build: /scratch/09032/saini_2/sca/paper_builds/v6_text_33/ (main.pdf, main.log, p01..p12.png at 110 dpi).
+Status: DONE, including the lead-review pass of 2026-11-10 ~11:40 (Section 8) and the "more visual results" round
+(~13:20 to 14:10, Section 9). Owner of paper/main.tex only (no git command run, no other file edited).
+Last verified builds: /scratch/09032/saini_2/sca/paper_builds/v6_text_46/ (main.tex, 67 pp) and v6_text_s46/
+(main_short.tex, 31 pp); main.pdf, logs, aux, p01..p10.png at 110 dpi.
 Tools (session scratchpad .../scratchpad/text_v6/): qb.sh (build into v6_text_<n>, page report, falls back to a
 mirror with the last appendix that compiled when the live appendix is mid-edit), logcheck.py (overfull boxes by page,
 undefined refs, placeholders), pages.py (headings, floats, fill per page), textcheck.py (forbidden words on the PDF),
@@ -214,3 +215,66 @@ tables 1; no em dash or section symbol 1.
 - Checks on v6_text_33: 0 overfull boxes (main and appendix), no undefined references or citations, abstract 162
   words, no forbidden words in the main text, source-based sentence median 20 with every real sentence at most 35
   words.
+
+## 9. Round "more visual results" (2026-11-10, ~13:20 to 14:10): Figure 8 and the room for it
+Page limit. The ICLR 2027 instructions (template text, Exploration/semtwin-twinflow-2/paper/iclr2027_conference.tex,
+line ~131): "There will be a strict upper limit of 9 pages for the main text of the initial submission, with unlimited
+additional pages for citations. This limit will be expanded to 10 pages for rebuttal/camera ready."
+paper/iclr2027_conference.sty (identical to the TABES and semtwin copies) states no limit; TABES-iclr2027/README.txt:
+"The main text is 9 pages". So the main text stays within 9 pages. Item (e) was not needed: both algorithms stay.
+
+New figure: Figure 8, figures/v6/sizes_models.pdf (13:33, 5.50 x 2.40 in, layout A, sizes_models_provenance.json),
+label fig:sizes_models, [t] float sourced after Section 4.2, lands at the top of page 8; cited once, in 4.2 ("Figure 8
+shows samples at other sizes and on both checkpoints; at 2048 x 6144 ... but at 2048 x 4096 it wins three and loses
+three"). Not cited from the abstract or introduction: neither discusses other sizes, so no sentence there reads
+naturally with it. \IfFileExists keeps a 5.5 x 2.4 in grey block if the file is ever missing. Caption:
+  One reach table per checkpoint serves every size and checkpoint shown. Single-pass SCA on FLUX.1-dev and
+  FLUX.1-Krea-dev, SCA without the schedule on FLUX.2-dev; one prompt per setting naming no person, drawn with seed 0;
+  insets: native 256 x 256 windows of highest edge energy. Settings left out for artifacts: 6144 x 4096, 6144^2, and
+  8192^2 (Figures G.4 and G.6). Appendices G and L show more.
+  (Short edition: no gallery pointer, "Appendix G shows more."; macros \sizesArtifactRef and \sizesMoreRef.)
+- visuals: your proposed clause "each from a different subject category" does not hold for the final draw (the
+  provenance gives category "landscape" for both the 2048 x 6144 and the FLUX.2-dev tile: the "while one remains"
+  fallback applied), so the caption gives the seed and the person rule only; the full rule is in the provenance. Your
+  caption also left the 6144 x 4096 drop unstated; ours names all three dropped settings. If the figure is redrawn,
+  tell me: the tile description and the dropped list are written from sizes_models_provenance.json of 13:33.
+
+Pointers to the new appendix pages (labels from visuals.md; guard \whenlabel{label}{text}, so a missing label prints
+nothing; main.tex cannot use \iflabel, which appendix.tex defines after the main text):
+- 4.1, first paragraph: seeds 1 and 2 "(...; Figure~\ref{fig:seeds12})", HRGen-1K "(...; Table 2, Figure~\ref{fig:hrgen_samples})",
+  and "Figure 6 shows whole images at the quartiles of the per-prompt difference and Figures~\ref{fig:deciles_a}
+  and~\ref{fig:deciles_b} at every decile". Both editions carry these pages (full E.1, E.2, G.1, G.2; short E.1 to E.4).
+- Figure 1 caption: "Figures L.3 and L.5 show more" (gallery_prog16, mosaic); short edition "Figures G.1 and G.3".
+  The mosaic is 16 more progressive SCA showcase images, Figure 1's own kind, so it is cited from Figure 1.
+
+What I tightened (all prose restating a table or figure; no result, interval, bullet, or the single-pass limitation
+sentence was dropped; no figure shrunk):
+- Intro P2: prompt count and resolution (Section 2 gives them). Section 2: the lead sentence before "Reach."
+  (restated Figure 2's title); "because it barely moves with the step" (restates the 2.5%).
+- 3.1: AReA citation repeated in "(AReA's rule)". 3.2: rho = 0.77 and "below every coarser rule" (Figure 4a, c print
+  them). 3.3: "where lambda is the weight of the ratio-4 table" (Eq. 7 shows it), "of 28", "native", "right".
+- Section 4: Data (seed labels, development prompts) and timing sentences shorter; "a point estimate" dropped.
+- 4.1: "also beats DyPE, SEGA, full attention ... UltraImage on nine" (Table 1's record column).
+- 4.3: "Output error shows the same order" folded into the per-head paragraph (the four errors are in Figure 4b);
+  the mean-pooling clause (Table 3 row); "MUSIQ_c changes by +1.7 and no other column" became "only MUSIQ_c moves
+  significantly (+1.7)".
+- Related Work: one paragraph; the HRDiT and UltraImage descriptions point to Section 1 instead of repeating it.
+- Captions: Table 1 (one line), Table 3 ("coloured as in Section 4", "each group's", the full-metric pointer),
+  Figure 5 ((a)/(b) restated the panel titles), Figure 6 (one line).
+- Conclusion: "Code: <url>" (the abstract carries it; one fewer place to anonymize).
+- Fixed: "exceeds HRDiT's ... and, at two of three seeds, than AReA's" lost its stray "than".
+Added: Limitations "At 6144^2 and 8192^2 its samples show block and stripe artifacts." (SCA without the schedule;
+Appendix G galleries), since Figure 8 leaves those sizes out. Three sentences over 35 words were split.
+
+Layout (both editions; full has every new pointer printed, so it is the longer case):
+- Figure 7 (scaling, natural 0.48 width) now wraps beside the 4.1 HRDiT paragraph on page 7, under Figure 6, with
+  \needspace{20\baselineskip} before it. Beside the 4.2 time paragraph it began at the foot of page 7 and wrapfig cut
+  it across the break (build 40). The 4.1 single-pass paragraph cites it first ("2.63x faster than AReA (Figure 7)",
+  the plot's bottom row); 4.2 cites it again. The end \vspace is -24pt so the next paragraph starts at full width.
+- Float page / first citation: Fig 1 p1/p2, Fig 2 p2/p2, Fig 3 p3/p2, Fig 4 p4/p4 (new cite "(Figure 4b)" at the end
+  of 3.2), Alg 1 p5/p4, Alg 2 p5/p5, Table 1 p5/p6, Fig 5 + Table 2 p6/p6, Fig 6 p7/p6, Fig 7 p7/p7, Fig 8 p8/p8,
+  Table 3 p9/p8. Section 4.1 now starts on page 6.
+- Main text ends on page 9: full edition 95% (3 lines free), short edition 97%; reproducibility statement on page 10.
+  0 overfull boxes, 0 undefined references or citations in both; abstract 162 words; no forbidden word in pages 1 to 10.
+- Robustness: wraps cannot cross a page; the \needspace guard moves the HRDiT paragraph to the next page if it ever
+  starts with fewer than 20 lines left (it starts with 23 free lines now).

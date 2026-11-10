@@ -217,3 +217,42 @@ newer models + showcase on 28 pp (one showcase page, one page with the FLUX.2 an
 v6 visual snippets absent 25 pp, 0 undefined (crop-figure sentences guarded with \ifvsnip).
 Renders of the delivered PDF: /scratch/09032/saini_2/sca/paper_builds/v6_short_final/pages/ (110 dpi + sheets).
 Page 12 (end of references) is about half empty in both editions because the appendix starts on a new page.
+
+## 10. Round "more visual results" (2026-11-10; user: "add more visual results in main and appendix for shorter version as well")
+Status: DONE in appendix.tex and main_short.tex (main.tex not touched). Builds with the main.tex of 14:02:50:
+full 67 pages, 23.8 MiB; short 31 pages, 16.6 MiB; both 0 overfull, 0 undefined, main text ends on page 9 in both,
+every caption cited (scratch v6_more_6/{full,short}; renders in v6_more_6/*/pages/).
+
+Placement of the visuals owner's five new pages (snippets figures/v6/snippets/{deciles,seeds12,hrgen_samples,mosaic}.tex):
+- Full: deciles (Figures E.1, E.2) in E.2 "The headline comparisons with intervals", after Tables E.2 and E.3, so they
+  are the first sample pages a reader meets; seeds12 and hrgen_samples (G.1, G.2) in G.1 "Seeds, HRGen-1K, and
+  FLUX.2-dev", before the FLUX.2-dev page; mosaic (L.5) in L after the 18-prompt progressive pages, before the aspect page.
+- Short: new subsection E.2 "The distribution of the gain over AReA" (label app:gain_images) with deciles, seeds12 and
+  hrgen_samples (Figures E.1 to E.4), right after Table E.1; mosaic (G.3) after the all-methods page.
+- Openings that mention them: full E, E.2, G, G.1 and L; short E, E.2 and G. All mentions sit in \ifvsnip guards, so the
+  no-visuals switch build has no undefined reference.
+- Shared macros (defined before the contents): \apxdeciles, \apxseedspage, \apxhrgenpage, \apxmosaic, \ifgainpages,
+  and \apxallmetricstable{placement} (Table E.1).
+Captions (\apxcap leads; the snippets keep every selection clause): deciles (a) "AReA is ahead at the 10th percentile
+of progressive SCA's ImageReward gain, the two are level at the 20th and 30th, and from the 40th on progressive SCA
+leads by a growing margin" + "Over all n=\nmain prompts the mean difference is \hlProgAreaIr; Figure 6 shows the
+quartiles"; deciles (b) keeps its descriptive lead; seeds12 "AReA is ahead only at the 10th percentile ...; level at the
+25th; from the median on ..." + seed means \hlProgSeedOneAreaIr, \hlProgSeedTwoAreaIr (Table 2); hrgen_samples "On
+HRGen-1K AReA is best only at the 10th percentile ...; in the other four rows one of the two SCA modes is best" + mean
+\hlProgHrgenAreaIr over \nhrgen prompts (Table 2); mosaic keeps its own caption. Checked against the printed labels:
+deciles -0.19, -0.02, +0.03, +0.11 ... +1.28; seeds -0.13/-0.19, +0.05/+0.02, +0.32/+0.38 ...; HRGen bold winners
+AReA, prog, single, prog, single. No decile value is typed in the captions (the row labels print them).
+
+Short page 18 (protocol + "results in detail" before Table E.1): it was a full text page of five short subsections whose
+floats all came later. Now Table E.1 is set with [!b] right after the heading of E (short only), so page 18 holds the
+protocol summary, the opening of E and Table E.1; page 19 holds E.1 to E.5 with the Holm table between them. A
+\FloatBarrier before the short F keeps the limitations from being split by the float pages (page 19 is 69% full).
+
+Also fixed (full): Table D.1 (protocol) was never cited; D.1 now opens with "Table D.1 summarizes the protocol."
+main_short.tex: \fullversionpages is now 67; build_delivery.py --main main_short.tex stops if the full PDF differs.
+Text owner's main.tex: its pointers \whenlabel{fig:deciles_a}, {fig:seeds12}, {fig:hrgen_samples} and the Figure 1
+pointer to fig:mosaic resolve in both editions; its \sizesArtifactRef / \sizesMoreRef no longer cite app:generality
+in the short edition (an earlier state had 5 undefined references there; fixed by the text owner at 14:02).
+Switch builds (main.tex of about 14:00): full 66 pp (prog. ablation off), 70 pp (newer models + showcase), 64 pp (no v6
+visuals), 0 undefined; short 31, 33, 25 pp, undefined only from the then-current main.tex macro above (since fixed).
+Known, unchanged: full p33 (Table E.3 + E.3 text) is 52% full, as in v6.
