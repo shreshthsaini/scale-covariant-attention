@@ -13,6 +13,17 @@ Groups (each writes spool tasks; outputs /scratch/09032/saini_2/sca/out/qwen_tun
   prompts    write prompts/qwen_tune12.jsonl (refuses to overwrite different content)
   area4096   AReA (scripts/run_area_qwen.py, its qwen-image defaults) at 4096^2 on TUNE, the single-pass reference
   base4096   untuned SCA at 40 steps (the qwen_sca40 flags of the TEST comparison) at 4096^2 on TUNE
+  area5312   AReA at 5312^2 on TUNE, the reference of the progressive screens (their stage factors are exact there)
+  sp4096     single-pass SCA screens at 4096^2 (SP below; 40 steps, the untuned thresholds, which are noise levels)
+  prog5312   progressive SCA screens at 5312^2 (PROG below; scripts/sample_progressive_qwen.py)
+Configurations (labels are the sidecar methods and output folders):
+  qt_sca40     untuned: native mu 0.834, negative " ", no suffix (the TEST comparison's qwen_sca40)
+  qt_mu        + resolution time shift (--mu-mode resolution: mu 1.96 at 4096^2, 2.22 at 5312^2; AReA uses 2.0 / 2.26)
+  qt_sfx       + AReA's conditioning: its QWEN_SUFFIX and the empty negative prompt (metrics score the benchmark prompt)
+  qt_mu_sfx    both
+  qt_prog      progressive: 1328^2 stock attention (30 steps), 2656^2 SCA (last 20 steps, from sigma 0.81), 5312^2
+               SCA (last 13, from sigma 0.62); HRDiT's guidance, true CFG 4 in every stage, bridge 1024 tokens
+  qt_prog_sfx  qt_prog with AReA's conditioning
 Usage: slurm/qwen_tune_tasks.py GROUP [GROUP ...] [--dry]
 """
 
@@ -36,6 +47,15 @@ SCA_CODE = aq.SCA_CODE                  # code/fa20267, every Qwen-Image SCA ima
 BRIDGE = {"5312x5312": "--bridge-cells 4 --bridge-k 64", "4096x4096": "--bridge-cells 8 --bridge-k 16"}
 SCA40 = st.QWEN_SCA.replace("--steps 50 ", "--steps 40 ")
 assert SCA40.count("--steps 40 ") == 1
+NEW_CODE = f"{S}/code/a7034a3"          # resolution mu, --prompt-suffix, sample_progressive_qwen.py (tests pass)
+AREA_COND = "--prompt-suffix area --negative="
+SP = {"qt_mu": SCA40.replace("--mu-mode native ", "--mu-mode resolution "),
+      "qt_sfx": f"{SCA40} {AREA_COND}",
+      "qt_mu_sfx": SCA40.replace("--mu-mode native ", "--mu-mode resolution ") + f" {AREA_COND}"}
+assert all(v != SCA40 for v in SP.values())
+PROG_BASE = ("--stages 1328x1328,2656x2656,5312x5312 --base-steps 30 --highres-steps 20,13 --true-cfg 4.0 "
+             f"--pi-table {st.QWEN_TABLE} --bridge-tokens 1024")
+PROG = {"qt_prog": PROG_BASE, "qt_prog_sfx": f"{PROG_BASE} {AREA_COND}"}
 
 
 def tune_prompts(dry):
@@ -79,13 +99,50 @@ def base4096(dry):
                 f"--out {OUT_TUNE}/qt_sca40/4096x4096", dry, need=55)
 
 
+def area5312(dry):
+    rev = f"export SCA_CODE_REVISION={Path(AREA_CODE).name}\n"
+    for a, b in chunks(12, 3):
+        aq.task(f"000r_c_area5312_{a:02d}_{b:02d}.sh", 45, f"TUNE reference: AReA (qwen-image defaults) at 5312^2, "
+                f"prompts {a + 1}-{b}", AREA_CODE,
+                f"{PY} scripts/run_area_qwen.py --seed 0 --prompts {TUNE} --res 5312x5312 --start {a} --end {b} "
+                f"--label qt_area --out {OUT_TUNE}/qt_area/5312x5312", dry, need=60, extra_env=rev)
+
+
+def sp4096(dry, labels=None):
+    for label, flags in SP.items():
+        if labels and label not in labels:
+            continue
+        for a, b in chunks(12, 4):
+            aq.task(f"000r_d_{label[3:]}4096_{a:02d}_{b:02d}.sh", 35, f"TUNE screen: single-pass SCA {label} at "
+                    f"4096^2, prompts {a + 1}-{b}", NEW_CODE,
+                    f"{PY} scripts/sample_qwen.py {flags} --pi-table {st.QWEN_TABLE} {BRIDGE['4096x4096']} "
+                    f"--label {label} --res 4096x4096 --prompts {TUNE} --start {a} --end {b} "
+                    f"--out {OUT_TUNE}/{label}/4096x4096", dry, need=55)
+
+
+def prog5312(dry, labels=None):
+    for label, flags in PROG.items():
+        if labels and label not in labels:
+            continue
+        for a, b in chunks(12, 4):
+            pre = "000r_0" if (label, a) == ("qt_prog", 0) else "000r_c"   # first GPU run of the new sampler goes first
+            aq.task(f"{pre}_{label[3:]}5312_{a:02d}_{b:02d}.sh", 40, f"TUNE screen: progressive SCA {label} at "
+                    f"5312^2, prompts {a + 1}-{b}", NEW_CODE,
+                    f"{PY} scripts/sample_progressive_qwen.py {flags} --label {label} --prompts {TUNE} --start {a} "
+                    f"--end {b} --seed 0 --out {OUT_TUNE}/{label}/5312x5312", dry, need=60)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("groups", nargs="+", choices=("prompts", "area4096", "base4096"))
+    ap.add_argument("groups", nargs="+", choices=("prompts", "area4096", "base4096", "area5312", "sp4096", "prog5312"))
+    ap.add_argument("--labels", nargs="*", help="Only these configuration labels (sp4096, prog5312)")
     ap.add_argument("--dry", action="store_true")
     a = ap.parse_args()
     for g in a.groups:
-        {"prompts": tune_prompts, "area4096": area4096, "base4096": base4096}[g](a.dry)
+        if g in ("sp4096", "prog5312"):
+            {"sp4096": sp4096, "prog5312": prog5312}[g](a.dry, a.labels)
+        else:
+            {"prompts": tune_prompts, "area4096": area4096, "base4096": base4096, "area5312": area5312}[g](a.dry)
 
 
 if __name__ == "__main__":
