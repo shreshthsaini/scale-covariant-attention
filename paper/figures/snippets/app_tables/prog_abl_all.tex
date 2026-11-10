@@ -1,40 +1,48 @@
 % Generated (app_tables/prog_abl_all.tex) by paper/figures/src/gen_main_tables.py from results/; do not edit by hand.
+\ifdefined\scaFitTab\else\input{figures/snippets/main_tables/tabstyle.tex}\fi
 \begin{table}[!htbp]
-\caption{\textbf{Reach weights inside the progressive schedule, all metrics.} FLUX.1-dev, \nmain{} Aesthetic-4K prompts at $4096^2$, seed label 0. Each cell is the variant minus progressive \sca{} with per-head weights, with its 95\% paired interval below it. Per-image metrics use 2000 prompt draws; FID, KID and their patch versions use 1000 draws that also resample the 168 reference-image clusters. \up{Blue} / \dn{orange}: the interval excludes zero in favour of / against the variant; lower is better for FID and KID, so their signs read the other way. All four runs share the schedule, the window, the bridge, and the seeds, and differ only in the weights $\pi$.}
+\caption{\textbf{Inside the progressive sampler, per-head weights win every per-image metric; coarser weights have lower patch FID.} Expands the progressive rows of Table~\ref{tab:ablation}. FLUX.1-dev, \nmain{} Aesthetic-4K prompts at $4096^2$, seed 0. Each cell is the variant minus progressive \sca{} with per-head weights, with its 95\% paired interval below it in grey: 2000 prompt draws for the per-image metrics, and for FID, KID, and their patch versions 1000 draws that also resample the 168 reference-image clusters. $^{\times}$: $\times100$; $^{\ast}$: $\times1000$. \up{Blue} / \dn{orange}: the interval excludes zero in favour of / against the variant; for FID and KID lower is better. All four runs share the schedule, the window, the bridge, and the seeds, and differ only in the weights $\pi$. Key result: shared and per-layer weights lose all ten per-image metrics and lower patch FID; window-only attention raises it.}
 \label{tab:prog_abl_all}
-\centering\scriptsize\setlength{\tabcolsep}{5pt}
-\begin{tabular}{@{}lrrr@{}}
-\toprule
-Metric & shared $\pi(\sigma)$ & per-layer $\pi_\ell(\sigma)$ & window only \\
-\midrule
-ImageReward & \dn{${-}0.014$} & \dn{${-}0.012$} & \dn{${-}0.020$} \\
- & $[{-}0.025, {-}0.004]$ & $[{-}0.021, {-}0.003]$ & $[{-}0.038, {-}0.004]$ \\[0.5pt]
-Aesthetic & \dn{${-}0.08$} & \dn{${-}0.04$} & \dn{${-}0.08$} \\
- & $[{-}0.09, {-}0.06]$ & $[{-}0.06, {-}0.03]$ & $[{-}0.12, {-}0.03]$ \\[0.5pt]
-CLIP score & \dn{${-}0.32$} & \dn{${-}0.37$} & \dn{${-}0.57$} \\
- & $[{-}0.44, {-}0.20]$ & $[{-}0.49, {-}0.25]$ & $[{-}0.82, {-}0.33]$ \\[0.5pt]
-PickScore & \dn{${-}0.07$} & \dn{${-}0.07$} & \dn{${-}0.14$} \\
- & $[{-}0.09, {-}0.05]$ & $[{-}0.09, {-}0.05]$ & $[{-}0.20, {-}0.09]$ \\[0.5pt]
-HPSv2 ($\times100$) & \dn{${-}0.19$} & \dn{${-}0.28$} & \dn{${-}0.28$} \\
- & $[{-}0.24, {-}0.13]$ & $[{-}0.33, {-}0.22]$ & $[{-}0.36, {-}0.20]$ \\[0.5pt]
-HPSv2.1 ($\times100$) & \dn{${-}0.38$} & \dn{${-}0.39$} & \dn{${-}0.36$} \\
- & $[{-}0.45, {-}0.30]$ & $[{-}0.46, {-}0.32]$ & $[{-}0.48, {-}0.25]$ \\[0.5pt]
-MUSIQ & \dn{${-}3.8$} & \dn{${-}2.2$} & ${-}0.1$ \\
- & $[{-}4.6, {-}2.9]$ & $[{-}2.8, {-}1.5]$ & $[{-}0.7, 0.4]$ \\[0.5pt]
-MUSIQ, crops & \dn{${-}4.3$} & \dn{${-}2.8$} & \up{$+0.5$} \\
- & $[{-}4.8, {-}3.8]$ & $[{-}3.2, {-}2.4]$ & $[0.2, 0.9]$ \\[0.5pt]
-CLIP-IQA ($\times100$) & \dn{${-}3.6$} & \dn{${-}1.8$} & \dn{${-}1.6$} \\
- & $[{-}4.1, {-}3.0]$ & $[{-}2.1, {-}1.3]$ & $[{-}2.2, {-}1.0]$ \\[0.5pt]
-ARNIQA ($\times100$) & \dn{${-}3.5$} & \dn{${-}2.6$} & \dn{${-}0.3$} \\
- & $[{-}3.9, {-}3.2]$ & $[{-}3.0, {-}2.3]$ & $[{-}0.5, {-}0.0]$ \\[0.5pt]
-FID & ${-}0.2$ & $+0.0$ & ${-}0.4$ \\
- & $[{-}2.4, 2.0]$ & $[{-}1.9, 1.9]$ & $[{-}2.4, 1.7]$ \\[0.5pt]
-KID ($\times$1000) & ${-}0.28$ & ${-}0.02$ & ${-}0.29$ \\
- & $[{-}1.31, 0.88]$ & $[{-}0.85, 0.99]$ & $[{-}1.33, 0.58]$ \\[0.5pt]
-Patch FID & \up{${-}7.3$} & \up{${-}6.4$} & \dn{$+6.0$} \\
- & $[{-}10.3, {-}5.2]$ & $[{-}8.8, {-}4.8]$ & $[3.9, 9.9]$ \\[0.5pt]
-Patch KID ($\times$1000) & \up{${-}4.70$} & \up{${-}4.20$} & \dn{$+4.38$} \\
- & $[{-}6.90, {-}2.64]$ & $[{-}5.92, {-}2.57]$ & $[2.51, 6.53]$ \\
-\bottomrule
-\end{tabular}
+\centering\scriptsize
+\textit{(a) Preference}\par\smallskip
+\scaFitTab{l*{6}{r}}{7}{%
+  \toprule
+  Variant $-$ per-head & IR & Aesthetic & CLIP & PickScore & HPSv2$^{\times}$ & HPSv2.1$^{\times}$ \\
+  \midrule
+  shared $\pi(\sigma)$ & \dn{${-}0.014$} & \dn{${-}0.08$} & \dn{${-}0.32$} & \dn{${-}0.07$} & \dn{${-}0.19$} & \dn{${-}0.38$} \\
+   & {\color{scaCtx}$[{-}0.025, {-}0.004]$} & {\color{scaCtx}$[{-}0.09, {-}0.06]$} & {\color{scaCtx}$[{-}0.44, {-}0.20]$} & {\color{scaCtx}$[{-}0.09, {-}0.05]$} & {\color{scaCtx}$[{-}0.24, {-}0.13]$} & {\color{scaCtx}$[{-}0.45, {-}0.30]$} \\[1pt]
+  per-layer $\pi_\ell(\sigma)$ & \dn{${-}0.012$} & \dn{${-}0.04$} & \dn{${-}0.37$} & \dn{${-}0.07$} & \dn{${-}0.28$} & \dn{${-}0.39$} \\
+   & {\color{scaCtx}$[{-}0.021, {-}0.003]$} & {\color{scaCtx}$[{-}0.06, {-}0.03]$} & {\color{scaCtx}$[{-}0.49, {-}0.25]$} & {\color{scaCtx}$[{-}0.09, {-}0.05]$} & {\color{scaCtx}$[{-}0.33, {-}0.22]$} & {\color{scaCtx}$[{-}0.46, {-}0.32]$} \\[1pt]
+  window only ($\pi=1$) & \dn{${-}0.020$} & \dn{${-}0.08$} & \dn{${-}0.57$} & \dn{${-}0.14$} & \dn{${-}0.28$} & \dn{${-}0.36$} \\
+   & {\color{scaCtx}$[{-}0.038, {-}0.004]$} & {\color{scaCtx}$[{-}0.12, {-}0.03]$} & {\color{scaCtx}$[{-}0.82, {-}0.33]$} & {\color{scaCtx}$[{-}0.20, {-}0.09]$} & {\color{scaCtx}$[{-}0.36, {-}0.20]$} & {\color{scaCtx}$[{-}0.48, {-}0.25]$} \\[1pt]
+  \bottomrule
+}
+\par\medskip
+\textit{(b) Image quality}\par\smallskip
+\scaFitTab{l*{4}{r}}{5}{%
+  \toprule
+  Variant $-$ per-head & MUSIQ & MUSIQ$_\text{c}$ & CLIP-IQA$^{\times}$ & ARNIQA$^{\times}$ \\
+  \midrule
+  shared $\pi(\sigma)$ & \dn{${-}3.8$} & \dn{${-}4.3$} & \dn{${-}3.6$} & \dn{${-}3.5$} \\
+   & {\color{scaCtx}$[{-}4.6, {-}2.9]$} & {\color{scaCtx}$[{-}4.8, {-}3.8]$} & {\color{scaCtx}$[{-}4.1, {-}3.0]$} & {\color{scaCtx}$[{-}3.9, {-}3.2]$} \\[1pt]
+  per-layer $\pi_\ell(\sigma)$ & \dn{${-}2.2$} & \dn{${-}2.8$} & \dn{${-}1.8$} & \dn{${-}2.6$} \\
+   & {\color{scaCtx}$[{-}2.8, {-}1.5]$} & {\color{scaCtx}$[{-}3.2, {-}2.4]$} & {\color{scaCtx}$[{-}2.1, {-}1.3]$} & {\color{scaCtx}$[{-}3.0, {-}2.3]$} \\[1pt]
+  window only ($\pi=1$) & ${-}0.1$ & \up{$+0.5$} & \dn{${-}1.6$} & \dn{${-}0.3$} \\
+   & {\color{scaCtx}$[{-}0.7, 0.4]$} & {\color{scaCtx}$[0.2, 0.9]$} & {\color{scaCtx}$[{-}2.2, {-}1.0]$} & {\color{scaCtx}$[{-}0.5, {-}0.0]$} \\[1pt]
+  \bottomrule
+}
+\par\medskip
+\textit{(c) Set level}\par\smallskip
+\scaFitTab{l*{4}{r}}{5}{%
+  \toprule
+  Variant $-$ per-head & FID$\downarrow$ & KID$^{\ast}\!\downarrow$ & FID$_\text{p}\!\downarrow$ & KID$_\text{p}^{\ast}\!\downarrow$ \\
+  \midrule
+  shared $\pi(\sigma)$ & ${-}0.2$ & ${-}0.28$ & \up{${-}7.3$} & \up{${-}4.70$} \\
+   & {\color{scaCtx}$[{-}2.4, 2.0]$} & {\color{scaCtx}$[{-}1.31, 0.88]$} & {\color{scaCtx}$[{-}10.3, {-}5.2]$} & {\color{scaCtx}$[{-}6.90, {-}2.64]$} \\[1pt]
+  per-layer $\pi_\ell(\sigma)$ & $+0.0$ & ${-}0.02$ & \up{${-}6.4$} & \up{${-}4.20$} \\
+   & {\color{scaCtx}$[{-}1.9, 1.9]$} & {\color{scaCtx}$[{-}0.85, 0.99]$} & {\color{scaCtx}$[{-}8.8, {-}4.8]$} & {\color{scaCtx}$[{-}5.92, {-}2.57]$} \\[1pt]
+  window only ($\pi=1$) & ${-}0.4$ & ${-}0.29$ & \dn{$+6.0$} & \dn{$+4.38$} \\
+   & {\color{scaCtx}$[{-}2.4, 1.7]$} & {\color{scaCtx}$[{-}1.33, 0.58]$} & {\color{scaCtx}$[3.9, 9.9]$} & {\color{scaCtx}$[2.51, 6.53]$} \\[1pt]
+  \bottomrule
+}
 \end{table}

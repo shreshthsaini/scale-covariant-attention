@@ -1,12 +1,26 @@
 # Paper v6: tables and plots (role `tablesplots`), 2026-11-10
 
-Status: IN PROGRESS. This file is rewritten as work lands; the sections marked FINAL are settled.
+Status: IN PROGRESS (tables done; Figures 6 and 7 and appendix plots in progress; appendix tables of app_tab_*.py in
+progress). Sections marked FINAL are settled. Generators: run from paper/ with the sca env python; both print
+"checks passed". Builds: /scratch/09032/saini_2/sca/paper_builds/v6_tablesplots_<n>/.
 
-## 1. Holm result (FINAL; text owner please read now)
-Module: paper/figures/src/gen_holm.py. It re-runs scripts/paired_bootstrap.py on the archived per-image files
-(2000 prompt draws, seed 0, one generator shared by the metrics in sorted order) and reproduces all 16 archived paired
-CSVs digit for digit (the run fails otherwise). Two-sided bootstrap p-values from the same draws, Holm step-down over
-the ten per-image metrics of each pair at 5%; a paired sign-flip test (2000 sign vectors, seed 0) as a check.
+## 0. Actions for other owners (short list)
+- text: Table 2 (`tab_ablation_compact_prog.tex`) is now FULL WIDTH: take it out of the 0.48 minipage. Table 3
+  (`tab_generality.tex`) fits 0.48 width at \footnotesize; suggested placement beside Figure 7 (0.48) in Section 4.3.
+  Table 1 fills \linewidth by itself at \small. Captions to paste: Section 3. Holm wording: Section 1.
+- text: all 47 \reqnum macros are generated in headline.tex and equal their placeholders; the \providecommand
+  lines can stay (headline.tex is read first and wins) or go.
+- appendix: new float snippets, each with caption and label: app_tables/holm.tex (tab:holm), app_tables/gen_all.tex
+  (tab:gen_all), app_tables/app_abl.tex (tab:app_abl, replaces the hand-typed table of that label: delete the typed
+  float and use \snippetat{!htbp}{app_tables/app_abl}). Restyled in place, same labels: prog_all.tex, prog_abl_all.tex,
+  main_tables/tab_panel46.tex (body). Heights: Section 4.
+
+## 1. Holm result (FINAL)
+Module paper/figures/src/gen_holm.py re-runs scripts/paired_bootstrap.py on the archived per-image files (2000 prompt
+draws, seed 0, one generator shared by the metrics in sorted order) and reproduces all 25 archived paired CSVs it uses
+digit for digit (the run fails otherwise). Two-sided bootstrap p-values from the same draws, p = min(1, 2 min(1 + #{b
+<= 0}, 1 + #{b >= 0}) / 2001); Holm step-down over the ten per-image metrics of each pair at 5%; a paired sign-flip
+test (2000 sign vectors, seed 0) as a check. Smallest resolvable p = 0.001.
 
 | pair (n) | unadjusted better/worse | Holm, bootstrap | Holm, sign-flip |
 |---|---|---|---|
@@ -15,30 +29,115 @@ the ten per-image metrics of each pair at 5%; a paired sign-flip test (2000 sign
 | single-pass SCA - AReA (195) | 10/0 | 10/0 | 10/0 |
 | progressive - UltraImage / DyPE / SEGA / full (195) | 9/0, 10/0, 10/0, 10/0 | same | same |
 | progressive - single-pass (195) | 7/2 | 7/2 | 6/2 (ImageReward drops) |
-| progressive - AReA, seeds 1 and 2 (195), HRGen-1K (1000) | 10/0 each | 10/0 each | 10/0 each |
+| progressive - AReA, seeds 1, 2 (195), HRGen-1K (1000) | 10/0 each | 10/0 each | 10/0 each |
 | single-pass - AReA, seeds 1, 2 (195), HRGen-1K (1000) | 10/0 each | 10/0 each | 10/0 each |
 | single-pass - AReA, FLUX.1-Krea (195) | 7/0 | 7/0 | 7/0 |
 | w/o schedule - full attention, FLUX.2-dev (50) | 9/0 | 9/0 | 9/0 |
+| per-head over shared / per-layer, single pass (46) | 9/0, 5/0 | 9/0, 5/0 | 7/0, 5/0 |
+| per-head over shared / per-layer / window only, progressive (195) | 10/0, 10/0, 8/1 | 10/0, 10/0, 6/1 | same |
+| per-head over no opening / local / global / mean pooling (46) | 6/2, 8/0, 10/0, 9/0 | 6/2, 7/0, 10/0, 8/0 | same |
 
 What must weaken in the prose:
-- v5.1 Section 4.1, HRDiT paragraph: "Progressive SCA is better on HPSv2, ARNIQA, and MUSIQ and worse on CLIP-IQA".
-  After Holm only HPSv2 and ARNIQA remain (MUSIQ p = 0.030, Holm 0.24; CLIP-IQA p = 0.035, Holm 0.24). Say: "After
-  Holm correction over the ten metrics it remains better on HPSv2 and ARNIQA and is worse on none; MUSIQ (better) and
-  CLIP-IQA (worse) do not survive the correction."
-- Progressive over single-pass ImageReward (+0.07 [0.01, 0.13]): unadjusted p = 0.018, Holm 0.036 (bootstrap) but
-  0.059 (sign-flip). Keep the interval and avoid calling it a robust gain.
-- Everything else survives unchanged: "all ten per-image metrics" against AReA at three seeds and on HRGen-1K, both
-  modes; UltraImage nine; FLUX.1-Krea seven; FLUX.2-dev nine.
-Macros (in headline.tex, list below once written).
+- HRDiT paragraph (v5.1: "better on HPSv2, ARNIQA, and MUSIQ and worse on CLIP-IQA"). After Holm only HPSv2 and
+  ARNIQA remain; MUSIQ (p = \holmProgHrditMusiqP, Holm \holmProgHrditMusiqPHolm) and CLIP-IQA (p =
+  \holmProgHrditClipiqaP, Holm \holmProgHrditClipiqaPHolm) do not. Suggested: "After Holm correction over the ten
+  metrics it remains better on \holmProgHrditKept{} and is worse on none; \holmProgHrditDropped{} differ only before
+  the correction (Table~\ref{tab:holm})."
+- Progressive over single-pass ImageReward (+0.07 [0.01, 0.13]): p = \holmProgScaIrP; Holm \holmProgScaIrPHolm
+  (bootstrap), \holmProgScaIrPHolmFlip (sign-flip). Keep the interval; do not call it a robust gain.
+- Everything else survives: "all ten per-image metrics" against AReA, both modes, three seeds, HRGen-1K; UltraImage
+  nine; FLUX.1-Krea seven; FLUX.2-dev nine; inside the progressive sampler per-head weights win all ten against
+  shared and per-layer weights.
 
-## 2. Planned snippet changes (being implemented)
-- main_tables/tab_main_compact.tex (Table 1): full text width (tabular* to \linewidth), adds a speed-ratio column
-  (time over progressive SCA's, same kind) and a "record" column (of the ten per-image metrics, how many progressive
-  SCA is significantly better / worse than the row on, Holm-adjusted); campaign-only times printed with a mark
-  instead of "--"; best bold and second underlined per group.
-- main_tables/tab_ablation_compact_prog.tex (Table 2): becomes FULL WIDTH (it no longer fits a 0.48 minipage); each
-  group opens with a shaded reference row giving that reference's absolute values (v5.1 showed single-pass SCA's
-  values above deltas taken against SCA without the schedule).
-- main_tables/tab_generality.tex (Table 3): fits 0.48 text width at 8 pt, one line per setting, no interval rows
-  (intervals move to an appendix table), plus n and a ten-metric record column. Suggested placement: Table 3 and
-  Figure 7 (scaling) side by side in Section 4.3.
+## 2. Macros (headline.tex, all \newcommand; generated by gen_main_tables.py)
+- Holm counts, for every pair: \holm<Pair>Better, \holm<Pair>Worse (digits), ...BetterWord / ...WorseWord (words),
+  ...BetterRaw / ...WorseRaw (unadjusted). <Pair> in {ProgArea, ProgHrdit, ScaArea, ProgUltra, ProgDype, ProgSega,
+  ProgFull, ProgSca, ProgAreaSeedOne, ProgAreaSeedTwo, ProgAreaHrgen, ScaAreaSeedOne, ScaAreaSeedTwo, ScaAreaHrgen,
+  ScaAreaKrea, FluxTwo, AblShared, AblLayer, ProgAblShared, ProgAblLayer, ProgAblWindow, AblNoOpening, AblLocal,
+  AblGlobal, AblMean}. For the ablation pairs "Better" means the variant is better (so per-head wins = ...Worse).
+- \holmProgHrditKept (HPSv2 and ARNIQA), \holmProgHrditDropped (MUSIQ and CLIP-IQA), \holmProgHrditMusiqP,
+  \holmProgHrditMusiqPHolm, \holmProgHrditClipiqaP, \holmProgHrditClipiqaPHolm, \holmProgScaIrP,
+  \holmProgScaIrPHolm, \holmProgScaIrPHolmFlip.
+- Latency: \hlLatExpSca (0.99), \hlLatExpArea (1.12, was typed in main.tex and appendix.tex), \hlLatEightSca,
+  \hlLatEightArea (952.0, was typed), \hlLatEightRatio.
+- The 47 \reqnum requests of main.tex (hlEmu*, hlAbl*, hlKrea*, hlWide*, hlSixKWins, hlEightKFavWord, hlWorked*,
+  hlFidAreaAbs, hlAreaReproGap, hlFluxTwoWinsWord, hlLat*): all generated from results/ (sources in headline.tex
+  comments); the generator checks each equals the placeholder value. hlWorkedPairsRatio / LocalKeys come from the
+  analytic cost model of Table tab:flops (method constants), checked against its printed 8.56e16 / 1.24e16.
+
+## 3. Tables (main text)
+Shared style file: main_tables/tabstyle.tex (written by gen_main_tables.py; every v6 table snippet inputs it once):
+colour scaRowTint #EAF4F1 (pale tint of SCA green #13865F), scaCtx #6E7781 (interval grey), \scaRowOurs (shade),
+\camp (campaign-mean mark), \scaCI, \scaFitTab{colspec}{ncols}{rows} (sets a booktabs tabular at \linewidth by
+spreading spare width over the cell paddings; shaded rows stay seamless, unlike tabular*).
+
+### Table 1, main_tables/tab_main_compact.tex (tab:main): full text width at \small (9 pt)
+Columns: time per image (clean batch-1 seconds; a method with no clean time prints its campaign mean with a double
+dagger) and "vs. ours" (that time over progressive SCA's time of the same kind; equals \hlSpeedProgArea,
+\hlSpeedProgHrdit, \hlSpeedProgFull, \hlSpeedProg{Dype,Sega,Ultra}Camp, checked); IR, HPSv2.1, PickScore; MUSIQ_c;
+FID and patch FID (FID is new); "Ten metrics +/-" (Holm-adjusted record of progressive SCA against the row). No "--"
+cells. Best bold, second underlined within each group; both our rows shaded; group heads italic.
+Proposed caption:
+\caption{\textbf{Progressive \sca{} is the fastest method at $4096^2$ and beats every single-pass baseline on all ten
+per-image metrics.} FLUX.1-dev, \nmain{} Aesthetic-4K prompts, seed 0. Time: clean batch-1 median on one idle GH200;
+vs.\ ours: that time over progressive \sca{}'s; $^\ddagger$campaign mean on shared nodes, the only time for that
+method, over progressive \sca{}'s campaign mean (\hlSecProgCamp\,s). IR ImageReward, HPSv2.1 $\times100$, Pick
+PickScore, M$_\text{c}$ MUSIQ on four $1024^2$ crops, FID$_\text{p}$ patch FID$^\dagger$. Ten metrics: on how many of
+the ten per-image metrics progressive \sca{} is significantly better\,/\,worse than the row (paired bootstrap over
+prompts, 2000 draws, Holm-adjusted). Bold: best, underline: second per group; shaded: ours.
+Table~\ref{tab:all_metrics} lists every metric. Key result: progressive \sca{} needs \hlSecProg\,s per image,
+$\hlSpeedProgArea\times$ less than AReA and $\hlSpeedProgHrdit\times$ less than HRDiT, and HRDiT is significantly
+better on none of the ten metrics.}
+
+### Table 2, main_tables/tab_ablation_compact_prog.tex (tab:ablation): FULL WIDTH at \small
+(tab_ablation_compact.tex is the same table without the progressive group.) Three groups: reach weights in single pass
+(46 prompts), reach weights in progressive SCA (195), views (46). Each group opens with its shaded per-head reference
+in absolute values. FIX of v5.1: its shaded row printed single-pass SCA (1.17 / 30.07 / 23.02 / 60.7) above deltas
+taken against SCA without the schedule; v6 prints the true reference (1.12 / 29.98 / 22.96 / 62.5). New columns:
+patch FID (progressive rows with cluster-bootstrap intervals, single-pass rows point estimates) and the Holm record.
+Proposed caption:
+\caption{\textbf{Per-head weights beat shared and per-layer ones in both samplers.} FLUX.1-dev at $4096^2$. Each group
+opens with its shaded per-head reference in absolute values; the rows below give the variant minus that reference
+(views: minus the first shaded row). \dn{Orange} / \up{blue}: the 95\% paired interval excludes zero against / in
+favour of the variant (FID$_\text{p}$: lower is better; the \nabl-prompt values are point estimates). $+$\,/\,$-$: of
+the ten per-image metrics, those on which per-head weights are significantly better\,/\,worse after Holm correction.
+Tables~\ref{tab:app_abl} and~\ref{tab:prog_abl_all} give every metric with its interval. Key result: inside the
+progressive sampler per-head weights win all ten per-image metrics against shared and per-layer weights, which have
+lower patch FID.}
+
+### Table 3, main_tables/tab_generality.tex (tab:generality): 0.48 text width at \footnotesize (8 pt)
+One line per setting: n, paired differences in IR, HPS (HPSv2.1 x100), PickScore (colour = interval), Holm record.
+Single-pass seed 0 row added. Intervals moved to the new appendix table tab:gen_all (every number kept).
+Proposed caption:
+\caption{\textbf{The gains hold across seeds, prompt sets, and checkpoints.} Paired differences at $4096^2$ (2000
+prompt draws); HPS is HPSv2.1$\times100$. FLUX.1-Krea-dev is AReA's checkpoint; FLUX.2-dev pairs \sca{} without the
+schedule with full attention. \up{Blue}: the 95\% interval excludes zero in favour of \sca{}. Holm $+$\,/\,$-$:
+metrics of ten significantly better\,/\,worse after Holm correction. Table~\ref{tab:gen_all} gives all ten metrics with
+intervals. Key result: no setting is significantly worse on any metric.}
+
+## 4. Appendix tables (FINAL unless noted)
+| snippet | label | kind | change | size |
+|---|---|---|---|---|
+| app_tables/holm.tex | tab:holm | float (new) | (a) three headline pairs x ten metrics: delta, p, p_Holm; (b) record of all 25 pairs | about 0.75 page |
+| app_tables/gen_all.tex | tab:gen_all | float (new) | expands Table 3: 10 settings x 10 metrics, two panels, grey intervals below | about 0.6 page |
+| app_tables/app_abl.tex | tab:app_abl | float (new, replaces the typed one) | expands Table 2 single-pass rows: (a) preference, (b) image quality, (c) patch FID and output error | about 0.55 page |
+| app_tables/prog_all.tex | tab:prog_all | float (restyled) | transposed: 7 baselines as rows, three panels (preference, image quality, set level), grey intervals; no \resizebox | about 0.6 page (taller than v5.1, now 7 pt) |
+| app_tables/prog_abl_all.tex | tab:prog_abl_all | float (restyled) | same layout, 3 variants | about 0.35 page |
+| main_tables/tab_panel46.tex | tab:panel46 | body (restyled) | one time column (campaign mean, every row has one), grouped heads; caption in appendix.tex should drop "clean" | same height |
+| app_tables/variance_split.tex | tab:variance_split | float | unchanged | |
+Captions of float snippets are generated; each states what it expands and ends with "Key result:".
+Pending (worker): all_metrics, app_4k, app_wide, latency, published_compare, published_hrgen, krea_6144,
+phase2_baselines, phase2_general, panel46_deltas, prog_deltas (app_tab_main.py, app_tab_phase2.py).
+Still hand-typed in appendix.tex (numbers typed by hand, not mine to edit): tab:app_ps2, tab:phase2_sensitivity,
+tab:phase2_budget, tab:flops. Generated replacements can follow on request.
+
+## 5. Number audit (no number changed)
+Script: /scratch/.../scratchpad/tp/numdiff.py compares the multiset of numbers in table rows, old snapshot
+(/scratch/09032/saini_2/sca/paper_builds/v6_tablesplots_base/snippets_orig, = v5.1) against v6:
+tab_main_compact: every v5.1 number present; tab_ablation_compact_prog: every v5.1 number present except the four
+values of the mislabelled shaded row (intended fix above); tab_generality: every v5.1 number present in
+tab_generality + gen_all; prog_all, prog_abl_all: identical numbers and identical \up/\dn sets; app_abl: every number of
+the hand-typed v5.1 table present.
+
+## 6. Figures 6 and 7, appendix plots
+In progress (worker); stems paper/figures/v6/gains.pdf and scaling.pdf; rubric and captions to follow here.

@@ -1,0 +1,72 @@
+% Generated (app_tables/gen_all.tex, with gen_holm.py) by paper/figures/src/gen_main_tables.py from results/; do not edit by hand.
+\ifdefined\scaFitTab\else\input{figures/snippets/main_tables/tabstyle.tex}\fi
+\begin{table}[!htbp]
+\caption{\textbf{Table~\ref{tab:generality} with all ten per-image metrics.} FLUX.1-dev at $4096^2$ unless named; each cell is the paired difference (HPS, CLIP-IQA, ARNIQA $\times100$) with its 95\% interval below it in grey (2000 prompt draws, seed 0). \up{Blue} / \dn{orange}: the interval excludes zero in favour of / against \sca{}. Seeds 0 to 2 each cover all \nmain{} Aesthetic-4K prompts; HRGen-1K has \nhrgen{} prompts; FLUX.1-Krea-dev runs the same \nkrea{} prompts as seed 0; FLUX.2-dev uses 50. Table~\ref{tab:holm} gives the Holm-adjusted calls. Key result: no comparison is significantly worse on any metric, and every comparison on FLUX.1-dev is significantly better on all ten.}
+\label{tab:gen_all}
+\centering\scriptsize
+\textit{(a) Preference}\par\smallskip
+\scaFitTab{lr*{6}{r}}{8}{%
+  \toprule
+  Setting & $n$ & IR & Aesthetic & CLIP & PickScore & HPSv2 ($\times100$) & HPSv2.1 ($\times100$) \\
+  \midrule
+  \multicolumn{8}{l}{\emph{Progressive \sca{} $-$ AReA}} \\
+  Seed 0 & 195 & \up{$+0.40$} & \up{$+0.23$} & \up{$+1.70$} & \up{$+1.05$} & \up{$+1.64$} & \up{$+3.86$} \\
+   &  & {\color{scaCtx}$[0.32, 0.49]$} & {\color{scaCtx}$[0.17, 0.30]$} & {\color{scaCtx}$[1.33, 2.07]$} & {\color{scaCtx}$[0.93, 1.19]$} & {\color{scaCtx}$[1.42, 1.86]$} & {\color{scaCtx}$[3.41, 4.30]$} \\[1pt]
+  Seed 1 & 195 & \up{$+0.37$} & \up{$+0.24$} & \up{$+1.28$} & \up{$+1.00$} & \up{$+1.50$} & \up{$+3.67$} \\
+   &  & {\color{scaCtx}$[0.29, 0.46]$} & {\color{scaCtx}$[0.18, 0.30]$} & {\color{scaCtx}$[0.90, 1.66]$} & {\color{scaCtx}$[0.88, 1.12]$} & {\color{scaCtx}$[1.31, 1.69]$} & {\color{scaCtx}$[3.26, 4.06]$} \\[1pt]
+  Seed 2 & 195 & \up{$+0.35$} & \up{$+0.22$} & \up{$+1.49$} & \up{$+0.99$} & \up{$+1.52$} & \up{$+3.61$} \\
+   &  & {\color{scaCtx}$[0.27, 0.45]$} & {\color{scaCtx}$[0.16, 0.28]$} & {\color{scaCtx}$[1.13, 1.85]$} & {\color{scaCtx}$[0.87, 1.12]$} & {\color{scaCtx}$[1.31, 1.72]$} & {\color{scaCtx}$[3.20, 4.03]$} \\[1pt]
+  HRGen-1K & 1000 & \up{$+0.90$} & \up{$+0.41$} & \up{$+2.80$} & \up{$+1.40$} & \up{$+2.38$} & \up{$+6.59$} \\
+   &  & {\color{scaCtx}$[0.84, 0.96]$} & {\color{scaCtx}$[0.38, 0.45]$} & {\color{scaCtx}$[2.54, 3.05]$} & {\color{scaCtx}$[1.33, 1.46]$} & {\color{scaCtx}$[2.27, 2.49]$} & {\color{scaCtx}$[6.31, 6.88]$} \\[1pt]
+  \midrule
+  \multicolumn{8}{l}{\emph{Single-pass \sca{} $-$ AReA}} \\
+  Seed 0 & 195 & \up{$+0.33$} & \up{$+0.15$} & \up{$+1.45$} & \up{$+0.76$} & \up{$+1.15$} & \up{$+2.56$} \\
+   &  & {\color{scaCtx}$[0.25, 0.40]$} & {\color{scaCtx}$[0.09, 0.20]$} & {\color{scaCtx}$[1.12, 1.80]$} & {\color{scaCtx}$[0.66, 0.88]$} & {\color{scaCtx}$[0.96, 1.34]$} & {\color{scaCtx}$[2.18, 2.94]$} \\[1pt]
+  Seed 1 & 195 & \up{$+0.31$} & \up{$+0.11$} & \up{$+1.22$} & \up{$+0.77$} & \up{$+1.17$} & \up{$+2.49$} \\
+   &  & {\color{scaCtx}$[0.24, 0.38]$} & {\color{scaCtx}$[0.06, 0.16]$} & {\color{scaCtx}$[0.89, 1.54]$} & {\color{scaCtx}$[0.67, 0.88]$} & {\color{scaCtx}$[1.01, 1.33]$} & {\color{scaCtx}$[2.16, 2.83]$} \\[1pt]
+  Seed 2 & 195 & \up{$+0.26$} & \up{$+0.09$} & \up{$+1.37$} & \up{$+0.74$} & \up{$+1.18$} & \up{$+2.53$} \\
+   &  & {\color{scaCtx}$[0.20, 0.34]$} & {\color{scaCtx}$[0.04, 0.14]$} & {\color{scaCtx}$[1.08, 1.66]$} & {\color{scaCtx}$[0.62, 0.86]$} & {\color{scaCtx}$[0.99, 1.38]$} & {\color{scaCtx}$[2.13, 2.90]$} \\[1pt]
+  HRGen-1K & 1000 & \up{$+0.76$} & \up{$+0.27$} & \up{$+2.35$} & \up{$+1.09$} & \up{$+1.81$} & \up{$+4.60$} \\
+   &  & {\color{scaCtx}$[0.71, 0.82]$} & {\color{scaCtx}$[0.24, 0.31]$} & {\color{scaCtx}$[2.12, 2.59]$} & {\color{scaCtx}$[1.04, 1.14]$} & {\color{scaCtx}$[1.71, 1.90]$} & {\color{scaCtx}$[4.37, 4.83]$} \\[1pt]
+  FLUX.1-Krea & 195 & $+0.02$ & \up{$+0.04$} & $+0.15$ & \up{$+0.17$} & \up{$+0.39$} & \up{$+0.91$} \\
+   &  & {\color{scaCtx}$[{-}0.02, 0.06]$} & {\color{scaCtx}$[0.01, 0.07]$} & {\color{scaCtx}$[{-}0.07, 0.36]$} & {\color{scaCtx}$[0.11, 0.24]$} & {\color{scaCtx}$[0.30, 0.49]$} & {\color{scaCtx}$[0.70, 1.10]$} \\[1pt]
+  \midrule
+  \multicolumn{8}{l}{\emph{\sca{} without the schedule $-$ full attention}} \\
+  FLUX.2-dev & 50 & \up{$+0.46$} & \up{$+0.30$} & $+0.38$ & \up{$+0.56$} & \up{$+0.85$} & \up{$+1.84$} \\
+   &  & {\color{scaCtx}$[0.32, 0.60]$} & {\color{scaCtx}$[0.18, 0.42]$} & {\color{scaCtx}$[{-}0.38, 1.12]$} & {\color{scaCtx}$[0.29, 0.86]$} & {\color{scaCtx}$[0.50, 1.21]$} & {\color{scaCtx}$[1.10, 2.55]$} \\[1pt]
+  \bottomrule
+}
+\par\medskip
+\textit{(b) Image quality}\par\smallskip
+\scaFitTab{lr*{4}{r}}{6}{%
+  \toprule
+  Setting & $n$ & MUSIQ & MUSIQ$_\text{c}$ & CLIP-IQA ($\times100$) & ARNIQA ($\times100$) \\
+  \midrule
+  \multicolumn{6}{l}{\emph{Progressive \sca{} $-$ AReA}} \\
+  Seed 0 & 195 & \up{$+2.3$} & \up{$+3.7$} & \up{$+7.2$} & \up{$+7.1$} \\
+   &  & {\color{scaCtx}$[0.5, 3.9]$} & {\color{scaCtx}$[2.0, 5.4]$} & {\color{scaCtx}$[5.6, 8.7]$} & {\color{scaCtx}$[6.1, 8.2]$} \\[1pt]
+  Seed 1 & 195 & \up{$+3.0$} & \up{$+4.1$} & \up{$+7.4$} & \up{$+6.8$} \\
+   &  & {\color{scaCtx}$[1.6, 4.4]$} & {\color{scaCtx}$[2.6, 5.8]$} & {\color{scaCtx}$[5.9, 8.8]$} & {\color{scaCtx}$[5.9, 7.9]$} \\[1pt]
+  Seed 2 & 195 & \up{$+3.8$} & \up{$+5.9$} & \up{$+8.1$} & \up{$+6.7$} \\
+   &  & {\color{scaCtx}$[2.1, 5.5]$} & {\color{scaCtx}$[4.1, 7.7]$} & {\color{scaCtx}$[6.6, 9.4]$} & {\color{scaCtx}$[5.7, 7.7]$} \\[1pt]
+  HRGen-1K & 1000 & \up{$+5.2$} & \up{$+5.4$} & \up{$+11.2$} & \up{$+10.3$} \\
+   &  & {\color{scaCtx}$[4.5, 6.0]$} & {\color{scaCtx}$[4.6, 6.2]$} & {\color{scaCtx}$[10.5, 12.0]$} & {\color{scaCtx}$[9.8, 10.9]$} \\[1pt]
+  \midrule
+  \multicolumn{6}{l}{\emph{Single-pass \sca{} $-$ AReA}} \\
+  Seed 0 & 195 & \up{$+5.6$} & \up{$+9.7$} & \up{$+4.6$} & \up{$+3.4$} \\
+   &  & {\color{scaCtx}$[3.9, 7.4]$} & {\color{scaCtx}$[8.3, 11.1]$} & {\color{scaCtx}$[3.2, 6.1]$} & {\color{scaCtx}$[2.5, 4.3]$} \\[1pt]
+  Seed 1 & 195 & \up{$+5.5$} & \up{$+10.3$} & \up{$+4.6$} & \up{$+3.4$} \\
+   &  & {\color{scaCtx}$[3.8, 7.2]$} & {\color{scaCtx}$[8.9, 11.6]$} & {\color{scaCtx}$[3.2, 6.1]$} & {\color{scaCtx}$[2.5, 4.3]$} \\[1pt]
+  Seed 2 & 195 & \up{$+6.3$} & \up{$+10.9$} & \up{$+4.2$} & \up{$+3.5$} \\
+   &  & {\color{scaCtx}$[4.4, 8.1]$} & {\color{scaCtx}$[9.3, 12.6]$} & {\color{scaCtx}$[3.0, 5.4]$} & {\color{scaCtx}$[2.6, 4.4]$} \\[1pt]
+  HRGen-1K & 1000 & \up{$+7.7$} & \up{$+12.6$} & \up{$+9.0$} & \up{$+6.5$} \\
+   &  & {\color{scaCtx}$[6.9, 8.5]$} & {\color{scaCtx}$[11.8, 13.3]$} & {\color{scaCtx}$[8.2, 9.7]$} & {\color{scaCtx}$[6.0, 7.0]$} \\[1pt]
+  FLUX.1-Krea & 195 & \up{$+1.9$} & \up{$+2.7$} & ${-}0.6$ & \up{$+0.8$} \\
+   &  & {\color{scaCtx}$[1.0, 2.9]$} & {\color{scaCtx}$[2.0, 3.3]$} & {\color{scaCtx}$[{-}1.4, 0.3]$} & {\color{scaCtx}$[0.3, 1.2]$} \\[1pt]
+  \midrule
+  \multicolumn{6}{l}{\emph{\sca{} without the schedule $-$ full attention}} \\
+  FLUX.2-dev & 50 & \up{$+16.0$} & \up{$+21.4$} & \up{$+6.6$} & \up{$+7.1$} \\
+   &  & {\color{scaCtx}$[11.9, 19.9]$} & {\color{scaCtx}$[18.2, 24.8]$} & {\color{scaCtx}$[4.7, 8.6]$} & {\color{scaCtx}$[5.4, 8.8]$} \\[1pt]
+  \bottomrule
+}
+\end{table}

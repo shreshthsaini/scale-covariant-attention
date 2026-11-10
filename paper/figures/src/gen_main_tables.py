@@ -587,25 +587,51 @@ def table_main_compact(clean):
 
 
 def table_panel(clean):
+    """Appendix Table tab:panel46 (v6 style): SigMa and three budgets of SCA without the schedule beside single-pass
+    SCA. One time column, the campaign mean on shared nodes, which every row has (single-pass SCA's clean time is in
+    Table 1); colours as before (against single-pass SCA at 28 steps; the budget rows against SCA without the
+    schedule at 28 steps); bold best and underline second within each group."""
     flat = table_rows(TAB_PANEL, clean)
-    cells = [list(r[6]) for r in flat]
-    rank_groups("tab_panel46", TAB_PANEL, cells, underline=False)
+    j_of = {c[0]: j for j, c in enumerate(COLS)}
+    keys = ("seconds", "ir", "hpsv21", "pickscore", "clip", "musiq_crop1024", "fid", "patch_fid")
+    cells = [[r[6][j_of[k]] for k in keys] for r in flat]
+    k0 = 0
+    for _, group in TAB_PANEL:
+        a_, b_ = k0, k0 + len(group)
+        k0 = b_
+        for jj, k in enumerate(keys):
+            for pos, rk in ranks([cells[i][jj] for i in range(a_, b_)], COLS[j_of[k]][3]).items():
+                i = a_ + pos
+                if rk == "best":
+                    cells[i][jj] = rf"\textbf{{{cells[i][jj]}}}"
+                elif b_ - a_ >= 3:  # a second place means something only among three or more rows
+                    cells[i][jj] = rf"\underline{{{cells[i][jj]}}}"
     sca_row = next(r for r in flat if r[0] == "sca")
     for i, row in enumerate(flat):
         marks = table2_marks(row, sca_row) if row[0] != "sca" else {}
-        for j, (k, *_) in enumerate(COLS):
+        for jj, k in enumerate(keys):
             colour, grey = marks.get(k, ("", False))
-            painted = cells[i][j] if (grey or row[7][j]) else paint(cells[i][j], colour or "")
-            cells[i][j] = pend(painted, row[7][j])
+            painted = cells[i][jj] if (grey or row[7][j_of[k]]) else paint(cells[i][jj], colour or "")
+            cells[i][jj] = pend(painted, row[7][j_of[k]])
     PENDING["tab_panel46"] = any(any(r[7]) for r in flat) or any(r"\pend" in c for c in sum(cells, []))
+    heads = [r"Single pass, AReA's sampler (28 steps, guidance 4.5)", r"\sca{} without the schedule, other budgets"]
     body, i = [], 0
-    for g, (heading, group) in enumerate(TAB_PANEL):
-        body += ([r"\midrule"] if g else []) + [rf"\multicolumn{{{NCOL11}}}{{@{{}}l}}{{\emph{{{heading}}}}} \\"]
+    for g, (_, group) in enumerate(TAB_PANEL):
+        body += ([r"\midrule"] if g else []) + [rf"\multicolumn{{10}}{{l}}{{\emph{{{heads[g]}}}}} \\"]
         for _ in group:
-            shade = SHADE if flat[i][0] == "sca" else ""
-            body.append(shade + " & ".join([flat[i][3], flat[i][4]] + cells[i]) + r" \\")
+            shade = r"\scaRowOurs " if flat[i][0] == "sca" else ""
+            label = flat[i][3].replace(r"\quad ", "")
+            body.append(shade + " & ".join([label, flat[i][4]] + cells[i]) + r" \\")
             i += 1
-    return tabular(r"\setlength{\tabcolsep}{3.1pt}", r"@{}lcrr*{7}{r}@{}", HEAD11 + [r"\midrule"], body, "  ")
+    head = [r"\toprule",
+            r" & \multicolumn{2}{c}{Cost} & \multicolumn{4}{c}{Preference $\uparrow$} & "
+            r"\multicolumn{1}{c}{Detail $\uparrow$} & \multicolumn{2}{c}{Set level $\downarrow$} \\",
+            r"\cmidrule(lr){2-3}\cmidrule(lr){4-7}\cmidrule(lr){8-8}\cmidrule(lr){9-10}",
+            r"Method & Steps & s$\downarrow$ & IR & HPSv2.1 & Pick & CLIP & M$_\text{c}$ & FID & "
+            r"FID$_\text{p}^{\dagger}$ \\", r"\midrule"]
+    lines = [HEADER, TABSTYLE_INPUT, r"\scaFitTab{lc*{8}{r}}{10}{%"]
+    lines += ["  " + x for x in head + body + [r"\bottomrule"]]
+    return "\n".join(lines + ["}%"]) + "\n"
 
 
 # ---------------------------------------------------------------- Table 2 (ablations, 46 prompts) ----------------
@@ -779,42 +805,31 @@ def prog_ablation_full():
 
 def table_prog_abl_all(full):
     """Appendix table prog_abl_all.tex: every metric of the progressive-schedule ablation with its interval."""
-    lines = []
-    no_ci = False
-    for key, label, sc, d in PROG_ALL_METRICS:
-        top, low = [label], [""]
-        for _, _, dd in full:
-            if key not in dd:
-                top.append("--")
-                low.append("")
-                continue
-            v, lo, hi = dd[key]
-            top.append(paint(sgn(sc * v, d, "{-}"), sig(dd[key], lower=key in LOWER) or ""))
-            low.append(interval(sc * lo, sc * hi, d) if lo is not None else "")
-            no_ci |= lo is None
-        lines += [" & ".join(top) + r" \\", " & ".join(low) + r" \\[0.5pt]"]
-    lines[-1] = lines[-1].replace(r" \\[0.5pt]", r" \\")
+    no_ci = any(dd[k][1] is None for _, _, dd in full for k in dd if k in LOWER)
     lost = {m: sum(dd[k][2] < 0 for k in PER_IMAGE10) for m, _, dd in full}
     won = {m: sum(dd[k][1] > 0 for k in PER_IMAGE10) for m, _, dd in full}
     NOTES.append(f"prog_abl_all: per-image metrics significantly lost {lost}, won {won}")
     NOTES.append("prog_abl_all: patch FID " + ", ".join(
         f"{m} {dd['patch_fid'][0]:+.1f} [{dd['patch_fid'][1]}, {dd['patch_fid'][2]}]" for m, _, dd in full
         if "patch_fid" in dd))
-    cap = (r"\caption{\textbf{Reach weights inside the progressive schedule, all metrics.} FLUX.1-dev, \nmain{} "
-           r"Aesthetic-4K prompts at $4096^2$, seed label 0. Each cell is the variant minus progressive \sca{} with "
-           r"per-head weights, with its 95\% paired interval below it. Per-image metrics use 2000 prompt draws; FID, "
-           r"KID and their patch versions use 1000 draws that also resample the 168 reference-image clusters"
-           + (r", and print a point estimate alone where that interval is not yet computed" if no_ci else "") +
-           r". \up{Blue} / \dn{orange}: the interval excludes zero in favour of / against the variant; lower is "
-           r"better for FID and KID, so their signs read the other way. All four runs share the schedule, the "
-           r"window, the bridge, and the seeds, and differ only in the weights $\pi$.}")
+    rows_ = [(ABL6_PROG_LABEL.get(m, label), dd) for m, label, dd in full]
+    check(all(dd["patch_fid"][2] < 0 for m, _, dd in full if m != "prog_win") and
+          full[[m for m, _, _ in full].index("prog_win")][2]["patch_fid"][1] > 0,
+          "prog_abl_all key result: patch FID directions")
+    cap = (r"\caption{\textbf{Inside the progressive sampler, per-head weights win every per-image metric; coarser "
+           r"weights have lower patch FID.} Expands the progressive rows of Table~\ref{tab:ablation}. FLUX.1-dev, "
+           r"\nmain{} Aesthetic-4K prompts at $4096^2$, seed 0. Each cell is the variant minus progressive \sca{} with "
+           r"per-head weights, with its 95\% paired interval below it in grey: 2000 prompt draws for the per-image "
+           r"metrics, and for FID, KID, and their patch versions 1000 draws that also resample the 168 reference-image "
+           r"clusters" + (r" (a point estimate alone where that interval is not yet computed)" if no_ci else "") +
+           r". $^{\times}$: $\times100$; $^{\ast}$: $\times1000$. \up{Blue} / \dn{orange}: the interval excludes zero "
+           r"in favour of / against the variant; for FID and KID lower is better. All four runs share the schedule, "
+           r"the window, the bridge, and the seeds, and differ only in the weights $\pi$. Key result: shared and "
+           r"per-layer weights lose all ten per-image metrics and lower patch FID; window-only attention raises it.}")
     return "\n".join([
-        HEADER.replace("% Generated", "% Generated (app_tables/prog_abl_all.tex)"),
-        r"\begin{table}[!htbp]", cap, r"\label{tab:prog_abl_all}",
-        r"\centering\scriptsize\setlength{\tabcolsep}{5pt}",
-        r"\begin{tabular}{@{}l" + "r" * len(full) + "@{}}", r"\toprule",
-        " & ".join(["Metric"] + [label for _, label, _ in full]) + r" \\", r"\midrule"]
-        + lines + [r"\bottomrule", r"\end{tabular}", r"\end{table}"]) + "\n"
+        HEADER.replace("% Generated", "% Generated (app_tables/prog_abl_all.tex)"), TABSTYLE_INPUT,
+        r"\begin{table}[!htbp]", cap, r"\label{tab:prog_abl_all}", r"\centering\scriptsize"]
+        + paired_panels(rows_, r"Variant $-$ per-head") + [r"\end{table}"]) + "\n"
 
 
 def prog_ablation_sentence(full):
@@ -1110,31 +1125,62 @@ def interval(lo, hi, d):
     return rf"$[{lo:.{d}f}, {hi:.{d}f}]$".replace("[-", "[{-}").replace(", -", ", {-}")
 
 
+# Appendix paired tables in the v6 style: comparisons as rows, metrics as columns, split into stacked panels by metric
+# family so that every cell fits at 7 pt without \resizebox; each estimate carries its 95% interval on the line below
+# in grey; colour by the paper's convention. Precision per metric as PROG_ALL_METRICS.
+PANELS_V6 = [("(a) Preference", ["ir", "aesthetic", "clip", "pickscore", "hpsv2", "hpsv21"]),
+             ("(b) Image quality", ["musiq", "musiq_crop1024", "clipiqa", "arniqa"]),
+             ("(c) Set level", ["fid", "kid", "patch_fid", "patch_kid"])]
+SHORT_V6 = {"ir": "IR", "aesthetic": "Aesthetic", "clip": "CLIP", "pickscore": "PickScore",
+            "hpsv2": r"HPSv2$^{\times}$", "hpsv21": r"HPSv2.1$^{\times}$", "musiq": "MUSIQ",
+            "musiq_crop1024": r"MUSIQ$_\text{c}$", "clipiqa": r"CLIP-IQA$^{\times}$", "arniqa": r"ARNIQA$^{\times}$",
+            "fid": r"FID$\downarrow$", "kid": r"KID$^{\ast}\!\downarrow$", "patch_fid": r"FID$_\text{p}\!\downarrow$",
+            "patch_kid": r"KID$_\text{p}^{\ast}\!\downarrow$"}
+
+
+def paired_panels(rows_, label_head, shade=()):
+    """rows_: [(label, {metric: (delta, lo, hi) or (delta, None, None)})]. Returns the LaTeX lines of the stacked
+    panels. A missing metric prints "--"; a point estimate without interval prints no second line."""
+    spec = {k: (sc, d) for k, _, sc, d in PROG_ALL_METRICS}
+    out = []
+    for p_i, (title, keys) in enumerate(PANELS_V6):
+        body = []
+        for label, dd in rows_:
+            top, low = [label], [""]
+            for k in keys:
+                sc, d = spec[k]
+                if k not in dd:
+                    top.append("--")
+                    low.append("")
+                    continue
+                v, lo, hi = dd[k]
+                top.append(paint(sgn(sc * v, d, "{-}"), sig(dd[k], lower=k in LOWER) or ""))
+                low.append(rf"{{\color{{scaCtx}}{interval(sc * lo, sc * hi, d)}}}" if lo is not None else "")
+            pre = r"\scaRowOurs " if label in shade else ""
+            body += [pre + " & ".join(top) + r" \\", (pre + " & ".join(low)) + r" \\[1pt]"]
+        head = [r"\toprule", label_head + " & " + " & ".join(SHORT_V6[k] for k in keys) + r" \\", r"\midrule"]
+        out += ([r"\par\medskip"] if p_i else []) + [rf"\textit{{{title}}}\par\smallskip",
+                                                     rf"\scaFitTab{{l*{{{len(keys)}}}{{r}}}}{{{len(keys) + 1}}}{{%"]
+        out += ["  " + x for x in head + body + [r"\bottomrule"]] + ["}"]
+    return out
+
+
+
 def table_prog_all():
     cols = []
     for m, _ in PROG_ALL_REFS:
         pi, n, _ = prog_pairs(m)
         sl, _ = prog_setlevel(m)
         cols.append((pi, sl))
-    lines = []
     pending_refs = [name for (m, name), (_, sl) in zip(PROG_ALL_REFS, cols) if sl is None]
     metric_name = {"fid": "FID", "kid": "KID", "patch_fid": "patch FID", "patch_kid": "patch KID"}
     outside = [f"{name} {metric_name[key]}" for (m, name), (pi, sl) in zip(PROG_ALL_REFS, cols)
                for key in data195.DIST if sl and key in sl and not (sl[key][1] <= sl[key][0] <= sl[key][2])]
-    for key, label, sc, d in PROG_ALL_METRICS:
-        top, low = [label], [""]
-        for (m, _), (pi, sl) in zip(PROG_ALL_REFS, cols):
-            src = pi if key in pi else (sl or {})
-            if key not in src:
-                top.append(r"{\color{pendgrey}pending}")
-                low.append("")
-                continue
-            v, lo, hi = src[key]
-            top.append(paint(sgn(sc * v, d, "{-}"), sig(src[key], lower=key in data195.DIST) or ""))
-            low.append(interval(sc * lo, sc * hi, d))
-        lines += [" & ".join(top) + r" \\", " & ".join(low) + r" \\[0.5pt]"]
-    lines[-1] = lines[-1].replace(r" \\[0.5pt]", r" \\")
-    head = " & ".join(["Metric"] + [name for _, name in PROG_ALL_REFS]) + r" \\"
+    rows_ = []
+    for (m, name), (pi, sl) in zip(PROG_ALL_REFS, cols):
+        dd = dict(pi)
+        dd.update(sl or {})
+        rows_.append((name if m != "sca_v2" else r"Single-pass \sca{}", dd))
     note = (" Set-level intervals against " + ", ".join(pending_refs) + " are pending." if pending_refs else "")
     # key result, checked against the cells
     wins = {m: sum(pi[k][1] > 0 for k in PER_IMAGE10) for (m, _), (pi, _) in zip(PROG_ALL_REFS, cols)}
@@ -1144,26 +1190,26 @@ def table_prog_all():
     worse_pfid = [m for m in ("area", "hrdit_dev_author", "sca_v2") if sl_of[m] and sl_of[m]["patch_fid"][1] > 0]
     check(worse_pfid == ["area", "hrdit_dev_author", "sca_v2"], f"prog_all key result: patch FID worse vs {worse_pfid}")
     key = (r" Key result: progressive \sca{} is significantly better than AReA, DyPE, SEGA, and full attention on every "
-           r"per-image metric and than UltraImage on nine. Its differences from HRDiT on ImageReward, HPSv2.1, and "
-           r"PickScore span zero, and its patch FID is higher than AReA's, HRDiT's, and single-pass \sca{}'s."
+           r"per-image metric and than UltraImage on nine; its differences from HRDiT on ImageReward, HPSv2.1, and "
+           r"PickScore include zero, and its patch FID is higher than AReA's, HRDiT's, and single-pass \sca{}'s."
            if not pending_refs else "")
     if outside:  # a percentile interval of a biased statistic need not contain the point estimate
         note += (" The point estimate lies outside its percentile interval for " + ", ".join(outside) +
                  ", as it can for a biased statistic.")
     NOTES.append(f"prog_all: points outside their interval: {outside or 'none'}")
-    cap = (r"\caption{\textbf{Progressive \sca{} against every $4096^2$ baseline.} FLUX.1-dev, \nmain{} Aesthetic-4K "
-           r"prompts, seed label 0. Each cell is progressive \sca{} minus the column's method, with its 95\% paired "
-           r"interval below it. Per-image metrics use 2000 prompt draws; FID, KID and their patch versions use 1000 "
-           r"draws that also resample the 168 reference-image clusters. Single-pass: single-pass \sca{}. \up{Blue} / \dn{orange}: the interval excludes zero "
-           r"in favour of / against progressive \sca{}; lower is better for FID and KID, so their signs read the other "
-           r"way. Inception score has no paired interval (Table~\ref{tab:all_metrics})." + note + key + "}")
+    cap = (r"\caption{\textbf{Progressive \sca{} beats every single-pass baseline on all ten per-image metrics and "
+           r"pays in patch FID.} Expands the progressive row of Table~\ref{tab:main}. FLUX.1-dev at $4096^2$, \nmain{} "
+           r"Aesthetic-4K prompts, seed 0. Each cell is progressive \sca{} minus the row's method, with its 95\% paired "
+           r"interval below it in grey: 2000 prompt draws for the per-image metrics, and for FID, KID, and their patch "
+           r"versions 1000 draws that also resample the 168 reference-image clusters. $^{\times}$: $\times100$; "
+           r"$^{\ast}$: $\times1000$. \up{Blue} / \dn{orange}: the interval excludes zero in favour of / against "
+           r"progressive \sca{}; for FID and KID lower is better, so a negative difference is a gain. Inception score "
+           r"has no paired interval (Table~\ref{tab:all_metrics}); Table~\ref{tab:holm} gives the Holm-adjusted calls."
+           + note + key + "}")
     text = "\n".join([
-        HEADER.replace("% Generated", "% Generated (app_tables/prog_all.tex)"),
-        r"\begin{table}[!htbp]", cap, r"\label{tab:prog_all}",
-        r"\centering\scriptsize\setlength{\tabcolsep}{2.6pt}",
-        r"\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%",
-        r"\begin{tabular}{@{}l" + "r" * len(PROG_ALL_REFS) + "@{}}", r"\toprule", head, r"\midrule"]
-        + lines + [r"\bottomrule", r"\end{tabular}}", r"\end{table}"]) + "\n"
+        HEADER.replace("% Generated", "% Generated (app_tables/prog_all.tex)"), TABSTYLE_INPUT,
+        r"\begin{table}[!htbp]", cap, r"\label{tab:prog_all}", r"\centering\scriptsize"]
+        + paired_panels(rows_, r"Progressive \sca{} $-$") + [r"\end{table}"]) + "\n"
     NOTES.append(f"prog_all: set-level pending against {pending_refs or 'none'}")
     return text
 
@@ -1214,6 +1260,259 @@ def table_variance_split():
             for c, s, _, _ in VS_ROWS for rr in ("8", "16")]
     check(min(post) >= 0.969, f"variance_split caption: minimum post-gate head share {min(post):.4f} < 0.969")
     return text
+
+
+# ---------------------------------------------------------------- appendix Table holm (v6) ----------------------
+# (a) the three headline comparisons metric by metric: difference, unadjusted and Holm-adjusted bootstrap p-values;
+# (b) the record of every paired comparison of Tables 1 to 3 before and after adjustment. gen_holm.py reproduces each
+# archived paired CSV before it computes a p-value, so every difference here equals the one in the other tables.
+HOLM_SCALE = {"ir": (1, 3), "aesthetic": (1, 2), "clip": (1, 2), "pickscore": (1, 2), "hpsv2": (100, 2),
+              "hpsv21": (100, 2), "musiq": (1, 1), "musiq_crop1024": (1, 1), "clipiqa": (100, 1), "arniqa": (100, 1)}
+HOLM_HEAD = [("prog_area", r"Progressive $-$ AReA"), ("prog_hrdit", r"Progressive $-$ HRDiT"),
+             ("sca_area", r"Single-pass $-$ AReA")]
+HOLM_GROUPS = [("Table 1: progressive \\sca{} against each method (\\nmain{} prompts, seed 0)",
+                [("prog_area", "AReA"), ("prog_hrdit", "HRDiT"), ("prog_ultra", "UltraImage"), ("prog_dype", "DyPE"),
+                 ("prog_sega", "SEGA"), ("prog_full", "full attention"), ("prog_sca", r"single-pass \sca{}")]),
+               ("Table 3: \\sca{} against AReA, other seeds, prompts, checkpoints",
+                [("sca_area", r"single-pass, seed 0"), ("prog_area_s1", "progressive, seed 1"),
+                 ("prog_area_s2", "progressive, seed 2"), ("prog_area_hrgen", "progressive, HRGen-1K"),
+                 ("sca_area_s1", "single-pass, seed 1"), ("sca_area_s2", "single-pass, seed 2"),
+                 ("sca_area_hrgen", "single-pass, HRGen-1K"), ("sca_area_krea", "single-pass, FLUX.1-Krea"),
+                 ("flux2", r"w/o schedule $-$ full attn., FLUX.2-dev")]),
+               (r"Table 2: per-head weights against each variant (reversed: variant losses are per-head wins)",
+                [("abl_uniform_nb", r"shared $\pi(\sigma)$, single pass"),
+                 ("abl_layer_nb", r"per-layer $\pi_\ell(\sigma)$, single pass"),
+                 ("prog_headmean", r"shared $\pi(\sigma)$, progressive"),
+                 ("prog_layermean", r"per-layer $\pi_\ell(\sigma)$, progressive"),
+                 ("prog_win", r"window only, progressive"), ("abl_v0", "no opening"),
+                 ("abl_localonly_nb", "local only"), ("abl_globalonly", "global only"),
+                 ("abl_mean_nb", "mean pooling")])]
+
+
+def fmt_p(p):
+    """A p-value at three decimals; the smallest value 2000 draws resolve prints as <=0.001."""
+    return r"${\le}0.001$" if p < 0.0015 else f"{p:.3f}"
+
+
+def table_holm():
+    import gen_holm
+    H = holm()
+    body = []
+    for grp, metrics in (("Preference", ["ir", "aesthetic", "clip", "pickscore", "hpsv2", "hpsv21"]),
+                         ("Image quality", ["musiq", "musiq_crop1024", "clipiqa", "arniqa"])):
+        body.append(rf"\multicolumn{{10}}{{l}}{{\emph{{{grp}}}}} \\")
+        for k in metrics:
+            sc, d = HOLM_SCALE[k]
+            label = dict(gen_holm.METRICS)[k] + (r" ($\times100$)" if sc == 100 else "")
+            cells = [label]
+            for key, _ in HOLM_HEAD:
+                g = H[key]["metrics"][k]
+                s = {1: "up", -1: "dn", 0: ""}[g["sig_holm"]]
+                cells += [paint(sgn(sc * g["delta"], d, "{-}"), s), fmt_p(g["p_boot"]), fmt_p(g["holm_boot"])]
+            body.append(" & ".join(cells) + r" \\")
+    head_a = [r"\toprule",
+              " & " + " & ".join(rf"\multicolumn{{3}}{{c}}{{{name}}}" for _, name in HOLM_HEAD) + r" \\",
+              r"\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}",
+              r"Metric" + r" & $\Delta$ & $p$ & $p_\text{Holm}$" * 3 + r" \\", r"\midrule"]
+    rec = []
+    for g_i, (heading, pairs) in enumerate(HOLM_GROUPS):
+        rec += ([r"\midrule"] if g_i else []) + [rf"\multicolumn{{5}}{{l}}{{\emph{{{heading}}}}} \\"]
+        for key, label in pairs:
+            h = H[key]
+            rev = h["group"] in ("abl", "ablprog")
+            pair_ = (lambda u, dn: f"{dn}\\,/\\,{u}") if rev else (lambda u, dn: f"{u}\\,/\\,{dn}")
+            rec.append(" & ".join([label, str(h["n"]), pair_(h["up_raw"], h["dn_raw"]), pair_(h["up"], h["dn"]),
+                                   pair_(h["up_flip"], h["dn_flip"])]) + r" \\")
+    head_b = [r"\toprule", r"Comparison & $n$ & 95\% interval & Holm, bootstrap & Holm, sign-flip \\", r"\midrule"]
+    hr = H["prog_hrdit"]
+    lost = [dict(gen_holm.METRICS)[k] for k, _ in gen_holm.METRICS
+            if hr["metrics"][k]["sig_raw"] and not hr["metrics"][k]["sig_holm"]]
+    kept = [dict(gen_holm.METRICS)[k] for k, _ in gen_holm.METRICS if hr["metrics"][k]["sig_holm"]]
+    check((H["prog_area"]["up"], H["prog_area"]["dn"], H["sca_area"]["up"], H["sca_area"]["dn"]) == (10, 0, 10, 0),
+          "tab:holm key result: a headline win over AReA does not survive Holm")
+    check(kept == ["HPSv2", "ARNIQA"] and hr["dn"] == 0, f"tab:holm key result: HRDiT survivors {kept}")
+    cap = (r"\caption{\textbf{Every win over AReA survives Holm correction; against HRDiT, two differences of four do.} "
+           r"FLUX.1-dev at $4096^2$. (a) Paired differences, method minus reference, with two-sided bootstrap "
+           r"$p$-values from the same 2000 prompt draws (seed 0) that give every interval of the paper, before and "
+           r"after Holm's step-down adjustment over the ten per-image metrics of each comparison. \up{Blue} / "
+           r"\dn{orange}: significantly better / worse after adjustment at 5\%. $p\le0.001$ is the smallest value 2000 "
+           r"draws resolve. (b) Significantly better / worse metrics of ten for every paired comparison of "
+           r"Tables~\ref{tab:main} to~\ref{tab:generality}: unadjusted (the 95\% interval excludes zero), Holm on the "
+           r"bootstrap $p$-values, and Holm on paired sign-flip $p$-values (2000 sign vectors, seed 0) as a check. "
+           r"Every archived interval is reproduced to six digits before a $p$-value is taken. Key result: progressive "
+           r"and single-pass \sca{} keep all ten wins over AReA at every seed and on HRGen-1K; against HRDiT, "
+           + " and ".join(kept) + r" remain better and " + " and ".join(lost) +
+           r" no longer differ.}")
+    text = "\n".join(
+        [HEADER.replace("% Generated", "% Generated (app_tables/holm.tex, with gen_holm.py)"), TABSTYLE_INPUT,
+         r"\begin{table}[!htbp]", cap, r"\label{tab:holm}", r"\centering\scriptsize",
+         r"\textit{(a) The headline comparisons, metric by metric}\par\smallskip",
+         r"\scaFitTab{l*{9}{r}}{10}{%"] + ["  " + x for x in head_a + body + [r"\bottomrule"]] + ["}", r"\par\medskip",
+         r"\textit{(b) Wins\,/\,losses of ten for every paired comparison}\par\smallskip",
+         r"\scaFitTab{lrccc}{5}{%"] + ["  " + x for x in head_b + rec + [r"\bottomrule"]] + ["}", r"\end{table}"])
+    return text + "\n"
+
+
+def holm_macros():
+    """\\holm<Pair>Better / Worse (digits) and ...Word (words) for every comparison; the HRDiT survivors as a list."""
+    import gen_holm
+    H = holm()
+    names = {"prog_area": "ProgArea", "prog_hrdit": "ProgHrdit", "sca_area": "ScaArea", "prog_ultra": "ProgUltra",
+             "prog_dype": "ProgDype", "prog_sega": "ProgSega", "prog_full": "ProgFull", "prog_sca": "ProgSca",
+             "prog_area_s1": "ProgAreaSeedOne", "prog_area_s2": "ProgAreaSeedTwo", "prog_area_hrgen": "ProgAreaHrgen",
+             "sca_area_s1": "ScaAreaSeedOne", "sca_area_s2": "ScaAreaSeedTwo", "sca_area_hrgen": "ScaAreaHrgen",
+             "sca_area_krea": "ScaAreaKrea", "flux2": "FluxTwo", "abl_uniform_nb": "AblShared",
+             "abl_layer_nb": "AblLayer", "prog_headmean": "ProgAblShared", "prog_layermean": "ProgAblLayer",
+             "prog_win": "ProgAblWindow", "abl_v0": "AblNoOpening", "abl_localonly_nb": "AblLocal",
+             "abl_globalonly": "AblGlobal", "abl_mean_nb": "AblMean"}
+    out = []
+    for key, nm in names.items():
+        h = H[key]
+        src = f"gen_holm.py on the per-image files behind {h['src']}: metrics of ten, Holm-adjusted bootstrap p <= 0.05"
+        for tag, v in (("Better", h["up"]), ("Worse", h["dn"])):
+            out.append((f"holm{nm}{tag}", str(v), f"{src}, {tag.lower()} for the first-named method", False))
+            out.append((f"holm{nm}{tag}Word", word(v), "the same count as a word", False))
+        out.append((f"holm{nm}BetterRaw", str(h["up_raw"]), f"{src.split(':')[0]}: unadjusted count (interval)", False))
+        out.append((f"holm{nm}WorseRaw", str(h["dn_raw"]), f"{src.split(':')[0]}: unadjusted count (interval)", False))
+    hr = H["prog_hrdit"]
+    lab = dict(gen_holm.METRICS)
+    kept = [lab[k] for k, _ in gen_holm.METRICS if hr["metrics"][k]["sig_holm"] > 0]
+    lost = [lab[k] for k, _ in gen_holm.METRICS if hr["metrics"][k]["sig_raw"] and not hr["metrics"][k]["sig_holm"]]
+    out += [("holmProgHrditKept", " and ".join(kept), "gen_holm.py: metrics on which progressive SCA stays "
+                                                       "significantly better than HRDiT after Holm", False),
+            ("holmProgHrditDropped", " and ".join(lost), "gen_holm.py: metrics significant before but not after Holm "
+                                                         "(progressive SCA minus HRDiT)", False)]
+    for k, nm in (("musiq", "Musiq"), ("clipiqa", "Clipiqa")):
+        g = hr["metrics"][k]
+        out += [(f"holmProgHrdit{nm}P", f"{g['p_boot']:.3f}", "gen_holm.py: unadjusted bootstrap p, progressive SCA "
+                                                               f"minus HRDiT, {k}", False),
+                (f"holmProgHrdit{nm}PHolm", f"{g['holm_boot']:.2f}", f"gen_holm.py: Holm-adjusted p, {k}", False)]
+    g = H["prog_sca"]["metrics"]["ir"]
+    out += [("holmProgScaIrP", f"{g['p_boot']:.3f}", "gen_holm.py: unadjusted bootstrap p, progressive minus single-pass "
+                                                      "SCA, ImageReward", False),
+            ("holmProgScaIrPHolm", f"{g['holm_boot']:.3f}", "gen_holm.py: Holm-adjusted bootstrap p, the same", False),
+            ("holmProgScaIrPHolmFlip", f"{g['holm_flip']:.3f}", "gen_holm.py: Holm-adjusted sign-flip p, the same",
+             False)]
+    return out
+
+
+# ---------------------------------------------------------------- appendix Table app_abl (v6) -------------------
+# Generated replacement of the hand-typed Table tab:app_abl (v5.1 kept gen_tables.py's output cell for cell): the
+# single-pass variants on the fixed 46-prompt subset, each minus SCA without the schedule (results/ablnb_<m>_deltas.csv,
+# 2000 draws), the reference row in absolute values; panel (c) gives corrected patch FID (point estimates, no
+# interval) and the relative output error of each weight rule at emulated ratio 4 (k1_1024.json; mean pooling has
+# none, since reach emulation scores block-centre keys only; no opening keeps the per-head table).
+APP_ABL_ROWS = [("abl_uniform_nb", r"shared $\pi(\sigma)$", "uniform"), ("abl_layer_nb", r"per-layer $\pi_\ell(\sigma)$",
+                                                                       "per_layer"),
+                ("abl_localonly_nb", "local only", "loc"), ("abl_globalonly", "global only", "glob"),
+                ("abl_mean_nb", "mean pooling", None), ("abl_v0", "no opening", "per_head")]
+
+
+def table_app_abl():
+    S, pfid = abl46_reference()
+    err = json.load(open(RES / CALIB_JSON))["scales"]["4"]["rel_err"]
+    spec = {k: (sc, d) for k, _, sc, d in PROG_ALL_METRICS}
+    ref_label = r"per-head $\pi_h$"
+    out = []
+    for p_i, (title, keys) in enumerate(PANELS_V6[:2]):
+        head = [r"\toprule", "Variant & " + " & ".join(SHORT_V6[k] for k in keys) + r" \\", r"\midrule"]
+        body = [r"\scaRowOurs " + " & ".join([ref_label] + [num(spec[k][0] * S[(REF, k)], spec[k][1]) for k in keys])
+                + r" \\[1pt]"]
+        for m, label, _ in APP_ABL_ROWS:
+            dd = ablation_deltas(m)
+            top, low = [label], [""]
+            for k in keys:
+                sc, d = spec[k]
+                v, lo, hi = dd[k]
+                top.append(paint(sgn(sc * v, d, "{-}"), sig(dd[k], lower=False) or ""))
+                low.append(rf"{{\color{{scaCtx}}{interval(sc * lo, sc * hi, d)}}}")
+            body += [" & ".join(top) + r" \\", " & ".join(low) + r" \\[1pt]"]
+        out += ([r"\par\medskip"] if p_i else []) + [rf"\textit{{{title}}}\par\smallskip",
+                                                     rf"\scaFitTab{{l*{{{len(keys)}}}{{r}}}}{{{len(keys) + 1}}}{{%"]
+        out += ["  " + x for x in head + body + [r"\bottomrule"]] + ["}"]
+    rows_c = [r"\scaRowOurs " + ref_label + rf" & {num(pfid[REF], 1)} & {err['per_head']:.3f} \\"]
+    for m, label, key in APP_ABL_ROWS:
+        rows_c.append(rf"{label} & {num(pfid[m], 1)} & {f'{err[key]:.3f}' if key else '--'} \\")
+    out += [r"\par\medskip", r"\textit{(c) Patch FID and output error, absolute values}\par\smallskip",
+            r"\scaFitTab{lrr}{3}{%"] + ["  " + x for x in [r"\toprule",
+                                                       r"Variant & FID$_\text{p}\downarrow$ & Output error$\downarrow$ \\",
+                                                       r"\midrule"] + rows_c + [r"\bottomrule"]] + ["}"]
+    lost = {m: sum(ablation_deltas(m)[k][2] < 0 for k in PER_IMAGE10) for m, _, _ in APP_ABL_ROWS}
+    check(min(lost.values()) >= 5 and max(lost.values()) <= 10, f"app_abl key result: losses {lost}")
+    check(all(f"{err[k]:.3f}" > f"{err['per_head']:.3f}" for _, _, k in APP_ABL_ROWS if k and k != "per_head"),
+          "app_abl: a coarser rule has lower output error than per-head weights")
+    cap = (r"\caption{\textbf{Every single-pass variant is significantly worse than per-head weights on five to ten "
+           r"per-image metrics.} Expands the single-pass rows of Table~\ref{tab:ablation}. FLUX.1-dev at $4096^2$, the "
+           r"fixed \nabl-prompt ablation subset, \sca{} without the schedule throughout. The shaded row gives absolute "
+           r"values; every other cell is the variant minus that reference, with its 95\% paired interval below it in "
+           r"grey (2000 prompt draws). $^{\times}$: $\times100$. \up{Blue} / \dn{orange}: the interval excludes zero in "
+           r"favour of / against the variant. (c) Patch FID is set-level and has no paired interval at 46 prompts; "
+           r"output error is the relative error of each weight rule at emulated ratio 4 (Section~\ref{sec:ablations}); "
+           r"mean pooling has none because reach emulation scores block-centre keys only, and the no-opening variant "
+           r"keeps the per-head table. Table~\ref{tab:holm} gives the Holm-adjusted counts. Key result: shared and "
+           r"per-layer weights, which raise the output error, lose " + word(lost["abl_uniform_nb"]) + " and " +
+           word(lost["abl_layer_nb"]) + r" per-image metrics.}")
+    text = "\n".join([HEADER.replace("% Generated", "% Generated (app_tables/app_abl.tex)"), TABSTYLE_INPUT,
+                      r"\begin{table}[!htbp]", cap, r"\label{tab:app_abl}", r"\centering\scriptsize"] + out +
+                     [r"\end{table}"])
+    return text + "\n"
+
+
+# ---------------------------------------------------------------- appendix Table gen_all (v6) -------------------
+# Expands Table 3: every generality comparison on all ten per-image metrics, each difference with its 95% interval
+# on the same line (gen_holm.py's reproduction of the archived paired CSVs, 2000 prompt draws, seed 0).
+def table_gen_all():
+    import gen_holm
+    H = holm()
+    lab = dict(gen_holm.METRICS)
+    blocks = [("Progressive \\sca{} $-$ AReA", [("prog_area", "Seed 0"), ("prog_area_s1", "Seed 1"),
+                                                 ("prog_area_s2", "Seed 2"), ("prog_area_hrgen", "HRGen-1K")]),
+              ("Single-pass \\sca{} $-$ AReA", [("sca_area", "Seed 0"), ("sca_area_s1", "Seed 1"),
+                                                 ("sca_area_s2", "Seed 2"), ("sca_area_hrgen", "HRGen-1K"),
+                                                 ("sca_area_krea", "FLUX.1-Krea")]),
+              ("\\sca{} without the schedule $-$ full attention", [("flux2", "FLUX.2-dev")])]
+    short = {"ir": "IR", "aesthetic": "Aesthetic", "clip": "CLIP", "pickscore": "PickScore", "hpsv2": "HPSv2",
+             "hpsv21": "HPSv2.1", "musiq": "MUSIQ", "musiq_crop1024": r"MUSIQ$_\text{c}$", "clipiqa": "CLIP-IQA",
+             "arniqa": "ARNIQA"}
+    panels = []
+    for p_i, (pname, keys) in enumerate((("Preference", ["ir", "aesthetic", "clip", "pickscore", "hpsv2", "hpsv21"]),
+                                          ("Image quality", ["musiq", "musiq_crop1024", "clipiqa", "arniqa"]))):
+        body = []
+        for b_i, (heading, settings) in enumerate(blocks):
+            body += ([r"\midrule"] if b_i else []) + [rf"\multicolumn{{{len(keys) + 2}}}{{l}}{{\emph{{{heading}}}}} \\"]
+            for key, label in settings:
+                h = H[key]
+                top, low = [label, str(h["n"])], ["", ""]
+                for k in keys:
+                    sc, d = HOLM_SCALE[k]
+                    d = min(d, 2)
+                    g = h["metrics"][k]
+                    top.append(paint(sgn(sc * g["delta"], d, "{-}"),
+                                     sig((g["delta"], g["lo"], g["hi"]), lower=False) or ""))
+                    low.append(rf"{{\color{{scaCtx}}{interval(sc * g['lo'], sc * g['hi'], d)}}}")
+                body += [" & ".join(top) + r" \\", " & ".join(low) + r" \\[1pt]"]
+        heads = [short[k] + (r" ($\times100$)" if HOLM_SCALE[k][0] == 100 else "") for k in keys]
+        head = [r"\toprule", "Setting & $n$ & " + " & ".join(heads) + r" \\", r"\midrule"]
+        panels += ([r"\par\medskip"] if p_i else []) + [rf"\textit{{({'ab'[p_i]}) {pname}}}\par\smallskip",
+                                                          rf"\scaFitTab{{lr*{{{len(keys)}}}{{r}}}}{{{len(keys) + 2}}}{{%"]
+        panels += ["  " + x for x in head + body + [r"\bottomrule"]] + ["}"]
+    cap = (r"\caption{\textbf{Table~\ref{tab:generality} with all ten per-image metrics.} FLUX.1-dev at $4096^2$ unless "
+           r"named; each cell is the paired difference (HPS, CLIP-IQA, ARNIQA $\times100$) with its 95\% interval below "
+           r"it in grey (2000 prompt draws, seed 0). \up{Blue} / \dn{orange}: the interval excludes zero in favour of / "
+           r"against \sca{}. Seeds 0 to 2 each cover all \nmain{} Aesthetic-4K prompts; HRGen-1K has \nhrgen{} prompts; "
+           r"FLUX.1-Krea-dev runs the same \nkrea{} prompts as seed 0; FLUX.2-dev uses 50. Table~\ref{tab:holm} gives "
+           r"the Holm-adjusted calls. Key result: no comparison is significantly worse on any metric, and every "
+           r"comparison on FLUX.1-dev is significantly better on all ten.}")
+    for _, settings in blocks:
+        for key, _ in settings:
+            check(H[key]["dn_raw"] == 0, f"gen_all key result: {key} loses a metric")
+    for key in ("prog_area", "prog_area_s1", "prog_area_s2", "prog_area_hrgen", "sca_area", "sca_area_s1",
+                "sca_area_s2", "sca_area_hrgen"):
+        check(H[key]["up_raw"] == 10, f"gen_all key result: {key} wins {H[key]['up_raw']} of ten")
+    text = "\n".join(
+        [HEADER.replace("% Generated", "% Generated (app_tables/gen_all.tex, with gen_holm.py)"), TABSTYLE_INPUT,
+         r"\begin{table}[!htbp]", cap, r"\label{tab:gen_all}", r"\centering\scriptsize"] + panels + [r"\end{table}"])
+    return text + "\n"
 
 
 # ---------------------------------------------------------------- headline macros ---------------------------------
@@ -1519,6 +1818,151 @@ def variance_macros():
     return out
 
 
+def latency_macros():
+    """Section 4.4's scaling numbers: least-squares exponents b of clean seconds ~ N^b (N = (W/16)(H/16) image
+    tokens, all five sizes of each method) for single-pass SCA (results/latency_curve_v2/summary.csv, sca_v2) and AReA
+    (results/latency_curve_summary.csv), and both times at 8192^2 with their ratio. main.tex had these typed as
+    \\providecommand defaults (0.99, 309.7, 3.07) and as literals (1.12, 952.0); these definitions replace them."""
+    def tok(res):
+        w, h = (int(v) for v in res.split("x"))
+        return (w // 16) * (h // 16)
+
+    def fit(rel, m):
+        rs = [r for r in rows(rel) if r["method"] == m]
+        check(len(rs) == 5, f"{rel} {m}: {len(rs)} sizes, expected 5")
+        x = [math.log(tok(r["res"])) for r in rs]
+        y = [math.log(float(r["median_seconds"])) for r in rs]
+        mx, my = sum(x) / len(x), sum(y) / len(y)
+        b = sum((u - mx) * (v - my) for u, v in zip(x, y)) / sum((u - mx) ** 2 for u in x)
+        eight = next(float(r["median_seconds"]) for r in rs if r["res"] == "8192x8192")
+        return b, eight
+
+    v2, s1 = "latency_curve_v2/summary.csv", "latency_curve_summary.csv"
+    bs, es = fit(v2, "sca_v2")
+    ba, ea = fit(s1, "area")
+    check(f"{bs:.2f}" == "0.99" and f"{ba:.2f}" == "1.12", f"latency exponents {bs:.3f} {ba:.3f} (paper: 0.99, 1.12)")
+    src = "least squares of log median_seconds on log N over 2048^2 to 8192^2"
+    return [("hlLatExpSca", f"{bs:.2f}", f"results/{v2}, method sca_v2: {src}", False),
+            ("hlLatExpArea", f"{ba:.2f}", f"results/{s1}, method area: {src}", False),
+            ("hlLatEightSca", f"{es:.1f}", f"results/{v2}, method sca_v2, res 8192x8192, median_seconds", False),
+            ("hlLatEightArea", f"{ea:.1f}", f"results/{s1}, method area, res 8192x8192, median_seconds", False),
+            ("hlLatEightRatio", f"{float(f'{ea:.1f}') / float(f'{es:.1f}'):.2f}",
+             "the two printed 8192^2 times divided (AReA over single-pass SCA)", False)]
+
+
+def request_macros():
+    """Numbers the v6 text owner asked for (main.tex \\reqnum placeholders, .agent/notes/paper_v6/text.md), each read
+    from its archived source. Each value is checked against the v5.1 value main.tex keeps as the placeholder (no
+    number may change); a mismatch fails the run."""
+    out = []
+
+    def add(name, value, src):
+        out.append((name, value, src, False))
+
+    # emulation statistics (Section 3.2 and Figure 4): results/evidence/calib/k1_1024.json and k1_1280b.json
+    k1 = json.load(open(RES / CALIB_JSON))
+    k1280 = json.load(open(RES / "evidence/calib/k1_1280b.json"))
+    for s, nm in (("2", "Two"), ("4", "Four")):
+        add(f"hlEmuSplitHalf{nm}", f"{k1['scales'][s]['split_half_corr']['per_head']:.3f}",
+            f"results/{CALIB_JSON}: scales/{s}/split_half_corr/per_head (tables fitted on odd and even prompts)")
+        for key, rule in (("per_head", "Head"), ("per_layer", "Layer"), ("uniform", "Shared"), ("switch", "Switch")):
+            add(f"hlEmuErr{rule}{nm}", f"{k1['scales'][s]['rel_err'][key]:.3f}",
+                f"results/{CALIB_JSON}: scales/{s}/rel_err/{key} (relative output error at emulated ratio {s})")
+    t = k1["transfer"]["1024x1024/s2 -> 1024x1024/s4"]
+    add("hlEmuXferRatio", f"{t['rel_err']:.3f}", f"results/{CALIB_JSON}: transfer 's2 -> s4' rel_err (own "
+                                                 f"{t['own']:.3f})")
+    t = k1280["transfer"]["1024x1024/s2 -> 1280x1280/s2"]
+    add("hlEmuXferRes", f"{t['rel_err']:.4f}", "results/evidence/calib/k1_1280b.json: transfer '1024x1024/s2 -> "
+                                               "1280x1280/s2' rel_err")
+    add("hlEmuOwnRes", f"{t['own']:.4f}", "the same entry, own (the 1280^2 table on 1280^2)")
+    rho = [r for r in rows("heads_view/summary.csv") if (r["kind"], r["metric"], r["scale"], r["radius"], r["bin"])
+           == ("pearson", "pearson_r", "2", "16", "8")]
+    check(len(rho) == 1, "heads_view/summary.csv: one Pearson row at scale 2, radius 16, bin 8")
+    add("hlEmuShareRho", f"{float(rho[0]['value']):.2f}", "results/heads_view/summary.csv: kind pearson, scale 2, "
+                                                          "radius 16, bin 8 (fitted weight against near share, 1368 heads)")
+    irs = [float(r["delta"]) for n in (4, 8, 16) for r in rows(f"e6_sca_cal{n}_deltas.csv") if r["metric"] == "ir"]
+    check(len(irs) == 3, f"e6_sca_cal*_deltas.csv: {len(irs)} ImageReward rows")
+    add("hlEmuBudgetIrMax", f"{max(abs(x) for x in irs):.3f}", "results/e6_sca_cal{4,8,16}_deltas.csv: largest |ir "
+                                                                "delta| of the 4-, 8- and 16-prompt tables")
+    # single-pass ablations, 46 prompts, variant minus SCA without the schedule
+    for m, nm in (("abl_uniform_nb", "Shared"), ("abl_localonly_nb", "Local"), ("abl_mean_nb", "Mean"),
+                  ("abl_v0", "NoOpen")):
+        dd = ablation_deltas(m)
+        add(f"hlAbl{nm}Ir", f"{dd['ir'][0]:.2f}", f"results/ablnb_{m}_deltas.csv, metric ir, delta")
+        if nm != "Mean":
+            add(f"hlAbl{nm}IrLo", f"{dd['ir'][1]:.2f}", f"results/ablnb_{m}_deltas.csv, metric ir, ci_low")
+            add(f"hlAbl{nm}IrHi", f"{dd['ir'][2]:.2f}", f"results/ablnb_{m}_deltas.csv, metric ir, ci_high")
+        if nm == "Shared":
+            add("hlAblSharedMusiqc", f"{dd['musiq_crop1024'][0]:.1f}", f"results/ablnb_{m}_deltas.csv, musiq_crop1024")
+    p46 = V.pair46(DEFAULT46)  # single-pass SCA minus SCA without the schedule, 46 prompts
+    add("hlAblNoSchedMusiqc", f"{-p46['musiq_crop1024'][0]:+.1f}", f"eval/dup46_{DEFAULT46}/paired/{DEFAULT46}_vs_"
+                                                                     "sca_nb.csv, musiq_crop1024, negated")
+    # generality, sizes, latency
+    add("hlFidAreaAbs", f"{data(MAIN_RUN)[0][('area', 'fid')]:.1f}", f"results/{MAIN_RUN}, corrected FID of AReA")
+    gaps = []
+    for r in rows("published_compare/compare.csv"):
+        if (r["benchmark"], r["method"], r["ours_model"]) == ("Aesthetic-4K", "AReA", "FLUX.1-Krea-dev") and \
+                r["metric"] in ("ir", "aesthetic", "clip", "pickscore", "hpsv2", "musiq"):
+            gaps.append(abs(float(r["ours_minus_published"])) * (100 if r["metric"] == "hpsv2" else 1))
+    check(len(gaps) >= 6, f"published_compare/compare.csv: {len(gaps)} AReA rows")
+    add("hlAreaReproGap", f"{math.ceil(10 * max(gaps) - 1e-9) / 10:.1f}",
+        "results/published_compare/compare.csv: largest |ours - published| of AReA on FLUX.1-Krea-dev over ImageReward, "
+        "aesthetic, CLIP, PickScore, HPSv2 (x100), MUSIQ, rounded up to 0.1")
+    kd, _ = V.paired_csv("krea195_sca_v2/sca_v2_krea_vs_area.csv", "sca_v2_krea", "area")
+    add("hlKreaIr", f"{kd['ir'][0]:+.3f}", "results/krea195_sca_v2/sca_v2_krea_vs_area.csv, ir, delta")
+    add("hlKreaIrLo", f"{kd['ir'][1]:.3f}", "the same, ci_low")
+    add("hlKreaIrHi", f"{kd['ir'][2]:.3f}", "the same, ci_high")
+    kp = [r for r in rows("krea195_sca_v2/corrected_fidp_ci/paired_deltas.csv")
+          if (r["method"], r["reference_method"], r["metric"]) == ("area", "sca_v2_krea", "patch_fid")]
+    check(len(kp) == 1 and kp[0]["bootstrap_valid"] == "1000", "krea195_sca_v2 corrected patch FID row")
+    v, lo, hi = neg((float(kp[0]["value"]), float(kp[0]["ci_low"]), float(kp[0]["ci_high"])))
+    add("hlKreaFidP", f"{v:+.1f}", "results/krea195_sca_v2/corrected_fidp_ci/paired_deltas.csv, patch_fid, area minus "
+                                   "sca_v2_krea, negated")
+    add("hlKreaFidPLo", f"{lo:.1f}", "the same, lower end")
+    add("hlKreaFidPHi", f"{hi:.1f}", "the same, upper end")
+    add("hlFluxTwoWinsWord", word(holm()["flux2"]["up_raw"]), "results/e8_flux2_sca_vs_full.csv: per-image metrics "
+                                                               "(of ten) with ci_low > 0, as a word")
+    wide_run = "a4k195_2048x4096_sca_v2" if V.landed("a4k195_2048x4096_sca_v2") else "a4k195_2048x4096"
+    wvs = sca_vs_area(wide_run, "sca_v2" if wide_run.endswith("sca_v2") else REF)
+    w4, l4, _, _, _ = area_counts(wvs)
+    add("hlWideFourWinsWord", word(w4), f"results/{wide_run}: of the 15 metrics, significant wins over AReA")
+    add("hlWideFourLossesWord", word(l4), f"results/{wide_run}: of the 15 metrics, significant losses")
+    import gen_late_tables as late
+    d6 = late.load_deltas("e2_6144", "sca_nb")
+    spec6 = [(k, h) for k, _, _, _, h in late.PER_IMAGE + late.DIST if k != "seconds"]
+    wins6 = sum((v6[1] > 0) if h else (v6[2] < 0) for k, h in spec6 for v6 in [d6[k]])
+    add("hlSixKWins", str(wins6), f"results/e2_6144 (sca_nb minus area, 100 prompts): of {len(spec6)} metrics, "
+                                  "intervals excluding zero in SCA's favour")
+    e8 = {r["metric"]: r for r in rows("e2_8192_sca_nb_vs_area.csv")}
+    add("hlEightKFavWord", word(sum(float(e8[k]["ci_low"]) > 0 for k in PER_IMAGE10)),
+        "results/e2_8192_sca_nb_vs_area.csv (12 prompts): per-image metrics with ci_low > 0, as a word")
+    # the worked cost example (Section 3.1, Table tab:flops): analytic attention FLOPs of one 4096^2 image with
+    # FLUX.1-dev's 57 blocks, 24 heads, head dimension 128, 28 steps, T = 512 text tokens; single-pass SCA: the global
+    # view (n0^2 block centres + T keys for all N + T queries) at every step, the local view (window^2 + T + 1,024
+    # bridge keys for the N image queries) after the 8 opening steps, windows 128, 112, 96, 80, then 16 steps at 64
+    n0, T, bridge, side = 64, 512, 1024, 256
+    N = side * side
+    per = 57 * 24 * 128 * 4  # blocks x heads x head dim x (QK^T + PV, 2 FLOP per MAC)
+    full = 28 * per * (N + T) ** 2
+    glob = 28 * per * (N + T) * (n0 * n0 + T)
+    loc = sum(per * N * (w * w + T + bridge) for w in [128, 112, 96, 80] + [n0] * 16)
+    check(f"{full:.2e}" == "8.56e+16" and f"{glob + loc:.2e}" == "1.24e+16",
+          f"worked cost: {full:.3e} / {glob + loc:.3e} (Table tab:flops prints 8.56e16 / 1.24e16)")
+    add("hlWorkedLocalKeys", f"{n0 * n0 + T + bridge:,}".replace(",", "{,}"),
+        "n0^2 + T + 1,024: keys of one image query in the native local view (method constants)")
+    add("hlWorkedPairsRatio", f"{full / (glob + loc):.1f}", "analytic attention FLOPs of full attention over single-pass "
+                                                            "SCA at 4096^2 (see request_macros)")
+    # every value must equal the v5.1 number main.tex keeps as its placeholder
+    main_tex = (ROOT / "paper" / "main.tex").read_text()
+    for name, value, _, _ in out:
+        hit = re.search(r"\\providecommand\{\\" + name + r"\}\{\\reqnum\{" + name + r"\}\{([^}]*(?:\{,\}[^}]*)?)\}\}",
+                        main_tex)
+        if hit:
+            check(hit.group(1).replace("{,}", ",") == value.replace("{,}", ","),
+                  f"requested macro \\{name}: generated {value}, main.tex placeholder {hit.group(1)}")
+    return out
+
+
 def overhead_macros():
     """The time the schedule and the bridge add to single-pass SCA at 4096^2: sca_v2 against sca_nb timed back to back
     on one GPU (latency_curve_v2), and the operator without them in seconds."""
@@ -1541,7 +1985,9 @@ def main():
              OUT / "tab_panel46.tex": table_panel(clean),
              OUT / "tab_ablation_compact.tex": table_ablation_v6(),
              OUT / "tab_ablation.tex": table_ablation(), OUT / "tab_generality.tex": table_generality_v6(),
-             OUT_APP / "prog_all.tex": table_prog_all(), OUT_APP / "variance_split.tex": table_variance_split()}
+             OUT_APP / "prog_all.tex": table_prog_all(), OUT_APP / "variance_split.tex": table_variance_split(),
+             OUT_APP / "holm.tex": table_holm(), OUT_APP / "gen_all.tex": table_gen_all(),
+             OUT_APP / "app_abl.tex": table_app_abl()}
     prog_abl = prog_ablation_rows()
     if prog_abl:
         # Section 4.3's sentences (\progAblResult) and the all-metric appendix table (tab:prog_abl_all)
@@ -1557,7 +2003,7 @@ def main():
             rf"\newcommand{{\progAblSeconds}}{{{seconds}}}"]) + "\n"
     print("progressive ablation: " + ("waiting for results/prog195_ablation/SHA256SUMS" if prog_abl is None
                                        else f"{len(prog_abl)} rows -> tab_ablation_compact_prog.tex"))
-    macros = headline(clean)
+    macros = headline(clean) + holm_macros() + latency_macros() + request_macros()
     lines = [HEADER, "% Headline numbers the prose repeats; each prints exactly the literal used in the text.",
              "% Fallback grey for values of runs that have not landed; main.tex defines \\pend after this file.",
              r"\providecommand{\pend}[1]{\textcolor{gray}{#1}}",

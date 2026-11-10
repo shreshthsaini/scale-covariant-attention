@@ -55,6 +55,7 @@ LOSS = sf.LOSS
 NS = getattr(sf, "NS", sf.METHOD_COLOR["sega"])
 ARROW = "\u2192"   # right arrow, set in the text face
 DOWN = "\u2193"
+UP = "\u2191"
 TIMES = "\u00d7"
 MINUS = "\u2212"
 

@@ -76,7 +76,7 @@ def heat(base: np.ndarray, dens: np.ndarray, color: np.ndarray, mask=None) -> np
     v = np.clip(np.log10(np.maximum(dens, 1.0)) / np.log10(DMAX), 0, 1)
     if mask is not None:
         v = np.where(mask, v, 0.0)
-    a = 0.95 * v ** 0.7
+    a = np.minimum(1.0, 1.0 * v ** 0.6)
     k = base.shape[0] // dens.shape[0]
     a = np.kron(a, np.ones((k, k)))[..., None]
     return base * (1 - a) + color[None, None, :] * a

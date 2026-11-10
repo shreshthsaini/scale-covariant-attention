@@ -79,6 +79,25 @@ CATEGORIES = [
 ]
 
 
+# Prompts that name a person (lower-cased text, word boundaries). Sample pages that show single-pass SCA, SCA without
+# the schedule or the ablation variants draw from the prompts that name no person (person_free); the caption says so.
+PERSON = (r"\b(woman|women|man|men|girls?|boys?|persons?|people|figures?|hikers?|climbers?|astronauts?|divers?|surfers?|"
+          r"dancers?|ballerinas?|warriors?|characters?|individuals?|couples?|children|child|kids?|chefs?|models?|"
+          r"silhouettes?|travell?ers?|walkers?|explorers?|skiers?|lady|ladies|monks?|soldiers?|knights?|crowds?|"
+          r"family|wanderers?|humanoids?|robots?|players?|musicians?|brides?|grooms?|queens?|kings?|princes?|"
+          r"princess|cowboys?|samurai|fishermen|fisherman|farmers?|sailors?|pilots?|athletes?|runners?|riders?|"
+          r"elderly|teenagers?|babies|baby|humans?|faces?)\b")
+
+
+def names_person(prompt: str) -> bool:
+    return re.search(PERSON, prompt.lower()) is not None
+
+
+def person_free(texts: dict) -> set:
+    """Ids whose prompt names no person (keyword rule PERSON)."""
+    return {k for k, t in texts.items() if not names_person(t)}
+
+
 # ------------------------------------------------------------------------------------------------ data
 def sha256(path) -> str:
     h = hashlib.sha256()
@@ -253,6 +272,8 @@ class Canvas:
                      r"inner xsep=1.6pt,inner ysep=1.0pt")
         else:
             style = r"inner sep=0pt,text=%s" % self.c(color)
+        if r"\\" in s:  # multi-line label: centred lines at the label size
+            style += r",align=center"
         self.body.append(r"\node[anchor=%s,%s,rotate=%g,font=%s] at (%.3f,%.3f) {%s};"
                          % (anchor, style, rotate, font, x, -y, s))
 

@@ -35,6 +35,14 @@
   \renewcommand{\table}[1][]{\expandafter\sca@tab\expandafter[\sca@place]}%
   \expandafter\renewcommand\csname figure*\endcsname[1][]{\expandafter\sca@figs\expandafter[\sca@place]}%
   \input{figures/snippets/#2.tex}\endgroup}{}}
+% \apxbarrier: the float barrier at every section. When the floats still waiting would fill more than
+% about a page, it flushes them like \FloatBarrier. Otherwise it lets them appear at the top of the next
+% page, so a section never ends on a page of a few stranded lines and no float drifts more than a page.
+\newdimen\apx@pend
+\newcommand{\apxbarrier}{\par\begingroup\global\apx@pend\z@
+  \def\@elt##1{\global\advance\apx@pend\ht##1\global\advance\apx@pend\dp##1\global\advance\apx@pend\floatsep}%
+  \@deferlist\endgroup
+  \ifdim\apx@pend>0.9\textheight\relax\FloatBarrier\fi}
 \makeatother
 % Our rows and the reference column of a table: the pale method green of every table.
 \newcommand{\apxshade}{\rowcolor[HTML]{EAF4F1}}
@@ -70,9 +78,9 @@
 \apxgap
 \apxS{app:impl}{Implementation and pseudocode}
 \apxs{app:zoom}{The operators in detail}
+\apxs{app:code}{Pseudocode}
 \apxs{app:kernel}{Kernel and numerics}
 \apxs{app:cost}{Attention cost}
-\apxs{app:code}{Pseudocode}
 \apxs{app:hparams}{Hyperparameters}
 \apxgap
 \apxS{app:metrics}{Evaluation protocol and baselines}
@@ -96,6 +104,8 @@
 \apxs{app:latency}{Latency}
 \apxgap
 \apxS{app:prog}{Progressive \sca{}}
+\apxs{app:prog_protocol}{Protocol}
+\apxs{app:prog_results}{Against HRDiT and single pass}
 \apxgap
 \apxS{app:generality}{Generality}
 \apxs{app:gen_seeds}{Seeds, HRGen-1K, FLUX.2-dev}
@@ -105,10 +115,17 @@
 \newmodelsline
 \apxgap
 \apxS{app:budget}{Sensitivity and budgets}
+\apxs{app:sens}{Emulation budget and gate}
+\apxs{app:ps2}{Reach table at non-square sizes}
+\apxs{app:budgets}{Steps, guidance, and SigMa}
 \apxgap
 \apxS{app:compute}{Compute and reproducibility}
+\apxs{app:hardware}{Hardware and compute}
+\apxs{app:release}{Release and sources}
 \apxgap
 \apxS{app:limits}{Limitations in detail}
+\apxs{app:failures}{Failure cases and scope}
+\apxs{app:impact}{Broader impact}
 \apxgap
 \apxS{app:prompts}{Emulation prompts}
 \apxgap
@@ -117,7 +134,7 @@
 \end{minipage}}
 
 % =====================================================================================
-\FloatBarrier
+\apxbarrier
 \section{Proofs}
 \label{app:proofs}
 
@@ -166,7 +183,7 @@ Any rule that assigns one weight per cell is a feasible $\pi'$ in every cell. Ex
 \end{proof}
 
 % =====================================================================================
-\FloatBarrier
+\apxbarrier
 \section{Reach emulation: details and statistics}
 \label{app:emulation}
 
@@ -221,7 +238,7 @@ The reach table holds one weight per block, head, noise bin, and ratio. Figure~\
 \subsection{Output error of each mixing rule}
 \label{app:emu_error}
 
-Figure~\ref{fig:relerr} compares the relative output error of every mixing rule at both ratios, and Figure~\ref{fig:pisigma} resolves it by noise level. Section~\ref{sec:ablations} quotes these errors.
+Figure~\ref{fig:relerr} compares the relative output error of every mixing rule at both ratios, and Figure~\ref{fig:pisigma} resolves it by noise level; Section~\ref{sec:ablations} quotes these errors. Tables fitted on the first 4, 8, or 16 emulation prompts, merged from the stored statistics, are tested in generation in Appendix~\ref{app:sens}.
 
 \begin{figure}[!htbp]
   \centering
@@ -239,14 +256,13 @@ Figure~\ref{fig:relerr} compares the relative output error of every mixing rule 
 
 \paragraph{No global phase in output energy.} The best single shared weight falls from 0.88 at $\sigma=0.10$ to 0.72 at $\sigma=0.97$, and the mean per-head weight from 0.74 to 0.64 (Figure~\ref{fig:pisigma}). The median within-block range of the per-head weights is 0.66 to 0.84 at every noise level (Figure~\ref{fig:heatmap}). Among hard switches from global to local, the best threshold is $\sigma^\star=1$, which equals local only. A switch at $\sigma^\star=0.89$ between our two branches raises the error from 0.092 to 0.152 at ratio 2 and from 0.261 to 0.376 at ratio 4. In the noisiest bin the global branch alone has relative error 0.27 at ratio 2, the local branch alone 0.14, and the per-head mix 0.09. Generation still needs the opening (Section~\ref{sec:ablations}), because output error cannot see layout.
 
-\paragraph{Emulation budget.} Tables fitted on the first 4, 8, or 16 emulation prompts, merged from the stored statistics, are tested in generation in Appendix~\ref{app:sens} (Table~\ref{tab:phase2_sensitivity}).
 
 % =====================================================================================
-\FloatBarrier
+\apxbarrier
 \section{Implementation, pseudocode, and hyperparameters}
 \label{app:impl}
 
-This appendix expands Section~\ref{sec:method}, Figure~\ref{fig:method}, and Algorithms~\ref{alg:emulate} and~\ref{alg:sample}. Figure~\ref{fig:method_zoom} draws the operators at component level (Appendix~\ref{app:zoom}). Appendix~\ref{app:kernel} gives the kernel layout and the numerical checks, Appendix~\ref{app:cost} the attention cost, Appendix~\ref{app:code} the full pseudocode, and Appendix~\ref{app:hparams} every hyperparameter.
+This appendix expands Section~\ref{sec:method}, Figure~\ref{fig:method}, and Algorithms~\ref{alg:emulate} and~\ref{alg:sample}. Figure~\ref{fig:method_zoom} draws the operators at component level (Appendix~\ref{app:zoom}), and Appendix~\ref{app:code} gives the full pseudocode. Appendix~\ref{app:kernel} gives the kernel layout and the numerical checks, Appendix~\ref{app:cost} the attention cost, and Appendix~\ref{app:hparams} every hyperparameter.
 
 \subsection{The operators in detail}
 \label{app:zoom}
@@ -259,6 +275,128 @@ This appendix expands Section~\ref{sec:method}, Figure~\ref{fig:method}, and Alg
 \end{figure}
 
 \paragraph{Design choices.} A block centre is a real token, so the global branch attends to keys and values the model produced; mean pooling does worse (Section~\ref{sec:ablations}). Native windows keep offsets in the trained range, so \sca{} keeps FLUX.1's RoPE and softmax scale. Text keys sit at position 0 in both branches (Remark~\ref{rem:text}). Bridge keys keep their true positions, and windows wider than $n_0$ reach offsets up to $w-1$. The local operator therefore leaves the trained range for its 1,024 bridge keys and during the four wide-window steps. FLUX.1 also rounds positions in bf16 beyond 256 tokens per axis (Appendix~\ref{app:kernel}).
+
+\subsection{Pseudocode}
+\label{app:code}
+
+Algorithms~\ref{alg:emulate_full} and~\ref{alg:sample_full} expand Algorithms~\ref{alg:emulate} and~\ref{alg:sample} to every step the code performs, and Algorithm~\ref{alg:prog} writes out progressive \sca{} (Section~\ref{sec:progressive}). Each comment names the equation or setting that its line implements. Appendix~\ref{app:release} maps each algorithm to its source file.
+
+\begin{figure}[p]
+\noindent\begin{minipage}{\linewidth}
+    \hrule height 0.6pt\vspace{2pt}
+    \captionof{algorithm}{\textbf{Reach emulation}, in full: one full-attention pass at $1024^2$ fills the table of every ratio}
+    \label{alg:emulate_full}
+    \vspace{-4pt}
+\begin{lstlisting}[style=scacode, basicstyle=\fontfamily{lmtt}\fontsize{8}{9}\selectfont, emph={bin,on_step,emulate,attn,global_branch,local_branch,sample,clip,where,arange,fill_empty_bins}]
+# Input: 32 prompts; FLUX.1-dev at (*@$1024^2$@*) (n = 64), 28 steps, guidance 4.5,
+#   full attention
+# Output: pi[s_c, l, h, beta] for emulated ratios s_c in {2, 4}; centres[beta]
+def bin(sigma): return min(int(14 * sigma), 13)  # 14 bins of width 1/14
+def on_step(sigma):                         # once per step
+  S[bin(sigma)] += sigma; C[bin(sigma)] += 1
+def emulate(q, k, v, l, sigma):             # every block l
+  O_full = attn(q, k, v)                    # Eq. (*@\ref{eq:attn}@*), all keys
+  beta = bin(sigma)
+  for s_c in (2, 4):                        # emulation, App. (*@\ref{app:emu_record}@*)
+    f, w = s_c, n // s_c                    # subsampling factor, window side
+    t_c = round(t * w / n0)                 # tile sides 4 and 2
+    O_glob = global_branch(q, k, v, f)      # Eq. (*@\ref{eq:glob}@*)
+    O_loc = local_branch(q, k, v, w, t_c)   # Eq. (*@\ref{eq:loc}@*), no bridge
+    dl, df = O_loc - O_glob, O_full - O_glob
+    A[s_c, l, :, beta] += sum(dl * dl)      # Eq. (*@\ref{eq:stats}@*): per head, over
+    B[s_c, l, :, beta] += sum(df * dl)      #   image rows and channels
+    E[s_c, l, :, beta] += sum(df * df)
+    F[s_c, l, :, beta] += sum(O_full * O_full)
+  return O_full                             # the sampler is unchanged
+sample(prompts, on_step, emulate)
+pop = C > 0                                 # 13 of 14 bins populated
+centres = where(pop, S / C, (arange(14) + 0.5) / 14)
+pi = clip(B / A, 0, 1); pi[A == 0] = 1      # Prop. (*@\ref{prop:opt}@*)
+pi = fill_empty_bins(pi, pop)               # copy the nearest populated bin
+J = E - 2 * pi * B + pi**2 * A              # error of the mix
+rel_err = J.sum() / F.sum()                 # Sec. (*@\ref{sec:emulation}@*)
+\end{lstlisting}
+\end{minipage}
+
+\vspace{8pt}
+\noindent\begin{minipage}{\linewidth}
+    \hrule height 0.6pt\vspace{2pt}
+    \captionof{algorithm}{\textbf{Sampling}, in full: one \sca{} attention call of single-pass \sca{}}
+    \label{alg:sample_full}
+    \vspace{-4pt}
+\begin{lstlisting}[style=scacode, basicstyle=\fontfamily{lmtt}\fontsize{8}{9}\selectfont, emph={rope,sdpa,cat,clip,log2,interp,top_k,tile_major,block_mask,flex_attention,inverse}]
+# Input: q, k, v before RoPE (T text, then H x W image tokens), block l, sigma
+# Output: O for all T + HW queries
+# Per image: s_H, s_W = H // n0, W // n0; pi_s is the table entry nearest
+#   max(s_H, s_W) in log. Per step, all 57 x 24 heads, table ends held:
+w = n0                                      # Sec. (*@\ref{sec:sched}@*)
+for sig_k, w_k in ((.88, 128), (.86, 112), (.84, 96), (.82, 80)):
+  if sigma > sig_k: w = w_k; break
+if w == n0: pi = interp(sigma, centres, pi_s)
+else:                                       # Eq. (*@\ref{eq:sched}@*), linear in log r
+  r = max(H, W) / w; u = clip(log2(r / 2), 0, 1)
+  pi = ((1 - u) * interp(sigma, centres, table[2])
+        + u * interp(sigma, centres, table[4]))
+kb = k_img[s_H//2::s_H, s_W//2::s_W]        # (*@$\kappa(b)$@*)
+vb = v_img[s_H//2::s_H, s_W//2::s_W]
+cp = p // (s_H, s_W)                        # (*@$c(p_i)$@*); text at 0
+Q, K = cat(rope(q_txt, 0), rope(q_img, cp)), cat(rope(k_txt, 0), rope(kb, b))
+O_glob = sdpa(Q, K, cat(v_txt, vb))         # Eq. (*@\ref{eq:glob}@*)
+if sigma > sigma_g:                         # 0.89, Eq. (*@\ref{eq:mix}@*)
+  return O_glob                             # opening phase
+d = ((k_img - k_img.mean(0))**2).sum(heads, ch)  # bridge, Eq. (*@\ref{eq:bridge}@*)
+B = top_k(d, 16) per cell, 8 x 8 cells      # 1,024, per block and step
+kr = rope(k_img, p)                         # true positions
+kl = cat(rope(k_txt, 0), kr[B], kr)
+vl = cat(v_txt, v_img[B], v_img)            # a bridge key in the window: twice
+P = T + len(B)                              # prefix, seen by all
+w = (min(w, H), min(w, W))                  # window sides
+a = clip(t*(p//t) + t//2 - w//2, 0, (H, W) - w)
+keep(i, j) = j < P or a_i <= p_j < a_i + w  # Eq. (*@\ref{eq:loc}@*)
+perm = tile_major(H, W)                     # 8 x 16 query blocks
+mask = block_mask(keep, perm)               # 8 x 8 key blocks
+O_loc = flex_attention(rope(q_img, p)[perm], kl, vl, mask)[inverse(perm)]
+O_img = pi[l] * O_loc + (1 - pi[l]) * O_glob[T:]  # fp32 mix, Eq. (*@\ref{eq:mix}@*)
+return cat(O_glob[:T], O_img)               # text queries take O_glob
+\end{lstlisting}
+\end{minipage}
+\end{figure}
+
+\begin{figure}[!htbp]
+\noindent\begin{minipage}{\linewidth}
+    \hrule height 0.6pt\vspace{2pt}
+    \captionof{algorithm}{\textbf{Progressive \sca{}}: HRDiT's schedule with \sca{} attention (Section~\ref{sec:progressive}, Appendix~\ref{app:prog})}
+    \label{alg:prog}
+    \vspace{-4pt}
+\begin{lstlisting}[style=scacode, basicstyle=\fontfamily{lmtt}\fontsize{8}{9}\selectfont, emph={shift,linspace,noise,flux,decode,encode,bicubic,sharpen,lowpass,up,momentum,use_sca}]
+# Input: prompt, seed; FLUX.1-dev in bf16; reach table at ratios 2 and 4
+# Output: (*@$4096^2$@*) image
+# one 30-step schedule for all stages, as in HRDiT:
+sig = cat(shift(linspace(1, 1/30, 30), mu=1.15), [0])
+x = noise((*@$1024^2$@*), seed)    # stage 1: stock dense attention, native RoPE
+for i in range(30):                         # Euler; ref keeps each x0 estimate
+  v = flux(x, sig[i], g=3.5); ref[i] = x - sig[i] * v
+  x = x + (sig[i+1] - sig[i]) * v
+for res, k, g, s_c, a in ((2048, 13, 4.5, 2, 1.0), (4096, 20, 6.0, 4, 0.25)):
+  img = sharpen(bicubic(decode(x), res))    # 2 img - blur(img), blur width
+                                            #   ~ U(0.1, 2.0)
+  x = sig[k] * noise + (1 - sig[k]) * encode(img)  # re-enter at 0.81, 0.61
+  # replaces NTK RoPE, attention scale, pruning, and alignment; w = n0 as
+  # sig[k] < 0.82 (Sec. (*@\ref{sec:sched}@*)); no opening phase as sig[k] < sigma_g
+  use_sca(table[s_c], n0=64, t=8, sigma_g=0.89, bridge=(8, 16))
+  N = 30 - k                                # 17, then 10 steps
+  for n, i in enumerate(range(k, 30)):
+    v = flux(x, sig[i], g); x0 = x - sig[i] * v   # SCA in every block
+    r, ref[i] = ref[i], x0
+    # low-band guidance; Butterworth, order 4, cut-off 0.2:
+    x0 = x0 + a * (N - n) / N * (lowpass(up(r)) - lowpass(x0))
+    # HRDiT's velocity momentum:
+    u = momentum((x - x0) / sig[i], 0.5 * (N - n) / N)
+    x = x + (sig[i+1] - sig[i]) * u
+return decode(x)
+\end{lstlisting}
+\end{minipage}
+\end{figure}
 
 \subsection{Kernel and numerics}
 \label{app:kernel}
@@ -300,121 +438,6 @@ Table~\ref{tab:flops} counts the attention FLOPs of one image and times one atte
     \bottomrule
   \end{tabular}
 \end{table}
-
-\subsection{Pseudocode}
-\label{app:code}
-
-Algorithms~\ref{alg:emulate_full} and~\ref{alg:sample_full} expand Algorithms~\ref{alg:emulate} and~\ref{alg:sample} to every step the code performs, and Algorithm~\ref{alg:prog} writes out progressive \sca{} (Section~\ref{sec:progressive}). Each comment names the equation or setting that its line implements. Appendix~\ref{app:release} maps each algorithm to its source file.
-
-\begin{figure}[!htbp]
-\noindent\begin{minipage}{\linewidth}
-    \hrule height 0.6pt\vspace{2pt}
-    \captionof{algorithm}{\textbf{Reach emulation}, in full: one pass of the full-attention sampler at $1024^2$ fills the reach table}
-    \label{alg:emulate_full}
-    \vspace{-4pt}
-\begin{lstlisting}[style=scacode, basicstyle=\fontfamily{lmtt}\selectfont\footnotesize, emph={bin,on_step,emulate,attn,global_branch,local_branch,sample,clip,where,arange,fill_empty_bins}]
-# Input: 32 prompts; FLUX.1-dev at (*@$1024^2$@*) (n = 64), 28 steps, guidance 4.5, full attention
-# Output: pi[s_c, l, h, beta] for emulated ratios s_c in {2, 4}; bin centres[beta]
-def bin(sigma): return min(int(14 * sigma), 13)    # 14 noise bins of width 1/14
-def on_step(sigma):                                 # once per step
-  S[bin(sigma)] += sigma; C[bin(sigma)] += 1
-def emulate(q, k, v, l, sigma):                     # every block l
-  O_full = attn(q, k, v)                            # Eq. (*@\ref{eq:attn}@*), all keys
-  beta = bin(sigma)
-  for s_c in (2, 4):                                # App. (*@\ref{app:emu_record}@*)
-    f, w = s_c, n // s_c                            # subsampling factor, window side
-    t_c = round(t * w / n0)                         # tile sides 4 and 2
-    O_glob = global_branch(q, k, v, f)              # Eq. (*@\ref{eq:glob}@*)
-    O_loc = local_branch(q, k, v, w, t_c)           # Eq. (*@\ref{eq:loc}@*), no bridge
-    dl, df = O_loc - O_glob, O_full - O_glob
-    A[s_c, l, :, beta] += sum(dl * dl)              # Eq. (*@\ref{eq:stats}@*): per head, over
-    B[s_c, l, :, beta] += sum(df * dl)              #   image rows and channels
-    E[s_c, l, :, beta] += sum(df * df)
-    F[s_c, l, :, beta] += sum(O_full * O_full)
-  return O_full                                     # the sampler is unchanged
-sample(prompts, on_step, emulate)
-pop = C > 0                                         # 13 of 14 bins populated
-centres = where(pop, S / C, (arange(14) + 0.5) / 14)
-pi = clip(B / A, 0, 1); pi[A == 0] = 1              # Prop. (*@\ref{prop:opt}@*)
-pi = fill_empty_bins(pi, pop)                       # copy the nearest populated bin
-J = E - 2 * pi * B + pi**2 * A                      # error of the mix
-rel_err = J.sum() / F.sum()                         # Sec. (*@\ref{sec:emulation}@*)
-\end{lstlisting}
-\end{minipage}
-\end{figure}
-
-\begin{figure}[!htbp]
-\noindent\begin{minipage}{\linewidth}
-    \hrule height 0.6pt\vspace{2pt}
-    \captionof{algorithm}{\textbf{Sampling}, in full: one \sca{} attention call of single-pass \sca{}}
-    \label{alg:sample_full}
-    \vspace{-4pt}
-\begin{lstlisting}[style=scacode, basicstyle=\fontfamily{lmtt}\selectfont\footnotesize, emph={rope,sdpa,cat,clip,log2,interp,top_k,tile_major,block_mask,flex_attention,inverse}]
-# Input: q, k, v before RoPE (T text tokens, then the H x W image), block l, noise level sigma
-# Output: O for all T + HW queries
-# Per image: s_H, s_W = H // n0, W // n0; pi_s is the table entry nearest max(s_H, s_W) in log
-# Per step, all 57 x 24 heads, table ends held:
-w = n0                                              # Sec. (*@\ref{sec:sched}@*)
-for sig_k, w_k in ((.88, 128), (.86, 112), (.84, 96), (.82, 80)):
-  if sigma > sig_k: w = w_k; break
-if w == n0: pi = interp(sigma, centres, pi_s)
-else:                                               # Eq. (*@\ref{eq:sched}@*), linear in log r
-  r = max(H, W) / w; u = clip(log2(r / 2), 0, 1)
-  pi = (1 - u) * interp(sigma, centres, table[2]) + u * interp(sigma, centres, table[4])
-kb = k_img[s_H//2::s_H, s_W//2::s_W]                # (*@$\kappa(b)$@*)
-vb = v_img[s_H//2::s_H, s_W//2::s_W]
-cp = p // (s_H, s_W)                                # (*@$c(p_i)$@*); text at 0
-Q = cat(rope(q_txt, 0), rope(q_img, cp))
-K = cat(rope(k_txt, 0), rope(kb, b))
-O_glob = sdpa(Q, K, cat(v_txt, vb))                 # Eq. (*@\ref{eq:glob}@*)
-if sigma > sigma_g:                                 # sigma_g = 0.89, Eq. (*@\ref{eq:mix}@*)
-  return O_glob                                     # opening phase
-d = ((k_img - k_img.mean(0))**2).sum(heads, ch)     # bridge, Eq. (*@\ref{eq:bridge}@*), per block and step
-B = top_k(d, 16) per cell, 8 x 8 cells              # 1,024 tokens
-kr = rope(k_img, p)                                 # true positions
-kl = cat(rope(k_txt, 0), kr[B], kr)
-vl = cat(v_txt, v_img[B], v_img)                    # a bridge key inside the window enters twice
-P = T + len(B)                                      # prefix, seen by every query
-w = (min(w, H), min(w, W))                          # window sides
-a = clip(t*(p//t) + t//2 - w//2, 0, (H, W) - w)
-keep(i, j) = j < P or a_i <= p_j < a_i + w          # Eq. (*@\ref{eq:loc}@*)
-perm = tile_major(H, W)                             # 8 x 16 query blocks
-mask = block_mask(keep, perm)                       # 8 x 8 key blocks
-O_loc = flex_attention(rope(q_img, p)[perm], kl, vl, mask)[inverse(perm)]
-O_img = pi[l] * O_loc + (1 - pi[l]) * O_glob[T:]    # fp32 mix, Eq. (*@\ref{eq:mix}@*)
-return cat(O_glob[:T], O_img)                       # text queries take O_glob
-\end{lstlisting}
-\end{minipage}
-\end{figure}
-
-\begin{figure}[!htbp]
-\noindent\begin{minipage}{\linewidth}
-    \hrule height 0.6pt\vspace{2pt}
-    \captionof{algorithm}{\textbf{Progressive \sca{}}: HRDiT's schedule with \sca{} attention (Section~\ref{sec:progressive}, Appendix~\ref{app:prog})}
-    \label{alg:prog}
-    \vspace{-4pt}
-\begin{lstlisting}[style=scacode, basicstyle=\fontfamily{lmtt}\selectfont\footnotesize, emph={shift,linspace,noise,flux,decode,encode,bicubic,sharpen,lowpass,up,momentum,use_sca}]
-# Input: prompt, seed; FLUX.1-dev in bf16; reach table at ratios 2 and 4
-# Output: (*@$4096^2$@*) image
-sig = cat(shift(linspace(1, 1/30, 30), mu=1.15), [0])  # one 30-step schedule for all stages, as in HRDiT
-x = noise((*@$1024^2$@*), seed)                         # stage 1: stock dense attention, native RoPE
-for i in range(30):                                    # Euler; ref keeps each step's x0 estimate
-  v = flux(x, sig[i], g=3.5); ref[i] = x - sig[i] * v; x = x + (sig[i+1] - sig[i]) * v
-for res, k, g, s_c, a in ((2048, 13, 4.5, 2, 1.0), (4096, 20, 6.0, 4, 0.25)):
-  img = sharpen(bicubic(decode(x), res))               # 2 img - blur(img), blur width ~ U(0.1, 2.0)
-  x = sig[k] * noise + (1 - sig[k]) * encode(img)      # re-enter at sigma 0.81, then 0.61
-  use_sca(table[s_c], n0=64, t=8, sigma_g=0.89, bridge=(8, 16))  # replaces NTK RoPE, attention scale,
-                                                       #   pruning, alignment; w = n0 as sig[k] < 0.82
-  N = 30 - k                                           # 17, then 10 steps; sig[k] < sigma_g: no opening
-  for n, i in enumerate(range(k, 30)):
-    v = flux(x, sig[i], g); x0 = x - sig[i] * v; r, ref[i] = ref[i], x0     # SCA in every block
-    x0 = x0 + a * (N - n) / N * (lowpass(up(r)) - lowpass(x0))  # Butterworth, order 4, cut-off 0.2
-    u = momentum((x - x0) / sig[i], 0.5 * (N - n) / N)         # HRDiT's velocity momentum
-    x = x + (sig[i+1] - sig[i]) * u
-return decode(x)
-\end{lstlisting}
-\end{minipage}
-\end{figure}
 
 \subsection{Hyperparameters}
 \label{app:hparams}
@@ -481,7 +504,7 @@ Table~\ref{tab:handset} separates the hand-set settings of single-pass \sca{} fr
 \end{table}
 
 % =====================================================================================
-\FloatBarrier
+\apxbarrier
 \section{Evaluation protocol and baselines}
 \label{app:metrics}
 
@@ -526,9 +549,9 @@ This appendix expands the setup of Section~\ref{sec:experiments}. Appendix~\ref{
 \subsection{Intervals and table conventions}
 \label{app:intervals}
 
-\paragraph{Per-image metrics.} Intervals are 95\% paired percentile bootstraps over prompt ids. Summaries written by the evaluator use 1000 draws. Comparisons recomputed for the tables use 2000 draws with seed 0, so they can differ slightly from the evaluator summaries. Resampling matched prompt ids never treats the crops of one image as independent images.
+\paragraph{Per-image metrics.} Intervals are 95\% paired percentile bootstraps over prompt ids. Summaries written by the evaluator use 1000 draws. Comparisons recomputed for the tables use 2000 draws with seed 0 (Table~\ref{tab:krea_6144}: 1000), so they can differ slightly from the evaluator summaries. Resampling matched prompt ids never treats the crops of one image as independent images.
 
-\paragraph{Set-level metrics.} For FID, KID, and their patch versions, 1000 draws resample the generated prompt ids jointly across methods and the 168 distinct reference-image identities. Each draw keeps all rows and crops of a sampled identity together. This keeps the 195-row weighted point estimate and accounts for rows that share a reference image. For single-pass \sca{} against AReA, the FID difference is $-5.6$ $[-10.6,-0.4]$, patch FID $-4.4$ $[-7.9,0.4]$, and patch KID ($\times10^3$) $-2.53$ $[-4.57,-0.60]$ (Table~\ref{tab:app_4k}). The comparisons at both non-square sizes, against every added baseline, and of the sampling-budget and progressive runs use the same clusters. The other whole-image FID and KID intervals are reference-row bootstraps, labelled historical; they were not recomputed with image clusters. Historical patch intervals are never attached to corrected estimates and are omitted where recomputation is incomplete. Inception-score intervals resample only generated images. FID's finite-sample bias can place a point estimate outside its percentile interval.
+\paragraph{Set-level metrics.} For FID, KID, and their patch versions, 1000 draws resample the generated prompt ids jointly across methods and the 168 distinct reference-image identities. Each draw keeps all rows and crops of a sampled identity together. This keeps the 195-row weighted point estimate and accounts for rows that share a reference image. For single-pass \sca{} against AReA, the FID difference is $-5.6$ $[-10.6,-0.4]$, patch FID $-4.4$ $[-7.9,0.4]$, and patch KID ($\times10^3$) $-2.53$ $[-4.57,-0.60]$ (Table~\ref{tab:app_4k}). Every FID, KID, and patch interval on a 195-prompt set resamples these clusters, including the comparisons at both non-square sizes, against every added baseline, and of the sampling-budget and progressive runs. The other whole-image FID and KID intervals are reference-row bootstraps, labelled historical; they were not recomputed with image clusters. Historical patch intervals are never attached to corrected estimates and are omitted where recomputation is incomplete. Inception-score intervals resample only generated images. FID's finite-sample bias can place a point estimate outside its percentile interval.
 
 \paragraph{Sources.} Every table is populated from archived evaluation files (Appendix~\ref{app:release}). Per-image means were checked against the per-image records. Distribution-level estimates use cached features and the corrected crop assembly, and set-level metrics use the whole set.
 
@@ -599,7 +622,7 @@ This subsection gives the settings of the other baselines in Tables~\ref{tab:mai
 \paragraph{FLUX.2-dev.} The model has 56 attention blocks and 48 heads per block. We reuse the two branches and reach emulation with a native grid of $64^2$ tokens, local window 64, and query tile 8. The four-axis positions keep the time and text axes and coarsen the two spatial axes. Reach emulation uses 16 prompts at $1024^2$, 14 noise bins, and ratios 2 and 4; sampling uses the ratio-4 table. Full attention and \sca{} without the schedule both use 28 steps, guidance 4.0, seed label 0, and a shift fixed to the native sequence length, $\mu=2.1514$. The pipeline's default extrapolated shift at $4096^2$ would be about 11.55, so we do not read this comparison as a default-pipeline benchmark. The gate is 0.959, so that the first 8 steps use only global attention. The 50 evaluation prompts are Aesthetic-4K rows 4 to 53. Prompt embeddings are cached for both methods; reported times include denoising and tiled VAE decoding and exclude text encoding and model loading. At ratio 4 the fitted per-head relative output error is 0.1790, against 0.1889 for per-layer weights and 0.1924 for local-only attention. The split-half correlation is 0.950 and the cross-half error 0.1794. These are reach-emulation diagnostics, not generation ablations on FLUX.2.
 
 % =====================================================================================
-\FloatBarrier
+\apxbarrier
 \section{Extended results}
 \label{app:tables}
 
@@ -732,7 +755,7 @@ Table~\ref{tab:latency} and Figure~\ref{fig:latency_full} expand the latency of 
 \end{figure}
 
 % =====================================================================================
-\FloatBarrier
+\apxbarrier
 \section{Progressive \texorpdfstring{\sca{}}{SCA}}
 \label{app:prog}
 
@@ -767,24 +790,24 @@ Table~\ref{tab:all_metrics} gives the absolute values of progressive \sca{}, Tab
 \end{figure}
 
 % =====================================================================================
-\FloatBarrier
+\apxbarrier
 \section{Generality}
 \label{app:generality}
 
-This appendix expands Table~\ref{tab:generality} and Section~\ref{sec:generality}. Table~\ref{tab:phase2_general} expands the single-pass rows of Table~\ref{tab:generality} to all ten per-image metrics (Appendix~\ref{app:gen_seeds}). Appendix~\ref{app:gen_krea} covers $6144^2$ and FLUX.1-Krea-dev, Appendix~\ref{app:wide} the non-square sizes, and Appendix~\ref{app:8k} the exploratory $8192^2$ run\ifanynewmodel; Appendix~\ref{app:newer} adds the newer models\fi.
+This appendix expands Table~\ref{tab:generality} and Section~\ref{sec:generality}. \IfFileExists{figures/snippets/app_tables/gen_all.tex}{Table~\ref{tab:gen_all} expands Table~\ref{tab:generality} to all ten per-image metrics, and Table~\ref{tab:phase2_general} gives the single-pass rows on the same layout as the other paired tables (Appendix~\ref{app:gen_seeds}).}{Table~\ref{tab:phase2_general} expands the single-pass rows of Table~\ref{tab:generality} to all ten per-image metrics (Appendix~\ref{app:gen_seeds}).} Appendix~\ref{app:gen_krea} covers $6144^2$ and FLUX.1-Krea-dev, Appendix~\ref{app:wide} the non-square sizes, and Appendix~\ref{app:8k} the exploratory $8192^2$ run\ifanynewmodel; Appendix~\ref{app:newer} adds the newer models\fi.
 
 \subsection{Seeds, HRGen-1K, and FLUX.2-dev}
 \label{app:gen_seeds}
 
-Table~\ref{tab:phase2_general} pairs single-pass \sca{} with AReA on HRGen-1K and at seeds 1 and 2, and \sca{} without the schedule with full attention on FLUX.2-dev (Appendix~\ref{app:additional_protocols}). The progressive rows of Table~\ref{tab:generality} are expanded in Table~\ref{tab:prog_all} for seed 0.\IfFileExists{figures/snippets/app_tables/prog_general.tex}{ Table~\ref{tab:prog_general} expands them for seeds 1 and 2 and HRGen-1K.}{}
+\IfFileExists{figures/snippets/app_tables/gen_all.tex}{Table~\ref{tab:gen_all} gives every row of Table~\ref{tab:generality} on all ten per-image metrics: progressive \sca{} against AReA at three seeds and on HRGen-1K, single-pass \sca{} against AReA on HRGen-1K, at seeds 1 and 2, and on FLUX.1-Krea-dev, and \sca{} without the schedule against full attention on FLUX.2-dev. }{}Table~\ref{tab:phase2_general} pairs single-pass \sca{} with AReA on HRGen-1K and at seeds 1 and 2, and \sca{} without the schedule with full attention on FLUX.2-dev (Appendix~\ref{app:additional_protocols}). Table~\ref{tab:prog_all} expands the progressive row at seed 0 to every metric.
+
+\snippetat{!htbp}{app_tables/gen_all}
 
 \begin{table}[!htbp]
   \caption{\textbf{The gains hold on HRGen-1K, at two more seeds, and on FLUX.2-dev.} Table~\ref{tab:phase2_general} expands the single-pass rows of Table~\ref{tab:generality}. Single-pass \sca{} minus AReA on HRGen-1K and at seeds 1 and 2; \sca{} without the schedule minus full attention on FLUX.2-dev. All at $4096^2$; \up{blue}: significantly better than the reference. Key result: every per-image difference favours \sca{}, and only FLUX.2-dev's CLIP score interval includes zero.\pendAppPhaseGeneral}
   \label{tab:phase2_general}
   \apxbody{app_tables/phase2_general}
 \end{table}
-
-\snippetat{!htbp}{app_tables/prog_general}
 
 \subsection{\texorpdfstring{$6144^2$}{6144x6144} and FLUX.1-Krea-dev}
 \label{app:gen_krea}
@@ -826,7 +849,7 @@ This subsection expands the newer-model paragraphs of Section~\ref{sec:generalit
 \fi
 
 % =====================================================================================
-\FloatBarrier
+\apxbarrier
 \section{Sensitivity and budgets}
 \label{app:budget}
 
@@ -841,8 +864,8 @@ We merge the stored sufficient statistics of the first 4, 8, or 16 emulation pro
 \begin{table}[!htbp]
 \caption{\textbf{Reach tables fitted on 4 to 16 prompts change one of 30 differences significantly (MUSIQ $+0.1$); a gate at $\sigma_g=0.85$ lowers seven metrics.} Variant minus default \sca{}, both without the schedule, \nabl{} ablation prompts; \up{blue} / \dn{orange}: variant significantly better / worse than default \sca{}. Budgets use the first 4, 8, or 16 of the 32 emulation prompts; the default gate is $\sigma_g=0.89$. Key result: 4 prompts suffice, and the gate is the setting that matters.}
 \label{tab:phase2_sensitivity}
-\centering\footnotesize\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}l*{5}{Z{63pt}}@{}}
+\centering\footnotesize\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{@{}l*{5}{Z{59pt}}@{}}
 \toprule
  & \multicolumn{5}{c}{\sca{} without the schedule: variant minus default} \\
 \cmidrule(l){2-6}
@@ -943,7 +966,7 @@ ARNIQA ($\times100$) & \up{$+1.5$} {\tiny[$+1.0$, $+1.9$]} & \dn{${-}1.2$} {\tin
 \end{table}
 
 % =====================================================================================
-\FloatBarrier
+\apxbarrier
 \section{Compute and reproducibility}
 \label{app:compute}
 
@@ -991,7 +1014,7 @@ We will release the code: the attention processor, reach emulation, single-pass 
 \end{table}
 
 % =====================================================================================
-\FloatBarrier
+\apxbarrier
 \section{Limitations in detail}
 \label{app:limits}
 
@@ -1026,7 +1049,7 @@ Figure~\ref{fig:failures} shows four local errors of \sca{} without the schedule
 \sca{} shortens generation at $4096^2$ relative to full attention under our measured protocol, which helps applications such as print, design, and scientific visualization. Energy use remains unmeasured. The same reduction lowers the cost of producing high-resolution synthetic images that could be used to mislead. \sca{} adds no capability beyond the base model's and does not change its safety filters or watermarking; the risks and mitigations of the base model apply unchanged.
 
 % =====================================================================================
-\FloatBarrier
+\apxbarrier
 \section{Emulation prompts}
 \label{app:prompts}
 
@@ -1087,11 +1110,11 @@ This appendix lists the 48 prompts written for reach emulation (Section~\ref{sec
 \end{multicols}}
 
 % =====================================================================================
-\FloatBarrier
+\apxbarrier
 \section{Sample pages}
 \label{app:galleries}
 
-This appendix expands Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog} with more samples. Progressive \sca{} comes first\ifprogSixteen{: sixteen evaluation prompts beside AReA and HRDiT (Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog16b}), then}\ifprogGallery{ six more prompts with every method (Figure~\ref{fig:gallery_prog})}. Figure~\ref{fig:teaser} compares six methods on one prompt, and Figure~\ref{fig:hero} shows single-pass \sca{} at three aspect ratios. Figures~\ref{fig:gallery_baselines} to~\ref{fig:gallery_flux2} show seeded draws of \sca{} against each baseline, at other sizes, and on other checkpoints, and Figure~\ref{fig:ablation_grid} shows the ablation variants.
+This appendix expands Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog} with more samples. Figure~\ref{fig:teaser} opens with six methods on one prompt. Progressive \sca{} follows\ifprogSixteen{: sixteen evaluation prompts beside AReA and HRDiT (Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog16b}), then}\ifprogGallery{ six more prompts with every method (Figure~\ref{fig:gallery_prog})}. Figure~\ref{fig:hero} shows single-pass \sca{} at three aspect ratios. Figures~\ref{fig:gallery_baselines} to~\ref{fig:gallery_flux2} show seeded draws of \sca{} against each baseline, at other sizes, and on other checkpoints, and Figure~\ref{fig:ablation_grid} shows the ablation variants.
 
 \paragraph{Selection.} The prompts of Figures~\ref{fig:gallery_baselines} to~\ref{fig:gallery_flux2} come from a seeded draw over pools fixed without looking at images; the pools exclude the development prompts. Figures~\ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048} also exclude 16 prompts that other figures showed when the pool was fixed. The prompts of Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog16b} were set later, so a prompt can appear in more than one figure. The selection seed, source hashes, and crop coordinates of every gallery are archived with it (Table~\ref{tab:sources}).
 
@@ -1099,16 +1122,17 @@ This appendix expands Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog} with m
 
 \paragraph{Configurations.} Figures~\ref{fig:gallery_prog16} to~\ref{fig:gallery_prog} show progressive \sca{}. Figures~\ref{fig:teaser}, \ref{fig:hero}, \ref{fig:gallery_prog}, \ref{fig:gallery_baselines}, \ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048}, and~\ref{fig:gallery_krea_complete} show single-pass \sca{}. Figures~\ref{fig:gallery_6144_complete}, \ref{fig:gallery_8192_complete}, \ref{fig:gallery_flux2}, and~\ref{fig:ablation_grid} show \sca{} without the schedule. Figure~\ref{fig:gallery_flux2} uses FLUX.2-dev with guidance 4.0 and a FLUX.2-dev reach table. Figure~\ref{fig:gallery_krea_complete} uses the FLUX.1-Krea-dev transformer with FLUX.1-dev text encoders and VAE and a reach table fitted on FLUX.1-Krea-dev. Its DyPE and SEGA images come from the recorded Krea campaign; seven SEGA outputs were regenerated from an archived runtime because their original source snapshots could not be recovered, and the inherited Krea baselines span several runtime revisions. In Figure~\ref{fig:gallery_baselines}, UltraImage runs its two-stage defaults (30+30 steps, guidance 3.5 then 7), so that comparison is not equal-cost.\ifshowcase{} Figure~\ref{fig:showcase_models} shows \sca{} on FLUX.2-dev and Qwen-Image.\fi
 
-% Sample pages, top-aligned (\topfloatpages), in four groups: progressive SCA; showcases; seeded draws
+% Sample pages, top-aligned (\topfloatpages): the six-method opener shares the page of the text above;
+% then progressive SCA; showcases; seeded draws
 % (gallery_baselines to gallery_flux2, a contiguous range the paragraphs above rely on); the ablation grid.
-\snippetat{p}{gallery_prog16}
-\snippetat{p}{gallery_prog}
-\begin{figure}[p]
+\begin{figure}[!htbp]
   \centering
   \apxgraphic[width=\linewidth,trim=0 0 0 1.12in,clip]{teaser}
   \caption{\textbf{Six methods on one $4096^2$ prompt.} Single-pass \sca{}; each column shows the image and a 1:1 crop. Full attention gives a flat field, DyPE and SEGA a lattice, and the other three keep the church and the flock. Aesthetic-4K evaluation prompt at seed~0; Figure~\ref{fig:gallery_4096} shows more prompts.}
   \label{fig:teaser}
 \end{figure}
+\snippetat{p}{gallery_prog16}
+\snippetat{p}{gallery_prog}
 \snippetat{p}{hero}
 \ifshowcase\snippetat{p}{showcase_models}\fi
 \snippetat{p}{gallery_baselines}

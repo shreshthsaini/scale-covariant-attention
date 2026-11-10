@@ -20,7 +20,8 @@ means), the v5.1 convention; ImageReward has no natural zero, so its percent is 
 
 Encoding. Colour is the direction of an interval that excludes zero (SCA green: SCA better; LOSS orange: SCA
 worse) and grey when it includes zero; a filled marker survives Holm, a hollow coloured marker is significant only
-before adjustment. Circles: progressive SCA; diamonds: single-pass SCA. Zero line, light vertical gridlines, the
+before adjustment. Stars: progressive SCA; circles: single-pass SCA (the marks of Figure 7 and the appendix
+plots). Zero line, light vertical gridlines, the
 direction of "better" on the axis.
 
 Layouts (two candidates, both rendered and scored; WINNER goes to v6/gains.pdf, the other to v6/candidates/):
@@ -57,7 +58,7 @@ import scafig as sf  # noqa: E402
 import v6_plotkit as pk  # noqa: E402
 
 KEYS = ("prog_area", "sca_area", "prog_hrdit")
-WINNER = "B"
+WINNER = "A"
 STEM = "gains"
 # display names, in gen_holm's reading order (preference metrics, then image quality)
 LABEL = {"ir": "ImageReward", "aesthetic": "Aesthetic", "clip": "CLIP score", "pickscore": "PickScore",
@@ -65,7 +66,7 @@ LABEL = {"ir": "ImageReward", "aesthetic": "Aesthetic", "clip": "CLIP score", "p
          "clipiqa": "CLIP-IQA", "arniqa": "ARNIQA"}
 PREFERENCE = ("ir", "aesthetic", "clip", "pickscore", "hpsv2", "hpsv21")
 GROUP_GAP = 0.55  # extra row space between the preference and the image-quality metrics
-MARKER = {"prog": ("o", 3.9), "sca": ("D", 3.3)}
+MARKER = {"prog": ("*", 6.6), "sca": ("o", 3.9)}  # the paper-wide marks: star progressive, circle single pass
 # headline.tex macros that print these pairs: (pair, metric, macro stem, scale, decimals, interval printed)
 PRINTED = [("prog_area", "ir", "hlProgAreaIr", 1, 2, True), ("prog_area", "pickscore", "hlProgAreaPick", 1, 2, True),
            ("prog_area", "hpsv21", "hlProgAreaHps", 100, 2, True),
@@ -207,8 +208,8 @@ def tick_fmt(norm):
 
 def xlabel_text(norm):
     if norm == "dz":
-        return f"standardized difference, better {pk.ARROW}"
-    return f"difference, % of the reference's mean, better {pk.ARROW}"
+        return f"Standardized difference, better {pk.ARROW}"
+    return f"Difference, % of the reference's mean, better {pk.ARROW}"
 
 
 def build(D, layout, norm):
@@ -218,15 +219,15 @@ def build(D, layout, norm):
         W = pk.WRAP
         panels = [(("prog_area", "prog", -0.19), ("sca_area", "sca", 0.19)), (("prog_hrdit", "prog", 0.0),)]
         tags = [("a", "vs AReA"), ("b", "vs HRDiT")]
-        pitch, left, gap, right = 12.0, 50.0, 9.0, 3.0      # points
-        top, bottom = 34.0, 27.0
+        pitch, left, gap, right = 11.5, 50.0, 9.0, 3.0      # points
+        top, bottom = 27.0, 26.0
     else:
         W = pk.TEXT
         panels = [(("prog_area", "prog", 0.0),), (("sca_area", "sca", 0.0),), (("prog_hrdit", "prog", 0.0),)]
-        tags = [("a", f"Progressive SCA {pk.MINUS} AReA"), ("b", f"Single-pass SCA {pk.MINUS} AReA"),
-                ("c", f"Progressive SCA {pk.MINUS} HRDiT")]
-        pitch, left, gap, right = 9.6, 50.0, 14.0, 4.0
-        top, bottom = 15.0, 27.0
+        tags = [("a", f"progressive {pk.MINUS} AReA"), ("b", f"single pass {pk.MINUS} AReA"),
+                ("c", f"progressive {pk.MINUS} HRDiT")]
+        pitch, left, gap, right = 8.8, 50.0, 14.0, 4.0
+        top, bottom = 14.0, 26.0
     rows_h = (ymax + 1.0) * pitch
     H = (top + rows_h + bottom) / 72.0
     ranges = []

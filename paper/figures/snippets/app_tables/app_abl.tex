@@ -1,0 +1,63 @@
+% Generated (app_tables/app_abl.tex) by paper/figures/src/gen_main_tables.py from results/; do not edit by hand.
+\ifdefined\scaFitTab\else\input{figures/snippets/main_tables/tabstyle.tex}\fi
+\begin{table}[!htbp]
+\caption{\textbf{Every single-pass variant is significantly worse than per-head weights on five to ten per-image metrics.} Expands the single-pass rows of Table~\ref{tab:ablation}. FLUX.1-dev at $4096^2$, the fixed \nabl-prompt ablation subset, \sca{} without the schedule throughout. The shaded row gives absolute values; every other cell is the variant minus that reference, with its 95\% paired interval below it in grey (2000 prompt draws). $^{\times}$: $\times100$. \up{Blue} / \dn{orange}: the interval excludes zero in favour of / against the variant. (c) Patch FID is set-level and has no paired interval at 46 prompts; output error is the relative error of each weight rule at emulated ratio 4 (Section~\ref{sec:ablations}); mean pooling has none because reach emulation scores block-centre keys only, and the no-opening variant keeps the per-head table. Table~\ref{tab:holm} gives the Holm-adjusted counts. Key result: shared and per-layer weights, which raise the output error, lose nine and five per-image metrics.}
+\label{tab:app_abl}
+\centering\scriptsize
+\textit{(a) Preference}\par\smallskip
+\scaFitTab{l*{6}{r}}{7}{%
+  \toprule
+  Variant & IR & Aesthetic & CLIP & PickScore & HPSv2$^{\times}$ & HPSv2.1$^{\times}$ \\
+  \midrule
+  \scaRowOurs per-head $\pi_h$ & 1.124 & 6.45 & 29.41 & 22.96 & 29.71 & 29.98 \\[1pt]
+  shared $\pi(\sigma)$ & \dn{${-}0.090$} & \dn{${-}0.09$} & ${-}0.38$ & \dn{${-}0.38$} & \dn{${-}0.96$} & \dn{${-}1.83$} \\
+   & {\color{scaCtx}$[{-}0.173, {-}0.012]$} & {\color{scaCtx}$[{-}0.18, {-}0.02]$} & {\color{scaCtx}$[{-}0.78, 0.08]$} & {\color{scaCtx}$[{-}0.51, {-}0.26]$} & {\color{scaCtx}$[{-}1.19, {-}0.73]$} & {\color{scaCtx}$[{-}2.24, {-}1.43]$} \\[1pt]
+  per-layer $\pi_\ell(\sigma)$ & ${-}0.054$ & $+0.01$ & ${-}0.13$ & \dn{${-}0.16$} & \dn{${-}0.50$} & \dn{${-}0.70$} \\
+   & {\color{scaCtx}$[{-}0.159, 0.030]$} & {\color{scaCtx}$[{-}0.06, 0.07]$} & {\color{scaCtx}$[{-}0.54, 0.28]$} & {\color{scaCtx}$[{-}0.28, {-}0.05]$} & {\color{scaCtx}$[{-}0.63, {-}0.37]$} & {\color{scaCtx}$[{-}0.98, {-}0.41]$} \\[1pt]
+  local only & \dn{${-}0.357$} & \dn{${-}0.21$} & \dn{${-}1.93$} & \dn{${-}1.20$} & \dn{${-}1.78$} & \dn{${-}2.86$} \\
+   & {\color{scaCtx}$[{-}0.524, {-}0.207]$} & {\color{scaCtx}$[{-}0.35, {-}0.07]$} & {\color{scaCtx}$[{-}2.68, {-}1.20]$} & {\color{scaCtx}$[{-}1.44, {-}0.99]$} & {\color{scaCtx}$[{-}2.07, {-}1.50]$} & {\color{scaCtx}$[{-}3.35, {-}2.36]$} \\[1pt]
+  global only & \dn{${-}0.395$} & \dn{${-}0.76$} & \dn{${-}3.48$} & \dn{${-}1.44$} & \dn{${-}3.32$} & \dn{${-}5.66$} \\
+   & {\color{scaCtx}$[{-}0.507, {-}0.295]$} & {\color{scaCtx}$[{-}0.87, {-}0.64]$} & {\color{scaCtx}$[{-}4.43, {-}2.59]$} & {\color{scaCtx}$[{-}1.66, {-}1.22]$} & {\color{scaCtx}$[{-}3.72, {-}2.94]$} & {\color{scaCtx}$[{-}6.35, {-}4.98]$} \\[1pt]
+  mean pooling & \dn{${-}1.518$} & \dn{${-}0.61$} & \dn{${-}3.59$} & \dn{${-}2.60$} & \dn{${-}4.04$} & \dn{${-}9.75$} \\
+   & {\color{scaCtx}$[{-}1.847, {-}1.193]$} & {\color{scaCtx}$[{-}0.77, {-}0.44]$} & {\color{scaCtx}$[{-}4.76, {-}2.49]$} & {\color{scaCtx}$[{-}3.00, {-}2.17]$} & {\color{scaCtx}$[{-}4.66, {-}3.43]$} & {\color{scaCtx}$[{-}11.30, {-}8.17]$} \\[1pt]
+  no opening & \dn{${-}1.328$} & ${-}0.08$ & \dn{${-}1.65$} & \dn{${-}2.18$} & \dn{${-}1.89$} & \dn{${-}4.07$} \\
+   & {\color{scaCtx}$[{-}1.595, {-}1.064]$} & {\color{scaCtx}$[{-}0.17, 0.01]$} & {\color{scaCtx}$[{-}2.58, {-}0.84]$} & {\color{scaCtx}$[{-}2.51, {-}1.85]$} & {\color{scaCtx}$[{-}2.34, {-}1.45]$} & {\color{scaCtx}$[{-}5.11, {-}3.04]$} \\[1pt]
+  \bottomrule
+}
+\par\medskip
+\textit{(b) Image quality}\par\smallskip
+\scaFitTab{l*{4}{r}}{5}{%
+  \toprule
+  Variant & MUSIQ & MUSIQ$_\text{c}$ & CLIP-IQA$^{\times}$ & ARNIQA$^{\times}$ \\
+  \midrule
+  \scaRowOurs per-head $\pi_h$ & 46.1 & 62.5 & 71.3 & 70.5 \\[1pt]
+  shared $\pi(\sigma)$ & \dn{${-}4.9$} & \dn{${-}10.4$} & \dn{${-}7.7$} & \dn{${-}6.5$} \\
+   & {\color{scaCtx}$[{-}7.9, {-}1.9]$} & {\color{scaCtx}$[{-}12.8, {-}8.3]$} & {\color{scaCtx}$[{-}9.4, {-}6.0]$} & {\color{scaCtx}$[{-}8.5, {-}4.8]$} \\[1pt]
+  per-layer $\pi_\ell(\sigma)$ & $+0.7$ & \dn{${-}2.4$} & ${-}0.9$ & \dn{${-}1.5$} \\
+   & {\color{scaCtx}$[{-}1.6, 3.0]$} & {\color{scaCtx}$[{-}3.6, {-}1.1]$} & {\color{scaCtx}$[{-}2.0, 0.1]$} & {\color{scaCtx}$[{-}2.3, {-}0.9]$} \\[1pt]
+  local only & \dn{${-}3.5$} & ${-}0.3$ & \dn{${-}4.6$} & ${-}1.0$ \\
+   & {\color{scaCtx}$[{-}6.5, {-}0.7]$} & {\color{scaCtx}$[{-}2.5, 1.7]$} & {\color{scaCtx}$[{-}6.3, {-}3.0]$} & {\color{scaCtx}$[{-}2.0, 0.0]$} \\[1pt]
+  global only & \dn{${-}3.5$} & \dn{${-}11.7$} & \dn{${-}27.0$} & \dn{${-}45.1$} \\
+   & {\color{scaCtx}$[{-}6.7, {-}0.2]$} & {\color{scaCtx}$[{-}13.6, {-}9.8]$} & {\color{scaCtx}$[{-}30.2, {-}23.8]$} & {\color{scaCtx}$[{-}47.6, {-}42.5]$} \\[1pt]
+  mean pooling & ${-}1.8$ & \dn{${-}4.2$} & \dn{${-}10.1$} & \dn{${-}4.8$} \\
+   & {\color{scaCtx}$[{-}5.3, 1.9]$} & {\color{scaCtx}$[{-}8.4, {-}0.5]$} & {\color{scaCtx}$[{-}13.0, {-}7.1]$} & {\color{scaCtx}$[{-}6.7, {-}2.6]$} \\[1pt]
+  no opening & \dn{${-}5.6$} & $+2.5$ & \up{$+2.9$} & \up{$+4.3$} \\
+   & {\color{scaCtx}$[{-}9.0, {-}2.1]$} & {\color{scaCtx}$[{-}0.4, 5.5]$} & {\color{scaCtx}$[1.0, 4.9]$} & {\color{scaCtx}$[2.7, 6.1]$} \\[1pt]
+  \bottomrule
+}
+\par\medskip
+\textit{(c) Patch FID and output error, absolute values}\par\smallskip
+\scaFitTab{lrr}{3}{%
+  \toprule
+  Variant & FID$_\text{p}\downarrow$ & Output error$\downarrow$ \\
+  \midrule
+  \scaRowOurs per-head $\pi_h$ & 168.0 & 0.200 \\
+  shared $\pi(\sigma)$ & 166.7 & 0.230 \\
+  per-layer $\pi_\ell(\sigma)$ & 167.7 & 0.223 \\
+  local only & 192.2 & 0.261 \\
+  global only & 237.0 & 0.627 \\
+  mean pooling & 184.6 & -- \\
+  no opening & 202.6 & 0.200 \\
+  \bottomrule
+}
+\end{table}
