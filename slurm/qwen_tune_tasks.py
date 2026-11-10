@@ -24,6 +24,7 @@ Configurations (labels are the sidecar methods and output folders):
   qt_prog      progressive: 1328^2 stock attention (30 steps), 2656^2 SCA (last 20 steps, from sigma 0.81), 5312^2
                SCA (last 13, from sigma 0.62); HRDiT's guidance, true CFG 4 in every stage, bridge 1024 tokens
   qt_prog_sfx  qt_prog with AReA's conditioning
+  qt_prog_late qt_prog with HRDiT's FLUX step counts (17 at 2656^2 from sigma 0.74, 10 at 5312^2 from sigma 0.51)
 Usage: slurm/qwen_tune_tasks.py GROUP [GROUP ...] [--dry]
 """
 
@@ -55,7 +56,10 @@ SP = {"qt_mu": SCA40.replace("--mu-mode native ", "--mu-mode resolution "),
 assert all(v != SCA40 for v in SP.values())
 PROG_BASE = ("--stages 1328x1328,2656x2656,5312x5312 --base-steps 30 --highres-steps 20,13 --true-cfg 4.0 "
              f"--pi-table {st.QWEN_TABLE} --bridge-tokens 1024")
-PROG = {"qt_prog": PROG_BASE, "qt_prog_sfx": f"{PROG_BASE} {AREA_COND}"}
+PROG = {"qt_prog": PROG_BASE, "qt_prog_sfx": f"{PROG_BASE} {AREA_COND}",
+        # HRDiT's FLUX step counts (17 and 10 of 30) instead of its noise levels: stages from sigma 0.74 and 0.51
+        "qt_prog_late": PROG_BASE.replace("--highres-steps 20,13 ", "--highres-steps 17,10 ")}
+assert PROG["qt_prog_late"] != PROG_BASE
 
 
 def tune_prompts(dry):
@@ -132,17 +136,85 @@ def prog5312(dry, labels=None):
                     f"--end {b} --seed 0 --out {OUT_TUNE}/{label}/5312x5312", dry, need=60)
 
 
+def full5312(dry):
+    """Full attention at 5312^2 for the TEST prompts that lack it (the review page's grids): exactly the queued
+    00s9_qfull5312 tasks' tree, flags, prompt file and output folder, one prompt per task, so those skip them later."""
+    rows = [json.loads(x)["id"] for x in open(st.PROMPTS) if x.strip()]
+    have = {p.name.split("_seed")[0].rsplit("_", 1)[0] for p in Path(f"{st.OUT}/qwen_full/5312x5312").glob("*.png")}
+    for pid in [json.loads(x)["id"] for x in open(TEST) if x.strip()]:
+        if pid in have:
+            continue
+        k = rows.index(pid)
+        aq.task(f"000r_h_qfull5312_{k:02d}.sh", 40, f"TEST grids: full attention at 5312^2, {pid} (00s9_qfull5312 flags)",
+                SCA_CODE, f"{PY} scripts/sample_qwen.py --method full --steps 50 --true-cfg 4.0 --mu-mode native "
+                f"--label qwen_full --res 5312x5312 --prompts {st.PROMPTS} --out {st.OUT}/qwen_full/5312x5312 "
+                f"--start {k} --end {k + 1}", dry, need=60)
+
+
+OUT_TEST = f"{S}/out/qwen_tuned"
+EVAL = f"{S}/eval"
+
+
+def eval_tune(dry, res, labels, code, tag=""):
+    """Screen evaluation at one size: every label that has a folder there, against AReA (qt_area)."""
+    folders = [lab for lab in ["qt_area"] + list(labels) if lab == "qt_area" or Path(f"{OUT_TUNE}/{lab}/{res}").is_dir()]
+    meth = " ".join(f"--method {lab}={OUT_TUNE}/{lab}/{res}" for lab in folders)
+    aq.task(f"000r_e_eval_tune{res[:4]}{tag}.sh", 45, f"TUNE screen evaluation at {res} (scripts/qwen_tune_eval.py)",
+            code, f"{PY} scripts/qwen_tune_eval.py --prompts {TUNE} --res {res} --reference qt_area {meth} "
+            f"--eval {EVAL}/qwen_tune{res[:4]} --results {st.P}/results/qwen_tune/{res[:4]}", dry, need=40,
+            exclusive=False)
+
+
+def test5312(dry, labels, code):
+    """The chosen configuration(s) on the 15 TEST prompts at 5312^2, three prompts per task."""
+    for label in labels:
+        if label in SP:
+            cmd = (f"{PY} scripts/sample_qwen.py {SP[label]} --pi-table {st.QWEN_TABLE} {BRIDGE['5312x5312']} "
+                   f"--label {label} --res 5312x5312")
+        elif label in PROG:
+            cmd = f"{PY} scripts/sample_progressive_qwen.py {PROG[label]} --label {label} --seed 0"
+        else:
+            raise SystemExit(f"unknown configuration {label}")
+        for a, b in chunks(15, 3):
+            aq.task(f"000r_f_{label[3:]}5312_{a:02d}_{b:02d}.sh", 45, f"TEST: {label} at 5312^2, prompts {a + 1}-{b}",
+                    code, f"{cmd} --prompts {TEST} --start {a} --end {b} --out {OUT_TEST}/{label}/5312x5312", dry,
+                    need=60)
+
+
+def eval_test(dry, labels, code):
+    """TEST evaluation at 5312^2: the chosen configuration(s), AReA, untuned SCA (40 and 50 steps), full attention."""
+    meth = [f"--method qwen_area={st.OUT}/qwen_area/5312x5312", f"--method qwen_sca40={st.OUT}/qwen_sca40/5312x5312",
+            f"--method qwen_sca={st.OUT}/qwen_sca/5312x5312", f"--method qwen_full={st.OUT}/qwen_full/5312x5312"]
+    meth += [f"--method {lab}={OUT_TEST}/{lab}/5312x5312" for lab in labels]
+    aq.task("000r_g_eval_test5312.sh", 60, "TEST evaluation at 5312^2 (scripts/qwen_tune_eval.py)", code,
+            f"{PY} scripts/qwen_tune_eval.py --prompts {TEST} --res 5312x5312 --reference qwen_area {' '.join(meth)} "
+            f"--eval {EVAL}/qwen_5312_tuned --results {st.P}/results/qwen_5312_tuned", dry, need=40, exclusive=False)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("groups", nargs="+", choices=("prompts", "area4096", "base4096", "area5312", "sp4096", "prog5312"))
-    ap.add_argument("--labels", nargs="*", help="Only these configuration labels (sp4096, prog5312)")
+    ap.add_argument("groups", nargs="+", choices=("prompts", "area4096", "base4096", "area5312", "sp4096", "prog5312",
+                                                  "full5312", "eval4096", "eval5312", "test", "evaltest"))
+    ap.add_argument("--labels", nargs="*", help="Configuration labels (sp4096, prog5312, eval*, test)")
+    ap.add_argument("--code", help="Frozen tree for eval*, test (default NEW_CODE)")
+    ap.add_argument("--tag", default="", help="Suffix of the evaluation task name (a re-run after more images)")
     ap.add_argument("--dry", action="store_true")
     a = ap.parse_args()
+    code = a.code or NEW_CODE
     for g in a.groups:
         if g in ("sp4096", "prog5312"):
             {"sp4096": sp4096, "prog5312": prog5312}[g](a.dry, a.labels)
+        elif g == "eval4096":
+            eval_tune(a.dry, "4096x4096", a.labels or ["qt_sca40", *SP], code, a.tag)
+        elif g == "eval5312":
+            eval_tune(a.dry, "5312x5312", a.labels or list(PROG), code, a.tag)
+        elif g == "test":
+            test5312(a.dry, a.labels, code)
+        elif g == "evaltest":
+            eval_test(a.dry, a.labels, code)
         else:
-            {"prompts": tune_prompts, "area4096": area4096, "base4096": base4096, "area5312": area5312}[g](a.dry)
+            {"prompts": tune_prompts, "area4096": area4096, "base4096": base4096, "area5312": area5312,
+             "full5312": full5312}[g](a.dry)
 
 
 if __name__ == "__main__":
