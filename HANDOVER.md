@@ -2054,3 +2054,9 @@ contributions, captions of at most three lines, a leaner Table 1, and redesigned
   (pixel mosaic, detector 0). References: AReA 4, 1; sca_v2 19, 1; sca_v2 seed 1 18. Only ra_t50 (no native window at
   any step) reaches the bar of 8; its labelers also note doubled outlines and fused second copies (the 2 x 2 lattice).
   Whether the kill criterion triggers depends on ra_t50's core metrics on the 46 (evaluation queued).
+- 01:20 staged, not released (taskq/hold_ra/next_ra_p19, next_ra_p22, README_next.txt): ra_p19 = ra_t50 with native
+  windows from step 19 (sigma 0.599, progressive SCA's 4K start), ra_p22 from step 22. Both test whether a short native
+  phase at the end restores detail without the copies (the single-pass analogue of progressive SCA). Release only if the
+  lead wants the iteration (kill criterion).
+- ra_fixed's 46 chunk 000a_b002 ran at 158 s per image on c619-002 next to a foreign 19 GB process (PID 1691541, not
+  ours, left alone); those 8 sidecar times are not clean.
