@@ -2064,3 +2064,6 @@ contributions, captions of at most three lines, a leaner Table 1, and redesigned
   HPSv2.1 -0.019, PickScore -0.34 (also on the 25 clean prompts); aesthetic, ARNIQA, CLIP-IQA and HPSv2 fall below
   AReA; MUSIQ crop -5.2 [-6.9, -3.7] (level with progressive SCA, +0.8 n.s.; scripts/ra_sharpness.py); 4 detector
   flags on the 26 person/animal prompts (sca_v2 4); 76.2 s (x0.99).
+- 01:25 B identity check: the latency sweep's sca_v2_prog images from tree 4fb0b4d are bit-identical (PSNR 168 dB,
+  zero error) to out/dupfix_prog (tree 7bd64c0) on the three timed prompts, so (i) and (ii)-(iv) differ only in the
+  table. B generation running since 01:20 (000b_g*), its evaluation self-releases.
