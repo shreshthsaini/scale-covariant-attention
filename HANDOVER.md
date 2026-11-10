@@ -1892,3 +1892,14 @@ configuration with AReA on the 15 TEST prompts at 5312^2; review page web/review
   qt_prog, qt_prog_sfx (30 native steps, 20 at 2656^2 from sigma 0.81, 13 at 5312^2 from sigma 0.62). Full attention
   for the 12 TEST prompts without it at 5312^2 (000r_h_qfull5312_*, exactly the 00s9_qfull5312 tree and flags, so
   those skip them), for the review grids.
+- 22:45 status: screen tasks running 3 wide (5 fleet GPUs on Ideogram SEGA until about 23:15). Added qt_prog_late
+  (HRDiT's step counts 17 and 10 of 30: stages from sigma 0.74 and 0.51) and qt_prog_late_sfx, so the screen has 8
+  configurations: single pass 2 x 2 (time shift x conditioning) at 4096^2, progressive 2 x 2 (stage starts x
+  conditioning) at 5312^2. First progressive images 298-344 s (AReA 690 s at 5312^2), peak 52.8 GB.
+- Evaluation: 000r_e_eval_tune{4096,5312}.sh on code/362d4ab (qwen_tune_eval.py --expect 12: claimed after the last
+  screen task starts, scores images as they land) write results/qwen_tune/{4096,5312} (screen.csv ranks by mean d_z).
+- Next (resume recipe): read results/qwen_tune/*/screen.csv; pick by the rule; then
+  `python3 -I slurm/qwen_tune_tasks.py test evaltest --labels <chosen> [<second>] --code /scratch/09032/saini_2/sca/code/362d4ab`
+  (TEST 5312^2 into out/qwen_tuned/<label>/5312x5312; 000r_g eval writes results/qwen_5312_tuned), then
+  `web/build/build_review_qwen.py --tuned <chosen> --summary "..."` (page web/review_qwen/index.html; check with the
+  playwright script in the notes), commit results/qwen_tune, results/qwen_5312_tuned, web/review_qwen.
