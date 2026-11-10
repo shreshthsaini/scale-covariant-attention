@@ -22,8 +22,9 @@ FIGS = HERE.parent
 V6 = FIGS / "v6"
 TECTONIC = shutil.which("tectonic") or str(Path.home() / ".local" / "bin" / "tectonic")
 DEFAULT_BUILD = Path("/scratch/09032/saini_2/sca/paper_builds/v6_methodfigs_tikz")
-SOURCES = ("sca_colors.tex", "v6_method_common.tex", "v6_method_a.tex", "v6_method_b.tex", "v6_method_zoom.tex")
-KEEP = {"method": "v6_method_b", "method_zoom": "v6_method_zoom"}
+SOURCES = ("sca_colors.tex", "v6_method_common.tex", "v6_method_a.tex", "v6_method_b.tex", "v6_method_c.tex",
+           "v6_method_zoom.tex")
+KEEP = {"method": "v6_method_c", "method_zoom": "v6_method_zoom"}
 
 
 def setup(build: Path) -> Path:
@@ -55,7 +56,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--build", type=Path, default=DEFAULT_BUILD)
     ap.add_argument("--install", action="store_true", help="copy the kept outputs into paper/figures/v6")
-    ap.add_argument("names", nargs="*", default=["v6_method_a", "v6_method_b", "v6_method_zoom"])
+    ap.add_argument("names", nargs="*", default=["v6_method_a", "v6_method_b", "v6_method_c", "v6_method_zoom"])
     a = ap.parse_args()
     src = setup(a.build)
     built = {}

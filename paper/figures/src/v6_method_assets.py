@@ -206,7 +206,7 @@ def main() -> None:
     (OUT / "data.tex").write_text("\n".join(lines) + "\n")
     grad = sf.PI_CMAP(np.linspace(1, 0, 256))[:, None, :3] * np.ones((1, 8, 1))
     save_png(grad, OUT / "picmap.png")
-
+    two_band_assets(z, a, win_tok, win_px, order, cols, tables, head_row, bin_col)
     prov = {
         "script": rel(Path(__file__)),
         "inputs": {rel(p): sha256(p) for p in (IMG1024, IMG4096, ATTN, CALIB)},
@@ -232,6 +232,43 @@ def main() -> None:
     (OUT / "provenance.json").write_text(json.dumps(prov, indent=1) + "\n")
     print(json.dumps({k: prov[k] for k in ("window_1024_r4", "window_4096_native", "near_share_in_window_full",
                                            "j_curves", "table")}, indent=1))
+
+
+def soft(img: Image.Image, px: int, keep: float = 0.5, lift: float = 0.16) -> np.ndarray:
+    """Light desaturation that keeps the image recognisable: half colour, half grey, lifted a little towards white."""
+    rgb = np.asarray(img.convert("RGB").resize((px, px), Image.LANCZOS), dtype=np.float64) / 255
+    grey = rgb @ np.array([0.299, 0.587, 0.114])
+    mix = keep * rgb + (1 - keep) * grey[..., None]
+    return (1 - lift) * mix + lift
+
+
+def two_band_assets(z, a, win_tok, win_px, order, cols, tables, head_row, bin_col) -> None:
+    """Assets of candidate C (two bands): the same image in both bands, lightly desaturated, and the weights of
+    Figure 2's heads 4 and 7 at r = 4 in the noise bin of the J curve."""
+    base = soft(Image.open(IMG1024), PX)
+    loc = np.zeros((N1024, N1024))
+    r0, c0, w = (int(v) for v in z["window_r4"][:3])
+    loc[r0:r0 + w, c0:c0 + w] = z["local_r4"][HEAD]
+    d_loc = loc / loc.sum() * N1024 ** 2
+    save_png(veil(heat(base, d_loc, NEAR, win_tok), win_px, 0.45), OUT / "c_near.png")
+    full = z["full"][STEP_INDEX, HEAD].astype(np.float64)
+    d_full = full / full.sum() * N1024 ** 2
+    save_png(heat(heat(base, d_full, NEAR, win_tok), d_full, FAR, ~win_tok), OUT / "c_full.png")
+    save_png(veil(base, None, 0.40), OUT / "c_far.png")
+    tgt = soft(Image.open(IMG4096), 640)
+    Image.fromarray((np.clip(tgt, 0, 1) * 255).round().astype(np.uint8)).save(OUT / "c_img4096.jpg", quality=92,
+                                                                               subsampling=0)
+    pi4 = tables[4][:, bin_col]                      # block 12, r = 4, the J curve's noise bin
+    lines = ["% candidate C: Figure 2's heads at r = 4, noise bin of the J curve (v6_method_assets.py)"]
+    for tag, h in (("Four", FAR_HEAD * 0 + NEAR_HEAD), ("Seven", FAR_HEAD)):
+        v = float(pi4[h])
+        r, g, b, _ = sf.PI_CMAP(v)
+        lines += [r"\def\Pi%s{%.2f}\def\Pi%sC{%.2f}" % (tag, v, tag, 1 - v),
+                  r"\definecolor{chip%s}{HTML}{%02X%02X%02X}" % (tag, round(r * 255), round(g * 255), round(b * 255)),
+                  r"\def\TabRow%s{%d}" % (tag, int(np.where(order == h)[0][0]))]
+    assert abs(float(pi4[NEAR_HEAD]) - 0.928) < 1e-3 and float(pi4[FAR_HEAD]) == 0.0, "heads 4 and 7 contrast"
+    with open(OUT / "data.tex", "a") as fh:
+        fh.write("\n".join(lines) + "\n")
 
 
 if __name__ == "__main__":

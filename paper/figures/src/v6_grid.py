@@ -8,9 +8,9 @@ Two orientations:
 * "cols": methods are columns (names above), examples are rows; each cell is the full image with the crop beneath it,
   both as wide as the column.
 
-Crop rule (one clause in every caption): the window of fixed size with the highest mean edge energy averaged over the
-methods shown for that example (v6_common.best_windows over v6_common.detail_map of each image), at least 1/16 of the
-side from every border. Images of one example must share prompt and initial noise (asserted from the sidecars).
+Crop rule (one clause in every caption): the window of fixed size that maximises the smallest mean edge energy among
+the methods shown for that example (maximin, v6_common.best_windows_maximin over v6_common.detail_map of each image),
+at least 1/16 of the side from every border, so no method's crop is empty. Images of one example must share prompt and initial noise (asserted from the sidecars).
 """
 from __future__ import annotations
 

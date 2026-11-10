@@ -102,6 +102,7 @@
 \apxs{app:metricdefs}{Metrics}
 \apxs{app:intervals}{Intervals and table conventions}
 \apxs{app:timing}{Timing}
+\apxs{app:samples}{Sample figures}
 \apxs{app:related}{How each method changes attention}
 \apxs{app:area}{AReA}
 \apxs{app:additional_protocols}{Other baselines and FLUX.2-dev}
@@ -222,7 +223,7 @@ Table~\ref{tab:variance_split} expands the variance split of Section~\ref{sec:ob
 \begin{figure}[!htbp]
   \centering
   \apxgraphic{heads_view}
-  \caption{\textbf{Measured reach tracks the fitted weight $\pi_h$.} (a)~Local window (amber) and every fourth block-centre key per axis (blue) on a $4096^2$ output. (b)~Full-attention mass density of three heads at $1024^2$ and $\sigma=0.62$ (log scale, clipped at 0.1 and 100 times uniform), with each head's share within 16 tokens. (c)~Their $\pi_h$ with the median and interquartile range of all 1368 heads; dashed: the gate $\sigma_g$; grey band: the global-only opening. (d)~$\pi_h$ against that share, Pearson $\rho=0.77$.}
+  \caption{\textbf{Measured reach tracks the fitted weight $\pi_h$.} (a)~Near window (amber) and every fourth block-centre key per axis of the far view (blue) on a $4096^2$ output. (b)~Full-attention mass density of three heads at $1024^2$ and $\sigma=0.62$ (log scale, clipped at 0.1 and 100 times uniform), with each head's near share, its share of image attention within 16 tokens. (c)~Their $\pi_h$ with the median and interquartile range of all 1368 heads; $\sigma$ falls left to right; dashed: the gate $\sigma_g$; grey band: the far-only opening. (d)~$\pi_h$ against the near share, Pearson $\rho=0.77$.}
   \label{fig:heads}
 \end{figure}
 
@@ -233,19 +234,24 @@ Table~\ref{tab:variance_split} expands the variance split of Section~\ref{sec:ob
 
 The reach table holds one weight per block, head, noise bin, and ratio. Figure~\ref{fig:reach_tables} shows the ratio-4 table that sampling reads and how well a table transfers to another ratio or resolution. Figure~\ref{fig:pi_heads} plots every head's weight against noise level with the split-half agreement, and Figure~\ref{fig:heatmap} shows how widely the heads of one block differ.
 
-\snippetat{!htbp}{reach_tables}
+\begin{figure}[!htbp]
+  \centering
+  \apxgraphic{reach_tables}
+  \caption{\textbf{Heads differ widely, yet a reach table transfers across ratio and resolution.} \IfFileExists{figures/v6/reach_tables.pdf}{(a to c)~$\pih$ of the ratio-4 reach table at $\sigma=0.83$, $0.46$, and $0.10$. (d)~Mean and interquartile range across heads of three tables; shaded: far-only opening.}{(a to c)~$\pih$ of the ratio-4 reach table at $\sigma = 0.10$, $0.46$, and $0.83$ ($\sigma = 1$: pure noise). (d)~Mean and interquartile range across heads; shaded: global-only opening.} (e)~Excess error over each setting's own table: at most 5.4\% transferred, 12 to 24\% per layer.}
+  \label{fig:reach_tables}
+\end{figure}
 
 \begin{figure}[!htbp]
   \centering
   \apxgraphic{pi_heads}
-  \caption{\textbf{Heads use different mixes, and the mix repeats on new prompts.} (a to c)~$\pi_h(\sigma)$ of all 1368 heads at ratio 2, by block range; amber: mean above 0.8, blue: below 0.2, green: median; $\sigma>\sigma_g$ shaded. (d)~Tables fitted on disjoint prompt halves agree (Pearson $\rho=0.989$).}
+  \caption{\textbf{Heads use different mixes, and the mix repeats on new prompts.} (a to c)~$\pi_h(\sigma)$ of all 1368 heads at ratio 2: blocks 1 to 19 (double-stream), 20 to 38, and 39 to 57 (single-stream); amber: mean above 0.8, blue: below 0.2, green: median; $\sigma>\sigma_g$ shaded. (d)~Tables fitted on disjoint prompt halves agree (Pearson $\rho=\ifdefined\hlEmuSplitHalfTwo\hlEmuSplitHalfTwo\else0.989\fi$).}
   \label{fig:pi_heads}
 \end{figure}
 
 \begin{figure}[!htbp]
   \centering
   \apxgraphic[width=0.9\linewidth]{pi_heatmap}
-  \caption{\textbf{Heads in the same block differ widely at every noise level.} $\pih$ of the ratio-2 table at $\sigma = 0.10$ (a), $0.54$ (b), and $0.97$ (c): 57 blocks by 24 heads, 32 prompts, heads sorted per block by (b). The median within-block range is 0.66 to 0.84. Figure~\ref{fig:reach_tables} shows the ratio-4 table that sampling reads.}
+  \caption{\textbf{Heads in the same block differ widely at every noise level.} $\pih$ of the ratio-2 table at \IfFileExists{figures/v6/pi_heatmap.pdf}{$\sigma = 0.97$ (a), $0.54$ (b), and $0.10$ (c)}{$\sigma = 0.10$ (a), $0.54$ (b), and $0.97$ (c)}: 57 blocks by 24 heads, 32 prompts, heads sorted per block by (b). The median within-block range is 0.66 to 0.84. Figure~\ref{fig:reach_tables} shows the ratio-4 table that sampling reads.}
   \label{fig:heatmap}
 \end{figure}
 
@@ -264,7 +270,7 @@ Figure~\ref{fig:relerr} compares the relative output error of every mixing rule 
 \begin{figure}[!htbp]
   \centering
   \apxgraphic{pi_sigma}
-  \caption{\textbf{In output energy, no noise level prefers the far view.} (a)~Fraction of heads per weight $\pi$ and noise bin, with the per-head mean, the best shared $\pi(\sigma)$, and AReA's switch; ratio 2, 32 prompts, $\sigma = 1$ is pure noise. (b)~Relative error per noise bin: the near view (local branch) alone beats the far view (global branch) alone everywhere, and the per-head mix beats both.}
+  \caption{\textbf{In output energy, no noise level prefers the far view.} (a)~Fraction of heads per weight $\pi$ and noise bin, with the per-head mean, the best shared $\pi(\sigma)$, and AReA's switch; ratio 2, 32 prompts; $\sigma$ falls left to right, from pure noise at $\sigma=1$. (b)~Relative error per noise bin: the near view alone beats the far view alone everywhere, and the per-head mix beats both.}
   \label{fig:pisigma}
 \end{figure}
 
@@ -284,7 +290,7 @@ This appendix expands Section~\ref{sec:method}, Figure~\ref{fig:method}, and Alg
 \begin{figure}[!htbp]
   \centering
   \apxgraphic{method_zoom}
-  \caption{\textbf{Both views keep the native geometry, and one weight per head and step mixes them.} The operators of Figure~\ref{fig:method} at component level on a toy grid: $H=W=24$ tokens, $s=4$, $n_0=6$, $t=2$. (a)~The far view keys each block by its centre token (Equation~\ref{eq:glob}). (b)~A query tile's near view: text keys, bridge tokens (dots), and a border-clamped window, with its block mask (Equations~\ref{eq:loc} and~\ref{eq:bridge}). (c)~Head 24 of block 12 at $r=2$ (dashed) and $r=4$ (solid); dots: the weight applied at each post-gate step at $4096^2$ (amber: wide windows), and the mix (Equation~\ref{eq:mix}). (d)~The $r=4$ table, $57\times24$ heads by 14 noise bins.}
+  \caption{\textbf{Both views keep the native geometry, and one weight per head and step mixes them.} The operators of Figure~\ref{fig:method} at component level on a toy grid: $H=W=24$ tokens, $s=4$, $n_0=6$, $t=2$. (a)~The far view keys each block by its centre token (Equation~\ref{eq:glob}). (b)~A query tile's near view: text keys, bridge tokens (dots), and a border-clamped window, with its block mask (Equations~\ref{eq:loc} and~\ref{eq:bridge}). (c)~Head 24 of block 12 at $r=2$ (dashed) and $r=4$ (solid); dots: the weight applied at each post-gate step at $4096^2$ (amber: wide windows; $\sigma$ falls left to right), and the mix (Equation~\ref{eq:mix}). (d)~The $r=4$ table, $57\times24$ heads by 14 noise bins.}
   \label{fig:method_zoom}
 \end{figure}
 
@@ -525,7 +531,7 @@ Table~\ref{tab:handset} separates the hand-set settings of single-pass \sca{} fr
 \section{Evaluation protocol and baselines}
 \label{app:metrics}
 
-This appendix expands the setup of Section~\ref{sec:experiments}. Appendix~\ref{app:protocol} gives the protocol and the prompts, \ref{app:metricdefs} defines every metric, \ref{app:intervals} the intervals and table conventions, and \ref{app:timing} the timing protocol. Appendix~\ref{app:related} compares how each method changes attention and expands Section~\ref{sec:related}. Appendices~\ref{app:area} and~\ref{app:additional_protocols} say how each baseline was run.
+This appendix expands the setup of Section~\ref{sec:experiments}. Appendix~\ref{app:protocol} gives the protocol and the prompts, \ref{app:metricdefs} defines every metric, \ref{app:intervals} the intervals and table conventions, \ref{app:timing} the timing protocol, and \ref{app:samples} the rules behind every sample figure. Appendix~\ref{app:related} compares how each method changes attention and expands Section~\ref{sec:related}. Appendices~\ref{app:area} and~\ref{app:additional_protocols} say how each baseline was run.
 
 \subsection{Protocol and prompts}
 \label{app:protocol}
@@ -578,6 +584,15 @@ This appendix expands the setup of Section~\ref{sec:experiments}. Appendix~\ref{
 \label{app:timing}
 
 Clean latency follows one protocol on idle GH200s. At each size each method generates one excluded warm-up image and then three timed images in the same process at batch 1, and we report the median. Single-pass methods take 28 steps. Three runs use this protocol. Run T1 times full attention, AReA, and \sca{} without the schedule at every size. Run T2 times single-pass \sca{} and \sca{} without the schedule back to back on one GPU. Its medians for \sca{} without the schedule are within 0.8\% of T1's at every size (71.1\,s at $4096^2$ in both). Run T3 times progressive \sca{}, HRDiT, and AReA back to back on one GH200 at $4096^2$, and Tables~\ref{tab:main} and~\ref{tab:all_metrics} take HRDiT's and progressive \sca{}'s times from it. Reported time covers text encoding, every denoising step, and VAE decoding, and excludes model loading. For progressive \sca{} it is CUDA-synchronized and also covers the transitions between stages. Campaign means are the mean seconds per image of the evaluation runs on shared nodes. They are marked as such and never ranked against clean times. Appendix~\ref{app:latency} reports every timed image.
+
+\subsection{Sample figures}
+\label{app:samples}
+
+This subsection states how the prompts and crop windows of every sample figure were chosen. The full-page samples are in Appendix~\ref{app:galleries}. The others sit beside their results: Figures~\ref{fig:gallery_baselines} and~\ref{fig:ablation_grid} in Appendix~\ref{app:tables}, Figures~\ref{fig:progressive} and~\ref{fig:qual_main} in Appendix~\ref{app:prog}, Figures~\ref{fig:gallery_flux2} to~\ref{fig:gallery_8192_complete} in Appendix~\ref{app:generality}, and Figure~\ref{fig:failures} in Appendix~\ref{app:limits}.
+
+\paragraph{Selection.} \ifvsnip{all_methods}{Each caption states how its prompts were chosen: a fixed seed over a stated pool of evaluation prompts, or, in Figure~\ref{fig:failures}, a metric rule. The pools exclude the development prompts. Figures that show single-pass \sca{}, \sca{} without the schedule, or the ablation variants draw only from the prompts that name no person, by a keyword rule on the prompt text. No prompt repeats across the $4096^2$ FLUX.1-dev figures. The rule, the seed, the sources with their hashes, and the crop windows of every figure are archived beside it (Table~\ref{tab:sources}).}{The prompts of Figures~\ref{fig:gallery_baselines}, \ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048}, \ref{fig:gallery_flux2}, \ref{fig:gallery_6144_complete}, \ref{fig:gallery_krea_complete}, and~\ref{fig:gallery_8192_complete} come from a seeded draw over pools fixed without looking at images; the pools exclude the development prompts. Figures~\ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048} also exclude 16 prompts that other figures showed when the pool was fixed. The prompts of Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog16b} were set later, so a prompt can appear in more than one figure. The selection seed, source hashes, and crop coordinates of every gallery are archived with it (Table~\ref{tab:sources}).}
+
+\paragraph{Defaults and crops.} Unless a caption says otherwise, images are FLUX.1-dev outputs for Aesthetic-4K evaluation prompts at seed 0. Single-pass methods take 28 steps at guidance 4.5. HRDiT and progressive \sca{} take HRDiT's 30, 17, and 10 steps at $1024^2$, $2048^2$, and $4096^2$, with guidance 3.5, 4.5, and 6.0. \ifvsnip{all_methods}{Every crop shows native pixels of its outlined window. The window is placed automatically: in a figure that compares methods, at the window whose smallest edge energy over the compared images is largest, so no method's detail is favoured; in Figure~\ref{fig:hero}, at the highest edge energy of each image.}{In Figures~\ref{fig:gallery_prog}, \ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048}, \ref{fig:gallery_baselines}, \ref{fig:gallery_flux2}, \ref{fig:gallery_6144_complete}, \ref{fig:gallery_krea_complete}, \ref{fig:gallery_8192_complete}, \ref{fig:progressive}, and~\ref{fig:qual_main}, every crop shows native pixels of the outlined window. The window is placed automatically at the highest edge energy averaged over the methods shown.}
 
 \subsection{How each method changes attention}
 \label{app:related}
@@ -651,7 +666,7 @@ This appendix expands the results of Section~\ref{sec:experiments} to every metr
 Table~\ref{tab:all_metrics} expands Table~\ref{tab:main} to all 14 metrics and adds the two non-square sizes and $6144^2$. Each row is marked against AReA; Appendix~\ref{app:pairs} gives the intervals.
 
 \begin{table}[!htbp]
-  \caption{\textbf{Both \sca{} configurations beat AReA on all ten per-image metrics at $4096^2$; the non-square sizes are mixed.} Table~\ref{tab:all_metrics} expands Table~\ref{tab:main}. FLUX.1-dev, \nmain{} prompts (100 at $6144^2$, where the row is \sca{} without the schedule); HPS, CLIP-IQA, and ARNIQA $\times100$; lower is better for latency and FID. Bold: best per size. \up{Blue} / \dn{orange}: significantly better / worse than AReA. Full attention's FID and FID$_\text{p}$ are unmarked; DyPE, SEGA, UltraImage, and HRDiT are paired with single-pass \sca{} in Table~\ref{tab:panel46_deltas} instead. Progressive \sca{} is paired over 2000 prompt draws, and for FID and FID$_\text{p}$ over 1000 draws that also resample reference-image clusters. Latency: batch-1 median of three on an idle GH200 (HRDiT and progressive \sca{}: run T3, Appendix~\ref{app:timing}); $^\ddagger$campaign mean on shared nodes; $^\circ$UltraImage's two-stage defaults. Key result: at $4096^2$ progressive \sca{} is the fastest method (49.2\,s) and best on CLIP, both HPS scores, and ARNIQA; single-pass \sca{} is best on patch FID and both MUSIQ scores.\pendAppAllMetrics}
+  \caption{\textbf{Both \sca{} modes beat AReA on all ten per-image metrics at $4096^2$; the non-square sizes are mixed.} Expands Table~\ref{tab:main} to every metric and adds the non-square sizes and $6144^2$. FLUX.1-dev, \nmain{} prompts (100 at $6144^2$, where the row is \sca{} without the schedule); HPS, CLIP-IQA, and ARNIQA $\times100$; AReA runs its released code. \up{Blue} / \dn{orange}: the 95\% paired percentile-bootstrap interval against AReA excludes zero in favour of / against the row. Progressive \sca{} is paired over 2000 prompt draws, and for FID and FID$_\text{p}$ over 1000 draws that also resample reference-image clusters. Full attention's FID and FID$_\text{p}$ are unmarked; Table~\ref{tab:panel46_deltas} pairs DyPE, SEGA, UltraImage, and HRDiT with single-pass \sca{}. \textbf{Bold} / \underline{underline}: best / second best per size (bold only in the two-row blocks); shaded: ours. Time: batch-1 median of three on an idle GH200 (HRDiT and progressive \sca{}: run T3, Appendix~\ref{app:timing}); $^\ddagger$campaign mean on shared nodes; $^\circ$UltraImage's two-stage defaults. Key result: at $4096^2$ progressive \sca{} is the fastest method (49.2\,s) and best on CLIP, both HPS scores, and ARNIQA; single-pass \sca{} is best on patch FID and both MUSIQ scores.\pendAppAllMetrics}
   \label{tab:all_metrics}
   \apxbody{app_tables/all_metrics}
 \end{table}
@@ -668,7 +683,7 @@ Table~\ref{tab:prog_all} gives progressive \sca{} minus every $4096^2$ baseline,
 \snippetat{!htbp}{app_tables/prog_all}
 
 \begin{table}[!htbp]
-  \caption{\textbf{Single-pass \sca{} beats AReA on all ten per-image metrics, FID, and patch KID at $4096^2$.} \nmain{} prompts; $\Delta$ is the method minus AReA with its 95\% paired interval, coloured as in Table~\ref{tab:all_metrics}. Intervals use 1000 prompt draws for single-pass \sca{} (FID, KID, and their patch versions also resample reference-image clusters) and 2000 for full attention's per-image metrics. Full attention's set-level differences and campaign time have none. $^\ddagger$Campaign mean (clean latency: Table~\ref{tab:latency}). Table~\ref{tab:prog_all} pairs progressive \sca{} with every baseline. Key result: KID, patch FID, and Inception score are unresolved; every other metric favours single-pass \sca{}.\pendAppFourK}
+  \caption{\textbf{Single-pass \sca{} beats AReA on all ten per-image metrics, FID, and patch KID at $4096^2$.} Expands the single-pass row of Table~\ref{tab:main}. FLUX.1-dev, \nmain{} prompts. $\Delta$: the method minus AReA, with its 95\% paired percentile-bootstrap interval in grey. Intervals use 1000 prompt draws for single-pass \sca{} (FID, KID, and their patch versions also resample reference-image clusters) and 2000 for full attention's per-image metrics; full attention's set-level differences and campaign time have none. \up{Blue} / \dn{orange}: significantly better / worse than AReA; for FID, KID, and time lower is better. $^\ddagger$Campaign mean (clean latency: Table~\ref{tab:latency}). Table~\ref{tab:prog_all} pairs progressive \sca{} with every baseline. Key result: KID, patch FID, and Inception score are unresolved; every other metric favours single-pass \sca{}.\pendAppFourK}
   \label{tab:app_4k}
   \apxbody{app_tables/app_4k}
 \end{table}
@@ -684,10 +699,10 @@ Table~\ref{tab:holm} counts, for each headline pair, the per-image metrics that 
 \subsection{Every baseline against single-pass \texorpdfstring{\sca{}}{SCA}}
 \label{app:phase2}
 
-Table~\ref{tab:panel46_deltas} pairs every baseline of Tables~\ref{tab:main} and~\ref{tab:panel46} with single-pass \sca{} on the same \npanel{} prompts and seeds, and Figure~\ref{fig:baseline_quality} plots four of its metrics. Per-image intervals use 2000 prompt draws with seed 0. FID, KID, and their patch versions are paired with \sca{} without the schedule, over 1000 draws that resample generated prompts and reference-image clusters.\ifpanelfull{}{ With \npanel{} generated images, the whole-image distribution metrics are exploratory.} Every shared-sampler baseline trails single-pass \sca{} on all ten per-image metrics. SigMa, with its dev-matched profile (Appendix~\ref{app:additional_protocols}), also takes 192.5\,s per image against 78.4\,s (campaign means). HRDiT and UltraImage lead on several preference metrics; Appendix~\ref{app:budgets} adds the 56-step and guidance-7 runs of \sca{} without the schedule. Figure~\ref{fig:gallery_baselines} shows AReA, DyPE, SEGA, UltraImage, and single-pass \sca{} on three prompts. UltraImage runs its two-stage defaults (30+30 steps, guidance 3.5 then 7), so that comparison is not equal-cost.
+Table~\ref{tab:panel46_deltas} pairs every baseline of Tables~\ref{tab:main} and~\ref{tab:panel46} with single-pass \sca{} on the same \npanel{} prompts and seeds, and Figure~\ref{fig:baseline_quality} plots four of its metrics. Per-image intervals use 2000 prompt draws with seed 0. FID, KID, and their patch versions are paired with \sca{} without the schedule, over 1000 draws that resample generated prompts and reference-image clusters.\ifpanelfull{}{ With \npanel{} generated images, the whole-image distribution metrics are exploratory.} Every shared-sampler baseline trails single-pass \sca{} on all ten per-image metrics, and HRDiT and UltraImage lead on several preference metrics. Appendix~\ref{app:budgets} discusses SigMa and adds the 56-step and guidance-7 runs of \sca{} without the schedule. Figure~\ref{fig:gallery_baselines} shows AReA, DyPE, SEGA, UltraImage, and single-pass \sca{} on three prompts. UltraImage runs its two-stage defaults (30+30 steps, guidance 3.5 then 7), so that comparison is not equal-cost.
 
 \begin{table}[!htbp]
-  \caption{\textbf{Every shared-sampler baseline trails single-pass \sca{} on all ten per-image metrics; HRDiT and UltraImage lead on several preference metrics.} Baseline minus single-pass \sca{} (28 steps) at $4096^2$ with 95\% paired intervals; the set-level and time rows pair against \sca{} without the schedule. HPSv2, HPSv2.1, CLIP-IQA, and ARNIQA are $\times100$, KID and KID$_\text{p}$ $\times10^3$. For FID, KID, their patch versions, and campaign time (seconds per image), lower is better, so negative favours the baseline. \up{Blue} / \dn{orange}: baseline significantly better / worse than the reference. SigMa uses its dev-matched profile; UltraImage and HRDiT use their own recipes (Appendix~\ref{app:additional_protocols}). Finite-sample bias can put a FID estimate outside its percentile interval (full attention's FID$_\text{p}$).\pendAppPanelDeltas}
+  \caption{\textbf{Every shared-sampler baseline trails single-pass \sca{} on all ten per-image metrics; HRDiT and UltraImage lead on several preference metrics.} Expands the baseline rows of Table~\ref{tab:main}. FLUX.1-dev at $4096^2$, \npanel{} prompts, seed 0: each baseline minus single-pass \sca{} in (a) and (b), and minus \sca{} without the schedule in (c), since set-level intervals across runs do not exist. Grey: the 95\% paired percentile-bootstrap interval, over 2000 prompt draws per image and 1000 draws that also resample reference-image clusters for FID, KID, and their patch versions. HPS, CLIP-IQA, and ARNIQA $\times100$; KID $\times10^3$; time: campaign mean in seconds. \up{Blue} / \dn{orange}: baseline significantly better / worse than \sca{}; in (c) lower is better. SigMa uses its dev-matched profile, UltraImage and HRDiT their own recipes (Appendix~\ref{app:additional_protocols}). Full attention's FID$_\text{p}$ lies outside its percentile interval, as a biased estimate can. Key result: UltraImage and HRDiT are significantly better on Aesthetic, PickScore, and HPSv2.1, worse on both MUSIQ scores, and higher in patch FID and patch KID.\pendAppPanelDeltas}
   \label{tab:panel46_deltas}\label{tab:phase2_baselines}% phase2_baselines held a subset of these cells; the main text cites it
   \apxbody{app_tables/panel46_deltas}
 \end{table}
@@ -713,24 +728,25 @@ Table~\ref{tab:app_abl} expands Table~\ref{tab:ablation} to every metric for the
 
 Table~\ref{tab:latency} and Figure~\ref{fig:latency_full} expand the latency of \iflabel{fig:scaling}{Figure~\ref{fig:scaling}}{Figure~\ref{fig:speed}} and Section~\ref{sec:sizes}. All times follow Appendix~\ref{app:timing}.
 
-\paragraph{Clean times.} At $4096^2$ the medians are 186.5\,s for full attention (186.0, 186.6, 186.5), 202.4\,s for AReA (192.7, 202.4, 204.3), and 77.1\,s for single-pass \sca{} (77.3, 77.1, 77.1). At $2048^2$ and $3072^2$ they are 22.9 and 73.9\,s for full attention, 41.0 and 114.3\,s for AReA, and 19.8 and 44.3\,s for single-pass \sca{}. At $6144^2$ and $8192^2$, AReA takes 482.3 and \ifdefined\hlLatEightArea\hlLatEightArea\else 952.0\fi\,s and single-pass \sca{} 174.7 and \hlLatEightSca\,s, a reduction of 63.8\% and 67.5\%. At $6144^2$ full attention takes 762.7\,s (763.5, 762.7, 762.5), $4.4\times$ the time of single-pass \sca{}. The schedule and the bridge add 8.4\% at $4096^2$ and 8 to 11\% across sizes. In run T3 progressive \sca{}, HRDiT, and AReA take 49.2, 107.0, and 202.4\,s.
-
-\paragraph{A separate $4096^2$ run.} A separate batch-1 run at $4096^2$ gave 184.6\,s for full attention (184.1, 184.7, 184.6), 212.6\,s for AReA (207.3, 225.8, 212.6), and 71.0\,s for \sca{} without the schedule (71.0, 83.1, 70.9).
-
-\paragraph{Non-square sizes.} Here we have only campaign means over \nmain{} prompts on shared nodes. Single-pass \sca{} takes 41.1\,s (38.1\,s without the schedule) and AReA 112.4\,s at $2048\times4096$, and 60.5\,s (55.8\,s) and 150.5\,s at $2048\times6144$.
-
 \begin{table}[!htbp]
-  \caption{\textbf{Single-pass \sca{} is the fastest method at every size.} Seconds per image of single-pass \sca{}, AReA, and full attention. Batch 1 on an idle GH200, 28 steps with text encoding and VAE decoding, median of three timed images after an excluded warm-up (Appendix~\ref{app:timing}). Full attention was not run at $8192^2$. Key result: single-pass \sca{} is 2.6 times faster than AReA at $4096^2$.\pendAppLatency}
+  \caption{\textbf{Single-pass \sca{} is the fastest method at every size.} Expands the timing of Section~\ref{sec:sizes} and \iflabel{fig:scaling}{Figure~\ref{fig:scaling}}{Figure~\ref{fig:speed}}. Seconds per image of full attention, AReA, and single-pass \sca{}: batch 1 on an idle GH200, 28 steps with text encoding and VAE decoding, median of three timed images after an excluded warm-up (Appendix~\ref{app:timing}). $N$: image tokens; full attention was not run at $8192^2$; bold: fastest per size. Key result: single-pass \sca{} is 2.6 times faster than AReA at $4096^2$.\pendAppLatency}
   \label{tab:latency}
   \apxbody{app_tables/latency}
 \end{table}
-
 \begin{figure}[!htbp]
   \centering
   \apxgraphic{latency}
   \caption{\textbf{Single-pass \sca{} is the fastest method at every size; its lead over AReA grows to $\hlLatEightRatio\times$ at $8192^2$.} (a)~Median seconds per image of three timed images after one excluded warm-up (batch 1, one GH200, 28 steps including text encoding and VAE decoding), whiskers min to max; labels give $b$ of seconds $\propto N^b$ ($N$ image tokens). (b)~Each baseline's median time over single-pass \sca{}'s; dotted: parity. Full attention was not run at $8192^2$. Table~\ref{tab:latency} lists the times.\pendFigLatency}
   \label{fig:latency_full}
 \end{figure}
+
+\paragraph{Clean times.} At $4096^2$ the medians are 186.5\,s for full attention (186.0, 186.6, 186.5), 202.4\,s for AReA (192.7, 202.4, 204.3), and 77.1\,s for single-pass \sca{} (77.3, 77.1, 77.1). At $2048^2$ and $3072^2$ they are 22.9 and 73.9\,s for full attention, 41.0 and 114.3\,s for AReA, and 19.8 and 44.3\,s for single-pass \sca{}. At $6144^2$ and $8192^2$, AReA takes 482.3 and \ifdefined\hlLatEightArea\hlLatEightArea\else 952.0\fi\,s and single-pass \sca{} 174.7 and \hlLatEightSca\,s, a reduction of 63.8\% and 67.5\%. At $6144^2$ full attention takes 762.7\,s (763.5, 762.7, 762.5), $4.4\times$ the time of single-pass \sca{}. The schedule and the bridge add 8.4\% at $4096^2$ and 8 to 11\% across sizes. In run T3 progressive \sca{}, HRDiT, and AReA take 49.2, 107.0, and 202.4\,s.
+
+\paragraph{A separate $4096^2$ run.} A separate batch-1 run at $4096^2$ gave 184.6\,s for full attention (184.1, 184.7, 184.6), 212.6\,s for AReA (207.3, 225.8, 212.6), and 71.0\,s for \sca{} without the schedule (71.0, 83.1, 70.9).
+
+\paragraph{Non-square sizes.} Here we have only campaign means over \nmain{} prompts on shared nodes. Single-pass \sca{} takes 41.1\,s (38.1\,s without the schedule) and AReA 112.4\,s at $2048\times4096$, and 60.5\,s (55.8\,s) and 150.5\,s at $2048\times6144$.
+
+
 
 % =====================================================================================
 \apxbarrier
@@ -753,10 +769,6 @@ This appendix expands Section~\ref{sec:progressive} and the progressive rows of 
 
 Table~\ref{tab:all_metrics} gives the absolute values of progressive \sca{}, Table~\ref{tab:prog_all} its difference from every baseline, and Table~\ref{tab:prog_deltas} the per-image comparisons with HRDiT and with single-pass \sca{}. Set-level intervals use 1000 draws over prompts and reference-image clusters.
 
-\paragraph{Against HRDiT.} Progressive \sca{} is significantly better on HPSv2, MUSIQ, and ARNIQA, worse only on CLIP-IQA, and within noise on the other six per-image metrics (Table~\ref{tab:prog_deltas}).\IfFileExists{figures/snippets/app_tables/holm.tex}{ After a Holm correction over the ten per-image metrics, only HPSv2 and ARNIQA stay significant (Table~\ref{tab:holm}).}{} HRDiT has lower KID, patch FID (103.0 against 107.7; progressive minus HRDiT $+4.6$ $[0.6,7.7]$), and patch KID, while the FID difference (141.9 against 138.4) spans zero. Progressive \sca{} takes 49.2\,s per image and HRDiT 107.0\,s in run T3, and 50.7 and 110.4\,s as campaign means on shared nodes.
-
-\paragraph{Against single-pass \sca{}.} Progressive \sca{} gains seven per-image metrics, ties on CLIP ($+0.25$ $[-0.02,0.52]$), and loses both MUSIQ scores (Table~\ref{tab:prog_deltas}).\IfFileExists{figures/snippets/app_tables/holm.tex}{ Its ImageReward gain is the weakest of the seven: it survives the Holm correction with bootstrap $p$-values but not with the sign-flip test (Table~\ref{tab:holm}).}{} Its patch FID ($+9.2$ $[5.1,13.2]$) and patch KID are significantly higher, and its FID and KID differences span zero. It takes 27.7\,s less per image in campaign means (50.7 against 78.4\,s) and 27.9\,s less in clean times (49.2 against 77.1\,s). Figure~\ref{fig:progressive} shows that progressive \sca{} keeps a large subject, as HRDiT does, while single-pass \sca{} draws more native detail. Figure~\ref{fig:qual_main} compares the methods crop by crop at native resolution, and Figure~\ref{fig:gallery_prog} sets the two modes side by side on six more prompts.
-
 \snippetat{!htbp}{app_tables/prog_deltas}
 \vsnippet{!htbp}{progressive}
 
@@ -768,6 +780,11 @@ Table~\ref{tab:all_metrics} gives the absolute values of progressive \sca{}, Tab
   \label{fig:qual_main}
 \end{figure}
 }
+
+\paragraph{Against HRDiT.} Before correction for multiple comparisons, progressive \sca{} is significantly better on HPSv2, MUSIQ, and ARNIQA, worse only on CLIP-IQA, and within noise on the other six per-image metrics (Table~\ref{tab:prog_deltas}).\IfFileExists{figures/snippets/app_tables/holm.tex}{ After a Holm correction over the ten per-image metrics, \ifdefined\holmProgHrditKept\holmProgHrditKept\else HPSv2 and ARNIQA\fi{} remain and no metric is worse (Table~\ref{tab:holm}).}{} HRDiT has lower KID, patch FID (103.0 against 107.7; progressive minus HRDiT $+4.6$ $[0.6,7.7]$), and patch KID, while the FID difference (141.9 against 138.4) spans zero. Progressive \sca{} takes 49.2\,s per image and HRDiT 107.0\,s in run T3, and 50.7 and 110.4\,s as campaign means on shared nodes.
+
+\paragraph{Against single-pass \sca{}.} Progressive \sca{} gains seven per-image metrics, ties on CLIP ($+0.25$ $[-0.02,0.52]$), and loses both MUSIQ scores (Table~\ref{tab:prog_deltas}).\IfFileExists{figures/snippets/app_tables/holm.tex}{ Its ImageReward gain is the weakest of the seven: it survives the Holm correction with bootstrap $p$-values but not with the sign-flip test (Table~\ref{tab:holm}).}{} Its patch FID ($+9.2$ $[5.1,13.2]$) and patch KID are significantly higher, and its FID and KID differences span zero. It takes 27.7\,s less per image in campaign means (50.7 against 78.4\,s) and 27.9\,s less in clean times (49.2 against 77.1\,s). Figure~\ref{fig:progressive} shows that progressive \sca{} keeps a large subject, as HRDiT does, while single-pass \sca{} draws more native detail. Figure~\ref{fig:qual_main} compares the methods crop by crop at native resolution, and Figure~\ref{fig:gallery_prog} sets the two modes side by side on six more prompts.
+
 
 % =====================================================================================
 \apxbarrier
@@ -784,7 +801,7 @@ This appendix expands Table~\ref{tab:generality} and Section~\ref{sec:generality
 \snippetat{!htbp}{app_tables/gen_all}
 
 \begin{table}[!htbp]
-  \caption{\textbf{The gains hold on HRGen-1K, at two more seeds, and on FLUX.2-dev.} Table~\ref{tab:phase2_general} expands the single-pass rows of Table~\ref{tab:generality}. Single-pass \sca{} minus AReA on HRGen-1K and at seeds 1 and 2; \sca{} without the schedule minus full attention on FLUX.2-dev. All at $4096^2$; \up{blue}: significantly better than the reference. Key result: every per-image difference favours \sca{}, and only FLUX.2-dev's CLIP score interval includes zero.\pendAppPhaseGeneral}
+  \caption{\textbf{The single-pass gains hold on HRGen-1K, at two more seeds, and on FLUX.2-dev.} Expands the single-pass rows of Table~\ref{tab:generality}. Each cell is the paired difference at $4096^2$ (HPS, CLIP-IQA, ARNIQA $\times100$) with its 95\% percentile-bootstrap interval below it in grey (2000 prompt draws, seed 0). Rows: single-pass \sca{} minus AReA on HRGen-1K (\nhrgen{} prompts) and at seeds 1 and 2 (\nseed{} prompts each); \sca{} without the schedule minus full attention on FLUX.2-dev (50 prompts). \up{Blue}: significantly better than the reference. Key result: every per-image difference favours \sca{}, and only FLUX.2-dev's CLIP score interval includes zero.\pendAppPhaseGeneral}
   \label{tab:phase2_general}
   \apxbody{app_tables/phase2_general}
 \end{table}
@@ -807,7 +824,7 @@ Figure~\ref{fig:gallery_6144_complete} shows four $6144^2$ prompts, and Figure~\
 Table~\ref{tab:app_wide} pairs single-pass \sca{} with AReA at $2048\times4096$ and $2048\times6144$. At $2048\times4096$ the window already covers half the image height, so the per-head mix gains little (Appendix~\ref{app:failures}); Appendix~\ref{app:ps2} checks which reach table that size should read.
 
 \begin{table}[!htbp]
-  \caption{\textbf{At $2048\times6144$ single-pass \sca{} wins seven of 15 metrics; at $2048\times4096$ the result is mixed.} \nmain{} prompts each, single-pass \sca{} paired against AReA (released code). Conventions as in Table~\ref{tab:app_4k}: evaluator intervals over 1000 prompt draws, and for FID, KID, and their patch versions 1000 draws that also resample reference-image clusters. Key result: at $2048\times6144$ single-pass \sca{} wins seven of 15 metrics and loses two, at $2048\times4096$ it wins three and loses three, and it is faster at both.\pendAppWide}
+  \caption{\textbf{At $2048\times6144$ single-pass \sca{} wins seven of 15 metrics; at $2048\times4096$ the result is mixed.} Expands the aspect-ratio paragraph of Section~\ref{sec:sizes}. FLUX.1-dev, \nmain{} prompts each; AReA runs its released code. $\Delta$: single-pass \sca{} minus AReA, with its 95\% paired percentile-bootstrap interval in grey over 1000 prompt draws; for FID, KID, and their patch versions the draws also resample reference-image clusters. \up{Blue} / \dn{orange}: significantly better / worse than AReA; for FID, KID, and time lower is better. $^\ddagger$Campaign mean on shared nodes. Key result: at $2048\times6144$ single-pass \sca{} wins seven of 15 metrics and loses two, at $2048\times4096$ it wins three and loses three, and it is faster at both.\pendAppWide}
   \label{tab:app_wide}
   \apxbody{app_tables/app_wide}
 \end{table}
@@ -817,10 +834,11 @@ Table~\ref{tab:app_wide} pairs single-pass \sca{} with AReA at $2048\times4096$ 
 
 This subsection expands the $8192^2$ sentence of Section~\ref{sec:sizes}. Table~\ref{tab:e2_8192_per_image} reports all 12 completed prompt pairs at $8192^2$ under the shared FLUX.1-dev protocol, for \sca{} without the schedule against AReA. \sca{} without the schedule has higher ImageReward, CLIP, PickScore, both HPS variants, and ARNIQA, with paired intervals that exclude zero. Aesthetic score and the three remaining quality metrics have intervals that span zero, and MUSIQ, MUSIQ$_\text{c}$, and CLIP-IQA have point estimates that favour AReA. These mixed quality scores and the grid and stripe failures in Figure~\ref{fig:gallery_8192_complete} limit the evidence for reliable 8K generation. With only 12 prompts the comparison is exploratory, and we report no distribution metrics for it.
 
-All 8K scores were computed on CPU (Table~\ref{tab:e2_8192_per_image} notes the HPS precision). For native-resolution MUSIQ, attention queries are processed in chunks of 256 while every key and native image patch is retained. This bounds intermediate memory without changing the attention context; equivalence checks with the pretrained model at three smaller image sizes reproduced the unchunked scores exactly.
-
 \snippetat{!htbp}{e2_8192_tables}
 \vsnippet{!htbp}{gallery_8192_complete}
+
+All 8K scores were computed on CPU (Table~\ref{tab:e2_8192_per_image} notes the HPS precision). For native-resolution MUSIQ, attention queries are processed in chunks of 256 while every key and native image patch is retained. This bounds intermediate memory without changing the attention context; equivalence checks with the pretrained model at three smaller image sizes reproduced the unchunked scores exactly.
+
 
 % Newer models: each block appears only when its switch is on in main.tex (snippets written by the run owners).
 \ifanynewmodel
@@ -981,11 +999,12 @@ This appendix expands the limitations of Section~\ref{sec:limits}. Appendix~\ref
 \section{Emulation prompts}
 \label{app:prompts}
 
-This appendix lists the 48 prompts written for reach emulation (Section~\ref{sec:observation} and Algorithm~\ref{alg:emulate}). The $1024^2$ table uses prompts 1 to 32, and the $1280^2$, FLUX.1-Krea-dev, and FLUX.2-dev tables use prompts 1 to 16. Prompts 33 to 48 are spares that no reported table uses. None of them is an evaluation prompt (Appendix~\ref{app:protocol}).
+This appendix lists the 48 prompts written for reach emulation (Section~\ref{sec:observation} and Algorithm~\ref{alg:emulate}); none is an evaluation prompt (Appendix~\ref{app:protocol}). The $1024^2$ table uses prompts 1 to 32, and the $1280^2$, FLUX.1-Krea-dev, and FLUX.2-dev tables use prompts 1 to 16. Prompts 33 to 48 are spares that no reported table uses.
 
-{\footnotesize
+% 8 pt on 8.8 pt leading keeps the list on one page, so the sample pages start below their intro.
+{\fontsize{8}{8.8}\selectfont
 \begin{multicols}{2}
-\begin{enumerate}[leftmargin=2.1em,itemsep=0.5pt,topsep=0pt,parsep=0pt]
+\begin{enumerate}[leftmargin=2.1em,itemsep=0pt,topsep=0pt,parsep=0pt]
   \item A candid street portrait of an elderly fisherman with a weathered face and a knitted wool cap, harbor in the background, overcast light
   \item Two children laughing while running through a lawn sprinkler on a summer afternoon, backlit by the sun
   \item A professional headshot of a young woman with curly red hair and freckles, soft studio lighting, neutral grey backdrop
@@ -1038,20 +1057,16 @@ This appendix lists the 48 prompts written for reach emulation (Section~\ref{sec
 \end{multicols}}
 
 % =====================================================================================
-\apxbarrier
 \section{Sample pages}
 \label{app:galleries}
 
 \ifvsnip{all_methods}{%
-This appendix expands Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog} with full pages of samples. Figure~\ref{fig:teaser} shows eight methods on the same two prompts. Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog16b} set progressive \sca{} beside AReA, UltraImage, and HRDiT on 18 more prompts, and Figure~\ref{fig:gallery_prog} adds single-pass \sca{} on six. Figure~\ref{fig:hero} shows single-pass \sca{} at three aspect ratios. Figures~\ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048} set it beside AReA on 16 prompts at $4096^2$ and on four prompts at each of $2048\times4096$ and $2048\times6144$.}{%
-This appendix expands Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog} with full pages of samples. Figure~\ref{fig:teaser} shows six methods on one prompt. Progressive \sca{} follows\ifprogSixteen{: sixteen evaluation prompts beside AReA and HRDiT (Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog16b}), then}\ifprogGallery{ six more prompts with every method (Figure~\ref{fig:gallery_prog})}. Figure~\ref{fig:hero} shows single-pass \sca{} at three aspect ratios, and Figures~\ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048} set it beside AReA at $4096^2$, $2048\times4096$, and $2048\times6144$.} Samples of the other baselines and of the ablation sit beside their tables in Appendix~\ref{app:tables} (Figures~\ref{fig:gallery_baselines} and~\ref{fig:ablation_grid}). Samples of other sizes and checkpoints sit in Appendix~\ref{app:generality} (Figures~\ref{fig:gallery_flux2} to~\ref{fig:gallery_8192_complete}).
+This appendix expands Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog} with full pages of samples; Appendix~\ref{app:samples} gives the selection and crop rules. Figure~\ref{fig:gallery_prog} sets both modes of \sca{} beside AReA, UltraImage, and HRDiT on six prompts, and Figure~\ref{fig:teaser} shows eight methods on two more. Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog16b} set progressive \sca{} beside AReA, UltraImage, and HRDiT on 18 prompts. Figure~\ref{fig:hero} shows single-pass \sca{} at three aspect ratios, and Figures~\ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048} set it beside AReA on 16 prompts at $4096^2$ and four at each wide size.}{%
+This appendix expands Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog} with full pages of samples; Appendix~\ref{app:samples} gives the selection and crop rules. Figure~\ref{fig:gallery_prog} shows six prompts with every method, and Figure~\ref{fig:teaser} six methods on one prompt. Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog16b} set progressive \sca{} beside AReA and HRDiT on sixteen prompts. Figure~\ref{fig:hero} shows single-pass \sca{} at three aspect ratios, and Figures~\ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048} set it beside AReA at $4096^2$, $2048\times4096$, and $2048\times6144$.}\ifshowcase{} Figure~\ref{fig:showcase_models} shows \sca{} on FLUX.2-dev and Qwen-Image.\fi
 
-\paragraph{Selection.} \ifvsnip{all_methods}{Each caption states how its prompts were chosen: a fixed seed over a stated pool of evaluation prompts, or, in Figure~\ref{fig:failures}, a metric rule. The pools exclude the development prompts. Figures that show single-pass \sca{}, \sca{} without the schedule, or the ablation variants draw only from the prompts that name no person, by a keyword rule on the prompt text. No prompt repeats across the $4096^2$ FLUX.1-dev figures. The rule, the seed, the sources with their hashes, and the crop windows of every figure are archived beside it (Table~\ref{tab:sources}).}{The prompts of Figures~\ref{fig:gallery_baselines}, \ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048}, \ref{fig:gallery_flux2}, \ref{fig:gallery_6144_complete}, \ref{fig:gallery_krea_complete}, and~\ref{fig:gallery_8192_complete} come from a seeded draw over pools fixed without looking at images; the pools exclude the development prompts. Figures~\ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048} also exclude 16 prompts that other figures showed when the pool was fixed. The prompts of Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog16b} were set later, so a prompt can appear in more than one figure. The selection seed, source hashes, and crop coordinates of every gallery are archived with it (Table~\ref{tab:sources}).}
-
-\paragraph{Defaults and crops.} Unless a caption says otherwise, images are FLUX.1-dev outputs for Aesthetic-4K evaluation prompts at seed 0. Single-pass methods take 28 steps at guidance 4.5. HRDiT and progressive \sca{} take HRDiT's 30, 17, and 10 steps at $1024^2$, $2048^2$, and $4096^2$, with guidance 3.5, 4.5, and 6.0. \ifvsnip{all_methods}{Every crop shows native pixels of its outlined window. The window is placed automatically at the highest edge energy averaged over the images it compares.}{In Figure~\ref{fig:gallery_prog}, in Figures~\ref{fig:gallery_4096} to~\ref{fig:gallery_8192_complete} except Figure~\ref{fig:ablation_grid}, and in Figures~\ref{fig:progressive} and~\ref{fig:qual_main}, every crop shows native pixels of the outlined window. The window is placed automatically at the highest edge energy averaged over the methods shown.}\ifshowcase{} Figure~\ref{fig:showcase_models} shows \sca{} on FLUX.2-dev and Qwen-Image.\fi
-
-% Sample pages, one per page and top-aligned (\topfloatpages). The smaller sample figures sit beside their
-% tables in Appendices E and G.
+% Sample pages: the first sits below the intro when it fits, the others fill pages of their own, top-aligned
+% (\topfloatpages). The smaller sample figures sit beside their tables in Appendices E and G.
+\vsnippet{!ht}{gallery_prog}
 \ifvsnip{all_methods}{\vsnippet{p}{all_methods}}{%
 \begin{figure}[!htbp]
   \centering
@@ -1061,7 +1076,6 @@ This appendix expands Figures~\ref{fig:prog_hero} and~\ref{fig:qual_prog} with f
 \end{figure}
 }
 \vsnippet{p}{gallery_prog16}
-\vsnippet{p}{gallery_prog}
 \vsnippet{p}{hero}
 \ifshowcase\vsnippet{p}{showcase_models}\fi
 \vsnippet{p}{gallery_4096}

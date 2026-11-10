@@ -295,38 +295,40 @@ def panel_matrix(fig, d, x, y, w, h, strip_h=0.075):
 
 
 def panel_zoom(fig, d, x, y, w, h):
-    """(c) A: the variance split drawn large (FLUX.1-dev), a zoom into the noise-level share, and the head's share
-    in the two other checkpoints as slim bars on the same scale."""
+    """(c) A: the variance split drawn large (FLUX.1-dev). Every label sits outside the bars, one per line: the head's
+    share above the bar; a zoom (light wedge, labelled with the noise level's share) magnifies the noise-level share;
+    under it, the part a schedule shared by all heads can follow (the head-averaged curve, black). Then the head's
+    share in the two other checkpoints, on the same scale."""
     ax = inch_axes(fig, x, y, w, h)
     ax.set_xlim(0, 100)
     ax.set_ylim(0, h)              # y in inches inside the panel
     ax.set_axis_off()
     p = d["pct"]["flux1_dev"]
     head, step, avg = 100 * p["head_f"], 100 * p["step_f"], 100 * p["avg_f"]
-    bt, bh = h - 0.38, 0.25        # top bar: all of the variance, FLUX.1-dev
-    zt, zh = h - 0.86, 0.25        # zoom bar: the noise-level share
-    ax.text(0, bt + bh + 0.035, "FLUX.1-dev", ha="left", va="bottom", fontsize=FS_S, color=sf.MID)
-    ax.add_patch(Rectangle((0, bt), head, bh, fc=HEAD_C, ec="none"))
-    ax.add_patch(Rectangle((head, bt), step, bh, fc=STEP_C, ec="none"))
-    ax.text(4, bt + bh / 2, f"head {p['head']}%", ha="left", va="center", fontsize=FS_L, color="white",
+    bh = 0.15
+    bt = h - 0.42                  # top bar: all of the variance, FLUX.1-dev
+    zt = h - 0.80                  # zoom bar: the noise-level share, magnified
+    ax.text(0, h - 0.11, "FLUX.1-dev", ha="left", va="bottom", fontsize=FS_S, color=sf.MID)
+    ax.text(0, bt + bh + 0.03, f"head {p['head']}%", ha="left", va="bottom", fontsize=FS_L, color=sf.INK,
             fontweight="bold")
-    ax.add_patch(Polygon([(head, bt), (100, bt), (100, zt + zh), (0, zt + zh)], closed=True, fc="#EDEFF1",
+    ax.add_patch(Rectangle((0, bt), head, bh, fc=HEAD_C, ec="none"))
+    ax.add_patch(Rectangle((head, bt), step, bh, fc=STEP_C, ec=HEAD_C, lw=0.4))
+    ax.add_patch(Polygon([(head, bt), (100, bt), (100, zt + bh), (0, zt + bh)], closed=True, fc="#EDEFF1",
                          ec="none", zorder=0))
-    ax.add_patch(Rectangle((0, zt), 100, zh, fc=STEP_C, ec="none"))
-    ax.add_patch(Rectangle((0, zt), 100 * avg / step, zh, fc=AVG_C, ec="none"))
-    ax.text(97, zt + zh / 2, f"noise level {p['step']}%", ha="right", va="center", fontsize=FS_S, color=sf.INK)
-    ax.plot([100 * avg / step / 2] * 2, [zt, zt - 0.06], color=AVG_C, lw=0.6)
-    ax.text(0, zt - 0.075, f"head average {p['avg']}%", ha="left", va="top", fontsize=FS_S, color=AVG_C)
-    # the other checkpoints (Table B.1): the head's share, same scale as the top bar
-    sb = 0.13
+    ax.text(100, (bt + zt + bh) / 2, f"noise level {p['step']}%", ha="right", va="center", fontsize=FS_S,
+            color=sf.INK)
+    ax.add_patch(Rectangle((0, zt), 100, bh, fc=STEP_C, ec="none"))
+    ax.add_patch(Rectangle((0, zt), 100 * avg / step, bh, fc=AVG_C, ec="none"))
+    ax.plot([100 * avg / step / 2] * 2, [zt, zt - 0.05], color=AVG_C, lw=0.6)
+    ax.text(0, zt - 0.065, f"shared schedule {p['avg']}%", ha="left", va="top", fontsize=FS_S, color=AVG_C)
+    # the other checkpoints (Table B.1): the head's share, same scale as the top bar, labels outside
+    sb = 0.11
     for i, (ck, nm) in enumerate((("flux1_krea_dev", "FLUX.1-Krea-dev"), ("flux2_dev", "FLUX.2-dev"))):
         q = d["pct"][ck]
-        y0 = 0.30 - i * 0.30
+        y0 = 0.33 - i * 0.30
         ax.add_patch(Rectangle((0, y0), 100 * q["head_f"], sb, fc=HEAD_C, ec="none"))
-        ax.add_patch(Rectangle((100 * q["head_f"], y0), 100 * q["step_f"], sb, fc=STEP_C, ec="none"))
-        ax.text(0, y0 + sb + 0.03, nm, ha="left", va="bottom", fontsize=FS_S, color=sf.MID)
-        ax.text(97, y0 + sb / 2, f"{q['head']}%", ha="right", va="center", fontsize=FS_S, color="white",
-                fontweight="bold")
+        ax.add_patch(Rectangle((100 * q["head_f"], y0), 100 * q["step_f"], sb, fc=STEP_C, ec=HEAD_C, lw=0.4))
+        ax.text(0, y0 + sb + 0.03, f"{nm} {q['head']}%", ha="left", va="bottom", fontsize=FS_S, color=sf.MID)
 
 
 def panel_models(fig, d, x, y, w, h):

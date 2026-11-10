@@ -244,11 +244,11 @@ def pair_rows(fig, d, x, y, w, h, items, xmax=None, key=True):
     for i, (lab, own, tr, fmt) in enumerate(items):
         y0 = n - 1 - i
         for k, (v, col) in enumerate(((own, sf.SCA), (tr, SCA_LIGHT))):
-            yy = y0 + 0.43 - k * 0.27
-            ax.barh([yy], [v], height=0.24, color=col, lw=0, zorder=2)
+            yy = y0 + 0.45 - k * 0.30
+            ax.barh([yy], [v], height=0.22, color=col, lw=0, zorder=2)
             ax.text(v + top * 0.025, yy, fmt.format(v), fontsize=FS_V, va="center", ha="left",
                     fontweight="bold" if k == 0 else "normal")
-        ax.text(0, y0 + 0.64, lab, fontsize=FS_S, va="bottom", ha="left")
+        ax.text(0, y0 + 0.63, lab, fontsize=FS_S, va="bottom", ha="left")
     ax.set_yticks([])
     for side in ("top", "right", "left"):
         ax.spines[side].set_visible(False)
@@ -256,11 +256,11 @@ def pair_rows(fig, d, x, y, w, h, items, xmax=None, key=True):
     ticks = [0, 0.1, 0.2] if top > 0.2 else [0, 0.05]
     ax.set_xticks(ticks, ["0"] + [f"{t:g}" for t in ticks[1:]])
     sf.value_grid(ax, "x")
-    if key:
-        for k, (lab, col) in enumerate((("own table", sf.SCA), ("transferred", SCA_LIGHT))):
-            xx = k * 0.50
-            ax.add_patch(plt.Rectangle((top * xx, n + 0.02), top * 0.06, 0.20, color=col, lw=0, clip_on=False))
-            ax.text(top * (xx + 0.09), n + 0.12, lab, fontsize=FS_S, va="center", ha="left")
+    if key:   # two-entry legend above the bars: what the dark and the light bar of each pair mean
+        for k, (lab, col) in enumerate((("fitted there", sf.SCA), ("transferred", SCA_LIGHT))):
+            xx = k * 0.47
+            ax.add_patch(plt.Rectangle((top * xx, n + 0.14), top * 0.055, 0.22, color=col, lw=0, clip_on=False))
+            ax.text(top * (xx + 0.075), n + 0.25, lab, fontsize=FS_S, va="center", ha="left")
     return ax
 
 
@@ -297,10 +297,10 @@ def render(d, cand: str):
         title(fig, 1.62, ty, "b", "Per-head fits best")
         panel_rules_split(fig, d, 2.22, 0.36, 1.58, 0.98, gap=0.18)
         title(fig, 4.02, ty, "c", "One table transfers")
-        pair_rows(fig, d, 4.06, 0.33, 1.38, 1.02, [
+        pair_rows(fig, d, 4.06, 0.30, 1.38, 0.92, [
             (rf"held-out prompts, $\rho={d['r_half']:.3f}$", d["half"][0], d["half"][1], "{:.4f}"),
             (r"ratio-2 table at $r=4$", d["rat"][0], d["rat"][1], "{:.3f}"),
-            (r"$1024^2$ table at $1280^2$", d["res"][0], d["res"][1], "{:.4f}")], xmax=0.30, key=False)
+            (r"$1024^2$ table at $1280^2$", d["res"][0], d["res"][1], "{:.4f}")], xmax=0.30, key=True)
     return fig
 
 

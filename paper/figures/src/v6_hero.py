@@ -131,9 +131,9 @@ def panel(pdf: Path, w_pt: float, h_pt: float, fs: float = 7.5) -> dict:
         ax.annotate(text, at or pts[m], xytext=(dx, dy), ha=ha, color=color, fontweight="bold" if bold else None, **lab)
 
     # Offsets in points from the marker (the upper-left cluster holds three markers within 35 pt).
-    note("Progressive SCA", "sca_v2_prog", -9, 12.5, bold=True)
+    note("Progressive SCA", "sca_v2_prog", -9, 14.5, bold=True)
     note("Single-pass SCA", "sca_v2", 5.5, -0.5)
-    note("HRDiT", "hrdit_dev_author", 5.5, 0.5, color="#56626F")
+    note("HRDiT", "hrdit_dev_author", 5.5, -3.0, color="#56626F")
     note("AReA", "area", 0, -8, ha="center", color=scafig.AREA)
     (x0, y0), (x1, y1) = pts["hrdit_dev_author"], pts["sca_v2_prog"]
     note(f"{sp['hrdit_dev_author'][0]:.1f}\u00d7", None, 0, -7.5, ha="center", bold=True, at=((x0 + x1) / 2, (y0 + y1) / 2))

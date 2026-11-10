@@ -896,23 +896,28 @@ def hrgen_text(B, rows, hpub):
     if hi and not lo:
         lead = f"On HRGen-1K, single-pass \\sca{{}} exceeds every score AReA publishes{some}"
     elif hi:
-        lead = f"On HRGen-1K, single-pass \\sca{{}} exceeds {WORDS[len(hi)]} of the {WORDS[len(cols)]} scores AReA publishes{some}"
+        lead = (f"On HRGen-1K, single-pass \\sca{{}} exceeds {WORDS[len(hi)]} of the {WORDS[len(cols)]} scores AReA "
+                f"publishes{some}")
     else:
         lead = f"On HRGen-1K, single-pass \\sca{{}} does not exceed the scores AReA publishes{some}"
-    key = ("single-pass \\sca{} on FLUX.1-Krea-dev " + (f"exceeds AReA's published {join_words([pub_name(B, c) for c in hi])}"
+    hi_names = join_words([pub_name(B, c) for c in hi]) if hi else ""
+    lo_names = join_words([pub_name(B, c) for c in lo]) if lo else ""
+    key = ("single-pass \\sca{} on FLUX.1-Krea-dev " + (f"exceeds AReA's published {hi_names}"
            if hi else "does not exceed AReA's published numbers")
-           + (f" and trails it on {join_words([pub_name(B, c) for c in lo])}" if lo else ""))
+           + (f" and trails it on {lo_names}" if lo else ""))
     pend = krea[6]
     dev_area = next((r for r in rows if r[0] == "hrgen_dev" and not r[5]), None)
     dev_sca = next((r for r in rows if r[0] == "hrgen_dev" and r[5]), None)
     if dev_area and dev_sca:
         shown = lambda c, v: float(fmt(c, v))  # noqa: E731
         dcols = [c for c in HCOLS if c in dev_area[2] and c in dev_sca[2]]
-        up = [c for c in dcols if (shown(c, dev_sca[2][c]) - shown(c, dev_area[2][c])) * (1 if METRICS[c][1] else -1) > 0]
+        sign = {c: 1 if METRICS[c][1] else -1 for c in dcols}
+        up = [c for c in dcols if (shown(c, dev_sca[2][c]) - shown(c, dev_area[2][c])) * sign[c] > 0]
         if len(up) == len(dcols):
             key += f"; on FLUX.1-dev its point estimates exceed our AReA run on all {WORDS[len(dcols)]} metrics"
         elif up:
-            key += (f"; on FLUX.1-dev its point estimates exceed our AReA run on {join_words([pub_name(B, c) for c in up])}"
+            up_names = join_words([pub_name(B, c) for c in up])
+            key += (f"; on FLUX.1-dev its point estimates exceed our AReA run on {up_names}"
                     f" of {WORDS[len(dcols)]} metrics")
         else:
             key += "; on FLUX.1-dev its point estimates exceed our AReA run on none of the metrics"

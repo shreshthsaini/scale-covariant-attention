@@ -1,0 +1,132 @@
+% v6 method figure, candidate C (lead's two-band layout, round 2). Two bands, each read left to right, with a green
+% band title at the left.
+%   Band 1, "Measure once at 1024^2": (a) the model's own full attention of head 10 of block 12 at one query of the
+%   1024^2 stage (the reference) ~ pi x near view (window shrunk by r = 4) + (1 - pi) x far view (16 x 16 block-centre
+%   grid), each with its real attention; the parabola J(pi) (32 emulation prompts) and pi* = clip(B/A, 0, 1);
+%   (b) pi* fills its cell of the reach table (block 12: 24 heads x 13 noise bins, sigma falling left to right; r = 4
+%   in front, r = 2 behind); heads 4 and 7 of Figure 2 marked.
+%   Band 2, "Generate at any size": (c) the 4096^2 output of the same run; heads 4 and 7 mix their native window and
+%   grid with their table weights at r = 4 (0.93 and 0.00, printed; each view drawn at an opacity that follows its
+%   weight); the progressive sampler's stages, which read the table right above them at r = 2 and r = 4.
+% One image flows through: the run whose 1024^2 stage was captured (prompt a4k_eval_4096_minus8343371271909676658,
+% seed 0); its 1024^2 stage and 4096^2 output match (light desaturation in both bands, method_assets/c_*).
+% Real data: v6_method_assets.py (method_assets/provenance.json). Build: v6_tikz_build.py.
+\input{v6_method_common.tex}
+\DeclareMathSizes{7}{7}{6.6}{6.6}
+\DeclareMathSizes{7.5}{7.5}{6.6}{6.6}
+\DeclareMathSizes{8}{8}{6.6}{6.6}
+\DeclareMathSizes{8.5}{8.5}{6.6}{6.6}
+\DeclareMathSizes{9}{9}{6.8}{6.6}
+\DeclareMathSizes{9.5}{9.5}{7}{6.6}
+\renewcommand{\sq}{\textsuperscript{\fontsize{6.6}{7}\selectfont 2}}
+\newcommand{\band}{\fontsize{8}{9.2}\selectfont\bfseries}
+
+% 1024^2 tiles of band 1 (same geometry as \AtNear, \AtFar, \AtFull; light-desaturated base)
+\newcommand{\CNear}[3]{\begin{scope}[shift={(#1,#2)}]
+  \node[anchor=south west] at (0,0) {\includegraphics[width=#3bp,height=#3bp]{method_assets/c_near.png}};
+  \draw[line width=1pt, scaLocal] \FracBox{\WinX}{\WinY}{\WinS}{#3};
+  \draw[frame] (0,0) rectangle (#3,#3); \QueryMark{#3}\end{scope}}
+\newcommand{\CFar}[3]{\begin{scope}[shift={(#1,#2)}]
+  \node[anchor=south west] at (0,0) {\includegraphics[width=#3bp,height=#3bp]{method_assets/c_far.png}};
+  \foreach \i in {0,...,15}{\foreach \j in {0,...,15}{
+    \fill[scaGlobal!55] ({(4*\i+2.5)*#3/64},{#3-(4*\j+2.5)*#3/64}) circle[radius=0.32];}}
+  \foreach \dx/\dy/\dr in \FarDots{\fill[scaGlobal] \fp{\dx}{\dy}{#3} circle[radius={\dr*#3}];}
+  \draw[frame] (0,0) rectangle (#3,#3); \QueryMark{#3}\end{scope}}
+\newcommand{\CFull}[3]{\begin{scope}[shift={(#1,#2)}]
+  \node[anchor=south west] at (0,0) {\includegraphics[width=#3bp,height=#3bp]{method_assets/c_full.png}};
+  \draw[line width=0.6pt, scaLocal, dash pattern=on 1.6pt off 1.2pt] \FracBox{\WinX}{\WinY}{\WinS}{#3};
+  \draw[frame] (0,0) rectangle (#3,#3); \QueryMark{#3}\end{scope}}
+% 4096^2 tiles of band 2: the output, its native window view and its native grid view at opacity #4
+\newcommand{\CImg}[3]{\begin{scope}[shift={(#1,#2)}]
+  \node[anchor=south west] at (0,0) {\includegraphics[width=#3bp,height=#3bp]{method_assets/c_img4096.jpg}};
+  \draw[frame] (0,0) rectangle (#3,#3); \QueryMark{#3}\end{scope}}
+\newcommand{\CWin}[4]{\begin{scope}[shift={(#1,#2)}]
+  \begin{scope}[opacity=#4, transparency group]
+  \node[anchor=south west] at (0,0) {\includegraphics[width=#3bp,height=#3bp]{method_assets/c_img4096.jpg}};
+  \fill[white, opacity=0.55, even odd rule] (0,0) rectangle (#3,#3) \FracBox{\NatX}{\NatY}{\NatS}{#3};
+  \draw[line width=0.9pt, scaLocal] \FracBox{\NatX}{\NatY}{\NatS}{#3};
+  \end{scope}
+  \draw[frame] (0,0) rectangle (#3,#3); \end{scope}}
+\newcommand{\CGrid}[4]{\begin{scope}[shift={(#1,#2)}]
+  \begin{scope}[opacity=#4, transparency group]
+  \node[anchor=south west] at (0,0) {\includegraphics[width=#3bp,height=#3bp]{method_assets/c_img4096.jpg}};
+  \fill[white, opacity=0.35] (0,0) rectangle (#3,#3);
+  \foreach \i in {0,...,31}{\foreach \j in {0,...,31}{
+    \fill[scaGlobal] ({(2*\i+1)*#3/64},{#3-(2*\j+1)*#3/64}) circle[radius=0.12];}}
+  \end{scope}
+  \draw[frame] (0,0) rectangle (#3,#3); \end{scope}}
+% weight chip: #1 x, #2 y (centre), #3 fill, #4 text colour, #5 value
+\newcommand{\Chip}[5]{\node[rounded corners=1.5pt, fill=#3, minimum width=18bp, minimum height=10bp,
+  text=#4, inner sep=0pt] at (#1,#2) {\sml #5};}
+
+\begin{document}
+\begin{tikzpicture}[x=1bp, y=1bp]
+\useasboundingbox (0,0) rectangle (396,177);
+
+% ---------------------------------------------------------------- band titles (method green, at the left)
+\node[rotate=90, align=center, text=scaAccentText] at (10.5,131) {\band Measure once\\[-0.5pt]\band at 1024\sq};
+\node[rotate=90, align=center, text=scaAccentText] at (10.5,43) {\band Generate at\\[-0.5pt]\band any size};
+\draw[line width=0.8pt, scaAccent] (21.5,95) -- (21.5,170);
+\draw[line width=0.8pt, scaAccent] (21.5,5) -- (21.5,86);
+
+% ================================================================= band 1, (a) reach emulation at 1024^2
+\node[anchor=base west] at (26,168.5) {\ttl (a) Reach emulation};
+\CFull{26}{104}{52}
+\node[anchor=north, text=scaMid] at (52,101.5) {\sml full attention};
+\node at (85,130) {\mtl$\approx$};
+\node[anchor=east] at (97.5,130) {\mth$\pi$};
+\CNear{99}{104}{52}
+\node[anchor=north, text=scaLocalText] at (125,101.5) {\sml window $\div\,r$};
+\node at (168,130) {\mth$+\;(1-\pi)$};
+\CFar{190}{104}{52}
+\node[anchor=north, text=scaGlobalText] at (216,101.5) {\sml grid $\div\,r$};
+\draw[arr] (245,130) -- (253.4,130);
+\Quad{261}{117}{34}{31}{1}
+\node[anchor=north] at (279,101.5) {\mts$\pi^\star\!=\mathrm{clip}(B/A,0,1)$};
+\draw[garr] (304.5,132) -- (317.4,132);
+
+% ================================================================= (b) the reach table: the hinge of the two bands
+\node[anchor=base west] at (318,168.5) {\ttl (b) Reach table};
+\Cards{318}{64}{50}{90}{5}
+\node[anchor=west, text=scaMid] at (374.5,156) {\mts$r=2$};
+\node[anchor=west, text=scaMid] at (369.5,66) {\mts$r=4$};
+\node[anchor=north west, text=scaMid] at (318,62.2) {\mts$\sigma$};
+\node[rotate=90, anchor=north, text=scaMid] at (386,112) {\sml heads};
+\pgfmathsetmacro{\rfour}{154-(\TabRowFour+0.5)*90/24}\pgfmathsetmacro{\rseven}{154-(\TabRowSeven+0.5)*90/24}
+\fill[scaLocal] (313,\rfour+2) -- (317,\rfour) -- (313,\rfour-2) -- cycle;
+\fill[scaGlobal] (313,\rseven+2) -- (317,\rseven) -- (313,\rseven-2) -- cycle;
+
+% ================================================================= band 2, (c) two heads at 4096^2 and the sampler
+\node[anchor=base west] at (26,79.5) {\ttl (c) Two heads at 4096\sqt};
+\CImg{26}{5}{66}
+\draw[arr] (95,38) -- (104.4,38);
+% head 4: mostly window
+\node[anchor=west, text=scaLocalText] at (107,55.5) {\sml\bfseries head 4};
+\Chip{142}{55.5}{chipFour}{white}{\PiFour}
+\CWin{154}{40}{31}{0.93}
+\node at (191,55.5) {\mth$+$};
+\Chip{206}{55.5}{scaGrid}{scaInk}{\PiFourC}
+\CGrid{218}{40}{31}{0.19}
+% head 7: all grid
+\node[anchor=west, text=scaGlobalText] at (107,20.5) {\sml\bfseries head 7};
+\Chip{142}{20.5}{chipSeven}{white}{\PiSeven}
+\CWin{154}{5}{31}{0.12}
+\node at (191,20.5) {\mth$+$};
+\Chip{206}{20.5}{scaGrid}{scaInk}{\PiSevenC}
+\CGrid{218}{5}{31}{1}
+% the sampler reads the table right above it
+\draw[nblk] (262,25) rectangle (296,40);
+\node at (279,32.5) {\sml 1024\sq};
+\node[anchor=north, text=scaMid] at (279,22.5) {\sml full};
+\draw[sblk] (308,25) rectangle (342,40);
+\node at (325,32.5) {\sml 2048\sq};
+\draw[sblk] (354,25) rectangle (388,40);
+\node at (371,32.5) {\sml 4096\sq};
+\draw[arr] (296.4,32.5) -- (307.4,32.5);
+\draw[arr] (342.4,32.5) -- (353.4,32.5);
+\draw[garr] (325,63.6) -- (325,40.6);
+\draw[garr] (362,63.6) -- (362,40.6);
+\node[anchor=east, text=scaMid] at (323,52) {\mts$r=2$};
+\node[anchor=east, text=scaMid] at (360,52) {\mts$r=4$};
+\end{tikzpicture}
+\end{document}

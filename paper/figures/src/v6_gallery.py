@@ -132,7 +132,7 @@ def base():
         pool = vc.pool195()
         texts = vc.prompts195(pool)
         import v6_qual_main as qm
-        fig5 = set(vc.draw_by_category(texts, qm.CATS[:2], qm.SEED, exclude=imgsel.dev4_ids()).values())
+        fig5 = set(qm.picks_from(pool, texts)[1].values())
         _CACHE["base"] = (pool, texts, eligible195(pool), fig5)
     return _CACHE["base"]
 
@@ -186,7 +186,7 @@ def g4096_ids():
 CHAIN = ["all_methods", "gallery_baselines", "gallery_4096"]
 CHAIN_IDS = {"all_methods": all_methods_ids, "gallery_baselines": baselines_ids, "gallery_4096": g4096_ids}
 PF = "that name no person (keyword rule)"
-CROPS = r"Crops are native 1:1 windows at the highest edge energy averaged over %s."
+CROPS = r"Each crop shows native pixels of the window that maximises the smallest edge energy among %s."
 
 
 def fig_prog16(out_dir):
@@ -353,8 +353,8 @@ def fig_flux2(out_dir):
 
 def fig_ablation(out_dir):
     pool, texts, elig, fig5 = base()
-    roots = {"abl_local": "abl/abl_localonly_nb", "abl_global": "abl/abl_globalonly", "abl_mean": "abl/abl_mean_nb",
-             "abl_uniform": "abl/abl_uniform_nb", "abl_sca": "main/sca_nb"}
+    roots = {"abl_v0": "abl/abl_v0", "abl_local": "abl/abl_localonly_nb", "abl_global": "abl/abl_globalonly",
+             "abl_mean": "abl/abl_mean_nb", "abl_uniform": "abl/abl_uniform_nb", "abl_sca": "main/sca_nb"}
     res = "4096x4096"
     idx = {m: {imgsel.short_id(pid): p for pid, p in imgsel.index(f"{OUT}/{r}/{{res}}", res).items()}
            for m, r in roots.items()}
@@ -365,14 +365,12 @@ def fig_ablation(out_dir):
     src = {s: {m: idx[m][s] for m in roots} for s in ids}
     methods = list(roots)
     rec, assets = run_grid("ablation", examples(ids, src, methods), methods, 85.0, 2, 1, out_dir)
-    cap = (r"\textbf{Each view alone fails in its own way; the per-head mix stays clean.} Two of the \nabl{} ablation "
-           r"prompts %s, chosen by a fixed seed (seed 46); $4096^2$, seed 0. Rows change one part of \sca{} without the "
-           r"schedule (Table~\ref{tab:ablation}): local only flattens texture into blocks, global only leaves a grid, "
-           r"mean pooling moves the layout. "
-           % PF + CROPS % "the five variants")
+    cap = (r"\textbf{Without the opening phase, subjects shrink to a small scale.} Two of the \nabl{} ablation prompts "
+           r"%s, chosen by a fixed seed (seed 46); $4096^2$, seed 0. Each row changes one part of \sca{} without the "
+           r"schedule (Table~\ref{tab:ablation}): local only flattens texture into blocks, global only leaves a grid, and "
+           r"mean pooling moves the layout. " % PF + CROPS % "the six variants")
     return [("ablation", rec, assets)], [("ablation", cap, "fig:ablation_grid")], dict(
-        rule="random.Random(46).sample(sorted(person-free ablation prompts), 2); the opening ablation is in the table "
-             "only", seed=46, draw=ids)
+        rule="random.Random(46).sample(sorted(person-free ablation prompts), 2)", seed=46, draw=ids)
 
 
 def fig_showcase_models(out_dir):

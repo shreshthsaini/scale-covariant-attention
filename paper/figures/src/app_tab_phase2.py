@@ -592,6 +592,27 @@ def panel46_deltas():
 
 
 # ---------------------------------------------------------------- prog_deltas ---------------------------------------
+def holm_calls(keys, cols):
+    """({key: {metric: +1 / -1 / 0}}, None): the Holm-adjusted calls over the ten per-image metrics of gen_holm.py's
+    pairs `keys` (read-only use of that module: it re-runs the paired bootstrap, 2000 prompt draws seeded 0, and
+    fails unless it reproduces the archived intervals), after checking that each pair's differences are the ones
+    printed in the matching column of `cols`; (None, reason) when the module cannot run or disagrees."""
+    try:
+        import gen_holm
+        specs = {spec[0]: spec for spec in gen_holm.PAIRS}
+        out = {}
+        for key, col in zip(keys, cols):
+            res = gen_holm.pair(specs[key])["metrics"]
+            for k, *_ in prog.METRICS:
+                a, b = res[k]["delta"], col[k][0]
+                if float(f"{a:.6g}") != float(f"{b:.6g}"):  # the archived CSVs keep six significant digits
+                    return None, f"{key} {k}: gen_holm difference {a:.6g}, table {b:.6g}"
+            out[key] = {k: res[k]["sig_holm"] for k, *_ in prog.METRICS}
+        return out, None
+    except Exception as err:  # the owner's module may change; the table must still build
+        return None, repr(err)[:200]
+
+
 PROG_RUN = "prog195_sca_v2"
 
 
@@ -610,17 +631,40 @@ def prog_deltas():
     flags = [not prog_landed, not single_landed, False, False]
     note = "pendAppProgDeltas"
     worse_now = [NAMES[k] for k, *_ in prog.METRICS if prog_landed and data[0][k][2] < 0]
-    lead = (rf"Per image, progressive \sca{{}} is significantly worse than HRDiT only on {join(worse_now)}."
-            if worse_now else r"Against HRDiT, progressive \sca{} is not significantly worse on any per-image metric; "
-            r"single-pass \sca{} without the schedule at 42 steps is.")
-    # Key result (v6): progressive against HRDiT and against single-pass SCA, from the colours of the first two columns
     keys = [k for k, *_ in prog.METRICS]
-    better_h, _ = sig_counts(data[0], [(k, True) for k in keys])
-    better_s, worse_s = sig_counts(data[1], [(k, True) for k in keys])
-    key = (r"progressive \sca{} is significantly better than HRDiT on "
-           + (label_list(better_h) if better_h else "none of the ten metrics")
-           + rf" and better than single-pass \sca{{}} on {WORDS[len(better_s)]} of {WORDS[len(keys)]}"
-           + (f", but worse on {label_list(worse_s)}" if worse_s else ", and worse on none"))
+    # Holm over the ten per-image metrics (gen_holm.py, read-only: the same 2000 seeded prompt draws as every interval)
+    holm, holm_err = holm_calls(["prog_hrdit", "prog_sca"], [data[0], data[1]]) if single_landed else (None, "pending")
+    if holm is None and single_landed:
+        warnings_holm = [f"prog_deltas: no Holm calls ({holm_err}); the caption keeps the unadjusted wording"]
+    else:
+        warnings_holm = []
+    if worse_now:
+        lead = rf"Per image, progressive \sca{{}} is significantly worse than HRDiT only on {join(worse_now)}"
+        if holm is not None:
+            worse_holm = [k for k in keys if holm["prog_hrdit"][k] < 0]
+            lead += (", and on none after Holm correction" if not worse_holm
+                     else f", and after Holm correction on {label_list(worse_holm)}")
+        lead += "."
+    else:
+        lead = (r"Against HRDiT, progressive \sca{} is not significantly worse on any per-image metric; "
+                r"single-pass \sca{} without the schedule at 42 steps is.")
+    # Key result (v6): progressive against HRDiT and against single-pass SCA. With the Holm calls, every count is
+    # Holm-adjusted; without them, from the colours of the first two columns.
+    if holm is not None:
+        better_h = [k for k in keys if holm["prog_hrdit"][k] > 0]
+        better_s = [k for k in keys if holm["prog_sca"][k] > 0]
+        worse_s = [k for k in keys if holm["prog_sca"][k] < 0]
+        key = (r"after Holm correction progressive \sca{} stays better than HRDiT on "
+               + (label_list(better_h) if better_h else "no metric")
+               + rf", and better than single-pass \sca{{}} on {WORDS[len(better_s)]} of {WORDS[len(keys)]} metrics"
+               + (f" and worse on {label_list(worse_s)}" if worse_s else " and worse on none"))
+    else:
+        better_h, _ = sig_counts(data[0], [(k, True) for k in keys])
+        better_s, worse_s = sig_counts(data[1], [(k, True) for k in keys])
+        key = (r"progressive \sca{} is significantly better than HRDiT on "
+               + (label_list(better_h) if better_h else "none of the ten metrics")
+               + rf" and better than single-pass \sca{{}} on {WORDS[len(better_s)]} of {WORDS[len(keys)]}"
+               + (f", but worse on {label_list(worse_s)}" if worse_s else ", and worse on none"))
     caption = (r"\caption{\textbf{" + lead + "}"
                r" Expands the progressive rows of Table~\ref{tab:main}. FLUX.1-dev at $4096^2$, "
                rf"{prog.N_PROMPTS} prompts, seed label 0. Each cell is the first-named setting minus the second, with its "
@@ -642,7 +686,7 @@ def prog_deltas():
     lines = [header(sources), STYLE, v2swap.PEND_FALLBACK, r"\begin{table}[!htbp]", caption, r"\label{tab:prog_deltas}",
              r"\centering\scriptsize", rf"\scaFitTab{{l{PAIR}{PAIR_GAP}{PAIR}{PAIR}}}{{5}}{{%"]
     lines += ["  " + x for x in head + body + [r"\bottomrule"]] + ["}", r"\end{table}"]
-    warnings = []
+    warnings = list(warnings_holm)
     if prog_landed:
         worse = [NAMES[k] for k, *_ in prog.METRICS if data[0][k][2] < 0]
         if worse:  # the caption lead names them (worse_now); main.tex must say so too

@@ -1,6 +1,7 @@
 # methodfigs (v6): Figures 2, 3, 4, appendix method zoom and analysis plots
 
-Status 2026-11-10: done. Main figures 2, 3, 4, the method zoom and the six Appendix B plots are installed under
+Status 2026-11-10: done (round 2 after the lead's review: Figure 3 rebuilt as two bands, Figure 2 (c) and
+Figure 4 (c) fixed). Main figures 2, 3, 4, the method zoom and the six Appendix B plots are installed under
 paper/figures/v6/ (same stems). All pass the PyMuPDF check (no span under 6 pt) and were read at print size in an ICLR
 test page (/scratch/09032/saini_2/sca/paper_builds/v6_methodfigs_1/testdoc/test_v6figs.pdf and test_v6app.pdf).
 LIVE NOW: appendix.tex's \apxgraphic already picks up v6/heads_view, pi_heads, pi_heatmap, rel_err, pi_sigma and
@@ -9,7 +10,8 @@ Builds and renders: /scratch/09032/saini_2/sca/paper_builds/v6_methodfigs_1/ (pn
 
 ## New files (all mine; announce)
 - Scripts (paper/figures/src): v6_attn_extract.py (data), v6_method_assets.py (method assets), v6_method_common.tex,
-  v6_method_a.tex, v6_method_b.tex (TikZ), v6_tikz_build.py (compiles TikZ in scratch, `--install` copies kept),
+  v6_method_a.tex, v6_method_b.tex, v6_method_c.tex (TikZ; C is kept), v6_tikz_build.py (compiles TikZ in
+  scratch, `--install` copies the kept ones),
   v6_observation.py, v6_emulation.py, v6_figcheck.py (PyMuPDF check: size, smallest span, words, PNG).
 - Data: paper/figures/src/data/v6_attn_block12.npz + .json (1.1 MB): full-attention rows of all 24 heads of block 12 at
   query (43, 11) of the 1024^2 capture at steps 8, 20, 26 (sigma 0.897, 0.612, 0.327), plus the r = 4 near and far
@@ -25,15 +27,15 @@ Builds and renders: /scratch/09032/saini_2/sca/paper_builds/v6_methodfigs_1/ (pn
 ## Figure 2: paper/figures/v6/observation.pdf (5.5 x 1.9 in, full width, label fig:observation unchanged)
 Claim: how far a head looks is set by the head, not by the denoising step.
 Panels: (a) two heads x three noise levels, one query, real maps; (b) all 1,368 heads as lines across the 11 post-gate
-noise bins, heads 4 and 7 bold, head average black; (c) variance split drawn large with a zoom into the noise-level
-share (0.7% head-average curve inside the 2.5%), plus FLUX.1-Krea-dev and FLUX.2-dev head shares. 30 words, text 7 to
-8.5 pt.
-Proposed caption:
+noise bins, heads 4 and 7 bold, head average black; (c) variance split drawn large, every label outside the bars and
+one per line (round 2): "head 97.5%" above the bar, a zoom wedge labelled "noise level 2.5%" into the magnified noise
+share, and under it "shared schedule 0.7%" (black: the part of the 2.5% a schedule shared by all heads can follow, the
+head-averaged curve of (b)); then FLUX.1-Krea-dev 97.6% and FLUX.2-dev 99.1%. 30 words, text 7 to 8.5 pt.
+Final caption:
   \textbf{Reach belongs to the head, not to the denoising step.} (a)~Full attention of heads 4 and 7 of block 12 at
-  one query of a $1024^2$ image, at three noise levels: amber within 16 tokens of the query (dashed), blue beyond,
-  with that near share. (b)~Near share of all 1,368 FLUX.1-dev heads after the first 8 steps, 32 prompts; black: head
-  average. (c)~Variance of the near share; the head-averaged curve is part of the noise level
-  (Table~\ref{tab:variance_split}).
+  one query of a $1024^2$ image, at three noise levels: amber within 16 tokens of the query (dashed), blue beyond, with
+  that near share. (b)~Near share of all 1,368 FLUX.1-dev heads after the first 8 steps, 32 prompts. (c)~Variance of
+  the near share; a schedule shared by all heads can follow only the head average (Table~\ref{tab:variance_split}).
 Data: calib/k1_1024.npz (mass_mean), results/heads_view/variance_split.csv (checked against the recomputation and
 headline.tex \hlVarHead/\hlVarStep/\hlVarAvg/\hlVarHeadKrea/\hlVarHeadFluxTwo), src/data/v6_attn_block12.npz,
 paper/figures/attn_focus/image_1024.png.
@@ -47,37 +49,49 @@ tiles); 97.5 / 2.5 / 0.7 drawn large A2 / B1 (B drops the 2.5/0.7 nesting). Mean
 A: lines + zoomed split. B: sorted matrix (v5.1 style) + three-checkpoint bars. The matrix reads as a vertical
 gradient (by construction of the sort) and hides flatness in colour; lines show "flat and far apart" directly.
 
-## Figure 3: paper/figures/v6/method.pdf (5.5 x 2.3 in, full width, label fig:method unchanged)
-Claim: SCA mixes two native-size views per head with one number, fitted once at 1024^2 against full attention in
-closed form, and one table serves every size and sampler stage.
-Panels: (a) top row, the 4096^2 output of progressive SCA: near view (64-token window, amber) and far view (64 x 64
-block-centre grid, blue), pi_h (+) (1 - pi_h); bracket and "÷ r" arrow down to (b): the same views on the 1024^2
-stage of the same run (r = 4: 16-token window, 16 x 16 grid) with the real attention of head 10 of block 12, the
-picture equation pi [near] + (1 - pi) [far] ≈ [full attention], the real parabola J(pi) (32 prompts, block 12,
-sigma 0.62, r = 4) with pi* = 0.79, and pi* = clip(B/A, 0, 1); (c) pi* fills its cell (green outline) of the reach
-table card (block 12: 24 heads x 13 noise bins, r = 4 in front of r = 2), which the progressive stages read (1024^2
-full attention -> 2048^2 at r = 2 -> 4096^2 at r = 4). 16 words, 4 hues, text 6.2 to 9 pt (scripts >= 6.2 pt).
-Proposed caption:
-  \textbf{One number per head, measured once at $1024^2$.} (a)~A head mixes a native-size window (amber) and grid
-  (blue) by its reach $\pi_h$; $4096^2$ output of progressive \sca{}. (b)~On the $1024^2$ stage of the same run both
-  views shrink by $r$, and the mix is fitted to full attention in closed form (head 10 of block 12, $r=4$).
-  (c)~$\pi^\star$ fills one cell of the reach table, which each stage reads at its $r$. Figure~\ref{fig:method_zoom}
-  zooms in.
-  (Measured in the ICLR test page: the longer first draft ran 5 lines; this one is 4 including the lead.)
-Data: method_assets/ (v6_method_assets.py): img4096.jpg (attn_focus/target_4096_at1024.jpg), img1024.jpg
-(attn_focus/image_1024.png), b_near/b_full/b_far.png from v6_attn_block12.npz, J curves and tables from
-results/evidence/calib/k1_1024.npz. Head 10 rule (asserted): of block 12's heads, the one whose full attention at this
-query puts the share closest to one half inside the r = 4 window (0.522).
-Honesty note for the caption owner: the 1024^2 stage (white sheep) and the final 4096^2 output (brown sheep, autumn
-trees) differ in colour because HRDiT's sampler re-noises between stages; layout and the window region match. The
-caption says "1024^2 stage of the same run". The reach table itself is fitted on the 32 emulation prompts, not on this
-image; (b) illustrates the operation on this image. Single-pass mode is not drawn (caption may add "single-pass mode
-reads r(sigma)").
-Rubric (0/1/2): one idea readable without text B2 / A1 (A: 3 overlapping J curves, (a)/(b) boundary weaker); words
-15-30 B1 (16) / A0 (13); lettered panels B1 / A1; <= 4 hues B1 / A1; data flowing through (real image, real attention,
-real J, real table) B2 / A2; arrows 0.6 pt orthogonal B1 / A1; blocks 2 pt radius, 0.8 pt border, tint fill B1 / A1;
-labels 7-9 pt, >= 6 pt B1 / A1; layout density B1 / A1. Mean B 1.2, A 1.0. Kept B (two rows that rhyme: the 1024^2
-views sit under the 4096^2 views at the same proportions).
+## Figure 3: paper/figures/v6/method.pdf (5.5 x 2.46 in, full width, label fig:method unchanged)
+ROUND 2 (lead review 2026-11-10): kept candidate C, source v6_method_c.tex (B stays as v6_method_b.tex for reference).
+Claim: each head's reach is measured once at 1024^2, in closed form against the model's own full attention, stored in
+one table, and read at any size and sampler stage.
+Layout: two bands read left to right, green band titles at the left.
+  Band 1 "Measure once at 1024^2": (a) Reach emulation: full attention of head 10 of block 12 at one query of the
+  1024^2 stage (the reference) ~ pi [window / r] + (1 - pi) [grid / r], each view with its real attention; the real
+  parabola J(pi) (32 emulation prompts, sigma 0.62, r = 4) and pi* = clip(B/A, 0, 1); then (b) Reach table: block
+  12's 24 heads (rows) by 13 noise levels (columns, sigma falling left to right), r = 4 sheet in front of r = 2,
+  pi* outlined in green, rows of heads 4 and 7 marked. The table is the hinge: it sits at the right end of band 1 and
+  reaches down to the sampler strip of band 2 (short arrows r = 2, r = 4), so no long return arrow.
+  Band 2 "Generate at any size": (c) the 4096^2 output; head 4 = 0.93 x window + 0.07 x grid, head 7 = 0.00 x window +
+  1.00 x grid (table weights at r = 4, sigma 0.62, printed in chips coloured like their table cells; each view drawn
+  at an opacity that follows its weight); the progressive stages 1024^2 (full) -> 2048^2 -> 4096^2.
+  22 words, four hues, text 6.6 to 9 pt (lead asked >= 6.5 pt).
+Image: one image throughout, the run whose 1024^2 stage was captured (prompt a4k_eval_4096_minus8343371271909676658,
+seed 0): band 1 its 1024^2 stage, band 2 its 4096^2 progressive SCA output, both lightly desaturated (half colour,
+lifted 16% towards white). CORRECTION of my first report: there is no brown/white sheep mismatch. In colour the
+1024^2 stage and the 4096^2 output match (same beige sheep, church, orange trees; contact sheet
+/scratch/09032/saini_2/sca/paper_builds/v6_methodfigs_1/cand4096.png); the "white sheep" came from my own light-grey
+rendering of the 1024^2 tiles in round 1. No image was re-chosen.
+Heads: head 10 (band 1) by the rule "share closest to one half inside the r = 4 window at this query"; heads 4 and 7
+(band 2) are Figure 2's heads (highest and lowest 32-prompt near share in block 12), and their r = 4 weights do show
+the contrast (0.928 and 0.000; asserted in v6_method_assets.py).
+Two-sentence test (figure alone): "At 1024^2 each head's full attention is fitted, in closed form, by a weighted mix of
+a window and a grid shrunk by r, and the weight goes into a table of heads by noise level. At 4096^2 each head mixes
+its native window and grid by that weight (head 4 mostly window, head 7 only grid), and each sampler stage reads the
+table at its ratio r." Passes.
+Rubric C / B (0/1/2): one idea readable without text 2 / 1; words 15-30 1 (22) / 1 (17); panels lettered in reading
+order 1 / 0 (B read a, c, b); <= 4 hues 1 / 1; real data flowing through (one recognisable image, real attention, J,
+table, per-head weights) 2 / 1 (B's images near white); arrows short and orthogonal 1 / 0 (B's long return arrow);
+blocks per recipe 1 / 1; text >= 6.5 pt 1 / 0 (B 6.18); width filled, no dead quarter 1 / 0; tied to Figure 2 2 / 0.
+Mean C 1.3, B 0.5. Kept C.
+Final caption:
+  \textbf{Reach is measured once at $1024^2$ and read at any size.} (a)~Full attention of one head at $1024^2$ is
+  fitted by a mix of its window and grid views shrunk by $r$; the fit has a closed form. (b)~The weight fills one cell
+  of the reach table: heads by noise level, one sheet per $r$. (c)~At $4096^2$, head 4 of
+  Figure~\ref{fig:observation} mixes mostly its window and head 7 only its grid; each sampler stage reads the table at
+  its $r$. Figure~\ref{fig:method_zoom} zooms in.
+  (4 lines in the ICLR test page.) Optional addition if space allows: "Head 10 of block 12; the table is fitted on 32
+  emulation prompts." Single-pass sampling (reads r(sigma)) is shown in Figure D.1 (c), not here.
+Data: method_assets/ (v6_method_assets.py): c_full/c_near/c_far.png (1024^2 tiles), c_img4096.jpg, table_r2/r4.png,
+data.tex (geometry, J curve, table cell, \PiFour 0.93, \PiSeven 0.00, chip colours, marked rows).
 
 ## Figure 4: paper/figures/v6/emulation.pdf (5.5 x 1.6 in, full width; new label, suggest fig:emulation)
 Claim: the fitted weight measures the head's reach, per-head weights fit full attention best at both ratios, and one
@@ -86,13 +100,14 @@ Panels: (a) pi_h (ratio-2 table) vs near share, 1,368 heads at sigma 0.62, rho 0
 relative output error per head / per layer / shared / best hard switch at r = 2 and r = 4 (two small panels, values
 printed, per head green and bold); (c) own table (dark green) vs a table used where it was not fitted (light green)
 on one error axis: held-out prompt half (0.0574 vs 0.0576, label carries the split-half rho 0.989), ratio-2 table at
-r = 4 (0.200 vs 0.205), 1024^2 table at 1280^2 (0.0585 vs 0.0589). 30 words, text 6.04 to 8.5 pt.
-Proposed caption:
+r = 4 (0.200 vs 0.205), 1024^2 table at 1280^2 (0.0585 vs 0.0589); round 2: a two-entry legend above the bars,
+"fitted there" (dark) and "transferred" (light). 33 words, text 6.04 to 8.5 pt.
+Final caption:
   \textbf{The fitted weight measures reach, fits full attention best, and transfers.} (a)~$\pi_h$ of the ratio-2
   table against the near share, 1,368 heads at $\sigma=0.62$ ($\rho=\hlEmuShareRho$); amber and blue: heads 4 and 7
-  of Figure~\ref{fig:observation}. (b)~Relative output error of four mixing rules, 32 prompts. (c)~A table used where
-  it was not fitted (light) against the table fitted there (dark); held-out: each prompt half's table on the other
-  half. Appendix~\ref{app:emulation} expands each panel.
+  of Figure~\ref{fig:observation}. (b)~Relative output error of four mixing rules, 32 prompts. (c)~Each table where
+  it was fitted and where it is transferred; held-out: each prompt half's table on the other half.
+  Appendix~\ref{app:emulation} expands each panel.
 Data: results/heads_view/pi_vs_mass.csv + summary.csv (rho, recomputed), src/data/k1_1024_pi.npz + k1_1024.json
 (errors via k1data, asserted), results/evidence/calib/k1_1024.npz + k1_1024_split_half_stats.npz (split-half rho,
 asserted against the report), src/data/k1_1280_pi.npz + k1_1280.json (resolution transfer, asserted).
@@ -174,6 +189,6 @@ was written to results/ or to the v5.1 PDFs (mtimes checked).
 
 ## Not done or not verified
 - Not compiled inside the real main.tex/appendix.tex (owned by others); verified only in my ICLR test pages.
-- Single-pass sampling is not drawn in Figure 3(c) (caption can say it reads r(sigma)); the zoom's (c) shows it.
-- Figure 3 (b) illustrates emulation on the 1024^2 stage of the evaluation prompt; the table itself comes from the 32
-  emulation prompts (the caption must keep "same run" and not imply the table was fitted on this image).
+- Single-pass sampling is not drawn in Figure 3 (the zoom's (c) shows it).
+- Figure 3 (a) illustrates emulation on the 1024^2 stage of an evaluation prompt; the table itself comes from the 32
+  emulation prompts (the caption must not imply the table was fitted on this image).
