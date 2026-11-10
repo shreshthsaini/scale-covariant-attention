@@ -2060,3 +2060,7 @@ contributions, captions of at most three lines, a leaner Table 1, and redesigned
   lead wants the iteration (kill criterion).
 - ra_fixed's 46 chunk 000a_b002 ran at 158 s per image on c619-002 next to a foreign 19 GB process (PID 1691541, not
   ours, left alone); those 8 sidecar times are not clean.
+- 01:22 ra_m on the 46 (r7_decide, eval/r7_46_ra_m): relaxed bar FAIL. 9 significant losses vs sca_v2, core IR -0.079,
+  HPSv2.1 -0.019, PickScore -0.34 (also on the 25 clean prompts); aesthetic, ARNIQA, CLIP-IQA and HPSv2 fall below
+  AReA; MUSIQ crop -5.2 [-6.9, -3.7] (level with progressive SCA, +0.8 n.s.; scripts/ra_sharpness.py); 4 detector
+  flags on the 26 person/animal prompts (sca_v2 4); 76.2 s (x0.99).
