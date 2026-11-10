@@ -2067,3 +2067,10 @@ contributions, captions of at most three lines, a leaner Table 1, and redesigned
 - 01:25 B identity check: the latency sweep's sca_v2_prog images from tree 4fb0b4d are bit-identical (PSNR 168 dB,
   zero error) to out/dupfix_prog (tree 7bd64c0) on the three timed prompts, so (i) and (ii)-(iv) differ only in the
   table. B generation running since 01:20 (000b_g*), its evaluation self-releases.
+- 01:29 46-prompt verdicts (r7_decide; MUSIQ crop vs progressive SCA from scripts/ra_sharpness.py):
+  - ra_fixed: relaxed bar FAIL. 10 losses vs sca_v2, core IR -0.114, HPSv2.1 -0.016, PickScore -0.32 (also on the 26
+    clean prompts); aesthetic, ARNIQA, CLIP-IQA, HPSv2 and patch KID fall below AReA; MUSIQ crop -4.4 [-5.8, -3.1]
+    (vs progressive SCA +1.7 n.s.); 1 detector flag on the 26 person/animal prompts; 74.2 s (x0.96). Six pooled r = 2
+    steps alone cost adherence and crop detail.
+  - ra_t40 (no opening): FAIL, IR -0.48, PickScore -1.01, MUSIQ crop -14.3, every win over AReA lost, 8 flags.
+  - Gate: eval/ra_gate195/DECIDED = NONE (every candidate has core losses and > 6 copyprone21 flags). No 195 run.
