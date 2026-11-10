@@ -2094,3 +2094,6 @@ contributions, captions of at most three lines, a leaner Table 1, and redesigned
 - In flight: B (above). Parked: taskq/hold_ra (gate template, ra_t60's 46, ra_t50's 195, next_ra_p19, next_ra_p22),
   taskq/hold_ra195/{ra_fixed,ra_m,ra_t40} (staged 195 runs, not needed). Nothing of the method owner runs on the
   controller.
+- Crux archived: results/ra_screen (frontier_46.csv, split_46.csv, r7_decide_46.txt, sharpness_46.csv,
+  handoff_schedule.txt, copyprone21 detector rates, gate decision, timing; SHA256SUMS); hand labels in
+  results/dup_audit_20261027/human_labels_r7.csv (packets pRA1 to pRA4) and copyprone21_counts.txt.
