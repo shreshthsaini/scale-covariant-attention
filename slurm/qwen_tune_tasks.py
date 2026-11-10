@@ -192,16 +192,18 @@ def eval_tune(dry, res, labels, code, tag=""):
 def test5312(dry, labels, code, name=None):
     """The chosen configuration(s) on the 15 TEST prompts at 5312^2, three prompts per task, on the tree of the TUNE
     screens (NEW_CODE; samplers identical in every later tree), so each runs exactly as screened. The first label is
-    the chosen one: out/qwen_tuned/chosen.env names it for the review page hook."""
+    the chosen one: with --name (the final choice), out/qwen_tuned/chosen.env names it for the review page hook; a
+    configuration enqueued before the final choice (the best single pass while round 2 runs) passes no --name."""
     code = NEW_CODE
     env = Path(OUT_TEST) / "chosen.env"
     text = f"TUNED={labels[0]}\nTUNED_NAME={json.dumps(name or labels[0])}\n"
-    if env.exists() and env.read_text() != text:
+    if name and env.exists() and env.read_text() != text:
         raise SystemExit(f"{env} exists with a different choice; the TEST run happens once")
-    print("write", env, text.split())
-    if not dry:
-        env.parent.mkdir(parents=True, exist_ok=True)
-        env.write_text(text)
+    if name:
+        print("write", env, text.split())
+        if not dry:
+            env.parent.mkdir(parents=True, exist_ok=True)
+            env.write_text(text)
     for label in labels:
         if label in SP:
             cmd = (f"{PY} scripts/sample_qwen.py {SP[label]} --pi-table {st.QWEN_TABLE} {BRIDGE['5312x5312']} "

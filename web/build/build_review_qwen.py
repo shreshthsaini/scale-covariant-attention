@@ -154,10 +154,21 @@ def test_table(tuned):
     return out, {m: r.get("n") for m, r in summ.items()}
 
 
-def timing_table(tuned):
+def also_table(label):
+    """A further TEST configuration (run on TEST but not the chosen one): its means and paired differences."""
+    R = P / "results" / "qwen_5312_tuned"
+    summ = {r["method"]: r for r in rows(R / "summary.csv")}
+    pa, pu = paired(R, label, "qwen_area"), paired(R, label, "qwen_sca40")
+    return [{"metric": name, "mean": f(summ.get(label, {}).get(k), 1 if k.startswith("musiq") or k == "clip" else 3),
+             "d_area": ci_cell(pa.get(k), 1 if k.startswith("musiq") or k == "clip" else 3),
+             "d_untuned": ci_cell(pu.get(k), 1 if k.startswith("musiq") or k == "clip" else 3)} for k, name in METRICS]
+
+
+def timing_table(tuned, also=()):
     R = P / "results" / "qwen_5312_tuned"
     names = {"qwen_full": "Full attention", "qwen_area": "AReA", "qwen_sca40": "SCA, untuned (40 steps)",
              "qwen_sca": "SCA, untuned (50 steps)", tuned: "SCA, tuned"}
+    names.update({lab: f"SCA, {nm}" for lab, nm in also})
     out = []
     for r in rows(R / "timing_summary.csv"):
         if r["method"] in names:
@@ -165,6 +176,7 @@ def timing_table(tuned):
                         "sec": f(r["median_seconds_clean"], 0), "sec_all": f(r["median_seconds_all"], 0),
                         "mem": f(r["max_peak_memory_gb"], 1), "ours": r["method"] == tuned})
     order = ["Full attention", "AReA", "SCA, untuned (50 steps)", "SCA, untuned (40 steps)", "SCA, tuned"]
+    order += [f"SCA, {nm}" for _, nm in also]
     return sorted(out, key=lambda r: order.index(r["name"]))
 
 
@@ -260,7 +272,7 @@ def table_html(head, body, cls=None):
     return f'<div class="tw"><table{f" class={cls}" if cls else ""}><thead><tr>{th}</tr></thead><tbody>{body}</tbody></table></div>'
 
 
-def build_html(tuned, tuned_name, items, screen, test, ns, timing, summary_text):
+def build_html(tuned, tuned_name, items, screen, test, ns, timing, summary_text, also=()):
     def tr(cells, cls=""):
         return f'<tr class="{cls}">' + "".join(cells) + "</tr>"
     sb, fam = [], None
@@ -282,6 +294,13 @@ def build_html(tuned, tuned_name, items, screen, test, ns, timing, summary_text)
     test_html = table_html([("Metric (mean over prompts)", "l"), ("AReA", None), ("SCA, untuned", None),
                             ("SCA, tuned", None), ("Untuned \u2212 AReA", None), ("Tuned \u2212 AReA", None),
                             ("Tuned \u2212 untuned", None)], tb)
+    for lab, nm, rows_ in also:
+        ab = "".join(tr([f'<td class="l">{r["metric"]}</td>', f"<td>{r['mean']}</td>", f"<td>{r['d_area']}</td>",
+                         f"<td>{r['d_untuned']}</td>"]) for r in rows_)
+        test_html += (f'<p class="note" style="margin-top:18px">Also run on TEST (selected on TUNE as the best of its '
+                      f'family, not the chosen configuration): {html.escape(nm)}.</p>'
+                      + table_html([("Metric (mean over prompts)", "l"), (html.escape(nm), None),
+                                    ("\u2212 AReA", None), ("\u2212 untuned", None)], ab))
     tm = "".join(tr([f'<td class="l">{r["name"]}</td>', f"<td>{r['steps']}</td>", f"<td>{r['n_clean']} of {r['n']}</td>",
                      f"<td>{r['sec']}</td>", f"<td>{r['sec_all']}</td>", f"<td>{r['mem']}</td>"],
                     "chosen" if r["ours"] else "") for r in timing)
@@ -356,6 +375,8 @@ def main(argv=None):
     ap.add_argument("--processes", type=int, default=8)
     ap.add_argument("--outdir", type=Path, help="Write the page here instead of web/review_qwen (previews)")
     ap.add_argument("--limit", type=int, help="First N TEST prompts only (previews)")
+    ap.add_argument("--also", action="append", default=[], metavar="LABEL=NAME",
+                    help="A further configuration run on TEST (table and timing rows; not in the grids)")
     a = ap.parse_args(argv)
     if a.outdir:
         global OUTDIR
@@ -389,8 +410,10 @@ def main(argv=None):
         items.append({"id": r["id"], "prompt": r["prompt"], "size": g["size"], "regions": g["regions"],
                       "panels": panels, "secs": " · ".join(secs)})
     test, ns = test_table(a.tuned)
-    page = build_html(a.tuned, a.tuned_name, items, screen_table(a.tuned), test, ns, timing_table(a.tuned),
-                      a.summary or auto_summary(a.tuned, a.tuned_name))
+    also = [tuple(x.split("=", 1)) for x in a.also]
+    page = build_html(a.tuned, a.tuned_name, items, screen_table(a.tuned), test, ns, timing_table(a.tuned, also),
+                      a.summary or auto_summary(a.tuned, a.tuned_name),
+                      [(lab, nm, also_table(lab)) for lab, nm in also])
     (OUTDIR / "index.html").write_text(page)
     total = zoomlib.dir_bytes(str(OUTDIR))
     print(f"wrote {OUTDIR / 'index.html'}: {len(items)} grids, {total / 1e6:.1f} MB in web/review_qwen", flush=True)
