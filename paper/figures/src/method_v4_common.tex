@@ -1,0 +1,173 @@
+% Shared preamble and macros of the method figure v4 candidates (method_v4a.tex, method_v4b.tex) and the chosen
+% method_v4.tex. Derived from method_v3_common.tex (same palette, fonts, and drawing rules); adds a dark-page switch
+% and the native views on the 4096^2 target. Data assets are v3's, unchanged (fig_method_v3.py writes ../method_v3/:
+% canvas, 4096^2 target, reach-table cards, data.tex with three real quadratics J(pi); provenance.json there).
+% Units: 1 unit = 1 pt at print size (5.5 in = 397.48 pt wide).
+% Text: titles 9 pt bold sans, labels 7.5 pt, small labels 7 pt; math 8 pt (scripts 6 pt), the fit 9 pt.
+% Palette: sca_colors.tex (green SCA, amber local window, blue global grid, greys).
+% Dark page (web export only): compile a one-line wrapper \def\SCADARK{1}\input{method_v4.tex} from this directory
+% (fig_method_v4.py does this in a scratch build directory); it recolours ink, greys, tints, and the photo fades for
+% the project page's dark theme (--bg #0D100F).
+\documentclass[border=0pt]{standalone}
+\RequirePackage{fix-cm}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, calc}
+\DeclareMathSizes{6.5}{6.5}{6}{6}
+\DeclareMathSizes{7}{7}{6}{6}
+\DeclareMathSizes{7.5}{7.5}{6}{6}
+\DeclareMathSizes{8}{8}{6.2}{6}
+\DeclareMathSizes{8.5}{8.5}{6.5}{6}
+\DeclareMathSizes{9}{9}{6.5}{6}
+\DeclareMathSizes{10}{10}{7}{6}
+\input{sca_colors.tex}
+\input{../method_v3/data.tex}
+\definecolor{scaLocalText}{HTML}{A85F12}
+\definecolor{scaGlobalText}{HTML}{245A96}
+\definecolor{scaPaper}{HTML}{FFFFFF}
+\definecolor{scaQuery}{HTML}{1F2328}
+\newif\ifscadark
+\ifdefined\SCADARK\scadarktrue\fi
+\ifscadark
+  % the project page's dark theme (web/assets/css/site.css): ink, muted, accent, amber and blue of its figures
+  \definecolor{scaInk}{HTML}{E7EAE8}
+  \definecolor{scaMid}{HTML}{A3ACB3}
+  \definecolor{scaRule}{HTML}{323A37}
+  \definecolor{scaGrid}{HTML}{262C2A}
+  \definecolor{scaGlobal}{HTML}{6E9FD6}
+  \definecolor{scaGlobalLight}{HTML}{18263A}
+  \definecolor{scaLocal}{HTML}{E39A47}
+  \definecolor{scaLocalLight}{HTML}{3A2812}
+  \definecolor{scaAccent}{HTML}{3DBB8C}
+  \definecolor{scaAccentLight}{HTML}{10271D}
+  \definecolor{scaFull}{HTML}{77818A}
+  \definecolor{scaLocalText}{HTML}{E39A47}
+  \definecolor{scaGlobalText}{HTML}{8DB5E3}
+  \definecolor{scaPaper}{HTML}{0D100F}
+\fi
+
+\newcommand{\ttl}{\fontsize{9}{10.5}\selectfont\sffamily\bfseries}
+\newcommand{\lab}{\fontsize{7.5}{9}\selectfont\sffamily}
+\newcommand{\sml}{\fontsize{7}{8}\selectfont\sffamily}
+\newcommand{\mth}{\fontsize{8}{9.5}\selectfont}
+\newcommand{\mtb}{\fontsize{8.5}{10}\selectfont}
+\newcommand{\mts}{\fontsize{7}{8}\selectfont}
+\newcommand{\mfit}{\fontsize{9}{11}\selectfont}
+\newcommand{\bigsym}{\fontsize{10}{12}\selectfont}
+
+\tikzset{
+  every node/.style={inner sep=0pt, outer sep=0pt, text=scaInk},
+  arr/.style={-{Stealth[length=3.2pt, width=2.8pt]}, line width=0.6pt, draw=scaInk},
+  blk/.style={rounded corners=2pt, line width=0.8pt},
+  sblk/.style={blk, draw=scaAccent, fill=scaAccentLight},
+  nblk/.style={blk, draw=scaFull, fill=scaPaper},
+  fitbox/.style={rounded corners=2pt, line width=1pt, draw=scaAccent, fill=scaAccentLight},
+  wedge/.style={fill=scaGrid},
+  axis/.style={line width=0.5pt, draw=scaMid},
+}
+
+% ---------------------------------------------------------------- the 1024^2 canvas (64 x 64 tokens, ratio 4)
+% Window: 16 x 16 tokens, rows 19..34 and columns 23..38 (row 0 at the top), centred on the query tile;
+% query tile drawn enlarged to 4 x 4 tokens (rows 25..28, columns 29..32); block centres at 4b + 2, b = 0..15.
+\newcommand{\WinBox}[1]{(23*#1/64,{#1-35*#1/64}) rectangle (39*#1/64,{#1-19*#1/64})}
+\newcommand{\Query}[1]{%
+  \fill[scaQuery] (29*#1/64,{#1-29*#1/64}) rectangle (33*#1/64,{#1-25*#1/64});
+  \draw[white, line width=0.35pt] (29*#1/64,{#1-29*#1/64}) rectangle (33*#1/64,{#1-25*#1/64});}
+% \Cv{x}{y}{side}{mode}: 0 full (all keys), 1 window (near set, local view), 3 block-centre grid (global view).
+\newcommand{\Cv}[4]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \node[anchor=south west] at (0,0) {\includegraphics[width=#3pt]{../method_v3/canvas_1024.jpg}};
+    \ifcase#4
+    \or
+      \fill[scaPaper, opacity=0.68, even odd rule] (0,0) rectangle (#3,#3) \WinBox{#3};
+      \draw[line width=0.9pt, scaLocal] \WinBox{#3};
+    \or
+    \or
+      \fill[scaPaper, opacity=0.6] (0,0) rectangle (#3,#3);
+      \foreach \i in {0,...,15}{\foreach \j in {0,...,15}{
+        \fill[scaGlobal] ({(4*\i+2.5)*#3/64},{#3-(4*\j+2.5)*#3/64}) circle[radius=0.42pt];}}
+    \fi
+    \draw[line width=0.6pt, scaFull] (0,0) rectangle (#3,#3);
+    \Query{#3}
+  \end{scope}}
+
+% ---------------------------------------------------------------- the 4096^2 target (256 x 256 tokens)
+% Native window of 64 tokens, rows 144..207 and columns 124..187, centred on the query tile (rows 172..179,
+% columns 152..159, on a sheep); block centres every 4 tokens (64 x 64), drawn to scale.
+% \TgV{x}{y}{side}{mode}: 1 near view (window, outside faded), 3 far view (64 x 64 block-centre grid), 4 both.
+\newcommand{\TgWin}[1]{(124*#1/256,{#1-208*#1/256}) rectangle (188*#1/256,{#1-144*#1/256})}
+\newcommand{\TgQuery}[1]{%
+  \fill[scaQuery] (152*#1/256,{#1-180*#1/256}) rectangle (160*#1/256,{#1-172*#1/256});
+  \draw[white, line width=0.3pt] (152*#1/256,{#1-180*#1/256}) rectangle (160*#1/256,{#1-172*#1/256});}
+\newcommand{\TgDots}[2]{% side, radius
+  \foreach \i in {0,...,63}{\foreach \j in {0,...,63}{
+    \fill[scaGlobal] ({(4*\i+2.5)*#1/256},{#1-(4*\j+2.5)*#1/256}) circle[radius=#2];}}}
+\newcommand{\TgV}[4]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \node[anchor=south west] at (0,0) {\includegraphics[width=#3pt]{../method_v3/target_4096.jpg}};
+    \ifcase#4
+    \or
+      \fill[scaPaper, opacity=0.68, even odd rule] (0,0) rectangle (#3,#3) \TgWin{#3};
+      \draw[line width=0.9pt, scaLocal] \TgWin{#3};
+    \or
+    \or
+      \fill[scaPaper, opacity=0.55] (0,0) rectangle (#3,#3);
+      \TgDots{#3}{0.16pt}
+    \or
+      \fill[scaPaper, opacity=0.55] (0,0) rectangle (#3,#3);
+      \TgDots{#3}{0.17pt}
+      \draw[line width=0.9pt, scaLocal] \TgWin{#3};
+    \fi
+    \draw[line width=0.6pt, scaFull] (0,0) rectangle (#3,#3);
+    \TgQuery{#3}
+  \end{scope}}
+
+% ---------------------------------------------------------------- the fit: three real quadratics J(pi)
+% \Quad{x0}{y0}{w}{h}: axes with the three rescaled curves of data.tex and their minimizers pi* = clip(B/A, 0, 1);
+% y maps [-0.08, 1.04] to the box so that the minima sit just above the axis.
+\newcommand{\Quad}[4]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \begin{scope}[xscale=#3, yscale=#4/1.12, shift={(0,0.08)}]
+      \draw[line width=0.9pt, scaGlobal, line join=round] plot coordinates {\JcG};
+      \draw[line width=0.9pt, scaInk, line join=round] plot coordinates {\JcM};
+      \draw[line width=0.9pt, scaLocal, line join=round] plot coordinates {\JcL};
+    \end{scope}
+    \draw[axis] (0,0) -- (#3,0);
+    \draw[axis] (0,0) -- (0,#4);
+    \foreach \p in {\JpG,\JpM,\JpL}{
+      \fill[scaAccent] ({#3*\p},{#4*0.08/1.12}) circle[radius=1.5pt];}
+    \draw[scaMid, line width=0.4pt, dash pattern=on 1pt off 1pt] ({#3*\JpM},{#4*0.08/1.12}) -- ({#3*\JpM},0);
+    \foreach \v/\t in {0/0, 1/1}{
+      \draw[axis] ({#3*\v},0) -- ({#3*\v},-1.6);
+      \node[anchor=north, text=scaMid] at ({#3*\v},-2.4) {\sml\t};}
+    \node[anchor=north] at ({#3*\JpM},-2.0) {\mts$\pi^\star$};
+    \node[anchor=west, text=scaMid] at (#3+2,0) {\mth$\pi$};
+    \node[anchor=east, text=scaMid] at (-2,#4-3) {\mth$J$};
+  \end{scope}}
+
+% ---------------------------------------------------------------- schematic views at a stage
+\newcommand{\Tile}[1]{\fill[scaGrid] (0,0) rectangle (#1,#1); \draw[line width=0.5pt, scaFull] (0,0) rectangle (#1,#1);}
+\newcommand{\QueryC}[1]{\fill[scaQuery] ({0.47*#1},{0.53*#1}) rectangle ++({0.07*#1},{0.07*#1});
+  \draw[white, line width=0.3pt] ({0.47*#1},{0.53*#1}) rectangle ++({0.07*#1},{0.07*#1});}
+% \LocIcon{x}{y}{side}{r}: native window of side/r around the query; \GlobIcon{x}{y}{side}{n}: n x n grid.
+\newcommand{\LocIcon}[4]{\begin{scope}[shift={(#1,#2)}]\Tile{#3}
+  \pgfmathsetmacro{\wh}{0.5*#3/#4}
+  \fill[scaLocalLight] ({0.505*#3-\wh},{0.565*#3-\wh}) rectangle ({0.505*#3+\wh},{0.565*#3+\wh});
+  \draw[scaLocal, line width=0.8pt] ({0.505*#3-\wh},{0.565*#3-\wh}) rectangle ({0.505*#3+\wh},{0.565*#3+\wh});
+  \QueryC{#3}\end{scope}}
+\newcommand{\GlobIcon}[4]{\begin{scope}[shift={(#1,#2)}]\Tile{#3}
+  \pgfmathtruncatemacro{\gn}{#4-1}
+  \foreach \i in {0,...,\gn}{\foreach \j in {0,...,\gn}{\fill[scaGlobal] ({(\i+0.5)*#3/#4},{(\j+0.5)*#3/#4}) circle[radius=0.42pt];}}
+  \QueryC{#3}\end{scope}}
+
+% Reach-table cards (one block, 24 heads x 13 noise bins): ratio 2 behind, ratio 4 in front; lower-left of the
+% front card (#1,#2), card size #3 x #4, offset 5.
+\newcommand{\Cards}[4]{%
+  \node[anchor=south west] at (#1+5,#2+5) {\includegraphics[width=#3pt, height=#4pt]{../method_v3/table_r2.png}};
+  \draw[line width=0.5pt, scaFull] (#1+5,#2+5) rectangle ++(#3,#4);
+  \fill[scaPaper] (#1,#2) rectangle ++(#3,#4);
+  \node[anchor=south west] at (#1,#2) {\includegraphics[width=#3pt, height=#4pt]{../method_v3/table_r4.png}};
+  \draw[line width=0.5pt, scaFull] (#1,#2) rectangle ++(#3,#4);}

@@ -1,0 +1,75 @@
+% Method figure v4, candidate A (fig:method): one left-to-right row, the two views stacked so that each maps
+% through its own shrink by r. (a) the near window and the far grid on the 4096^2 output of progressive SCA, mixed by
+% pi_h; (b) the same two views shrunk by r = 4 onto the 1024^2 canvas, against the model's own full attention there;
+% the fit pi* = clip(B/A, 0, 1) with three real quadratics J(pi) (block 12, sigma = 0.618, r = 4) is the boxed centre;
+% (c) the reach table read at r by the per-head mix of the sampler's stages.
+% Data assets: v3's (fig_method_v3.py, ../method_v3/provenance.json). Macros: method_v4_common.tex.
+% Build from this directory:  ~/.local/bin/tectonic --outdir OUT method_v4a.tex
+\input{method_v4_common.tex}
+\begin{document}
+\begin{tikzpicture}[x=1pt, y=1pt]
+\useasboundingbox (0,0) rectangle (397.48,128);
+
+% ================================================================== (a) two native views, one weight per head
+\node[anchor=north west] at (0,127.8) {\ttl (a) Two views per head};
+\TgV{41}{68}{42}{1}
+\TgV{41}{14}{42}{3}
+\node[anchor=east] at (38,89) {\mtb $\pi_h$};
+\node at (24,62) {\mth $+$};
+\node[anchor=east] at (38,35) {\mtb $(1-\pi_h)$};
+\node[anchor=north, text=scaLocalText] at (62,67) {\mth $O^{\mathrm{loc}}_h$};
+\node[anchor=north, text=scaGlobalText] at (62,13) {\mth $O^{\mathrm{glob}}_h$};
+
+% shrink each view by r
+\fill[wedge] (83.6,110) -- (103.4,104) -- (103.4,74) -- (83.6,68) -- cycle;
+\fill[wedge] (83.6,56) -- (103.4,50) -- (103.4,20) -- (83.6,14) -- cycle;
+\node at (93.5,89) {\mth $\div r$};
+\node at (93.5,35) {\mth $\div r$};
+
+% ================================================================== (b) emulate the ratio at the training size
+\node[anchor=north west] at (104,127.8) {\ttl (b) Reach emulation at 1024\textsuperscript{2}};
+\Cv{104}{74}{30}{1}
+\Cv{104}{20}{30}{3}
+\draw[line width=0.6pt, scaMid] (136.5,104) -- (139,104) -- (139,20) -- (136.5,20);
+\node at (145,62) {\bigsym $\approx$};
+\Cv{151}{43}{38}{0}
+\node[anchor=north, text=scaMid] at (170,41) {\sml full attention};
+\draw[arr] (189.5,62) -- (199,62);
+
+% ================================================================== the fit, one value per block, head, noise level, r
+\draw[fitbox] (199.5,14) rectangle (288,110);
+\node at (243.75,101) {\mts $J(\pi)=E-2\pi B+\pi^2 A$};
+\Quad{214}{54}{58}{34}
+\node at (243.75,29) {\bigsym $\pi^\star=\mathrm{clip}(B/A,0,1)$};
+
+% ================================================================== (c) the per-head mix in the sampler
+\node[anchor=north west] at (300.5,127.8) {\ttl (c) Mix in the sampler};
+\draw[arr] (288.5,89) -- (295.6,89);
+\Cards{296}{78}{30}{22}
+\node[anchor=west] at (336,99) {\sml reach};
+\node[anchor=west] at (336,91) {\sml table};
+\node[anchor=west] at (336,81.5) {\mts $\pi_{lh}(\sigma;r)$};
+\draw[arr] (311,77.6) -- (311,64.6);
+\node[anchor=west] at (314,71) {\mts $r$};
+\draw[sblk] (292.4,40) rectangle (397.08,64);
+\node[anchor=east] at (308,52) {\mth $\pi_h$};
+\LocIcon{309.5}{43}{18}{4}
+\node at (333.5,52) {\mth $+$};
+\node[anchor=east] at (370.5,52) {\mth $(1-\pi_h)$};
+\GlobIcon{372}{43}{18}{12}
+% the stages that read it (progressive SCA); a single-pass sampler reads its own r
+\draw[nblk] (292.4,14) rectangle (321.4,27);
+\node at (306.9,20.5) {\sml 1024\textsuperscript{2}};
+\draw[arr] (321.8,20.5) -- (329.6,20.5);
+\draw[sblk] (330,14) rectangle (359,27);
+\node at (344.5,20.5) {\sml 2048\textsuperscript{2}};
+\draw[arr] (359.4,20.5) -- (367.2,20.5);
+\draw[sblk] (367.6,14) rectangle (397.08,27);
+\node at (382.3,20.5) {\sml 4096\textsuperscript{2}};
+\node[anchor=north, text=scaMid] at (306.9,12.2) {\sml full};
+\node[anchor=north, text=scaMid] at (344.5,12) {\mts $r=2$};
+\node[anchor=north, text=scaMid] at (382.3,12) {\mts $r=4$};
+\draw[arr] (344.5,39.6) -- (344.5,27.6);
+\draw[arr] (382.3,39.6) -- (382.3,27.6);
+\end{tikzpicture}
+\end{document}

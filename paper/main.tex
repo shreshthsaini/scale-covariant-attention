@@ -127,9 +127,8 @@
 \snippet{showcase_flux2_text}{}\snippet{showcase_qwen_text}{}
 \snippet{flux2_result_text}{}\snippet{qwen_result_text}{}\snippet{ideogram4_text}{}
 \snippet{main_tables/prog_abl_text}{}\snippet{ra195_text}{}\snippet{ra195_method}{}
+\providecommand{\raMethod}{The hand-off from the global view to the native window can be measured instead of set by hand. With $m_r(\sigma)$ the near share of full attention inside the ratio-$r$ window at $1024^2$, averaged over heads, the reach-annealed sampler keeps the global view until $m_2$ exceeds a threshold, reads a ratio-2 view whose 128-token window holds $64\times64$ block means of keys and values, and moves to the native window once $m_4$ exceeds the same threshold.}
 % Figure files and captions of the 2026-11-10 rewrite (temporary until the new figures land).
-\newcommand{\METHODGRAPHIC}{\IfFileExists{figures/method_v4.pdf}{\includegraphics[width=\linewidth]{figures/method_v4.pdf}}{\includegraphics[width=\linewidth]{figures/method_v3.pdf}}}
-\newcommand{\METHODCAPTION}{\textbf{One number per head, measured once at $1024^2$.} (a)~Two native-size views mixed by $\pi_h$. (b)~Reach emulation. (c)~The sampler reads the reach table; Figure~\ref{fig:method_zoom} zooms in.}
 \providecommand{\showcaseFluxTwoSizes}{$4096^2$}\providecommand{\showcaseQwenSizes}{$4096^2$}
 % Ideogram 4 pointers: the table and the figure that exist (HANDOVER Section 36 writes both after its evaluation).
 \newcommand{\ideogramRefs}{\IfFileExists{figures/snippets/ideogram4.tex}{Table~\ref{tab:ideogram4}\IfFileExists{figures/snippets/ideogram4_fig.tex}{, Figure~\ref{fig:ideogram4}}{}}{\IfFileExists{figures/snippets/ideogram4_fig.tex}{Figure~\ref{fig:ideogram4}}{Appendix~\ref{app:newer}}}}
@@ -288,8 +287,8 @@ where $d$ is the head dimension. Full attention $\Ofull_i$ attends to all keys a
 
 \begin{figure}[t]
   \centering
-  \METHODGRAPHIC
-  \caption{\METHODCAPTION}
+  \includegraphics[width=\linewidth]{figures/method_v4.pdf}
+  \caption{\textbf{One number per head, measured once at $1024^2$.} (a)~Two native-size views mixed by the head's reach $\pi_h$. (b)~Reach emulation: full attention at $1024^2$ is the reference, and $\pi^\star$ has a closed form. (c)~Each sampler stage reads the same reach table at its ratio $r$ (zoom: Figure~\ref{fig:method_zoom}).}
   \label{fig:method}
 \end{figure}
 

@@ -588,8 +588,12 @@ def table_ablation():
 # (method,reference,metric,delta,ci_low,ci_high,n_prompts,...), each row a variant minus progressive SCA.
 PROG_ABL_DIR = RES / "prog195_ablation"
 PROG_ABL_REFS = ("sca_v2_prog",)
-PROG_ABL_LABELS = (("uniform", r"shared $\pi(\sigma)$"), ("shared", r"shared $\pi(\sigma)$"),
-                   ("layer", r"per-layer $\pi_\ell(\sigma)$"), ("switch", "hard switch"), ("hard", "hard switch"))
+# Method names of HANDOVER Section 40, experiment B (slurm/reach_anneal_tasks.py): prog_headmean (the table's mean over
+# every layer and head per noise bin), prog_layermean (mean over each layer's heads), prog_win (pi = 1: window and bridge
+# only). Checked in order; the first substring found in the method name gives the row label.
+PROG_ABL_LABELS = (("headmean", r"shared $\pi(\sigma)$"), ("layermean", r"per-layer $\pi_\ell(\sigma)$"),
+                   ("_win", r"window only ($\pi=1$)"), ("uniform", r"shared $\pi(\sigma)$"),
+                   ("shared", r"shared $\pi(\sigma)$"), ("layer", r"per-layer $\pi_\ell(\sigma)$"))
 ABL_COMPACT_GROUPS = [(r"Reach weights, against per-head $\pi_h$", ("abl_uniform_nb", "abl_layer_nb")),
                       ("Views", ("abl_v0", "abl_localonly_nb", "abl_globalonly", "abl_mean_nb"))]
 
@@ -1159,11 +1163,11 @@ def main():
     if prog_abl:
         files[OUT / "tab_ablation_compact_prog.tex"] = table_ablation_compact(prog_abl)
         # one neutral sentence for Section 4.3 (\progAblResult): each variant's ImageReward change with its interval
-        parts = [rf"{label} weights change ImageReward by {sgn(dd['ir'][0], 2)} "
-                 rf"$[{dd['ir'][1]:.2f},{dd['ir'][2]:.2f}]$".replace("[-", "[{-}").replace(",-", ",{-}")
-                 for label, dd, _ in prog_abl]
-        sentence = ("In the progressive sampler, " + "; ".join(parts) +
-                    r" against per-head weights (Table~\ref{tab:ablation}).")
+        parts = [rf"{sgn(dd['ir'][0], 2)} $[{dd['ir'][1]:.2f},{dd['ir'][2]:.2f}]$ with {label}"
+                 .replace("[-", "[{-}").replace(",-", ",{-}") for label, dd, _ in prog_abl]
+        listed = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + ", and " + parts[-1]
+        sentence = ("In the progressive sampler, ImageReward changes against per-head weights by " + listed +
+                    r" (Table~\ref{tab:ablation}).")
         files[OUT / "prog_abl_text.tex"] = "\n".join([HEADER, rf"\newcommand{{\progAblResult}}{{{sentence}}}"]) + "\n"
     print("progressive ablation: " + ("waiting for results/prog195_ablation/SHA256SUMS" if prog_abl is None
                                        else f"{len(prog_abl)} rows -> tab_ablation_compact_prog.tex"))

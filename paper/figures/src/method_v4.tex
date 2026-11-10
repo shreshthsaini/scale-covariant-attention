@@ -1,0 +1,82 @@
+% Method figure v4 (fig:method), chosen on 2026-11-10 from two candidates scored 0/1/2 against the gold-standard
+% diagram recipe: candidate A (method_v4a.tex), one left-to-right row with the two views stacked so that each maps
+% through its own shrink by r (score 10/16), over candidate B (method_v4b.tex), which overlays both views on one image
+% per resolution (score 8/16: its (b) title runs into the fit box, the fit overflows its box, and the overlaid views
+% read less clearly at print size). Iteration on A: wider fit box so the fit has side room, longer arrow into the
+% reach table.
+% Panels: (a) the near window (64 tokens) and the far grid (64 x 64 block centres) on the 4096^2 output of
+% progressive SCA, mixed by pi_h; (b) both views shrunk by r = 4 onto the 1024^2 canvas, against the model's own full
+% attention there; the boxed centre: J(pi) = E - 2 pi B + pi^2 A with three real quadratics (block 12,
+% sigma = 0.618, r = 4) and pi* = clip(B/A, 0, 1); (c) the reach table read at r by the per-head mix, and the
+% progressive stages that read it (1024^2 full, 2048^2 at r = 2, 4096^2 at r = 4).
+% Data assets: v3's, unchanged (fig_method_v3.py, ../method_v3/provenance.json). Macros: method_v4_common.tex.
+% Build and web exports: fig_method_v4.py (compiles in a scratch directory; writes ../method_v4.pdf and the light
+% and dark web exports). By hand from this directory: ~/.local/bin/tectonic --outdir .. method_v4.tex
+\input{method_v4_common.tex}
+\begin{document}
+\begin{tikzpicture}[x=1pt, y=1pt]
+\useasboundingbox (0,0) rectangle (397.48,128);
+
+% ================================================================== (a) two native views, one weight per head
+\node[anchor=north west] at (0,127.8) {\ttl (a) Two views per head};
+\TgV{41}{68}{42}{1}
+\TgV{41}{14}{42}{3}
+\node[anchor=east] at (38,89) {\mtb $\pi_h$};
+\node at (24,62) {\mth $+$};
+\node[anchor=east] at (38,35) {\mtb $(1-\pi_h)$};
+\node[anchor=north, text=scaLocalText] at (62,67) {\mth $O^{\mathrm{loc}}_h$};
+\node[anchor=north, text=scaGlobalText] at (62,13) {\mth $O^{\mathrm{glob}}_h$};
+
+% shrink each view by r
+\fill[wedge] (83.6,110) -- (103.4,104) -- (103.4,74) -- (83.6,68) -- cycle;
+\fill[wedge] (83.6,56) -- (103.4,50) -- (103.4,20) -- (83.6,14) -- cycle;
+\node at (93.5,89) {\mth $\div r$};
+\node at (93.5,35) {\mth $\div r$};
+
+% ================================================================== (b) emulate the ratio at the training size
+\node[anchor=north west] at (104,127.8) {\ttl (b) Reach emulation at 1024\textsuperscript{2}};
+\Cv{104}{74}{30}{1}
+\Cv{104}{20}{30}{3}
+\draw[line width=0.6pt, scaMid] (136.5,104) -- (139,104) -- (139,20) -- (136.5,20);
+\node at (145,62) {\bigsym $\approx$};
+\Cv{151}{43}{38}{0}
+\node[anchor=north, text=scaMid] at (170,41) {\sml full attention};
+\draw[arr] (189.5,62) -- (196.6,62);
+
+% ================================================================== the fit, one value per block, head, noise level, r
+\draw[fitbox] (197,14) rectangle (290,110);
+\node at (243.5,101) {\mts $J(\pi)=E-2\pi B+\pi^2 A$};
+\Quad{214.5}{54}{58}{34}
+\node at (243.5,29) {\bigsym $\pi^\star=\mathrm{clip}(B/A,0,1)$};
+
+% ================================================================== (c) the per-head mix in the sampler
+\node[anchor=north west] at (300.5,127.8) {\ttl (c) Mix in the sampler};
+\draw[arr] (290.5,89) -- (297.6,89);
+\Cards{298}{78}{30}{22}
+\node[anchor=west] at (338,99) {\sml reach};
+\node[anchor=west] at (338,91) {\sml table};
+\node[anchor=west] at (338,81.5) {\mts $\pi_{lh}(\sigma;r)$};
+\draw[arr] (313,77.6) -- (313,64.6);
+\node[anchor=west] at (316,71) {\mts $r$};
+\draw[sblk] (292.4,40) rectangle (397.08,64);
+\node[anchor=east] at (308,52) {\mth $\pi_h$};
+\LocIcon{309.5}{43}{18}{4}
+\node at (333.5,52) {\mth $+$};
+\node[anchor=east] at (370.5,52) {\mth $(1-\pi_h)$};
+\GlobIcon{372}{43}{18}{12}
+% the stages that read it (progressive SCA); a single-pass sampler reads its own r
+\draw[nblk] (292.4,14) rectangle (321.4,27);
+\node at (306.9,20.5) {\sml 1024\textsuperscript{2}};
+\draw[arr] (321.8,20.5) -- (329.6,20.5);
+\draw[sblk] (330,14) rectangle (359,27);
+\node at (344.5,20.5) {\sml 2048\textsuperscript{2}};
+\draw[arr] (359.4,20.5) -- (367.2,20.5);
+\draw[sblk] (367.6,14) rectangle (397.08,27);
+\node at (382.3,20.5) {\sml 4096\textsuperscript{2}};
+\node[anchor=north, text=scaMid] at (306.9,12.2) {\sml full};
+\node[anchor=north, text=scaMid] at (344.5,12) {\mts $r=2$};
+\node[anchor=north, text=scaMid] at (382.3,12) {\mts $r=4$};
+\draw[arr] (344.5,39.6) -- (344.5,27.6);
+\draw[arr] (382.3,39.6) -- (382.3,27.6);
+\end{tikzpicture}
+\end{document}
