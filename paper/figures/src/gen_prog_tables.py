@@ -1,3 +1,10 @@
+# ======================================================================================================================
+# DO NOT RUN THIS SCRIPT (legacy, paper v5 era; warning added 2026-11-10 by the v6 tablesplots owner).
+# It writes figures/snippets/prog_deltas.tex, which nothing inputs any more (Table tab:prog_deltas now comes from
+# gen_app_tables.py, module app_tab_phase2.py, as app_tables/prog_deltas.tex), and its cross-check of tab_panel46.tex
+# has failed since v5 because it expects pre-v5 cell marks. Importing it is safe (app_tab_phase2.py imports
+# signed()); running it is refused unless SCA_RUN_LEGACY=1 is set.
+# ======================================================================================================================
 """Progressive SCA numbers for the paper, generated from the archived CSVs (no hand-typed values).
 
 Writes figures/snippets/prog_deltas.tex (Table tab:prog_deltas: paired per-image intervals for progressive SCA,
@@ -192,4 +199,8 @@ def main():
 
 
 if __name__ == "__main__":
+    import os as _os
+    import sys as _sys
+    if _os.environ.get("SCA_RUN_LEGACY") != "1":
+        _sys.exit(f"{Path(__file__).name} is legacy and must not be run (see the warning at the top of the file).")
     main()

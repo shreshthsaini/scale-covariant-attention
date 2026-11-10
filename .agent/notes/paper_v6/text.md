@@ -1,7 +1,8 @@
 # Paper v6: main text (role `text`), 2026-11-10
 
-Status: DONE for this round. Owner of paper/main.tex only (no git command run, no other file edited).
-Last verified build: /scratch/09032/saini_2/sca/paper_builds/v6_text_29/ (main.pdf, main.log, p01..p12.png at 110 dpi).
+Status: DONE, including the lead-review pass of 2026-11-10 ~11:40 (Section 8). Owner of paper/main.tex only (no git
+command run, no other file edited).
+Last verified build: /scratch/09032/saini_2/sca/paper_builds/v6_text_33/ (main.pdf, main.log, p01..p12.png at 110 dpi).
 Tools (session scratchpad .../scratchpad/text_v6/): qb.sh (build into v6_text_<n>, page report, falls back to a
 mirror with the last appendix that compiled when the live appendix is mid-edit), logcheck.py (overfull boxes by page,
 undefined refs, placeholders), pages.py (headings, floats, fill per page), textcheck.py (forbidden words on the PDF),
@@ -16,11 +17,8 @@ srclen.py (sentence lengths on the LaTeX source).
 - lead, decision 3: Sections 4.2 and 4.3 swapped. 4.2 is now "Generality, other sizes, and latency" and 4.3 "The
   measured reach carries the gain"; labels sec:generality, sec:sizes, sec:ablations unchanged. This keeps the
   generality table and Figure 7 next to their text and ends the experiments on why the method works.
-- lead, open layout item: Table 3 (ablations, tab:ablation) is cited at the foot of page 7 and placed at the top of
-  page 9, because page 8 carries Figure 6 (3.84 in) and Figure 7. Every other float is within one page of its first
-  citation (table in Section 5). No order of ten floats in nine pages that I tried fixes all of them. Options:
-  accept; Figure 6 back to 3.6 in plus a 3.4 in Table 3 so both fit page 8 (needs topfraction above 0.6, a float-heavy
-  page); or Figure 7 to the appendix.
+- lead, layout item (RESOLVED, Section 8): every float is now on the page of its first citation or one page before it,
+  with Table 3 beside Section 4.3 and Figure 7 wrapped in Section 4.2. Sections 5 and 6 below describe the earlier layout.
 - appendix: labels of the main figures. Figure 1 carries fig:prog_hero AND fig:speed (the hero holds the speed
   panel); Figure 4 = fig:emulation (new); Figure 5 = fig:paired_area (gains.pdf); Figure 6 = fig:qual_prog; Figure 7 =
   fig:scaling (new; the time-against-size plot that v5.1 called fig:speed b). Point latency text at fig:scaling.
@@ -183,3 +181,36 @@ tables 1; no em dash or section symbol 1.
 - The selection rules in the Figure 1 and Figure 6 captions are taken from the visuals notes and provenance JSON; I
   did not re-run their selection scripts.
 - I did not build with \scafinaltrue (no placeholder remains, so it changes nothing).
+
+## 8. Lead-review pass (11:40 to 12:00)
+- Float layout, final (build v6_text_33; placed / first cited): Table 1 p5/p6 (its source now sits in Section 3.3 and
+  the Models paragraph cites it); Figure 5 gains + Table 2 generality p6/p7 (source opens Section 4); Figure 6
+  qualitative p7/p7 (source opens 4.1); Table 3 ablations p8/p8 (4.3 now opens with "Per-head weights beat coarser
+  ones in images (Table 3)", then "Output error shows the same order", then views and opening); Figure 7 scaling p8/p8
+  as a wrapfigure beside the two 4.2 paragraphs (time paragraph first). No float inside Related Work. Every float is on
+  the page of its first citation or one page before it.
+- Figure 7 wrap width: natural 0.48 text width, not 0.42. At 0.42 its smallest labels would fall to 5.3 pt (it is
+  drawn at 2.64 in with 6.04 pt math scripts). If the lead wants 0.42, tablesplots should redraw it at 2.31 in.
+- Page 9: 90% full; main text ends on page 9; the reproducibility statement starts page 10.
+- Figure 6 (percentile version, qual_main.pdf of 11:38, 5.5 x 4.2 in; rule from qual_main_provenance.json). Caption:
+  "Progressive SCA's gain over AReA is in the whole image, in a quarter of AReA's time, and it is level with HRDiT.
+  Rows: the evaluation prompts at the 25th, 50th, and 75th percentile of the paired ImageReward difference,
+  progressive SCA minus AReA (seed 0, n = 195, mean +0.40). Numbers: each image's ImageReward, best bold; insets:
+  each image's 512 x 512 window of highest edge energy at native pixels; heads: seconds per image (double dagger:
+  campaign mean). Over all prompts, ImageReward differs from HRDiT's by -0.02 [-0.09, 0.03]. Figures L.3 and L.4 show
+  more." The citing sentence ends the first 4.1 paragraph: "Figure 6 shows that the gain lies in the whole image, on
+  the prompts at the quartiles of the ImageReward difference."
+- Crop detail: the HRDiT paragraph now says "Crop detail is statistically indistinguishable from HRDiT's (MUSIQ_c
+  +0.6 [-0.7, 1.8]; \cropsref)". \cropsref prints Figure~\ref{fig:crops_matched} once that label exists and
+  "Appendix L" (app:galleries) until then. APPENDIX OWNER: please give the matched-crop figure the label
+  fig:crops_matched. This is the only main-text citation of it.
+- Bullets: one quotable sentence each, at most two lines, each starting with "We"; the last carries 49.2 s, 4.1x and
+  all ten metrics at three seeds (macros \hlSecProg, \hlSpeedProgArea). The lead-in "We make three contributions."
+  was dropped so that Section 2 still starts on page 2.
+- Figure 2 caption (c) now reads "a schedule shared by all heads can follow only the head average", matching the
+  "shared schedule 0.7%" label of the fixed panel (c).
+- AI use statement: a commented marker sits above the reproducibility statement in main.tex ("AI USE STATEMENT GOES
+  HERE ..."); the lead is raising the disclosure with the user.
+- Checks on v6_text_33: 0 overfull boxes (main and appendix), no undefined references or citations, abstract 162
+  words, no forbidden words in the main text, source-based sentence median 20 with every real sentence at most 35
+  words.

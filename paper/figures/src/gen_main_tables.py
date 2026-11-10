@@ -1606,8 +1606,7 @@ def table_gen_all():
                 h = H[key]
                 top, low = [label, str(h["n"])], ["", ""]
                 for k in keys:
-                    sc, d = HOLM_SCALE[k]
-                    d = min(d, 2)
+                    sc, d = HOLM_SCALE[k]  # ImageReward at three decimals, as phase2_general and prog_all print it
                     g = h["metrics"][k]
                     top.append(paint(sgn(sc * g["delta"], d, "{-}"),
                                      sig((g["delta"], g["lo"], g["hi"]), lower=False) or ""))
@@ -2074,6 +2073,12 @@ def request_macros():
         "n0^2 + T + 1,024: keys of one image query in the native local view (method constants)")
     add("hlWorkedPairsRatio", f"{full / (glob + loc):.1f}", "analytic attention FLOPs of full attention over single-pass "
                                                             "SCA at 4096^2 (see request_macros)")
+    # progressive SCA minus UltraImage on MUSIQ over 1024^2 crops (text owner's optional request for Figure 6)
+    pu, _, srcu = prog_pairs("ultraimage")
+    v, lo, hi = pu["musiq_crop1024"]
+    add("hlProgUltraMusiqc", f"{v:+.1f}", f"{srcu}, metric musiq_crop1024, delta")
+    add("hlProgUltraMusiqcLo", f"{lo:.1f}", f"{srcu}, metric musiq_crop1024, ci_low")
+    add("hlProgUltraMusiqcHi", f"{hi:.1f}", f"{srcu}, metric musiq_crop1024, ci_high")
     # every value must equal the v5.1 number main.tex keeps as its placeholder
     main_tex = (ROOT / "paper" / "main.tex").read_text()
     for name, value, _, _ in out:

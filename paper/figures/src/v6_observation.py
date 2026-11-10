@@ -322,13 +322,15 @@ def panel_zoom(fig, d, x, y, w, h):
     ax.plot([100 * avg / step / 2] * 2, [zt, zt - 0.05], color=AVG_C, lw=0.6)
     ax.text(0, zt - 0.065, f"shared schedule {p['avg']}%", ha="left", va="top", fontsize=FS_S, color=AVG_C)
     # the other checkpoints (Table B.1): the head's share, same scale as the top bar, labels outside
-    sb = 0.11
+    sb = 0.13
     for i, (ck, nm) in enumerate((("flux1_krea_dev", "FLUX.1-Krea-dev"), ("flux2_dev", "FLUX.2-dev"))):
         q = d["pct"][ck]
-        y0 = 0.33 - i * 0.30
+        y0 = 0.31 - i * 0.30
         ax.add_patch(Rectangle((0, y0), 100 * q["head_f"], sb, fc=HEAD_C, ec="none"))
         ax.add_patch(Rectangle((100 * q["head_f"], y0), 100 * q["step_f"], sb, fc=STEP_C, ec=HEAD_C, lw=0.4))
-        ax.text(0, y0 + sb + 0.03, f"{nm} {q['head']}%", ha="left", va="bottom", fontsize=FS_S, color=sf.MID)
+        ax.text(0, y0 + sb + 0.03, nm, ha="left", va="bottom", fontsize=FS_S, color=sf.MID)
+        ax.text(95, y0 + sb / 2, f"{q['head']}%", ha="right", va="center", fontsize=FS_S, color="white",
+                fontweight="bold")
 
 
 def panel_models(fig, d, x, y, w, h):
@@ -361,7 +363,7 @@ def render(d, cand: str):
         panel_lines(fig, d, xb, 0.40, 1.20, 1.20)
         xc = xb + 1.20 + 0.66
         title(fig, xc, 1.81, "c", "Variance split")
-        panel_zoom(fig, d, xc, 0.03, W - xc - 0.02, 1.66)
+        panel_zoom(fig, d, xc, 0.03, W - xc - 0.07, 1.66)
     else:
         panel_matrix(fig, d, xb, 0.40, 1.20, 1.20)
         xc = xb + 1.20 + 0.66

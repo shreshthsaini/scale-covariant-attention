@@ -8,6 +8,34 @@ Full build (tectonic, 61 pages, exit 0, no undefined references): /scratch/09032
 v6_tablesplots_4/main.pdf; renders read: pages 6, 7, 9 (Tables 1 to 3, Figures 5/6 and 7 as numbered there), 30, 32,
 34, 35, 43 (appendix tables).
 
+## 0a. Lead review fixes (2026-11-10, done)
+- Panel tags: one style paper-wide, the whole tag bold, "(a) Against AReA" / "(b) Against HRDiT" in gains.pdf
+  (v6_plotkit.panel_tag / panel_tags, which also keep a row of tags clear of the canvas edge and of each other);
+  latency.pdf now "(a) Time per image" / "(b) Speed-up of single-pass SCA"; baseline_deltas.pdf "(a) ImageReward" to
+  "(d) MUSIQ_c" bold. Candidate gains_B renamed in the same words. All audits clean; rerun byte-stable.
+- gen_all prints ImageReward to three decimals (as phase2_general and prog_all). gen_all now holds every number of
+  phase2_general (multiset check: nothing of phase2_general missing), so the appendix owner can retire
+  tab:phase2_general (put \label{tab:phase2_general} beside tab:gen_all so the main-text reference still resolves).
+- scafig.py: CROP = "#E4572E" (crop boxes, visuals' request); sca_colors.tex regenerated with
+  \definecolor{scaCrop}{HTML}{E4572E} (the only new line). The colour name does not collide with the \scaCrop macro
+  of the gallery snippets (colours live in their own namespace).
+- tab:flops is typed inline in appendix.tex (no snippet exists, so there is none of mine to comment). Its timing rows
+  ("One layer, bf16 (ms)": 7.1 / 87.3 / 49.6 full attention, 5.2 / 18.7 / 14.0 SCA) have NO archived source under
+  results/; the only record is HANDOVER.md Section 4 ("Per-layer attention at 4096^2 is 18.7 ms for SCA vs 87.3 ms").
+  REQUEST to the appendix owner: (1) a comment above the float: "% Timing rows: measured once on one GH200 during
+  development; no archived timing file under results/ (HANDOVER Section 4); not regenerable by a script.";
+  (2) in the caption replace "Bottom: measured time of one attention layer ..., minimum over interleaved runs" by
+  "Bottom: time of one attention layer ..., measured once on one GH200 (minimum over interleaved runs; no archived
+  timing file)"; (3) its lead "6.9 times" can be \hlWorkedPairsRatio (same cost model, checked against 8.56e16 and
+  1.24e16). The FLOPs rows are analytic and reproduced by gen_main_tables.request_macros at 4096^2.
+- Legacy generators: gen_late_tables.py and gen_prog_tables.py now open with a "DO NOT RUN" banner and refuse to run
+  unless SCA_RUN_LEGACY=1 (tested: both exit 1 with the message; importing them, as gen_main_tables.py and
+  app_tab_phase2.py do, still works).
+- Also: \hlProgUltraMusiqc{,Lo,Hi} (+12.4 [11.5, 13.2]) generated, the text owner's optional request.
+- Verified: gen_main_tables.py "checks passed", gen_app_tables.py exit 0, strict tectonic build of main.tex exit 0
+  (61 pages, no undefined references; three 2 pt overfull lines are in main.tex's algorithm listings, not tables):
+  /scratch/09032/saini_2/sca/paper_builds/v6_tablesplots_5/main.pdf, page 6 read.
+
 ## 0. Actions for other owners
 - text: done on your side as far as tables go: Tables 1 to 3, Figure 6 caption (standardized differences, two
   panels) and the Holm wording are in the build. All 47 \reqnum macros are generated and equal their placeholders.

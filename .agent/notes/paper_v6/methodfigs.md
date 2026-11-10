@@ -30,7 +30,9 @@ Panels: (a) two heads x three noise levels, one query, real maps; (b) all 1,368 
 noise bins, heads 4 and 7 bold, head average black; (c) variance split drawn large, every label outside the bars and
 one per line (round 2): "head 97.5%" above the bar, a zoom wedge labelled "noise level 2.5%" into the magnified noise
 share, and under it "shared schedule 0.7%" (black: the part of the 2.5% a schedule shared by all heads can follow, the
-head-averaged curve of (b)); then FLUX.1-Krea-dev 97.6% and FLUX.2-dev 99.1%. 30 words, text 7 to 8.5 pt.
+head-averaged curve of (b)); then FLUX.1-Krea-dev and FLUX.2-dev, each name above its bar and its share (97.6%,
+99.1%) in white inside the bar end (round 3); rightmost text 5 bp inside the right edge. 30 words, text 7 to 8.5 pt.
+CROP (#E4572E): none of my figures draws a crop box (amber boxes are the near window / 16-token region), so n/a.
 Final caption:
   \textbf{Reach belongs to the head, not to the denoising step.} (a)~Full attention of heads 4 and 7 of block 12 at
   one query of a $1024^2$ image, at three noise levels: amber within 16 tokens of the query (dashed), blue beyond, with

@@ -131,8 +131,8 @@ def base():
     if "base" not in _CACHE:
         pool = vc.pool195()
         texts = vc.prompts195(pool)
-        import v6_qual_main as qm
-        fig5 = set(qm.picks_from(pool, texts)[1].values())
+        import v6_crops_matched as cm  # the gallery draws exclude the prompts of the like-for-like crop figure
+        fig5 = set(cm.picks_from(pool, texts)[1].values())
         _CACHE["base"] = (pool, texts, eligible195(pool), fig5)
     return _CACHE["base"]
 

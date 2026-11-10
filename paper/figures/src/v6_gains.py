@@ -218,14 +218,14 @@ def build(D, layout, norm):
     if layout == "A":
         W = pk.WRAP
         panels = [(("prog_area", "prog", -0.19), ("sca_area", "sca", 0.19)), (("prog_hrdit", "prog", 0.0),)]
-        tags = [("a", "vs AReA"), ("b", "vs HRDiT")]
+        tags = [("a", "Against AReA"), ("b", "Against HRDiT")]
         pitch, left, gap, right = 11.5, 50.0, 9.0, 3.0      # points
         top, bottom = 27.0, 26.0
     else:
         W = pk.TEXT
         panels = [(("prog_area", "prog", 0.0),), (("sca_area", "sca", 0.0),), (("prog_hrdit", "prog", 0.0),)]
-        tags = [("a", f"progressive {pk.MINUS} AReA"), ("b", f"single pass {pk.MINUS} AReA"),
-                ("c", f"progressive {pk.MINUS} HRDiT")]
+        tags = [("a", "Progressive against AReA"), ("b", "Single pass against AReA"),
+                ("c", "Progressive against HRDiT")]
         pitch, left, gap, right = 8.8, 50.0, 14.0, 4.0
         top, bottom = 14.0, 26.0
     rows_h = (ymax + 1.0) * pitch
@@ -269,8 +269,7 @@ def build(D, layout, norm):
     fig.text((span0 + span1) / 2, 3.0 / (H * 72), xlabel_text(norm), ha="center", va="bottom", fontsize=sf.FS,
              color=sf.INK)
     fig.canvas.draw()
-    for ax, (letter, name) in zip(axes, tags):
-        pk.panel_tag(fig, ax, letter, name, dy_pt=4.0)
+    pk.panel_tags(fig, axes, tags, dy_pt=4.0)
     if layout == "A":  # one key for the two marker shapes, above the panel tags
         handles = [Line2D([], [], ls="none", marker=MARKER[k][0], ms=MARKER[k][1], mfc=pk.GAIN, mec=pk.GAIN,
                           mew=0.9) for k in ("prog", "sca")]

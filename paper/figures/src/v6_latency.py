@@ -105,8 +105,8 @@ def build(cells, expo, ratio):
     axr.set_xlabel("Image side (px)")
     axr.set_ylabel(f"Speed-up {pk.UP}")
     fig.canvas.draw()
-    pk.panel_tag(fig, ax, "a", dy_pt=5.0, dx_pt=-30.0)
-    pk.panel_tag(fig, axr, "b", dy_pt=5.0, dx_pt=-26.0)
+    pk.panel_tag(fig, ax, "a", "Time per image", dy_pt=5.0, dx_pt=-30.0)
+    pk.panel_tag(fig, axr, "b", "Speed-up of single-pass SCA", dy_pt=5.0, dx_pt=-26.0)
     return fig, full_ratio
 
 

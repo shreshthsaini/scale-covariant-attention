@@ -1,3 +1,10 @@
+# ======================================================================================================================
+# DO NOT RUN THIS SCRIPT (legacy, paper v4 era; warning added 2026-11-10 by the v6 tablesplots owner).
+# Its main() rewrites paper/main.tex in place, unconditionally, and expects v4 placeholder rows that no longer exist.
+# Its tables are now written by gen_app_tables.py (module app_tab_phase2.py: krea_6144, phase2_baselines). Importing
+# it is safe (gen_main_tables.py and app_tab_phase2.py import its loaders); running it is refused unless
+# SCA_RUN_LEGACY=1 is set, and even then it would overwrite main.tex.
+# ======================================================================================================================
 """Late-arriving results (HRDiT on 191 prompts, E2 at 6144^2, E9 on FLUX.1-Krea-dev) as paper tables.
 
 Every value comes from the archived CSVs under results/; nothing is typed by hand.
@@ -225,4 +232,8 @@ def main():
 
 
 if __name__ == "__main__":
+    import os as _os
+    import sys as _sys
+    if _os.environ.get("SCA_RUN_LEGACY") != "1":
+        _sys.exit(f"{Path(__file__).name} is legacy and must not be run (see the warning at the top of the file).")
     main()

@@ -8,7 +8,7 @@ orx_figstyle (rcParams, audit):
 * Labels 7 to 8 pt (scafig FS_TICK and FS), nothing under scafig.MIN_PT (6 pt), sub- and superscripts included
   (scafig.script_floor). No titles, no top or right spines, light gridlines along the value axis only, legends
   without frames, the direction of "better" stated on the value axis, no broken axes.
-* Panel tags read "(a) name": a bold letter in parentheses, then a short name, top left above the axes.
+* Panel tags read "(a) Name", the whole tag bold, top left above the axes (one style across the paper).
 * save() writes PDF and SVG and runs the orx_figstyle audit unchanged. The audit's width rule knows only 3.25, 5.5
   and 6.75 in, so for a figure built at a declared narrower printed width (WRAP or HALF) that one finding is
   dropped and the audit line names the width; every other check (fonts, titles, axis labels, text size, overlaps,
@@ -69,17 +69,35 @@ def use_style(script_pt: float | None = None) -> None:
 
 def panel_tag(fig, ax, letter: str, name: str = "", dy_pt: float = 3.0, dx_pt: float = 0.0,
               color: str | None = None) -> None:
-    """"(a) name" above the top-left corner of `ax`: the letter bold, the name regular, both FS (8 pt)."""
+    """"(a) Name" above the top-left corner of `ax`, the whole tag bold at FS (8 pt): the one panel-tag style of the
+    paper (methodfigs' figures; lead decision of 2026-11-10)."""
     bb = ax.get_position()
     W, H = fig.get_size_inches()
     x, y = bb.x0 + dx_pt / 72 / W, bb.y1 + dy_pt / 72 / H
-    t = fig.text(x, y, f"({letter})", fontsize=sf.FS_PANEL, fontweight="bold", ha="left", va="baseline",
-                 color=sf.INK)
-    if name:
-        fig.canvas.draw()
-        w = t.get_window_extent().width / fig.dpi / W
-        fig.text(x + w + 2.5 / 72 / W, y, name, fontsize=sf.FS, ha="left", va="baseline",
-                 color=color or sf.INK)
+    fig.text(x, y, f"({letter}) {name}".rstrip(), fontsize=sf.FS_PANEL, fontweight="bold", ha="left",
+             va="baseline", color=color or sf.INK)
+
+
+def panel_tags(fig, axes, tags, dy_pt: float = 3.0, min_gap_pt: float = 12.0) -> None:
+    """A row of panel tags ("(a) Name", whole tag bold, FS_PANEL) above `axes`: each starts at its axes' left edge
+    unless the row would run off the canvas or two tags would come closer than `min_gap_pt`; then tags move left,
+    the last first, never past 2 pt from the canvas edge."""
+    W, H = fig.get_size_inches()
+    r = fig.canvas.get_renderer()
+    texts, x0s = [], []
+    for ax, (letter, name) in zip(axes, tags):
+        bb = ax.get_position()
+        t = fig.text(bb.x0, bb.y1 + dy_pt / 72 / H, f"({letter}) {name}".rstrip(), fontsize=sf.FS_PANEL,
+                     fontweight="bold", ha="left", va="baseline", color=sf.INK)
+        texts.append(t)
+        x0s.append(bb.x0 * W * 72)
+    widths = [t.get_window_extent(r).width / fig.dpi * 72 for t in texts]
+    xs = list(x0s)
+    xs[-1] = min(xs[-1], W * 72 - 1.0 - widths[-1])
+    for i in range(len(xs) - 2, -1, -1):
+        xs[i] = min(xs[i], xs[i + 1] - min_gap_pt - widths[i])
+    for t, x in zip(texts, xs):
+        t.set_x(max(2.0, x) / (W * 72))
 
 
 def clean_axes(ax, grid: str | None = "y", left: bool = True) -> None:

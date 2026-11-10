@@ -54,6 +54,7 @@ ZOOM = "#FFC21A"     # crop windows and the frames of their zoom tiles
 LOSS = "#B85C00"     # significant loss for SCA (matches the paper's \dn colour)
 AREA = "#7A4EA3"     # AReA: the one contrasting hue (not amber, blue or green)
 AREA_LIGHT = "#E9E0F1"
+CROP = "#E4572E"     # crop boxes on full images and the frames of their 1:1 crops (visuals owner, v6)
 
 # AReA purple; the other baselines neutral greys, darker for stronger ones.
 METHOD_COLOR = {
@@ -175,6 +176,7 @@ def write_tikz_colors(path: str) -> str:
         "scaAccent": SCA, "scaAccentLight": SCA_LIGHT,
         "scaNeutral": NEUTRAL, "scaZoom": ZOOM, "scaLoss": LOSS,
         "scaArea": METHOD_COLOR["area"], "scaAreaLight": AREA_LIGHT, "scaFull": METHOD_COLOR["full"],
+        "scaCrop": CROP,
     }
     lines = ["% Written by scafig.py; the same palette as the matplotlib figures."]
     lines += [r"\definecolor{%s}{HTML}{%s}" % (k, v.lstrip("#").upper()) for k, v in names.items()]

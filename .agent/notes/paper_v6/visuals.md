@@ -3,6 +3,15 @@
 Figures 1 and 5 and every appendix sample page are rebuilt as one family. Every image and window comes from a rule
 implemented in the scripts and stated in the caption. Nothing is picked by eye.
 
+## Lead review, round 3 (final): Figure 5 compares whole images
+Figure 5 is rebuilt on whole images, with percentile rows of the ImageReward gain over AReA; see Figure 5. The
+window-agreement figure is kept in the appendix as the new stem crops_matched.pdf (label fig:crops_matched, snippet
+v6/snippets/crops_matched.tex). Its caption: "Where the four methods draw the same content, progressive SCA's crops
+are sharper than UltraImage's and level with HRDiT's." followed by the selection clause and the note that AReA's and
+HRDiT's layouts still differ in some rows. The comparison pages are unchanged; their draws still exclude the
+crops_matched prompts (`v6_gallery` now imports `v6_crops_matched.picks_from`). None of the new Figure 5 prompts
+appears on another page.
+
 ## Lead review, round 2 (Figure 5 selection on window agreement)
 The window-level rule is built and is in the stem; see Figure 5. Two of three rows are not fully like for like
 (AReA's crops show other content in rows 1 and 3, HRDiT's in row 3). As instructed I stopped and sent the render and
@@ -65,59 +74,48 @@ like-for-like crops on Figure 5. I will apply it once the lead settles the rule.
   proof: 2 / 1. Grid: 1 / 1. Variety: 2 / 1. Words and text size: 1 / 1. Palette: 1 / 1. Height budget: 1 / 1.
   Mean: 1.38 / 1.13.
 
-## Figure 5: `figures/v6/qual_main.pdf` (label fig:qual_prog, unchanged), round 2 (lead's window rule)
-- Size: 5.5 x 3.95 in, natural width; 1.06 MB. Layout as approved: one prompt per row, three rows. Progressive SCA's
-  full image (1.07 in) carries a red box on a shared 512 x 512 window. The same window follows at native pixels from
-  AReA, UltraImage, HRDiT and progressive SCA (1.07 in tiles, 478 ppi), with methods as column heads.
-  - Under each head, a grey 6.5 pt line gives seconds per 4096^2 image from the hero panel's data
-    (`fig_speed.load`, half-up rounding as printed): AReA 202.4 s, HRDiT 107.0 s, ours 49.2 s, clean batch-1. For
-    UltraImage it gives 308.5 s‡, its campaign mean, with Table 1's double dagger (`\camp`).
-  - Under each crop, that crop's MUSIQ (pyiqa musiq, the evaluation's KonIQ checkpoint, CPU), best of the row bold.
-  - 26 words; smallest text 6.48 pt.
-- Selection rule, implemented in `v6_qual_main.picks_from`:
-  - Candidates: every 512 x 512 window on a stride-256 grid (256 px border) of the 195 prompts at seed 0, 32,955 in
-    all.
-  - Detail filter: keep windows whose maximin edge energy (smallest mean edge energy among the four methods) is in the
-    top decile of all candidates. That leaves 3,213: 1,202 portrait, 679 landscape, 790 architecture. The quintile
-    fallback was not needed.
-  - Score: the smallest pairwise SSIM among the four methods' crops, downsampled to 128 x 128 greyscale.
-  - Pick: the best pair per category (portrait, landscape, architecture), one prompt each.
-  - Caption clause: "per category, the evaluation prompt and 512 x 512 window on which the four methods agree most in
-    content among high-detail windows, seed 0".
-- Picks (local agreement):
-  - m5805253890620089726 (four uniformed characters, 0.485, window 1024, 512)
-  - 1095479033191131413 (lake under clouds, 0.345, window 3328, 768)
-  - m3112502764021036396 (stone bridge over a waterfall, 0.392, window 2048, 256)
-- What the render shows. Crop MUSIQ for AReA / UltraImage / HRDiT / ours:
-  - Row 1: 76.0 / 43.5 / 70.3 / 64.6. UltraImage, HRDiT and ours show the same bearded face and epaulette; AReA shows
-    another character's face.
-  - Row 2: 71.8 / 36.1 / 57.1 / 55.5. All four show a pine against the sky, so like for like; AReA's tree is crisp.
-  - Row 3: 55.0 / 37.3 / 45.6 / 63.1. UltraImage and ours show the bridge parapet, HRDiT trees, AReA haze with
-    vertical stripes.
-  So two of three rows are not fully like for like. Per the lead's instruction I stopped iterating and sent the render
-  and the top five pairs per category. What holds in every row: ours is sharper than UltraImage, and level with HRDiT
-  where both draw the same content (rows 1 and 2). It is not sharper than AReA in rows 1 and 2.
-- Renders for the lead:
-  - ICLR page: /scratch/09032/saini_2/sca/paper_builds/v6_visuals_1/testdoc/test_main_p03.png
-  - 300 dpi: .../cand4/qual_main_r300.png
-  - Top five pairs per category, crops of the four methods with ids, windows and SSIM: .../cand4/top5_pairs_labeled.jpg
-    (data in top5_pairs.json).
-  - Round 1 (image-level agreement): .../cand2/qual_main_r300.png.
-- Why four-way like-for-like is hard: AReA (single pass) and HRDiT (fp16 first stage) set their own layouts. Even
-  among high-detail windows the best smallest SSIM is 0.49, and by rank five it is about 0.26. The pairs closest to
-  like for like show one object class in all four methods (faces, a pine against a peak, a hatted silhouette).
-  Untested option for the lead: let each baseline's window be the window of its own image that best matches ours by
-  normalised cross-correlation within a search radius. This aligns content even when the layout shifts.
-- Proposed caption for the current stem (claims only what every row shows):
-  `\textbf{Progressive \sca{} is sharper than UltraImage in every row and level with HRDiT where both draw the same
-  content, in \hlProgHrditPct\% of HRDiT's time.} Per category, the evaluation prompt and $512\times512$ window on
-  which the four methods agree most in content among high-detail windows, seed~0. Numbers: MUSIQ of each crop, best
-  bold; times: clean seconds per $4096^2$ image (\textdaggerdbl{} campaign mean). Figures~\ref{fig:gallery_prog16}
-  and~\ref{fig:gallery_prog16b} show 18 more prompts.`
-- Earlier rounds, kept for the record:
-  - v6 first version: each method's own image beside a shared window. Rejected in review (unrelated content per row).
-  - Round 1: the image-level agreement rule. Its portrait row was the comparison the lead wants; the planet and church
-    rows were flat.
+## Figure 5: `figures/v6/qual_main.pdf` (label fig:qual_prog, unchanged), final (round 3: whole images)
+- Size: 5.5 x 4.20 in, natural width; 2.27 MB. Script `v6_qual_main.py`.
+- Layout:
+  - Columns: AReA, UltraImage, HRDiT, progressive SCA (ours bold green). Under each head, a grey 6.5 pt line of
+    seconds per 4096^2 image from the hero's data: 202.4 s, 308.5 s‡ (UltraImage's campaign mean, Table 1's mark),
+    107.0 s, 49.2 s.
+  - Rows: three prompts, labelled at left with the percentile and the ImageReward difference.
+  - Cells: the full 4096^2 image (1.19 in). The image's own 512 x 512 window of highest edge energy is boxed in red and
+    shown at native pixels as a 0.47 in inset, bottom-right unless that covers the box (then bottom-left, top-right,
+    top-left). Under each image, its ImageReward in grey, best of the row bold.
+  - Smallest text 6.48 pt; 27 words if a number with its unit counts as one.
+- Rows (caption clause): the evaluation prompts at the 25th, 50th and 75th percentile (nearest rank, ranks 49, 98 and
+  147 of 195) of the paired ImageReward difference, progressive SCA minus AReA, at seed 0. Per-image ImageReward comes
+  from the files the paired bootstrap read: eval/a4k195_main (AReA, UltraImage) and eval/prog195_sca_v2 (HRDiT, ours).
+  They equal eval/prog195_vs_baselines, and their mean difference reproduces the archived 0.399078. The person-free
+  fallback was not needed: our three images show no repeated figures.
+
+| Row | prompt | difference | ImageReward AReA / UltraImage / HRDiT / ours |
+|---|---|---|---|
+| 25th pct. | m1066207185399086750 (woman with glasses and silver jewelry) | +0.01 | 1.89 / 1.89 / 1.89 / **1.90** |
+| median | 2022937813048109690 (snow-covered waterfall) | +0.24 | 1.23 / **1.56** / 1.38 / 1.47 |
+| 75th pct. | m5370774387421928008 (riverside castle in autumn) | +0.66 | 0.83 / 1.40 / 1.17 / **1.49** |
+
+- What the rows show: at the 25th percentile the four images are level. At the median and the 75th percentile AReA's
+  whole image is flatter and hazier (washed out at the 75th) than the other three. Ours takes 49.2 s against AReA's
+  202.4 s. Nothing over HRDiT is claimed; UltraImage has the best ImageReward at the median.
+- Caption:
+  `\textbf{Progressive \sca{}'s typical gain over AReA is in the whole image, at a quarter of AReA's time.} Rows: the
+  evaluation prompts at the 25th, 50th and 75th percentile (nearest rank) of progressive \sca{}'s ImageReward gain over
+  AReA, seed~0. Under each image its ImageReward (best bold); insets show each image's highest-detail $512^2$ window at
+  1:1; \textdaggerdbl{} campaign mean. Figures~\ref{fig:gallery_prog16} and~\ref{fig:gallery_prog16b} show 18 more
+  prompts.`
+- Claim: progressive SCA's measured advantage over AReA is whole-image preference (ImageReward \hlProgAreaIr
+  [\hlProgAreaIrLo, \hlProgAreaIrHi] over 195 prompts), at \hlSpeedProgArea x less time. The rows show a small, a
+  typical and a large gain.
+- Render on the ICLR page: /scratch/09032/saini_2/sca/paper_builds/v6_visuals_1/testdoc/test_main_p03.png; 300 dpi
+  candidate: .../cand5/qual_main_r300.png (0.53 in insets; the stem uses 0.47 in).
+- Rounds for the record:
+  1. Each method's image beside a shared window: rejected, unrelated content per row.
+  2. Image-level layout agreement: two flat rows (.../cand2).
+  3. Window-level agreement: two of three rows not fully like for like (.../cand4, top five pairs in
+     cand4/top5_pairs_labeled.jpg). This round moved to the appendix as crops_matched (below).
 
 ## Appendix sample pages (one family)
 Shared design: full text width, methods as rows with rotated two-line 8 pt labels (ours green, progressive bold), and
@@ -145,6 +143,7 @@ Every shared window is maximin: the window that maximises the smallest edge ener
 | gallery_6144_complete | fig:gallery_6144_complete | gallery_6144_complete | 3.68 | 0.30 | four person-free of the 100 completed (17) |
 | gallery_8192_complete | fig:gallery_8192_complete | gallery_8192_complete | 3.68 | 0.31 | four person-free of the 12 completed (17) |
 | progressive | fig:progressive | progressive | 2.69 | 0.20 | frozen v5.1 draw over the 46-prompt panel (17) |
+| crops_matched (new stem) | fig:crops_matched (new label) | crops_matched | 3.95 | 1.06 | per category, the prompt and 512 x 512 window on which the four methods agree most in content among high-detail windows (Figure 5's round 3; `v6_crops_matched.py`) |
 | failures | fig:failures | failures | 3.68 | 0.53 | the four person-free prompts with the largest ImageReward deficit of SCA without the schedule against AReA |
 
 Family rubric (per page):
@@ -181,8 +180,7 @@ full attention's flat field and DyPE's and SEGA's lattices; the second prompt's 
 ## Requests to other owners
 Text owner (main.tex):
 - Figure 1: the caption above. It has no panel letters, and its images are showcase prompts.
-- Figure 5: the round 2 caption above, uses `\hlProgHrditPct`. `\vsixinc{qual_main}` at natural width; the figure is
-  3.95 in tall. The rule may still change after the lead's decision.
+- Figure 5: the final caption above (round 3). `\vsixinc{qual_main}` at natural width; the figure is 4.20 in tall.
 
 Appendix owner (appendix.tex):
 - Make `\snippetat` prefer `figures/v6/snippets/<stem>.tex` and fall back to `figures/snippets/<stem>.tex`. Choose the
@@ -192,6 +190,9 @@ Appendix owner (appendix.tex):
   `\snippetat{p}{all_methods}`. Replace the inline zoom4k block (`\apxgraphic{zoom4k}`, caption, label) with
   `\snippetat{!htbp}{crops4k}`. Do not trim any v6 PDF.
 - `\snippetat{p}{hero}` picks up v6/snippets/hero.tex, which includes aspect.pdf with fig:hero.
+- New appendix figure: `\snippetat{p}{crops_matched}` (label fig:crops_matched), placed in the progressive appendix
+  or the galleries. It documents that crop detail is level with HRDiT where the methods draw the same content; it
+  pairs with crops4k or gallery_baselines on one float page.
 - Failure section: fig:failures shows the four person-free prompts with the largest ImageReward deficit against AReA.
   It no longer shows "local errors".
 - App. progressive: crops4k does not support "single-pass SCA keeps more native detail in every crop"; cite
@@ -216,13 +217,12 @@ Tables and plots owner:
 - Optional, for Figure 5's claim in numbers: `\hlProgUltraMusiqc{+12.4}`, `\hlProgUltraMusiqcLo{11.5}`,
   `\hlProgUltraMusiqcHi{13.2}` from results/prog195_vs_baselines/sca_v2_prog_vs_ultraimage.csv (musiq_crop1024).
 
-Lead: decide Figure 5's rule (see round 2, the review sheet and the untested option of per-method matched windows).
-No GPU work is needed.
+Lead: no open decision on Figure 5; no GPU work is needed.
 Nothing was committed.
 
 ## Sizes
-Figure 1 0.51 MB, Figure 5 1.06 MB; the 19 appendix PDFs 12.6 MB; my PDFs total 14.2 MB. All 21 floats compile
-together to 13.3 MiB. The v5.1 qualitative assets were about 38.7 MB and the v5.1 paper 34.4 MB.
+Figure 1 0.51 MB, Figure 5 2.27 MB; the 20 appendix PDFs (with crops_matched) 13.7 MB; my PDFs total 16.5 MB. All 22 floats compile
+together to 15.7 MiB. The v5.1 qualitative assets were about 38.7 MB and the v5.1 paper 34.4 MB.
 
 ## Not verified
 - I have not built the real paper with main.tex and appendix.tex. I checked the main figures on ICLR test pages and all

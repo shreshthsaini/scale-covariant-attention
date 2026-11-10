@@ -160,6 +160,7 @@ def latency_table():
         assert len(cols) == 4, line
         for key, cell in zip(("full", "area", "sca_v2"), cols[1:]):
             cell = re.sub(r"\\textbf\{([^}]*)\}", r"\1", cell.replace("\\\\", "")).strip()
+            cell = re.sub(r"^\{\\color\{[^}]*\}(.*)\}$", r"\1", cell).strip()  # v6: "not run" set in grey
             if cell != "not run":
                 out[key, int(m.group(1))] = float(cell)
     assert out, "no rows parsed from tab:latency"
