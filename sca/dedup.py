@@ -46,6 +46,9 @@ def add_args(p):
     p.add_argument("--scale-fixed", type=win_sched, default=(), metavar="SIGMA:A,...", help="Every head at apparent "
                    "scale A while sigma > SIGMA (stride s / A lattice, coarse ids, weight from the scale-A table; bridge "
                    "keys at the same coarse ids), the published local branch below (default: off)")
+    p.add_argument("--lattice-pool", choices=("center", "mean"), default="center", help="Keys and values of the "
+                   "apparent-scale local view (--scale-fixed / --scale-sched): block-centre lattice (center, default) or "
+                   "block means (mean: reach-annealed hand-off, a 2 n0 window pooled by 2 at r = 2)")
     p.add_argument("--win-pi-interp", action="store_true", help="With --win-pi-match: interpolate pi log-linearly "
                    "between the bracketing calibrated scales (e.g. 112-token windows at 4096^2 sit between scale 2 and 4)")
     p.add_argument("--win-pi-match", action="store_true", help="On --win-sched steps read pi from the table at the "
@@ -173,7 +176,8 @@ def context_kwargs(args):
                 bridge_lo=args.bridge_lo, bridge_k_hi=args.bridge_k_hi, bridge_k_hi_lo=args.bridge_k_hi_lo,
                 bridge_ratio=args.bridge_ratio,
                 lse_tau=args.lse_tau, scale_sched=args.scale_sched, scale_lo=args.scale_lo,
-                scale_fixed=args.scale_fixed, win_pi_match=args.win_pi_match, win_pi_interp=args.win_pi_interp, win_heads_below=args.win_heads_below,
+                scale_fixed=args.scale_fixed, lattice_pool=getattr(args, "lattice_pool", "center"),
+                win_pi_match=args.win_pi_match, win_pi_interp=args.win_pi_interp, win_heads_below=args.win_heads_below,
                 text_mode=args.text_mode, text_mode_lo=args.text_mode_lo, text_gamma=args.text_gamma,
                 text_clip=args.text_clip, text_bw_scale=args.text_bw_scale, ffl_near=args.ffl_near,
                 ffl_head_frac=args.ffl_head_frac, ffl_fade_lo=args.ffl_fade_lo, ffl_outside=args.ffl_outside,
@@ -238,6 +242,8 @@ def info(args):
         out.update(scale_sched=True, scale_lo=args.scale_lo)
     if args.scale_fixed:
         out["scale_fixed"] = [list(x) for x in args.scale_fixed]
+    if getattr(args, "lattice_pool", "center") != "center":
+        out["lattice_pool"] = args.lattice_pool
     if args.win_pi_match:
         out["win_pi_match"] = True
     if args.win_pi_interp:

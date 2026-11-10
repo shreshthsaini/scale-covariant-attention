@@ -581,13 +581,15 @@ def local_branch_strided(qc, kc, vc, L, grid, tile, stride, window, chunk=None, 
     return out.view(B, Th, Tw, th, tw, h, D).permute(0, 1, 3, 2, 4, 5, 6).reshape(B, H * W, h, D)
 
 
-def lattice_qkv(q, k, v, L, grid, stride, rope_q, rope_k, k_txt):
+def lattice_qkv(q, k, v, L, grid, stride, rope_q, rope_k, k_txt, lattice_pool="center"):
     """Inputs of the strided local branch: image queries at coarse ids (rope_q), [text | lattice] keys with the
     lattice taken at block centres as pool_tokens 'center' does (rope_k at their coarse ids), and the matching
-    values. q, k, v pre-RoPE [B, S, h, D]; k_txt the RoPE'd text keys."""
+    values. q, k, v pre-RoPE [B, S, h, D]; k_txt the RoPE'd text keys. lattice_pool="mean" (reach-annealed hand-off,
+    HANDOVER Section 40) averages each stride block's pre-RoPE keys and its values instead (pool_tokens 'mean', the
+    opening's pooling code), the key placed at the block's coarse id as before."""
     qc = rope(q[:, L:], rope_q)
-    kc = torch.cat([k_txt, rope(pool_tokens(k[:, L:], grid, stride, "center"), rope_k)], 1)
-    vc = torch.cat([v[:, :L], pool_tokens(v[:, L:], grid, stride, "center")], 1)
+    kc = torch.cat([k_txt, rope(pool_tokens(k[:, L:], grid, stride, lattice_pool), rope_k)], 1)
+    vc = torch.cat([v[:, :L], pool_tokens(v[:, L:], grid, stride, lattice_pool)], 1)
     return qc, kc, vc
 
 
@@ -667,14 +669,16 @@ def head_layout(layout, heads):
                       bm.kv_num_blocks.clone(), full)
 
 
-def sca_scale_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, groups, text_bias=0.0, cells=None, per=0):
+def sca_scale_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, groups, text_bias=0.0, cells=None, per=0,
+                      lattice_pool="center"):
     """SCA with per-head apparent scales (flex). groups: ((stride, rope_q_d, rope_k_d, layout, member), ...), one per
     apparent scale a > 1, layout a HeadLayout.layout whose block counts set_heads(member) has set (or any layout when
     member is all True); member [1, 1, h, 1] bool. Image queries of the heads in member take
     pi O_loc(stride) + (1 - pi) O_glob (pi [1, 1, h, 1], the weight at each head's apparent scale); heads in no group
     (a = 1) and all text queries take O_glob. per > 0 prepends the AReA bridge (bridge_index, the same tokens for every
     stride) to each group's lattice keys, its keys at the group's coarse query ids (rope_q_d); layouts are then built
-    for the prefix L + R, R = cells_h * cells_w * per."""
+    for the prefix L + R, R = cells_h * cells_w * per. lattice_pool: center (block-centre lattice) | mean (block means
+    of keys and values, lattice_qkv)."""
     cos, sin = rot
     rot_txt = (cos[:L], sin[:L])
     k_txt = rope(k[:, :L], rot_txt)
@@ -686,7 +690,7 @@ def sca_scale_forward(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, groups
         g = idx[:, :, None, None].expand(-1, -1, k.shape[2], k.shape[3])
         vb = torch.gather(v[:, L:], 1, g)
     for stride, rqd, rkd, layout, member in groups:
-        qc, kc, vc = lattice_qkv(q, k, v, L, grid, stride, rqd, rkd, k_txt)
+        qc, kc, vc = lattice_qkv(q, k, v, L, grid, stride, rqd, rkd, k_txt, lattice_pool)
         Lp = L
         if per:
             kb = torch.gather(rope(k[:, L:], rqd), 1, g)                             # bridge keys at coarse query ids
@@ -708,7 +712,8 @@ def sca_scale_fn(device):
     return _FLEX["scale"]
 
 
-def sca_scale_gather(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, tile, groups, chunk=None, text_bias=0.0):
+def sca_scale_gather(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, tile, groups, chunk=None, text_bias=0.0,
+                     lattice_pool="center"):
     """Gather reference of sca_scale_forward. groups: ((stride, window, rope_q_d, rope_k_d, heads), ...), heads a
     LongTensor of the heads at that apparent scale; each group runs local_branch_strided on its heads only
     (index_select on the head dimension), mixes with their pi and scatters back."""
@@ -719,7 +724,7 @@ def sca_scale_gather(q, k, v, rot, rope_q, rope_k, pi, L, grid, f, pool, tile, g
     img = o_glob[:, L:].clone()
     for stride, window, rqd, rkd, heads in groups:
         q_, k_, v_, kt_ = (t.index_select(2, heads) for t in (q, k, v, k_txt))
-        qc, kc, vc = lattice_qkv(q_, k_, v_, L, grid, stride, rqd, rkd, kt_)
+        qc, kc, vc = lattice_qkv(q_, k_, v_, L, grid, stride, rqd, rkd, kt_, lattice_pool)
         o_loc = local_branch_strided(qc, kc, vc, L, grid, tile, stride, window, chunk, text_bias)
         p, og = pi.index_select(2, heads), o_glob[:, L:].index_select(2, heads)
         img.index_copy_(2, heads, (p * o_loc.float() + (1 - p) * og.float()).to(og.dtype))
@@ -764,7 +769,10 @@ def sca_headwin_fn(device):
 # ----------------------------------------------------------------------------- pi tables
 
 class PiTable:
-    """pi(layer, head, sigma). variant: head | layer | uniform | switch | const."""
+    """pi(layer, head, sigma). variant: head | layer | uniform | switch | const | headmean | layermean.
+    headmean / layermean (prog195 ablation, HANDOVER Section 40) average the fitted per-head table: one weight per
+    sigma bin (mean over every layer and head), or one per layer and bin (mean over the layer's heads). layer and
+    uniform are the separately fitted pooled tables."""
 
     def __init__(self, variant="const", table=None, centers=None, value=1.0, sigma_star=None):
         self.variant, self.value, self.sigma_star = variant, value, sigma_star
@@ -781,6 +789,10 @@ class PiTable:
         p = f"s{scale}_"
         if variant == "switch":
             obj = cls("switch", sigma_star=float(z[p + "sigma_star"]) if sigma_star is None else sigma_star)
+        elif variant in ("headmean", "layermean"):
+            ph = np.asarray(z[p + "pi_head"], dtype=np.float64)                      # [layers, heads, bins]
+            table = ph.mean((0, 1))[None, None] if variant == "headmean" else ph.mean(1)[:, None]
+            obj = cls(variant, table, z["sigma_centers"])
         else:
             table = z[p + {"head": "pi_head", "layer": "pi_layer", "uniform": "pi_uniform"}[variant]]
             table = table[:, None] if variant == "layer" else table.reshape((1,) * (3 - table.ndim) + table.shape)
@@ -840,6 +852,8 @@ class SCAContext:
     win_pi_interp: bool = False         # with win_pi_match: log-linear interpolation between the bracketing calibrated scales
     win_heads_below: float | None = None  # TAU: on win_sched steps only heads with published pi < TAU take the wide window
     scale_fixed: tuple = ()             # ((sigma_k, a_k), ...): every head at apparent scale a_k while sigma > sigma_k
+    lattice_pool: str = "center"        # keys/values of the strided (apparent-scale) local view: center = block-centre
+                                        # lattice | mean = block means (reach-annealed hand-off, HANDOVER Section 40)
     text_mode: str = ""                 # round 6 (sca/textgate.py): "", ctw, gtg, gtx or ctw+gtg (window text options)
     text_mode_lo: float = 0.0           # text_mode applies while sigma > text_mode_lo
     text_gamma: float = 1.0             # gtg: strength of the global text gate
@@ -976,6 +990,10 @@ class SCAContext:
                                      or self.ramp_sigma or self.route or self.scale_sched):
             raise ValueError("win_heads_below needs win_sched and local_impl flex, without band, lse mixing, pi ramp, "
                              "routing or scale_sched")
+        if self.lattice_pool not in ("center", "mean"):
+            raise ValueError(f"lattice_pool must be center or mean, got {self.lattice_pool}")
+        if self.lattice_pool != "center" and not (self.scale_fixed or self.scale_sched):
+            raise ValueError("lattice_pool mean acts on the strided local view only: needs scale_fixed or scale_sched")
         self.win_sched = tuple(sorted(((float(a), int(b)) for a, b in self.win_sched), reverse=True))
         if self.text_mode:
             from sca.textgate import parse_mode
@@ -1757,8 +1775,10 @@ class SCAProcessor:
             groups.append((d, rqd, rkd, hl.layout, member.view(1, 1, -1, 1)))
         if ctx.local_impl == "gather":
             return sca_scale_gather(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, tile,
-                                    tuple(groups), ctx.chunk, tb)
+                                    tuple(groups), ctx.chunk, tb, ctx.lattice_pool)
         args = (q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, tuple(groups))
+        if ctx.lattice_pool != "center":
+            return sca_scale_fn(q.device)(*args, tb, None, 0, ctx.lattice_pool)
         return sca_scale_fn(q.device)(*args, tb) if tb else sca_scale_fn(q.device)(*args)
 
     def scale_fixed(self, q, k, v, image_rotary_emb, f, tile, a):
@@ -1777,10 +1797,13 @@ class SCAProcessor:
         if ctx.local_impl == "gather":
             heads = torch.arange(q.shape[2], device=q.device)
             return sca_scale_gather(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool, tile,
-                                    ((d, win, rqd, rkd, heads),), ctx.chunk, tb)
+                                    ((d, win, rqd, rkd, heads),), ctx.chunk, tb, ctx.lattice_pool)
         cells, per = ctx.bridge_now()
         layout = ctx.strided_layout(L + (cells[0] * cells[1] * per if per else 0), tile, d, win, q.device)
         member = torch.ones(1, 1, q.shape[2], 1, dtype=torch.bool, device=q.device)
+        if ctx.lattice_pool != "center":
+            return sca_scale_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
+                                          ((d, rqd, rkd, layout, member),), tb, cells, per, ctx.lattice_pool)
         return sca_scale_fn(q.device)(q, k, v, tuple(image_rotary_emb), rq, rk, pi, L, ctx.grid, f, ctx.pool,
                                       ((d, rqd, rkd, layout, member),), tb, cells, per)
 

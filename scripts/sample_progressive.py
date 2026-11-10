@@ -299,6 +299,9 @@ def parser():
                    help="stock = FLUX.1-dev processors untouched at the native stage")
     p.add_argument("--pi-table", type=Path, help="npz from scripts/calibrate.py (required unless --pi-const)")
     p.add_argument("--pi-const", type=float, help="Constant pi (tests and ablations)")
+    p.add_argument("--pi-variant", choices=("head", "headmean", "layermean"), default="head",
+                   help="head: the fitted per-head table (published); headmean: its mean over every layer and head per "
+                   "sigma bin; layermean: its mean over each layer's heads (prog195 ablation, HANDOVER Section 40)")
     p.add_argument("--gate-sigma", default="0.89",
                    help="Global-only above this sigma; one value, or one per higher-resolution stage")
     p.add_argument("--n0", type=int, default=64)
@@ -349,7 +352,7 @@ def build_contexts(args, plan, vae_scale_factor=8):
         elif args.pi_table is None:
             raise SystemExit("--pi-table is required unless --pi-const is given")
         else:
-            pi = PiTable.load(args.pi_table, "head", None, None, target)
+            pi = PiTable.load(args.pi_table, getattr(args, "pi_variant", "head"), None, None, target)
         contexts.append(SCAContext(mode="sca", known_grid=grid, n0=args.n0, tile=args.tile, window=args.window,
                                    pool=args.pool, chunk=args.chunk, local_impl=args.local_impl, pi=pi,
                                    gate_sigma=gates[s - 1], **dedup.context_kwargs(args)))
