@@ -1916,6 +1916,28 @@ configuration with AReA on the 15 TEST prompts at 5312^2; review page web/review
   /scratch/09032/saini_2/sca/code/596fa4b`; then wait for the hook (or rmdir out/qwen_tuned/.review_built and run it).
   Controller note: the fresh controller 1132105 (48 h) cannot start before the Vista_PM maintenance (11-11 06:15 to
   22:00) because its walltime overlaps it; a job under about 30 h could.
+- 2026-11-10 00:45 state. TUNE screens archived (results/qwen_tune/{4096,5312}, SHA256SUMS). Mean d_z against AReA:
+  qt_prog_sfx -0.07, qt_prog_late_sfx -0.07, qt_prog -0.28, qt_prog_late -0.35 (5312^2); qt_sfx -0.55, qt_mu_sfx
+  -0.60, qt_sca40 (untuned) -0.78, qt_mu -0.86 (4096^2). Every progressive configuration fails the guard rail: their
+  native crops are soft with a fine mesh texture (MUSIQ_c 7.5 to 13.7 below AReA, untuned single pass is 7.2 above);
+  the 5312^2 stage starts at sigma 0.62 or 0.51, about 0.29 or 0.21 in native terms at 4x the side, so it keeps the
+  upsampled image. qt_mu_sfx fails the MUSIQ_c guard rail by 0.01 (operationalization written before any result).
+  Chosen: qt_sfx (single pass, AReA's prompt suffix and empty negative prompt, else untuned): TUNE PickScore -0.28
+  [-0.47,-0.10], HPSv2.1 -0.008 [-0.015,+0.000], IR -0.02 (ns), MUSIQ_c +4.6 against AReA; against untuned PickScore
+  +0.29 [+0.12,+0.48], HPSv2.1 +0.011 [+0.002,+0.022], MUSIQ_c -2.6 [-4.3,-0.9]. Details in the notes.
+- In the spool (nothing else needs a controller): 000r_f_sfx5312_* (TEST qt_sfx, 15 prompts, tree a7034a3),
+  000r_g_eval_test5312 (results/qwen_5312_tuned with --pair qt_sfx=qwen_sca40, then the review hook),
+  round 2 000r_gz_prog_deep_sfx5312_* + 000r_gz_zeval_tune5312_r2 (TUNE only: the progressive design with a 25-step
+  5312^2 stage from sigma 0.915, to fix the softness), 000r_h_qfull5312_* (8 pending, 4 running). chosen.env =
+  qt_sfx. BLOCKER: the 74 000a_*/000b_* tasks of Section 40 (enqueued 00:27) sort ahead of every 000r task, so none of
+  these runs until they drain (SCS1/SCS2 end about 07:10). The lead decides the order.
+- When the TEST evaluation and the full-attention tasks are done the hook builds web/review_qwen (final) and checks it;
+  then review logs/review_qwen_finish.log and web_assets/check_review_qwen/report.json, and commit web/review_qwen
+  and results/qwen_5312_tuned (the interim page on disk now has TUNE tables, TEST pending, grids without the tuned
+  panel; not committed). If round 2 passes the guard rail and beats -0.547: `qwen_tune_tasks.py test evaltest
+  --labels qt_prog_deep_sfx qt_sfx --code /scratch/09032/saini_2/sca/code/596fa4b` after setting chosen.env to
+  TUNED=qt_prog_deep_sfx, a display name and ALSO="qt_sfx=single pass with AReA's conditioning" (evaltest rewrites
+  000r_g only while it is pending; otherwise add a tagged rerun), then rebuild with the hook.
 
 ## 40. 2026-11-10: reach-annealed hand-off (A) and the progressive table ablation (B) (method owner; this section is the log)
 Brief (lead, 00:00): A = single pass that walks the reach table r = 1 -> 2 -> 4 with measured switch points; B = does
