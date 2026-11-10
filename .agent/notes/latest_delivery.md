@@ -1,18 +1,20 @@
-# Latest verified paper delivery, 2026-11-10 04:00 CST (v5.1: v5 plus the progressive-schedule ablation)
+# Latest verified paper delivery, 2026-11-10 afternoon (v6: full presentation revamp)
 
-- [Paper PDF](../../paper/main.pdf), 55 pages: main text pages 1 to 9, reproducibility statement and references from
-  page 10, appendix after. SHA256 8af9545fcace987727fc2c0a78aa07d6f7dc1396c83bca1d9b7c907a14c35a90.
-- [Overleaf source ZIP](../../paper/sca_overleaf.zip), 429 source files, SHA256
-  260d4287aba5968ffd3c1ecef806476b818b250bbb6f03aa1bc338ca6111ac9e.
+- [Paper PDF](../../paper/main.pdf), 62 pages, 19.7 MB: main text pages 1 to 9 (page 9 about 90% full),
+  reproducibility statement and references from page 10, appendix pp. 13 to 62. SHA256
+  aea2da4f2ba262ba4e3527f21e90c37e83be5e4f9317b687e14a03810cf23c46.
+- [Overleaf source ZIP](../../paper/sca_overleaf.zip), 95 source files, 19.2 MB, SHA256
+  e3b10d4a226c31fca102cb4ff88c48f61ce5c176ca1ac2912655a984dd088c72.
 - [Build receipt](../../paper/delivery_receipt.json); build and fresh-unzip check in
-  `/scratch/09032/saini_2/sca/paper_builds/delivery_5revguaf/`.
+  `/scratch/09032/saini_2/sca/paper_builds/delivery_i6ibrtrb/`. Git tag `paper-v6`.
 
-Both builds: zero overfull boxes, zero undefined references, and the fresh unzip builds on its own to the same 55 pages.
-PDF text has no calib*, curat*, "drawn at random", "random draw", "random quer*", "fixed random", em dash, section
-symbol or "??"; no file name in the ZIP contains calib or curat.
+Both builds: zero overfull boxes, zero undefined references, and the fresh unzip builds on its own to the same 62 pages.
+PDF text has no calibrat*, curat*, "random" as a selection word, em dash, section symbol or "??".
 
-What changed against v5 (HANDOVER Section 42): switch \resprogabl on. Table 2 has the progressive group (shared,
-per-layer, window only against per-head weights, 195 prompts), Section 4.2 two generated sentences, appendix Table L.3
-all 14 metrics with intervals (set-level ones from results/prog195_ablation/cfid_ci). Switch \resra stays off.
+What changed against v5.1: everything about presentation, no result (HANDOVER Section 43; lead brief and the five
+workers' notes in .agent/notes/paper_v6/). Both files are under the 30 MiB chat upload limit, so they can be sent
+as they are.
 
-Previous deliveries: `delivery_gy4l47kq` (v5, HANDOVER Section 41, 54 pp), `delivery_gvyduue4` (v4, Section 37).
+Open before submission: AI use statement (authors), anonymous code URL.
+
+Previous deliveries: tag `paper-v5.1` (`delivery_5revguaf`, 55 pp), `delivery_gy4l47kq` (v5), `delivery_gvyduue4` (v4).

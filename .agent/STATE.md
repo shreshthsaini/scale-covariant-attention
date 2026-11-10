@@ -1,4 +1,4 @@
-# SCA live state, 2026-11-10 10:25 CST (paper owner; HANDOVER.md Sections 31 to 42 are the log)
+# SCA live state, 2026-11-10 afternoon (paper owner; HANDOVER.md Sections 31 to 42 are the log)
 
 ## Goal
 Submission-ready SCA paper that sells: measurement-first story (observation, two views, reach emulation, use,
@@ -7,25 +7,19 @@ calibration/calibrate/calibrated, no curated/uncurated, no "random" as selection
 Main text at most 10 pages (now 9).
 
 ## Status and next action
-- v5.1 is the last delivered paper (tag paper-v5.1, HANDOVER 42, .agent/notes/latest_delivery.md).
-- IN FLIGHT since 2026-11-10 10:20: version 6, a full presentation revamp the user asked for ("best paper at ICLR":
-  all text, tables, figures, method and qualitative design). Lead brief: .agent/notes/paper_v6/BRIEF.md (story spine,
-  figure stems under paper/figures/v6/, design system, hard rules, one writer per file).
-- Five Opus workers (background agents of the lead session), each with a notes file in .agent/notes/paper_v6/:
-  text (main.tex), appendix (appendix.tex), methodfigs (observation, method, emulation figures, appendix zoom),
-  visuals (hero, qualitative, all sample pages), tablesplots (generators, Tables 1 to 3, gains and scaling plots,
-  Holm-adjusted significance). Workers do not commit; the lead commits.
-- NEXT: when workers report, read their notes, have text and appendix integrate the new figures and captions,
-  build, review every page against the gold-standard rubric (lead reads the renders), send corrections, repeat until
-  no rubric item scores 0. Then paper/build_delivery.py, latest_delivery.md, HANDOVER Section 43, commit, push,
-  sync, and send the user a reading PDF under 30 MiB (PyMuPDF rewrite_images, see share_20261110).
-- GitHub checkpoints: `bash scripts/wip_push.sh --loop 15` runs in the lead session (commits paper sources, figures,
-  notes and the handover to origin/main every 15 minutes; stop with `touch
-  /scratch/09032/saini_2/sca/paper_builds/wip_push.stop`). User, 2026-11-10: keep pushing everything so another agent
-  can continue. A new agent starts from origin/main, this file, and .agent/notes/paper_v6/.
-- If the session restarts mid-way: the workers die with it. Read each notes file for progress, check
-  paper/figures/v6/ and git status, and relaunch only the unfinished roles with the same brief.
-- \resra stays OFF for good (HANDOVER 40). Before submitting, anonymize the code URL macro.
+- Paper v6 delivered (tag paper-v6; HANDOVER Section 43; hashes in .agent/notes/latest_delivery.md, build
+  delivery_i6ibrtrb): 62 pp, main text pages 1 to 9, 0 overfull, 0 undefined, fresh unzip builds to the same pages.
+- v6 is the full presentation revamp the user asked for on 2026-11-10; no result changed. Lead brief and the five
+  owners' notes (text, appendix, methodfigs, visuals, tablesplots): .agent/notes/paper_v6/. Figures live in
+  paper/figures/v6/ with scripts paper/figures/src/v6_*.py; tables come from gen_main_tables.py, gen_app_tables.py,
+  gen_holm.py (never run gen_late_tables.py or gen_prog_tables.py).
+- Open for the user: AI use statement (marker in main.tex above the reproducibility statement), anonymous code URL.
+- NEXT: wait for the user's reaction to v6. To change a figure, edit its v6_ script and rerun it; to change text,
+  edit main.tex / appendix.tex; then paper/build_delivery.py, update latest_delivery.md, commit, push, sync.
+- GitHub: push after every change (user, 2026-11-10: "keep pushing all to github so that other agent can continue").
+  For long multi-worker work run `bash scripts/wip_push.sh --loop 15` (remove
+  /scratch/09032/saini_2/sca/paper_builds/wip_push.stop first).
+- \resra stays OFF for good (HANDOVER 40).
 
 ## Map
 | file | read it when |

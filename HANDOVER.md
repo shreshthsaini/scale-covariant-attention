@@ -2132,3 +2132,40 @@ method-figure design, qualitative design, examples), best-paper level in rigour,
   hard rules, ownership. v5.1 tagged paper-v5.1.
 - 10:20 five Opus workers launched in parallel: text, appendix, methodfigs, visuals, tablesplots (notes files in
   .agent/notes/paper_v6/). No result changes; no GPU work planned.
+- Delivered 2026-11-10 afternoon: **paper v6**, build /scratch/09032/saini_2/sca/paper_builds/delivery_i6ibrtrb, 62 pp
+  (main text pages 1 to 9, page 9 about 90% full; reproducibility statement page 10; appendix pp. 13 to 62), 0 overfull,
+  0 undefined, fresh unzip builds to the same 62 pages; PDF 19.7 MB (v5.1: 34 MB), ZIP 95 source files. Hashes in
+  .agent/notes/latest_delivery.md. Tag paper-v6.
+- What v6 is (each worker's notes file in .agent/notes/paper_v6/ has the detail):
+  - Title "Reach Is a Property of the Head: Scale-Covariant Attention for High-Resolution Diffusion Transformers";
+    abstract 162 words; one spine (question, observation, method, evidence, honest edges); median sentence 20 words.
+  - Figures (paper/figures/v6/, scripts paper/figures/src/v6_*.py, each with a *_provenance.json): 1 hero (one large
+    4096^2 sample with two 1:1 crops, five samples, quality-against-seconds panel), 2 observation (two heads at
+    three noise levels, all 1,368 heads as lines, variance split), 3 method (two bands: measure once at 1024^2,
+    generate at any size, joined by the reach table), 4 emulation (weight tracks reach, per-head fits best, one
+    table transfers), 5 paired gains against AReA and HRDiT, 6 whole-image comparison at the 25th / 50th / 75th
+    percentile of the ImageReward gain over AReA, 7 time against image side (wrapfigure).
+  - Tables from the generators only: Table 1 full width with speed ratio, FID and a Holm "+/-" record; Table 2
+    generality; Table 3 ablations (fixes a v5.1 error: the shaded reference row showed single-pass SCA's values above
+    differences taken against SCA without the schedule). 47 formerly typed numbers and four appendix tables are
+    now generated. gen_late_tables.py and gen_prog_tables.py refuse to run (legacy; the first rewrites main.tex).
+  - Rigour: Holm correction over the ten per-image metrics (paper/figures/src/gen_holm.py reproduces all 25 archived
+    paired files digit for digit). Against AReA every "all ten" claim survives at every seed and on HRGen-1K.
+    Against HRDiT only HPSv2 and ARNIQA stay significantly better and none worse (v5.1 also listed MUSIQ better
+    and CLIP-IQA worse). Progressive over single-pass on ImageReward is borderline (Holm 0.036 bootstrap, 0.059
+    sign-flip). Claims-and-evidence audit in text.md.
+  - Finding from the qualitative rounds: per-crop detail is roughly level across methods (in matched windows AReA's
+    crop often scores highest), so no figure claims "sharper than AReA" from crops; the main qualitative figure
+    compares whole images, and the matched-crop figure is appendix Figure F.1 with a limited claim. Sample-page
+    caption leads were made descriptive, with the 195-prompt intervals in the body.
+  - Selection rules are in the scripts and captions (seeded draws, percentile and edge-energy rules). Pages that show
+    single-pass SCA draw from prompts that name no person, and say so. The ablation grid keeps the "no opening" row.
+  - Appendix reordered by reader questions with a contents block; all 83 v5.1 labels and all 2,514 table numbers
+    present; tab:phase2_general retired into tab:gen_all (label kept as an alias).
+- Rubric (gold-standard-paper, lead's scores, 0/1/2): page 1 2, introduction 1, method diagram 2, equations 1,
+  algorithms 1, setup 1, main table 2, finding paragraphs 2, ablations 1, plots 2, qualitative 1, limitations and
+  reproducibility 1, appendix 2, layout 1. No zero; mean 1.43.
+- Open for the user: (1) ICLR 2027 requires an AI use statement; a commented marker sits above the reproducibility
+  statement in main.tex and the authors must write it. (2) The code URL is not anonymous. (3) tab:flops per-layer
+  timings have no archived source (caption says measured once).
+- GitHub checkpoints during the work: scripts/wip_push.sh (loop stopped with the stop file at delivery).

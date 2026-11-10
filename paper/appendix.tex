@@ -51,11 +51,17 @@
 \newcommand{\apxcap}[3]{\global\@namedef{apx@lead#1}{#2}\global\@namedef{apx@close#1}{#3}}
 \newcommand{\apx@clearcaps}{\@for\apx@n:=1,2,3\do{\global\expandafter\let\csname apx@lead\apx@n\endcsname\relax
   \global\expandafter\let\csname apx@close\apx@n\endcsname\relax}}
-\def\apx@relead#1#2#3\apx@nil{#1{\csname apx@lead\the\apx@capno\endcsname}#3%
-  \expandafter\ifx\csname apx@close\the\apx@capno\endcsname\@empty\else\space\csname apx@close\the\apx@capno\endcsname\fi}
+% caption3 hands the text format "\ignorespaces\caption@makeanchor{<caption text>}"; the lead is the first \textbf
+% group of <caption text>.
+\long\def\apx@reanchor#1\caption@makeanchor#2#3\apx@nil{#1\caption@makeanchor{\apx@reinner#2\apx@nil}#3}
+\long\def\apx@reinner#1#2#3\apx@nil{#1{\csname apx@lead\the\apx@capno\endcsname}#3\apx@addclose}
+\def\apx@addclose{\expandafter\ifx\csname apx@close\the\apx@capno\endcsname\@empty\else
+  \space\csname apx@close\the\apx@capno\endcsname\fi}
 % The text format apxlead, defined directly (\DeclareCaptionTextFormat is preamble-only; caption3 stores a text
 % format as \caption@textformat@<name>).
-\long\expandafter\gdef\csname caption@textformat@apxlead\endcsname#1{\expandafter\ifx\csname apx@lead\the\apx@capno\endcsname\relax#1\else\apx@relead#1\apx@nil\fi}
+\long\expandafter\gdef\csname caption@textformat@apxlead\endcsname#1{%
+  \expandafter\ifx\csname apx@lead\the\apx@capno\endcsname\relax#1\else
+    \in@{\caption@makeanchor}{#1}\ifin@\apx@reanchor#1\apx@nil\else\apx@reinner#1\apx@nil\fi\fi}
 \newcommand{\vsnippetcap}[2]{\IfFileExists{figures/v6/snippets/#2.tex}{\begingroup\global\apx@capno\z@
     \let\apx@origcaption\caption\def\caption{\global\advance\apx@capno\@ne\apx@origcaption}%
     \captionsetup{textformat=apxlead}\apxinput{#1}{figures/v6/snippets/#2.tex}\endgroup}{\snippetat{#1}{#2}}%
@@ -617,7 +623,7 @@ This subsection states how the prompts and crop windows of every sample figure w
 
 \paragraph{Defaults and crops.} Unless a caption says otherwise, images are FLUX.1-dev outputs for Aesthetic-4K evaluation prompts at seed 0. Single-pass methods take 28 steps at guidance 4.5. HRDiT and progressive \sca{} take HRDiT's 30, 17, and 10 steps at $1024^2$, $2048^2$, and $4096^2$, with guidance 3.5, 4.5, and 6.0. \ifvsnip{all_methods}{Every crop shows native pixels of its outlined window. The window is placed automatically: in a figure that compares methods, at the window whose smallest edge energy over the compared images is largest, so no method's detail is favoured; in Figure~\ref{fig:hero}, at the highest edge energy of each image.\ifvsnip{crops_matched}{ Figure~\ref{fig:crops_matched} instead takes, per category, the prompt and window on which the four methods agree most in content among high-detail windows.}{}}{In Figures~\ref{fig:gallery_prog}, \ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048}, \ref{fig:gallery_baselines}, \ref{fig:gallery_flux2}, \ref{fig:gallery_6144_complete}, \ref{fig:gallery_krea_complete}, \ref{fig:gallery_8192_complete}, \ref{fig:progressive}, and~\ref{fig:qual_main}, every crop shows native pixels of the outlined window. The window is placed automatically at the highest edge energy averaged over the methods shown.}
 
-\paragraph{Configurations.} \ifvsnip{all_methods}{The row label of every image names its configuration: progressive \sca{}, single-pass \sca{}, or \sca{} without the schedule. Figures~\ref{fig:gallery_6144_complete}, \ref{fig:gallery_8192_complete}, \ref{fig:gallery_flux2}, \ref{fig:ablation_grid}, and~\ref{fig:failures} show \sca{} without the schedule, the configuration of those experiments.}{Figures~\ref{fig:gallery_prog16} to~\ref{fig:gallery_prog} show progressive \sca{}. Figures~\ref{fig:teaser}, \ref{fig:hero}, \ref{fig:gallery_prog}, \ref{fig:gallery_baselines}, \ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048}, and~\ref{fig:gallery_krea_complete} show single-pass \sca{}. Figures~\ref{fig:gallery_6144_complete}, \ref{fig:gallery_8192_complete}, \ref{fig:gallery_flux2}, and~\ref{fig:ablation_grid} show \sca{} without the schedule.} Figure~\ref{fig:gallery_flux2} uses FLUX.2-dev with guidance 4.0 and a FLUX.2-dev reach table, and Figure~\ref{fig:gallery_krea_complete} the FLUX.1-Krea-dev setup of Appendix~\ref{app:gen_krea}.
+\paragraph{Configurations.} \ifvsnip{all_methods}{The row label of every image names its configuration: progressive \sca{}, single-pass \sca{}, or \sca{} without the schedule. Figures~\ref{fig:ablation_grid}, \ref{fig:gallery_flux2}, \ref{fig:gallery_6144_complete}, \ref{fig:gallery_8192_complete}, and~\ref{fig:failures} show \sca{} without the schedule, the configuration of those experiments.}{Figures~\ref{fig:gallery_prog16} to~\ref{fig:gallery_prog} show progressive \sca{}. Figures~\ref{fig:teaser}, \ref{fig:hero}, \ref{fig:gallery_prog}, \ref{fig:gallery_baselines}, \ref{fig:gallery_4096} to~\ref{fig:gallery_6144x2048}, and~\ref{fig:gallery_krea_complete} show single-pass \sca{}. Figures~\ref{fig:gallery_6144_complete}, \ref{fig:gallery_8192_complete}, \ref{fig:gallery_flux2}, and~\ref{fig:ablation_grid} show \sca{} without the schedule.} Figure~\ref{fig:gallery_flux2} uses FLUX.2-dev with guidance 4.0 and a FLUX.2-dev reach table, and Figure~\ref{fig:gallery_krea_complete} the FLUX.1-Krea-dev setup of Appendix~\ref{app:gen_krea}.
 
 \subsection{How each method changes attention}
 \label{app:related}
@@ -656,7 +662,7 @@ This subsection expands the AReA comparison of Section~\ref{sec:main}. It gives 
 
 \paragraph{Published numbers.} AReA's published numbers match FLUX.1-Krea-dev, the default checkpoint of its released code. Rerunning that code on FLUX.1-Krea-dev reproduces its published ImageReward, aesthetic score, and PickScore within 0.1 and its CLIP, HPS, and MUSIQ within 0.28 (Table~\ref{tab:published_compare}). On FLUX.1-dev the same code gives ImageReward 0.92 against the published 1.32. AReA's paper reports 151\,s for AReA and 314\,s for full attention at $4096^2$ on an H100; our matched run measures 202.4\,s and 186.5\,s on one GH200 (medians of three images). Table~\ref{tab:published_hrgen} expands the HRGen-1K block of Table~\ref{tab:published_compare} to every row of AReA's Table~2.
 
-\paragraph{FLUX.1-Krea-dev.} On FLUX.1-Krea-dev we rerun AReA and fit a new reach table for \sca{} (16 prompts at $1024^2$, ratio-4 table, other settings unchanged), with the same 28-step, guidance-4.5 sampler on all \nkrea{} prompts. DyPE and SEGA run the Krea transformer through our frozen baseline harness on the 100 prompts of rows 4 to 103. There single-pass \sca{} wins eight of the 15 metrics and loses only patch FID, at a third of AReA's time (Table~\ref{tab:krea_6144}). Its FID is 1.0 higher, with an interval that spans zero ($[-3.6,6.0]$). The progressive sampler does not support FLUX.1-Krea-dev.
+\paragraph{FLUX.1-Krea-dev.} On FLUX.1-Krea-dev we rerun AReA and fit a new reach table for \sca{} (16 prompts at $1024^2$, ratio-4 table, other settings unchanged), with the same 28-step, guidance-4.5 sampler on all \nkrea{} prompts. DyPE and SEGA run the Krea transformer through our frozen baseline runner on the 100 prompts of rows 4 to 103. There single-pass \sca{} wins eight of the 15 metrics and loses only patch FID, at a third of AReA's time (Table~\ref{tab:krea_6144}). Its FID is 1.0 higher, with an interval that spans zero ($[-3.6,6.0]$). The progressive sampler does not support FLUX.1-Krea-dev.
 
 \snippetat{!htbp}{app_tables/published_compare}
 \snippetat{!htbp}{app_tables/published_hrgen}
@@ -685,6 +691,8 @@ This subsection gives the settings of the other baselines in Tables~\ref{tab:mai
 
 This appendix expands the results of Section~\ref{sec:experiments} to every metric, with intervals. Table~\ref{tab:all_metrics} expands Table~\ref{tab:main} (Appendix~\ref{app:allmetrics}). Tables~\ref{tab:prog_all} and~\ref{tab:app_4k} expand the paired comparisons of Section~\ref{sec:main} and Figure~\ref{fig:paired_area} (Appendix~\ref{app:pairs}), and Table~\ref{tab:panel46_deltas} pairs every baseline with single-pass \sca{} (Appendix~\ref{app:phase2}). Table~\ref{tab:app_abl} expands Table~\ref{tab:ablation} (Appendix~\ref{app:abl}), and Table~\ref{tab:latency} the latency of \iflabel{fig:scaling}{Figure~\ref{fig:scaling}}{Figure~\ref{fig:speed}} (Appendix~\ref{app:latency}). Every table follows the conventions of Appendix~\ref{app:intervals}.
 
+% Each subsection of E starts after the floats of the previous one, so its text sits beside its own tables.
+\FloatBarrier
 \subsection{Every metric of Table~\ref{tab:main}}
 \label{app:allmetrics}
 
@@ -696,6 +704,7 @@ Table~\ref{tab:all_metrics} expands Table~\ref{tab:main} to all 14 metrics and a
   \apxbody{app_tables/all_metrics}
 \end{table}
 
+\FloatBarrier
 \subsection{The headline comparisons with intervals}
 \label{app:pairs}
 
@@ -714,6 +723,7 @@ Table~\ref{tab:prog_all} gives progressive \sca{} minus every $4096^2$ baseline,
 \end{table}
 
 \IfFileExists{figures/snippets/app_tables/holm.tex}{%
+\FloatBarrier
 \subsection{Multiple comparisons}
 \label{app:holm}
 
@@ -721,6 +731,7 @@ Table~\ref{tab:holm} counts, for each headline pair, the per-image metrics that 
 
 \snippetat{!htbp}{app_tables/holm}}{}
 
+\FloatBarrier
 \subsection{Every baseline against single-pass \texorpdfstring{\sca{}}{SCA}}
 \label{app:phase2}
 
@@ -736,6 +747,7 @@ Table~\ref{tab:panel46_deltas} pairs every baseline of Tables~\ref{tab:main} and
 \apxcap{1}{Single-pass \sca{} beside AReA, DyPE, SEGA, and UltraImage.}{Over all \nmain{} prompts, AReA, DyPE, and SEGA trail single-pass \sca{} on all ten per-image metrics; UltraImage is significantly better on aesthetic score, PickScore, and HPSv2.1 and worse on both MUSIQ scores (Table~\ref{tab:panel46_deltas}).}
 \vsnippetcap{!htbp}{gallery_baselines}
 
+\FloatBarrier
 \subsection{Ablations}
 \label{app:abl}
 
@@ -750,6 +762,7 @@ Table~\ref{tab:app_abl} expands Table~\ref{tab:ablation} to every metric for the
 \apxcap{1}{Without the opening phase, subjects shrink to a small scale.}{Over the \nabl{} ablation prompts, dropping the opening phase changes ImageReward by $\hlAblNoOpenIr$ $[\hlAblNoOpenIrLo,\hlAblNoOpenIrHi]$ (Table~\ref{tab:app_abl}).}
 \vsnippetcap{!htbp}{ablation}
 
+\FloatBarrier
 \subsection{Latency}
 \label{app:latency}
 
@@ -1013,7 +1026,7 @@ This appendix expands the limitations of Section~\ref{sec:limits}. Appendix~\ref
 
 \paragraph{Small factors.} At $2048\times4096$ the window covers half the image height, so the local branch alone already sees most of the image along that axis. There the per-head mix gains little over AReA's shrinking windows, and single-pass \sca{} is significantly worse on aesthetic score, CLIP score, and CLIP-IQA (Table~\ref{tab:app_wide}).
 
-\paragraph{Larger scales and another backbone.} Both use \sca{} without the schedule. The samples of the completed 12-prompt $8192^2$ run still show failures in both methods, speckle for AReA and blocks and stripes for \sca{} without the schedule (Figure~\ref{fig:gallery_8192_complete}); this exploratory set does not establish general 8K quality. In FLUX.2-dev, improved aggregate metrics coexist with distortions of facial geometry and fine texture in the portrait example of Figure~\ref{fig:gallery_flux2}.
+\paragraph{Larger scales and another backbone.} Both use \sca{} without the schedule. The samples of the completed 12-prompt $8192^2$ run still show artifacts in both methods, dots and grids for AReA and stripes and blocks for \sca{} without the schedule (Figure~\ref{fig:gallery_8192_complete}); this exploratory set does not establish general 8K quality. In FLUX.2-dev, improved aggregate metrics coexist with distortions of facial geometry and fine texture in the portrait example of Figure~\ref{fig:gallery_flux2}.
 
 \paragraph{Emulation.} Reach emulation omits the bridge and sees 16 times fewer keys per view than the target, so the deployed operator's error is untested.
 
