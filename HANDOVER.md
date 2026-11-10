@@ -1903,3 +1903,16 @@ configuration with AReA on the 15 TEST prompts at 5312^2; review page web/review
   (TEST 5312^2 into out/qwen_tuned/<label>/5312x5312; 000r_g eval writes results/qwen_5312_tuned), then
   `web/build/build_review_qwen.py --tuned <chosen> --summary "..."` (page web/review_qwen/index.html; check with the
   playwright script in the notes), commit results/qwen_tune, results/qwen_5312_tuned, web/review_qwen.
+- 2026-11-10 00:05, new owner (the previous session died; work committed): verified that every 000r task (running and
+  done) reads prompts/qwen_tune12.jsonl and every image in out/qwen_tune is a TUNE id: no TEST prompt was touched.
+  Progressive screens done for qt_prog, qt_prog_late, qt_prog_late_sfx (warm 250 to 315 s), qt_prog_sfx finishing
+  (320 to 340 s); single-pass qt_mu, qt_mu_sfx, qt_sfx at 4096^2 running or next. Visual guard rail so far (contact
+  sheets of qt_prog, qt_prog_late, qt_prog_late_sfx, qt_sca40, AReA): one coherent subject per image, no duplication.
+  596fa4b (frozen code/596fa4b): qwen_tune_eval.py --pair (tuned minus untuned SCA on TEST); `test` always runs the
+  screens' tree a7034a3 and writes out/qwen_tuned/chosen.env; slurm/qwen_review_finish.sh runs after 000r_g and every
+  000r_h task (pending 000r_h rewritten with it): the last one builds web/review_qwen and runs check_review_qwen.py
+  (web_assets/check_review_qwen/report.json, logs/review_qwen_finish.log). Nothing is committed by tasks.
+  Resume: `python3 -I slurm/qwen_tune_tasks.py test evaltest --labels <chosen> --name "<display name>" --code
+  /scratch/09032/saini_2/sca/code/596fa4b`; then wait for the hook (or rmdir out/qwen_tuned/.review_built and run it).
+  Controller note: the fresh controller 1132105 (48 h) cannot start before the Vista_PM maintenance (11-11 06:15 to
+  22:00) because its walltime overlaps it; a job under about 30 h could.
