@@ -44,6 +44,7 @@ DESC = {  # what each screened configuration changes (plain words for the table)
     "qt_prog": "Progressive: 1328 (stock attention, 30 steps), 2656 (SCA, 20 steps), 5312 (SCA, 13 steps)",
     "qt_prog_sfx": "Progressive with AReA's conditioning",
     "qt_prog_late": "Progressive with HRDiT's step counts: 2656 (17 steps from sigma 0.74), 5312 (10 from 0.51)",
+    "qt_prog_late_sfx": "Progressive with HRDiT's step counts and AReA's conditioning",
 }
 
 

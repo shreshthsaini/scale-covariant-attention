@@ -25,6 +25,7 @@ Configurations (labels are the sidecar methods and output folders):
                SCA (last 13, from sigma 0.62); HRDiT's guidance, true CFG 4 in every stage, bridge 1024 tokens
   qt_prog_sfx  qt_prog with AReA's conditioning
   qt_prog_late qt_prog with HRDiT's FLUX step counts (17 at 2656^2 from sigma 0.74, 10 at 5312^2 from sigma 0.51)
+  qt_prog_late_sfx  qt_prog_late with AReA's conditioning (completes the 2 x 2 of stage starts and conditioning)
 Usage: slurm/qwen_tune_tasks.py GROUP [GROUP ...] [--dry]
 """
 
@@ -59,6 +60,7 @@ PROG_BASE = ("--stages 1328x1328,2656x2656,5312x5312 --base-steps 30 --highres-s
 PROG = {"qt_prog": PROG_BASE, "qt_prog_sfx": f"{PROG_BASE} {AREA_COND}",
         # HRDiT's FLUX step counts (17 and 10 of 30) instead of its noise levels: stages from sigma 0.74 and 0.51
         "qt_prog_late": PROG_BASE.replace("--highres-steps 20,13 ", "--highres-steps 17,10 ")}
+PROG["qt_prog_late_sfx"] = f"{PROG['qt_prog_late']} {AREA_COND}"
 assert PROG["qt_prog_late"] != PROG_BASE
 
 
