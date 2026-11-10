@@ -2049,3 +2049,8 @@ contributions, captions of at most three lines, a leaner Table 1, and redesigned
   on, 12 to 14 of 21 carry copies; with no native window at all (ra_t50) the detector finds 1 of 21, at the price of
   native-resolution detail. The pooled r = 2 view itself does not draw copies.
 - 01:08 ra_m by hand (pRA2): 13 yes, 0 borderline, 8 no of 21. FAIL on the screen bar.
+- 01:15 copyprone21 by hand, all screens (6 blind Opus labelers each; results/dup_audit_20261027/human_labels_r7.csv,
+  copyprone21_counts.txt): ra_t50 3 yes, 2 borderline; ra_m 13, 0; ra_fixed 14, 3; ra_t40 15, 3; ra_t60 not labeled
+  (pixel mosaic, detector 0). References: AReA 4, 1; sca_v2 19, 1; sca_v2 seed 1 18. Only ra_t50 (no native window at
+  any step) reaches the bar of 8; its labelers also note doubled outlines and fused second copies (the 2 x 2 lattice).
+  Whether the kill criterion triggers depends on ra_t50's core metrics on the 46 (evaluation queued).
