@@ -136,12 +136,14 @@ def test_table(tuned):
     R = P / "results" / "qwen_5312_tuned"
     summ = {r["method"]: r for r in rows(R / "summary.csv")}
     pu, pt = paired(R, "qwen_sca40", "qwen_area"), paired(R, tuned, "qwen_area")
+    ptu = paired(R, tuned, "qwen_sca40")
     out = []
     for k, name in METRICS:
         d = 1 if k.startswith("musiq") or k == "clip" else 3
         out.append({"metric": name, "area": f(summ.get("qwen_area", {}).get(k), d),
                     "untuned": f(summ.get("qwen_sca40", {}).get(k), d), "tuned": f(summ.get(tuned, {}).get(k), d),
-                    "d_untuned": ci_cell(pu.get(k), d), "d_tuned": ci_cell(pt.get(k), d)})
+                    "d_untuned": ci_cell(pu.get(k), d), "d_tuned": ci_cell(pt.get(k), d),
+                    "d_tu": ci_cell(ptu.get(k), d)})
     return out, {m: r.get("n") for m, r in summ.items()}
 
 
@@ -157,6 +159,32 @@ def timing_table(tuned):
                         "mem": f(r["max_peak_memory_gb"], 1), "ours": r["method"] == tuned})
     order = ["Full attention", "AReA", "SCA, untuned (50 steps)", "SCA, untuned (40 steps)", "SCA, tuned"]
     return sorted(out, key=lambda r: order.index(r["name"]))
+
+
+def auto_summary(tuned, tuned_name):
+    """Lead paragraph from the result files (so the page's numbers come from the archived CSVs)."""
+    n_cfg = sum(len(rows(P / "results" / "qwen_tune" / r / "screen.csv")) for r in ("4096", "5312"))
+    R = P / "results" / "qwen_5312_tuned"
+    pt, pu = paired(R, tuned, "qwen_area"), paired(R, "qwen_sca40", "qwen_area")
+    tm = {r["method"]: r for r in rows(R / "timing_summary.csv")}
+    if not pt:
+        return "Results pending."
+
+    def d(pr, k, dd=3):
+        r = pr.get(k)
+        return "pending" if not r else (f"{float(r['delta']):+.{dd}f} [{float(r['ci_low']):+.{dd}f}, "
+                                        f"{float(r['ci_high']):+.{dd}f}]")
+
+    def sec(m):
+        r = tm.get(m)
+        return "pending" if not r or r.get("median_seconds_clean") in ("", None) else f"{float(r['median_seconds_clean']):.0f} s"
+    return (f"SCA's Qwen-Image settings had been carried over from FLUX. {n_cfg} configurations were screened against "
+            f"AReA (its own defaults) on 12 TUNE prompts, and the selection rule fixed before any run chose "
+            f"<b>{html.escape(tuned_name)}</b>. It then ran once on the 15 held-out TEST prompts at 5312². "
+            f"Against AReA on TEST: PickScore {d(pt, 'pickscore', 2)}, HPSv2.1 {d(pt, 'hpsv21')}, ImageReward "
+            f"{d(pt, 'ir', 2)}, MUSIQ on 1024 px crops {d(pt, 'musiq_crop1024', 1)} (untuned SCA: PickScore "
+            f"{d(pu, 'pickscore', 2)}, HPSv2.1 {d(pu, 'hpsv21')}). Median time per image: {sec(tuned)} against "
+            f"AReA's {sec('qwen_area')} and untuned SCA's {sec('qwen_sca40')} (40 steps).")
 
 
 # ----------------------------------------------------------------------------- page
@@ -242,10 +270,11 @@ def build_html(tuned, tuned_name, items, screen, test, ns, timing, summary_text)
                               ("CLIP-IQA", None), ("Seconds", None), ("AReA s", None), ("", None)],
                              "".join(sb) or tr(['<td class="l" colspan="11">pending</td>']))
     tb = "".join(tr([f'<td class="l">{r["metric"]}</td>', f"<td>{r['area']}</td>", f"<td>{r['untuned']}</td>",
-                     f"<td>{r['tuned']}</td>", f"<td>{r['d_untuned']}</td>", f"<td>{r['d_tuned']}</td>"]) for r in test)
+                     f"<td>{r['tuned']}</td>", f"<td>{r['d_untuned']}</td>", f"<td>{r['d_tuned']}</td>",
+                     f"<td>{r['d_tu']}</td>"]) for r in test)
     test_html = table_html([("Metric (mean over prompts)", "l"), ("AReA", None), ("SCA, untuned", None),
-                            ("SCA, tuned", None), ("Untuned minus AReA [95% CI]", None),
-                            ("Tuned minus AReA [95% CI]", None)], tb)
+                            ("SCA, tuned", None), ("Untuned \u2212 AReA", None), ("Tuned \u2212 AReA", None),
+                            ("Tuned \u2212 untuned", None)], tb)
     tm = "".join(tr([f'<td class="l">{r["name"]}</td>', f"<td>{r['steps']}</td>", f"<td>{r['n_clean']} of {r['n']}</td>",
                      f"<td>{r['sec']}</td>", f"<td>{r['sec_all']}</td>", f"<td>{r['mem']}</td>"],
                     "chosen" if r["ours"] else "") for r in timing)
@@ -287,7 +316,8 @@ four 1024 px native crops. Seconds are medians per image on one GH200.</p>
 <h2 id="test">TEST (15 held-out prompts, 5312²)</h2>
 <p class="note">The 15 prompts of the earlier comparison, untouched during tuning; {html.escape(tuned_name)} ran once on
 them. Untuned SCA is the 40-step run of that comparison (step-matched to AReA). Prompts per method: {html.escape(json.dumps(ns))}.
-Bold intervals exclude zero.</p>
+The three right columns are paired differences over prompts: mean [95% bootstrap interval, 2000 draws]; bold intervals
+exclude zero.</p>
 {test_html}
 <h2 id="timing">Timing at 5312²</h2>
 <p class="note">Seconds per image cover denoising, any stage transitions and the VAE decode, with prompt embeddings
@@ -352,7 +382,7 @@ def main(argv=None):
                       "panels": panels, "secs": " · ".join(secs)})
     test, ns = test_table(a.tuned)
     page = build_html(a.tuned, a.tuned_name, items, screen_table(a.tuned), test, ns, timing_table(a.tuned),
-                      a.summary or "Results pending.")
+                      a.summary or auto_summary(a.tuned, a.tuned_name))
     (OUTDIR / "index.html").write_text(page)
     total = zoomlib.dir_bytes(str(OUTDIR))
     print(f"wrote {OUTDIR / 'index.html'}: {len(items)} grids, {total / 1e6:.1f} MB in web/review_qwen", flush=True)

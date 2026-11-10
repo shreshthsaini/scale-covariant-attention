@@ -150,11 +150,13 @@ def full5312(dry):
         aq.task(f"000r_h_qfull5312_{k:02d}.sh", 40, f"TEST grids: full attention at 5312^2, {pid} (00s9_qfull5312 flags)",
                 SCA_CODE, f"{PY} scripts/sample_qwen.py --method full --steps 50 --true-cfg 4.0 --mu-mode native "
                 f"--label qwen_full --res 5312x5312 --prompts {st.PROMPTS} --out {st.OUT}/qwen_full/5312x5312 "
-                f"--start {k} --end {k + 1}", dry, need=60)
+                f"--start {k} --end {k + 1}", dry, need=60, post=FINISH.format(name=f"000r_h_qfull5312_{k:02d}.sh"))
 
 
 OUT_TEST = f"{S}/out/qwen_tuned"
 EVAL = f"{S}/eval"
+# Review page hook (slurm/qwen_review_finish.sh): run after 000r_g and every 000r_h task; the last one builds the page
+FINISH = f"bash {st.P}/slurm/qwen_review_finish.sh {{name}}\n"
 
 
 def eval_tune(dry, res, labels, code, tag=""):
@@ -167,8 +169,19 @@ def eval_tune(dry, res, labels, code, tag=""):
             "--wait-max 5400", dry, need=40, exclusive=False)
 
 
-def test5312(dry, labels, code):
-    """The chosen configuration(s) on the 15 TEST prompts at 5312^2, three prompts per task."""
+def test5312(dry, labels, code, name=None):
+    """The chosen configuration(s) on the 15 TEST prompts at 5312^2, three prompts per task, on the tree of the TUNE
+    screens (NEW_CODE; samplers identical in every later tree), so each runs exactly as screened. The first label is
+    the chosen one: out/qwen_tuned/chosen.env names it for the review page hook."""
+    code = NEW_CODE
+    env = Path(OUT_TEST) / "chosen.env"
+    text = f"TUNED={labels[0]}\nTUNED_NAME={json.dumps(name or labels[0])}\n"
+    if env.exists() and env.read_text() != text:
+        raise SystemExit(f"{env} exists with a different choice; the TEST run happens once")
+    print("write", env, text.split())
+    if not dry:
+        env.parent.mkdir(parents=True, exist_ok=True)
+        env.write_text(text)
     for label in labels:
         if label in SP:
             cmd = (f"{PY} scripts/sample_qwen.py {SP[label]} --pi-table {st.QWEN_TABLE} {BRIDGE['5312x5312']} "
@@ -188,11 +201,12 @@ def eval_test(dry, labels, code):
     meth = [f"--method qwen_area={st.OUT}/qwen_area/5312x5312", f"--method qwen_sca40={st.OUT}/qwen_sca40/5312x5312",
             f"--method qwen_sca={st.OUT}/qwen_sca/5312x5312", f"--method qwen_full={st.OUT}/qwen_full/5312x5312"]
     meth += [f"--method {lab}={OUT_TEST}/{lab}/5312x5312" for lab in labels]
+    meth += [f"--pair {lab}=qwen_sca40" for lab in labels]          # tuned minus untuned SCA (40 steps), paired
     aq.task("000r_g_eval_test5312.sh", 120, "TEST evaluation at 5312^2 (scripts/qwen_tune_eval.py); scores images as "
             "they land until the tuned configuration has all 15", code,
             f"{PY} scripts/qwen_tune_eval.py --prompts {TEST} --res 5312x5312 --reference qwen_area {' '.join(meth)} "
             f"--eval {EVAL}/qwen_5312_tuned --results {st.P}/results/qwen_5312_tuned --expect 15 --partial qwen_full "
-            "--wait-max 6000", dry, need=40, exclusive=False)
+            "--wait-max 6000", dry, need=40, exclusive=False, post=FINISH.format(name="000r_g_eval_test5312.sh"))
 
 
 def main():
@@ -202,6 +216,7 @@ def main():
     ap.add_argument("--labels", nargs="*", help="Configuration labels (sp4096, prog5312, eval*, test)")
     ap.add_argument("--code", help="Frozen tree for eval*, test (default NEW_CODE)")
     ap.add_argument("--tag", default="", help="Suffix of the evaluation task name (a re-run after more images)")
+    ap.add_argument("--name", help="Display name of the chosen configuration (test; the review page)")
     ap.add_argument("--dry", action="store_true")
     a = ap.parse_args()
     code = a.code or NEW_CODE
@@ -213,7 +228,7 @@ def main():
         elif g == "eval5312":
             eval_tune(a.dry, "5312x5312", a.labels or list(PROG), code, a.tag)
         elif g == "test":
-            test5312(a.dry, a.labels, code)
+            test5312(a.dry, a.labels, code, a.name)
         elif g == "evaltest":
             eval_test(a.dry, a.labels, code)
         else:

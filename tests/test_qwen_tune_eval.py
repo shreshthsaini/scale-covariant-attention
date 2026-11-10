@@ -62,7 +62,10 @@ def test_eval_skip_metrics(tmp_path, monkeypatch):
     write(E / "base/per_image.csv", base)
     write(E / "musiq.csv", musiq)
     T.main(["--prompts", str(prompts), "--res", "64x64", "--reference", "ref", "--eval", str(E), "--results", str(R),
-            "--skip-metrics"] + [f"--method={m}={d}" for m, d in dirs.items()])
+            "--skip-metrics", "--pair", "good=bad"] + [f"--method={m}={d}" for m, d in dirs.items()])
+    gb = {r["metric"]: r for r in csv.DictReader(open(R / "good_minus_bad.csv"))}   # the extra pair
+    assert abs(float(gb["pickscore"]["delta"]) - 0.6) < 0.05 and float(gb["pickscore"]["ci_low"]) > 0
+    assert json.loads((R / "about.json").read_text())["extra_pairs"] == ["good minus bad"]
     sc = list(csv.DictReader(open(R / "screen.csv")))
     assert [r["method"] for r in sc] == ["good", "bad"]
     assert float(sc[0]["mean_dz"]) > 0 > float(sc[1]["mean_dz"]) and int(sc[0]["n_prompts"]) == 6

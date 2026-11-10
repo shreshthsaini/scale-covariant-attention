@@ -20,8 +20,12 @@ html = open(os.path.join(root, "index.html")).read()
 items = json.loads(re.search(r"window\.ITEMS = (\[.*?\]);</script>", html, re.S).group(1))
 missing = [p for it in items for pn in it["panels"] for p in [pn["view"]] + [r[4] for r in pn.get("rt", [])]
            if not os.path.exists(os.path.join(root, p))]
-handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=root)
-handler.log_message = lambda *a: None
+class Quiet(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, *a):
+        pass
+
+
+handler = functools.partial(Quiet, directory=root)
 srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 url = f"http://127.0.0.1:{srv.server_address[1]}/index.html"

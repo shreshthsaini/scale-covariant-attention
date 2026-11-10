@@ -137,10 +137,15 @@ def main(argv=None):
                    "images, scoring the ones that exist meanwhile (0 = score what exists now)")
     p.add_argument("--partial", nargs="*", default=[], help="Labels exempt from --expect (e.g. full attention)")
     p.add_argument("--wait-max", type=float, default=3600.0, help="Seconds to wait for --expect at most")
+    p.add_argument("--pair", action="append", default=[], metavar="A=B",
+                   help="Extra paired bootstrap of A minus B, both --method labels (e.g. tuned minus untuned SCA)")
     args = p.parse_args(argv)
     methods = dict(x.split("=", 1) for x in args.method)
     if args.reference not in methods:
         raise SystemExit("--reference must be one of the --method labels")
+    extra_pairs = [tuple(x.split("=", 1)) for x in args.pair]
+    if any(len(t) != 2 or t[0] not in methods or t[1] not in methods or t[0] == t[1] for t in extra_pairs):
+        raise SystemExit("--pair takes A=B with two different --method labels")
     qae.METHODS = tuple(methods)       # ordering for qae.merge / summarize / timing
     qae.SIZES = (args.res,)
     ids = [json.loads(x)["id"] for x in open(args.prompts) if x.strip()]
@@ -172,16 +177,14 @@ def main(argv=None):
     rows = qae.read_rows(files)
     have = {m: {r["prompt_id"] for r in rows if r["method"] == m} for m in methods}
     pairs = []
-    for m in methods:
-        if m == args.reference:
-            continue
-        common = have[m] & have[args.reference]
+    for m, ref in [(m, args.reference) for m in methods if m != args.reference] + extra_pairs:
+        common = have[m] & have[ref]
         if len(common) < args.min_pairs:
-            print(f"no bootstrap of {m}: {len(common)} common prompts", flush=True)
+            print(f"no bootstrap of {m} minus {ref}: {len(common)} common prompts", flush=True)
             continue
-        sub = qae.subset(files, {m, args.reference}, common, E / "pairs_tmp")
-        q = E / "paired" / f"{m}_minus_{args.reference}.csv"
-        qae.run([PY, "-I", str(P / "scripts/paired_bootstrap.py"), "--method", m, "--reference", args.reference,
+        sub = qae.subset(files, {m, ref}, common, E / "pairs_tmp")
+        q = E / "paired" / f"{m}_minus_{ref}.csv"
+        qae.run([PY, "-I", str(P / "scripts/paired_bootstrap.py"), "--method", m, "--reference", ref,
                  "--draws", "2000", "--out", str(q), *sub], log)
         pairs.append(q)
     per, fields = qae.merge(rows, ids)
@@ -206,7 +209,8 @@ def main(argv=None):
                                                                                  for m in methods},
              "configs": configs, "screen_rule": "mean d_z over PickScore, HPSv2.1, ImageReward vs the reference; ties "
              "within 0.10 to the faster", "metrics": "as results/qwen_5312_vs_area (scripts/qwen_area_eval.py)",
-             "bootstrap": "scripts/paired_bootstrap.py, prompts resampled, 2000 draws, seed 0, 95% percentile CI"}
+             "bootstrap": "scripts/paired_bootstrap.py, prompts resampled, 2000 draws, seed 0, 95% percentile CI",
+             "extra_pairs": [f"{a} minus {b}" for a, b in extra_pairs]}
     (R / "about.json").write_text(json.dumps(about, indent=1) + "\n")
     shutil.copy(args.prompts, R / "prompts.jsonl")
     out = sorted(str(x.relative_to(R)) for x in R.rglob("*") if x.is_file() and x.name != "SHA256SUMS")
