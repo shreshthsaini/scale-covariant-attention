@@ -3,6 +3,95 @@
 Figures 1 and 5 and every appendix sample page are rebuilt as one family. Every image and window comes from a rule
 implemented in the scripts and stated in the caption. Nothing is picked by eye.
 
+## Round: more visual results (2026-11-10; user: "add more visual results in main and appendix for shorter version as well")
+Scripts: `v6_sizes_models.py` (main figure), `v6_more.py` (deciles, seeds12, hrgen, mosaic) on the new shared builder
+`v6_wholegrid.py` (Figure 5's whole-image style). PDFs and `<stem>_provenance.json` are in paper/figures/v6/, snippets
+in paper/figures/v6/snippets/, and build assets on scratch (v6_visuals_assets/<stem>/). All new floats compile with the
+existing ones in testdoc/test_all.pdf (24 pages, no errors, no duplicate labels, no overfull boxes; the only warning is
+`tab:ablation`, which the stand-in document lacks). Figure text is 6.48 to 7.97 pt.
+
+| stem | label | size (in) | PDF | rule clause (caption) |
+|---|---|---|---|---|
+| sizes_models (main) | fig:sizes_models | 5.50 x 2.40 | 0.46 MB | one prompt per setting, drawn with seed 0 among prompts that name no person, each from a different subject category |
+| deciles_a, deciles_b | fig:deciles_a, fig:deciles_b (snippet deciles.tex) | 5.50 x 6.93, 5.50 x 5.58 | 0.93 + 0.98 MB | the evaluation prompts at the 10th, 20th, ..., 90th percentile (nearest rank) of the paired ImageReward difference, progressive SCA minus AReA, 195 prompts, seed 0 |
+| seeds12 | fig:seeds12 | 5.50 x 6.77 | 0.95 MB | per seed (1 and 2), the prompts at the 10th, 25th, 50th, 75th and 90th percentile of the same difference, among the 80 prompts that name no person |
+| hrgen_samples | fig:hrgen_samples | 5.50 x 8.22 | 1.08 MB | the HRGen-1K prompts at the 10th, 25th, 50th, 75th and 90th percentile of the same difference, among the 740 of 1000 prompts that name no person |
+| mosaic | fig:mosaic | 5.50 x 5.50 | 0.88 MB | 16 showcase prompts outside Figure 1, the six categories taken in turn, each category's order fixed by seed 1; insets on the four most detailed windows |
+
+New PDFs total 5.27 MB. Estimates: full edition 19.7 + 5.3 = about 25.0 MB; short edition 12.2 + 0.46 (main figure)
++ 3.9 (four pages below) = about 16.6 MB. Appendix insets on these pages are native 256 x 256 windows (JPEG q85 4:2:0;
+the red boxes are vector), and thumbnails are 250 ppi.
+
+### A. Main figure `figures/v6/sizes_models.pdf` (`\vsixinc{sizes_models}`, natural width)
+- Five tiles in two rows: FLUX.1-dev single-pass SCA at 2048 x 6144, 2048 x 4096 and 4096 x 6144; FLUX.1-Krea-dev
+  single-pass SCA and FLUX.2-dev SCA without the schedule at 4096^2.
+  - Each tile has a tag (size or checkpoint) and a 0.47 in native inset of its 256 x 256 window of highest edge
+    energy.
+  - The two full-width rows of these aspect ratios need 2.6 in, so the tiling is scaled to the 2.40 in cap and
+    centred (5.07 in of content, 0.21 in side margins).
+- Draw (seed 0, DRAW_ORDER): 1046736963520652161 (mountain lake), m4850138611731379908 (desert under the Milky Way,
+  Krea), 6384782444147762726 (sheep and church), sc_l01_fjord_village (showcase; only showcase prompts exist at
+  4096 x 6144), m1017950324987649681 (snow mountain, FLUX.2).
+- Left out, every setting drawn first and dropped after so that no drop changes another draw (reasons in
+  provenance):
+  - 6144 x 4096 (sc_p03_amber_perfume): the 1:1 window lands on a lattice of blocks and stripes over defocused
+    petals.
+  - 6144^2 (m3130703310573987496, SCA without the schedule): at native pixels the stone wall smears into horizontal
+    streaks.
+  - 8192^2 (m5023570400257826529): horizontal stripes across the planet and its ring.
+- Rule history: rule 1, without the variety clause, drew m6845347395255545991 for Krea. Its image has a second lit
+  structure on the left peak for the one glowing tower the prompt asks for, and the draw had three mountain scenes.
+  The variety clause was added before its draw was viewed.
+- Two candidates were rendered on an ICLR test page (testdoc/test_sizes.png).
+  - A (two rows with insets, kept): fit 1, global coherence 2 (1.2 in rows), detail 1 (0.47 in insets), variety 2,
+    tags 1, words 1 (10), text 1. Mean 1.29.
+  - B (one strip with crops beneath): fit 1, coherence 0 (0.63 in images), detail 2, variety 2, tags 0 (tags overflow
+    the narrow tiles), words 1, text 1. Mean 1.14, with two zeros.
+- Proposed caption:
+  `\textbf{\sca{} at other sizes and on other checkpoints.} Single-pass \sca{} on FLUX.1-dev at $2048\times6144$,
+  $2048\times4096$ and $4096\times6144$ with the reach table fitted at $1024^2$; single-pass \sca{} on
+  FLUX.1-Krea-dev and \sca{} without the schedule on FLUX.2-dev at $4096^2$, each with its own table. One prompt
+  per setting (a showcase prompt at $4096\times6144$), drawn with seed~0 among prompts that name no person, each
+  from a different subject category; insets show 1:1 crops of the red boxes. Exploratory $6144^2$ and $8192^2$
+  samples, which show artifacts, are in Figures~\ref{fig:gallery_6144_complete} and~\ref{fig:gallery_8192_complete}.`
+- Claim: the same mechanism produces coherent images with native detail at three other aspect ratios and on two
+  other checkpoints (qualitative; the numbers are Table 3's).
+
+### B. Appendix pages (each a float page; snippets carry the captions)
+1. **Deciles** (`\snippetat{p}{deciles}`, two floats). AReA, UltraImage, HRDiT, progressive SCA. All nine deciles
+   are kept; only the median coincides with Figure 5 (which shows the 25th, 50th, 75th), so the distribution reads
+   whole. Lead of the caption: "Whole-image comparison at every decile of progressive SCA's ImageReward gain over
+   AReA (10th to 50th percentile / 60th to 90th percentile)". The rows show AReA ahead at the 10th percentile
+   (-0.19) and level at the 20th and 30th; the gain grows from the 40th on (+0.11 to +1.28).
+   - For the lead: at the 80th percentile ("twelve silhouettes in a row") the person-count detector counts 13 in
+     ours and 14 in UltraImage's. It is the prompt's own crowd, off by one, not a duplicated main subject, so I kept
+     the 195-prompt deciles. Say if you want the person-free subset here too.
+2. **Seeds 1 and 2** (`\snippetat{p}{seeds12}`). Seed 1 and seed 2 groups, each AReA and progressive SCA (better of
+   each pair bold), five percentile rows.
+   - HRDiT has no seed-1 or seed-2 images on disk, so its column is absent and the caption says so.
+   - Fallback used (I am telling you, as you asked): the draw over all 195 prompts put the seed-1 median on
+     m5795767365495583614. The prompt asks for one tiny figure; our image has a second one on the far shore,
+     invisible at the page's thumbnail size but present. Both seeds now draw from the 80 prompts that name no person,
+     stated in the caption.
+   - The rows show AReA ahead at the 10th percentile (-0.13, -0.19); the gain grows to +1.23 and +1.29 at the 90th.
+3. **HRGen-1K** (`\snippetat{p}{hrgen_samples}`). AReA, single-pass SCA, progressive SCA (single-pass included, so
+   the person-free rule applies: 740 of the 1000 prompts).
+   - AReA is best at the 10th percentile (-0.09). Single-pass SCA is best at the median and 90th, progressive SCA at
+     the 25th and 75th.
+   - AReA's water-drop texture is visible at the 75th and 90th.
+4. **Mosaic** (`\snippetat{p}{mosaic}`): 16 progressive SCA images at 4096^2, 4 x 4 at 1.35 in, insets on 4.
+   One-line caption: "Progressive SCA at 4096^2 on 16 more showcase prompts."
+5. **6144^2 and 8192^2**: already in the appendix as gallery_6144_complete and gallery_8192_complete (AReA against
+   SCA without the schedule; single-pass SCA has no 6144^2 or 8192^2 images on disk). Nothing new built.
+
+### C. Short edition: recommended four pages
+deciles_a, deciles_b, hrgen_samples, seeds12 (about 3.9 MB). Together they show the whole distribution of the
+headline gain, at the main seed, at two more seeds and on a second prompt set. These are the rigour a reviewer checks;
+the mosaic is a showcase and can stay full-only.
+
+### Missing on disk (no GPU work requested)
+HRDiT at seeds 1 and 2. Single-pass SCA at 6144^2 and 8192^2. HRDiT on HRGen-1K.
+
 ## Lead review, round 3 (final): Figure 5 compares whole images
 Figure 5 is rebuilt on whole images, with percentile rows of the ImageReward gain over AReA; see Figure 5. The
 window-agreement figure is kept in the appendix as the new stem crops_matched.pdf (label fig:crops_matched, snippet

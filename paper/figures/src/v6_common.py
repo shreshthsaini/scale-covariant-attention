@@ -245,9 +245,10 @@ def thumb(img: Image.Image, w_pt: float, h_pt: float | None = None, dpi: int = T
     return img.resize((pw, ph), Image.Resampling.LANCZOS)
 
 
-def save_jpeg(img: Image.Image, path: Path, q: int) -> Path:
+def save_jpeg(img: Image.Image, path: Path, q: int, subsampling: int = 0) -> Path:
+    """Deterministic JPEG; subsampling 0 is 4:4:4, 2 is 4:2:0 (used for small appendix insets to save bytes)."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    img.convert("RGB").save(path, "JPEG", quality=q, optimize=True, subsampling=0)
+    img.convert("RGB").save(path, "JPEG", quality=q, optimize=True, subsampling=subsampling)
     return path
 
 

@@ -1,6 +1,6 @@
 """Whole-image comparison grids of the v6 family (Figure 5's style), used by the appendix pages of v6_more.py.
 
-Each cell is a method's full image; that image's own 512 x 512 window of highest edge energy is boxed in red and shown at
+Each cell is a method's full image; that image's own 256 x 256 window of highest edge energy is boxed in red and shown at
 native pixels as an inset in the bottom-right corner (bottom-left, top-right, top-left when the inset would cover the
 box). Under each image sits one number (ImageReward), best of the row bold. Columns are methods (optionally grouped
 under a spanning head, for example a seed), rows are examples with a two-line label at left.
@@ -15,7 +15,7 @@ from PIL import Image
 import v6_common as vc
 
 Image.MAX_IMAGE_PIXELS = None
-WIN = 512
+WIN = 256   # inset window side (native px); Figure 1 and fig:sizes_models use the same size
 
 
 def _edge(p):
@@ -27,14 +27,14 @@ def _tile(job):
     im = Image.open(path).convert("RGB")
     vc.save_jpeg(vc.thumb(im, w, h, dpi=dpi), Path(assets) / tn, vc.THUMB_Q)
     x, y = win[0], win[1]
-    vc.save_jpeg(im.crop((x, y, x + WIN, y + WIN)), Path(assets) / cn, q)
+    vc.save_jpeg(im.crop((x, y, x + WIN, y + WIN)), Path(assets) / cn, q, subsampling=2)  # 0.47 in insets: 4:2:0
     return im.size
 
 
 def build(rows: list, cols: list, pdf: Path, assets: Path, stem: str, groups: list | None = None,
           secs: dict | None = None, label_w: float = 45.0, cell: float | None = None, inset: float = 34.0,
-          group_gap: float = 6.0, fmt: str = "%.2f", dpi: int = 250, crop_q: int = 90,
-          width: float = vc.TEXT_PT) -> dict:
+          group_gap: float = 6.0, fmt: str = "%.2f", dpi: int = 250, crop_q: int = 85,
+          width: float = vc.TEXT_PT, bold_sets: list | None = None) -> dict:
     """rows: [dict(label=(line1, line2), cells={col: dict(path=..., value=float)})];
     cols: [(key, head TeX, ours bool)]; groups: [(head TeX, [col keys])] for a spanning line above the heads;
     secs: {col: TeX} grey seconds line under each head. Returns a record."""
@@ -90,7 +90,9 @@ def build(rows: list, cols: list, pdf: Path, assets: Path, stem: str, groups: li
         if l2:
             cv.text(x0 + label_w / 2, y + cell / 2 + 5.5, l2, anchor="base")
         vals = {k: c["value"] for k, c in r["cells"].items()}
-        best = max(vals, key=vals.get)
+        sets = bold_sets or [list(vals)]          # bold the best value within each set (default: the whole row)
+        bests = {max([k for k in st if k in vals], key=vals.get) for st in sets}
+        best = sorted(bests)
         cells = {}
         for k, x in zip(keys, xs):
             if k not in r["cells"]:
@@ -110,12 +112,12 @@ def build(rows: list, cols: list, pdf: Path, assets: Path, stem: str, groups: li
             cv.image(ix, iy, inset, inset, f"r{r_i}_{k}_inset_{bx[0]}_{bx[1]}.jpg")
             cv.box(ix, iy, ix + inset, iy + inset, inside=True)
             cv.text(x + cell / 2, y + cell + val_h - 1.6, fmt % vals[k], size=6.5, anchor="base", color=vc.MID,
-                    bold=(k == best))
+                    bold=(k in bests))
             cells[k] = dict(path=r["cells"][k]["path"], value=vals[k], window_px=list(bx), inset_corner=corner,
                             png_sha256=vc.sidecar(r["cells"][k]["path"])["png_sha256"])
         rec["rows"].append(dict(label=list(r["label"]), best=best, cells=cells, **r.get("meta", {})))
     cv.compile(pdf, stem)
     rec.update(pdf=str(pdf), pdf_bytes=pdf.stat().st_size, size_in=[round(width / 72.27, 3), round(H / 72.27, 3)],
                cell_pt=round(cell, 2), inset_pt=inset, used_width_pt=round(used, 2), thumb_dpi=dpi,
-               inset_jpeg_q=crop_q, window_rule="each image's own 512 x 512 window of highest edge energy")
+               inset_jpeg_q=crop_q, window_rule=f"each image's own {WIN} x {WIN} window of highest edge energy")
     return rec
