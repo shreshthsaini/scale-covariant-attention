@@ -69,6 +69,12 @@ def ci_cell(row, d=3):
     return f"<b>{txt}</b>" if sig else txt
 
 
+def tune_ids():
+    p = P / "results" / "qwen_tune" / "5312" / "prompts.jsonl"
+    p = p if p.exists() else S / "prompts" / "qwen_tune12.jsonl"
+    return [json.loads(x)["id"].removeprefix("sc_") for x in open(p) if x.strip()] if p.exists() else []
+
+
 def paired(results, method, ref):
     return {r["metric"]: r for r in rows(results / f"{method}_minus_{ref}.csv")}
 
@@ -310,8 +316,9 @@ def build_html(tuned, tuned_name, items, screen, test, ns, timing, summary_text)
 <p class="note">Each row is one configuration, scored by paired differences against AReA at its own defaults on the same
 12 TUNE prompts and size (seed 0). Cells give the mean difference and its 95% bootstrap interval (2000 draws over
 prompts); bold intervals exclude zero. Mean d<sub>z</sub> is the selection score fixed before any run: the mean, over
-PickScore, HPSv2.1 and ImageReward, of the paired mean divided by the SD of the paired differences. MUSIQ crops scores
-four 1024 px native crops. Seconds are medians per image on one GH200.</p>
+PickScore, HPSv2.1 and ImageReward, of the paired mean divided by the SD of the paired differences; within 0.10 of the
+best, the faster configuration wins. MUSIQ crops scores four 1024 px native crops. Seconds are medians per image on one
+GH200. TUNE prompts: {html.escape(", ".join(tune_ids()))}; none of them is a TEST prompt.</p>
 {screen_html}
 <h2 id="test">TEST (15 held-out prompts, 5312²)</h2>
 <p class="note">The 15 prompts of the earlier comparison, untouched during tuning; {html.escape(tuned_name)} ran once on
