@@ -679,6 +679,11 @@ In both high-resolution stages \sca{} replaces HRDiT's four attention changes: N
 \input{figures/snippets/app_tables/prog_all.tex}
 \input{figures/snippets/app_tables/prog_deltas.tex}
 
+\ifresprogabl
+\paragraph{Reach weights inside the progressive schedule.} Table~\ref{tab:prog_abl_all} repeats the reach-weight ablation of Section~\ref{sec:ablations} inside progressive \sca{}. The four runs share the three-stage schedule, the window, the bridge, and the per-prompt seeds, and differ only in the weights: per-head $\pi_h$, the mean of the table over every layer and head at each noise level (shared $\pi(\sigma)$), the mean over each layer's heads (per-layer $\pi_\ell(\sigma)$), and $\pi=1$, which keeps the window and the bridge alone (window only). Clean batch-1 time is the same for all four (\progAblSeconds~s), so the comparison is one of quality.
+\snippet{app_tables/prog_abl_all}{}
+\fi
+
 \FloatBarrier
 \section{Additional paired intervals}
 \label{app:phase2}

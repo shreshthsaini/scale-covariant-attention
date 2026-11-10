@@ -79,7 +79,7 @@
 %                (\raResult); the method agent writes ra195_method.tex (\raMethod, one or two sentences, no numbers).
 %                Section 3.3 then gains the paragraph "Measured hand-off". Rebuild and check the main text still
 %                ends on page 10.
-\newif\ifresprogabl \resprogablfalse
+\newif\ifresprogabl \resprogabltrue
 \newif\ifresra      \resrafalse
 
 % Code and project link; swap for an anonymous mirror at submission time.
@@ -465,7 +465,7 @@ The global view runs alone while $\sigma>\sigma_g=0.89$, the first 8 of 28 steps
 \begin{table}[t]
   \centering
   \begin{minipage}[t]{0.48\linewidth}
-    \caption{\textbf{Per-head weights beat shared and per-layer ones.} Single-pass \sca{}, $4096^2$, \nabl{} prompts. The shaded row gives absolute values, the others changes against \sca{} without the schedule; \dn{orange}: significantly worse. Table~\ref{tab:app_abl} adds all metrics.\pendTabAbl{}}
+    \caption{\textbf{Per-head weights beat shared and per-layer ones.} Single-pass \sca{}, $4096^2$, \nabl{} prompts. The shaded row gives absolute values, the others changes against \sca{} without the schedule; \dn{orange}: significantly worse. Table~\ref{tab:app_abl} adds all metrics.\ifresprogabl{} The progressive rows use \nmain{} prompts and pair against progressive \sca{} (Table~\ref{tab:prog_abl_all}).\fi\pendTabAbl{}}
     \label{tab:ablation}
     \centering\footnotesize
     \ifresprogabl\snippet{main_tables/tab_ablation_compact_prog}{\input{figures/snippets/main_tables/tab_ablation_compact.tex}}\else\input{figures/snippets/main_tables/tab_ablation_compact.tex}\fi

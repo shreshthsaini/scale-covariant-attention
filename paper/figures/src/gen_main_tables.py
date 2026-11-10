@@ -627,6 +627,156 @@ def prog_ablation_rows():
     return rows_
 
 
+def prog_ablation_setlevel():
+    """{method: {metric: (delta, lo, hi)}} for FID, KID and their patch versions of each progressive-ablation variant
+    minus progressive SCA. Intervals come from results/prog195_ablation/cfid_ci/*_paired_deltas.csv (CPU bootstrap,
+    1000 draws, 168 reference identities); until those exist the point estimates of corrected_fidp/ are used with
+    lo = hi = None."""
+    out = {}
+
+    def take(path):
+        for r in csv.DictReader(open(path)):
+            if r["reference_method"] not in PROG_ABL_REFS or r["metric"] not in LOWER:
+                continue
+            has_ci = bool(r["ci_low"] and r["ci_high"])
+            if has_ci:
+                assert r["bootstrap_valid"] == "1000" and r["n_reference_prompts"] == "168", r
+            cur = out.setdefault(r["method"], {})
+            if has_ci or r["metric"] not in cur:
+                cur[r["metric"]] = (float(r["value"]), float(r["ci_low"]) if has_ci else None,
+                                    float(r["ci_high"]) if has_ci else None)
+
+    point = PROG_ABL_DIR / "corrected_fidp" / "paired_deltas.csv"
+    if point.exists():
+        take(point)
+    for path in sorted((PROG_ABL_DIR / "cfid_ci").glob("*_paired_deltas.csv")):
+        take(path)
+    return out
+
+
+def prog_ablation_methods():
+    """[(method, label)] of the progressive-ablation variants, in the row order of the compact table."""
+    seen = set()
+    for path in sorted(PROG_ABL_DIR.glob("*.csv")):
+        table = list(csv.DictReader(open(path)))
+        if table and {"method", "reference", "metric", "delta"} <= set(table[0]):
+            seen |= {r["method"] for r in table if r["reference"] in PROG_ABL_REFS}
+    return [(m, next((lab for key, lab in PROG_ABL_LABELS if key in m), m.replace("_", r"\_"))) for m in sorted(seen)]
+
+
+def prog_ablation_full():
+    """[(method, label, {metric: (delta, lo, hi)})]: all ten per-image metrics plus the set-level ones."""
+    setlevel = prog_ablation_setlevel()
+    out = []
+    for method, label in prog_ablation_methods():
+        dd = {}
+        for path in sorted(PROG_ABL_DIR.glob(f"{method}_vs_*.csv")):
+            for r in csv.DictReader(open(path)):
+                if r["method"] == method and r["reference"] in PROG_ABL_REFS:
+                    check(r["n_prompts"] == "195", f"{path.name}: {r['n_prompts']} prompts, not 195")
+                    dd[r["metric"]] = (float(r["delta"]), float(r["ci_low"]), float(r["ci_high"]))
+        check(all(k in dd for k in PER_IMAGE10), f"prog195_ablation: {method} lacks a per-image metric")
+        dd.update(setlevel.get(method, {}))
+        out.append((method, label, dd))
+    return out
+
+
+def table_prog_abl_all(full):
+    """Appendix table prog_abl_all.tex: every metric of the progressive-schedule ablation with its interval."""
+    lines = []
+    no_ci = False
+    for key, label, sc, d in PROG_ALL_METRICS:
+        top, low = [label], [""]
+        for _, _, dd in full:
+            if key not in dd:
+                top.append("--")
+                low.append("")
+                continue
+            v, lo, hi = dd[key]
+            top.append(paint(sgn(sc * v, d, "{-}"), sig(dd[key], lower=key in LOWER) or ""))
+            low.append(interval(sc * lo, sc * hi, d) if lo is not None else "")
+            no_ci |= lo is None
+        lines += [" & ".join(top) + r" \\", " & ".join(low) + r" \\[0.5pt]"]
+    lines[-1] = lines[-1].replace(r" \\[0.5pt]", r" \\")
+    lost = {m: sum(dd[k][2] < 0 for k in PER_IMAGE10) for m, _, dd in full}
+    won = {m: sum(dd[k][1] > 0 for k in PER_IMAGE10) for m, _, dd in full}
+    NOTES.append(f"prog_abl_all: per-image metrics significantly lost {lost}, won {won}")
+    NOTES.append("prog_abl_all: patch FID " + ", ".join(
+        f"{m} {dd['patch_fid'][0]:+.1f} [{dd['patch_fid'][1]}, {dd['patch_fid'][2]}]" for m, _, dd in full
+        if "patch_fid" in dd))
+    cap = (r"\caption{\textbf{Reach weights inside the progressive schedule, all metrics.} FLUX.1-dev, \nmain{} "
+           r"Aesthetic-4K prompts at $4096^2$, seed label 0. Each cell is the variant minus progressive \sca{} with "
+           r"per-head weights, with its 95\% paired interval below it. Per-image metrics use 2000 prompt draws; FID, "
+           r"KID and their patch versions use 1000 draws that also resample the 168 reference-image clusters"
+           + (r", and print a point estimate alone where that interval is not yet computed" if no_ci else "") +
+           r". \up{Blue} / \dn{orange}: the interval excludes zero in favour of / against the variant; lower is "
+           r"better for FID and KID, so their signs read the other way. All four runs share the schedule, the "
+           r"window, the bridge, and the seeds, and differ only in the weights $\pi$.}")
+    return "\n".join([
+        HEADER.replace("% Generated", "% Generated (app_tables/prog_abl_all.tex)"),
+        r"\begin{table}[!htbp]", cap, r"\label{tab:prog_abl_all}",
+        r"\centering\scriptsize\setlength{\tabcolsep}{5pt}",
+        r"\begin{tabular}{@{}l" + "r" * len(full) + "@{}}", r"\toprule",
+        " & ".join(["Metric"] + [label for _, label, _ in full]) + r" \\", r"\midrule"]
+        + lines + [r"\bottomrule", r"\end{tabular}", r"\end{table}"]) + "\n"
+
+
+def prog_ablation_sentence(full):
+    """Section 4.3's sentences (\\progAblResult): how many of the ten per-image metrics each variant loses against
+    per-head weights, the ImageReward and MUSIQ-crop changes, and the patch FID change, which can read the other way.
+    The wording is chosen from the intervals, so it cannot claim more than the cells of tab:prog_abl_all show."""
+    def ci(v, d):
+        return (rf"{sgn(v[0], d)} $[{v[1]:.{d}f},{v[2]:.{d}f}]$".replace("[-", "[{-}").replace(",-", ",{-}")
+                if v[1] is not None else sgn(v[0], d))
+
+    def joined(parts):
+        return " and ".join(parts) if len(parts) < 3 else ", ".join(parts[:-1]) + ", and " + parts[-1]
+
+    def count(n):
+        return "all ten" if n == 10 else word(n)
+
+    lost = {m: sum(dd[k][2] < 0 for k in PER_IMAGE10) for m, _, dd in full}
+    won = {m: sum(dd[k][1] > 0 for k in PER_IMAGE10) for m, _, dd in full}
+    check(all(lost[m] > won[m] for m in lost), f"prog195_ablation: a variant does not lose to per-head weights: {lost} {won}")
+    coarse = [(m, lab, dd) for m, lab, dd in full if "window" not in lab]
+    rest = [(m, lab, dd) for m, lab, dd in full if "window" in lab]
+    parts = []
+    if coarse:
+        n = {lost[m] for m, _, _ in coarse}
+        each = " each" if len(coarse) > 1 else ""
+        head = (rf"{joined([lab for _, lab, _ in coarse])}{each} lose to per-head weights on {count(n.pop())} "
+                "per-image metrics" if len(n) == 1 else
+                joined([rf"{lab} loses to per-head weights on {count(lost[m])}" for m, lab, _ in coarse]) +
+                " per-image metrics")
+        parts.append(head + " (ImageReward " + " and ".join(ci(dd["ir"], 3) for _, _, dd in coarse) +
+                     r", MUSIQ$_\text{c}$ " + " and ".join(sgn(dd["musiq_crop1024"][0], 1) for _, _, dd in coarse) + ")")
+    for m, lab, dd in rest:
+        gain = (rf" and gains {sgn(dd['musiq_crop1024'][0], 1)[1:-1].lstrip('+')} MUSIQ$_\text{{c}}$"
+                if dd["musiq_crop1024"][1] > 0 else "")
+        parts.append(rf"{lab} loses on {count(lost[m])}{gain}")
+    sentence = ("Inside the progressive sampler the gaps are smaller but point the same way: " +
+                (", and ".join(parts) if len(parts) == 2 else joined(parts)) + ".")
+    pf = [(lab, dd["patch_fid"]) for _, lab, dd in full if "patch_fid" in dd]
+    if pf:
+        have_ci = all(v[1] is not None for _, v in pf)
+        lower = [(lab, v) for lab, v in pf if have_ci and v[2] < 0]
+        higher = [(lab, v) for lab, v in pf if have_ci and v[1] > 0]
+        open_ = [(lab, v) for lab, v in pf if (lab, v) not in lower + higher]
+        bits = []
+        if lower:
+            bits.append("is lower with " + joined([rf"{lab} ({ci(v, 1)})" for lab, v in lower]))
+        if higher:
+            bits.append("higher with " + joined([rf"{lab} ({ci(v, 1)})" for lab, v in higher]))
+        if open_:
+            bits.append(("changes by " if not have_ci else "unresolved with ") +
+                        joined([rf"{lab} ({ci(v, 1)})" if have_ci else rf"{ci(v, 1)} with {lab}" for lab, v in open_]))
+        sentence += (" Patch FID, a set-level metric, does not follow them: it " + joined(bits) +
+                     r" (Tables~\ref{tab:ablation} and~\ref{tab:prog_abl_all})." if lower else
+                     " Patch FID, a set-level metric, " + joined(bits) +
+                     r" (Tables~\ref{tab:ablation} and~\ref{tab:prog_abl_all}).")
+    return sentence
+
+
 def table_ablation_compact(prog_rows=None):
     S46 = V.summary46(DEFAULT46)
     sca = [num(sc * S46[k], d) for k, sc, d in ABL_COLS]
@@ -1162,13 +1312,16 @@ def main():
     prog_abl = prog_ablation_rows()
     if prog_abl:
         files[OUT / "tab_ablation_compact_prog.tex"] = table_ablation_compact(prog_abl)
-        # one neutral sentence for Section 4.3 (\progAblResult): each variant's ImageReward change with its interval
-        parts = [rf"{sgn(dd['ir'][0], 2)} $[{dd['ir'][1]:.2f},{dd['ir'][2]:.2f}]$ with {label}"
-                 .replace("[-", "[{-}").replace(",-", ",{-}") for label, dd, _ in prog_abl]
-        listed = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + ", and " + parts[-1]
-        sentence = ("In the progressive sampler, ImageReward changes against per-head weights by " + listed +
-                    r" (Table~\ref{tab:ablation}).")
-        files[OUT / "prog_abl_text.tex"] = "\n".join([HEADER, rf"\newcommand{{\progAblResult}}{{{sentence}}}"]) + "\n"
+        # Section 4.3's sentences (\progAblResult) and the all-metric appendix table (tab:prog_abl_all)
+        full = prog_ablation_full()
+        files[OUT_APP / "prog_abl_all.tex"] = table_prog_abl_all(full)
+        sentence = prog_ablation_sentence(full)
+        lat = [float(r["median_s"]) for r in csv.DictReader(open(PROG_ABL_DIR / "latency.csv"))]
+        check(len(lat) == len(full) + 1, f"prog195_ablation/latency.csv: {len(lat)} rows")
+        seconds = f"{min(lat):.1f} to {max(lat):.1f}"  # clean batch-1 medians of the four runs
+        files[OUT / "prog_abl_text.tex"] = "\n".join([
+            HEADER, rf"\newcommand{{\progAblResult}}{{{sentence}}}",
+            rf"\newcommand{{\progAblSeconds}}{{{seconds}}}"]) + "\n"
     print("progressive ablation: " + ("waiting for results/prog195_ablation/SHA256SUMS" if prog_abl is None
                                        else f"{len(prog_abl)} rows -> tab_ablation_compact_prog.tex"))
     macros = headline(clean)
