@@ -1916,3 +1916,56 @@ configuration with AReA on the 15 TEST prompts at 5312^2; review page web/review
   /scratch/09032/saini_2/sca/code/596fa4b`; then wait for the hook (or rmdir out/qwen_tuned/.review_built and run it).
   Controller note: the fresh controller 1132105 (48 h) cannot start before the Vista_PM maintenance (11-11 06:15 to
   22:00) because its walltime overlaps it; a job under about 30 h could.
+
+## 40. 2026-11-10: reach-annealed hand-off (A) and the progressive table ablation (B) (method owner; this section is the log)
+Brief (lead, 00:00): A = single pass that walks the reach table r = 1 -> 2 -> 4 with measured switch points; B = does
+the per-head table matter inside the progressive schedule. GPU only through taskq, tasks 000a_* (A) and 000b_* (B) sort
+ahead of the Qwen 000r_* tasks; evaluations self-release (tag 0a0). Controller i614-062 ends about 02:45, so every
+step below runs from the spool without a controller.
+- Code 4fb0b4d (frozen /scratch/09032/saini_2/sca/code/4fb0b4d; tests/test_reach_anneal.py, 9 new tests incl. a float64
+  brute force; full suite 339 pass, the 3 failures are AReA-import order effects that pass alone):
+  - --lattice-pool mean (default center = every published path): on --scale-fixed steps at apparent scale 2 each query
+    (at its coarse id floor(p / 2)) attends the text, the bridge and a 64 x 64 window of 2 x 2 block means of the
+    pre-RoPE keys and the values (a 128-token footprint, offsets inside the native range, the native key count), mixed
+    with the pool-4 global branch by the scale-2 per-head table. Cost: the stride-2 block layout (1.055x a native
+    window step, round two) plus one average pool.
+  - PiTable headmean / layermean and sample_progressive.py --pi-variant (B).
+  - scripts/handoff_from_mass.py: measured schedule (CPU). m_r = head-averaged image share of full attention inside the
+    ratio-r window (mass_mean at radius 0.5 x 64 / r, divided by the image mass, as Fix 2's m_h).
+- Measured schedule (28 steps at 4096^2). m_2 runs 0.476 -> 0.624 over the trajectory and m_4 0.286 -> 0.475: the
+  ranges do not overlap, so one tau can never produce both switches inside the trajectory.
+  - tau 0.4: m_2 > 0.4 from step 0 (no global opening), r = 2 on steps 0-12, r = 4 from 13 (sigma_4 0.789).
+  - tau 0.5: global steps 0-4 (sigma_2 0.940), r = 2 from step 5 to the end (m_4 never reaches 0.5).
+  - tau 0.6: global steps 0-19 (sigma_2 0.590), r = 2 on steps 20-27, never r = 4.
+  - The only measured schedule that walks 1 -> 2 -> 4 uses two thresholds, tau_2 0.5 and tau_4 0.4: global 0-4, r = 2
+    on 5-12, r = 4 from 13 (same steps under the near-plus-text normalization with 0.6 / 0.5). Screened as ra_m.
+  - The all-key normalization (text in the denominator) is degenerate too (tau 0.6 never leaves the opening).
+- Variants (all with the bridge, 8 x 8 cells x 16, and --lattice-pool mean; r = 4 is sca_v2's native window without
+  its 128 -> 80 shrink): ra_fixed (control: gate 0.89, r = 2 on steps 8-13, --scale-fixed 0.77:2), ra_m (0.9404 /
+  0.7892), ra_t40 (gate 0, --scale-fixed 0.7892:2), ra_t50 (gate 0.9404, r = 2 to the end), ra_t60 (gate 0.5896, r = 2
+  to the end; its 46-prompt run is parked in taskq/hold_ra/park46_ra_t60 because 20 pool-4 steps are expected to
+  leave the 4 x 4 block mosaic of the early gate-0.80 test).
+- Spool (slurm/reach_anneal_tasks.py, enqueued 00:27): copyprone21 (000a_a<k>NN, 3 chunks per variant, out
+  r7/out/<label>/4096x4096); each variant's last chunk releases 000a_0a1_tri_<label> (GPU detector triage into
+  r7/cpu_det/<label>, line in r7/cpu_det/auto_triage.log, and the blind packet r7/label/pRA_<label>). The 46
+  (000a_b<k>NN, 6 chunks) release 000a_0a0_eval_<label> (eval/r7_46_<label>); each evaluation then queues the gate
+  000a_0a2_gate195 (template taskq/hold_ra/gate195.template). Once the four 46-prompt evaluations are DONE the gate runs
+  r7_decide and writes eval/ra_gate195/{decision.txt,DECIDED}: a variant is released for the provisional 195-prompt run
+  only if it passes the metric part of the relaxed bar (no core loss on IR, HPSv2.1, PickScore; other losses still
+  better than AReA; time < 202 s), has <= 6 of 21 copyprone21 detector flags and <= 2 detector flags on the 46;
+  fewest copyprone21 flags wins. The staged run sits in taskq/hold_ra195/<label> (13 chunks 000a_c<k>NN into
+  out/ra195/<label>, evaluation 000a_0a0_eval195_<label> -> eval/ra195_<label> and results/ra195 with paired
+  bootstraps against sca_v2, AReA, sca_v2_prog and HRDiT, clean batch-1 timing 000a_0a3_latency_<label> ->
+  results/ra195/latency.csv). The 195 result is provisional until the hand labels confirm the copy counts.
+- B (000b_*, after A in the spool): prog_headmean (head mean of the table per sigma bin and ratio), prog_layermean (mean
+  over each layer's heads; the averaged family isolates head variation; the paper's single-pass ablation used the
+  separately fitted pooled tables), prog_win (--pi-const 1.0: window plus bridge only; text queries still read the
+  global branch, SCA's text rule). 195 prompts, seed 0, schedule and flags of sca_v2_prog, out/prog195_ablation/<label>;
+  evaluation 000b_0a0_eval_prog195_ablation -> eval/prog195_ablation and results/prog195_ablation (15 metrics,
+  corrected FID / patch FID, paired bootstraps vs sca_v2_prog and vs HRDiT, detector); clean batch-1 timing
+  000b_0a1_latency_prog_ablation -> results/prog195_ablation/latency.csv.
+- Next (whoever holds this section): blind-label every copyprone21 packet r7/label/pRA_<label> with the round-7
+  protocol (one Opus labeler per batch file, prompt_NN.txt), collect with scripts/r7_label_collect.py; kill criterion:
+  no variant at <= 8 of 21 without core losses -> stop and report. For a variant that holds, label its 26 person/animal
+  images on the 46 (r7/label_people.sh with the default prompt set) and run r7_decide; if the gate already released
+  a 195 run, label all 95 person/animal images (protocol results/dup_audit_20261027/human_labels_95_protocol.md).
