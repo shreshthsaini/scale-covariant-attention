@@ -28,6 +28,9 @@ Outputs, in paper/figures/snippets/:
       (tab:gen_all), app_abl.tex, app_ps2.tex, phase2_sensitivity.tex, phase2_budget.tex (generated replacements of
       tables v5.1 typed into appendix.tex), and the restyled prog_all.tex, prog_abl_all.tex, tab_panel46.tex; headline
       macros \\holm..., \\hlLat..., and the numbers the v6 text requested (request_macros).
+  app_tables/holm_short.tex (2026-11-10, appendix owner)
+      panel (a) of holm.tex alone, with its own caption, for the short review edition (main_short.tex inputs it in
+      place of holm.tex, so no table of that edition prints the record panel).
   main_tables/headline.tex
       \\newcommand{\\hl...} macros for the numbers the prose repeats, and the caption notes \\pendTabMain,
       \\pendTabPanel, \\pendTabAbl, \\pendTabGen; \\input it once in the preamble. A comment above each macro names
@@ -1290,16 +1293,16 @@ HOLM_SCALE = {"ir": (1, 3), "aesthetic": (1, 2), "clip": (1, 2), "pickscore": (1
               "hpsv21": (100, 2), "musiq": (1, 1), "musiq_crop1024": (1, 1), "clipiqa": (100, 1), "arniqa": (100, 1)}
 HOLM_HEAD = [("prog_area", r"Progressive $-$ AReA"), ("prog_hrdit", r"Progressive $-$ HRDiT"),
              ("sca_area", r"Single-pass $-$ AReA")]
-HOLM_GROUPS = [("Table 1: progressive \\sca{} against each method (\\nmain{} prompts, seed 0)",
+HOLM_GROUPS = [("Table~\\ref{tab:main}: progressive \\sca{} against each method (\\nmain{} prompts, seed 0)",
                 [("prog_area", "AReA"), ("prog_hrdit", "HRDiT"), ("prog_ultra", "UltraImage"), ("prog_dype", "DyPE"),
                  ("prog_sega", "SEGA"), ("prog_full", "full attention"), ("prog_sca", r"single-pass \sca{}")]),
-               ("Table 3: \\sca{} against AReA, other seeds, prompts, checkpoints",
+               ("Table~\\ref{tab:generality}: \\sca{} against AReA, other seeds, prompts, checkpoints",
                 [("sca_area", r"single-pass, seed 0"), ("prog_area_s1", "progressive, seed 1"),
                  ("prog_area_s2", "progressive, seed 2"), ("prog_area_hrgen", "progressive, HRGen-1K"),
                  ("sca_area_s1", "single-pass, seed 1"), ("sca_area_s2", "single-pass, seed 2"),
                  ("sca_area_hrgen", "single-pass, HRGen-1K"), ("sca_area_krea", "single-pass, FLUX.1-Krea"),
                  ("flux2", r"w/o schedule $-$ full attn., FLUX.2-dev")]),
-               (r"Table 2: per-head weights against each variant (reversed: variant losses are per-head wins)",
+               (r"Table~\ref{tab:ablation}: per-head weights against each variant (reversed: variant losses are per-head wins)",
                 [("abl_uniform_nb", r"shared $\pi(\sigma)$, single pass"),
                  ("abl_layer_nb", r"per-layer $\pi_\ell(\sigma)$, single pass"),
                  ("prog_headmean", r"shared $\pi(\sigma)$, progressive"),
@@ -1357,7 +1360,7 @@ def table_holm():
            r"after Holm's step-down adjustment over the ten per-image metrics of each comparison. \up{Blue} / "
            r"\dn{orange}: significantly better / worse after adjustment at 5\%. $p\le0.001$ is the smallest value 2000 "
            r"draws resolve. (b) Significantly better / worse metrics of ten for every paired comparison of "
-           r"Tables~\ref{tab:main} to~\ref{tab:generality}: unadjusted (the 95\% interval excludes zero), Holm on the "
+           r"Tables~\ref{tab:main} to~\ref{tab:ablation}: unadjusted (the 95\% interval excludes zero), Holm on the "
            r"bootstrap $p$-values, and Holm on paired sign-flip $p$-values (2000 sign vectors, seed 0) as a check. "
            r"Every archived interval is reproduced to six digits before a $p$-value is taken. Key result: progressive "
            r"and single-pass \sca{} keep all ten wins over AReA at every seed and on HRGen-1K; against HRDiT, "
@@ -1370,6 +1373,35 @@ def table_holm():
          r"\scaFitTab{l*{9}{r}}{10}{%"] + ["  " + x for x in head_a + body + [r"\bottomrule"]] + ["}", r"\par\medskip",
          r"\textit{(b) Wins\,/\,losses of ten for every paired comparison}\par\smallskip",
          r"\scaFitTab{lrccc}{5}{%"] + ["  " + x for x in head_b + rec + [r"\bottomrule"]] + ["}", r"\end{table}"])
+    return text + "\n"
+
+
+def table_holm_short():
+    """Panel (a) of table_holm() alone, for the short review edition (main_short.tex inputs app_tables/holm_short.tex
+    in place of holm.tex): the same cells and the same label tab:holm; the caption drops panel (b) and names the full
+    version for the record of every paired comparison. Added 2026-11-10 (appendix owner, short edition)."""
+    import gen_holm
+    full = table_holm().splitlines()
+    i0 = full.index(r"\scaFitTab{l*{9}{r}}{10}{%")
+    i1 = full.index(r"\par\medskip", i0)
+    H = holm()
+    hr = H["prog_hrdit"]
+    lost = [dict(gen_holm.METRICS)[k] for k, _ in gen_holm.METRICS
+            if hr["metrics"][k]["sig_raw"] and not hr["metrics"][k]["sig_holm"]]
+    kept = [dict(gen_holm.METRICS)[k] for k, _ in gen_holm.METRICS if hr["metrics"][k]["sig_holm"]]
+    cap = (r"\caption{\textbf{Every win over AReA survives Holm correction; against HRDiT, two differences of four do.} "
+           r"FLUX.1-dev at $4096^2$. Paired differences, method minus reference, with two-sided bootstrap "
+           r"$p$-values from the same 2000 prompt draws (seed 0) that give every interval of the paper, before and "
+           r"after Holm's step-down adjustment over the ten per-image metrics of each comparison. \up{Blue} / "
+           r"\dn{orange}: significantly better / worse after adjustment at 5\%. $p\le0.001$ is the smallest value 2000 "
+           r"draws resolve. The full version adds the record of every paired comparison of Tables~\ref{tab:main} "
+           r"to~\ref{tab:ablation}, with a sign-flip check. Key result: progressive and single-pass \sca{} keep all "
+           r"ten wins over AReA; against HRDiT, " + " and ".join(kept) + r" remain better and " + " and ".join(lost) +
+           r" no longer differ.}")
+    text = "\n".join(
+        [HEADER.replace("% Generated", "% Generated (app_tables/holm_short.tex: panel (a) of holm.tex for the short "
+                                       "edition, with gen_holm.py)"), TABSTYLE_INPUT,
+         r"\begin{table}[!htbp]", cap, r"\label{tab:holm}", r"\centering\scriptsize"] + full[i0:i1] + [r"\end{table}"])
     return text + "\n"
 
 
@@ -2113,7 +2145,8 @@ def main():
              OUT / "tab_ablation_compact.tex": table_ablation_v6(),
              OUT / "tab_ablation.tex": table_ablation(), OUT / "tab_generality.tex": table_generality_v6(),
              OUT_APP / "prog_all.tex": table_prog_all(), OUT_APP / "variance_split.tex": table_variance_split(),
-             OUT_APP / "holm.tex": table_holm(), OUT_APP / "gen_all.tex": table_gen_all(),
+             OUT_APP / "holm.tex": table_holm(), OUT_APP / "holm_short.tex": table_holm_short(),
+             OUT_APP / "gen_all.tex": table_gen_all(),
              OUT_APP / "app_abl.tex": table_app_abl(), OUT_APP / "app_ps2.tex": table_app_ps2(),
              OUT_APP / "phase2_sensitivity.tex": table_phase2_sensitivity(),
              OUT_APP / "phase2_budget.tex": table_phase2_budget()}

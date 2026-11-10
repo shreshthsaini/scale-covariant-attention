@@ -13,6 +13,9 @@ Main text at most 10 pages (now 9).
   owners' notes (text, appendix, methodfigs, visuals, tablesplots): .agent/notes/paper_v6/. Figures live in
   paper/figures/v6/ with scripts paper/figures/src/v6_*.py; tables come from gen_main_tables.py, gen_app_tables.py,
   gen_holm.py (never run gen_late_tables.py or gen_prog_tables.py).
+- Short review edition also delivered: paper/main_short.pdf, 26 pp, no intervals in tables; build with
+  `python paper/build_delivery.py --main main_short.tex --stem short` (HANDOVER 43, appendix.md Section 9). Asked the
+  user whether the full edition's appendix interval tables should lose their intervals too; no answer yet.
 - Open for the user: AI use statement (marker in main.tex above the reproducibility statement), anonymous code URL.
 - NEXT: wait for the user's reaction to v6. To change a figure, edit its v6_ script and rerun it; to change text,
   edit main.tex / appendix.tex; then paper/build_delivery.py, update latest_delivery.md, commit, push, sync.

@@ -2169,3 +2169,16 @@ method-figure design, qualitative design, examples), best-paper level in rigour,
   statement in main.tex and the authors must write it. (2) The code URL is not anonymous. (3) tab:flops per-layer
   timings have no archived source (caption says measured once).
 - GitHub checkpoints during the work: scripts/wip_push.sh (loop stopped with the stop file at delivery).
+- 2026-11-10 later: **short review edition** (user: "a 25ish page version ... remove unnecessary tables ... keep more
+  figures and plots", then "in tables dont write CI"). One source, switch \ifshortversion; paper/main_short.tex is the
+  entry file; helpers \fullonly{} and \shortalt{}{} in main.tex wrap pointers to items the short edition drops.
+  Short: 26 pp (main text 1 to 9, appendix 13 to 26), keeps proofs, all Appendix B plots, the method zoom, a protocol
+  summary, Table E.1 (all metrics, no intervals) and the Holm table (panel a, no intervals), result plots, the
+  matched-crop figure and five sample pages; drops 24 of 26 appendix tables, Algorithms 3 to 5, prompts, sources.
+  No table in the short edition prints an interval. Build: `python paper/build_delivery.py --main main_short.tex
+  --stem short` -> paper/main_short.pdf, sca_overleaf_short.zip, delivery_receipt_short.json (delivery_6ghqbk_d).
+  Detail: .agent/notes/paper_v6/appendix.md Section 9.
+- Same pass, full edition rebuilt (delivery_l9uo8n02, 62 pp): only change against tag paper-v6 is the Holm table
+  (E.4), whose group headings named the wrong main tables; they now use \ref (generator HOLM_GROUPS).
+- Open question to the user: should the full edition's appendix interval tables (E.2, E.3, E.5 to E.7, F.1, G.1 to
+  G.3, H.1, H.2, H.4) also lose their intervals?

@@ -164,3 +164,56 @@ Snippet labels now included: tab:holm, tab:gen_all (tablesplots), and the v6 vis
 - I did not inspect every image tile at 1:1; the galleries were read at page scale.
 - Float-to-reference distance: in E and G the text is much shorter than the tables (about 1.7 vs 7.5 pages in E), so
   some tables sit two to four pages after the paragraph that cites them, always inside their own section.
+
+## 9. Short edition (2026-11-10, coordinator request; user: "remove unnecessary tables, keep figures and plots";
+## "in tables don't write CI")
+Status: DONE. paper/main_short.pdf = 26 pages (main text 1 to 9, reproducibility + references 10 to 12, appendix
+13 to 26), 11.6 MiB, 0 overfull, 0 undefined. The full edition is unchanged: main.tex builds 62 pages whose
+extracted text equals paper-v6's on every page (PyMuPDF), 0 overfull, 0 undefined.
+
+Build: `tectonic main_short.tex` (short) and `tectonic main.tex` (full), both in paper/. Delivery:
+`python paper/build_delivery.py --main main_short.tex --stem short` writes main_short.pdf, sca_overleaf_short.zip
+(53 sources, only what the short build reads, plus README.txt naming main_short.tex as main document) and
+delivery_receipt_short.json; its standalone ZIP build gives the same 26 pages and identical text. The default call
+(no options) is unchanged: tested in a scratch copy of paper/, same 96 ZIP entries as v6, 62 pages, identical text.
+
+Mechanism: main.tex declares `\ifshortversion` (false) unless main_short.tex declared it true first;
+`\fullonly{x}` prints x only in the full edition; `\shortalt{full}{short}` picks per edition. One appendix source
+with `\ifshortversion ... \else ... \fi` blocks. main_short.tex defines `\fullversionpages` (62), used twice;
+build_delivery.py --main main_short.tex stops if it differs from primary_pages in delivery_receipt.json (whose
+sha256 must match main.pdf). Floats used by both editions are macros defined before the contents:
+\apxablationgrid, \apxcropsmatched, \apxqualitytime, \apximpacttext, \apxprotocoltable (full only now).
+Main-text pointers to dropped floats read "full version" (at most one per paragraph, checked on the source).
+
+Generated variant (announced): app_tables/holm_short.tex = panel (a) of holm.tex alone, with its own caption,
+written by gen_main_tables.py (new table_holm_short(), added to main()). The generator was rerun: every other
+output byte-identical to before, checks passed. The short edition inputs it in place of holm.tex.
+
+Kept: A proofs; B with all six plots (B.1 now "Noise bins"; Statistics and Geometry paragraphs full only);
+C.1 operators figure + window placement (pseudocode, kernel, cost, both hyperparameter tables full only);
+D "Evaluation protocol in brief" (baselines and how run, intervals and Holm, timing; data and metrics point to
+Section 4; protocol table full only); E: Table E.1 (all metrics, no intervals), Table E.2 (Holm panel (a): deltas,
+p, p_Holm; no intervals), Figures E.1 crops matched, E.2 baseline deltas, E.3 latency, E.4 quality-time;
+F limitations + broader impact, one paragraph each; G samples: G.1 progressive gallery, G.2 all methods,
+G.3 aspect ratios, G.4 single-pass vs AReA, G.5 ablation grid (+ newer-model figures only when switched on).
+Dropped (full version only): 24 of the 26 appendix tables, namely B.1 (variance split), C.1 to C.3 (flops,
+hand-set, hyperparameters), D.1 to D.4 (protocol, related settings, published comparisons), E.2, E.3, E.5 to E.8,
+F.1, G.1 to G.4, H.1 to H.4, I.1 (sources); appendices F to I and K (prompts); Algorithms 3 to 5; the duplicate
+galleries (prog16, 4096 page 2, 2048x4096, 2048x6144, baselines); the clean-time paragraphs.
+
+No-interval check (short): no table cell prints [lo, hi] (PyMuPDF scan of lines set at <= 8.1 pt); intervals
+remain only in prose and figure captions. Full-edition tables that print intervals in cells: E.2 prog_all,
+E.3 app_4k, E.5 panel46_deltas, E.6 app_abl, E.7 prog_abl_all, F.1 prog_deltas, G.1 gen_all, G.2 krea_6144,
+G.3 app_wide, H.1 phase2_sensitivity, H.2 app_ps2, H.4 phase2_budget; E.4 holm panel (b) has a column headed
+"95% interval" that holds win/loss counts, not intervals.
+
+Found, not fixed (would change the full edition): holm.tex panel (b) labels its groups "Table 3: SCA against AReA,
+other seeds..." and "Table 2: per-head weights...", but tab:generality is Table 2 and tab:ablation Table 3; its
+caption says "Tables 1 to 2" (\ref{tab:generality}) where it means 1 to 3. Source: HOLM_GROUPS and the caption
+in gen_main_tables.py table_holm().
+
+Switch builds of the short edition (scratch v6_short_7/switch, v6_short_8/switch): progressive ablation off 26 pp;
+newer models + showcase on 28 pp (one showcase page, one page with the FLUX.2 and Qwen figures), 0 undefined;
+v6 visual snippets absent 25 pp, 0 undefined (crop-figure sentences guarded with \ifvsnip).
+Renders of the delivered PDF: /scratch/09032/saini_2/sca/paper_builds/v6_short_final/pages/ (110 dpi + sheets).
+Page 12 (end of references) is about half empty in both editions because the appendix starts on a new page.
