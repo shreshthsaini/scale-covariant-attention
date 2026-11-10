@@ -96,7 +96,7 @@ J(\pi')-J(\pi^\star)=A(\pi'-\pi^\star)^2+2(\pi'-\pi^\star)(A\pi^\star-B).
 \]
 If $0<\pi^\star<1$ then $A\pi^\star=B$ and the second term vanishes. If $\pi^\star=0$ then $B\le0$, so $A\pi^\star-B\ge0$ and $\pi'-\pi^\star\ge0$. If $\pi^\star=1$ then $B\ge A$, so $A\pi^\star-B\le0$ and $\pi'-\pi^\star\le0$. In both clipped cases the second term is nonnegative.
 
-Any rule that assigns one weight per cell is a feasible $\pi'$ in every cell. Examples are a per-layer table, a weight shared per noise level, a hard switch, or a table fitted elsewhere. Its total error is therefore at least the per-head table's plus $\sum_{\text{cells}}A(\pi'-\pi^\star)^2$. A table interpolated in $\sigma$ between the mean sampled noise levels of occupied bins is not constant within a bin; the statement applies to the bin-constant table used to score rules in Section~\ref{sec:analysis}.
+Any rule that assigns one weight per cell is a feasible $\pi'$ in every cell. Examples are a per-layer table, a weight shared per noise level, a hard switch, or a table fitted elsewhere. Its total error is therefore at least the per-head table's plus $\sum_{\text{cells}}A(\pi'-\pi^\star)^2$. A table interpolated in $\sigma$ between the mean sampled noise levels of occupied bins is not constant within a bin; the statement applies to the bin-constant table used to score rules in Section~\ref{sec:ablations}.
 \end{proof}
 
 
@@ -319,7 +319,7 @@ centres = where(pop, S / C, (arange(14)+0.5)/14)
 pi = clip(B / A, 0, 1); pi[A == 0] = 1  # Prop. (*@\ref{prop:opt}@*)
 pi = fill_empty_bins(pi, pop)  # nearest bin
 J = E - 2 * pi * B + pi**2 * A # error of the mix
-rel_err = J.sum() / F.sum()    # Section (*@\ref{sec:analysis}@*)
+rel_err = J.sum() / F.sum()    # Section (*@\ref{sec:emulation}@*)
 \end{lstlisting}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.48\linewidth}
@@ -526,7 +526,7 @@ This section gives the settings of the other baselines in Tables~\ref{tab:main} 
 This section expands Section~\ref{sec:related}: Table~\ref{tab:related} compares how the closest training-free methods change attention.
 
 \begin{table}[!htbp]
-  \caption{\textbf{How training-free methods change attention.} Entries follow each paper's text or, where marked $^\ast$, its mechanism. Offsets: whether image query-key offsets stay in the trained range (text keys aside, Remark~\ref{rem:text}); \sca{} stays in range in the native window but not for its bridge keys or four wide-window steps (Section~\ref{sec:branches}). Cost: order in the image tokens $N$ at a fixed native size. AReA's entry follows its code: its pooled steps at factor 2 attend to $N/4$ keys, and its first window is the largest whose cost stays below full attention. Fitted latency exponents are 1.12 for AReA and \hlLatExpSca{} for single-pass \sca{} (Section~\ref{sec:sizes}). $^\dagger$Also inside HRDiT's cascade, as progressive \sca{}. Key result: only \sca{} fits per-head weights once at the training resolution, and it runs at linear cost in a single pass or inside HRDiT's cascade.}
+  \caption{\textbf{How training-free methods change attention.} Entries follow each paper's text or, where marked $^\ast$, its mechanism. Offsets: whether image query-key offsets stay in the trained range (text keys aside, Remark~\ref{rem:text}); \sca{} stays in range in the native window but not for its bridge keys or four wide-window steps (Section~\ref{sec:branches}). Cost: order in the image tokens $N$ at a fixed native size. AReA's entry follows its code: its pooled steps at factor 2 attend to $N/4$ keys, and its first window is the largest whose cost stays below full attention. Fitted latency exponents are 1.12 for AReA and \hlLatExpSca{} for single-pass \sca{} (Section~\ref{sec:generality}). $^\dagger$Also inside HRDiT's cascade, as progressive \sca{}. Key result: only \sca{} fits per-head weights once at the training resolution, and it runs at linear cost in a single pass or inside HRDiT's cascade.}
   \label{tab:related}
   \centering\footnotesize
   \setlength{\tabcolsep}{2.8pt}
@@ -605,7 +605,7 @@ Table~\ref{tab:app_wide} gives this pairing at the two non-square sizes, Table~\
 \end{table}
 
 \begin{table}[!htbp]
-  \caption{\textbf{Ablation intervals for the base-operator rows of Table~\ref{tab:ablation}.} Fixed \nabl-prompt ablation subset at $4096^2$, paired against \sca{} without the schedule (2000 bootstrap draws), whose column gives absolute values; every variant also runs without the schedule. \up{Blue} / \dn{orange}: significantly better / worse. Panels split the variants by component. Each panel's last two rows give patch FID (set-level, no paired interval) and the relative output error of the weight rule at emulated scale 4 (Section~\ref{sec:analysis}). The v0 column keeps the per-head table, and reach emulation scores block-centre keys only, so mean pooling has no output-error entry. Sources: \texttt{results/ablnb\_*} and the statistics file \texttt{k1\_1024.json}. Key result: every variant is significantly worse than \sca{} without the schedule on five to ten per-image metrics.}
+  \caption{\textbf{Ablation intervals for the base-operator rows of Table~\ref{tab:ablation}.} Fixed \nabl-prompt ablation subset at $4096^2$, paired against \sca{} without the schedule (2000 bootstrap draws), whose column gives absolute values; every variant also runs without the schedule. \up{Blue} / \dn{orange}: significantly better / worse. Panels split the variants by component. Each panel's last two rows give patch FID (set-level, no paired interval) and the relative output error of the weight rule at emulated scale 4 (Section~\ref{sec:ablations}). The v0 column keeps the per-head table, and reach emulation scores block-centre keys only, so mean pooling has no output-error entry. Sources: \texttt{results/ablnb\_*} and the statistics file \texttt{k1\_1024.json}. Key result: every variant is significantly worse than \sca{} without the schedule on five to ten per-image metrics.}
   \label{tab:app_abl}
   \centering\scriptsize\setlength{\tabcolsep}{3pt}\let\tiny\scriptsize
   \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%

@@ -1991,3 +1991,44 @@ step below runs from the spool without a controller.
   no variant at <= 8 of 21 without core losses -> stop and report. For a variant that holds, label its 26 person/animal
   images on the 46 (r7/label_people.sh with the default prompt set) and run r7_decide; if the gate already released
   a 195 run, label all 95 person/animal images (protocol results/dup_audit_20261027/human_labels_95_protocol.md).
+
+## 41. 2026-11-10: paper v5, measurement-first rewrite (paper owner; notes .agent/notes/paper_v5_20261110.md)
+User request via lead: the complete paper did not sell; rewrite it as a lean ICLR paper in five steps (observation,
+idea, reach emulation, use, evidence) with an abstract of at most 150 words, a one-page introduction with three
+contributions, captions of at most three lines, a leaner Table 1, and redesigned figures.
+- Delivery: /scratch/09032/saini_2/sca/paper_builds/delivery_gy4l47kq, 54 pp, ICLR 2027 style (official files copied
+  from Projects/TABES-iclr2027; 2026 files removed), main text pages 1 to 9, 0 overfull, 0 undefined, fresh unzip
+  builds to the same pages; hashes in .agent/notes/latest_delivery.md.
+- Abstract (150 words) opens with the observation. Introduction: question; observation with the priority line
+  (UltraImage noted stable head roles; ours is the first variance decomposition of reach into heads and steps and the
+  first per-head reach measured once at 1024^2 and reused at any size); SCA and reach emulation; results with margins
+  and the fidelity trade-off in one sentence; bullets Observation / Method / Results.
+- Structure: 2 "Reach is a property of the head" (labels sec:observation, sec:analysis); 3.1 two native-size views
+  (notation moved here; Propositions on trained range and cost moved to Appendix A with their proofs), 3.2 reach
+  emulation (Prop. 1, "One table serves every size"), 3.3 sampling (progressive, single pass; Algorithm 3 out of the
+  main text, Algorithm 5 cited); 4.1 main results, 4.2 "The measured reach carries the gain", 4.3 generality, sizes,
+  latency; related work and limitations tightened (the one repeated-subject sentence kept verbatim).
+- Figures: Figure 3 observation (fig_observation.py, candidate B of two: maps of heads 4 and 7, the 1,368 x 11 matrix
+  with head-average strip, 97.5% / 2.5% bar; asserts \hlVarHead, \hlVarStep, \hlVarAvg); Figure 4 method v4
+  (method_v4.tex, candidate A of two, three panels, pi* = clip(B/A, 0, 1) in the centre box, titles on one
+  baseline); Figure 2 speed cleaned (arrows from AReA and HRDiT only, UltraImage plain point; checks and
+  speed_numbers.tex unchanged); Figure 5 (paired differences) floats ({R}) so it no longer overflows a page foot.
+  Critique tables in the notes. Web exports for the web owner (no page edited): web/assets/img/figs/{observation,
+  method_v4,speed_v5,speed_v5_time,speed_v5_latency}_{light,dark}.{svg,png,webp}.
+- Tables (gen_main_tables.py): tab_main_compact.tex (time, IR, HPS, Pick, M_c, FID_p; bold best per group only),
+  tab_ablation_compact.tex (reach weights, then views); full versions stay generated for the appendix.
+- Switches, off: \resprogabl (results/prog195_ablation/ with SHA256SUMS -> rerun gen_main_tables.py, which writes
+  tab_ablation_compact_prog.tex and prog_abl_text.tex for prog_headmean / prog_layermean / prog_win against
+  sca_v2_prog) and \resra (results/ra195/ with SHA256SUMS -> figures/src/gen_ra195_text.py writes \raResult; the
+  "Measured hand-off" paragraph uses a default \raMethod from HANDOVER 40 unless ra195_method.tex overrides it).
+  Tested with fake snippets and every switch on, newer models included: 0 overfull, main text still ends on page 9.
+  A background wait for the two folders ran until this session finished (about 00:50); neither had landed.
+- Wording: no "random" as selection anywhere in the PDF (gallery captions say "chosen by a fixed seed" or "selection
+  seed 0", queries are "seeded", crops "fixed"), changed in the generating scripts and their snippets alike.
+- Render review, two cycles over every main page. Cycle 1 MUST: notation ahead of the finding in Section 2 (moved to
+  3.1); numbers repeated in the bullets; captions over three lines; abstract at 152 words. Cycle 2 MUST: Figure 5
+  overflowed the foot of page 5 when Section 4 started low (now floating); sentences over 35 words (19 split); stale
+  appendix references to the old Sections 2 and 3 and to fig:focus and alg:prog_main; random-as-selection captions;
+  a stray parenthesis and a doubled "seed" in two captions. Open SHOULD: page 9 is 40% used (room for the switches);
+  Figure 3a maps are small; Figure 4's far grid reads as a fine mesh at print size.
+- Pending: the two switches above; nothing of the paper owner's is running.
