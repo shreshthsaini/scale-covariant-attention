@@ -592,7 +592,7 @@ PROG_ABL_REFS = ("sca_v2_prog",)
 # every layer and head per noise bin), prog_layermean (mean over each layer's heads), prog_win (pi = 1: window and bridge
 # only). Checked in order; the first substring found in the method name gives the row label.
 PROG_ABL_LABELS = (("headmean", r"shared $\pi(\sigma)$"), ("layermean", r"per-layer $\pi_\ell(\sigma)$"),
-                   ("_win", r"window only ($\pi=1$)"), ("uniform", r"shared $\pi(\sigma)$"),
+                   ("_win", "window only"), ("uniform", r"shared $\pi(\sigma)$"),
                    ("shared", r"shared $\pi(\sigma)$"), ("layer", r"per-layer $\pi_\ell(\sigma)$"))
 ABL_COMPACT_GROUPS = [(r"Reach weights, against per-head $\pi_h$", ("abl_uniform_nb", "abl_layer_nb")),
                       ("Views", ("abl_v0", "abl_localonly_nb", "abl_globalonly", "abl_mean_nb"))]
@@ -639,7 +639,7 @@ def table_ablation_compact(prog_rows=None):
         if prog_rows and heading.startswith("Reach weights"):
             body.append(rf"\multicolumn{{5}}{{@{{}}l}}{{\emph{{Progressive \sca{{}}, against per-head $\pi_h$}}}} \\")
             for label, dd, _ in prog_rows:
-                body.append(" & ".join([r"\quad " + label] + delta_cells(dd)) + r" \\")
+                body.append(" & ".join([label] + delta_cells(dd)) + r" \\")
     return tabular(r"\setlength{\tabcolsep}{2.4pt}", "@{}lrrrr@{}",
                    [r"\toprule", r"Variant & IR & HPS & Pick & M$_\text{c}$ \\", r"\midrule"], body, "  ")
 
@@ -815,7 +815,7 @@ def table_variance_split():
            r"8 or 16 tokens of the query (Chebyshev distance), over all (block, head, noise bin) cells. It is split into "
            r"the head (between blocks plus between heads of one block) and the noise level within a head; the two "
            r"sum to 100\%. Avg.\ is the variance of the head-averaged curve over noise levels, the part one schedule shared "
-           r"by all heads could follow. 256 random queries per block and step, full attention at each row's "
+           r"by all heads could follow. 256 seeded queries per block and step, full attention at each row's "
            r"resolution. AReA's statistic is the distance to dominant keys; ours is the mass share, which sets the output "
            r"by Lemma~\ref{lem:split}. Key result: after the gate the head carries at least "
            + f"{100 * min_head:.1f}" + r"\% of the variance in every model and size.}")

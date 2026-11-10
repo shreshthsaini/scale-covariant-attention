@@ -56,7 +56,7 @@ SPECS = {
         "methods": ["flux2_full", "flux2_sca"],
         "caption": (  # laid out by fig_gallery_large.py (display record); kept equal to its caption
             r"\textbf{FLUX.2-dev, $4096^2$: full attention blurs; SCA without the schedule is sharp but distorts "
-            r"the portrait.} Four of 50 prompts drawn at random; 1:1 crops follow each image."
+            r"the portrait.} Four of 50 prompts chosen by a fixed seed; 1:1 crops follow each image."
         ),
     },
     "6144": {"res": "6144x6144", "n": 4, "methods": ["area", "sca"]},
@@ -65,7 +65,7 @@ SPECS = {
         "res": "8192x8192", "n": 4, "methods": ["area", "sca"], "expected": 12,
         "caption": (
             r"\textbf{At $8192^2$ both fail: AReA blurs and speckles, and SCA without the schedule breaks into "
-            r"blocks and stripes.} Exploratory: four of 12 paired prompts drawn at random; 1:1 crops follow each "
+            r"blocks and stripes.} Exploratory: four of 12 paired prompts chosen by a fixed seed; 1:1 crops follow each "
             r"image."
         ),
     },
@@ -74,7 +74,7 @@ SPECS = {
         "expected": 100, "prompt_manifest": EVAL100,
         "caption": (
             r"\textbf{At $6144^2$ AReA's crops dissolve into speckle or streaks; SCA without the schedule keeps "
-            r"layouts but shows stripes or block speckle.} Four of 100 prompts drawn at random; "
+            r"layouts but shows stripes or block speckle.} Four of 100 prompts chosen by a fixed seed; "
             r"1:1 crops follow each image."
         ),
     },
@@ -89,7 +89,7 @@ SPECS = {
             # Audited 2026-10-30 at 1:1 (sca_v2_krea): the portrait is clean; the lone figure's legs melt into
             # hanging strands and a second person stands on the left rocks. DyPE ghosts the face in both versions.
             r"\textbf{On FLUX.1-Krea-dev at $4096^2$ DyPE smears the face; single-pass SCA melts the lone "
-            r"figure's legs.} Two of 100 prompts drawn at random; 1:1 crops below."
+            r"figure's legs.} Two of 100 prompts chosen by a fixed seed; 1:1 crops below."
         ),
     },
 }

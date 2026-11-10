@@ -55,13 +55,13 @@ SPECS = {
         k=10, parts=[("gallery_4096", 5), ("gallery_4096_p2", 5)], retired=["gallery_4096_p3"],
         captions=[
             r"\textbf{At $4096^2$ single-pass SCA keeps texture that AReA blurs or grids.} "
-            r"Prompts one to five of 32 drawn at random; 1:1 crops follow.",
+            r"Prompts one to five of 32 chosen by a fixed seed; 1:1 crops follow.",
             r"\textbf{At $4096^2$, continued: five more prompts, AReA against single-pass SCA.} Prompts "
             r"six to ten of the random draw in Figure~\ref{fig:gallery_4096}.",
         ]),
     "gallery_4096x2048": dict(k=2, captions=[
         r"\textbf{At $2048\times4096$ both methods keep the layout; SCA avoids AReA's faint weave and keeps "
-        r"sharper rock texture.} First two of six prompts drawn at random; AReA above, single-pass SCA below; "
+        r"sharper rock texture.} First two of six prompts chosen by a fixed seed; AReA above, single-pass SCA below; "
         r"1:1 crops follow."]),
     "gallery_6144x2048": dict(k=2, captions=[
         r"\textbf{At $2048\times6144$ single-pass SCA resolves finer texture than AReA.} First two of six "
@@ -69,7 +69,7 @@ SPECS = {
     "gallery_flux2": dict(  # no sca_v2 run on FLUX.2-dev: the published operator, headed "SCA w/o schedule"
         k=4, captions=[
             r"\textbf{FLUX.2-dev, $4096^2$: full attention blurs; SCA without the schedule is sharp but distorts "
-            r"the portrait.} Four of 50 prompts drawn at random; 1:1 crops follow each image."]),
+            r"the portrait.} Four of 50 prompts chosen by a fixed seed; 1:1 crops follow each image."]),
 }
 
 

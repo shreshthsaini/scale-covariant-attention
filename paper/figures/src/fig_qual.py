@@ -631,7 +631,7 @@ def fig_gallery_square(a):
             rows.append((g_row(cells), G_ROW))
         cap = rf"\textbf{{Samples at {wxh(res)}: {vs}{', continued' if pi else ''}.}} "
         if pi == 0:
-            cap += (rf"{count_word(len(ids))} evaluation prompts drawn at random (selection seed~{a.seed}), excluding "
+            cap += (rf"{count_word(len(ids))} evaluation prompts (selection seed~{a.seed}), excluding "
                     rf"development and main-text prompts. {FLUX1}. Each image is followed by a native-pixel crop of "
                     rf"its outlined {size}$\times${size} window of highest edge energy averaged over the methods.")
         else:
@@ -675,7 +675,7 @@ def fig_gallery_wide(a):
         rows += [(g_row(pair_cells(t, s, methods, box[s], res)), G_ROW) for s in ids]
         vs = " and ".join(r"\textbf{SCA (ours)}" if m in ACCENT else NAMES.get(m, m) for m in methods)
         cap = (rf"\textbf{{Samples at {w}$\times${h} (width$\times$height): {vs}.}} "
-               rf"{count_word(len(ids))} evaluation prompts drawn at random, disjoint from the other galleries, "
+               rf"{count_word(len(ids))} evaluation prompts chosen by a fixed seed, disjoint from the other galleries, "
                rf"excluding development and main-text prompts. {FLUX1}. Each image is followed by a native-pixel "
                r"crop of its outlined 512$\times$512 window of highest edge energy averaged over the methods.")
         grid_snippet(name, geo, rows, cap, f"fig:{name}", comments=prompt_comments([("sca", res, s) for s in ids]),

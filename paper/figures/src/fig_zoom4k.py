@@ -3,7 +3,7 @@
 Three curated prompts at 4096^2, seed 0, one row each: progressive SCA's full image with the crop window
 outlined in red (1 pt, drawn just outside the window), then that CROP_W x CROP_H (352 x 176 px) window at
 native resolution (1:1) from AReA, HRDiT, single-pass SCA and progressive SCA (the headline configuration,
-last). Above each crop is its image's MUSIQ_c (MUSIQ averaged over four fixed random 1024^2 crops per image,
+last). Above each crop is its image's MUSIQ_c (MUSIQ averaged over four fixed 1024^2 crops per image,
 Appendix app:metrics), read from the 195-prompt per-image CSVs behind Table tab:main: AReA from
 eval/a4k195_main, HRDiT from eval/a4k195_panel, single-pass SCA from eval/a4k195_main_sca_v2 and progressive
 SCA from eval/prog195_sca_v2. Each value is checked to be identical, for the same PNG, in every other per-image
@@ -540,7 +540,7 @@ def main() -> None:
                    "is cropped from every drawn method; layouts differ between methods, so the crops differ in "
                    "content. Review round 1 used a 432x240 window over area, hrdit and sca (review_round_1.windows)."
                    % (CROP_W, CROP_H)),
-        metric=("MUSIQ_c (CSV column %s): pyiqa MUSIQ averaged over four fixed random 1024^2 crops per image, "
+        metric=("MUSIQ_c (CSV column %s): pyiqa MUSIQ averaged over four fixed 1024^2 crops per image, "
                 "crop positions set by the prompt id and shared across methods (Appendix app:metrics). It is "
                 "a per-image score, not a score of the displayed window. Printed to one decimal; the best "
                 "printed value per row is bold." % METRIC),

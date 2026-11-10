@@ -214,7 +214,7 @@ def tiles(job):
 
 
 CAPTION = (
-    r"\textbf{Samples at $4096^2$.} Six prompts drawn at random (selection seed~%d) from the %d of the "
+    r"\textbf{Samples at $4096^2$.} Six prompts, by selection seed~%d) from the %d of the "
     r"%d evaluation prompts that are neither development prompts nor shown in another figure "
     r"when the draw was made. "
     r"FLUX.1-dev, generation seed~0. AReA and single-pass \sca{}: 28 steps at $4096^2$, guidance 4.5. HRDiT and "
