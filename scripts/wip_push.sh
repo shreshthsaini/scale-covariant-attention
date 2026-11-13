@@ -6,7 +6,7 @@
 set -uo pipefail
 REPO=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 STOP_FILE=${STOP_FILE:-/scratch/09032/saini_2/sca/paper_builds/wip_push.stop}
-PATHS=(paper/main.tex paper/appendix.tex paper/references.bib paper/figures .agent/notes .agent/STATE.md HANDOVER.md scripts/wip_push.sh)
+PATHS=(paper/main.tex paper/appendix.tex paper/references.bib paper/figures web .agent/notes .agent/STATE.md HANDOVER.md scripts/wip_push.sh)
 one_pass() {
   cd "$REPO" || return 1
   [[ $(git symbolic-ref -q --short HEAD) == main ]] || { echo "wip_push: HEAD is not main; skipped"; return 0; }
@@ -17,10 +17,10 @@ one_pass() {
   done < <(git diff --cached --name-only -z --diff-filter=d)
   if git diff --cached --quiet; then echo "wip_push: $(date '+%m-%d %H:%M') nothing new"; return 0; fi
   n=$(git diff --cached --name-only | wc -l)
-  git commit -q -m "WIP paper v6: checkpoint $(date '+%Y-%m-%d %H:%M') ($n files)
+  git commit -q -m "WIP: checkpoint $(date '+%Y-%m-%d %H:%M') ($n files)
 
-Work in progress by the v6 workers (brief: .agent/notes/paper_v6/BRIEF.md). The last
-delivered paper is tag paper-v5.1; this commit may not build." || return 1
+Work in progress (see .agent/STATE.md for what is in flight). Delivered states are
+tagged; this commit may be mid-edit." || return 1
   git push -q origin HEAD:main 2>&1 | tail -1
   echo "wip_push: $(date '+%m-%d %H:%M') pushed $(git rev-parse --short HEAD) ($n files)"
 }

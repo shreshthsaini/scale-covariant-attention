@@ -7,20 +7,23 @@ calibration/calibrate/calibrated, no curated/uncurated, no "random" as selection
 Main text at most 10 pages (now 9).
 
 ## Status and next action
-- Delivered: paper v6.2, two editions from one source (tag paper-v6.2; HANDOVER Section 43; hashes and build commands
-  in .agent/notes/latest_delivery.md). Full: paper/main.pdf, 67 pp. Short review edition: paper/main_short.pdf, 31 pp
-  (\ifshortversion in main.tex and appendix.tex, entry file main_short.tex, helpers \fullonly, \shortalt,
-  \whenlabel). Main text pages 1 to 9 in both; ICLR 2027 submission limit is a strict 9 pages.
-- User decisions of 2026-11-10: no confidence intervals in tables of the short edition; the full edition's appendix
-  interval tables stay; more visual results in main and appendix of both editions (done: Figure 8, deciles, seeds,
-  HRGen-1K, mosaic). Keep pushing everything to GitHub so another agent can continue.
-- Where things are: lead brief and the five owners' notes in .agent/notes/paper_v6/ (text, appendix, methodfigs,
-  visuals, tablesplots); figures paper/figures/v6/ with scripts paper/figures/src/v6_*.py and provenance files;
-  tables from gen_main_tables.py, gen_app_tables.py, gen_holm.py (never run gen_late_tables.py or gen_prog_tables.py).
-- Open for the user: AI use statement (marker in main.tex above the reproducibility statement), anonymous code URL.
-- NEXT: wait for the user's reaction. For any change: edit, build the full edition first and then the short one,
-  update latest_delivery.md, commit, push, run repro/migration/sync_incremental.sh. For long multi-worker work run
-  `bash scripts/wip_push.sh --loop 15` (remove /scratch/09032/saini_2/sca/paper_builds/wip_push.stop first).
+- Paper: v6.2 delivered in two editions (tag paper-v6.2; .agent/notes/latest_delivery.md). Nothing in flight there.
+  Open for the user: AI use statement, anonymous code URL.
+- IN FLIGHT since 2026-11-13 16:15: project page v5. User: "check the AReA webpage... our webpage should beat that
+  in style and quality and examples and video and gif etc." Lead brief with the audit of both pages, acceptance
+  list, page plan, component and video lists, shared contract: .agent/notes/web_v5/BRIEF.md. Captures of both pages:
+  /scratch/09032/saini_2/sca/web_builds/v6_audit/.
+- Three Opus workers (background agents of the lead session), notes in .agent/notes/web_v5/: webdesign (index.html,
+  site.css, site.js, sub-pages, numbers in line with paper v6.2), webinteractive (components percentiles, heads,
+  emulate, table, speed under assets/js/c_*.js with demos in web/dev/), webmedia (videos and loops under
+  assets/video/v5/ with manifest.json). Workers do not commit or publish.
+- NEXT: when they report, the lead reads screenshots, sends corrections, has webdesign integrate components and
+  videos, runs web/build/check_page.py, then publishes with `bash web/build/publish_pages.sh` and checks the live
+  URL https://shreshthsaini.github.io/scale-covariant-attention/. Then HANDOVER Section 44, commit, push, sync.
+- The controller node's allocation ends about 22:10 on 2026-11-13. If the session dies: workers die with it; read
+  the notes files, check web/ and git status, relaunch only unfinished roles with the same brief.
+- GitHub: `bash scripts/wip_push.sh --loop 15` runs in the lead session (now also covers web/; stop with
+  `touch /scratch/09032/saini_2/sca/paper_builds/wip_push.stop`).
 - \resra stays OFF for good (HANDOVER 40).
 
 ## Map
