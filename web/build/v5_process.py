@@ -141,7 +141,7 @@ def panel_run(img, d, x, y, frames, crops, st_list, i, a, box, inset_corner, kin
     else:
         tag = "1:1"
         lab = (f"coarse · pooled keys, f = {st['area_size']}" if st["phase"] == "coarse"
-               else f"fine · windows of {st['area_size']}")
+               else f"fine · windows of {st['area_size']} tokens")
         col = M.PAL["area"]
     chip(img, (ix + 6, iy + 6), tag, size=18, color=M.PAL["ink"])
     chip(img, (x + 12, y + 12), lab, size=22, color=col)

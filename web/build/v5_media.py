@@ -247,19 +247,31 @@ def encode(frames: str | Path, out: Path, fps: float, *, crf: float | None = Non
 def encode_to_size(frames, out: Path, fps: float, n_frames: int, max_bytes: int, *, margin: float = 0.965,
                    crf_floor: float = 16.0, **kw) -> dict:
     """Best quality that fits max_bytes: try CRF crf_floor first; if it is too big, two-pass ABR at the bitrate that
-    fills max_bytes * margin (and step down until it fits)."""
+    fills max_bytes * margin (and step down until it fits). Every attempt is written on scratch; only the file that
+    fits is copied into place (the repository is committed by a loop, so an oversized attempt must never sit there)."""
+    import shutil
     kw["n_frames"] = n_frames
-    encode(frames, out, fps, crf=crf_floor, **kw)
-    if out.stat().st_size <= max_bytes:
-        return dict(mode="crf", crf=crf_floor, bytes=out.stat().st_size)
+    final = Path(out)
+    work = BUILD / "enc_tmp" / final.name
+    work.parent.mkdir(parents=True, exist_ok=True)
+
+    def place(rec):
+        part = final.with_name("." + final.name + ".part")
+        shutil.copyfile(work, part)
+        os.replace(part, final)
+        return rec
+
+    encode(frames, work, fps, crf=crf_floor, **kw)
+    if work.stat().st_size <= max_bytes:
+        return place(dict(mode="crf", crf=crf_floor, bytes=work.stat().st_size))
     seconds = n_frames / fps
     kbps = max_bytes * margin * 8 / seconds / 1000
     for _ in range(6):
-        encode(frames, out, fps, kbps=kbps, **kw)
-        if out.stat().st_size <= max_bytes:
-            return dict(mode="2pass", kbps=round(kbps), bytes=out.stat().st_size)
-        kbps *= 0.94 * max_bytes / out.stat().st_size
-    raise RuntimeError(f"{out} does not fit {max_bytes} bytes")
+        encode(frames, work, fps, kbps=kbps, **kw)
+        if work.stat().st_size <= max_bytes:
+            return place(dict(mode="2pass", kbps=round(kbps), bytes=work.stat().st_size))
+        kbps *= 0.94 * max_bytes / work.stat().st_size
+    raise RuntimeError(f"{final} does not fit {max_bytes} bytes")
 
 
 def probe(path: Path) -> dict:

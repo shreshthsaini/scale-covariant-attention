@@ -98,7 +98,9 @@
     var range = el("input", "range", { type: "range", min: "0", max: "8", step: "1", value: "4", "aria-label": "Percentile of the ImageReward gain", disabled: true });
     var ticks = el("div", "ticks", { "aria-hidden": "true" });
     for (var t = 1; t <= 9; t++) ticks.appendChild(el("span", "tick", { text: ordinal(t * 10), style: "left:" + (t * 10) + "%" }));
-    var slider = el("div", "slider", null, [range, ticks]);
+    var prevB = el("button", "step step-p", { type: "button", "aria-label": "Previous percentile", disabled: true, html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>' });
+    var nextB = el("button", "step step-n", { type: "button", "aria-label": "Next percentile", disabled: true, html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>' });
+    var slider = el("div", "slider", null, [prevB, range, ticks, nextB]);
     var dist = el("div", "dist", null, [chartBox, slider]);
     var stage = el("div", "stage");
     var skel = el("div", "skel", { "aria-hidden": "true" });
@@ -240,6 +242,7 @@
       requestAnimationFrame(function () { more.hidden = !(prompt.scrollHeight > prompt.clientHeight + 2); });
       markStop(st);
       for (var q = 0; q < ticks.children.length; q++) ticks.children[q].classList.toggle(P + "on", q === k);
+      prevB.disabled = k <= 0; nextB.disabled = k >= D.stops.length - 1;
       range.setAttribute("aria-valuetext", (st.p === 50 ? "median" : ordinal(st.p) + " percentile") + ", difference " + signed(st.diff, 2) + (st.diff < 0 ? ", AReA ahead" : ", progressive SCA ahead"));
       if (!first) live.textContent = (st.p === 50 ? "Median" : ordinal(st.p) + " percentile") + ": " + (st.diff < 0 ? "AReA ahead by " : "progressive SCA ahead by ") + Math.abs(st.diff).toFixed(2) + " ImageReward.";
       var my = ++pending;
@@ -253,6 +256,8 @@
       show(k);
     }
     range.addEventListener("input", function () { if (D) setIdx(+range.value); });
+    prevB.addEventListener("click", function () { if (D) setIdx(cur - 1); });
+    nextB.addEventListener("click", function () { if (D) setIdx(cur + 1); });
     more.addEventListener("click", function () {
       var o = prompt.classList.toggle(P + "open");
       more.setAttribute("aria-expanded", String(o)); more.textContent = o ? "Less" : "Full prompt";

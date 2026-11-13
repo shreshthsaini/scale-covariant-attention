@@ -102,6 +102,72 @@
     if (c !== null) { MANAGED.forEach(function (x) { e.classList.remove(x); }); String(c).split(/\s+/).forEach(function (x) { if (x) e.classList.add(x); }); }
   });
 
+  /* ================================================================ v5: hero, top bar, component mounts, v5 videos, race, figures */
+  var V5 = window.SCA_V5 || { comps: {}, videos: {} };
+  function v5video(role) { var v = (V5.videos || {})[role]; return v && v.file ? v : null; }
+  var ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+  var ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+
+  /* the top bar is transparent over the hero and solid below it */
+  (function topbar() {
+    var bar = $(".topbar[data-hero]"), hero = $(".hero5"); if (!bar || !hero) return;
+    if (!("IntersectionObserver" in window)) { bar.classList.add("solid"); return; }
+    new IntersectionObserver(function (es) { es.forEach(function (en) { bar.classList.toggle("solid", !en.isIntersecting); }); },
+      { rootMargin: "-60px 0px 0px 0px", threshold: 0 }).observe(hero);
+  })();
+
+  /* the hero loop: v5 deep zoom (16:9, or 9:16 on a portrait screen), else the v4 zoom loop; a pause button; posters
+     only under reduced motion until the visitor presses play */
+  (function heroMedia() {
+    var box = $("#hero-media"); if (!box) return;
+    var portrait = window.matchMedia && matchMedia("(max-aspect-ratio: 4/5)").matches;
+    var m = (portrait && v5video("hero9x16")) || v5video("hero16x9") || v5video("hero9x16"), src = null, poster = null;
+    if (m) { src = m.file; poster = m.poster; }
+    else if (MEDIA.teaser && MEDIA.teaser.zoom) { src = MEDIA.teaser.zoom.mp4; poster = MEDIA.teaser.zoom.poster; }
+    var pim = $("img.poster", box);
+    if (poster && pim && !pim.closest("picture") && pim.getAttribute("src") !== poster) pim.src = poster;
+    var btn = $("#hero-pause"); if (!src) { if (btn) btn.hidden = true; return; }
+    var v = null, userPaused = REDUCED, visible = true;
+    function make() {
+      v = document.createElement("video");
+      v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true;
+      v.setAttribute("muted", ""); v.setAttribute("playsinline", ""); v.setAttribute("aria-hidden", "true");
+      v.preload = "auto"; if (poster) v.poster = poster; v.src = src;
+      v.addEventListener("playing", function () { v.classList.add("ready"); });
+      box.insertBefore(v, box.querySelector(".hero5-hud"));
+      if (m && m.readout) readout(v, m.readout);
+    }
+    function play() { if (!v) make(); var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+    function sync() {
+      if (btn) { btn.innerHTML = userPaused ? ICON_PLAY : ICON_PAUSE; btn.setAttribute("aria-label", userPaused ? "Play the deep zoom" : "Pause the deep zoom"); btn.setAttribute("aria-pressed", String(userPaused)); }
+      if (!userPaused && visible) play(); else if (v) v.pause();
+    }
+    if (btn) btn.addEventListener("click", function () { userPaused = !userPaused; sync(); });
+    if ("IntersectionObserver" in window) new IntersectionObserver(function (es) { es.forEach(function (en) { visible = en.isIntersecting; sync(); }); }, { threshold: 0.05 }).observe(box);
+    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden" && v) v.pause(); else sync(); });
+    sync();
+  })();
+
+  /* the hero readout: magnification against the whole image and the native-pixel hold, from the loop's own zoom curve */
+  function readout(v, R) {
+    var tEl = $("#hud-title"), zEl = $("#hud-zoom"), curve = R.zoom_curve || [], segs = R.segments || [], whole = R.whole_scale || (curve[0] && curve[0][1]) || 1;
+    if (!tEl || !zEl || !curve.length) return;
+    var last = "";
+    function tick() {
+      var t = v.currentTime || 0, i = Math.max(0, Math.min(curve.length - 1, Math.round(t * 10))), s = curve[i][1];
+      var seg = segs.filter(function (g) { return t >= g.t0 && t < g.t1; })[0];
+      var nat = seg && seg.native && t >= seg.native[0] && t <= seg.native[1];
+      var txt = (seg ? seg.title + " · " : "") + (R.label || "4096 × 4096").replace(" x ", " × ") + "|" + (nat ? (R.native_label || "1:1 native pixels") : "zoom ×" + (s / whole).toFixed(1));
+      if (txt !== last) { last = txt; var p = txt.split("|"); tEl.textContent = p[0]; zEl.textContent = p[1]; zEl.className = nat ? "nat" : ""; }
+    }
+    v.addEventListener("timeupdate", tick);
+    var raf = 0; function loop() { tick(); if (!v.paused) raf = requestAnimationFrame(loop); }
+    v.addEventListener("playing", function () { cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); });
+  }
+
+  /* ================================================================ everything below the fold */
+  function rest() {
+    IM = window.SCA_IMAGES || {}; SHOW = window.SCA_SHOWCASE || {};
   /* ---------------------------------------------------------------- nav highlight */
   (function nav() {
     var links = $$(".nav a"); if (!links.length || !("IntersectionObserver" in window)) return;
@@ -122,7 +188,7 @@
     });
   }, { threshold: .3 }) : null;
   function loopVideo(src, poster, label, controls) {
-    var v = el("video", { muted: true, loop: true, playsinline: true, preload: "metadata", poster: poster || null, "aria-label": label, controls: controls || REDUCED || null });
+    var v = el("video", { muted: true, loop: true, playsinline: true, preload: "none", poster: poster || null, "aria-label": label, controls: controls || REDUCED || null });
     v.muted = true; v.defaultMuted = true;
     v.src = src;
     v.addEventListener("pause", function () { if (document.visibilityState === "visible" && v._seen) v._userPaused = !!v._manual; });
@@ -623,7 +689,7 @@
       var VV = (window.SCA_V5 || {}).videos || {};
       list = Object.keys(VV).filter(function (k) { return /^process/.test(k) && VV[k].file; }).sort().map(function (k) {
         var x = VV[k];
-        return { sid: k, prompt: x.prompt || x.alt || "", mp4: x.file, poster: x.poster, still: x.still || null, size: x.size || [4096, 4096],
+        return { sid: k, prompt: x.prompt || "", cap: x.prompt ? "" : pretty(x.caption || x.alt || ""), mp4: x.file, poster: x.poster, still: x.still || null, size: x.size || [4096, 4096],
                  model: x.model || "FLUX.1-dev", seed: x.seed === undefined ? 0 : x.seed, label: x.label || "Progressive SCA beside AReA", title: x.title || "", caption: x.caption || "" };
       });
     }
@@ -636,7 +702,7 @@
       var lede = $("#process-lede");
       if (lede && list.length) lede.innerHTML = "Each video replays one sample of <b>single-pass SCA</b> beside AReA: the decoded estimate of the clean image at each of the " + (num("config.steps") || "28") + " steps, the phase, the weights of all " + (num("calib.n_heads_c") || "1,368") + " heads and a native-pixel crop.";
     }
-    if (host.hasAttribute("data-no-person")) list = list.filter(function (x) { return !PERSON.test(x.prompt || ""); });
+    if (legacy && host.hasAttribute("data-no-person")) list = list.filter(function (x) { return !PERSON.test(x.prompt || ""); });
     if (!list.length) { host.appendChild(ph("Videos in preparation")); return; }
     var at = 0, stage = el("div", { class: "proc-stage" }), head = el("div", { class: "proc-head" }), nav = el("div", { class: "proc-nav" });
     var prev = el("button", { type: "button", "aria-label": "Previous example", html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>' });
@@ -652,7 +718,7 @@
       $$("video", stage).forEach(function (v) { v.pause(); v.removeAttribute("src"); v.load(); });
       stage.innerHTML = ""; head.innerHTML = "";
       head.appendChild(metaRow([x.label, x.model, sizeLabel(x.size), "seed " + x.seed], true));
-      head.appendChild(el("p", { class: "prompt" }, [el("q", { text: x.prompt })]));
+      head.appendChild(x.cap ? el("p", { class: "prompt", text: x.cap }) : el("p", { class: "prompt" }, [el("q", { text: x.prompt })]));
       var left = x.still ? el("div", { class: "still tile" }, [img(x.still, "Final image: " + x.prompt)]) : null;
       var v = loopVideo(x.mp4, x.poster, (legacy ? "Single-pass SCA" : "Progressive SCA") + " beside AReA, step by step: " + short(x.prompt, 80), true);
       if (left) stage.appendChild(left);
@@ -828,69 +894,6 @@
       else { var r = document.createRange(); r.selectNodeContents($(b.getAttribute("data-target"))); var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
     });
   });
-  /* ================================================================ v5: hero, top bar, component mounts, v5 videos, race, figures */
-  var V5 = window.SCA_V5 || { comps: {}, videos: {} };
-  function v5video(role) { var v = (V5.videos || {})[role]; return v && v.file ? v : null; }
-  var ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
-  var ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
-
-  /* the top bar is transparent over the hero and solid below it */
-  (function topbar() {
-    var bar = $(".topbar[data-hero]"), hero = $(".hero5"); if (!bar || !hero) return;
-    if (!("IntersectionObserver" in window)) { bar.classList.add("solid"); return; }
-    new IntersectionObserver(function (es) { es.forEach(function (en) { bar.classList.toggle("solid", !en.isIntersecting); }); },
-      { rootMargin: "-60px 0px 0px 0px", threshold: 0 }).observe(hero);
-  })();
-
-  /* the hero loop: v5 deep zoom (16:9, or 9:16 on a portrait screen), else the v4 zoom loop; a pause button; posters
-     only under reduced motion until the visitor presses play */
-  (function heroMedia() {
-    var box = $("#hero-media"); if (!box) return;
-    var portrait = window.matchMedia && matchMedia("(max-aspect-ratio: 4/5)").matches;
-    var m = (portrait && v5video("hero9x16")) || v5video("hero16x9") || v5video("hero9x16"), src = null, poster = null;
-    if (m) { src = m.file; poster = m.poster; }
-    else if (MEDIA.teaser && MEDIA.teaser.zoom) { src = MEDIA.teaser.zoom.mp4; poster = MEDIA.teaser.zoom.poster; }
-    var pim = $("img.poster", box);
-    if (poster && pim && !pim.closest("picture") && pim.getAttribute("src") !== poster) pim.src = poster;
-    var btn = $("#hero-pause"); if (!src) { if (btn) btn.hidden = true; return; }
-    var v = null, userPaused = REDUCED, visible = true;
-    function make() {
-      v = document.createElement("video");
-      v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true;
-      v.setAttribute("muted", ""); v.setAttribute("playsinline", ""); v.setAttribute("aria-hidden", "true");
-      v.preload = "auto"; if (poster) v.poster = poster; v.src = src;
-      v.addEventListener("playing", function () { v.classList.add("ready"); });
-      box.insertBefore(v, box.querySelector(".hero5-hud"));
-      if (m && m.readout) readout(v, m.readout);
-    }
-    function play() { if (!v) make(); var p = v.play(); if (p && p.catch) p.catch(function () {}); }
-    function sync() {
-      if (btn) { btn.innerHTML = userPaused ? ICON_PLAY : ICON_PAUSE; btn.setAttribute("aria-label", userPaused ? "Play the deep zoom" : "Pause the deep zoom"); btn.setAttribute("aria-pressed", String(userPaused)); }
-      if (!userPaused && visible) play(); else if (v) v.pause();
-    }
-    if (btn) btn.addEventListener("click", function () { userPaused = !userPaused; sync(); });
-    if ("IntersectionObserver" in window) new IntersectionObserver(function (es) { es.forEach(function (en) { visible = en.isIntersecting; sync(); }); }, { threshold: 0.05 }).observe(box);
-    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden" && v) v.pause(); else sync(); });
-    sync();
-  })();
-
-  /* the hero readout: magnification against the whole image and the native-pixel hold, from the loop's own zoom curve */
-  function readout(v, R) {
-    var tEl = $("#hud-title"), zEl = $("#hud-zoom"), curve = R.zoom_curve || [], segs = R.segments || [], whole = R.whole_scale || (curve[0] && curve[0][1]) || 1;
-    if (!tEl || !zEl || !curve.length) return;
-    var last = "";
-    function tick() {
-      var t = v.currentTime || 0, i = Math.max(0, Math.min(curve.length - 1, Math.round(t * 10))), s = curve[i][1];
-      var seg = segs.filter(function (g) { return t >= g.t0 && t < g.t1; })[0];
-      var nat = seg && seg.native && t >= seg.native[0] && t <= seg.native[1];
-      var txt = (seg ? seg.title + " · " : "") + (R.label || "4096 × 4096").replace(" x ", " × ") + "|" + (nat ? (R.native_label || "1:1 native pixels") : "zoom ×" + (s / whole).toFixed(1));
-      if (txt !== last) { last = txt; var p = txt.split("|"); tEl.textContent = p[0]; zEl.textContent = p[1]; zEl.className = nat ? "nat" : ""; }
-    }
-    v.addEventListener("timeupdate", tick);
-    var raf = 0; function loop() { tick(); if (!v.paused) raf = requestAnimationFrame(loop); }
-    v.addEventListener("playing", function () { cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); });
-  }
-
   /* inline theme-aware SVG figures (assets/js/v6_figs.js from web/build/v5_figs.py) */
   (function figs() {
     var F = window.SCA_FIGS || {};
@@ -920,6 +923,7 @@
       box.innerHTML = ""; box.appendChild(v);
       fig.classList.add("has-video"); fig.hidden = false;
       var row = fig.closest(".vrow"); if (row) row.hidden = false;
+      if (fig.id === "explainer") { var vb = $("#video-btn"); if (vb) vb.hidden = false; }
       if (m.loop && REDUCED) v.removeAttribute("autoplay");
       var cap = $("[data-vcap]", fig); if (cap && m.caption && !cap.hasAttribute("data-keep")) cap.textContent = pretty(m.caption);
     });
@@ -1021,4 +1025,27 @@
     b.addEventListener("click", open);
     b.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
   });
+  }
+
+  /* below the fold: the main page lists its heavy data scripts in window.SCA_DEFER; they load (in order, in parallel)
+     after the first scroll, tap or key, or two seconds after load, so the first screen is the hero and little else.
+     Pages that include the scripts directly run rest() at once. */
+  (function deferred() {
+    var D = window.SCA_DEFER || [], started = false;
+    if (!D.length) { rest(); return; }
+    function go() {
+      if (started) return; started = true;
+      ["scroll", "pointerdown", "keydown", "touchstart"].forEach(function (t) { window.removeEventListener(t, go); });
+      var left = D.length;
+      D.forEach(function (src) {
+        var sc = document.createElement("script"); sc.src = src; sc.async = false;
+        sc.onload = sc.onerror = function () { if (--left === 0) rest(); };
+        document.body.appendChild(sc);
+      });
+    }
+    ["scroll", "pointerdown", "keydown", "touchstart"].forEach(function (t) { window.addEventListener(t, go, { passive: true }); });
+    if (location.hash && location.hash.length > 1) go();
+    else if (document.readyState === "complete") setTimeout(go, 2000);
+    else window.addEventListener("load", function () { setTimeout(go, 2000); });
+  })();
 })();

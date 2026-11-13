@@ -236,7 +236,62 @@ def check_page(br, page_name, out, views, themes):
     return bad
 
 
-RUNNERS = {"percentiles": run_percentiles, "heads": run_heads, "emulate": run_emulate, "table": run_table, "speed": run_speed}
+def run_views(page, view, out, tag, log):
+    page.wait_for_selector(".c-views-seg-b", timeout=20000)
+    page.wait_for_timeout(900)
+    st = "() => Array.from(document.querySelectorAll('.c-views-st')).map(e => e.textContent).join(' | ')"
+    log.append(("4096", page.evaluate(st)))
+    shots = [shot(page, out, f"{tag}_0_4096")]
+    b = page.query_selector(".c-views-main").bounding_box()
+    x, y = b["x"] + b["width"] * 0.5, b["y"] + b["height"] * 0.3
+    if view == "phone":
+        tap(page, x, y)
+    else:
+        page.mouse.move(b["x"] + b["width"] * 0.2, b["y"] + b["height"] * 0.7)
+        page.mouse.down()
+        page.mouse.move(x, y, steps=8)
+        page.mouse.up()
+    page.wait_for_timeout(300)
+    shots.append(shot(page, out, f"{tag}_1_moved"))
+    page.query_selector_all(".c-views-seg-b")[1].click()
+    page.wait_for_timeout(500)
+    log.append(("2048", page.evaluate(st)))
+    shots.append(shot(page, out, f"{tag}_2_2048"))
+    page.query_selector_all(".c-views-seg-b")[0].click()
+    page.wait_for_timeout(500)
+    log.append(("1024", page.evaluate(st) + " || " + page.evaluate("() => document.querySelector('.c-views-st-m').textContent")))
+    shots.append(shot(page, out, f"{tag}_3_1024"))
+    return shots
+
+
+def run_stages(page, view, out, tag, log):
+    page.wait_for_selector(".c-stages-hm rect", timeout=20000)
+    page.wait_for_timeout(500)
+    rd = "() => document.querySelector('.c-stages-readout').textContent + ' | ' + document.querySelector('.c-stages-hmh').textContent.slice(0, 60)"
+    log.append(("first 4096 step", page.evaluate(rd)))
+    shots = [shot(page, out, f"{tag}_0_4096")]
+    rng = page.query_selector(".c-stages-range")
+    rng.focus()
+    page.keyboard.press("Home")
+    page.wait_for_timeout(300)
+    log.append(("Home", page.evaluate(rd)))
+    shots.append(shot(page, out, f"{tag}_1_native"))
+    b = page.query_selector(".c-stages-tlbox").bounding_box()
+    if view == "phone":
+        tap(page, b["x"] + b["width"] * 0.66, b["y"] + b["height"] * 0.5)
+    else:
+        page.mouse.click(b["x"] + b["width"] * 0.66, b["y"] + b["height"] * 0.5)
+    page.wait_for_timeout(300)
+    log.append(("timeline 66%", page.evaluate(rd)))
+    shots.append(shot(page, out, f"{tag}_2_2048"))
+    page.query_selector(".c-stages-play").click()
+    page.wait_for_timeout(1300)
+    log.append(("playing", page.evaluate(rd)))
+    page.query_selector(".c-stages-play").click()
+    return shots
+
+
+RUNNERS = {"percentiles": run_percentiles, "heads": run_heads, "emulate": run_emulate, "table": run_table, "speed": run_speed, "views": run_views, "stages": run_stages}
 
 
 def main():

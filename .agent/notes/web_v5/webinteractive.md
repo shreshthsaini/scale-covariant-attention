@@ -1,5 +1,13 @@
 # webinteractive notes (owner: webinteractive; components for the v5 page)
 
+## Status
+All seven components are finished and checked (demo pages and index.html, 1440x900 and 390x844, light and dark):
+percentiles, heads, emulate, table, speed (the brief's list) and views, stages (extras: method steps 1 and 3).
+The page mounts heads, views, emulate, percentiles, table and speed (webdesign.md, page order); stages waits for
+the designer (request at the end). Rebuild everything: the seven web/build/v5_build_<name>.py scripts (sca env), then
+web/build/build_v5_assets.py, then web/build/v5_check_components.py <names> --page index.html --out DIR (pwqa env).
+Last full check: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/final_check.jsonl and final/*.png.
+
 Contract: BRIEF.md Section 4 and Section 6, design.md "Components". Every component: assets/js/c_<name>.js,
 assets/css/c_<name>.css, data in assets/data/<name>/ (data.js sets window.SCA_DATA.<name>, loaded by script tag so
 file:// works), demo page web/dev/<name>.html (loads only that component plus web/dev/dev.css, a copy of the
@@ -19,7 +27,7 @@ Common behaviour (all components)
 - The component needs no other script: c_percentiles.js loads zoomgrid.js and zoomgrid.css from its own folder
   if window.SCAZoom is missing.
 
-## 1. percentiles: DONE (16:20)
+## 1. percentiles: DONE
 Files: web/assets/js/c_percentiles.js, web/assets/css/c_percentiles.css, web/assets/data/percentiles/
 (data.js 11 KB, fallback.webp 0.12 MB, img/p<pct>/<area|ultra|hrdit|prog>/{v.webp, <c>_<r>.webp}),
 web/build/v5_build_percentiles.py, web/dev/percentiles.html. Data 24.9 MB in total (36 overviews 1024 px WebP q76,
@@ -48,7 +56,7 @@ Rebuild: nice -n 10 /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web
 Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/percentiles_{desk,phone}_{light,dark}_*.png
 Claims: only the paper's (rule, differences, ImageReward per image, seconds). It never says SCA wins every prompt.
 
-## 2. heads: DONE (16:31)
+## 2. heads: DONE
 Files: web/assets/js/c_heads.js, web/assets/css/c_heads.css, web/assets/data/heads/ (data.js 0.47 MB, img/base.webp
 39 KB, fallback.webp 59 KB), web/build/v5_build_heads.py, web/dev/heads.html.
 API: SCAComp.heads(el, {view: "curves" | "matrix", head: [block, head] (one-based; default [12, 4]), sigma: 0 | 1 | 2
@@ -72,7 +80,7 @@ ranks[3] = 81, zero-based); no console errors, no overflow; height 608 px at 144
 Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_build_heads.py (seconds).
 Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/heads_{desk,phone}_{light,dark}_*.png
 
-## 3. emulate: DONE (16:40)
+## 3. emulate: DONE
 Files: web/assets/js/c_emulate.js, web/assets/css/c_emulate.css, web/assets/data/emulate/ (data.js 0.27 MB,
 img/base.webp, fallback.webp 16 KB), web/build/v5_build_emulate.py, web/dev/emulate.html.
 API: SCAComp.emulate(el, {head: 1..24 (default 10, the method figure's head), pi: 0..1 (default 0.3), lazy, base})
@@ -98,7 +106,7 @@ overflow; 684 px at 1440x900; 800 px at 390x844 (2 x 2 maps; notes collapse on n
 Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_build_emulate.py (seconds).
 Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/emulate_{desk,phone}_{light,dark}_*.png
 
-## 4a. table: DONE (17:00)
+## 4a. table: DONE
 Files: web/assets/js/c_table.js, web/assets/css/c_table.css, web/assets/data/table/data.js (8 KB),
 web/build/v5_build_table.py, web/dev/table.html.
 API: SCAComp.table(el, {tab: "main" | "gen", hide: ["time" | "pref" | "detail" | "set" | "holm"], lazy, base}) ->
@@ -122,7 +130,7 @@ frame on phones, method column sticky); 660 px at 1440x900, 765 px at 390x844.
 Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_build_table.py
 Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/table_{desk,phone}_{light,dark}_*.png
 
-## 4b. speed: DONE (17:10)
+## 4b. speed: DONE
 Files: web/assets/js/c_speed.js, web/assets/css/c_speed.css, web/assets/data/speed/data.js (2 KB),
 web/build/v5_build_speed.py, web/dev/speed.html.
 API: SCAComp.speed(el, {side: 4096 (or null for no readout at first), lazy, base}) -> {show(side), destroy()}.
@@ -138,6 +146,75 @@ Checked: values above; no console errors; no overflow; 466 px at 1440x900, 610 p
 Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_build_speed.py
 Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/speed_{desk,phone}_{light,dark}_*.png
 
+## 5. views (extra, method step 1): DONE
+Not in the brief's list; built because Section 3 asks for the method in three steps and each step should be
+playable: heads = the observation, views = step 1 (two native-size views), emulate = step 2.
+Files: web/assets/js/c_views.js, web/assets/css/c_views.css, web/assets/data/views/ (data.js 1 KB, img/base.webp
+0.63 MB = the 4096^2 picture at 2048 px, img/grid_r{1,2,4}.webp 0.1 to 0.23 MB, fallback.webp), web/build/v5_build_views.py,
+web/dev/views.html. Data 1.5 MB.
+API: SCAComp.views(el, {size: 1024 | 2048 | 4096 (default 4096), lazy, base}) -> {size(s), destroy()}.
+Fallback image: assets/data/views/fallback.webp (1200 x 1200, the picture with the 4096^2 window box and grid dots).
+What it shows: progressive SCA's 4096^2 output for the sheep prompt (the image of the paper's attention figures);
+drag, click or tap moves the query (arrow keys: one tile). Orange box = the native-size window (n0 x n0 = 64 x 64
+tokens around the query's 8 x 8 tile, clamped; sca/attn.py window_index), blue squares = the grid view's keys (one per
+r x r block at kappa(b) = r b + floor(r/2); sca/attn.py pool_tokens(center)). Insets: the window's pixels (cropped
+from the picture) and the grid view's keys laid side by side (the 16-px patch of every block-centre token). Counters:
+keys in full attention at that size (65,536 at 4096^2, 16,384 at 2048^2, 4,096 at 1024^2) against 4,096 in each view.
+Size buttons 1024^2 / 2048^2 / 4096^2 (r = 1, 2, 4); at 1024^2 both views are the whole image (= full attention).
+Honest note printed: the smaller sizes reuse the 4096^2 picture resized; boxes and dots are exact for each size.
+Geometry constants come from code (attn_focus_data.N0, TILE; v6_scaling.PATCH); nothing typed.
+Checked: counters above; no console errors; no overflow; 675 px at 1440x900; 896 px at 390x844.
+Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_build_views.py
+Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/views_{desk,phone}_{light,dark}_*.png
+
+## 6. stages (extra, method step 3): DONE
+Files: web/assets/js/c_stages.js, web/assets/css/c_stages.css, web/assets/data/stages/data.js (11 KB),
+web/build/v5_build_stages.py, web/dev/stages.html.
+API: SCAComp.stages(el, {step: 0..56 (default 47, the first 4096^2 step), lazy, base}) -> {step(i), destroy()}.
+No fallback image (the method figure or the method_stages loop is the natural fallback).
+What it shows: the real progressive SCA run of the sheep prompt step by step (its sidecar: 30 steps at 1024^2 from
+sigma 1, 17 at 2048^2 from 0.81, 10 at 4096^2 from 0.61): a timeline of sigma per step (three descents, each later
+stage re-noised) with the mean weight over all 1,368 heads at every SCA step; a readout (step, size, sigma, "reads the
+table at r = 2 / 4" or "the model's own attention, no table"); block 12's row of the one measured table (24 heads by
+mean r = 4 weight x 13 populated noise bins, colour = pi from far blue to near orange) at the stage's r, a line at the
+step's sigma, and a "now" column with every head's weight at that step. Play the run (380 ms per step; hidden under
+reduced motion), slider, arrow keys, click on the timeline.
+Source: the run's sidecar (/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/
+a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.json), the table results/evidence/calib/k1_1024.npz (sha256
+asserted equal to the run's pi_table_sha256), weights computed by sca.attn.PiTable (the sampler's own lookup) and the
+mean over all heads asserted equal to the run's pi_trace at all 27 SCA steps; the stage settings asserted (window 64
+at these noise levels: the hand-set wider windows act only above sigma 0.82). Nothing typed.
+Checked: readouts above (step 48 = first 4096^2 step, sigma 0.61, mean pi 0.73); no console errors; no overflow;
+642 px at 1440x900, 594 px at 390x844.
+Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_build_stages.py (imports torch, ~30 s).
+Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/stages_{desk,phone}_{light,dark}_*.png
+
+## Integration on the page (checked with web/build/v5_check_components.py --page index.html)
+heads, emulate, percentiles and table are mounted by the designer and go live (is-live) at 1440x900 and 390x844 in
+both themes with no console errors from the components (the only request failures are the .mp4 files: Playwright's
+Chromium has no H.264, so they are test artifacts, not page errors). I reran web/build/build_v5_assets.py (it says
+"rerun after either owner adds files") so v5_assets.js lists all six components.
+Data-failure path checked (dev pages with ?o_base=../nope/): percentiles, heads, emulate drop .is-live and the page's
+fallback shows again; table and speed print one line. Reduced motion checked: zoom flights and Snap to pi* jump.
+
 ## Requests to the designer
-- Mount percentiles in the "See it" section, figure with a comp-fallback image as above. The component sets its own
-  height (about 710 px desktop) and fills 100% width up to 1200 px.
+- percentiles: mounted (thanks). At 1344 px wide it is 759 px tall (the four images grow with the width); at 1200 px
+  it is 712 px. If the section can cap the figure at 1200 px it stays under 80vh at 1440x900.
+- speed: please mount it in Results next to the table: <figure class="comp-figure"> with the paper's scaling figure
+  (assets/img/v6/scaling.*) as .comp-fallback and <div class="comp-mount" data-comp="speed" data-options='{"side": 4096}'>.
+  It replaces the retired speed plot; numbers come from the paper's Figure 7 loader.
+- views: please mount it as method step 1 (two native-size views), before emulate:
+  data-comp="views" data-options='{"size": 4096}', fallback <img class="comp-fallback"
+  src="assets/data/views/fallback.webp" width="1200" height="1200" alt="A 4096 by 4096 image with the window view
+  (orange box) and the grid view (blue dots) of one query.">. It can sit beside or replace the method_window loop.
+- stages: please mount it as method step 3 (one table for any size and sampler stage), after emulate:
+  data-comp="stages" data-options='{}'; fallback = the method_stages loop or paper Figure 3. With views (step 1),
+  emulate (step 2) and stages (step 3) every method step is playable, and heads carries the observation.
+- table: its own fallback is your static table; nothing else needed. On phones it starts with Detail and Set level
+  hidden (chips bring them back) and scrolls inside its frame.
+- emulate: the fallback slot you used (method_emulation video) is fine; fallback.webp exists too
+  (assets/data/emulate/fallback.webp, 1152 x 480).
+- Components read --bg-raised, --bg-sunk, --ink, --ink-soft, --ink-faint, --rule, --accent, --accent-ink,
+  --accent-soft, --on-accent, --near, --far, --area, --hrdit, --neutral, --screen, --screen-ink, --radius-sm,
+  --shadow, --font-sans, --font-serif, --ease. Canvas components re-read them on sca:themechange and on changes of
+  data-theme on <html>, so .band-dark sections work too.

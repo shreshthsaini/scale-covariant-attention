@@ -33,6 +33,7 @@ WORDS_JS = """() => {
     const p = t.parentElement; if (!p) continue;
     const cs = getComputedStyle(p);
     if (cs.display === 'none' || cs.visibility === 'hidden' || p.closest('[hidden],script,style,noscript,.sr-only')) continue;
+    if (window.__noComp && p.closest('.comp-mount')) continue;
     n += (t.textContent.match(/[A-Za-z0-9][A-Za-z0-9'’.,%+-]*/g) || []).length;
   }
   return n;
@@ -117,11 +118,13 @@ def main():
                         pg.screenshot(path=full, full_page=True)
                     info = pg.evaluate("""() => ({h: document.documentElement.scrollHeight, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth})""")
                     words = pg.evaluate(WORDS_JS)
+                    pg.evaluate("window.__noComp = true")
+                    words_own = pg.evaluate(WORDS_JS)
                     rec = dict(page=page_name, view=vname, theme=theme, height=info["h"], overflow=info["sw"] > info["cw"],
-                               words=words, cls=round(cls, 4), console_errors=errs[:8], failed=sorted(set(fails))[:8],
+                               words=words, words_without_components=words_own, cls=round(cls, 4), console_errors=errs[:8], failed=sorted(set(fails))[:8],
                                first=first, full=full, segments=segments(full) if full else [])
                     report.append(rec)
-                    print(json.dumps({k: rec[k] for k in ("page", "view", "theme", "height", "overflow", "words", "cls", "console_errors", "failed")}))
+                    print(json.dumps({k: rec[k] for k in ("page", "view", "theme", "height", "overflow", "words", "words_without_components", "cls", "console_errors", "failed")}))
                     ctx.close()
         br.close()
     if srv:

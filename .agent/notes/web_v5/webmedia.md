@@ -102,5 +102,60 @@ Rebuild any item from the repository root:
   sc_l03_opera_house, sc_d03_antique_shop (product would be sc_p08_sapphire_ring).
 - Sheets: sheets/process_*_sheet.png, process_*_seam.png; look frames process/look/.
 
-## Next
-6. Explainer.
+### 6. Explainer (v5_explainer.py [--look t,t]): explainer.mp4 + explainer.webp + explainer.vtt
+- 1600 x 900, 84.5 s, 30 fps, 7.6 MB (CRF 21), role explainer, loop false (give it controls). 17 caption cues burned
+  in (Inter 30 px, wrapped to two lines when long) and the same cues in explainer.vtt and in the manifest (`cues`).
+- Scenes: title ("Reach Is a Property of the Head", subtitle, "Anonymous authors, under review"); problem (the run's
+  native 1024^2 stage beside full attention run directly at 4096^2, same prompt and seed: 64 x 64 vs 256 x 256 tokens,
+  offsets 63 vs 255); observation (near share of all 1,368 heads over sigma from v6_observation.load, heads 4 and 7
+  and the average highlighted; variance split 97.5 / 2.5 / 0.7 from \hlVarHead, \hlVarStep, \hlVarAvg); the two
+  views (method_window frames); band 1 "Measure once at 1024 x 1024" (method_emulation frames); band 2 "Generate at
+  any size" (method_stages frames); speed (speedrace frames; 49.2 s, 4.1x, 2.2x; "finishes four"); claims ("10 of 10
+  per-image metrics better than AReA, at each of three seeds"; "46% of HRDiT's time, statistically
+  indistinguishable on ImageReward, HPSv2.1 and PickScore"); showcase (hero frames, blacksmith); end card.
+- Numbers from headline.tex macros only; the script asserts the three HRDiT intervals include zero and that the ten
+  wins hold at seeds 0, 1, 2 before it prints the claims. Reused scenes stop before each loop's closing tail.
+- Replaces the 116 s v4 explainer (web/assets/video/method/sca_explainer.*, old title and claims; not deleted).
+- Sheets: sheets/explainer_sheet.png (20 frames), explainer_boundaries.png (every scene cut); look frames explainer/look/.
+
+### Extra: tagged hero fallback (v5_hero_tagged.py): hero_16x9_tagged.mp4, hero_9x16_tagged.mp4
+- The clean hero frames plus a "4096 x 4096" chip (top left) and a zoom indicator (track whole -> 1:1, dot, label
+  "2.5x" ... "1:1 native pixels" in green on the hold). 2.48 MB each, roles hero16x9_tagged / hero9x16_tagged. The
+  lead's brief asks for the tag and indicator; design.md asks for no burned-in text: the clean loop is the default
+  and the page can draw the readout from `readout`; the tagged pair is there if it does not.
+
+### Totals (audit of 2026-11-13 17:05)
+18 items, 41.2 MB with posters (web/assets/video/v5 is 40 MB on disk), all pass v5_manifest.py. All posters:
+sheets/posters.png. Build order for a full rebuild: v5_hero.py, v5_hero_tagged.py, v5_speedrace.py, v5_method.py,
+v5_compare.py, v5_process.py, v5_explainer.py (needs the frame folders of the first four), then v5_manifest.py.
+
+Encodes: v5_media.encode_to_size writes every attempt to <build>/enc_tmp and copies only the file that fits into
+web/assets/video/v5 (the repo is committed by a loop; checked that no oversized attempt reached the history).
+
+### Audit (v5_manifest.py)
+- Re-probes every item (codec, pix_fmt, size, no audio, moov first, byte limits, poster size = video size, wording
+  rules), adds `source` (design.md's field name) and `order`, writes total_mb. Run after any rebuild.
+- Phone check: sheets/phone_390.png (hero 9:16 tagged and the race phone cut at 390 px wide: legible).
+
+## Requests to the designer (webdesign)
+1. Hero: `<video muted autoplay loop playsinline preload="auto" poster="assets/video/v5/hero_16x9.webp">` with
+   hero_16x9.mp4, and hero_9x16.mp4 below about 700 px width (source media query or swap in site.js). The image is a
+   square centred on #0B0D0C at rest, so the --screen ground blends into the frame. The readout (tag, zoom indicator,
+   "1:1 native pixels") can be driven from manifest `readout.segments` / `readout.zoom_curve` on timeupdate; if not,
+   use the *_tagged files. First screen: poster 74 KB + video 2.48 MB.
+2. Every other loop: muted, loop, playsinline, preload="none", src set when it scrolls into view (IntersectionObserver),
+   paused when it leaves; prefers-reduced-motion: poster only, with a play control. Posters are the rest frames.
+3. Show the 1600 x 900 loops at content width (1000 px or more on desktop): their smallest labels are 22 to 24 px at
+   1600. On phones use speedrace_9x16.mp4; the method and compare loops are legible to about 600 px wide, below that
+   consider a tap-to-enlarge or the static figure.
+4. Explainer: controls, no autoplay, poster explainer.webp; captions are burned in, so add
+   `<track kind="captions" src="assets/video/v5/explainer.vtt" srclang="en" label="English">` without `default`.
+5. Captions under each video: manifest `caption` (each states its selection rule); alt text in `alt`.
+6. The v4 videos (teaser/zoom_loop, method/sca_explainer with old claims, trace/*_vs_area single-pass) are superseded;
+   take them off the main page (move or retire as the lead decides; nothing deleted).
+
+## Not made / limits
+- Hero at 1920 x 1080: a 20 s zoom loop does not fit 2.5 MB at 1920 with acceptable quality; 1600 x 900 at 2.48 MB
+  (sheets/hero_16x9_quality.png). Three hero images, not five, for the same reason.
+- No attention exists at 4096^2, so method_window draws the operator's exact geometry with real weights, not maps.
+- Process videos use one normalised clock (both runs over 11 s); real seconds are printed, the speed race shows time.

@@ -17,9 +17,17 @@ window.SCA_V5 = {
    "js": "assets/js/c_speed.js",
    "css": "assets/css/c_speed.css"
   },
+  "stages": {
+   "js": "assets/js/c_stages.js",
+   "css": "assets/css/c_stages.css"
+  },
   "table": {
    "js": "assets/js/c_table.js",
    "css": "assets/css/c_table.css"
+  },
+  "views": {
+   "js": "assets/js/c_views.js",
+   "css": "assets/css/c_views.css"
   }
  },
  "videos": {
@@ -32,6 +40,7 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "Deep zoom into 3 images generated at 4096 by 4096 pixels with progressive SCA (blacksmith, great horned owl, glacier ice cave): each starts whole, zooms to native pixels at a detailed spot, and zooms back out.",
    "caption": "Progressive SCA at 4096 x 4096, from the whole image to native pixels and back. Images: one showcase prompt per category by seeded draw (the paper hero's rule); zoom target: the 1600 x 900 window of highest edge energy.",
+   "source": "progressive SCA 4096^2 showcase PNGs, seed 0 (sc_h04_blacksmith, sc_a03_owl, sc_l10_ice_cave); paper hero draw",
    "role": "hero16x9",
    "bytes": 2479663,
    "readout": {
@@ -933,6 +942,7 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "Deep zoom into 3 images generated at 4096 by 4096 pixels with progressive SCA (blacksmith, great horned owl, glacier ice cave): each starts whole, zooms to native pixels at a detailed spot, and zooms back out.",
    "caption": "Progressive SCA at 4096 x 4096, from the whole image to native pixels and back. Images: one showcase prompt per category by seeded draw (the paper hero's rule); zoom target: the 900 x 1600 window of highest edge energy.",
+   "source": "progressive SCA 4096^2 showcase PNGs, seed 0 (sc_h04_blacksmith, sc_a03_owl, sc_l10_ice_cave); paper hero draw",
    "role": "hero9x16",
    "bytes": 2477761,
    "readout": {
@@ -1825,6 +1835,32 @@ window.SCA_V5 = {
     ]
    }
   },
+  "hero16x9_tagged": {
+   "file": "assets/video/v5/hero_16x9_tagged.mp4",
+   "poster": "assets/video/v5/hero_16x9_tagged.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 20.1,
+   "loop": true,
+   "alt": "Deep zoom into 3 images generated at 4096 by 4096 pixels with progressive SCA (blacksmith, great horned owl, glacier ice cave): each starts whole, zooms to native pixels at a detailed spot, and zooms back out. A tag reads 4096 by 4096 and a zoom indicator reaches 1:1 native pixels.",
+   "caption": "Progressive SCA at 4096 x 4096, from the whole image to native pixels and back. Images: one showcase prompt per category by seeded draw (the paper hero's rule); zoom target: the 1600 x 900 window of highest edge energy.",
+   "source": "progressive SCA 4096^2 showcase PNGs, seed 0 (sc_h04_blacksmith, sc_a03_owl, sc_l10_ice_cave); paper hero draw",
+   "role": "hero16x9_tagged",
+   "bytes": 2477964
+  },
+  "hero9x16_tagged": {
+   "file": "assets/video/v5/hero_9x16_tagged.mp4",
+   "poster": "assets/video/v5/hero_9x16_tagged.webp",
+   "width": 900,
+   "height": 1600,
+   "seconds": 20.1,
+   "loop": true,
+   "alt": "Deep zoom into 3 images generated at 4096 by 4096 pixels with progressive SCA (blacksmith, great horned owl, glacier ice cave): each starts whole, zooms to native pixels at a detailed spot, and zooms back out. A tag reads 4096 by 4096 and a zoom indicator reaches 1:1 native pixels.",
+   "caption": "Progressive SCA at 4096 x 4096, from the whole image to native pixels and back. Images: one showcase prompt per category by seeded draw (the paper hero's rule); zoom target: the 900 x 1600 window of highest edge energy.",
+   "source": "progressive SCA 4096^2 showcase PNGs, seed 0 (sc_h04_blacksmith, sc_a03_owl, sc_l10_ice_cave); paper hero draw",
+   "role": "hero9x16_tagged",
+   "bytes": 2476968
+  },
   "speedrace": {
    "file": "assets/video/v5/speedrace_16x9.mp4",
    "poster": "assets/video/v5/speedrace_16x9.webp",
@@ -1834,6 +1870,7 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "Race of four methods making 4096 by 4096 images, shown 20 times faster than real time: in the 202.4 seconds AReA takes for one image, progressive SCA finishes 4, single-pass SCA 2 and HRDiT 1.",
    "caption": "Clean seconds per 4096 x 4096 image on one GH200 (batch 1), time shown 20x faster. Every lane works through the same prompts: the paper's decile prompts of the ImageReward gain over AReA from the median outward (50th, 60th, 40th, 70th percentile).",
+   "source": "numbers.json main.*.time_clean (= paper headline macros); images: paper decile prompts 50, 60, 40, 70 from the 195-prompt evaluation pool",
    "role": "speedrace",
    "bytes": 311387
   },
@@ -1846,6 +1883,7 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "Race of four methods making 4096 by 4096 images, shown 20 times faster than real time: in the 202.4 seconds AReA takes for one image, progressive SCA finishes 4, single-pass SCA 2 and HRDiT 1.",
    "caption": "Clean seconds per 4096 x 4096 image on one GH200 (batch 1), time shown 20x faster. Every lane works through the same prompts: the paper's decile prompts of the ImageReward gain over AReA from the median outward (50th, 60th, 40th, 70th percentile).",
+   "source": "numbers.json main.*.time_clean (= paper headline macros); images: paper decile prompts 50, 60, 40, 70 from the 195-prompt evaluation pool",
    "role": "speedrace9x16",
    "bytes": 424421
   },
@@ -1858,6 +1896,7 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "Two panels of the same 4096 by 4096 image with a moving query point: for head 4 the orange window around the query dominates; for head 7 only the blue grid of keys over the whole image carries weight.",
    "caption": "Each head mixes a native-size window (orange, 64 x 64 tokens around the query's tile) and a native-size grid (blue, 64 x 64 keys over the whole image) by its reach pi. Block 12 at 4096 x 4096: head 4 pi = 0.93, head 7 pi = 0.00 (reach table at r = 4, sigma = 0.62).",
+   "source": "reach table results/evidence/calib/k1_1024.npz (block 12, heads 4 and 7, r = 4); sheep-church 4096^2",
    "role": "method_window",
    "bytes": 742478
   },
@@ -1870,6 +1909,7 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "Reach emulation at 1024 by 1024: a head's full attention at one query, its window and grid shrinking by a factor of four, and the weight between them sliding along an error parabola until it settles at its minimum.",
    "caption": "Reach emulation: at 1024 x 1024 both views shrink by r (window 16 tokens, grid stride 4 for r = 4) and the weight that best matches full attention has a closed form, pi* = clip(B/A, 0, 1) = 0.79 for block 12, head 10. Real attention of one query, real sums over 32 prompts.",
+   "source": "attention capture paper/figures/src/data/v6_attn_block12.npz; J sums method_assets/provenance.json",
    "role": "method_emulation",
    "bytes": 646263
   },
@@ -1882,6 +1922,7 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "A progressive SCA run: the image estimate grows from 1024 to 2048 to 4096 pixels, and a grid of 1,368 head weights lights up in orange and blue once the 2048 and 4096 stages read the reach table.",
    "caption": "Progressive SCA keeps HRDiT's three stages: 30 steps at 1024 x 1024 with the model's own attention, then 17 at 2048 x 2048 reading the reach table at r = 2 and 10 at 4096 x 4096 at r = 4. Recorded run of the first paper-hero prompt with a trace.",
+   "source": "recorded progressive SCA run /scratch/09032/saini_2/sca/web_assets/trace/sca_v2_prog/sc_l03_opera_house",
    "role": "method_stages",
    "bytes": 1581866
   },
@@ -1894,6 +1935,7 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "AReA, HRDiT and progressive SCA images of the same prompt side by side (25th percentile prompt), zooming together from the whole 4096 by 4096 images into the same detail at native pixels.",
    "caption": "25th percentile prompt of the paired ImageReward gain of progressive SCA over AReA (the rows of the paper's Figure 5). Synchronized push-in to native pixels on the window of highest edge energy averaged over the three images. Clean seconds per 4096 x 4096 image on one GH200.",
+   "source": "paper Figure 5 rows (qual_main_provenance.json): AReA, HRDiT, progressive SCA 4096^2 PNGs",
    "role": "compare_1",
    "bytes": 2242116
   },
@@ -1906,6 +1948,7 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "AReA, HRDiT and progressive SCA images of the same prompt side by side (50th percentile prompt), zooming together from the whole 4096 by 4096 images into the same detail at native pixels.",
    "caption": "50th percentile prompt of the paired ImageReward gain of progressive SCA over AReA (the rows of the paper's Figure 5). Synchronized push-in to native pixels on the window of highest edge energy averaged over the three images. Clean seconds per 4096 x 4096 image on one GH200.",
+   "source": "paper Figure 5 rows (qual_main_provenance.json): AReA, HRDiT, progressive SCA 4096^2 PNGs",
    "role": "compare_2",
    "bytes": 2487270
   },
@@ -1918,6 +1961,7 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "AReA, HRDiT and progressive SCA images of the same prompt side by side (75th percentile prompt), zooming together from the whole 4096 by 4096 images into the same detail at native pixels.",
    "caption": "75th percentile prompt of the paired ImageReward gain of progressive SCA over AReA (the rows of the paper's Figure 5). Synchronized push-in to native pixels on the window of highest edge energy averaged over the three images. Clean seconds per 4096 x 4096 image on one GH200.",
+   "source": "paper Figure 5 rows (qual_main_provenance.json): AReA, HRDiT, progressive SCA 4096^2 PNGs",
    "role": "compare_3",
    "bytes": 2475769
   },
@@ -1930,8 +1974,9 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "Silver braids: progressive SCA's final 4096 by 4096 image beside its recorded run, the estimate growing from 1024 to 2048 to 4096 pixels over 57 steps, and AReA's 28-step run of the same prompt and seed, each with a native-pixel inset of the same window.",
    "caption": "Silver braids: the final image beside the runs that made it. Progressive SCA: 30 steps at 1024 x 1024, 17 at 2048 x 2048 (reach table at r = 2), 10 at 4096 x 4096 (r = 4). AReA: 28 steps at 4096 x 4096. Both runs shown over the same 11 s; prompts: one traced showcase prompt per category by seeded draw.",
+   "source": "traces /scratch/09032/saini_2/sca/web_assets/trace/sca_v2_prog/sc_h01_silver_braids and /scratch/09032/saini_2/sca/web_assets/trace/area_sc/sc_h01_silver_braids",
    "role": "process_1",
-   "bytes": 1995599,
+   "bytes": 1990500,
    "title": "Silver braids"
   },
   "process_2": {
@@ -1943,8 +1988,9 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "Jumping spider: progressive SCA's final 4096 by 4096 image beside its recorded run, the estimate growing from 1024 to 2048 to 4096 pixels over 57 steps, and AReA's 28-step run of the same prompt and seed, each with a native-pixel inset of the same window.",
    "caption": "Jumping spider: the final image beside the runs that made it. Progressive SCA: 30 steps at 1024 x 1024, 17 at 2048 x 2048 (reach table at r = 2), 10 at 4096 x 4096 (r = 4). AReA: 28 steps at 4096 x 4096. Both runs shown over the same 11 s; prompts: one traced showcase prompt per category by seeded draw.",
+   "source": "traces /scratch/09032/saini_2/sca/web_assets/trace/sca_v2_prog/sc_a02_jumping_spider and /scratch/09032/saini_2/sca/web_assets/trace/area_sc/sc_a02_jumping_spider",
    "role": "process_2",
-   "bytes": 1914812,
+   "bytes": 1909940,
    "title": "Jumping spider"
   },
   "process_3": {
@@ -1956,8 +2002,9 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "Fjord village: progressive SCA's final 4096 by 4096 image beside its recorded run, the estimate growing from 1024 to 2048 to 4096 pixels over 57 steps, and AReA's 28-step run of the same prompt and seed, each with a native-pixel inset of the same window.",
    "caption": "Fjord village: the final image beside the runs that made it. Progressive SCA: 30 steps at 1024 x 1024, 17 at 2048 x 2048 (reach table at r = 2), 10 at 4096 x 4096 (r = 4). AReA: 28 steps at 4096 x 4096. Both runs shown over the same 11 s; prompts: one traced showcase prompt per category by seeded draw.",
+   "source": "traces /scratch/09032/saini_2/sca/web_assets/trace/sca_v2_prog/sc_l01_fjord_village and /scratch/09032/saini_2/sca/web_assets/trace/area_sc/sc_l01_fjord_village",
    "role": "process_3",
-   "bytes": 1881739,
+   "bytes": 1879133,
    "title": "Fjord village"
   },
   "process_4": {
@@ -1969,8 +2016,9 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "Opera house: progressive SCA's final 4096 by 4096 image beside its recorded run, the estimate growing from 1024 to 2048 to 4096 pixels over 57 steps, and AReA's 28-step run of the same prompt and seed, each with a native-pixel inset of the same window.",
    "caption": "Opera house: the final image beside the runs that made it. Progressive SCA: 30 steps at 1024 x 1024, 17 at 2048 x 2048 (reach table at r = 2), 10 at 4096 x 4096 (r = 4). AReA: 28 steps at 4096 x 4096. Both runs shown over the same 11 s; prompts: one traced showcase prompt per category by seeded draw.",
+   "source": "traces /scratch/09032/saini_2/sca/web_assets/trace/sca_v2_prog/sc_l03_opera_house and /scratch/09032/saini_2/sca/web_assets/trace/area_sc/sc_l03_opera_house",
    "role": "process_4",
-   "bytes": 2413739,
+   "bytes": 2414369,
    "title": "Opera house"
   },
   "process_5": {
@@ -1982,9 +2030,24 @@ window.SCA_V5 = {
    "loop": true,
    "alt": "Antique shop: progressive SCA's final 4096 by 4096 image beside its recorded run, the estimate growing from 1024 to 2048 to 4096 pixels over 57 steps, and AReA's 28-step run of the same prompt and seed, each with a native-pixel inset of the same window.",
    "caption": "Antique shop: the final image beside the runs that made it. Progressive SCA: 30 steps at 1024 x 1024, 17 at 2048 x 2048 (reach table at r = 2), 10 at 4096 x 4096 (r = 4). AReA: 28 steps at 4096 x 4096. Both runs shown over the same 11 s; prompts: one traced showcase prompt per category by seeded draw.",
+   "source": "traces /scratch/09032/saini_2/sca/web_assets/trace/sca_v2_prog/sc_d03_antique_shop and /scratch/09032/saini_2/sca/web_assets/trace/area_sc/sc_d03_antique_shop",
    "role": "process_5",
-   "bytes": 2384018,
+   "bytes": 2383271,
    "title": "Antique shop"
+  },
+  "explainer": {
+   "file": "assets/video/v5/explainer.mp4",
+   "poster": "assets/video/v5/explainer.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 84.5,
+   "loop": false,
+   "alt": "An 86-second explainer without sound, with captions: the problem at 4096 by 4096, the observation that reach belongs to the head, the two native-size views, reach emulation at 1024 by 1024, the three sampler stages, the speed race and the headline results.",
+   "caption": "The method in 86 seconds: reach is a property of the head; measure it once at 1024 x 1024; generate at any size. Captions burned in and in explainer.vtt.",
+   "vtt": "assets/video/v5/explainer.vtt",
+   "source": "paper headline macros; v5 loop frames; v6_observation data; native and full-attention images",
+   "role": "explainer",
+   "bytes": 7641538
   }
  }
 };

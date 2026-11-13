@@ -18,6 +18,7 @@
   var CUR = document.currentScript && document.currentScript.src;
   var JSDIR = CUR ? CUR.replace(/[^\/]*$/, "") : "assets/js/";
   var DEF_BASE = JSDIR.replace(/js\/$/, "") + "data/" + NAME + "/";
+  var UID = 0;
 
   function el(tag, cls, attrs, kids) {
     var e = document.createElement(tag);
@@ -84,7 +85,7 @@
       if (!alive) return;
       D = window.SCA_DATA[NAME];
       [["main", D.main.title], ["gen", D.gen.title]].forEach(function (q) {
-        var b = el("button", "tab", { type: "button", role: "tab", id: P + q[0] + "-" + Math.random().toString(36).slice(2, 7), "aria-selected": String(q[0] === tab), text: q[1] });
+        var b = el("button", "tab", { type: "button", role: "tab", id: P + q[0] + "-" + (++UID), "aria-selected": String(q[0] === tab), text: q[1] });
         b.addEventListener("click", function () { setTab(q[0]); });
         tabs.appendChild(b);
       });

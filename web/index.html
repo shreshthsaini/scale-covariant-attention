@@ -60,6 +60,7 @@
         <a class="btn btn-primary" href="../paper/main.pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>Paper</a>
         <span class="btn btn-ghost" aria-disabled="true">arXiv<span class="soon">soon</span></span>
         <span class="btn btn-ghost" aria-disabled="true">Code<span class="soon">at release</span></span>
+        <a class="btn btn-ghost" href="#explainer" id="video-btn" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>Video</a>
         <a class="btn btn-ghost" href="#cite">BibTeX</a>
       </div>
       <div class="hero5-stats">
@@ -136,9 +137,13 @@
           <p>The <span class="t-near">near view</span> is a native-size window around the query, for edges and texture. The <span class="t-far">far view</span> is a native-size grid over the whole image, for layout. Every position offset stays in the trained range, and the cost grows linearly with the pixel count.</p>
           <p class="eqn">O<sub><i>i</i></sub> = &pi;<sub><i>h</i></sub>&thinsp;<span class="t-near">O<sup>near</sup></span> + (1 &minus; &pi;<sub><i>h</i></sub>)&thinsp;<span class="t-far">O<sup>far</sup></span></p>
         </div>
-        <figure class="step-visual vslot" data-vrole="method_window">
-          <div class="vslot-media panel"><div class="views" id="views"></div></div>
-          <figcaption data-vcap>At 4096&sup2;: <span data-num="config.grid_side_4096">256</span>&sup2; tokens, a <span data-num="config.window">64</span>&sup2; window (orange) and one grid key per <span data-num="config.native_ratio">4</span>&nbsp;&times;&nbsp;<span data-num="config.native_ratio">4</span> block (blue), to scale.</figcaption>
+        <figure class="step-visual comp-figure">
+          <p class="comp-note">Interactive: drag the query</p>
+          <div class="comp-fallback vslot" data-vrole="method_window">
+            <div class="vslot-media panel"><div class="views" id="views"></div></div>
+            <p class="caption" data-vcap>At 4096&sup2;: <span data-num="config.grid_side_4096">256</span>&sup2; tokens, a <span data-num="config.window">64</span>&sup2; window (orange) and one grid key per <span data-num="config.native_ratio">4</span>&nbsp;&times;&nbsp;<span data-num="config.native_ratio">4</span> block (blue), to scale.</p>
+          </div>
+          <div class="comp-mount" data-comp="views" data-options='{"size": 4096}'></div>
         </figure>
       </div>
       <div class="step stack">
@@ -214,13 +219,7 @@
       <div class="figcard" data-zoomable><img src="assets/img/v6/sizes_models.webp" width="2400" height="1047" loading="lazy" decoding="async" alt="Paper Figure 8: single-pass SCA on FLUX.1-dev and FLUX.1-Krea-dev at several sizes and SCA without the schedule on FLUX.2-dev, each with a native-pixel inset."></div>
       <figcaption><b>Sizes and checkpoints.</b> Single-pass SCA on FLUX.1-dev and FLUX.1-Krea-dev, SCA without the schedule on FLUX.2-dev; one prompt per setting naming no person, seed 0; insets at native pixels. At 6144&sup2; and 8192&sup2; samples show block and stripe artifacts.</figcaption>
     </figure>
-    <div class="sub-h">
-      <h3>Showcase at native pixels</h3>
-      <p>Progressive SCA at 4096&sup2;. Zoom any image to native pixels; the four windows are its most detailed regions.</p>
-      <p class="rule-note">The first image of the first three showcase categories (purpose-written prompts, seed 0).</p>
-    </div>
-    <div id="showcase-body" data-limit="3" data-no-sizes></div>
-    <p class="sc-more"><a class="chip" href="gallery.html">The full gallery<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+    <p class="sc-more"><a class="chip" href="gallery.html">Twelve showcase images at native pixels, in the gallery<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
   </div>
 </section>
 
@@ -280,29 +279,35 @@
       <figcaption class="cap-fallback">Seed 0. Clean: batch-1 median on one GH200; camp.: campaign mean; n/m: not measured. HPSv2.1 &times;100; MUSIQ<sub>c</sub> on 1024&sup2; crops; patch FID is our own definition. Bold best, underline second per group; <span class="sig-up-key">blue</span> / <span class="sig-dn-key">orange</span>: significantly better / worse than progressive SCA.</figcaption>
     </figure>
 
-    <div class="pair sub-h edges-pair" style="max-width:none">
+    <div class="pair sub-h" style="max-width:none">
       <figure>
         <h4>Both modes against AReA</h4>
         <div class="vfig" data-fig="gains"><img src="assets/img/v6/gains.svg" width="760" height="697" loading="lazy" decoding="async" alt="Paired differences of progressive and single-pass SCA from AReA over their per-prompt standard deviation, with 95% intervals."></div>
         <figcaption>Paired differences over their per-prompt SD, 95% intervals, <i>n</i>&nbsp;=&nbsp;<span data-num="tex.nmain">195</span>; filled / open: significant after / only before Holm&rsquo;s correction.</figcaption>
       </figure>
-      <div>
-        <h3 class="edges-h">Where it falls short</h3>
+      <figure class="comp-figure">
+        <h4>Seconds per image against image side</h4>
+        <div class="comp-fallback vfig" data-fig="scaling"><img src="assets/img/v6/scaling.svg" width="760" height="632" loading="lazy" decoding="async" alt="Clean seconds per image against image side for single-pass SCA, AReA and full attention, both axes logarithmic."></div>
+        <div class="comp-mount" data-comp="speed" data-options='{"side": 4096}'></div>
+        <figcaption class="cap-fallback">Clean batch-1 seconds per image on one GH200; single-pass SCA&rsquo;s time grows linearly with the pixel count.</figcaption>
+      </figure>
+    </div>
+    <div class="sub-h">
+      <h3>Where it falls short</h3>
+    </div>
     <ul class="edges">
       <li><b>Patch-level fidelity</b>Patch FID is higher than HRDiT&rsquo;s (<span data-num="tex.hlProgHrditFidP">+4.6</span> [<span data-num="tex.hlProgHrditFidPLo">0.6</span>, <span data-num="tex.hlProgHrditFidPHi">7.7</span>]) and single-pass SCA&rsquo;s (<span data-num="tex.hlProgScaFidP">+9.2</span> [<span data-num="tex.hlProgScaFidPLo">5.1</span>, <span data-num="tex.hlProgScaFidPHi">13.2</span>]); in its sampler, coarser weights have lower patch FID.</li>
       <li><b>Hand-set parts</b>The opening, window sizes and bridge are set by hand, the window sizes on a <span data-num="tex.nabl">46</span>-prompt subset of the evaluation set; only the weights are measured.</li>
       <li><b>Larger sizes</b>At 6144&sup2; and 8192&sup2; the samples show block and stripe artifacts.</li>
       <li><b>Single pass</b>In single-pass mode, small additional figures occasionally appear in scenes with people or animals; the progressive configuration reduces this to the level of the multi-stage baselines.</li>
     </ul>
-      </div>
-    </div>
   </div>
 </section>
 
 <!-- ================================================================ 08 more -->
 <section id="more" class="scr" aria-labelledby="h-more">
   <div class="wrap wide">
-    <figure class="vslot vblock" data-vrole="explainer" style="margin-bottom:clamp(64px,8vw,112px)" hidden>
+    <figure class="vslot vblock" id="explainer" data-vrole="explainer" style="margin-bottom:clamp(64px,8vw,112px)" hidden>
       <div class="sec-head"><p class="eyebrow"><span class="n">08</span>In two minutes</p><h2 class="display">The idea, start to finish</h2></div>
       <div class="vslot-media frame"></div>
       <figcaption data-vcap></figcaption>
@@ -345,15 +350,8 @@
 
 <script src="assets/js/numbers.js"></script>
 <script src="assets/js/v5_assets.js"></script>
-<script src="assets/js/images.js"></script>
 <script src="assets/js/media.js"></script>
-<script src="assets/js/showcase.js"></script>
-<script src="assets/js/process.js"></script>
-<script src="assets/js/traces.js"></script>
-<script src="assets/js/method_data.js"></script>
-<script src="assets/js/zoomsets.js"></script>
-<script src="assets/js/v6_figs.js"></script>
-<script src="assets/js/zoomgrid.js"></script>
+<script>window.SCA_DEFER = ["assets/js/images.js", "assets/js/showcase.js", "assets/js/process.js", "assets/js/traces.js", "assets/js/method_data.js", "assets/js/zoomsets.js", "assets/js/v6_figs.js", "assets/js/zoomgrid.js"];</script>
 <script src="assets/js/site.js"></script>
 </body>
 </html>

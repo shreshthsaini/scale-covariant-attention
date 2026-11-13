@@ -17,6 +17,11 @@ Main text at most 10 pages (now 9).
   site.css, site.js, sub-pages, numbers in line with paper v6.2), webinteractive (components percentiles, heads,
   emulate, table, speed under assets/js/c_*.js with demos in web/dev/), webmedia (videos and loops under
   assets/video/v5/ with manifest.json). Workers do not commit or publish.
+- User, 2026-11-13: "show in claud artifact first". Do NOT run publish_pages.sh until the user has seen the page as
+  a Claude Artifact and agreed. webdesign builds the artifact bundle (web/build/v5_artifact_bundle.py ->
+  /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle/, page.html + files.json chunks of at most 240 files /
+  55 MB); the lead publishes it with the Artifact tool (first chunk with the page, then further chunks to the same
+  url). webmedia is finished (18 videos in web/assets/video/v5/, manifest.json).
 - NEXT: when they report, the lead reads screenshots, sends corrections, has webdesign integrate components and
   videos, runs web/build/check_page.py, then publishes with `bash web/build/publish_pages.sh` and checks the live
   URL https://shreshthsaini.github.io/scale-covariant-attention/. Then HANDOVER Section 44, commit, push, sync.
