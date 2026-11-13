@@ -1510,6 +1510,72 @@ def check(quiet: bool) -> int:
     return len(flagged) + len(orphan)
 
 
+SNIPPETS = REPO / "paper" / "figures" / "snippets"
+NEWCMD = re.compile(r"\\(?:newcommand|renewcommand|providecommand)\*?\{\\([A-Za-z]+)\}\{")
+TEX_REPL = [(r"\,", " "), (r"\;", " "), (r"\ ", " "), ("~", " "), (r"\times", TIMES), (r"\%", "%"), ("$", ""),
+            ("{", ""), ("}", ""), (r"\textminus", MINUS), (r"\ensuremath", "")]
+
+
+def _tex_body(text: str, start: int):
+    """The brace-balanced body that starts at text[start] (just after its opening brace), or None."""
+    depth, i = 1, start
+    while i < len(text) and depth:
+        c = text[i]
+        if c == "\\":
+            i += 2
+            continue
+        depth += {"{": 1, "}": -1}.get(c, 0)
+        i += 1
+    return text[start:i - 1] if depth == 0 else None
+
+
+def _tex_display(body: str):
+    """Plain display text of a generated macro body, or None when it holds TeX logic (conditionals, refs, colour)."""
+    s = body.strip()
+    for a, b in TEX_REPL:
+        s = s.replace(a, b)
+    if "\\" in s or "#" in s or not s:
+        return None
+    s = re.sub(r"\s+", " ", s).strip()
+    s = re.sub(r"(?<![\w.])-(?=\d|\.\d)", MINUS, s)   # a minus before a number prints as U+2212, as everywhere else
+    return s
+
+
+def build_tex() -> None:
+    """tex.<name>: every argument-free macro the paper's generators write under paper/figures/snippets/ (the headline
+    numbers, Holm records, speed and attention numbers). These are the paper's own printed values, so the page's
+    headline numbers read them rather than recomputing; a macro defined twice with different text is an error."""
+    seen: dict[str, tuple[str, Path]] = {}
+    for path in sorted(SNIPPETS.rglob("*.tex")):
+        if path.name.startswith("_"):
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        text = re.sub(r"(?<!\\)%[^\n]*", "", text)   # drop comments
+        for m in NEWCMD.finditer(text):
+            name, body = m.group(1), _tex_body(text, m.end())
+            if body is None:
+                continue
+            disp = _tex_display(body)
+            if disp is None:
+                continue
+            if name in seen:
+                if seen[name][0] != disp:
+                    raise SystemExit(f"tex macro \\{name}: {seen[name][0]!r} in {rel(seen[name][1])} but {disp!r} "
+                                     f"in {rel(path)}")
+                continue
+            seen[name] = (disp, path)
+    main_tex = REPO / "paper" / "main.tex"   # the paper's sample sizes (\nmain, \nabl, \nhrgen) are set in its preamble
+    for m in re.finditer(r"\\newcommand\{\\(n[a-z]+)\}\{(\d+)\}", main_tex.read_text(encoding="utf-8")):
+        seen.setdefault(m.group(1), (m.group(2), main_tex))
+    for name, (disp, path) in sorted(seen.items()):
+        plain = disp.replace(MINUS, "-").replace(TIMES, "")
+        try:
+            value = float(plain) if re.fullmatch(r"[-+]?\d+(\.\d+)?", plain) else disp
+        except ValueError:
+            value = disp
+        put(f"tex.{name}", value, disp, path, f"paper macro \\{name} (generated; printed as is)")
+
+
 def write_outputs() -> None:
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JS.parent.mkdir(parents=True, exist_ok=True)
@@ -1576,6 +1642,7 @@ def main() -> None:
     ap.add_argument("--strict", action="store_true", help="exit 1 on an unexplained mismatch with the paper")
     args = ap.parse_args()
     build()
+    build_tex()
     write_outputs()
     bad = check(args.quiet)
     for path in args.fill:

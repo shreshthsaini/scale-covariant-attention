@@ -1,0 +1,43 @@
+/* Demo pages of the interactive components (web/dev/*.html) only. The tokens copy the designer's contract
+   (.agent/notes/web_v5/design.md); the real page defines them in assets/css/site.css. */
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url(../assets/fonts/inter-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url(../assets/fonts/inter-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url(../assets/fonts/inter-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url(../assets/fonts/inter-greek-400-normal.woff2) format("woff2"); unicode-range: U+0370-03FF; }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url(../assets/fonts/inter-greek-600-normal.woff2) format("woff2"); unicode-range: U+0370-03FF; }
+@font-face { font-family: "Source Serif 4"; font-style: normal; font-weight: 400; font-display: swap; src: url(../assets/fonts/source-serif-4-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Source Serif 4"; font-style: italic; font-weight: 400; font-display: swap; src: url(../assets/fonts/source-serif-4-latin-400-italic.woff2) format("woff2"); }
+@font-face { font-family: "Source Serif 4"; font-style: normal; font-weight: 600; font-display: swap; src: url(../assets/fonts/source-serif-4-latin-600-normal.woff2) format("woff2"); }
+:root {
+  --bg: #F4F3EE; --bg-raised: #FFFFFF; --bg-sunk: #EAE8E1; --ink: #111513; --ink-soft: #4F5853; --ink-faint: #7C847F; --rule: #DCD9CF;
+  --accent: #13865F; --accent-ink: #0B6B4A; --accent-soft: #DDEFE6; --on-accent: #FFFFFF; --near: #E08A2B; --far: #2F6DB3;
+  --area: #7A4EA3; --hrdit: #3D4541; --neutral: #8C9490; --screen: #0B0D0C; --screen-ink: #ECEEE9; --radius: 12px; --radius-sm: 6px;
+  --shadow: 0 1px 2px rgba(17,21,19,.06), 0 12px 32px rgba(17,21,19,.08);
+  --font-serif: "Source Serif 4", "Iowan Old Style", Georgia, serif; --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; --ease: cubic-bezier(.2,.7,.2,1);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B0D0C; --bg-raised: #141816; --bg-sunk: #070908; --ink: #ECEEE9; --ink-soft: #A5AEA8; --ink-faint: #727B76; --rule: #252B28;
+    --accent: #3DBB8C; --accent-ink: #5CD2A4; --accent-soft: #0F2A1F; --on-accent: #04130D; --near: #F0A04B; --far: #6FA3E0;
+    --area: #B592E3; --hrdit: #C9D0CB; --neutral: #7F8984; --shadow: 0 1px 2px rgba(0,0,0,.5), 0 14px 36px rgba(0,0,0,.45); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B0D0C; --bg-raised: #141816; --bg-sunk: #070908; --ink: #ECEEE9; --ink-soft: #A5AEA8; --ink-faint: #727B76; --rule: #252B28;
+  --accent: #3DBB8C; --accent-ink: #5CD2A4; --accent-soft: #0F2A1F; --on-accent: #04130D; --near: #F0A04B; --far: #6FA3E0;
+  --area: #B592E3; --hrdit: #C9D0CB; --neutral: #7F8984; --shadow: 0 1px 2px rgba(0,0,0,.5), 0 14px 36px rgba(0,0,0,.45); color-scheme: dark;
+}
+html { background: var(--bg); }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--font-sans); -webkit-text-size-adjust: 100%; }
+.dev-wrap { max-width: 1200px; margin: 0 auto; padding: 28px 16px 64px; }
+.dev-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 18px; }
+.dev-top h1 { margin: 0; font: 600 26px/1.15 var(--font-serif); letter-spacing: -.01em; }
+.dev-top p { margin: 4px 0 0; color: var(--ink-soft); font-size: 14px; }
+.dev-theme { border: 1px solid var(--rule); background: var(--bg-raised); color: var(--ink); border-radius: 999px; padding: 6px 12px; font: 500 13px var(--font-sans); cursor: pointer; }
+.dev-fig { margin: 0; padding: 20px; background: var(--bg-raised); border: 1px solid var(--rule); border-radius: var(--radius); }
+.dev-fig .comp-fallback { display: block; width: 100%; height: auto; }
+.dev-fig.is-live .comp-fallback { display: none; }
+.dev-spacer { height: 40px; }
+@media (max-width: 560px) { .dev-wrap { padding: 16px 16px 48px; } .dev-fig { padding: 12px; } .dev-top h1 { font-size: 21px; } }
