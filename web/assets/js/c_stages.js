@@ -70,9 +70,9 @@
     var range = el("input", "range", { type: "range", min: "0", max: "1", step: "1", value: "0", "aria-label": "Sampler step", disabled: true });
     var readout = el("div", "readout", { "aria-live": "polite" });
     var top = el("div", "top", null, [play, range]);
-    var tl = sv("svg", { cls: "tl", role: "img", "aria-label": "Noise level and mean weight at every step of the three stages" });
+    var tl = sv("svg", { cls: "tl", role: "img", height: "0", "aria-label": "Noise level and mean weight at every step of the three stages" });
     var tlBox = el("div", "tlbox", null, [tl]);
-    var hm = sv("svg", { cls: "hm", role: "img" });
+    var hm = sv("svg", { cls: "hm", role: "img", height: "0" });
     var hmBox = el("div", "hmbox", null, [hm]);
     var tip = el("div", "tip", { "aria-hidden": "true" });
     hmBox.appendChild(tip);
@@ -80,9 +80,12 @@
     var note = el("p", "note");
     root.appendChild(top); root.appendChild(readout); root.appendChild(tlBox); root.appendChild(hmHead); root.appendChild(hmBox); root.appendChild(note);
     if (REDUCED) play.hidden = true;
+    root.classList.toggle(P + "narrow", (root.clientWidth || 800) < 560);
+    root.classList.add(P + "loading");          /* reserves the final heights until the data arrives (no layout shift) */
 
     function fail() {
       if (!alive) return;
+      root.classList.remove(P + "loading");
       var fig = root.closest ? root.closest("figure") : null;
       if (fig && fig.querySelector(".comp-fallback")) { fig.classList.remove("is-live"); root.innerHTML = ""; return; }
       root.innerHTML = "";
@@ -113,6 +116,7 @@
         + st[0].size + "\u00b2, at r = " + st.filter(function (s) { return s.r; }).map(function (s) { return s.r; }).join(" and r = ")
         + ", interpolated in \u03c3 between its bins exactly as the sampler does. Rows: block " + D.block + "'s 24 heads by their mean r = 4 weight; the mean line covers all 1,368 heads.";
       render(); show(cur, true);
+      root.classList.remove(P + "loading");
     }
     function readColours() {
       C.ink = rgbOf(root, "--ink", "#111513"); C.soft = rgbOf(root, "--ink-soft", "#4F5853"); C.faint = rgbOf(root, "--ink-faint", "#7C847F");

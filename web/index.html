@@ -31,7 +31,7 @@
     </nav>
     <a class="nav-paper paper-link btn btn-ghost" href="../paper/main.pdf" style="height:34px;padding:0 14px;font-size:13px">Paper</a>
     <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch between light and dark theme">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+      <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg><svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
     </button>
   </div>
 </header>
@@ -40,10 +40,7 @@
 <!-- ================================================================ hero: deep zoom into 4096^2 images (assets/video/v5, role hero16x9 / hero9x16) -->
 <section class="hero5" aria-labelledby="h-title">
   <div class="hero5-media" id="hero-media">
-    <picture>
-      <source media="(max-width: 1099px), (max-aspect-ratio: 5/4)" srcset="assets/video/v5/hero_9x16.webp">
-      <img class="poster" src="assets/video/v5/hero_16x9.webp" alt="" width="1600" height="900" fetchpriority="high" decoding="async">
-    </picture>
+    <img class="poster" src="assets/video/v5/hero_16x9.webp" alt="" width="1600" height="900" fetchpriority="high" decoding="async">
     <div class="hero5-hud" aria-live="off">
       <span class="reticle-box" aria-hidden="true"><i></i></span>
       <span class="hud-text"><b id="hud-title">4096 &times; 4096</b><span id="hud-zoom">Progressive SCA, zooming to native pixels</span></span>
@@ -52,7 +49,7 @@
   </div>
   <div class="hero5-inner wrap wide">
     <div class="hero5-copy">
-      <p class="eyebrow">FLUX.1-dev at 4096&nbsp;&times;&nbsp;4096, no training</p>
+      <p class="eyebrow">Measured once at 1024&sup2;, reused at 4096&sup2;, no training</p>
       <h1 id="h-title">Reach Is a Property of the Head</h1>
       <p class="sub">Scale-Covariant Attention for High-Resolution Diffusion Transformers</p>
       <p class="authors">Anonymous authors, under review</p>
@@ -60,7 +57,7 @@
         <a class="btn btn-primary" href="../paper/main.pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>Paper</a>
         <span class="btn btn-ghost" aria-disabled="true">arXiv<span class="soon">soon</span></span>
         <span class="btn btn-ghost" aria-disabled="true">Code<span class="soon">at release</span></span>
-        <a class="btn btn-ghost" href="#explainer" id="video-btn" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>Video</a>
+        <a class="btn btn-ghost" href="#explainer" id="video-btn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>Video</a>
         <a class="btn btn-ghost" href="#cite">BibTeX</a>
       </div>
       <div class="hero5-stats">
@@ -114,7 +111,7 @@
     </div>
     <figure class="comp-figure obs-fig">
       <p class="comp-note">Interactive: hover or tap a head</p>
-      <div class="comp-fallback figcard" data-zoomable><img src="assets/img/v6/observation.webp" width="2400" height="829" loading="lazy" decoding="async" alt="Paper Figure 2: full attention of a near-reaching and a far-reaching head at three noise levels; the near share of all 1,368 heads over denoising; the variance split."></div>
+      <div class="comp-fallback figcard" data-zoomable><img data-src="assets/img/v6/observation.webp" width="2400" height="829" style="aspect-ratio:2400/829;width:100%;height:auto" decoding="async" alt="Paper Figure 2: full attention of a near-reaching and a far-reaching head at three noise levels; the near share of all 1,368 heads over denoising; the variance split."></div>
       <div class="comp-mount" data-comp="heads" data-options='{}'></div>
       <figcaption class="cap-fallback"><b>Each head keeps its reach across denoising steps.</b> The share of each head&rsquo;s attention within <span data-num="heads.var.radius">16</span> tokens of the query, after the first <span data-num="config.opening_steps">8</span> steps, <span data-num="calib.n_prompts">32</span> prompts.</figcaption>
     </figure>
@@ -134,7 +131,7 @@
         <div>
           <p class="step-k"><span class="n">1</span>Two views</p>
           <h3>A native-size window and a native-size grid</h3>
-          <p>The <span class="t-near">near view</span> is a native-size window around the query, for edges and texture. The <span class="t-far">far view</span> is a native-size grid over the whole image, for layout. Every position offset stays in the trained range, and the cost grows linearly with the pixel count.</p>
+          <p>The <span class="t-near">near view</span> is a native-size window around the query, for edges and texture. The <span class="t-far">far view</span> is a native-size grid over the whole image, for layout. Every offset in the window and the grid stays in the trained range, and the cost grows linearly with the pixel count.</p>
           <p class="eqn">O<sub><i>i</i></sub> = &pi;<sub><i>h</i></sub>&thinsp;<span class="t-near">O<sup>near</sup></span> + (1 &minus; &pi;<sub><i>h</i></sub>)&thinsp;<span class="t-far">O<sup>far</sup></span></p>
         </div>
         <figure class="step-visual comp-figure">
@@ -166,9 +163,13 @@
           <h3>Read at any size and sampler stage</h3>
           <p>One pass over <span data-num="calib.n_prompts">32</span> prompts fills the table at ratios 2 and 4. In HRDiT&rsquo;s sampler the 2048&sup2; stage reads ratio <span data-num="prog.cfg.ratio_2048">2</span> and the 4096&sup2; stage ratio <span data-num="prog.cfg.ratio_4096">4</span>. Tables from disjoint prompt halves correlate at <span data-num="tex.hlEmuSplitHalfTwo">0.989</span>.</p>
         </div>
-        <figure class="step-visual vslot" data-vrole="method_stages">
-          <div class="vslot-media panel"><div class="ptable" id="ptable"></div></div>
-          <figcaption data-vcap>The reach table, all <span data-num="calib.n_heads_c">1,368</span> heads. Move the noise level or switch the ratio: most heads keep their colour.</figcaption>
+        <figure class="step-visual comp-figure">
+          <p class="comp-note">Interactive: step through the run</p>
+          <div class="comp-fallback vslot" data-vrole="method_stages">
+            <div class="vslot-media panel"><div class="ptable" id="ptable"></div></div>
+            <p class="caption" data-vcap>The reach table, all <span data-num="calib.n_heads_c">1,368</span> heads. Move the noise level or switch the ratio: most heads keep their colour.</p>
+          </div>
+          <div class="comp-mount" data-comp="stages" data-options='{}'></div>
         </figure>
       </div>
     </div>
@@ -189,7 +190,7 @@
       <p class="rule-note">Nearest-rank deciles over all <span data-num="tex.nmain">195</span> prompts, seed 0, as in the paper&rsquo;s decile figures.</p>
     </div>
     <figure class="comp-figure">
-      <img class="comp-fallback" src="assets/data/percentiles/fallback.webp" width="1944" height="480" loading="lazy" decoding="async" alt="AReA, UltraImage, HRDiT and progressive SCA on the median prompt, whole images.">
+      <img class="comp-fallback" data-src="assets/data/percentiles/fallback.webp" width="1944" height="480" style="aspect-ratio:1944/480;width:100%;height:auto" decoding="async" alt="AReA, UltraImage, HRDiT and progressive SCA on the median prompt, whole images.">
       <div class="comp-mount" data-comp="percentiles" data-options='{"start": 50}'></div>
     </figure>
     <div class="sub-h">

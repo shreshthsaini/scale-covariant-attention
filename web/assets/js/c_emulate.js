@@ -95,9 +95,11 @@
     var body = el("div", "body", null, [maps, side]);
     var note = el("p", "note");
     root.appendChild(top); root.appendChild(body); root.appendChild(note);
+    root.classList.add(P + "loading");          /* reserves the final heights until the data arrives (no layout shift) */
 
     function fail() {
       if (!alive) return;
+      root.classList.remove(P + "loading");
       var fig = root.closest ? root.closest("figure") : null;
       if (fig && fig.querySelector(".comp-fallback")) { fig.classList.remove("is-live"); root.innerHTML = ""; return; }
       root.innerHTML = "";
@@ -138,6 +140,7 @@
         + "), not on this one map, and is shown rescaled between its minimum and maximum on [0, 1]. Maps exist for r = " + D.r + " only; r = 2 (2048\u00b2) enters through J alone. ")]));
       note.appendChild(tog);
       setHead(opts.head && opts.head >= 1 && opts.head <= D.heads.length ? opts.head : F.mid, true);
+      root.classList.remove(P + "loading");
     }
     function readColours() {
       C.ink = rgbOf(root, "--ink", "#111513"); C.soft = rgbOf(root, "--ink-soft", "#4F5853"); C.faint = rgbOf(root, "--ink-faint", "#7C847F");

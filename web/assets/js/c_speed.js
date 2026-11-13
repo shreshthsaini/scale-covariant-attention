@@ -63,9 +63,13 @@
     var read = el("p", "sr", { "aria-live": "polite" });
     var note = el("p", "note");
     root.appendChild(plot); root.appendChild(ratios); root.appendChild(note); root.appendChild(read);
+    var w0 = root.clientWidth || 800;
+    root.classList.toggle(P + "narrow", w0 < 560); root.classList.toggle(P + "below", w0 < 760);
+    root.classList.add(P + "loading");          /* reserves the final heights until the data arrives (no layout shift) */
 
     function fail() {
       if (!alive) return;
+      root.classList.remove(P + "loading");
       var fig = root.closest ? root.closest("figure") : null;
       if (fig && fig.querySelector(".comp-fallback")) { fig.classList.remove("is-live"); root.innerHTML = ""; return; }
       root.innerHTML = "";
@@ -85,6 +89,7 @@
       render();
       var s0 = opts.side === null ? -1 : D.sides.indexOf(opts.side || 4096);
       if (s0 >= 0) show(s0, true);
+      root.classList.remove(P + "loading");
     }
     var x0 = 0, x1 = 0, y0 = 0, y1 = 0;
     function X(s) { return G.L + (Math.log(s) - x0) / (x1 - x0) * (G.w - G.L - G.R); }
@@ -92,9 +97,11 @@
     function render() {
       var w = plot.clientWidth || 700, h = plot.clientHeight || 380, narrow = w < 560;
       G.w = w; G.h = h; G.R = narrow ? 92 : 150; G.L = narrow ? 38 : 46;
+      var below = w < 760;                    /* below this width the readout sits under the chart, not over it */
       root.classList.toggle(P + "narrow", narrow);
-      if (narrow && tip.parentNode !== root) root.insertBefore(tip, note);
-      if (!narrow && tip.parentNode !== plot) plot.appendChild(tip);
+      root.classList.toggle(P + "below", below);
+      if (below && tip.parentNode !== root) root.insertBefore(tip, note);
+      if (!below && tip.parentNode !== plot) plot.appendChild(tip);
       x0 = Math.log(D.sides[0] / 1.13); x1 = Math.log(D.sides[D.sides.length - 1] * 1.09);
       y0 = Math.log(11); y1 = Math.log(1500);
       svg.setAttribute("viewBox", "0 0 " + w + " " + h); svg.setAttribute("width", w); svg.setAttribute("height", h);
@@ -178,7 +185,7 @@
       tip.appendChild(el("span", "tip-x", { text: "Single-pass SCA " + D.ratio_t[s] + "\u00d7 faster than AReA" }));
       if (s === 4096) tip.appendChild(el("span", "tip-x tip-p", { text: "Progressive SCA " + D.prog.area + "\u00d7 faster than AReA, " + D.prog.hrdit + "\u00d7 than HRDiT" }));
       tip.classList.add(P + "on");
-      tip.style.transform = root.classList.contains(P + "narrow") ? "" : "translate(" + Math.round(G.L + 10) + "px," + Math.round(G.T) + "px)";
+      tip.style.transform = root.classList.contains(P + "below") ? "" : "translate(" + Math.round(G.L + 10) + "px," + Math.round(G.T) + "px)";
       if (!quiet) read.textContent = tip.textContent;
     }
     function hide() {

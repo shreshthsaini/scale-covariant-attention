@@ -66,10 +66,12 @@
     var note = el("p", "note");
     var live = el("p", "sr", { "aria-live": "polite" });
     root.appendChild(top); root.appendChild(wrap); root.appendChild(note); root.appendChild(live);
+    root.classList.add(P + "loading");          /* reserves the final heights until the data arrives (no layout shift) */
     for (var s = 0; s < 9; s++) tableEl.appendChild(el("tr", "skel-r", null, [el("td", null, { html: "&nbsp;" })]));
 
     function fail() {
       if (!alive) return;
+      root.classList.remove(P + "loading");
       var fig = root.closest ? root.closest("figure") : null;
       if (fig && fig.querySelector(".comp-fallback")) { fig.classList.remove("is-live"); root.innerHTML = ""; return; }
       root.innerHTML = "";
@@ -94,6 +96,7 @@
         e.preventDefault(); setTab(tab === "main" ? "gen" : "main"); tabs.querySelector('[aria-selected="true"]').focus();
       });
       setTab(tab, true);
+      root.classList.remove(P + "loading");
     }
     function T() { return D[tab]; }
     function setTab(t, first) {

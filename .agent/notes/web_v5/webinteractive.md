@@ -139,7 +139,9 @@ b = 0.99), AReA (purple, b = 1.12), full attention (neutral, b = 1.60, not run a
 slowest of three timed images; progressive SCA (accent star, 49.2 s) and HRDiT (107.0 s) at 4096^2. Hover, tap or
 arrow keys pick a size: a readout lists every method's seconds there, single-pass SCA's speed-up over AReA (2.07,
 2.58, 2.63, 2.76, 3.07) and at 4096^2 progressive SCA's 4.1x over AReA and 2.2x over HRDiT (sweep 3). A row of
-ratio chips under the x axis (aligned to sizes on desktop, a strip on phones).
+ratio chips under the x axis (aligned to sizes on desktop, a strip on phones). The readout floats in the chart's
+empty top-left corner when the component is at least 760 px wide and sits under the chart when narrower (the page's
+results column is about 640 px, so there it sits under the chart).
 Source: paper/figures/src/v6_scaling.py load / derived / checks (the build runs the paper's checks: tab:latency,
 headline macros, exponents, "fastest at every size"); nothing typed.
 Checked: values above; no console errors; no overflow; 466 px at 1440x900, 610 px at 390x844.
@@ -190,6 +192,11 @@ Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_b
 Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/stages_{desk,phone}_{light,dark}_*.png
 
 ## Integration on the page (checked with web/build/v5_check_components.py --page index.html)
+Latest run: heads, views, emulate, percentiles, table and speed are live on index.html at 1440x900 and 390x844 in
+both themes; component heights on the page (desktop / phone): heads 608 / 730, views 589 / 919, emulate 715 / 771,
+percentiles 723 / 705, table 543 / 781, speed 640 / 666. Screenshots: /scratch/09032/saini_2/sca/web_builds/
+v5_webinteractive_1/final/page_index_<name>_{desk,phone}_{light,dark}.png; the full demo-page run is in the same
+folder (<name>_<view>_<theme>_<n>_<state>.png) with its log in ../final_check.jsonl.
 heads, emulate, percentiles and table are mounted by the designer and go live (is-live) at 1440x900 and 390x844 in
 both themes with no console errors from the components (the only request failures are the .mp4 files: Playwright's
 Chromium has no H.264, so they are test artifacts, not page errors). I reran web/build/build_v5_assets.py (it says

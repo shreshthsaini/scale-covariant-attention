@@ -39,6 +39,25 @@ Qwen-Image beside the same model, Ideogram placeholders, labelled exploratory. r
 - Videos: `<figure data-vrole=ROLE [data-vrole-portrait=ROLE2]>` with `.vslot-media`; loops are preload="none" and
   play while visible; captions from the manifest (typographic x, pi) unless the figcaption has data-keep.
 
+## Artifact preview bundle (user request via the coordinator, 18:00)
+- Script: web/build/v5_artifact_bundle.py (build with any python; `--check` with the pwqa env runs the browser check).
+- Bundle: /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle/ (page.html + assets/...), manifest
+  bundle/files.json ({"chunks": [...]}, page.html excluded). Last build: 447 files, 65.5 MB, 3 chunks
+  (240 files 9.8 MB; 202 files 54.8 MB; 4 files 0.9 MB). Rebuilt in place, never deleted: files.json is the list.
+- page.html: no doctype/html/head/body; starts with <title>Scale-Covariant Attention</title> and
+  <meta name="claude:viewport-fit-sides" content="cover">; links to the paper, gallery, results, exploratory and the
+  96-prompt review go to https://shreshthsaini.github.io/scale-covariant-attention/ (target _blank, "on the live
+  site" note). Trims: percentile tiles only at the 10th, 50th, 90th stops; eight-method grid overviews only; no
+  v4 teaser, explainer or trace videos (media.js and traces.js are empty bundle copies). zoomgrid.js stops at the
+  overview resolution for any grid without tiles (same file on the site; no change there, every site grid has tiles).
+- Check (bundle served on 127.0.0.1, wrapped in a minimal skeleton, other hosts blocked): 1440x900 and 400x844,
+  light and dark: no console errors, no failed requests, no external requests, no overflow, all six components
+  live, 7 videos. Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_artifact/shot_{1440,400}_{light,dark}.png.
+- Contract changes made on the real site too (one stylesheet): hero sized to content, min(82svh, 880px) on wide
+  screens and a 16:10 media box plus copy on phones (next section peeks in); wrappers padded
+  max(16px, var(--gutter), env(safe-area-inset-*)); tokens on :root, dark under the guarded media query and
+  [data-theme="dark"] (already so); body background from --bg; localStorage only inside try/catch.
+
 ## Rebuild
 PY=/work/09032/saini_2/vista/library/uv-envs/sca/bin/python; PW: prefix PLAYWRIGHT_BROWSERS_PATH=/scratch/09032/saini_2/tmp/ms-playwright to /work/09032/saini_2/vista/library/uv-envs/pwqa/bin/python
 1. $PY web/build/build_numbers.py --fill web/index.html --fill web/gallery.html --fill web/results.html --fill web/exploratory.html

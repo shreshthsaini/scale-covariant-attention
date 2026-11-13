@@ -110,7 +110,14 @@
       });
     }
     function s0(P) { return Math.min(P.pw / W, P.ph / H) || 1e-6; }
-    function zmax() { var P = panels[0]; return Math.max(2, (6 / dpr()) / s0(P)); }
+    function zmax() {
+      var P = panels[0], hi = Math.max(2, (6 / dpr()) / s0(P));
+      if (!P.p.tiles && !(P.p.rt && P.p.rt.length)) {   /* no native tiles: stop where the overview runs out of pixels */
+        var ow = (P.img && P.img.naturalWidth) || (P.p.vs && P.p.vs[0]) || W;
+        hi = Math.min(hi, Math.max(1.5, 1.25 * (ow / W) / dpr() / s0(P)));
+      }
+      return hi;
+    }
     function clampSt() {
       var P = panels[0];
       st.z = clamp(st.z, 1, zmax());

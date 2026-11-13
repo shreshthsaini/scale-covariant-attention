@@ -120,8 +120,8 @@
      only under reduced motion until the visitor presses play */
   (function heroMedia() {
     var box = $("#hero-media"); if (!box) return;
-    var portrait = window.matchMedia && matchMedia("(max-aspect-ratio: 4/5)").matches;
-    var m = (portrait && v5video("hero9x16")) || v5video("hero16x9") || v5video("hero9x16"), src = null, poster = null;
+    var vb = $("#video-btn"); if (vb && !v5video("explainer")) vb.hidden = true;   /* shown in the HTML; hidden only if the explainer is missing */
+    var m = v5video("hero16x9") || v5video("hero9x16"), src = null, poster = null;   /* the box is 16:10 on phones too */
     if (m) { src = m.file; poster = m.poster; }
     else if (MEDIA.teaser && MEDIA.teaser.zoom) { src = MEDIA.teaser.zoom.mp4; poster = MEDIA.teaser.zoom.poster; }
     var pim = $("img.poster", box);
@@ -980,6 +980,10 @@
   (function comps() {
     var mounts = $$(".comp-mount[data-comp]"), C = V5.comps || {}; if (!mounts.length) return;
     var state = {};
+    function fallback(m) {   /* static images held back by data-src load only when their component is absent or fails */
+      var fig = m.closest(".comp-figure"); if (!fig) return;
+      $$("img[data-src]", fig).forEach(function (im) { if (!im.getAttribute("src")) im.src = im.getAttribute("data-src"); });
+    }
     function ensure(name, cb) {
       var c = C[name]; if (!c || !c.js) return;
       var st = state[name];
@@ -989,7 +993,7 @@
       if (c.css) document.head.appendChild(el("link", { rel: "stylesheet", href: c.css }));
       var s = document.createElement("script"); s.src = c.js; s.async = true;
       s.onload = function () { st.ready = true; st.q.splice(0).forEach(function (f) { f(); }); };
-      s.onerror = function () { st.q = []; };
+      s.onerror = function () { st.q = []; $$('.comp-mount[data-comp="' + name + '"]').forEach(fallback); };
       document.head.appendChild(s);
     }
     function mount(m) {
@@ -997,8 +1001,8 @@
       try { opts = JSON.parse(m.getAttribute("data-options") || "{}"); } catch (e) { opts = {}; }
       ensure(name, function () {
         var f = window.SCAComp && window.SCAComp[name]; if (typeof f !== "function") return;
-        try { m._comp = f(m, opts); var fig = m.closest(".comp-figure"); if (fig && m.children.length) fig.classList.add("is-live"); }
-        catch (e) { m.innerHTML = ""; }
+        try { m._comp = f(m, opts); var fig = m.closest(".comp-figure"); if (fig && m.children.length) fig.classList.add("is-live"); else fallback(m); }
+        catch (e) { m.innerHTML = ""; fallback(m); }
       });
     }
     /* observe the figure, not the mount: an empty mount is display:none and never intersects */
@@ -1006,7 +1010,7 @@
       es.forEach(function (en) { if (en.isIntersecting) { io.unobserve(en.target); mount(en.target._mount); } });
     }, { rootMargin: "900px 0px 900px 0px" }) : null;
     mounts.forEach(function (m) {
-      if (!C[m.getAttribute("data-comp")]) return;
+      if (!C[m.getAttribute("data-comp")]) { fallback(m); return; }
       var t = m.closest(".comp-figure") || m.parentNode; t._mount = m;
       if (io) io.observe(t); else mount(m);
     });

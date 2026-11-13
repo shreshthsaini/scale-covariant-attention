@@ -74,9 +74,11 @@
     var body = el("div", "body", null, [mainBox, side]);
     var note = el("p", "note");
     root.appendChild(top); root.appendChild(body); root.appendChild(note);
+    root.classList.add(P + "loading");          /* reserves the final heights until the data arrives (no layout shift) */
 
     function fail() {
       if (!alive) return;
+      root.classList.remove(P + "loading");
       var fig = root.closest ? root.closest("figure") : null;
       if (fig && fig.querySelector(".comp-fallback")) { fig.classList.remove("is-live"); root.innerHTML = ""; return; }
       root.innerHTML = "";
@@ -115,6 +117,7 @@
         + "One token is " + D.patch + " \u00d7 " + D.patch + " pixels; queries share a window per " + D.tile + " \u00d7 " + D.tile + "-token tile. "
         + "The grid inset lays the " + D.patch + "-pixel patch of every block-centre token side by side.";
       setSize(S, true);
+      root.classList.remove(P + "loading");
     }
     function readColours() {
       C.near = rgbOf(root, "--near", "#E08A2B"); C.far = rgbOf(root, "--far", "#2F6DB3"); C.screen = rgbOf(root, "--screen", "#0B0D0C");

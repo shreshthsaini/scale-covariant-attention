@@ -97,10 +97,12 @@
     var body = el("div", "body", null, [left, side]);
     var note = el("p", "note");
     root.appendChild(body); root.appendChild(note);
+    root.classList.add(P + "loading");          /* reserves the final heights until the data arrives (no layout shift) */
 
     /* ------------------------------------------------------------ data */
     function fail() {
       if (!alive) return;
+      root.classList.remove(P + "loading");
       var fig = root.closest ? root.closest("figure") : null;
       if (fig && fig.querySelector(".comp-fallback")) { fig.classList.remove("is-live"); root.innerHTML = ""; return; }
       root.innerHTML = "";
@@ -138,6 +140,7 @@
       tog.addEventListener("click", function () { var o = root.classList.toggle(P + "open"); tog.setAttribute("aria-expanded", String(o)); tog.textContent = o ? "Less" : "About these numbers"; });
       note.appendChild(tog);
       readColours(); setView(view, true); select(sel, true);
+      root.classList.remove(P + "loading");
     }
 
     function readColours() {

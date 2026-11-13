@@ -117,10 +117,12 @@
       skel.style.setProperty("--c-pct-cols", cols);
     }
     fit();
+    root.classList.add(P + "loading");          /* reserves the final heights until the data arrives (no layout shift) */
 
     /* ------------------------------------------------------------ data */
     function fail() {
       if (!alive) return;
+      root.classList.remove(P + "loading");
       var fig = root.closest ? root.closest("figure") : null;
       if (fig && fig.querySelector(".comp-fallback")) { fig.classList.remove("is-live"); root.innerHTML = ""; return; }
       root.innerHTML = "";
@@ -160,6 +162,7 @@
       D.stops.forEach(function (st, i) { if (st.p === startP) k = i; });
       range.value = String(k);
       show(k, true);
+      root.classList.remove(P + "loading");
     }
 
     /* ------------------------------------------------------------ strip chart of all sorted differences */
