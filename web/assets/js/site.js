@@ -596,9 +596,12 @@
       if (cur) { cur.destroy(); cur = null; }
       host.innerHTML = ""; meta.innerHTML = "";
       $$("button", thumbs).forEach(function (b, i) { b.setAttribute("aria-pressed", String(i === at)); });
-      cur = zgrid({ size: z.size, panels: z.panels.filter(function (p) { return on[p.m]; }), regions: z.regions, alt: z.prompt, minW: 200, label: "Every method on one prompt; zoom moves every panel" });
+      /* single-pass SCA is shown only for prompts that name no person (the page's rule; the progressive configuration
+         is the one the paper evaluates on people) */
+      var person = PERSON.test(z.prompt || "");
+      cur = zgrid({ size: z.size, panels: z.panels.filter(function (p) { return on[p.m] && !(person && p.m === "sca"); }), regions: z.regions, alt: z.prompt, minW: 200, label: "Every method on one prompt; zoom moves every panel" });
       host.appendChild(cur.el);
-      meta.appendChild(metaRow(["Prompt " + (at + 1) + " of " + Z.length, "FLUX.1-dev", sizeLabel(z.size), "seed 0"], false));
+      meta.appendChild(metaRow(["Prompt " + (at + 1) + " of " + Z.length, "FLUX.1-dev", sizeLabel(z.size), "seed 0"].concat(person ? ["single pass not shown: the prompt names a person"] : []), false));
       meta.appendChild(el("p", { class: "prompt" }, [el("q", { text: z.prompt })]));
     }
     render();
@@ -616,6 +619,14 @@
       });
     }
     var legacy = false;
+    if (!list.length) {   /* v5 process videos (webmedia manifest roles process_<n>): final image beside the run */
+      var VV = (window.SCA_V5 || {}).videos || {};
+      list = Object.keys(VV).filter(function (k) { return /^process/.test(k) && VV[k].file; }).sort().map(function (k) {
+        var x = VV[k];
+        return { sid: k, prompt: x.prompt || x.alt || "", mp4: x.file, poster: x.poster, still: x.still || null, size: x.size || [4096, 4096],
+                 model: x.model || "FLUX.1-dev", seed: x.seed === undefined ? 0 : x.seed, label: x.label || "Progressive SCA beside AReA", title: x.title || "", caption: x.caption || "" };
+      });
+    }
     if (!list.length) {
       var TR = window.SCA_TRACES || {}, byId = {};
       (TR.available || []).forEach(function (v) { if (v.kind === "vs_area") byId[v.sid] = v; });
@@ -888,9 +899,15 @@
 
   /* v5 videos from assets/video/v5/manifest.json (through assets/js/v5_assets.js): a figure with data-vrole="<role>"
      swaps its static fallback for the video once the file exists */
+  function pretty(t) {   /* manifest captions are plain ASCII: typographic times, pi and squares */
+    return String(t || "").replace(/(\d) x (\d)/g, "$1 × $2").replace(/\bpi\*/g, "π*").replace(/\bpi\b/g, "π")
+      .replace(/(\d)x faster/g, "$1× faster").replace(/ - /g, ", ");
+  }
   (function vslots() {
+    var portrait = window.matchMedia && matchMedia("(max-aspect-ratio: 4/5)").matches;
     $$("[data-vrole]").forEach(function (fig) {
-      var m = v5video(fig.getAttribute("data-vrole")); if (!m) return;
+      var m = (portrait && fig.getAttribute("data-vrole-portrait") && v5video(fig.getAttribute("data-vrole-portrait"))) || v5video(fig.getAttribute("data-vrole"));
+      if (!m) return;
       var box = $(".vslot-media", fig); if (!box) return;
       var v;
       if (m.loop) v = loopVideo(m.file, m.poster, m.alt || "", false);
@@ -902,8 +919,9 @@
       if (m.width && m.height) { v.setAttribute("width", m.width); v.setAttribute("height", m.height); v.style.aspectRatio = m.width + " / " + m.height; }
       box.innerHTML = ""; box.appendChild(v);
       fig.classList.add("has-video"); fig.hidden = false;
+      var row = fig.closest(".vrow"); if (row) row.hidden = false;
       if (m.loop && REDUCED) v.removeAttribute("autoplay");
-      var cap = $("[data-vcap]", fig); if (cap && m.caption) cap.textContent = m.caption;
+      var cap = $("[data-vcap]", fig); if (cap && m.caption && !cap.hasAttribute("data-keep")) cap.textContent = pretty(m.caption);
     });
   })();
 

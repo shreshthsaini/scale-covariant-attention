@@ -1,0 +1,69 @@
+WEBVTT
+
+1
+00:00:00.600 --> 00:00:04.800
+FLUX.1-dev at 4096 × 4096 without training: only the attention changes.
+
+2
+00:00:05.000 --> 00:00:08.900
+FLUX.1-dev is trained near 1024 × 1024, a grid of 64 × 64 tokens.
+
+3
+00:00:08.900 --> 00:00:13.000
+Run directly at 4096 × 4096, full attention sees 16 times the tokens and offsets up to 255, where training saw 63.
+
+4
+00:00:13.000 --> 00:00:17.600
+Split one query's keys into near and far: the near share is that head's reach.
+
+5
+00:00:17.600 --> 00:00:22.400
+Over 1,368 heads and every noise level, which head it is explains 97.5% of the variance.
+
+6
+00:00:22.400 --> 00:00:27.000
+The noise level explains 2.5%; a schedule shared by all heads, 0.7%.
+
+7
+00:00:27.000 --> 00:00:31.000
+SCA gives each head two native-size views: a window around the query and a grid over the whole image.
+
+8
+00:00:31.000 --> 00:00:35.000
+Each head mixes the two by its own reach π.
+
+9
+00:00:35.000 --> 00:00:39.600
+Measure once at 1024 × 1024, where full attention is still the reference: both views shrink by r.
+
+10
+00:00:39.600 --> 00:00:44.200
+The best weight has a closed form, π* = clip(B/A, 0, 1), and fills the reach table.
+
+11
+00:00:44.200 --> 00:00:48.950
+Generate at any size: progressive SCA keeps HRDiT's three sampler stages.
+
+12
+00:00:48.950 --> 00:00:53.700
+The 2048² and 4096² stages read the same reach table, at r = 2 and r = 4.
+
+13
+00:00:53.700 --> 00:01:02.700
+49.2 s per 4096² image on one GH200: 4.1× faster than AReA, 2.2× faster than HRDiT.
+
+14
+00:01:02.700 --> 00:01:06.900
+In AReA's 202.4 s for one image, progressive SCA finishes four.
+
+15
+00:01:06.900 --> 00:01:10.600
+Better than AReA on all ten per-image metrics, at each of three seeds.
+
+16
+00:01:10.600 --> 00:01:14.400
+Statistically indistinguishable from HRDiT on three preference scores, in 46% of its time.
+
+17
+00:01:14.400 --> 00:01:20.500
+A 4096 × 4096 progressive SCA image, from the whole frame to native pixels.

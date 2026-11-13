@@ -1920,6 +1920,66 @@
    }
   },
   {
+   "id": "hero_16x9_tagged",
+   "order": 12,
+   "file": "hero_16x9_tagged.mp4",
+   "poster": "hero_16x9_tagged.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 20.1,
+   "fps": 30.0,
+   "loop": true,
+   "bytes": 2477964,
+   "poster_bytes": 76554,
+   "alt": "Deep zoom into 3 images generated at 4096 by 4096 pixels with progressive SCA (blacksmith, great horned owl, glacier ice cave): each starts whole, zooms to native pixels at a detailed spot, and zooms back out. A tag reads 4096 by 4096 and a zoom indicator reaches 1:1 native pixels.",
+   "caption": "Progressive SCA at 4096 x 4096, from the whole image to native pixels and back. Images: one showcase prompt per category by seeded draw (the paper hero's rule); zoom target: the 1600 x 900 window of highest edge energy.",
+   "sources": [
+    {
+     "id": "sc_h04_blacksmith",
+     "png": "/scratch/09032/saini_2/sca/out/showcase/flux1_sca_v2_prog/4096x4096/sc_h04_blacksmith_a2c8735d4e_seed0.png",
+     "png_sha256": "21e06c90f4f530f5602d99926a64e4edbc1d2212304f8b3be9bdbdf8a91e80ca",
+     "window_px": [
+      1968,
+      2888,
+      1600,
+      900
+     ]
+    },
+    {
+     "id": "sc_a03_owl",
+     "png": "/scratch/09032/saini_2/sca/out/showcase/flux1_sca_v2_prog/4096x4096/sc_a03_owl_5c263642fe_seed0.png",
+     "png_sha256": "96096dc6ccf60b3896ead926778c8d5dbfd0f7769ded4b00cc28782f00a9aa80",
+     "window_px": [
+      1392,
+      1304,
+      1600,
+      900
+     ]
+    },
+    {
+     "id": "sc_l10_ice_cave",
+     "png": "/scratch/09032/saini_2/sca/out/showcase/flux1_sca_v2_prog/4096x4096/sc_l10_ice_cave_b3b302fad3_seed0.png",
+     "png_sha256": "5107d38958cddaf6d59f78353c0aa1c4645566e39340d92bc77cd9178d210718",
+     "window_px": [
+      1184,
+      2536,
+      1600,
+      900
+     ]
+    }
+   ],
+   "script": "web/build/v5_hero_tagged.py",
+   "sha256": "dbf8ca4003bafcbd22986f6f3c0706add0901d3e7a00f45ddfb036314b3aae34",
+   "role": "hero16x9_tagged",
+   "variant_of": "hero_16x9",
+   "note": "fallback with the tag and zoom indicator burned in; the clean loop is the default (design.md)",
+   "encode": {
+    "mode": "2pass",
+    "kbps": 960,
+    "bytes": 2477964
+   }
+  },
+  {
    "id": "speedrace_16x9",
    "order": 20,
    "file": "speedrace_16x9.mp4",
@@ -2188,10 +2248,10 @@
    "poster": "method_emulation.webp",
    "width": 1600,
    "height": 900,
-   "seconds": 9.7,
+   "seconds": 9.8,
    "fps": 30.0,
    "loop": true,
-   "bytes": 638591,
+   "bytes": 646263,
    "poster_bytes": 68780,
    "alt": "Reach emulation at 1024 by 1024: a head's full attention at one query, its window and grid shrinking by a factor of four, and the weight between them sliding along an error parabola until it settles at its minimum.",
    "caption": "Reach emulation: at 1024 x 1024 both views shrink by r (window 16 tokens, grid stride 4 for r = 4) and the weight that best matches full attention has a closed form, pi* = clip(B/A, 0, 1) = 0.79 for block 12, head 10. Real attention of one query, real sums over 32 prompts.",
@@ -2218,12 +2278,12 @@
     }
    },
    "script": "web/build/v5_method.py",
-   "sha256": "3f381ce833aea14f5b767f337710aa8a579f95ff398c4095dbe3c42b20e0e6ff",
+   "sha256": "bb2840ae49c342ab485c14c285b64d4d3e4edf82ae60be8dee32dd89b4ce3ab1",
    "role": "method_emulation",
    "encode": {
     "mode": "crf",
     "crf": 18,
-    "bytes": 638591
+    "bytes": 646263
    }
   },
   {
@@ -2233,10 +2293,10 @@
    "poster": "method_stages.webp",
    "width": 1600,
    "height": 900,
-   "seconds": 11.3,
+   "seconds": 10.1,
    "fps": 30.0,
    "loop": true,
-   "bytes": 1667819,
+   "bytes": 1581866,
    "poster_bytes": 145740,
    "alt": "A progressive SCA run: the image estimate grows from 1024 to 2048 to 4096 pixels, and a grid of 1,368 head weights lights up in orange and blue once the 2048 and 4096 stages read the reach table.",
    "caption": "Progressive SCA keeps HRDiT's three stages: 30 steps at 1024 x 1024 with the model's own attention, then 17 at 2048 x 2048 reading the reach table at r = 2 and 10 at 4096 x 4096 at r = 4. Recorded run of the first paper-hero prompt with a trace.",
@@ -2246,13 +2306,605 @@
     "rule": "first draw of the paper hero's rule (v6_hero.draw, category order) with a trace"
    },
    "script": "web/build/v5_method.py",
-   "sha256": "ff826f6d2085d4420a45f7c6c7dc9b4e9deff581304ea5d18f7dda9756a3cf31",
+   "sha256": "be00f59e2bc78eaa0f9c536858fe308a16629745ac8e10457459221fcfa36025",
    "role": "method_stages",
    "encode": {
     "mode": "crf",
     "crf": 18,
-    "bytes": 1667819
+    "bytes": 1581866
    }
+  },
+  {
+   "id": "compare_p25",
+   "order": 40,
+   "file": "compare_p25.mp4",
+   "poster": "compare_p25.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 9.8,
+   "fps": 30.0,
+   "loop": true,
+   "bytes": 2242116,
+   "poster_bytes": 97276,
+   "alt": "AReA, HRDiT and progressive SCA images of the same prompt side by side (25th percentile prompt), zooming together from the whole 4096 by 4096 images into the same detail at native pixels.",
+   "caption": "25th percentile prompt of the paired ImageReward gain of progressive SCA over AReA (the rows of the paper's Figure 5). Synchronized push-in to native pixels on the window of highest edge energy averaged over the three images. Clean seconds per 4096 x 4096 image on one GH200.",
+   "sources": {
+    "images": {
+     "area": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_minus1066207185399086750_d6e8faefc5_seed0.png",
+     "hrdit_dev_author": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_minus1066207185399086750_d6e8faefc5_seed0.png",
+     "sca_v2_prog": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus1066207185399086750_d6e8faefc5_seed0.png"
+    },
+    "prompt": "A woman with styled hair wears elegant glasses and multiple pieces of silver jewelry, including dangling earrings and layered necklaces, against a textured gray background.",
+    "prompt_id": "a4k_eval_4096_minus1066207185399086750",
+    "seed": 0,
+    "ir_difference": 0.0129,
+    "selection_rule": "the evaluation prompts at the 25th, 50th and 75th percentile (nearest rank) of the paired ImageReward difference, progressive SCA minus AReA, over the 195 prompts at seed 0",
+    "provenance": "paper/figures/v6/qual_main_provenance.json",
+    "window_px": [
+     1536,
+     3352,
+     488,
+     488
+    ],
+    "window_rule": "v6_common.best_windows over the three images' detail maps",
+    "seconds": {
+     "area": {
+      "display": "202.4"
+     },
+     "hrdit_dev_author": {
+      "display": "107.0"
+     },
+     "sca_v2_prog": {
+      "display": "49.2"
+     }
+    }
+   },
+   "script": "web/build/v5_compare.py",
+   "sha256": "b25df903058846024a1ab0a316ee52a1843a4fd41c07987d01acd6994cdba3b0",
+   "role": "compare_1",
+   "percentile": 25,
+   "encode": {
+    "mode": "crf",
+    "crf": 20,
+    "bytes": 2242116
+   },
+   "timing": {
+    "whole": 1.0,
+    "push_in": 6.2,
+    "native": 1.8,
+    "back": 0.8
+   }
+  },
+  {
+   "id": "compare_p50",
+   "order": 41,
+   "file": "compare_p50.mp4",
+   "poster": "compare_p50.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 9.8,
+   "fps": 30.0,
+   "loop": true,
+   "bytes": 2487270,
+   "poster_bytes": 142438,
+   "alt": "AReA, HRDiT and progressive SCA images of the same prompt side by side (50th percentile prompt), zooming together from the whole 4096 by 4096 images into the same detail at native pixels.",
+   "caption": "50th percentile prompt of the paired ImageReward gain of progressive SCA over AReA (the rows of the paper's Figure 5). Synchronized push-in to native pixels on the window of highest edge energy averaged over the three images. Clean seconds per 4096 x 4096 image on one GH200.",
+   "sources": {
+    "images": {
+     "area": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_2022937813048109690_c461afec17_seed0.png",
+     "hrdit_dev_author": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_2022937813048109690_c461afec17_seed0.png",
+     "sca_v2_prog": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_2022937813048109690_c461afec17_seed0.png"
+    },
+    "prompt": "A snow-covered landscape surrounds a cascading waterfall, with icy rocks and a flowing river reflecting the muted light, while chunks of ice float on the water's surface.",
+    "prompt_id": "a4k_eval_4096_2022937813048109690",
+    "seed": 0,
+    "ir_difference": 0.2441,
+    "selection_rule": "the evaluation prompts at the 25th, 50th and 75th percentile (nearest rank) of the paired ImageReward difference, progressive SCA minus AReA, over the 195 prompts at seed 0",
+    "provenance": "paper/figures/v6/qual_main_provenance.json",
+    "window_px": [
+     256,
+     776,
+     488,
+     488
+    ],
+    "window_rule": "v6_common.best_windows over the three images' detail maps",
+    "seconds": {
+     "area": {
+      "display": "202.4"
+     },
+     "hrdit_dev_author": {
+      "display": "107.0"
+     },
+     "sca_v2_prog": {
+      "display": "49.2"
+     }
+    }
+   },
+   "script": "web/build/v5_compare.py",
+   "sha256": "5119a587c94385e11ba47611443287bfe37981281b60f827a044ec1636b9956d",
+   "role": "compare_2",
+   "percentile": 50,
+   "encode": {
+    "mode": "2pass",
+    "kbps": 1969,
+    "bytes": 2487270
+   },
+   "timing": {
+    "whole": 1.0,
+    "push_in": 6.2,
+    "native": 1.8,
+    "back": 0.8
+   }
+  },
+  {
+   "id": "compare_p75",
+   "order": 42,
+   "file": "compare_p75.mp4",
+   "poster": "compare_p75.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 9.8,
+   "fps": 30.0,
+   "loop": true,
+   "bytes": 2475769,
+   "poster_bytes": 195330,
+   "alt": "AReA, HRDiT and progressive SCA images of the same prompt side by side (75th percentile prompt), zooming together from the whole 4096 by 4096 images into the same detail at native pixels.",
+   "caption": "75th percentile prompt of the paired ImageReward gain of progressive SCA over AReA (the rows of the paper's Figure 5). Synchronized push-in to native pixels on the window of highest edge energy averaged over the three images. Clean seconds per 4096 x 4096 image on one GH200.",
+   "sources": {
+    "images": {
+     "area": "/scratch/09032/saini_2/sca/out/main/area/4096x4096/a4k_eval_4096_minus5370774387421928008_13abd0e243_seed0.png",
+     "hrdit_dev_author": "/scratch/09032/saini_2/sca/out/baseline_expansion_20261017_rest145/hrdit_dev_author/4096x4096/a4k_eval_4096_minus5370774387421928008_13abd0e243_seed0.png",
+     "sca_v2_prog": "/scratch/09032/saini_2/sca/out/dupfix_prog/sca_v2_prog/4096x4096/a4k_eval_4096_minus5370774387421928008_13abd0e243_seed0.png"
+    },
+    "prompt": "A picturesque riverside scene featuring a medieval castle atop a hill, surrounded by vibrant autumn foliage, with colorful homes lining the waterfront and several boats docked along the river.",
+    "prompt_id": "a4k_eval_4096_minus5370774387421928008",
+    "seed": 0,
+    "ir_difference": 0.6602,
+    "selection_rule": "the evaluation prompts at the 25th, 50th and 75th percentile (nearest rank) of the paired ImageReward difference, progressive SCA minus AReA, over the 195 prompts at seed 0",
+    "provenance": "paper/figures/v6/qual_main_provenance.json",
+    "window_px": [
+     600,
+     2368,
+     488,
+     488
+    ],
+    "window_rule": "v6_common.best_windows over the three images' detail maps",
+    "seconds": {
+     "area": {
+      "display": "202.4"
+     },
+     "hrdit_dev_author": {
+      "display": "107.0"
+     },
+     "sca_v2_prog": {
+      "display": "49.2"
+     }
+    }
+   },
+   "script": "web/build/v5_compare.py",
+   "sha256": "58c68007ae7fc9526901af767ee4bf5b3f760501faa1bf1dcd88463625cca121",
+   "role": "compare_3",
+   "percentile": 75,
+   "encode": {
+    "mode": "2pass",
+    "kbps": 1969,
+    "bytes": 2475769
+   },
+   "timing": {
+    "whole": 1.0,
+    "push_in": 6.2,
+    "native": 1.8,
+    "back": 0.8
+   }
+  },
+  {
+   "id": "process_silver_braids",
+   "order": 60,
+   "file": "process_silver_braids.mp4",
+   "poster": "process_silver_braids.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 14.2,
+   "fps": 30.0,
+   "loop": true,
+   "bytes": 1995599,
+   "poster_bytes": 155894,
+   "alt": "Silver braids: progressive SCA's final 4096 by 4096 image beside its recorded run, the estimate growing from 1024 to 2048 to 4096 pixels over 57 steps, and AReA's 28-step run of the same prompt and seed, each with a native-pixel inset of the same window.",
+   "caption": "Silver braids: the final image beside the runs that made it. Progressive SCA: 30 steps at 1024 x 1024, 17 at 2048 x 2048 (reach table at r = 2), 10 at 4096 x 4096 (r = 4). AReA: 28 steps at 4096 x 4096. Both runs shown over the same 11 s; prompts: one traced showcase prompt per category by seeded draw.",
+   "sources": {
+    "prompt_id": "sc_h01_silver_braids",
+    "prompt": "Close-up portrait of an elderly woman with long silver hair braided with faded red ribbons, deep laugh lines and fine wrinkles, warm brown eyes, a hand-knitted wool shawl with an intricate cable pattern, soft window light, documentary photography, sharp skin and fabric detail",
+    "seed": 0,
+    "derived_seed": 6236985764599232339,
+    "progressive_trace": "/scratch/09032/saini_2/sca/web_assets/trace/sca_v2_prog/sc_h01_silver_braids",
+    "area_trace": "/scratch/09032/saini_2/sca/web_assets/trace/area_sc/sc_h01_silver_braids",
+    "final_png": "/scratch/09032/saini_2/sca/out/showcase/flux1_sca_v2_prog/4096x4096/sc_h01_silver_braids_3586bedd89_seed0.png",
+    "box_xys": [
+     2752,
+     3584,
+     512
+    ],
+    "rule": "traced showcase prompts, one per category by random.Random('0:<category>').choice over the category's sorted traced ids, hero category order"
+   },
+   "script": "web/build/v5_process.py",
+   "sha256": "e640118789bb1f50118686a847a5c9c9fdb3d14e8d0c4e8eaacc4e57f18820c0",
+   "role": "process_1",
+   "title": "Silver braids",
+   "encode": {
+    "mode": "crf",
+    "crf": 20,
+    "bytes": 1995599
+   },
+   "poster_time": 12.5,
+   "timing": {
+    "lead": 0.4,
+    "run": 11.0,
+    "hold": 2.2,
+    "back": 0.6
+   }
+  },
+  {
+   "id": "process_jumping_spider",
+   "order": 61,
+   "file": "process_jumping_spider.mp4",
+   "poster": "process_jumping_spider.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 14.2,
+   "fps": 30.0,
+   "loop": true,
+   "bytes": 1914812,
+   "poster_bytes": 124348,
+   "alt": "Jumping spider: progressive SCA's final 4096 by 4096 image beside its recorded run, the estimate growing from 1024 to 2048 to 4096 pixels over 57 steps, and AReA's 28-step run of the same prompt and seed, each with a native-pixel inset of the same window.",
+   "caption": "Jumping spider: the final image beside the runs that made it. Progressive SCA: 30 steps at 1024 x 1024, 17 at 2048 x 2048 (reach table at r = 2), 10 at 4096 x 4096 (r = 4). AReA: 28 steps at 4096 x 4096. Both runs shown over the same 11 s; prompts: one traced showcase prompt per category by seeded draw.",
+   "sources": {
+    "prompt_id": "sc_a02_jumping_spider",
+    "prompt": "Extreme macro photograph of a jumping spider on a green leaf covered in dew drops, large glossy front eyes reflecting the light, iridescent scales and fine hairs on its body, tiny water droplets magnifying the leaf veins, soft diffused light, shallow depth of field",
+    "seed": 0,
+    "derived_seed": 7639444433632673553,
+    "progressive_trace": "/scratch/09032/saini_2/sca/web_assets/trace/sca_v2_prog/sc_a02_jumping_spider",
+    "area_trace": "/scratch/09032/saini_2/sca/web_assets/trace/area_sc/sc_a02_jumping_spider",
+    "final_png": "/scratch/09032/saini_2/sca/out/showcase/flux1_sca_v2_prog/4096x4096/sc_a02_jumping_spider_f007f5db37_seed0.png",
+    "box_xys": [
+     1728,
+     1920,
+     512
+    ],
+    "rule": "traced showcase prompts, one per category by random.Random('0:<category>').choice over the category's sorted traced ids, hero category order"
+   },
+   "script": "web/build/v5_process.py",
+   "sha256": "b01ec935199684d6baedb6fa06b7723dea43e0629e2441f3b6266ac3b8b856ca",
+   "role": "process_2",
+   "title": "Jumping spider",
+   "encode": {
+    "mode": "crf",
+    "crf": 20,
+    "bytes": 1914812
+   },
+   "poster_time": 12.5,
+   "timing": {
+    "lead": 0.4,
+    "run": 11.0,
+    "hold": 2.2,
+    "back": 0.6
+   }
+  },
+  {
+   "id": "process_fjord_village",
+   "order": 62,
+   "file": "process_fjord_village.mp4",
+   "poster": "process_fjord_village.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 14.2,
+   "fps": 30.0,
+   "loop": true,
+   "bytes": 1881739,
+   "poster_bytes": 124112,
+   "alt": "Fjord village: progressive SCA's final 4096 by 4096 image beside its recorded run, the estimate growing from 1024 to 2048 to 4096 pixels over 57 steps, and AReA's 28-step run of the same prompt and seed, each with a native-pixel inset of the same window.",
+   "caption": "Fjord village: the final image beside the runs that made it. Progressive SCA: 30 steps at 1024 x 1024, 17 at 2048 x 2048 (reach table at r = 2), 10 at 4096 x 4096 (r = 4). AReA: 28 steps at 4096 x 4096. Both runs shown over the same 11 s; prompts: one traced showcase prompt per category by seeded draw.",
+   "sources": {
+    "prompt_id": "sc_l01_fjord_village",
+    "prompt": "A deep fjord at sunrise, sheer granite walls streaked with thin waterfalls, a small village of red and ochre wooden houses on the shore, a stone church, fishing boats at a wooden pier, a ferry wake on the glassy water, low clouds clinging to the cliffs, landscape photography, extremely detailed",
+    "seed": 0,
+    "derived_seed": 7341111960278053513,
+    "progressive_trace": "/scratch/09032/saini_2/sca/web_assets/trace/sca_v2_prog/sc_l01_fjord_village",
+    "area_trace": "/scratch/09032/saini_2/sca/web_assets/trace/area_sc/sc_l01_fjord_village",
+    "final_png": "/scratch/09032/saini_2/sca/out/showcase/flux1_sca_v2_prog/4096x4096/sc_l01_fjord_village_50714249a9_seed0.png",
+    "box_xys": [
+     2112,
+     2944,
+     512
+    ],
+    "rule": "traced showcase prompts, one per category by random.Random('0:<category>').choice over the category's sorted traced ids, hero category order"
+   },
+   "script": "web/build/v5_process.py",
+   "sha256": "4fe5fa7ba0701bde0afdf805d2c48ab72d564e51f0a5b4c29eae4e714d1341b0",
+   "role": "process_3",
+   "title": "Fjord village",
+   "encode": {
+    "mode": "crf",
+    "crf": 20,
+    "bytes": 1881739
+   },
+   "poster_time": 12.5,
+   "timing": {
+    "lead": 0.4,
+    "run": 11.0,
+    "hold": 2.2,
+    "back": 0.6
+   }
+  },
+  {
+   "id": "process_opera_house",
+   "order": 63,
+   "file": "process_opera_house.mp4",
+   "poster": "process_opera_house.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 14.2,
+   "fps": 30.0,
+   "loop": true,
+   "bytes": 2413739,
+   "poster_bytes": 201032,
+   "alt": "Opera house: progressive SCA's final 4096 by 4096 image beside its recorded run, the estimate growing from 1024 to 2048 to 4096 pixels over 57 steps, and AReA's 28-step run of the same prompt and seed, each with a native-pixel inset of the same window.",
+   "caption": "Opera house: the final image beside the runs that made it. Progressive SCA: 30 steps at 1024 x 1024, 17 at 2048 x 2048 (reach table at r = 2), 10 at 4096 x 4096 (r = 4). AReA: 28 steps at 4096 x 4096. Both runs shown over the same 11 s; prompts: one traced showcase prompt per category by seeded draw.",
+   "sources": {
+    "prompt_id": "sc_l03_opera_house",
+    "prompt": "The empty auditorium of an ornate opera house seen from the stage, tiers of gilded balconies with carved ornaments, rows of red velvet seats, a huge crystal chandelier, a painted ceiling with gold leaf, red curtains and boxes, warm light, symmetrical architectural photography, intricate detail",
+    "seed": 0,
+    "derived_seed": 2084927588876504509,
+    "progressive_trace": "/scratch/09032/saini_2/sca/web_assets/trace/sca_v2_prog/sc_l03_opera_house",
+    "area_trace": "/scratch/09032/saini_2/sca/web_assets/trace/area_sc/sc_l03_opera_house",
+    "final_png": "/scratch/09032/saini_2/sca/out/showcase/flux1_sca_v2_prog/4096x4096/sc_l03_opera_house_0e9faab283_seed0.png",
+    "box_xys": [
+     1792,
+     256,
+     512
+    ],
+    "rule": "traced showcase prompts, one per category by random.Random('0:<category>').choice over the category's sorted traced ids, hero category order"
+   },
+   "script": "web/build/v5_process.py",
+   "sha256": "57a1cf0724479b7856c391b025f02cf9a9f4e27e17e26763c3ed9d63eeac1242",
+   "role": "process_4",
+   "title": "Opera house",
+   "encode": {
+    "mode": "2pass",
+    "kbps": 1359,
+    "bytes": 2413739
+   },
+   "poster_time": 12.5,
+   "timing": {
+    "lead": 0.4,
+    "run": 11.0,
+    "hold": 2.2,
+    "back": 0.6
+   }
+  },
+  {
+   "id": "process_antique_shop",
+   "order": 64,
+   "file": "process_antique_shop.mp4",
+   "poster": "process_antique_shop.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 14.2,
+   "fps": 30.0,
+   "loop": true,
+   "bytes": 2384018,
+   "poster_bytes": 211394,
+   "alt": "Antique shop: progressive SCA's final 4096 by 4096 image beside its recorded run, the estimate growing from 1024 to 2048 to 4096 pixels over 57 steps, and AReA's 28-step run of the same prompt and seed, each with a native-pixel inset of the same window.",
+   "caption": "Antique shop: the final image beside the runs that made it. Progressive SCA: 30 steps at 1024 x 1024, 17 at 2048 x 2048 (reach table at r = 2), 10 at 4096 x 4096 (r = 4). AReA: 28 steps at 4096 x 4096. Both runs shown over the same 11 s; prompts: one traced showcase prompt per category by seeded draw.",
+   "sources": {
+    "prompt_id": "sc_d03_antique_shop",
+    "prompt": "The cluttered interior of an antique shop, walls covered with ticking clocks, shelves of porcelain teacups, brass telescopes and compasses, stacks of old books, framed maps, a cabinet of curiosities with shells and minerals, a dusty chandelier, warm lamp light, highly detailed",
+    "seed": 0,
+    "derived_seed": 2593901478702215601,
+    "progressive_trace": "/scratch/09032/saini_2/sca/web_assets/trace/sca_v2_prog/sc_d03_antique_shop",
+    "area_trace": "/scratch/09032/saini_2/sca/web_assets/trace/area_sc/sc_d03_antique_shop",
+    "final_png": "/scratch/09032/saini_2/sca/out/showcase/flux1_sca_v2_prog/4096x4096/sc_d03_antique_shop_20f5ae17e2_seed0.png",
+    "box_xys": [
+     64,
+     2368,
+     512
+    ],
+    "rule": "traced showcase prompts, one per category by random.Random('0:<category>').choice over the category's sorted traced ids, hero category order"
+   },
+   "script": "web/build/v5_process.py",
+   "sha256": "23d1cbec167fc0fd43ffa3e6b39191fd431fb22471531393abd470d258b8f2b6",
+   "role": "process_5",
+   "title": "Antique shop",
+   "encode": {
+    "mode": "2pass",
+    "kbps": 1359,
+    "bytes": 2384018
+   },
+   "poster_time": 12.5,
+   "timing": {
+    "lead": 0.4,
+    "run": 11.0,
+    "hold": 2.2,
+    "back": 0.6
+   }
+  },
+  {
+   "id": "explainer",
+   "order": 90,
+   "file": "explainer.mp4",
+   "poster": "explainer.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 84.5,
+   "fps": 30.0,
+   "loop": false,
+   "bytes": 7641538,
+   "poster_bytes": 26228,
+   "alt": "An 86-second explainer without sound, with captions: the problem at 4096 by 4096, the observation that reach belongs to the head, the two native-size views, reach emulation at 1024 by 1024, the three sampler stages, the speed race and the headline results.",
+   "caption": "The method in 86 seconds: reach is a property of the head; measure it once at 1024 x 1024; generate at any size. Captions burned in and in explainer.vtt.",
+   "sources": {
+    "macros": "paper/figures/snippets/main_tables/headline.tex",
+    "scenes": [
+     {
+      "name": "title",
+      "start": 0.0,
+      "seconds": 5.0
+     },
+     {
+      "name": "problem",
+      "start": 5.0,
+      "seconds": 8.0
+     },
+     {
+      "name": "observation",
+      "start": 13.0,
+      "seconds": 14.0
+     },
+     {
+      "name": "views",
+      "start": 27.0,
+      "seconds": 8.0
+     },
+     {
+      "name": "measure",
+      "start": 35.0,
+      "seconds": 9.2
+     },
+     {
+      "name": "generate",
+      "start": 44.2,
+      "seconds": 9.5
+     },
+     {
+      "name": "speed",
+      "start": 53.7,
+      "seconds": 13.2
+     },
+     {
+      "name": "claims",
+      "start": 66.9,
+      "seconds": 7.5
+     },
+     {
+      "name": "showcase",
+      "start": 74.4,
+      "seconds": 6.1
+     },
+     {
+      "name": "end",
+      "start": 80.5,
+      "seconds": 4.0
+     }
+    ],
+    "reused_frames": {
+     "views": "/scratch/09032/saini_2/sca/web_builds/v5_webmedia_1/method/method_window/frames_n240",
+     "measure": "/scratch/09032/saini_2/sca/web_builds/v5_webmedia_1/method/method_emulation/frames_n294",
+     "generate": "/scratch/09032/saini_2/sca/web_builds/v5_webmedia_1/method/method_stages/frames_n303",
+     "speed": "/scratch/09032/saini_2/sca/web_builds/v5_webmedia_1/speedrace/16x9/frames_c20_n413",
+     "showcase": "/scratch/09032/saini_2/sca/web_builds/v5_webmedia_1/hero/16x9/frames_k3_f30_0.8_2.3_1.4_1.6_0.6"
+    },
+    "problem_images": {
+     "native_1024": "paper/figures/attn_focus/image_1024.png",
+     "full_4096": "/scratch/09032/saini_2/sca/out/main/full/4096x4096/a4k_eval_4096_minus8343371271909676658_0325f0a692_seed0.png"
+    },
+    "observation": "paper/figures/src/v6_observation.py load() (k1_1024.npz, variance_split.csv)"
+   },
+   "script": "web/build/v5_explainer.py",
+   "sha256": "253bcadd195de1bc2e0e74cae9f35a1a6d93682484531495702569b514f539c6",
+   "role": "explainer",
+   "vtt": "explainer.vtt",
+   "controls": true,
+   "encode": {
+    "mode": "crf",
+    "crf": 21,
+    "bytes": 7641538
+   },
+   "cues": [
+    {
+     "start": 0.6,
+     "end": 4.8,
+     "text": "FLUX.1-dev at 4096 × 4096 without training: only the attention changes."
+    },
+    {
+     "start": 5.0,
+     "end": 8.9,
+     "text": "FLUX.1-dev is trained near 1024 × 1024, a grid of 64 × 64 tokens."
+    },
+    {
+     "start": 8.9,
+     "end": 13.0,
+     "text": "Run directly at 4096 × 4096, full attention sees 16 times the tokens and offsets up to 255, where training saw 63."
+    },
+    {
+     "start": 13.0,
+     "end": 17.6,
+     "text": "Split one query's keys into near and far: the near share is that head's reach."
+    },
+    {
+     "start": 17.6,
+     "end": 22.4,
+     "text": "Over 1,368 heads and every noise level, which head it is explains 97.5% of the variance."
+    },
+    {
+     "start": 22.4,
+     "end": 27.0,
+     "text": "The noise level explains 2.5%; a schedule shared by all heads, 0.7%."
+    },
+    {
+     "start": 27.0,
+     "end": 31.0,
+     "text": "SCA gives each head two native-size views: a window around the query and a grid over the whole image."
+    },
+    {
+     "start": 31.0,
+     "end": 35.0,
+     "text": "Each head mixes the two by its own reach π."
+    },
+    {
+     "start": 35.0,
+     "end": 39.6,
+     "text": "Measure once at 1024 × 1024, where full attention is still the reference: both views shrink by r."
+    },
+    {
+     "start": 39.6,
+     "end": 44.2,
+     "text": "The best weight has a closed form, π* = clip(B/A, 0, 1), and fills the reach table."
+    },
+    {
+     "start": 44.2,
+     "end": 48.95,
+     "text": "Generate at any size: progressive SCA keeps HRDiT's three sampler stages."
+    },
+    {
+     "start": 48.95,
+     "end": 53.7,
+     "text": "The 2048² and 4096² stages read the same reach table, at r = 2 and r = 4."
+    },
+    {
+     "start": 53.7,
+     "end": 62.7,
+     "text": "49.2 s per 4096² image on one GH200: 4.1× faster than AReA, 2.2× faster than HRDiT."
+    },
+    {
+     "start": 62.7,
+     "end": 66.9,
+     "text": "In AReA's 202.4 s for one image, progressive SCA finishes four."
+    },
+    {
+     "start": 66.9,
+     "end": 70.6,
+     "text": "Better than AReA on all ten per-image metrics, at each of three seeds."
+    },
+    {
+     "start": 70.6,
+     "end": 74.4,
+     "text": "Statistically indistinguishable from HRDiT on three preference scores, in 46% of its time."
+    },
+    {
+     "start": 74.4,
+     "end": 80.5,
+     "text": "A 4096 × 4096 progressive SCA image, from the whole frame to native pixels."
+    }
+   ]
   }
  ]
 }

@@ -130,10 +130,13 @@
       panels.far.sub.textContent = g + " \u00d7 " + g + " block-centre keys over the whole image";
       panels.full.sub.textContent = "all " + D.n + " \u00d7 " + D.n + " keys, the model's own attention";
       note.innerHTML = "";
-      note.appendChild(document.createTextNode("FLUX.1-dev at 1024\u00b2, block " + D.block + ", one query (the leftmost sheep's face), noise level \u03c3 " + D.sigma.toFixed(2)
+      var tog = el("button", "tog", { type: "button", "aria-expanded": "false", text: "About these numbers" });
+      tog.addEventListener("click", function () { var o = root.classList.toggle(P + "open"); tog.setAttribute("aria-expanded", String(o)); tog.textContent = o ? "Less" : "About these numbers"; });
+      note.appendChild(el("span", "more", null, [document.createTextNode("FLUX.1-dev at 1024\u00b2, block " + D.block + ", one query (the leftmost sheep's face), noise level \u03c3 " + D.sigma.toFixed(2)
         + ". The views are shrunk by r = " + D.r + ", the ratio of a 4096\u00b2 image to the native window, so they cover what the native-size views cover at 4096\u00b2. "
         + "The error J is measured on the attention outputs of " + D.n_prompts + " prompts (" + fmtInt(D.samples["4"]) + " query samples, noise bin at \u03c3 " + D.bin_sigma.toFixed(2)
-        + "), not on this one map, and is shown rescaled between its minimum and maximum on [0, 1]. Maps exist for r = " + D.r + " only; r = 2 (2048\u00b2) enters through J alone."));
+        + "), not on this one map, and is shown rescaled between its minimum and maximum on [0, 1]. Maps exist for r = " + D.r + " only; r = 2 (2048\u00b2) enters through J alone. ")]));
+      note.appendChild(tog);
       setHead(opts.head && opts.head >= 1 && opts.head <= D.heads.length ? opts.head : F.mid, true);
     }
     function readColours() {
@@ -168,13 +171,15 @@
     function readout(quiet) {
       var j4 = H.J["4"], j2 = H.J["2"], jp = J(H, "4", pi), js = J(H, "4", j4.pi), ratio = jp / js;
       big.innerHTML = "";
-      big.appendChild(el("span", "big-v", { text: ratio < 1.005 ? "minimum" : ratio.toFixed(2) + "\u00d7" }));
-      big.appendChild(el("span", "big-l", { text: ratio < 1.005 ? "this is the head's best weight" : "the head's smallest error J(\u03c0*), at \u03c0 = " + pi.toFixed(2) }));
+      big.appendChild(el("span", "big-v", { text: ratio.toFixed(2) + "\u00d7" }));
+      big.appendChild(el("span", "big-l", { text: ratio < 1.005 ? "the smallest error this head can have: \u03c0 = \u03c0*" : "the head's smallest error: J(" + pi.toFixed(2) + ") / J(\u03c0*)" }));
       var ba = j4.b / j4.a;
       star.innerHTML = "";
+      star.appendChild(el("span", "star-0", { text: "J(\u03c0) = E \u2212 2\u03c0B + \u03c0\u00b2A is a parabola in \u03c0, so its minimiser is" }));
       star.appendChild(el("b", null, { text: "\u03c0* = clip(B/A, 0, 1) = " + j4.pi.toFixed(2) }));
-      star.appendChild(document.createTextNode(ba < 0 ? " (B/A = " + num(ba, 2) + ", clipped: this head keeps only the grid view)" : ba > 1 ? " (B/A = " + num(ba, 2) + ", clipped)" : " at r = " + D.r));
-      star.appendChild(el("span", "star-2", { text: "r = 2: \u03c0* = " + j2.pi.toFixed(2) }));
+      star.appendChild(document.createTextNode(ba < 0 ? " (B/A = " + num(ba, 2) + ": this head keeps only the grid view)" : ba > 1 ? " (B/A = " + num(ba, 2) + ", clipped)" : ""));
+      star.appendChild(el("span", "star-2", null, [el("span", "key key-4"), document.createTextNode("r = " + D.r + " (4096\u00b2, these maps)  "),
+        el("span", "key key-2"), document.createTextNode("r = 2 (2048\u00b2): \u03c0* = " + j2.pi.toFixed(2))]));
       small.textContent = "Error relative to the energy of the full-attention output: " + pct(jp) + " at this \u03c0, " + pct(js) + " at \u03c0*.";
     }
 
@@ -253,7 +258,7 @@
     }
 
     /* ------------------------------------------------------------ the J chart */
-    var CG = { w: 0, h: 0, d: 1, L: 14, R: 14, T: 26, B: 30 };
+    var CG = { w: 0, h: 0, d: 1, L: 4, R: 4, T: 22, B: 26 };
     function px(p) { return CG.L + p * (CG.w - CG.L - CG.R); }
     function py(v) { return CG.T + (1 - v) * (CG.h - CG.T - CG.B); }
     function drawChart() {
@@ -265,12 +270,10 @@
       ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, w, h);
       ctx.strokeStyle = css(C.rule); ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(CG.L, py(0) + .5); ctx.lineTo(w - CG.R, py(0) + .5); ctx.stroke();
-      ctx.fillStyle = css(C.faint); ctx.font = "500 11px " + fn; ctx.textBaseline = "top";
-      [0, .5, 1].forEach(function (p) { ctx.textAlign = p === 0 ? "left" : p === 1 ? "right" : "center"; ctx.fillText(p === .5 ? "0.5" : String(p), px(p), py(0) + 6); });
-      ctx.textAlign = "center"; ctx.fillStyle = css(C.soft); ctx.font = "500 12px " + fn;
-      ctx.fillText("\u03c0: grid view \u2190 \u2192 window view", (CG.L + w - CG.R) / 2, py(0) + 6);
-      ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillStyle = css(C.soft);
-      ctx.fillText("J(\u03c0) = E \u2212 2\u03c0B + \u03c0\u00b2A", CG.L, 2);
+      ctx.font = "500 12px " + fn; ctx.textBaseline = "top";
+      ctx.textAlign = "left"; ctx.fillStyle = css(C.far); ctx.fillText("0  grid view only", px(0), py(0) + 6);
+      ctx.textAlign = "right"; ctx.fillStyle = css(C.near); ctx.fillText("window view only  1", px(1), py(0) + 6);
+
       function curve(r, col, dash, lw) {
         var mm = range01(H, r);
         ctx.setLineDash(dash); ctx.strokeStyle = css(col); ctx.lineWidth = lw; ctx.beginPath();
@@ -296,13 +299,6 @@
       ctx.strokeStyle = css(C.ink, .35); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, py(0)); ctx.stroke();
       ctx.fillStyle = css(C.bg); ctx.beginPath(); ctx.arc(x, y, 8.5, 0, 7); ctx.fill();
       ctx.fillStyle = css(C.accent); ctx.beginPath(); ctx.arc(x, y, 6, 0, 7); ctx.fill();
-      /* legend */
-      ctx.font = "500 11px " + fn; ctx.textAlign = "right"; ctx.textBaseline = "top";
-      var lx = CG.w - CG.R;
-      ctx.fillStyle = css(C.ink); ctx.fillText("r = 4 (4096\u00b2)", lx - 30, 2);
-      ctx.strokeStyle = css(C.ink); ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(lx - 24, 9); ctx.lineTo(lx, 9); ctx.stroke();
-      ctx.fillStyle = css(C.faint); ctx.fillText("r = 2 (2048\u00b2)", lx - 30, 16);
-      ctx.strokeStyle = css(C.faint); ctx.lineWidth = 1.4; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(lx - 24, 23); ctx.lineTo(lx, 23); ctx.stroke(); ctx.setLineDash([]);
     }
     var drag = false;
     function fromX(e) { var r = chart.getBoundingClientRect(); return clamp((e.clientX - r.left - CG.L) / (CG.w - CG.L - CG.R), 0, 1); }

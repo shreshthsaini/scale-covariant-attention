@@ -121,15 +121,131 @@ def run_heads(page, view, out, tag, log):
     return shots
 
 
-RUNNERS = {"percentiles": run_percentiles, "heads": run_heads}
+def run_emulate(page, view, out, tag, log):
+    page.wait_for_selector(".c-emulate-seg-b", timeout=20000)
+    page.wait_for_timeout(900)
+    rd = "() => document.querySelector('.c-emulate-big').textContent + ' | ' + document.querySelector('.c-emulate-star').textContent + ' | ' + document.querySelector('.c-emulate-small').textContent"
+    log.append(("default", page.evaluate(rd)))
+    shots = [shot(page, out, f"{tag}_0_default")]
+    page.query_selector(".c-emulate-snap").click()
+    page.wait_for_timeout(900)
+    log.append(("snap", page.evaluate(rd)))
+    shots.append(shot(page, out, f"{tag}_1_snap"))
+    page.query_selector_all(".c-emulate-seg-b")[0].click()
+    page.wait_for_timeout(400)
+    log.append(("near head", page.evaluate(rd)))
+    shots.append(shot(page, out, f"{tag}_2_near"))
+    page.query_selector_all(".c-emulate-seg-b")[2].click()
+    box = page.query_selector(".c-emulate-chartbox").bounding_box()
+    x, y = box["x"] + box["width"] * 0.85, box["y"] + box["height"] * 0.5
+    if view == "phone":
+        tap(page, x, y)
+    else:
+        page.mouse.move(box["x"] + box["width"] * 0.5, y)
+        page.mouse.down()
+        page.mouse.move(x, y, steps=6)
+        page.mouse.up()
+    page.wait_for_timeout(400)
+    log.append(("far head, pi ~0.85", page.evaluate(rd)))
+    shots.append(shot(page, out, f"{tag}_3_far"))
+    rng = page.query_selector(".c-emulate-range")
+    rng.focus()
+    page.keyboard.press("Home")
+    page.wait_for_timeout(200)
+    log.append(("Home", page.evaluate("() => document.querySelector('.c-emulate-range').value")))
+    return shots
+
+
+def run_table(page, view, out, tag, log):
+    page.wait_for_selector(".c-table-tab", timeout=20000)
+    page.wait_for_timeout(500)
+    rows = "() => Array.from(document.querySelectorAll('.c-table-r')).map(r => r.querySelector('.c-table-nm').textContent + ':' + (r.querySelector('.c-table-v-ir') || {}).textContent).join(' | ')"
+    log.append(("paper order", page.evaluate(rows)))
+    shots = [shot(page, out, f"{tag}_0_main")]
+    page.query_selector(".c-table-c-time .c-table-sort").click()
+    page.wait_for_timeout(300)
+    log.append(("sorted by time", page.evaluate("() => Array.from(document.querySelectorAll('.c-table-r .c-table-nm')).map(e => e.textContent).join(' | ')")))
+    shots.append(shot(page, out, f"{tag}_1_sorted"))
+    page.query_selector_all(".c-table-chip")[3].click()
+    page.query_selector_all(".c-table-chip")[2].click()
+    page.wait_for_timeout(300)
+    log.append(("columns", page.evaluate("() => Array.from(document.querySelectorAll('.c-table-ch .c-table-sort')).map(e => e.textContent).join(' ')")))
+    shots.append(shot(page, out, f"{tag}_2_toggled"))
+    page.query_selector_all(".c-table-tab")[1].click()
+    page.wait_for_timeout(300)
+    log.append(("generality", page.evaluate(rows)))
+    shots.append(shot(page, out, f"{tag}_3_gen"))
+    return shots
+
+
+def run_speed(page, view, out, tag, log):
+    page.wait_for_selector(".c-speed-rc", timeout=20000)
+    page.wait_for_timeout(500)
+    log.append(("tip 4096", page.evaluate("() => document.querySelector('.c-speed-tip').textContent")))
+    shots = [shot(page, out, f"{tag}_0_4096")]
+    b = page.query_selector(".c-speed-plot").bounding_box()
+    if view == "phone":
+        tap(page, b["x"] + b["width"] * 0.62, b["y"] + b["height"] * 0.5)
+    else:
+        page.mouse.move(b["x"] + b["width"] * 0.7, b["y"] + b["height"] * 0.5)
+    page.wait_for_timeout(300)
+    log.append(("tip moved", page.evaluate("() => document.querySelector('.c-speed-tip-h').textContent")))
+    shots.append(shot(page, out, f"{tag}_1_hover"))
+    page.query_selector(".c-speed-plot").focus()
+    page.keyboard.press("ArrowRight")
+    page.keyboard.press("ArrowRight")
+    page.wait_for_timeout(200)
+    log.append(("keys", page.evaluate("() => document.querySelector('.c-speed-tip').textContent")))
+    shots.append(shot(page, out, f"{tag}_2_keys"))
+    return shots
+
+
+def check_page(br, page_name, out, views, themes):
+    """Every .comp-mount of a real page (e.g. index.html): scroll to it, wait until it is live, screenshot the figure."""
+    bad = 0
+    url = "file://" + os.path.join(WEB, page_name)
+    for view in views:
+        for theme in themes:
+            ctx = br.new_context(color_scheme=theme, **VIEWS[view])
+            page = ctx.new_page()
+            errs = []
+            page.on("console", lambda m, errs=errs: errs.append(f"console.{m.type}: {m.text}") if m.type in ("error", "warning") else None)
+            page.on("pageerror", lambda e, errs=errs: errs.append(f"pageerror: {e}"))
+            page.on("requestfailed", lambda r, errs=errs: errs.append(f"requestfailed: {r.url}"))
+            page.goto(url)
+            page.wait_for_timeout(800)
+            names = page.evaluate("() => Array.from(document.querySelectorAll('.comp-mount[data-comp]')).map(m => m.getAttribute('data-comp'))")
+            res = {}
+            for i, name in enumerate(names):
+                page.evaluate("(i) => document.querySelectorAll('.comp-mount[data-comp]')[i].closest('figure').scrollIntoView({block: 'center'})", i)
+                page.wait_for_timeout(2500)
+                st = page.evaluate("""(i) => { const m = document.querySelectorAll('.comp-mount[data-comp]')[i], f = m.closest('figure'), r = m.getBoundingClientRect();
+                    return {live: f.classList.contains('is-live'), h: Math.round(r.height), w: Math.round(r.width), kids: m.children.length}; }""", i)
+                fig = page.query_selector_all(".comp-mount[data-comp]")[i].evaluate_handle("m => m.closest('figure')")
+                path = os.path.join(out, f"page_{page_name.replace('.html', '')}_{name}_{view}_{theme}.png")
+                try:
+                    fig.as_element().screenshot(path=path)
+                except Exception as e:  # noqa: BLE001
+                    errs.append(f"shot {name}: {e!r}")
+                res[name] = dict(st, shot=path)
+            over = page.evaluate("() => document.documentElement.scrollWidth > document.documentElement.clientWidth")
+            ok = not errs and not over and all(r["live"] for r in res.values())
+            bad += not ok
+            print(json.dumps(dict(page=page_name, view=view, theme=theme, ok=ok, errors=errs[:8], overflow=over, comps=res)))
+            ctx.close()
+    return bad
+
+
+RUNNERS = {"percentiles": run_percentiles, "heads": run_heads, "emulate": run_emulate, "table": run_table, "speed": run_speed}
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("names", nargs="+")
+    ap.add_argument("names", nargs="*")
     ap.add_argument("--out", required=True)
     ap.add_argument("--views", default="desk,phone")
     ap.add_argument("--themes", default="light,dark")
+    ap.add_argument("--page", default="", help="also check every component mounted on this page of web/ (e.g. index.html)")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     bad = 0
@@ -164,6 +280,8 @@ def main():
                                           mount_h=round(m["h"]), vh80=round(0.8 * m["vh"]), taller_than_80vh=tall,
                                           log=log, shots=shots)))
                     ctx.close()
+        if a.page:
+            bad += check_page(br, a.page, a.out, a.views.split(","), a.themes.split(","))
         br.close()
     sys.exit(1 if bad else 0)
 

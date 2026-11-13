@@ -1,0 +1,93 @@
+/* SCAComp.emulate (assets/js/c_emulate.js). Colours, fonts and radii from the page's tokens (design.md). */
+.c-emulate { position: relative; color: var(--ink, #111513); font: 400 14px/1.45 var(--font-sans, "Inter", system-ui, sans-serif); font-variant-numeric: tabular-nums; }
+.c-emulate *, .c-emulate *::before, .c-emulate *::after { box-sizing: border-box; }
+
+/* ---------------------------------------------------------------- head choice */
+.c-emulate-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 14px; }
+.c-emulate-seg { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--rule, #DCD9CF); border-radius: 12px; background: var(--bg-sunk, #EAE8E1); }
+.c-emulate-seg-b { display: flex; flex-direction: column; align-items: flex-start; min-height: 40px; padding: 4px 14px; border: 0; border-radius: 9px;
+  background: transparent; color: var(--ink-soft, #4F5853); font: 600 13px/1.2 var(--font-sans, system-ui, sans-serif); cursor: pointer; text-align: left; }
+.c-emulate-seg-h { font-weight: 400; font-size: 12px; color: var(--ink-faint, #7C847F); }
+.c-emulate-seg-b[aria-checked="true"] { background: var(--bg-raised, #fff); color: var(--ink, #111513); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.c-emulate-seg-b[aria-checked="true"] .c-emulate-seg-h { color: var(--ink-soft, #4F5853); }
+.c-emulate-seg-b:hover { color: var(--ink, #111513); }
+.c-emulate-pick-w { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft, #4F5853); }
+.c-emulate-pick { min-height: 32px; padding: 4px 8px; border: 1px solid var(--rule, #DCD9CF); border-radius: var(--radius-sm, 6px); background: var(--bg-raised, #fff);
+  color: var(--ink, #111513); font: 500 13px var(--font-sans, system-ui, sans-serif); }
+.c-emulate-featured .c-emulate-pick { color: var(--ink-soft, #4F5853); }
+
+/* ---------------------------------------------------------------- the four maps */
+.c-emulate-maps { display: grid; grid-template-columns: minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr); align-items: start; }
+.c-emulate-op { align-self: center; margin-top: -26px; text-align: center; font: 600 16px/1 var(--font-sans, system-ui, sans-serif); color: var(--ink-faint, #7C847F); }
+.c-emulate-panel { min-width: 0; }
+.c-emulate-frame { position: relative; aspect-ratio: 1 / 1; border-radius: var(--radius-sm, 6px); overflow: hidden; background: var(--screen, #0B0D0C); }
+.c-emulate-panel-mix .c-emulate-frame { box-shadow: 0 0 0 2px var(--accent, #13865F); }
+.c-emulate-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.c-emulate-lab { position: absolute; left: 6px; top: 6px; padding: 4px 7px; border-radius: 5px; background: rgba(11, 13, 12, .74); color: var(--screen-ink, #ECEEE9);
+  font: 600 12px/1 var(--font-sans, system-ui, sans-serif); pointer-events: none; white-space: nowrap; }
+.c-emulate-lab-near { box-shadow: inset 3px 0 0 var(--near, #E08A2B); padding-left: 9px; }
+.c-emulate-lab-far { box-shadow: inset 3px 0 0 var(--far, #2F6DB3); padding-left: 9px; }
+.c-emulate-lab-mix { background: var(--accent, #13865F); color: var(--on-accent, #fff); }
+.c-emulate-sub { display: block; margin-top: 5px; font-size: 12px; line-height: 1.35; color: var(--ink-soft, #4F5853); }
+
+/* ---------------------------------------------------------------- J chart, slider, readout */
+.c-emulate-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.c-emulate-side { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-areas: "chart big" "chart star" "ctl small"; gap: 4px 28px; align-items: start; }
+.c-emulate-chartbox { grid-area: chart; position: relative; height: 190px; cursor: ew-resize; touch-action: pan-y; }
+.c-emulate-chart { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.c-emulate-ctl { grid-area: ctl; display: flex; align-items: center; gap: 10px; }
+.c-emulate-pi-l { font: italic 600 16px var(--font-serif, "Source Serif 4", Georgia, serif); color: var(--ink-soft, #4F5853); }
+.c-emulate-range { flex: 1; min-width: 0; -webkit-appearance: none; appearance: none; height: 24px; margin: 0; background: transparent; cursor: pointer; touch-action: pan-y; }
+.c-emulate-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--far, #2F6DB3), var(--near, #E08A2B)); }
+.c-emulate-range::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--far, #2F6DB3), var(--near, #E08A2B)); }
+.c-emulate-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; margin-top: -8px; border-radius: 50%;
+  background: var(--accent, #13865F); border: 3px solid var(--bg-raised, #fff); box-shadow: 0 0 0 1px var(--accent, #13865F), 0 1px 4px rgba(0,0,0,.25); }
+.c-emulate-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--accent, #13865F); border: 3px solid var(--bg-raised, #fff);
+  box-shadow: 0 0 0 1px var(--accent, #13865F); }
+.c-emulate-range:focus-visible { outline: none; }
+.c-emulate-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--bg-raised, #fff), 0 0 0 4px var(--accent, #13865F); }
+.c-emulate-range:disabled { opacity: .5; }
+.c-emulate-snap { min-height: 34px; padding: 6px 14px; border: 1px solid var(--accent, #13865F); border-radius: 999px; background: var(--accent, #13865F); color: var(--on-accent, #fff);
+  font: 600 13px var(--font-sans, system-ui, sans-serif); cursor: pointer; white-space: nowrap; }
+.c-emulate-snap:hover { filter: brightness(1.08); }
+.c-emulate-snap:disabled { opacity: .5; cursor: default; }
+.c-emulate-snap:focus-visible, .c-emulate-seg-b:focus-visible, .c-emulate-pick:focus-visible { outline: 2px solid var(--accent, #13865F); outline-offset: 2px; }
+.c-emulate-big { grid-area: big; display: flex; flex-direction: column; gap: 2px; padding-top: 18px; }
+.c-emulate-big-v { font: 600 40px/1 var(--font-serif, "Source Serif 4", Georgia, serif); letter-spacing: -.015em; }
+.c-emulate-big-l { font-size: 13px; color: var(--ink-soft, #4F5853); }
+.c-emulate-star { grid-area: star; font-size: 13px; line-height: 1.45; color: var(--ink-soft, #4F5853); }
+.c-emulate-star b { color: var(--accent-ink, #0B6B4A); font-weight: 600; }
+.c-emulate-star-2 { display: block; color: var(--ink-faint, #7C847F); }
+.c-emulate-small { grid-area: small; margin: 0; font-size: 12px; line-height: 1.45; color: var(--ink-soft, #4F5853); }
+.c-emulate-note { margin: 14px 0 0; font-size: 12px; line-height: 1.5; color: var(--ink-soft, #4F5853); }
+.c-emulate-fallback { display: block; width: 100%; height: auto; border-radius: var(--radius-sm, 6px); }
+
+/* ---------------------------------------------------------------- narrow containers */
+.c-emulate-narrow .c-emulate-maps { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.c-emulate-narrow .c-emulate-op { display: none; }
+.c-emulate-narrow .c-emulate-sub { display: none; }
+.c-emulate-narrow .c-emulate-side { grid-template-columns: minmax(0, 1fr); grid-template-areas: "big" "chart" "ctl" "star" "small"; gap: 6px; }
+.c-emulate-narrow .c-emulate-big { padding-top: 0; flex-direction: row; align-items: baseline; gap: 10px; }
+.c-emulate-narrow .c-emulate-big-v { font-size: 30px; }
+.c-emulate-narrow .c-emulate-chartbox { height: 150px; }
+.c-emulate-narrow .c-emulate-seg-b { padding: 4px 10px; font-size: 12.5px; }
+.c-emulate-narrow .c-emulate-top { gap: 8px; }
+.c-emulate-star-0 { display: block; color: var(--ink-soft, #4F5853); }
+.c-emulate-star-2 { margin-top: 4px; font-size: 12px; }
+.c-emulate-key { display: inline-block; width: 22px; height: 0; margin-right: 6px; vertical-align: middle; }
+.c-emulate-key-4 { border-top: 2.5px solid var(--ink, #111513); }
+.c-emulate-key-2 { border-top: 1.5px dashed var(--ink-faint, #7C847F); margin-left: 6px; }
+.c-emulate-tog { display: none; padding: 0; border: 0; background: none; font: 600 12px/1.5 var(--font-sans, system-ui, sans-serif); color: var(--accent-ink, #0B6B4A); cursor: pointer; }
+.c-emulate-tog:focus-visible { outline: 2px solid var(--accent, #13865F); outline-offset: 2px; }
+.c-emulate-narrow .c-emulate-tog { display: inline; }
+.c-emulate-narrow .c-emulate-more, .c-emulate-narrow .c-emulate-star-0 { display: none; }
+.c-emulate-narrow.c-emulate-open .c-emulate-more { display: inline; }
+.c-emulate-narrow.c-emulate-open .c-emulate-star-0 { display: block; }
+.c-emulate-narrow .c-emulate-pick-w { display: none; }
+.c-emulate-narrow .c-emulate-note { margin-top: 8px; }
+.c-emulate-narrow .c-emulate-top { margin-bottom: 10px; }
+/* the page may style p inside its figures (e.g. .sub-h p); these keep the component's own text boxes */
+.c-emulate p { max-width: none; }
+.c-emulate .c-emulate-small { margin: 0; color: var(--ink-soft, #4F5853); font-size: 12px; }
+.c-emulate .c-emulate-note { margin: 14px 0 0; color: var(--ink-soft, #4F5853); font-size: 12px; }
+.c-emulate.c-emulate-narrow .c-emulate-note { margin-top: 8px; }

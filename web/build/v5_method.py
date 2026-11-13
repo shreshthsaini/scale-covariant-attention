@@ -239,7 +239,7 @@ def a_draw(ctx, k):
 # ================================================================================================ (b) emulation
 N1024 = 64
 B_PANEL = 576   # a multiple of 32 so the 64-token maps tile it exactly at 2x
-T_FULL, T_SHRINK, T_VIEWS, T_MIX, T_HOLD, T_BACK = 1.9, 2.3, 0.8, 3.0, 1.1, 0.6
+T_FULL, T_SHRINK, T_VIEWS, T_MIX, T_HOLD, T_BACK = 1.6, 2.3, 1.3, 2.9, 1.1, 0.6
 
 
 def b_times():

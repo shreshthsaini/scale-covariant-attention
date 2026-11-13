@@ -48,9 +48,95 @@ Rebuild: nice -n 10 /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web
 Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/percentiles_{desk,phone}_{light,dark}_*.png
 Claims: only the paper's (rule, differences, ImageReward per image, seconds). It never says SCA wins every prompt.
 
-## 2. heads: next
-## 3. emulate: after heads
-## 4. table, speed: last
+## 2. heads: DONE (16:31)
+Files: web/assets/js/c_heads.js, web/assets/css/c_heads.css, web/assets/data/heads/ (data.js 0.47 MB, img/base.webp
+39 KB, fallback.webp 59 KB), web/build/v5_build_heads.py, web/dev/heads.html.
+API: SCAComp.heads(el, {view: "curves" | "matrix", head: [block, head] (one-based; default [12, 4]), sigma: 0 | 1 | 2
+(map noise level, default 1), lazy, base}) -> {select(block, head), view(v), destroy()}.
+Fallback image: assets/data/heads/fallback.webp (1152 x 576, the curves drawn on the media ground, no labels).
+What it shows: all 1,368 near-share curves (57 blocks x 24 heads, 11 noise levels after the gate) on a canvas,
+coloured by mean near share (far blue, neutral, near orange), heads 4 and 7 of block 12 heavy in near/far colours,
+the head average in ink; hover or tap shows block, head, double- or single-stream, mean near share; click selects;
+arrow keys on the plot step through heads by reach rank; "Sorted by reach" shows the same numbers as a matrix (rows =
+heads by mean share, columns = noise bins, average strip under it: rows are flat, so reach belongs to the head).
+Beside it: the variance split from the paper's loader (97.5 / 2.5 / 0.7, plus the head share in FLUX.1-Krea-dev
+97.6 and FLUX.2-dev 99.1 = Table B.1 rows), drawn as a bar with the noise part magnified (as Figure 2c). Under it:
+the real full-attention row of the selected block-12 head at the sheep query, noise level scrubber (sigma 0.90, 0.61,
+0.33), near part (within 16 tokens) orange, far part blue, the dashed 16-token neighbourhood, the near share of
+that map; 24 chips pick block 12's heads (chip underline = mean reach colour).
+Source: paper/figures/src/v6_observation.py load() (the paper's own loader and checks: variance_split.csv,
+headline macros \hlVarHead / \hlVarStep / \hlVarAvg), v6_attn_block12.npz; nothing typed.
+Checked: split shows 97.5% / 2.5% / 0.7% (= headline.tex); head 4 of block 12 is rank 82 of 1,368 (the paper's
+ranks[3] = 81, zero-based); no console errors, no overflow; height 608 px at 1440x900; 738 px at 390x844 (limit
+675; notes collapse behind "About these numbers" on narrow screens).
+Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_build_heads.py (seconds).
+Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/heads_{desk,phone}_{light,dark}_*.png
+
+## 3. emulate: DONE (16:40)
+Files: web/assets/js/c_emulate.js, web/assets/css/c_emulate.css, web/assets/data/emulate/ (data.js 0.27 MB,
+img/base.webp, fallback.webp 16 KB), web/build/v5_build_emulate.py, web/dev/emulate.html.
+API: SCAComp.emulate(el, {head: 1..24 (default 10, the method figure's head), pi: 0..1 (default 0.3), lazy, base})
+-> {set(pi), head(h), destroy()}.
+Fallback image: assets/data/emulate/fallback.webp (1152 x 480, the three featured heads' J curves on the media ground).
+What it shows: block 12 at the sheep query, step 20 (sigma 0.61), r = 4: the window view (16 x 16 window keys, orange
+heat), the grid view (16 x 16 block-centre keys, blue dots by attention), their mix at pi (pi x window + (1 - pi) x
+grid, the effective attention of the mixed output), and the head's full attention (orange inside the window, blue
+outside). Under them the head's real J(pi) = E - 2 pi B + pi^2 A (archived statistics, 32 prompts, 262,144 query
+samples, noise bin sigma 0.62) for r = 4 (solid) and r = 2 (dashed), rescaled to [0, 1] as the paper's method
+figure does, the dot at the current pi, pi* = clip(B/A, 0, 1) marked; readout: J(pi) / J(pi*) (big), pi* (and B/A
+when it clips), the error relative to the full-attention output energy at pi and at pi*. Snap to pi* animates there.
+Head buttons: near-reaching head 4 (pi* 0.93), in between head 10 (0.79), far-reaching head 7 (0.00: B/A = -0.19,
+clipped), plus a select for all 24 heads.
+Supported by data: maps at r = 4 only (the npz holds r = 4 operators); r = 2 appears only as its J curve and pi*.
+Honest edge it shows as is: head 7's emulation error is large (211% of its output energy at pi*, r = 4); the toy
+prints it.
+Source: paper/figures/src/data/v6_attn_block12.npz and results/evidence/calib/k1_1024.npz through the constants and
+rules of paper/figures/src/v6_method_assets.py (head-10 rule, window, bin 8); pi* asserted equal to the paper's
+s2_pi_head / s4_pi_head tables.
+Checked: pi* 0.93 / 0.79 / 0.00 at r = 4 and 0.95 / 0.83 / 0.06 at r = 2 (= the tables); no console errors, no
+overflow; 684 px at 1440x900; 800 px at 390x844 (2 x 2 maps; notes collapse on narrow screens).
+Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_build_emulate.py (seconds).
+Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/emulate_{desk,phone}_{light,dark}_*.png
+
+## 4a. table: DONE (17:00)
+Files: web/assets/js/c_table.js, web/assets/css/c_table.css, web/assets/data/table/data.js (8 KB),
+web/build/v5_build_table.py, web/dev/table.html.
+API: SCAComp.table(el, {tab: "main" | "gen", hide: ["time" | "pref" | "detail" | "set" | "holm"], lazy, base}) ->
+{tab(t), destroy()}. On containers under 560 px the Detail and Set level groups start hidden (chips bring them back).
+No fallback image: the page's own static Table 1 (or a link to results.html) is the fallback; on data failure the
+component removes .is-live from its figure (or prints one line).
+What it shows: tab 1 = paper Table 1 (tab_main_compact.tex) cell for cell: groups "Single pass, AReA's sampler" and
+"Multi-stage, own recipes", columns s / vs. ours / IR / HPSv2.1 / Pick / M_c / FID / FID_p / +-; bold = best,
+underline = second per group, double dagger = campaign mean, our rows shaded green with a green rule; the Holm
+record drawn as ten cells (green = progressive SCA significantly better than the row, dark = worse, grey =
+neither) with "10 / 0" beside it, "ref." for progressive SCA. Tab 2 = Table 3 (tab_generality.tex): paired
+differences IR / HPS / Pick with n and the Holm record; significant cells (paper's \up) in accent ink.
+Sorting: header click = best first (direction-aware), again = worst first, again = paper order; sorted rows carry a
+"Single pass" / "Multi-stage" tag. Group chips hide or show column groups (at least one stays).
+Source: the paper's generated snippets (gen_main_tables.py output) and the n macros of paper/main.tex; the build
+asserts every time cell against fig_speed.load() (clean / campaign) and every IR cell against the mean per-image IR
+of the 195 prompts (v6_common.pool195). Nothing typed.
+Checked: paper order IR -2.18, -0.10, 0.56, 0.92, 1.25, 1.28, 1.34, 1.32; sort by time puts progressive SCA (49.2)
+first and UltraImage (308.5, campaign) last; no console errors; no page overflow (the table scrolls inside its own
+frame on phones, method column sticky); 660 px at 1440x900, 765 px at 390x844.
+Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_build_table.py
+Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/table_{desk,phone}_{light,dark}_*.png
+
+## 4b. speed: DONE (17:10)
+Files: web/assets/js/c_speed.js, web/assets/css/c_speed.css, web/assets/data/speed/data.js (2 KB),
+web/build/v5_build_speed.py, web/dev/speed.html.
+API: SCAComp.speed(el, {side: 4096 (or null for no readout at first), lazy, base}) -> {show(side), destroy()}.
+What it shows: the paper's Figure 7 data as an SVG log-log chart: single-pass SCA (accent line, hollow markers,
+b = 0.99), AReA (purple, b = 1.12), full attention (neutral, b = 1.60, not run at 8192^2), whiskers = fastest and
+slowest of three timed images; progressive SCA (accent star, 49.2 s) and HRDiT (107.0 s) at 4096^2. Hover, tap or
+arrow keys pick a size: a readout lists every method's seconds there, single-pass SCA's speed-up over AReA (2.07,
+2.58, 2.63, 2.76, 3.07) and at 4096^2 progressive SCA's 4.1x over AReA and 2.2x over HRDiT (sweep 3). A row of
+ratio chips under the x axis (aligned to sizes on desktop, a strip on phones).
+Source: paper/figures/src/v6_scaling.py load / derived / checks (the build runs the paper's checks: tab:latency,
+headline macros, exponents, "fastest at every size"); nothing typed.
+Checked: values above; no console errors; no overflow; 466 px at 1440x900, 610 px at 390x844.
+Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_build_speed.py
+Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/speed_{desk,phone}_{light,dark}_*.png
 
 ## Requests to the designer
 - Mount percentiles in the "See it" section, figure with a comp-fallback image as above. The component sets its own
