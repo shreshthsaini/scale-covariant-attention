@@ -65,6 +65,13 @@ Width: fill the mount (100%); the page gives at most 1200px on desktop and the f
 background, 1px --rule border at most, no outer shadow (the page frames you). Prefix every class with c-<name>-.
 Respect prefers-reduced-motion (no autoplay animation; still images). No console output.
 
+## Update 17:20 (designer)
+- The hero is no longer 100vh: on wide screens it is sized to its content (at most about 82% of the viewport, the
+  next section peeks in); on phones a 16:10 box shows the 16:9 loop (the 9:16 cut is kept but not used).
+- Component fallback images may use data-src (loaded only when the component is absent or fails).
+- An Artifact preview bundle of the main page is built by web/build/v5_artifact_bundle.py (see webdesign.md):
+  components must load their data by relative path from their own script (as they do), nothing from other hosts.
+
 ## Videos (webmedia)
 Ground --screen #0B0D0C; text #ECEEE9 (secondary #A5AEA8); SCA #3DBB8C, near #F0A04B, far #6FA3E0, AReA #B592E3,
 HRDiT #C9D0CB, others #7F8984 (the dark-theme values, since media sits on the screen ground in both themes).

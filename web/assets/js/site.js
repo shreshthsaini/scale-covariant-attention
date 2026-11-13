@@ -167,7 +167,9 @@
 
   /* ================================================================ everything below the fold */
   function rest() {
-    IM = window.SCA_IMAGES || {}; SHOW = window.SCA_SHOWCASE || {};
+    IM = window.SCA_IMAGES || {}; SHOW = window.SCA_SHOWCASE || {}; NUM = window.SCA_NUMBERS || NUM;   /* deferred on the main page */
+    STEPS = { prog: num("main.prog.steps") || STEPS.prog, sca: num("main.sca.steps") || STEPS.sca, area: num("main.area.steps") || STEPS.area,
+              hrdit: num("main.hrdit.steps") || STEPS.hrdit, ultra: num("main.ultraimage.steps") || STEPS.ultra, full: num("main.full.steps") || STEPS.full };
   /* ---------------------------------------------------------------- nav highlight */
   (function nav() {
     var links = $$(".nav a"); if (!links.length || !("IntersectionObserver" in window)) return;

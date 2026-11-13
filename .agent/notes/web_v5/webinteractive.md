@@ -3,8 +3,8 @@
 ## Status
 All seven components are finished and checked (demo pages and index.html, 1440x900 and 390x844, light and dark):
 percentiles, heads, emulate, table, speed (the brief's list) and views, stages (extras: method steps 1 and 3).
-The page mounts heads, views, emulate, percentiles, table and speed (webdesign.md, page order); stages waits for
-the designer (request at the end). Rebuild everything: the seven web/build/v5_build_<name>.py scripts (sca env), then
+index.html mounts all seven (heads, views, emulate, stages, percentiles, table, speed) and each goes live with no
+console errors at 1440x900 and 390x844 in both themes (last full check below). Rebuild everything: the seven web/build/v5_build_<name>.py scripts (sca env), then
 web/build/build_v5_assets.py, then web/build/v5_check_components.py <names> --page index.html --out DIR (pwqa env).
 Last full check: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/final_check.jsonl and final/*.png.
 
@@ -16,9 +16,11 @@ Check script for all of them: web/build/v5_check_components.py <names> --out DIR
 mount height against 80vh, scripted interactions, screenshots at 1440x900 and 390x844, light and dark).
 
 Common behaviour (all components)
-- Mount: SCAComp.<name>(el, options) returns {set?, destroy}. It renders a skeleton with the final geometry at
-  once, then loads data.js when the mount is within 900 px of the viewport (IntersectionObserver), so it never
-  shifts layout and costs nothing above the fold.
+- Mount: SCAComp.<name>(el, options) returns {set?, destroy}. It renders a skeleton at once, then loads data.js
+  when the mount is within 900 px of the viewport (IntersectionObserver), so it costs nothing above the fold.
+  While loading, a c-<name>-loading class reserves the final heights (measured on the demo pages): with data.js
+  delayed 2 s, the skeleton and the final component differ by at most 10 px at 1440x900 and 390x844
+  (v5_check_components.py --shift measures it).
 - Data failure: if data.js (or zoomgrid.js) fails to load, the component removes .is-live from its closest
   <figure> and empties itself when that figure has a .comp-fallback (the page's static image shows again);
   otherwise it shows assets/data/<name>/fallback.webp itself.
@@ -192,9 +194,9 @@ Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_b
 Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots/stages_{desk,phone}_{light,dark}_*.png
 
 ## Integration on the page (checked with web/build/v5_check_components.py --page index.html)
-Latest run: heads, views, emulate, percentiles, table and speed are live on index.html at 1440x900 and 390x844 in
-both themes; component heights on the page (desktop / phone): heads 608 / 730, views 589 / 919, emulate 715 / 771,
-percentiles 723 / 705, table 543 / 781, speed 640 / 666. Screenshots: /scratch/09032/saini_2/sca/web_builds/
+Latest run: all seven components are live on index.html at 1440x900 and 390x844 in both themes; heights on the
+page (desktop / phone): heads 608 / 730, views 589 / 919, emulate 715 / 771, stages 678 / 594, percentiles 723 / 705,
+table 543 / 781, speed 640 / 666. Screenshots: /scratch/09032/saini_2/sca/web_builds/
 v5_webinteractive_1/final/page_index_<name>_{desk,phone}_{light,dark}.png; the full demo-page run is in the same
 folder (<name>_<view>_<theme>_<n>_<state>.png) with its log in ../final_check.jsonl.
 heads, emulate, percentiles and table are mounted by the designer and go live (is-live) at 1440x900 and 390x844 in
@@ -205,23 +207,16 @@ Data-failure path checked (dev pages with ?o_base=../nope/): percentiles, heads,
 fallback shows again; table and speed print one line. Reduced motion checked: zoom flights and Snap to pi* jump.
 
 ## Requests to the designer
-- percentiles: mounted (thanks). At 1344 px wide it is 759 px tall (the four images grow with the width); at 1200 px
-  it is 712 px. If the section can cap the figure at 1200 px it stays under 80vh at 1440x900.
-- speed: please mount it in Results next to the table: <figure class="comp-figure"> with the paper's scaling figure
-  (assets/img/v6/scaling.*) as .comp-fallback and <div class="comp-mount" data-comp="speed" data-options='{"side": 4096}'>.
-  It replaces the retired speed plot; numbers come from the paper's Figure 7 loader.
-- views: please mount it as method step 1 (two native-size views), before emulate:
-  data-comp="views" data-options='{"size": 4096}', fallback <img class="comp-fallback"
-  src="assets/data/views/fallback.webp" width="1200" height="1200" alt="A 4096 by 4096 image with the window view
-  (orange box) and the grid view (blue dots) of one query.">. It can sit beside or replace the method_window loop.
-- stages: please mount it as method step 3 (one table for any size and sampler stage), after emulate:
-  data-comp="stages" data-options='{}'; fallback = the method_stages loop or paper Figure 3. With views (step 1),
-  emulate (step 2) and stages (step 3) every method step is playable, and heads carries the observation.
-- table: its own fallback is your static table; nothing else needed. On phones it starts with Detail and Set level
-  hidden (chips bring them back) and scrolls inside its frame.
-- emulate: the fallback slot you used (method_emulation video) is fine; fallback.webp exists too
-  (assets/data/emulate/fallback.webp, 1152 x 480).
+- percentiles: on the page it is 723 px tall at 1344 px wide (the four images grow with the width; 712 px at
+  1200 px). Capping that figure at 1200 px keeps it under 80vh at 1440x900; optional.
+- Phones: heads (730 px), views (919), emulate (771) and table (781) are taller than 80vh (675 px) at 390x844
+  because their images, maps and table rows need the height; their notes already collapse behind a toggle.
+- Fallbacks: percentiles, heads, emulate and views each ship assets/data/<name>/fallback.webp (no text, both
+  themes); table, speed and stages expect the page's static figure (paper Table 1, Figure 7, Figure 3 or the
+  method_stages loop) as .comp-fallback.
+- After adding or removing a component file, rerun web/build/build_v5_assets.py (I ran it; it lists all seven).
 - Components read --bg-raised, --bg-sunk, --ink, --ink-soft, --ink-faint, --rule, --accent, --accent-ink,
   --accent-soft, --on-accent, --near, --far, --area, --hrdit, --neutral, --screen, --screen-ink, --radius-sm,
   --shadow, --font-sans, --font-serif, --ease. Canvas components re-read them on sca:themechange and on changes of
   data-theme on <html>, so .band-dark sections work too.
+- Headless checks report failed .mp4 requests: Playwright's Chromium has no H.264. They are test artifacts.

@@ -208,8 +208,8 @@ def main():
                 pg.wait_for_timeout(300)
                 h = pg.evaluate("document.documentElement.scrollHeight")
                 over = pg.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
-                broken = pg.evaluate("""Array.from(document.images).filter(i => i.complete && i.naturalWidth === 0
-                                         && !i.src.includes('/ideogram/')).map(i => i.src)""")
+                broken = pg.evaluate("""Array.from(document.images).filter(i => i.getAttribute('src') && i.complete && i.naturalWidth === 0
+                                         && !i.src.includes('/ideogram/')).map(i => i.src)""")   # data-src fallbacks without src are held back, not broken
                 n_img = pg.evaluate("document.images.length")
                 text = pg.evaluate("document.body.innerText")
                 bad = sorted(set(m.group(0).lower() for m in re.finditer(FORBID, text, re.I)))

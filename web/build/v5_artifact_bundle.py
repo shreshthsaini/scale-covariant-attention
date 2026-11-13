@@ -123,10 +123,12 @@ def build() -> None:
     defer = [d for d in json.loads(m.group(1)) if d not in DEFER_DROP]
     body = body.replace(m.group(0), "window.SCA_DEFER = " + json.dumps(defer) + ";")
     links = re.findall(r'<link rel="stylesheet" href="([^"]+)">', head)
+    preloads = re.findall(r'<link rel="preload" href="(assets/fonts/[^"]+)" as="font" type="font/woff2" crossorigin>', head)
     page = (f"<title>{TITLE}</title>\n"
             '<meta name="claude:viewport-fit-sides" content="cover">\n'
             f'<meta name="description" content="{desc}">\n'
             + "".join(f'<link rel="stylesheet" href="{h}">\n' for h in links)
+            + "".join(f'<link rel="preload" href="{h}" as="font" type="font/woff2" crossorigin>\n' for h in preloads)
             + "<style>.live-note{font-size:.72em;font-weight:500;opacity:.7;margin-left:.35em;white-space:nowrap}</style>\n"
             + f"<script>{theme_js}</script>\n" + body.strip() + "\n")
     put_text("page.html", page)

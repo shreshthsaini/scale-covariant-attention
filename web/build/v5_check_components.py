@@ -5,8 +5,12 @@ files, horizontal overflow, the mount's height against 80vh, and screenshots aft
 Usage (repository root; an env with playwright and its Chromium build):
   PLAYWRIGHT_BROWSERS_PATH=/scratch/09032/saini_2/tmp/ms-playwright \
   /work/09032/saini_2/vista/library/uv-envs/pwqa/bin/python web/build/v5_check_components.py percentiles \
-      [heads emulate table speed] --out /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots
+      [heads emulate table speed views stages] --out /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_1/shots
+      [--page index.html] [--shift]
 Pages open from file://. Prints one line per page and view and exits non-zero on any console error or overflow.
+--page also checks every component mounted on that page of web/ (live, height, screenshot of its figure);
+--shift serves web/ on 127.0.0.1 with every data.js delayed 2 s and reports the skeleton's height against the
+final height (a move above 12 px fails).
 """
 import argparse
 import json
@@ -291,6 +295,43 @@ def run_stages(page, view, out, tag, log):
     return shots
 
 
+def check_shift(br, names, views):
+    """Layout shift when the data arrives: serve web/ on 127.0.0.1, delay every assets/data/*/data.js by 2 s, and
+    compare the mount's height before the data (the skeleton) with its height after."""
+    import functools
+    import http.server
+    import threading
+    import time
+
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=WEB))
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    worst = 0
+    try:
+        for view in views:
+            for name in names:
+                ctx = br.new_context(**VIEWS[view])
+                page = ctx.new_page()
+
+                def slow(route):
+                    time.sleep(2.0)
+                    route.continue_()
+                page.route("**/assets/data/*/data.js", slow)
+                page.goto(f"http://127.0.0.1:{srv.server_address[1]}/dev/{name}.html")
+                page.wait_for_timeout(1200)
+                h0 = page.evaluate("() => document.querySelector('.comp-mount').getBoundingClientRect().height")
+                page.wait_for_timeout(4500)
+                h1 = page.evaluate("() => document.querySelector('.comp-mount').getBoundingClientRect().height")
+                worst = max(worst, abs(h1 - h0))
+                print(json.dumps(dict(shift=name, view=view, skeleton=round(h0), final=round(h1), moved=round(h1 - h0))))
+                ctx.close()
+    finally:
+        srv.shutdown()
+    return worst
+
+
 RUNNERS = {"percentiles": run_percentiles, "heads": run_heads, "emulate": run_emulate, "table": run_table, "speed": run_speed, "views": run_views, "stages": run_stages}
 
 
@@ -301,6 +342,7 @@ def main():
     ap.add_argument("--views", default="desk,phone")
     ap.add_argument("--themes", default="light,dark")
     ap.add_argument("--page", default="", help="also check every component mounted on this page of web/ (e.g. index.html)")
+    ap.add_argument("--shift", action="store_true", help="also measure the layout shift when each component's data arrives")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     bad = 0
@@ -337,6 +379,8 @@ def main():
                     ctx.close()
         if a.page:
             bad += check_page(br, a.page, a.out, a.views.split(","), a.themes.split(","))
+        if a.shift:
+            bad += check_shift(br, a.names, a.views.split(",")) > 12
         br.close()
     sys.exit(1 if bad else 0)
 
