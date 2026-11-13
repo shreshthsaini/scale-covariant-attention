@@ -100,6 +100,24 @@ def text_w(s: str, f) -> float:
     return f.getlength(s)
 
 
+def text_alpha(img: Image.Image, xy, s: str, f, fill, alpha: float = 1.0, anchor: str = "la", features=None):
+    """Text at an opacity (PIL ignores the alpha of a text colour): glyph coverage x alpha as a paste mask."""
+    if alpha <= 0.002 or not s:
+        return
+    fill = rgb(fill) if isinstance(fill, str) else tuple(fill[:3])
+    d = ImageDraw.Draw(img)
+    if alpha >= 0.998:
+        d.text(xy, s, font=f, fill=fill, anchor=anchor, features=features)
+        return
+    b = d.textbbox(xy, s, font=f, anchor=anchor, features=features)
+    x0, y0 = int(math.floor(b[0])) - 2, int(math.floor(b[1])) - 2
+    x1, y1 = int(math.ceil(b[2])) + 2, int(math.ceil(b[3])) + 2
+    m = Image.new("L", (x1 - x0, y1 - y0), 0)
+    ImageDraw.Draw(m).text((xy[0] - x0, xy[1] - y0), s, font=f, fill=int(round(255 * alpha)), anchor=anchor,
+                           features=features)
+    img.paste(Image.new("RGB", m.size, fill), (x0, y0), m)
+
+
 def check_words(*strings: str, where: str = "") -> None:
     for s in strings:
         if s and BANNED.search(s):

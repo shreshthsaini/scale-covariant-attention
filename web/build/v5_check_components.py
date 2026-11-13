@@ -86,7 +86,42 @@ def run_percentiles(page, view, out, tag, log):
     return shots
 
 
-RUNNERS = {"percentiles": run_percentiles}
+def run_heads(page, view, out, tag, log):
+    page.wait_for_selector(".c-heads-chip", timeout=20000)
+    page.wait_for_timeout(900)
+    log.append(("read", page.evaluate("() => document.querySelector('.c-heads-read').textContent.slice(0, 90)")))
+    log.append(("split", page.evaluate("() => Array.from(document.querySelectorAll('.c-heads-num-v')).map(e => e.textContent).join(' / ')")))
+    shots = [shot(page, out, f"{tag}_0_default")]
+    box = page.query_selector(".c-heads-ov").bounding_box()
+    x, y = box["x"] + box["width"] * 0.55, box["y"] + box["height"] * 0.3
+    if view == "phone":
+        tap(page, x, y)
+    else:
+        page.mouse.move(x, y)
+        page.wait_for_timeout(300)
+        page.mouse.click(x, y)
+    page.wait_for_timeout(500)
+    log.append(("after pick", page.evaluate("() => document.querySelector('.c-heads-read').textContent.slice(0, 90)")))
+    shots.append(shot(page, out, f"{tag}_1_pick"))
+    chip = page.query_selector_all(".c-heads-chip")[6]
+    chip.click()
+    page.query_selector_all(".c-heads-scrub-b")[0].click()
+    page.wait_for_timeout(400)
+    log.append(("map", page.evaluate("() => document.querySelector('.c-heads-map-t').textContent + ' | ' + document.querySelector('.c-heads-map-sv').textContent")))
+    shots.append(shot(page, out, f"{tag}_2_head7"))
+    page.query_selector_all(".c-heads-seg-b")[1].click()
+    page.wait_for_timeout(400)
+    ov = page.query_selector(".c-heads-ov")
+    ov.focus()
+    for _ in range(3):
+        page.keyboard.press("ArrowDown")
+    page.wait_for_timeout(300)
+    log.append(("matrix + 3 down", page.evaluate("() => document.querySelector('.c-heads-read').textContent.slice(0, 90)")))
+    shots.append(shot(page, out, f"{tag}_3_matrix"))
+    return shots
+
+
+RUNNERS = {"percentiles": run_percentiles, "heads": run_heads}
 
 
 def main():

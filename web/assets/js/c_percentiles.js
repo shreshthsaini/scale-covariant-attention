@@ -76,7 +76,7 @@
 
     /* ------------------------------------------------------------ skeleton (final geometry, no data yet) */
     var head = el("div", "head");
-    var stopEl = el("div", "stop", null, [el("span", "kicker", { text: "ImageReward gain over AReA" }), el("span", "pct", { text: "\u00a0" })]);
+    var stopEl = el("div", "stop", null, [el("span", "kicker", { text: "Paired ImageReward gain" }), el("span", "pct", { text: "\u00a0" })]);
     var diffV = el("span", "diff-v", { text: "\u00a0" });
     var diffL = el("span", "diff-l", { text: "" });
     var pill = el("span", "pill", { text: "" });

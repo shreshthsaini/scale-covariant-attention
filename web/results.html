@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Results: Scale-Covariant Attention</title>
+<meta name="description" content="Every result of Scale-Covariant Attention with intervals, timing, the method in detail, limitations and protocol.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B0D0C'/%3E%3Cpath d='M8 13V8h5M19 8h5v5M24 19v5h-5M13 24H8v-5' fill='none' stroke='%233DBB8C' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%233DBB8C'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="stylesheet" href="assets/css/zoomgrid.css">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("sca-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+</head>
+<body class="sub subpage">
+<a class="skip" href="#content">Skip to content</a>
+<header class="topbar solid">
+  <div class="wrap wide bar">
+    <a class="brand" href="index.html" aria-label="SCA, the main page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></svg>SCA</a>
+    <nav class="nav" aria-label="Pages">
+      <a href="index.html#claim">Result</a>
+      <a href="index.html#observation">Idea</a>
+      <a href="index.html#method">Method</a>
+      <a href="index.html#see">Examples</a>
+      <a href="results.html" class="on" aria-current="page">Results</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="../paper/main.pdf">Paper</a>
+    </nav>
+    <a class="paper-link btn btn-ghost" href="index.html" style="height:34px;padding:0 14px;font-size:13px">Main page</a>
+    <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch between light and dark theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="content">
+<div class="subpage-head">
+  <div class="wrap wide">
+    <p class="crumbs"><a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:15px;height:15px;display:inline;vertical-align:-2px"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Reach Is a Property of the Head</a></p>
+    <p class="eyebrow">Results</p>
+    <h1 class="display">All results and protocol</h1>
+    <p class="lead">Every metric with its interval, the seeds and HRGen-1K, timing, the method in detail and the full limitations. The main page keeps the headline; this page keeps the rest.</p>
+  </div>
+</div>
+<section id="results" aria-labelledby="h-results">
+  <div class="wrap">
+    <div class="head-c">
+      <p class="kicker">Results</p>
+      <h2 id="h-results">Main comparison at 4096&sup2;</h2>
+      <p class="lede-c">FLUX.1-dev at 4096&sup2; on all <span data-num="main.n_prompts">195</span> Aesthetic-4K prompts. Intervals are paired bootstrap 95% intervals over prompts; Holm&rsquo;s correction over the ten per-image metrics leaves every &ldquo;all ten&rdquo; claim intact.</p>
+    </div>
+
+    <div class="res-top">
+      <div class="res-card">
+        <h3>Three seeds and HRGen-1K</h3>
+        <p class="res-big"><span data-num="prog.seeds.all_word">all ten</span> <small>per-image metrics</small></p>
+        <p>Progressive SCA beats AReA on every per-image metric at each of the <span data-num="prog.seeds.n_word">three</span> seed labels and on all <span data-num="prog.later.hrgen.n">1000</span> HRGen-1K prompts.</p>
+        <table class="mini">
+          <thead><tr><th>Run</th><th>ImageReward gain</th></tr></thead>
+          <tbody>
+            <tr><td>Seed 0</td><td data-num="prog.seed0.ir">+0.40 [0.32, 0.49]</td></tr>
+            <tr><td>Seed 1</td><td data-num="prog.seed1.ir">+0.37 [0.29, 0.46]</td></tr>
+            <tr><td>Seed 2</td><td data-num="prog.seed2.ir">+0.35 [0.27, 0.45]</td></tr>
+            <tr><td>HRGen-1K</td><td data-num="prog.later.hrgen.ir_ci2">+0.90 [0.84, 0.96]</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="res-card">
+        <h3>Seconds per 4096&sup2; image</h3>
+        <div class="timebars" id="timebars"></div>
+        <p class="small muted">Batch-1 median after a warm-up on one idle GH200, the three methods timed back to back. Progressive SCA is <span data-num="prog.clean.area_x">4.1×</span> faster than AReA and takes <span data-num="prog.clean.hrdit_pct">46%</span> of HRDiT's time on the same schedule.</p>
+      </div>
+    </div>
+
+    <h3 class="tbl-h">Table 1 of the paper</h3>
+    <div class="table-wrap" role="region" aria-label="Main comparison table" tabindex="0">
+      <table class="main-table">
+        <thead>
+          <tr><th rowspan="2">Method</th><th rowspan="2">Steps</th><th colspan="2" class="span">Time (s) &darr;</th><th rowspan="2">Image<br>Reward &uarr;</th><th rowspan="2">HPSv2.1 &uarr;</th><th rowspan="2">Pick<br>Score &uarr;</th><th rowspan="2">CLIP &uarr;</th><th rowspan="2">MUSIQ<sub>c</sub> &uarr;</th><th rowspan="2">FID &darr;</th><th rowspan="2">Patch<br>FID &darr;</th></tr>
+          <tr><th>clean</th><th>camp.</th></tr>
+        </thead>
+        <tbody>
+          <tr class="group"><td colspan="11">Single pass, shared sampler (<span data-num="config.steps">28</span> steps, guidance <span data-num="config.guidance">4.5</span>)</td></tr>
+          <tr><td>Full attention</td><td data-num="main.full.steps">28</td><td data-num="main.full.time_clean" class="second">186.5</td><td data-num="main.full.time_camp">196.2</td><td data-num="main.full.ir" class="sig-dn">−2.18</td><td data-num="main.full.hps21" class="sig-dn">7.60</td><td data-num="main.full.pick" class="sig-dn">17.94</td><td data-num="main.full.clip" class="sig-dn">15.37</td><td data-num="main.full.musiqc" class="sig-dn">33.1</td><td data-num="main.full.fid" class="sig-dn">312.4</td><td data-num="main.full.fidp" class="sig-dn">252.2</td></tr>
+          <tr><td>DyPE</td><td data-num="main.dype.steps">28</td><td data-num="main.dype.time_clean">n/m</td><td data-num="main.dype.time_camp">195.9</td><td data-num="main.dype.ir" class="sig-dn">−0.10</td><td data-num="main.dype.hps21" class="sig-dn">20.55</td><td data-num="main.dype.pick" class="sig-dn">20.51</td><td data-num="main.dype.clip" class="sig-dn">24.92</td><td data-num="main.dype.musiqc" class="sig-dn">50.3</td><td data-num="main.dype.fid" class="sig-dn">205.5</td><td data-num="main.dype.fidp" class="sig-dn">171.9</td></tr>
+          <tr><td>SEGA</td><td data-num="main.sega.steps">28</td><td data-num="main.sega.time_clean">n/m</td><td data-num="main.sega.time_camp">190.4</td><td data-num="main.sega.ir" class="sig-dn">0.56</td><td data-num="main.sega.hps21" class="sig-dn">24.34</td><td data-num="main.sega.pick" class="sig-dn">21.64</td><td data-num="main.sega.clip" class="sig-dn">26.95</td><td data-num="main.sega.musiqc" class="sig-dn">50.3</td><td data-num="main.sega.fid" class="sig-dn">164.9</td><td data-num="main.sega.fidp" class="sig-dn">125.8</td></tr>
+          <tr><td>AReA</td><td data-num="main.area.steps">28</td><td data-num="main.area.time_clean">202.4</td><td data-num="main.area.time_camp">264.4</td><td data-num="main.area.ir" class="second sig-dn">0.92</td><td data-num="main.area.hps21" class="second sig-dn">27.16</td><td data-num="main.area.pick" class="second sig-dn">22.36</td><td data-num="main.area.clip" class="second sig-dn">27.69</td><td data-num="main.area.musiqc" class="second sig-dn">50.4</td><td data-num="main.area.fid" class="second">145.8</td><td data-num="main.area.fidp" class="second sig-up">102.9</td></tr>
+          <tr class="ours"><td>Single-pass SCA (ours)</td><td data-num="main.sca.steps">28</td><td data-num="main.sca.time_clean" class="best">77.1</td><td data-num="main.sca.time_camp">78.4</td><td data-num="main.sca.ir" class="best sig-dn">1.25</td><td data-num="main.sca.hps21" class="best sig-dn">29.73</td><td data-num="main.sca.pick" class="best sig-dn">23.12</td><td data-num="main.sca.clip" class="best">29.14</td><td data-num="main.sca.musiqc" class="best sig-up">60.1</td><td data-num="main.sca.fid" class="best">140.2</td><td data-num="main.sca.fidp" class="best sig-up">98.4</td></tr>
+          <tr class="group"><td colspan="11">Multi-stage, own recipe and budget</td></tr>
+          <tr><td>UltraImage</td><td data-num="main.ultraimage.steps">30+30</td><td data-num="main.ultraimage.time_clean">n/m</td><td data-num="main.ultraimage.time_camp">308.5</td><td data-num="main.ultraimage.ir" class="sig-dn">1.28</td><td data-num="main.ultraimage.hps21" class="sig-dn">30.77</td><td data-num="main.ultraimage.pick" class="sig-dn">23.33</td><td data-num="main.ultraimage.clip" class="sig-dn">28.84</td><td data-num="main.ultraimage.musiqc" class="sig-dn">41.7</td><td data-num="main.ultraimage.fid">142.0</td><td data-num="main.ultraimage.fidp">109.5</td></tr>
+          <tr><td>HRDiT</td><td data-num="main.hrdit.steps">30+17+10</td><td data-num="main.hrdit.time_clean" class="second">107.0</td><td data-num="main.hrdit.time_camp">110.4</td><td data-num="main.hrdit.ir" class="best">1.34</td><td data-num="main.hrdit.hps21" class="second">30.92</td><td data-num="main.hrdit.pick" class="best">23.46</td><td data-num="main.hrdit.clip" class="second">29.12</td><td data-num="main.hrdit.musiqc" class="second">53.5</td><td data-num="main.hrdit.fid" class="best">138.4</td><td data-num="main.hrdit.fidp" class="best sig-up">103.0</td></tr>
+          <tr class="ours headline"><td>Progressive SCA (ours)</td><td data-num="main.prog.steps">30+17+10</td><td data-num="main.prog.time_clean" class="best">49.2</td><td data-num="main.prog.time_camp">50.7</td><td data-num="main.prog.ir" class="second">1.32</td><td data-num="main.prog.hps21" class="best">31.02</td><td data-num="main.prog.pick" class="second">23.41</td><td data-num="main.prog.clip" class="best">29.39</td><td data-num="main.prog.musiqc" class="best">54.1</td><td data-num="main.prog.fid" class="second">141.9</td><td data-num="main.prog.fidp" class="second">107.7</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption"><b>Paper Table 1.</b> Seed label 0. Seconds on one GH200: clean is the batch-1 median after a warm-up; campaign is the mean over the full run on shared nodes, not ranked; n/m: not measured. Clean times come from three sweeps: AReA and full attention from the first, single-pass SCA from the second, HRDiT and progressive SCA from the third, which re-timed AReA at <span data-num="prog.clean.area">202.4</span>&nbsp;s. HPSv2.1 &times;100; MUSIQ<sub>c</sub> is MUSIQ on 1024&sup2; crops; patch FID is our own definition and is not comparable across papers. Bold: best; underline: second best, within each group. <span class="sig-up-key">Blue</span>: significantly better than progressive SCA; <span class="sig-dn-key">orange</span>: significantly worse (95% paired intervals).</p>
+
+
+    <div class="pair" style="margin-top:56px">
+      <figure>
+        <h4>Both modes against AReA, and progressive SCA against HRDiT</h4>
+        <div class="vfig" data-fig="gains"><img src="assets/img/v6/gains.svg" width="760" height="697" loading="lazy" decoding="async" alt="Paired differences of progressive and single-pass SCA from AReA and of progressive SCA from HRDiT, over their per-prompt standard deviation, with 95% intervals."></div>
+        <figcaption>Paired differences over their per-prompt SD, 95% intervals, <i>n</i>&nbsp;=&nbsp;<span data-num="tex.nmain">195</span>; filled / open: significant after / only before Holm&rsquo;s correction.</figcaption>
+      </figure>
+      <figure>
+        <h4>Progressive SCA against every baseline</h4>
+        <div class="vfig" data-fig="baseline_deltas"><img src="assets/img/v6/baseline_deltas.svg" width="1584" height="433" loading="lazy" decoding="async" alt="Paired differences of progressive SCA from every baseline, per metric, with 95% intervals."></div>
+        <figcaption>Paired differences from each baseline with 95% intervals.</figcaption>
+      </figure>
+    </div>
+
+    <div class="facts-grid" style="margin-top:56px">
+      <div class="fact">
+        <h4>Against HRDiT, the same schedule</h4>
+        <p>Statistically indistinguishable in ImageReward (<span data-num="prog.vs.hrdit.ir.ci">−0.02 [−0.09, 0.03]</span>), HPSv2.1 (<span data-num="prog.vs.hrdit.hps21.ci">+0.10 [−0.14, 0.35]</span>, &times;100) and PickScore (<span data-num="prog.vs.hrdit.pick.ci">−0.05 [−0.14, 0.04]</span>), in <span data-num="prog.clean.prog">49.2</span> against <span data-num="prog.clean.hrdit">107.0</span>&nbsp;s; intervals that include zero do not establish equivalence. After Holm&rsquo;s correction progressive SCA remains better on HPSv2 (<span data-num="tex.hlProgHrditHpsTwo">+0.38</span>) and ARNIQA (<span data-num="tex.hlProgHrditArniqa">+2.9</span>) and is worse on none. Crop detail is level (MUSIQ<sub>c</sub> <span data-num="tex.hlProgHrditMusiqc">+0.6</span>). HRDiT keeps lower patch FID (<span data-num="prog.set.hrdit.fidp.ci">+4.6 [0.6, 7.7]</span> for progressive SCA).</p>
+      </div>
+      <div class="fact">
+        <h4>Against single-pass SCA</h4>
+        <p>Progressive SCA gains ImageReward (<span data-num="prog.vs.sca.ir.ci">+0.07 [0.01, 0.13]</span>) and PickScore (<span data-num="prog.vs.sca.pick.ci">+0.29 [0.20, 0.38]</span>). Single-pass SCA keeps more fine detail: MUSIQ on 1024&sup2; crops is <span data-num="prog.vs.sca.musiqc.ci">−6.0 [−7.3, −4.6]</span> for progressive SCA and its patch FID is higher by <span data-num="prog.set.sca.fidp.ci">+9.2 [5.1, 13.2]</span>.</p>
+      </div>
+      <div class="fact">
+        <h4>Set-level scores against AReA</h4>
+        <p>FID is unresolved at seed 0 (<span data-num="prog.set.area.fid.ci">−3.9 [−8.5, 3.1]</span>). The patch FID gap is significant at seeds <span data-num="prog.seeds.fidp_worse">0 and 2</span> (<span data-num="prog.seed0.fidp">+4.8 [0.1, 10.6]</span> and <span data-num="prog.seed2.fidp">+5.4 [0.8, 10.8]</span>) but not at seed <span data-num="prog.seeds.fidp_unresolved">1</span> (<span data-num="prog.seed1.fidp">+1.5 [−2.7, 6.9]</span>).</p>
+      </div>
+      <div class="fact">
+        <h4>Other baselines</h4>
+        <p>Better than DyPE, SEGA and full attention on <span data-num="prog.vs.dype.n_better">10</span>, <span data-num="prog.vs.sega.n_better">10</span> and <span data-num="prog.vs.full.n_better">10</span> of <span data-num="prog.vs.full.n_total">10</span> per-image metrics, and than UltraImage on <span data-num="prog.vs.ultraimage.n_better">9</span>; <span data-num="prog.vs.ultraimage.unresolved_metrics">aesthetic score</span> is unresolved there.</p>
+      </div>
+      <div class="fact">
+        <h4>Single pass, more prompts and checkpoints</h4>
+        <p>On HRGen-1K single-pass SCA beats AReA on <span data-num="general.hrgen.n_better">10</span> of <span data-num="general.hrgen.n_total">10</span> per-image metrics. On FLUX.1-Krea-dev it wins <span data-num="general.krea.n_better">7</span> of <span data-num="general.krea.n_total">10</span> and loses none at <span data-num="general.krea.speedup">3.1×</span> AReA's speed; ImageReward is unresolved there (<span data-num="general.krea.ir">+0.020 [−0.020, 0.063]</span>).</p>
+      </div>
+      <div class="fact">
+        <h4>FLUX.2-dev</h4>
+        <p>SCA without the window schedule beats full attention on <span data-num="general.flux2.n_better">9</span> of <span data-num="general.flux2.n_total">10</span> per-image metrics at <span data-num="general.flux2.speedup">2.0×</span> its speed; ImageReward rises from <span data-num="general.flux2.ir_full">0.75</span> to <span data-num="general.flux2.ir_sca">1.20</span> (<span data-num="general.flux2.n">50</span> prompts).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="speed" aria-labelledby="h-speed">
+  <div class="wrap wide">
+    <div class="head-c">
+      <p class="kicker">Time</p>
+      <h2 id="h-speed">Seconds per image</h2>
+      <p class="lede-c">Clean latency is the batch-1 median of three prompts on one idle GH200 after a warm-up image; ratios divide times of the same kind. Single-pass SCA&rsquo;s time grows linearly with the pixel count: at 8192&sup2; it takes <span data-num="tex.hlLatEightSca">309.7</span>&nbsp;s against AReA&rsquo;s <span data-num="tex.hlLatEightArea">952.0</span>&nbsp;s.</p>
+    </div>
+    <div class="pair">
+      <figure>
+        <h4>Quality against time at 4096&sup2;</h4>
+        <div class="vfig" data-fig="quality_time"><img src="assets/img/v6/quality_time.svg" width="792" height="562" loading="lazy" decoding="async" alt="ImageReward against clean seconds per 4096 squared image."></div>
+        <figcaption>ImageReward (<i>n</i>&nbsp;=&nbsp;<span data-num="tex.nmain">195</span>) against clean seconds per image; arrows give clean-over-clean speed-ups.</figcaption>
+      </figure>
+      <figure>
+        <h4>Seconds against image side</h4>
+        <div class="vfig" data-fig="scaling"><img src="assets/img/v6/scaling.svg" width="760" height="632" loading="lazy" decoding="async" alt="Clean seconds per image against image side for single-pass SCA, AReA and full attention."></div>
+        <figcaption>Clean batch-1 seconds per image; labels give <i>b</i> of seconds &prop; <i>N</i><sup><i>b</i></sup>, the bottom row AReA&rsquo;s time over single-pass SCA&rsquo;s.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="method-detail" aria-labelledby="h-mdetail">
+  <div class="wrap">
+    <div class="head-c">
+      <p class="kicker">The method in detail</p>
+      <h2 id="h-mdetail">Two views, reach emulation, one table</h2>
+      <p class="lede-c">The paper&rsquo;s operator figure, reach emulation and the two samplers, with the real reach table and three real heads.</p>
+    </div>
+    <figure class="paper-fig">
+      <div class="figcard" data-zoomable><img src="assets/img/v6/method_zoom.webp" width="2400" height="1491" loading="lazy" decoding="async" alt="Paper figure: the operators of SCA drawn on one image, window, grid and their mix."></div>
+      <figcaption><b>The operators, drawn on one image</b> (from the paper).</figcaption>
+    </figure>
+    <figure class="paper-fig">
+      <div class="figcard" data-zoomable><img src="assets/img/v6/emulation.webp" width="2400" height="698" loading="lazy" decoding="async" alt="Paper figure: the fitted weight against the near share of all heads, the relative output error of four mixing rules, and the transfer of reach tables."></div>
+      <figcaption><b>The fitted weight measures reach, fits full attention best, and transfers.</b> (a) &pi;<sub><i>h</i></sub> against the near share of <span data-num="calib.n_heads_c">1,368</span> heads. (b) Relative output error of four mixing rules, <span data-num="calib.n_prompts">32</span> prompts. (c) A table used where it was not fitted against the table fitted there.</figcaption>
+    </figure>
+<div class="step-row">
+      <div class="step-text">
+        <p class="step-n">The two views at 4096&sup2;</p>
+        <h3>A native window and a native view of the whole image</h3>
+        <p><b class="t-loc">Local:</b> an exact <span data-num="config.window">64</span>&nbsp;&times;&nbsp;<span data-num="config.window">64</span>-token window around each <span data-num="config.tile">8</span>&nbsp;&times;&nbsp;<span data-num="config.tile">8</span> query tile at its original positions, plus the text and <span data-num="config.bridge_tokens">1,024</span> bridge tokens from the whole image. <b class="t-glob">Global:</b> one real token per block, a <span data-num="config.window">64</span>&nbsp;&times;&nbsp;<span data-num="config.window">64</span> grid over the whole image with its coordinates rescaled to that grid. Each head returns</p>
+        <p class="eq">O<sub><i>h</i></sub> = &pi;<sub><i>h</i></sub>&thinsp;O<sub>loc</sub> + (1 &minus; &pi;<sub><i>h</i></sub>)&thinsp;O<sub>glob</sub>.</p>
+        <p>Every offset in both views stays inside the range seen in training, bridge keys aside, so the model keeps its own RoPE. The cost grows linearly with the number of tokens.</p>
+      </div>
+      <figure class="step-fig">
+        <div class="views" id="views"></div>
+        <figcaption>At 4096&sup2; the latent is 256&nbsp;&times;&nbsp;256 tokens. The local view (amber) is a 64-token window; the global view (blue) keeps one token per 4&nbsp;&times;&nbsp;4 block. Drawn to scale.</figcaption>
+      </figure>
+    </div>
+
+    <div class="step-row flip">
+      <div class="step-text">
+        <p class="step-n">Closed form</p>
+        <h3>The best weight is one division</h3>
+        <p>For each block, head, noise level and ratio, three sums over prompts, steps, queries and channels give the squared error of any weight:</p>
+        <p class="eq">J(&pi;) = E &minus; 2&pi;B + &pi;<sup>2</sup>A, &nbsp;&nbsp; &pi;* = clip(B&thinsp;/&thinsp;A, 0, 1),</p>
+        <p>with A = &Sigma;&#8214;O<sub>loc</sub> &minus; O<sub>glob</sub>&#8214;<sup>2</sup>, B = &Sigma;&#10216;O<sub>full</sub> &minus; O<sub>glob</sub>, O<sub>loc</sub> &minus; O<sub>glob</sub>&#10217; and E = &Sigma;&#8214;O<sub>full</sub> &minus; O<sub>glob</sub>&#8214;<sup>2</sup>. One emulation pass over <span data-num="calib.n_prompts">32</span> prompts fills the reach table for ratios 2 and 4. Reach tables fitted on disjoint halves of the prompts correlate at <span data-num="calib.split_half.s2">0.989</span>.</p>
+      </div>
+      <figure class="step-fig">
+        <div class="parab" id="parab"></div>
+        <figcaption>The relative error of three real heads as a function of their weight, from the sums the emulation pass stored. Drag the marker; the dot is the closed-form optimum. &pi; = 0 is the global view alone, &pi; = 1 the window alone.</figcaption>
+      </figure>
+    </div>
+
+    <figure class="table-fig">
+      <div class="ptable" id="ptable"></div>
+      <figcaption><b>The reach table.</b> The fitted weight of all <span data-num="calib.n_heads_c">1,368</span> heads, one row per block (<span data-num="config.blocks">57</span>) and one column per head, sorted within each block. Move the noise level or switch the ratio: most heads keep their colour.</figcaption>
+    </figure>
+
+    <div class="step-row stages-row">
+      <div class="step-text">
+        <p class="step-n">Sampling</p>
+        <h3>Progressive SCA, the headline</h3>
+        <p>We keep HRDiT's released three-stage schedule as is: <span data-num="prog.cfg.base_steps">30</span> steps at 1024&sup2; with the model's own attention set the layout. The image is then decoded, upsampled, sharpened, re-encoded and re-noised for the last <span data-num="prog.cfg.steps_2048">17</span> steps at 2048&sup2; and the last <span data-num="prog.cfg.steps_4096">10</span> at 4096&sup2;. SCA replaces HRDiT's attention changes at both upper stages, reading ratio <span data-num="prog.cfg.ratio_2048">2</span> and then <span data-num="prog.cfg.ratio_4096">4</span> from one table.</p>
+        <p><b>Single-pass SCA</b> is the fast mode: all <span data-num="config.steps">28</span> steps at the target, the global view alone for the first <span data-num="config.opening_steps">8</span> as in AReA, then windows of <span data-num="config.win_sched">128, 112, 96, 80</span> tokens before the native <span data-num="config.window">64</span>. The opening, the window sizes and the bridge are set by hand; only the weights are fitted.</p>
+      </div>
+      <div class="step-fig sched-col">
+        <div class="sched"><p class="sched-t">Progressive SCA, <span data-num="prog.cfg.total_steps">57</span> steps</p><div class="sched-bar" id="sched-prog"></div></div>
+        <div class="sched"><p class="sched-t">Single-pass SCA, <span data-num="config.steps">28</span> steps at 4096&sup2;</p><div class="sched-bar" id="sched-bar"></div></div>
+        <p class="caption">The 2048&sup2; stage re-enters at &sigma; = <span data-num="prog.cfg.sigma_2048">0.81</span>, the 4096&sup2; stage at &sigma; = <span data-num="prog.cfg.sigma_4096">0.61</span>; guidance is <span data-num="prog.cfg.guidance">3.5, 4.5 and 6.0</span>. Both upper stages start after the point where single-pass SCA opens with the global view alone, so the 1024&sup2; stage takes the place of that opening.</p>
+      </div>
+    </div>
+    <figure class="paper-fig wide-fig">
+      <div class="figcard" data-zoomable><img src="assets/img/v6/progressive.webp" width="2400" height="1174" loading="lazy" decoding="async" alt="Paper figure: progressive SCA inside HRDiT's three-stage sampler."></div>
+      <figcaption><b>Progressive SCA</b> (from the paper): HRDiT&rsquo;s three-stage sampler with SCA at the two upper stages.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="limits" aria-labelledby="h-limits">
+  <div class="wrap prose">
+    <p class="kicker">Limitations</p>
+    <h2 id="h-limits">What SCA does not fix</h2>
+    <ul class="limits">
+      <li><b>Patch-level fidelity.</b> Progressive SCA&rsquo;s patch FID is higher than HRDiT&rsquo;s (<span data-num="tex.hlProgHrditFidP">+4.6</span>) and single-pass SCA&rsquo;s (<span data-num="tex.hlProgScaFidP">+9.2</span>), and inside its sampler coarser weights have lower patch FID than per-head weights. Its patch FID is higher than AReA&rsquo;s at <span data-num="prog.seeds.fidp_n_worse_word">two</span> of <span data-num="prog.seeds.n_word">three</span> seeds.</li>
+      <li><b>Hand-set parts.</b> The opening, the window sizes and the bridge are set by hand; only the weights are measured. The window sizes were chosen on the <span data-num="abl.n_prompts">46</span>-prompt ablation subset, which is part of the evaluation set.</li>
+      <li><b>Single pass.</b> In single-pass mode, small additional figures occasionally appear in scenes with people or animals; the progressive configuration reduces this to the level of the multi-stage baselines.</li>
+      <li><b>Dependence on HRDiT.</b> Progressive SCA uses HRDiT&rsquo;s sampler, which does not support FLUX.1-Krea-dev, so the 6144&sup2;, 8192&sup2;, FLUX.2-dev and sensitivity results use SCA without the schedule. At 6144&sup2; and 8192&sup2; its samples show block and stripe artifacts.</li>
+      <li><b>The fit.</b> Reach emulation omits the bridge and sees <span data-num="calib.key_ratio">16</span> times fewer keys per view than the target, so the deployed operator&rsquo;s output error is untested.</li>
+      <li><b>Metrics.</b> All metrics are automatic. FID at 299&sup2; sees little of the 4K detail; patch FID is our own definition and is not comparable across papers.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="protocol" aria-labelledby="h-protocol">
+  <div class="wrap prose">
+    <p class="kicker">Protocol</p>
+    <h2 id="h-protocol">How the numbers were made</h2>
+    <p>The main set is the <span data-num="tex.nmain">195</span>-prompt Aesthetic-4K split with its 4K references, as in AReA, DyPE, TIDE and SigMa, and the <span data-num="tex.nhrgen">1000</span> HRGen-1K prompts; all methods share seed labels 0, 1 and 2. Four prompts were used in development and favour SCA slightly; ablations use a <span data-num="tex.nabl">46</span>-prompt subset fixed beforehand. The ten per-image metrics are ImageReward, HPSv2, HPSv2.1, PickScore, CLIP score, aesthetic score, MUSIQ on the full image and over four 1024&sup2; crops, CLIP-IQA and ARNIQA. Intervals are 95% paired percentile bootstraps over prompts; Holm&rsquo;s correction runs over the ten per-image metrics.</p>
+    <p>Progressive SCA runs HRDiT&rsquo;s <span data-num="main.prog.steps">30+17+10</span> steps at guidance <span data-num="prog.cfg.guidance">3.5, 4.5 and 6.0</span>; single-pass SCA, AReA, DyPE, SEGA and full attention share AReA&rsquo;s sampler, <span data-num="config.steps">28</span> Euler steps at guidance <span data-num="config.guidance">4.5</span>. One reach table per checkpoint (<span data-num="calib.n_prompts">32</span> prompts for FLUX.1-dev) serves every size and both modes.</p>
+  </div>
+</section>
+</main>
+
+<footer class="foot5">
+  <div class="wrap wide">
+    <p>Every number on this page is generated from the paper&rsquo;s result files and macros. Images are FLUX.1-dev at seed 0 unless noted; sizes are width &times; height. Anonymous authors, under review.</p>
+    <nav aria-label="Pages"><a href="index.html">Main page</a><a href="gallery.html">Gallery</a><a href="results.html">Results</a><a href="review/index.html">96 prompts</a><a href="exploratory.html">Exploratory</a><a href="../paper/main.pdf">Paper</a></nav>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Image viewer">
+  <button class="lb-close" type="button" aria-label="Close">&times;</button>
+  <div class="lb-body" id="lb-body"></div>
+</div>
+
+<script src="assets/js/numbers.js"></script>
+<script src="assets/js/v5_assets.js"></script>
+<script src="assets/js/images.js"></script>
+<script src="assets/js/media.js"></script>
+<script src="assets/js/showcase.js"></script>
+<script src="assets/js/process.js"></script>
+<script src="assets/js/traces.js"></script>
+<script src="assets/js/method_data.js"></script>
+<script src="assets/js/zoomsets.js"></script>
+<script src="assets/js/v6_figs.js"></script>
+<script src="assets/js/zoomgrid.js"></script>
+<script src="assets/js/site.js"></script>
+</body>
+</html>

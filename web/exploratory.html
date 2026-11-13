@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Exploratory: Scale-Covariant Attention on other backbones</title>
+<meta name="description" content="Exploratory runs of Scale-Covariant Attention on FLUX.2-dev and Qwen-Image; not part of the paper's claims.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B0D0C'/%3E%3Cpath d='M8 13V8h5M19 8h5v5M24 19v5h-5M13 24H8v-5' fill='none' stroke='%233DBB8C' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%233DBB8C'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="stylesheet" href="assets/css/zoomgrid.css">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("sca-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+</head>
+<body class="sub subpage">
+<a class="skip" href="#content">Skip to content</a>
+<header class="topbar solid">
+  <div class="wrap wide bar">
+    <a class="brand" href="index.html" aria-label="SCA, the main page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></svg>SCA</a>
+    <nav class="nav" aria-label="Pages">
+      <a href="index.html#claim">Result</a>
+      <a href="index.html#observation">Idea</a>
+      <a href="index.html#method">Method</a>
+      <a href="index.html#see">Examples</a>
+      <a href="results.html">Results</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="../paper/main.pdf">Paper</a>
+    </nav>
+    <a class="paper-link btn btn-ghost" href="index.html" style="height:34px;padding:0 14px;font-size:13px">Main page</a>
+    <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch between light and dark theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="content">
+<div class="subpage-head">
+  <div class="wrap wide">
+    <p class="crumbs"><a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:15px;height:15px;display:inline;vertical-align:-2px"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Reach Is a Property of the Head</a></p>
+    <p class="eyebrow">Exploratory</p>
+    <h1 class="display">Other backbones and models</h1>
+    <p class="lead">Runs outside the paper&rsquo;s claims: SCA on FLUX.2-dev and Qwen-Image beside each model sampled directly at the target size, and placeholders for Ideogram 4.0. The paper keeps these switches off; nothing on this page is headline evidence.</p>
+    <p class="exploratory-note"><b>Exploratory.</b> Configurations here were not tuned or evaluated with the protocol of the main results.</p>
+  </div>
+</div>
+<section id="backbones-sec" aria-labelledby="backbones">
+  <div class="wrap wide">
+    <div class="head-c">
+      <p class="kicker">Other backbones</p>
+      <h2 id="backbones">FLUX.2-dev and Qwen-Image</h2>
+      <p class="lede-c">The same attention on newer models, each with its own reach table, beside the same model sampled directly at the target size with full attention. Both panels zoom together.</p>
+    </div>
+    <div id="backbones-body"></div>
+<div id="qa-block" hidden>
+    <div class="sub-head">
+      <h3 id="qwen-area">Qwen-Image beside AReA</h3>
+      <p class="muted">Single-pass SCA on Qwen-Image at 5312&nbsp;&times;&nbsp;5312, four times its native 1328, beside AReA&rsquo;s released Qwen-Image code at its own settings (40 steps, its quality suffix appended to the prompt), all from the same initial noise. SCA runs at AReA&rsquo;s 40 steps for a step-matched comparison and at the model card&rsquo;s 50; full attention at the target size joins on the first three prompts. Pick a prompt; every panel zooms together.</p>
+    </div>
+  </div>
+</section>
+
+<section id="commercial" aria-labelledby="h-commercial">
+  <div class="wrap">
+    <div class="head-c">
+      <p class="kicker">Against a commercial model</p>
+      <h2 id="h-commercial">Ideogram 4.0 at the same prompts</h2>
+      <p class="lede-c">Progressive SCA on FLUX.1-dev, one GPU and no training, beside Ideogram 4.0 on six prompts, with 512&nbsp;&times;&nbsp;512 native crops centred on the same point of each scene. Ideogram generates up to about 4 megapixels and reaches 4096&sup2; only through an upscaler; SCA samples 4096&sup2; directly.</p>
+    </div>
+    <p class="note-box"><b>Placeholder.</b> The Ideogram 4.0 images are not in yet. Each will be generated once from the prompt text as written, at 1:1 and the largest size Ideogram offers, without prompt expansion or style presets, and the first result kept. Until then the right-hand panels stay empty.</p>
+    <div class="vs-grid" id="vs-grid"></div>
+  </div>
+</section>
+</main>
+
+<footer class="foot5">
+  <div class="wrap wide">
+    <p>Every number on this page is generated from the paper&rsquo;s result files and macros. Images are FLUX.1-dev at seed 0 unless noted; sizes are width &times; height. Anonymous authors, under review.</p>
+    <nav aria-label="Pages"><a href="index.html">Main page</a><a href="gallery.html">Gallery</a><a href="results.html">Results</a><a href="review/index.html">96 prompts</a><a href="exploratory.html">Exploratory</a><a href="../paper/main.pdf">Paper</a></nav>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Image viewer">
+  <button class="lb-close" type="button" aria-label="Close">&times;</button>
+  <div class="lb-body" id="lb-body"></div>
+</div>
+
+<script src="assets/js/numbers.js"></script>
+<script src="assets/js/v5_assets.js"></script>
+<script src="assets/js/images.js"></script>
+<script src="assets/js/media.js"></script>
+<script src="assets/js/showcase.js"></script>
+<script src="assets/js/process.js"></script>
+<script src="assets/js/traces.js"></script>
+<script src="assets/js/method_data.js"></script>
+<script src="assets/js/zoomsets.js"></script>
+<script src="assets/js/v6_figs.js"></script>
+<script src="assets/js/ideogram_manifest.js"></script>
+<script src="assets/js/zoomgrid.js"></script>
+<script src="assets/js/site.js"></script>
+</body>
+</html>

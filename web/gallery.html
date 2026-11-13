@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gallery: Scale-Covariant Attention</title>
+<meta name="description" content="Progressive SCA images at 4096 squared and beyond, zoomable to native pixels, beside the baselines.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B0D0C'/%3E%3Cpath d='M8 13V8h5M19 8h5v5M24 19v5h-5M13 24H8v-5' fill='none' stroke='%233DBB8C' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%233DBB8C'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="stylesheet" href="assets/css/zoomgrid.css">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("sca-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+</head>
+<body class="sub subpage">
+<a class="skip" href="#content">Skip to content</a>
+<header class="topbar solid">
+  <div class="wrap wide bar">
+    <a class="brand" href="index.html" aria-label="SCA, the main page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></svg>SCA</a>
+    <nav class="nav" aria-label="Pages">
+      <a href="index.html#claim">Result</a>
+      <a href="index.html#observation">Idea</a>
+      <a href="index.html#method">Method</a>
+      <a href="index.html#see">Examples</a>
+      <a href="results.html">Results</a>
+      <a href="gallery.html" class="on" aria-current="page">Gallery</a>
+      <a href="../paper/main.pdf">Paper</a>
+    </nav>
+    <a class="paper-link btn btn-ghost" href="index.html" style="height:34px;padding:0 14px;font-size:13px">Main page</a>
+    <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch between light and dark theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="content">
+<div class="subpage-head">
+  <div class="wrap wide">
+    <p class="crumbs"><a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:15px;height:15px;display:inline;vertical-align:-2px"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Reach Is a Property of the Head</a></p>
+    <p class="eyebrow">Gallery</p>
+    <h1 class="display">Every image, down to native pixels</h1>
+    <p class="lead">FLUX.1-dev without training. Scroll or pinch on any image to zoom, drag to pan, double-click to return; in a comparison every panel follows. The showcase, the eight-method comparison, the first twelve evaluation prompts and one prompt at five sizes.</p>
+    <p class="cta" style="justify-content:flex-start"><a class="chip" href="review/index.html">96 prompts side by side<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><span class="cta-note">progressive and single-pass SCA, AReA, HRDiT and UltraImage</span></p>
+  </div>
+</div>
+<section id="showcase" aria-labelledby="h-showcase">
+  <div class="wrap wide">
+    <div class="head-c">
+      <p class="kicker">Showcase</p>
+      <h2 id="h-showcase">Inspect every image at native pixels</h2>
+      <p class="lede-c">Progressive SCA on FLUX.1-dev without training; each image names its configuration and size. Scroll or pinch on an image to zoom down to native pixels, or press <b>Auto zoom</b>. The four windows under each image are its most detailed regions at native pixels; click one to fly there. Where AReA has the same prompt and seed, it sits beside the image and zooms with it.</p>
+    </div>
+    <div id="showcase-body"></div>
+  </div>
+</section>
+
+<section id="compare" aria-labelledby="h-compare">
+  <div class="wrap wide">
+    <div class="head-c">
+      <p class="kicker">Comparisons</p>
+      <h2 id="h-compare">Eight methods at 4096&sup2;</h2>
+      <p class="lede-c">FLUX.1-dev, the same prompt and seed in every panel. Scroll or pinch on any panel to zoom and drag to pan: every method follows, down to native pixels. <b>Auto zoom</b> visits the three most detailed regions of the prompt, found from the edge energy of all eight images. Steps: progressive SCA and HRDiT <span data-num="main.prog.steps">30+17+10</span>, UltraImage <span data-num="main.ultraimage.steps">30+30</span>, the others <span data-num="config.steps">28</span>.</p>
+    </div>
+    <p class="rule-note" style="justify-content:center">Fifteen prompts: four from an earlier paper figure, eight chosen by hand for range of subject, three by seeded draw from the other 183.</p>
+    <div class="thumbs" id="cmp-thumbs" role="group" aria-label="Prompt"></div>
+    <div class="m-chips" id="cmp-methods" role="group" aria-label="Methods shown"></div>
+    <div id="cmp-zoom"></div>
+    <div class="cmp-meta" id="cmp-meta"></div>
+    <noscript><p class="muted">The comparison needs JavaScript. The images are in assets/img/compare/, assets/img/qual/ and assets/img/deep/compare/.</p></noscript>
+  </div>
+</section>
+
+<section id="first12" aria-labelledby="h-gallery">
+  <div class="wrap wide">
+    <div class="head-c">
+      <p class="kicker">Gallery</p>
+      <h2 id="h-gallery">The first 12 prompts of the evaluation set</h2>
+      <p class="lede-c">Progressive SCA on the first 12 of the <span data-num="main.n_prompts">195</span> Aesthetic-4K evaluation prompts, in file order, at seed 0 and 4096&sup2;. Open one to zoom it beside AReA on the same prompt and seed, down to native pixels.</p>
+    </div>
+    <div class="gal" id="gal"></div>
+    <p class="cta"><a class="chip" href="review/index.html">Side by side on 96 prompts<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><span class="cta-note">progressive and single-pass SCA, AReA, HRDiT and UltraImage</span></p>
+  </div>
+</section>
+
+<section class="hero-show" id="hero-show" aria-label="Samples at very high resolution">
+  <div class="wrap wide">
+    <div class="head-c">
+      <p class="kicker">Beyond 4096&sup2;</p>
+      <h2>Single-pass SCA at 5120&sup2; and 6144&nbsp;&times;&nbsp;4096</h2>
+      <p class="lede-c">The fast mode, one prompt each, naming no person, seed 0. Scroll or pinch to zoom to native pixels.</p>
+    </div>
+    <div id="hero-figure"></div>
+  </div>
+</section>
+</main>
+
+<footer class="foot5">
+  <div class="wrap wide">
+    <p>Every number on this page is generated from the paper&rsquo;s result files and macros. Images are FLUX.1-dev at seed 0 unless noted; sizes are width &times; height. Anonymous authors, under review.</p>
+    <nav aria-label="Pages"><a href="index.html">Main page</a><a href="gallery.html">Gallery</a><a href="results.html">Results</a><a href="review/index.html">96 prompts</a><a href="exploratory.html">Exploratory</a><a href="../paper/main.pdf">Paper</a></nav>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Image viewer">
+  <button class="lb-close" type="button" aria-label="Close">&times;</button>
+  <div class="lb-body" id="lb-body"></div>
+</div>
+
+<script src="assets/js/numbers.js"></script>
+<script src="assets/js/v5_assets.js"></script>
+<script src="assets/js/images.js"></script>
+<script src="assets/js/media.js"></script>
+<script src="assets/js/showcase.js"></script>
+<script src="assets/js/process.js"></script>
+<script src="assets/js/traces.js"></script>
+<script src="assets/js/method_data.js"></script>
+<script src="assets/js/zoomsets.js"></script>
+<script src="assets/js/v6_figs.js"></script>
+<script src="assets/js/gallery.js"></script>
+<script src="assets/js/zoomgrid.js"></script>
+<script src="assets/js/site.js"></script>
+</body>
+</html>

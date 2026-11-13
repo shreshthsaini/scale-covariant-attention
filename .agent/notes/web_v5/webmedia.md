@@ -39,5 +39,19 @@ Rebuild any item from the repository root:
 - Sheets: sheets/hero_16x9_sheet.png, hero_9x16_sheet.png, hero_*_seam.png, hero_16x9_quality.png (100 percent
   crops, source against encode). Encode tests: hero/enc_test/.
 
+### 2. Speed race (v5_speedrace.py): speedrace_16x9.mp4, speedrace_9x16.mp4
+- 1600 x 900 (0.31 MB) and a phone layout 900 x 1600 (0.42 MB), 13.8 s, 30 fps, roles speedrace, speedrace9x16.
+  Poster = the final state (four, two, one, one images).
+- Shows: one shared time axis, four lanes (progressive SCA solid green, single-pass SCA hollow green, HRDiT, AReA
+  purple). Each image is one segment of its lane; it fills as time runs; at its end the image appears above it and
+  the lane's counter goes up. Runs to AReA's first image (202.4 s), holds 2.6 s, cross-fades back to the empty start
+  (seamless; seam sheet checked). Clock of real seconds and "real time, shown 20x faster" on screen.
+- Numbers: numbers.json main.{prog,sca,hrdit,area}.time_clean (value drives motion, display is printed), asserted
+  equal to \hlSecProg, \hlSecSca, \hlSecHrdit, \hlSecArea of the paper's headline.tex. Counts in the manifest.
+- Images (rule): every lane works through the same queue, the paper's decile prompts of the ImageReward gain over AReA
+  (v6_gallery deciles_a/b provenance) from the median outward, upper first: 50th (= Figure 5's median row), 60th,
+  40th, 70th. Single-pass SCA only reaches positions 1 and 2, both prompts that name no person (asserted).
+- Sheets: sheets/speedrace_16x9_sheet.png, speedrace_9x16_sheet.png, speedrace_*_seam.png.
+
 ## Next
-2. Speed race (v5_speedrace.py). 3. Method loops. 4. Comparison clips. 5. Process videos. 6. Explainer.
+3. Method loops. 4. Comparison clips. 5. Process videos. 6. Explainer.
