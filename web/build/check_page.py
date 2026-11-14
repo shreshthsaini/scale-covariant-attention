@@ -287,7 +287,7 @@ def main():
             if over > 0 or errs or n < 1:
                 problems.append(name)
             if name == "review_desktop":
-                problems += zoom_checks(pg, name, a.out, scope=".card")
+                problems += zoom_checks(pg, name, a.out, scope=".rv-card")
             ctx.close()
         b.close()
     if server:

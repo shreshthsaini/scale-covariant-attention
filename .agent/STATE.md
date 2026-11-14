@@ -9,30 +9,9 @@ Main text at most 10 pages (now 9).
 ## Status and next action
 - Paper: v6.2 delivered in two editions (tag paper-v6.2; .agent/notes/latest_delivery.md). Nothing in flight there.
   Open for the user: AI use statement, anonymous code URL.
-- Project page v5 is BUILT in web/ and NOT published to the live site. User, 2026-11-13: "show in claud artifact
-  first": do not run web/build/publish_pages.sh until the user has seen the Artifact and agreed.
-  - Artifact preview (private, main page only): https://claude.ai/artifact/2bjKpeUBiJMNKzkTmkftH6, published 18:25
-    from the bundle built by web/build/v5_artifact_bundle.py (/scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle;
-    the lead's publish copy is in the session scratchpad). The .vtt captions file is not in it (type not served).
-  - What exists (brief .agent/notes/web_v5/BRIEF.md; owners' notes design.md, webdesign.md, webinteractive.md,
-    webmedia.md): new index.html/site.css/site.js, sub-pages gallery.html, results.html, exploratory.html, review/;
-    seven components assets/js/c_*.js (percentiles, heads, emulate, table, speed, views, stages) with demos in
-    web/dev/; 18 videos in assets/video/v5/ with manifest.json; check_page.py passes on all pages.
-  - Open before going live: (1) the eight-method grid's 15 prompts include eight "chosen by hand" (the page says so);
-    replace with a rule-based set or get the user's OK; (2) exclude assets/img/ideogram4 (238 MB, unused by v5) and
-    web/dev from publishing so the site is under 400 MB; (3) review/ shows single-pass images on prompts that name
-    people; (4) sub-pages still carry v4 widget styling; (5) page is about 6% over the 14,000 px target.
-- Round 2 (user feedback 2026-11-13: show how an image forms patch by patch like AReA does; cleaner, more
-  professional; no error curve, lookup table, heat maps or curve bundles) is DONE in web/ and in the Artifact
-  (version 4, same URL, published 18:50 from /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r2: 140 files,
-  changed.json / removed.json against the previous publish; stale round-1 files remain in the Artifact, harmless;
-  the Artifact holds about 506 of its 511-file limit, so a further round should publish to a NEW Artifact or remove
-  files by passing null for each path of removed.json).
-  Main page now: hero, result (speed race), how it works in three plain steps (two heads' attention pictures,
-  compact views, two bars), how an image forms (SCAComp.formation explorer + formation_<prompt>.mp4 carousel),
-  compare (gain explorer, compact), results (three numbers, compact table, limits), explainer. 8,291 px, about 950
-  visible words. heads / emulate / stages, the paper figures, gains plot, speed chart are on results.html; the
-  eight-method grid is on gallery.html. The bundle's formation explorer carries one run; the site has three.
+- Project page v5 is BUILT in web/ and NOT published live. User, 2026-11-13: "show in claud artifact first": do not
+  run web/build/publish_pages.sh until the user has seen the Artifact and agreed. Brief and owners' notes:
+  .agent/notes/web_v5/ (BRIEF, design, webdesign, webinteractive, webmedia). Rounds 1 and 2 are superseded.
 - Round 3 DONE (2026-11-13 20:10): "One patch, three sizes" motion graphic (web/build/v5_patch3.py; ten files
   assets/video/v5/patch3_<prompt>[_9x16].mp4, five traced prompts) leads "How an image forms" with a five-example
   switcher, the pick-a-patch explorer below it; formation_* carousel moved to gallery.html. Main page 8,515 px,
@@ -41,6 +20,11 @@ Main text at most 10 pages (now 9).
   /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r3_final (lead's publish copy in the session scratchpad,
   sca_page_r3). Old Artifact (rounds 1 and 2): https://claude.ai/artifact/2bjKpeUBiJMNKzkTmkftH6.
   The session restarted at 19:36 on controller job 1142854 (about two days left).
+- Round 4 in flight since 2026-11-14 12:15 (user: "continue"). webmedia: the patch3 reading strokes were nearly
+  invisible in the encoded videos; re-render all ten with visible flowing strokes, two sub-beats per stage tying the
+  orange/blue flows to the near- and far-looking heads' weights, a 2x magnifier at 2K. webdesign: rule-based
+  gallery set (seeded draw of 15, seed 0), person rule on review/ single-pass panels, v5 styling on sub-pages,
+  bundle_r4 with changed.json against the published copy; then the lead republishes the same Artifact URL.
 - NEXT: wait for the user's reaction to the Artifact; apply their changes (designer notes say how to rebuild), rebuild
   the bundle, republish the Artifact to the same URL; publish live only on the user's word; then HANDOVER 44,
   commit, push, sync.

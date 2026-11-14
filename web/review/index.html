@@ -2,61 +2,86 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SCA: side by side on 96 prompts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Side by side on 96 prompts: Scale-Covariant Attention</title>
+<meta name="description" content="Progressive and single-pass SCA, AReA, HRDiT and UltraImage on 96 evaluation prompts at 4096 squared, zoomable together to native pixels.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B0D0C'/%3E%3Cpath d='M8 13V8h5M19 8h5v5M24 19v5h-5M13 24H8v-5' fill='none' stroke='%233DBB8C' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%233DBB8C'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/zoomgrid.css">
 <script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("sca-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <style>
-/* Same type, palette and controls as the main page (../assets/css/site.css); kept inline so this page stands alone. */
-@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:swap;src:url(../assets/fonts/inter-latin-400-normal.woff2) format("woff2")}
-@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:swap;src:url(../assets/fonts/inter-latin-500-normal.woff2) format("woff2")}
-@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:swap;src:url(../assets/fonts/inter-latin-600-normal.woff2) format("woff2")}
-@font-face{font-family:"Source Serif 4";font-style:normal;font-weight:600;font-display:swap;src:url(../assets/fonts/source-serif-4-latin-600-normal.woff2) format("woff2")}
-:root{--bg:#FCFCFB;--fg:#1C2024;--muted:#59636D;--faint:#8A939C;--card:#FFFFFF;--line:#E2E5E3;--line2:#D3D8D5;--surface:#F4F5F4;--accent:#13865F;--accent-ink:#0E6B4C;--on-accent:#fff;
- --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--serif:"Source Serif 4","Iowan Old Style",Palatino,Georgia,serif;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0D100F;--fg:#E7EAE8;--muted:#A3ACB3;--faint:#77818A;--card:#151918;--line:#262C2A;--line2:#323A37;--surface:#151918;--accent:#3DBB8C;--accent-ink:#62D2A7;--on-accent:#06140E;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0D100F;--fg:#E7EAE8;--muted:#A3ACB3;--faint:#77818A;--card:#151918;--line:#262C2A;--line2:#323A37;--surface:#151918;--accent:#3DBB8C;--accent-ink:#62D2A7;--on-accent:#06140E;color-scheme:dark}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
-a{color:var(--accent-ink);text-underline-offset:3px}
-.top{position:sticky;top:0;z-index:6;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.top .in{max-width:1280px;margin:auto;padding:0 16px;height:54px;display:flex;align-items:center;gap:16px}
-.brand{font:600 19px/1 var(--serif);color:var(--fg);text-decoration:none}
-.back{font-size:14px;color:var(--muted);text-decoration:none;margin-left:auto}.back:hover{color:var(--fg)}
-.theme{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer}
-.theme svg{width:17px;height:17px}
-header{padding:40px 16px 18px;max-width:1280px;margin:auto;text-align:center}
-.kicker{font:600 12px/1.3 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink);margin:0 0 10px}
-h1{font:600 clamp(28px,3.6vw,40px)/1.12 var(--serif);margin:0 0 12px}
-.sub{color:var(--muted);margin:0 auto;max-width:52rem;font-size:15.5px}
-.sub b{color:var(--fg);font-weight:600}
-main{max-width:1280px;margin:auto;padding:12px 16px 40px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:16px 0;content-visibility:auto;contain-intrinsic-size:auto 420px}
-.prompt{font-size:14px;margin:0 0 10px;color:var(--fg)}.prompt b{color:var(--faint);font-weight:500;margin-right:6px}
-.zg-btn{background:var(--card)}
-noscript p{text-align:center;color:var(--muted)}
+/* The 96-prompt page on the v5 system (../assets/css/site.css): one card per prompt, five panels zoomed together. */
+.rv-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(18px, 2.4vw, 28px); padding: clamp(32px, 4vw, 56px) 0 clamp(56px, 7vw, 96px); }
+.rv-card { background: var(--bg-raised); border: 1px solid var(--rule); border-radius: var(--radius); padding: clamp(12px, 1.6vw, 20px); content-visibility: auto; contain-intrinsic-size: auto 460px; }
+.rv-prompt { margin: 0 0 12px; font-size: 14.5px; line-height: 1.5; color: var(--ink); max-width: 90ch; }
+.rv-prompt b { color: var(--ink-soft); font-weight: 600; margin-right: 8px; font-variant-numeric: tabular-nums; }
+.rv-note { margin: 10px 0 0; font-size: 13px; color: var(--ink-soft); }
 </style>
-<link rel="stylesheet" href="../assets/css/zoomgrid.css">
 </head>
-<body>
-<div class="top"><div class="in"><a class="brand" href="../index.html">SCA</a><a class="back" href="../index.html">&larr; Project page</a><button class="theme" id="theme" type="button" aria-label="Switch between light and dark theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg></button></div></div>
-<header>
-<p class="kicker">Scale-Covariant Attention</p><h1>Side by side on 96 prompts</h1>
-<p class="sub">96 of the 195 Aesthetic-4K evaluation prompts, drawn once with a fixed seed. FLUX.1-dev at 4096&times;4096, seed 0, the same prompt and seed for every method. Scroll or pinch on any image to zoom and drag to pan: the other four follow, down to native pixels. Double-click goes back to the whole image; <b>Auto zoom</b> visits the three most detailed regions of each prompt, found from the edge energy of all five images.</p>
+<body class="sub subpage">
+<a class="skip" href="#list">Skip to content</a>
+<header class="topbar solid">
+  <div class="wrap wide bar">
+    <a class="brand" href="../index.html" aria-label="SCA, the main page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></svg>SCA</a>
+    <nav class="nav" aria-label="Pages">
+      <a href="../index.html#claim">Result</a>
+      <a href="../index.html#method">How it works</a>
+      <a href="../index.html#forms">How an image forms</a>
+      <a href="../results.html">Results</a>
+      <a href="../gallery.html">Gallery</a>
+      <a href="../../paper/main.pdf">Paper</a>
+    </nav>
+    <a class="paper-link btn btn-ghost" href="../index.html" style="height:34px;padding:0 14px;font-size:13px">Main page</a>
+    <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch between light and dark theme"><svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg><svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+  </div>
 </header>
-<main id="list"><noscript><p>This page needs JavaScript.</p></noscript></main>
+
+<main>
+<div class="subpage-head">
+  <div class="wrap wide">
+    <p class="crumbs"><a href="../index.html">Reach Is a Property of the Head</a></p>
+    <h1 class="display">Side by side on 96 prompts</h1>
+    <p class="lead">96 of the 195 Aesthetic-4K evaluation prompts, drawn once with a fixed seed. FLUX.1-dev at 4096&times;4096, seed 0, the same prompt and seed for every method. Scroll or pinch on any image to zoom and drag to pan: the others follow, down to native pixels; double-click goes back to the whole image.</p>
+    <p class="rv-note">Single-pass SCA is hidden on prompts that name a person.</p>
+  </div>
+</div>
+<div class="wrap wide"><div class="rv-list" id="list"><noscript><p class="muted">This page needs JavaScript.</p></noscript></div></div>
+</main>
+
+<footer class="foot5">
+  <div class="wrap wide">
+    <p>Every number on these pages is generated from the paper&rsquo;s result files and macros. Images are FLUX.1-dev at seed 0; sizes are width &times; height. Anonymous authors, under review.</p>
+    <nav aria-label="Pages"><a href="../index.html">Main page</a><a href="../gallery.html">Gallery</a><a href="../results.html">Results</a><a href="../exploratory.html">Exploratory</a></nav>
+  </div>
+</footer>
+
 <script src="items.js"></script>
 <script src="../assets/js/zoomgrid.js"></script>
 <script>
-(function(){
-  var list=document.getElementById('list'),items=window.ITEMS||[];
-  items.forEach(function(it,n){
-    var c=document.createElement('section');c.className='card';c.id='p'+(n+1);
-    var p=document.createElement('p');p.className='prompt';var b=document.createElement('b');b.textContent='#'+(n+1);p.appendChild(b);p.appendChild(document.createTextNode(it.prompt));
+(function () {
+  /* the page's rule (the same keyword list as the main page's site.js): single-pass SCA only on prompts that name no person */
+  var PERSON = /\b(man|men|woman|women|boy|boys|girl|girls|child|children|kid|kids|person|people|persons|climber|player|chef|lady|ladies|gentleman|couple|bride|groom|king|queen|soldier|monk|dancer|surfer|rider|farmer|fisherman|worker|musician|guitarist|portrait|face|he|she|his|her|him)\b/i;
+  var list = document.getElementById("list"), items = window.ITEMS || [];
+  items.forEach(function (it, n) {
+    var c = document.createElement("article"); c.className = "rv-card";   /* not a <section>: the sub-page section spacing must not apply */ c.id = "p" + (n + 1);
+    var p = document.createElement("p"); p.className = "rv-prompt";
+    var b = document.createElement("b"); b.textContent = "#" + (n + 1); p.appendChild(b); p.appendChild(document.createTextNode(it.prompt));
     c.appendChild(p);
-    c.appendChild(window.SCAZoom.grid({size:it.size,panels:it.panels,regions:it.regions,alt:it.prompt,minW:150,cls:'compact',label:'Five methods on prompt '+(n+1)}).el);
+    var person = PERSON.test(it.prompt || "");
+    var panels = it.panels.filter(function (q) { return !(person && q.m === "sca"); });
+    c.appendChild(window.SCAZoom.grid({ size: it.size, panels: panels, regions: it.regions, alt: it.prompt, minW: 150, cls: "compact",
+      label: panels.length + " methods on prompt " + (n + 1) }).el);
     list.appendChild(c);
   });
+  var btn = document.getElementById("theme-btn");
+  if (btn) btn.addEventListener("click", function () {
+    var r = document.documentElement, t = r.getAttribute("data-theme"),
+        dark = t ? t === "dark" : (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches), next = dark ? "light" : "dark";
+    r.setAttribute("data-theme", next);
+    try { localStorage.setItem("sca-theme", next); } catch (e) { /* private mode */ }
+  });
 })();
-document.getElementById('theme').onclick=()=>{const r=document.documentElement,t=r.getAttribute('data-theme'),dark=t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches,n=dark?'light':'dark';r.setAttribute('data-theme',n);try{localStorage.setItem('sca-theme',n)}catch(e){}};
 </script>
 </body>
 </html>

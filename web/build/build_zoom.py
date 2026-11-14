@@ -1,9 +1,11 @@
 """Deep-zoom grids of the page and of web/review/: tour regions, overviews and native-pixel tiles (zoomlib.py).
 
 Sets (all FLUX.1-dev at 4096^2, seed label 0, the same prompt and seed in every panel of a grid):
-  compare  the comparison section: the 4 prompts of the paper's Figure 5 (paper/figures/qual_prog/provenance.json)
-           and the 11 of web/build/compare_selection.json, eight methods each (progressive and single-pass SCA,
-           AReA, HRDiT, UltraImage, DyPE, SEGA, full attention); three tour stops.
+  compare  the eight-method comparison of gallery.html: the 15 evaluation prompts of web/build/gallery_draw.json
+           (web/build/v5_gallery_draw.py: random.Random(0).sample over the sorted evaluation prompt ids, minus the
+           main page's figure prompts), eight methods each (progressive and single-pass SCA, AReA, HRDiT,
+           UltraImage, DyPE, SEGA, full attention); three tour stops. (Until 2026-11-14 this set was the 4 prompts of
+           the paper's v5 Figure 5 and the 11 of web/build/compare_selection.json.)
   gallery  the fixed-rule gallery (web/assets/js/gallery.js): progressive SCA and AReA; three stops.
   review   the 96-prompt page (web/review/items.json): five methods; three stops; overviews at 1024 px and 640 px
            stop tiles (its panels are about 250 px wide, so a stop at 1:1 needs at most 640 native pixels).
@@ -63,33 +65,16 @@ def stem_png(d, stem):
 
 
 def compare_jobs():
-    IM = js_data("images.js")
-    views = {}
-    for r in IM["qual"]["rows"]:
-        for m, v in r["img"].items():
-            views[(r["sid"], m)] = v["full"]
-    for r in IM["compare"]["items"]:
-        for m, v in r["img"].items():
-            views[(r["sid"], m)] = v["full"]
-    grids = []
-    prov = json.load(open(os.path.join(REPO, "paper", "figures", "qual_prog", "provenance.json")))
-    for row in prov["rows"]:
-        stem = os.path.basename(row["methods"]["prog"]["source"])[:-4]
-        grids.append(dict(sid=row["prompt_id"], prompt=row["prompt"], stem=stem, hrdit=row["methods"]["hrdit"]["source"]))
-    sel = json.load(open(os.path.join(HERE, "compare_selection.json")))
-    for it in sel["items"]:
-        if any(g["sid"] == it["sid"] for g in grids):
-            continue
-        stem = os.path.basename(it["paths"]["area"])[:-4]
-        grids.append(dict(sid=it["sid"], prompt=it["prompt"], stem=stem, hrdit=it["paths"]["hrdit"]))
+    """The seeded draw of web/build/gallery_draw.json; overviews are written fresh (1600 px) for these prompts."""
+    draw = json.load(open(os.path.join(HERE, "gallery_draw.json")))
     jobs = []
-    for g in grids:
+    for g in draw["picks"]:
         members = []
         for m in COMPARE_METHODS:
-            png = g["hrdit"] if m == "hrdit" else stem_png(DIRS[m], g["stem"])
-            v = views.get((g["sid"], m))
-            members.append(dict(m=m, png=png, view=os.path.join(WEB, v) if v and os.path.exists(os.path.join(WEB, v)) else None,
-                                mode="regions"))
+            png = g["paths"][m]
+            if not os.path.exists(png):
+                raise FileNotFoundError(png)
+            members.append(dict(m=m, png=png, view=None, mode="regions"))
         jobs.append(dict(set="compare", sid=g["sid"], prompt=g["prompt"], members=members, base=WEB, k=3))
     return jobs
 

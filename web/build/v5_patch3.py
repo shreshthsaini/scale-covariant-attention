@@ -14,8 +14,17 @@ reads, drawn uniform; they are not attention strengths, and no attention map is 
 Patch: the formation component's first preset (v5_build_formation.presets: the trace's own window); scene 3's two
 extra patches are its other presets.
 
-Scenes (s): 0 final image with the patch (2) | 1 1K (6) | 2 growth to 2K (8) | 3 growth to 4K, then the focus visits
-the two other patches (8) | 4 recap, three canvases to scale (3) | cross-fade to the start (0.6).
+Scenes (s): 0 final image with the patch (2) | 1 1K (6) | 2 growth to 2K (8.6) | 3 growth to 4K (11.6) | 4 recap,
+three canvases to scale (3) | cross-fade to the start (0.6); 31.8 s in all. In 2K and 4K, after the growth and the
+thinning, the reading is the event: two sub-beats of 2.5 s, A for the near-looking head (head 4: its window flow at
+full strength, its grid flow at its grid share) and B for the far-looking head (head 7: its grid flow at full strength,
+its window flow at its window share), the head's bar outlined in the accent and the other dimmed, a label over the
+canvas ("a near-looking head reads mostly its window" / "a far-looking head reads the whole image through the grid").
+Flows: travelling pulses (3 px, glow, dark casing) from 20 window tokens spread over the window and 20 grid keys spread
+over the whole image (corners included) into the patch, each live source in a ring, the patch's brackets flashing as
+pulses arrive; every pulse of a view alike (which tokens are read; the head's weight scales the whole view). At 2K the
+16:9 cut also shows the 2K canvas magnified beside the to-scale one (the same reads); the 9:16 cut has no room for it.
+Then 4K zooms to native pixels and the focus visits the two other presets.
 
 Run from the repository root:
   /work/09032/saini_2/vista/library/uv-envs/sca/bin/python -I web/build/v5_patch3.py [--only <id>] [--look t,t,...]
@@ -47,11 +56,13 @@ PZ = 280                                 # zoom panel side
 # bars, legend, title, stage indicator, caption (centre and wrap width), recap (scale, x of each canvas, bottom, labels)
 LAYOUTS = {
     "16x9": dict(W=1600, H=900, AX=120, AY=750, K4=(120, 110, 760, 750), PX0=860, PY0=330, BX0=1176, LEG_X=860,
-                 LEG_Y=160, TITLE=(96, 70), IND=(1504, 70), CAP=(800, 852), CAP_W=1450,
+                 LEG_Y=160, TITLE=(96, 70), IND=(1504, 70), CAP=(800, 852), CAP_W=1450, MAG=(480, 292, 500),
+                 SUBLAB=(132, 124),
                  RECAP=dict(scale=1.0, xs=(200, 400, 760), bottom=730, lab_y=768,
                             labs=("64 × 64 tokens", "128 × 128 tokens", "256 × 256 tokens"))),
     "9x16": dict(W=900, H=1600, AX=130, AY=860, K4=(130, 220, 770, 860), PX0=54, PY0=1110, BX0=380, LEG_X=54,
-                 LEG_Y=950, TITLE=(54, 100), IND=(846, 100), CAP=(450, 1525), CAP_W=800,
+                 LEG_Y=950, TITLE=(54, 100), IND=(846, 100), CAP=(450, 1525), CAP_W=800, MAG=None,
+                 SUBLAB=(130, 150),
                  RECAP=dict(scale=0.66, xs=(54, 185, 421), bottom=1040, lab_y=1078,
                             labs=("64 × 64", "128 × 128", "256 × 256 tokens"))),
 }
@@ -62,13 +73,14 @@ def use(cut: str):
     g = globals()
     L = LAYOUTS[cut]
     for k in ("W", "H", "AX", "AY", "K4", "PX0", "PY0", "BX0", "LEG_X", "LEG_Y", "TITLE", "IND", "CAP", "CAP_W",
-              "RECAP"):
+              "RECAP", "MAG", "SUBLAB"):
         g[k] = L[k]
     g["CUT"] = cut
 
 
 use("16x9")
-T0, T1, T2, T3, T4, TB = 2.0, 6.0, 8.0, 8.0, 3.0, 0.6
+T0, T1, T2, T3, T4, TB = 2.0, 6.0, 8.6, 11.6, 3.0, 0.6
+SUB_A, SUB_B, SUB_END = 3.1, 5.6, 8.1             # reading sub-beats (local time in 2K and 4K)
 BLOCK, H4, H7 = 11, 3, 6
 MAX_BYTES = 6_000_000
 BUILD = M.BUILD / "patch3"
@@ -206,6 +218,57 @@ def brackets(d, box, col, arm=10, w=2):
         d.line([(x, y), (x, y + dy * arm)], fill=col, width=w)
 
 
+def brackets_glow(d, box, glow, arm, w=2.2, alpha=1.0):
+    """The patch's corner brackets; they brighten (and glow) briefly as reads arrive."""
+    g = max(0.0, min(1.0, glow))
+    if g > 0.01:
+        brackets(d, box, M.rgb(M.PAL["sca"]) + (int(110 * g * alpha),), arm=arm, w=w + 4.5)
+    col = M.mix(M.PAL["sca"], "#FFFFFF", 0.55 * g)
+    brackets(d, box, tuple(col) + (int(255 * alpha),), arm=arm, w=w + 0.8 * g)
+
+
+def flows(d, src, target, col, strength, u, period, travel, plen, width=2.75, k=1.0, off=(0.0, 0.0), org=(0.0, 0.0)):
+    """Travelling pulses from each source token to the patch: which tokens the patch reads. Uniform per view: every
+    source fires once per period, evenly staggered; `strength` (the highlighted head's share of this view) scales all
+    of them alike. Each live source wears a small ring; a faint route line shows the path; the pulse glows. Screen
+    position = off + (p - org) * k (k > 1 in the magnifier). Returns how much is arriving (for the brackets)."""
+    if strength <= 0.004:
+        return 0.0
+    n = max(1, len(src))
+    tx, ty = off[0] + (target[0] - org[0]) * k, off[1] + (target[1] - org[1]) * k
+    arriving = 0.0
+    for i, (sx0, sy0) in enumerate(src):
+        sx, sy = off[0] + (sx0 - org[0]) * k, off[1] + (sy0 - org[1]) * k
+        ph = ((u / period) + i / n) % 1.0
+        if ph > travel:
+            continue
+        q = ph / travel
+        dx, dy = tx - sx, ty - sy
+        dist = math.hypot(dx, dy)
+        if dist < 4:
+            continue
+        fade = min(1.0, q / 0.12)
+        a8 = strength * fade
+        d.line([(sx * S, sy * S), (tx * S, ty * S)], fill=col + (int(255 * 0.22 * a8),), width=round(1.2 * S))
+        r = 4.8 * k * S                  # the source's ring: a dark casing under the coloured ring
+        d.ellipse([sx * S - r, sy * S - r, sx * S + r, sy * S + r], outline=(11, 13, 12, int(255 * 0.6 * a8)),
+                  width=round(3.4 * S))
+        d.ellipse([sx * S - r, sy * S - r, sx * S + r, sy * S + r], outline=col + (int(255 * 0.9 * a8),),
+                  width=round(1.6 * S))
+        L = plen * k
+        b = q
+        a_ = max(0.0, q - L / dist)
+        p0 = ((sx + dx * a_) * S, (sy + dy * a_) * S)
+        p1 = ((sx + dx * b) * S, (sy + dy * b) * S)
+        kw = k ** 0.5                     # glow, then a dark casing (legible on bright and warm pictures), then the core
+        d.line([p0, p1], fill=col + (int(255 * 0.30 * a8),), width=round((width + 6.5) * kw * S))
+        d.line([p0, p1], fill=(11, 13, 12, int(255 * 0.62 * a8)), width=round((width + 2.6) * kw * S))
+        d.line([p0, p1], fill=col + (int(255 * 0.9 * a8),), width=round(width * kw * S))
+        if q > 0.9:
+            arriving += strength * (q - 0.9) / 0.1
+    return arriving
+
+
 def strokes(d, src, target, period, travel, length, col, width, u, alpha, glow=None):
     """A steady flow of uniform pulses, one per source, staggered evenly in time (which tokens are read, never how
     strongly). Each source fires once per period; the pulse travels for `travel` of the period, then rests. With
@@ -246,6 +309,37 @@ def caption(img, txt, al):
     M.text_alpha(img, (x, y + 19), " ".join(words[i:]), f, M.PAL["ink"], al, anchor="ms")
 
 
+def chip_lines(img, xy, txt, size, max_w, col, al):
+    """A dark chip with a coloured dot and the text wrapped to max_w px (the sub-beat labels)."""
+    f = M.font(size, "sans", 600)
+    words, lines, cur = txt.split(" "), [], ""
+    for w_ in words:
+        cand = (cur + " " + w_).strip()
+        if f.getlength(cand) <= max_w or not cur:
+            cur = cand
+        else:
+            lines.append(cur)
+            cur = w_
+    lines.append(cur)
+    lh = round(size * 1.3)
+    pad, dot_w = 14, 26
+    wmax = max(f.getlength(x) for x in lines)
+    x0, y0 = xy
+    lay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    dl = ImageDraw.Draw(lay)
+    dl.rounded_rectangle([x0, y0, x0 + pad * 2 + dot_w + wmax, y0 + pad * 2 + lh * len(lines) - (lh - size)],
+                         radius=8, fill=(8, 10, 9, int(225 * al)))
+    r = size * 0.24
+    cy = y0 + pad + size * 0.55
+    dl.ellipse([x0 + pad + 2, cy - r, x0 + pad + 2 + 2 * r, cy + r], fill=M.rgb(M.PAL[col]) + (int(255 * al),))
+    for i, ln in enumerate(lines):
+        dl.text((x0 + pad + dot_w, y0 + pad + i * lh + size * 0.85), ln, font=f,
+                fill=M.rgb(M.PAL["ink"]) + (int(255 * al),), anchor="ls")
+    base = img.convert("RGBA")
+    base.alpha_composite(lay)
+    img.paste(base.convert("RGB"))
+
+
 def text(img, xy, s, size, weight=600, col="ink", anchor="ls", alpha=1.0, family="sans"):
     M.text_alpha(img, xy, s, M.font(size, family, weight), M.PAL[col] if col in M.PAL else col, alpha, anchor=anchor)
 
@@ -265,6 +359,7 @@ def frame(ctx, t: float) -> Image.Image:
     zoom_img, zoom_lab, zoom_a, one = None, "the patch, magnified", 0.0, False
     bars_a, legend_a, legend = 0.0, 0.0, None
     inset = None
+    reading, mag_a = None, 0.0
     recap = sc == 4
     if sc == 0:
         side, s_content, img = 640.0, 2, ctx["final_sm"]
@@ -287,19 +382,26 @@ def frame(ctx, t: float) -> Image.Image:
     elif sc in (2, 3):
         s = sc - 1
         n_from, n_to = NT[s - 1], NT[s]
+        run_end = 8.0 if s == 1 else 7.6
         grow = float(M.smoothstep(u / 1.2))
         side = n_from * 2.5 + (n_to - n_from) * 2.5 * grow
         if u < 1.2:
             img = ctx["pv"][ctx["first"][s - 1][-1]]
         else:
-            img, _ = preview(ctx, s, u, 1.2, 7.4 if s == 1 else 4.4)
+            img, _ = preview(ctx, s, u, 1.2, run_end)
         dense = float(M.smoothstep((u - 1.2) / 0.4))
         thin = float(M.smoothstep((u - 1.7) / 0.9))
         on = float(M.smoothstep((u - 2.6) / 0.5))
-        travel = s == 2 and u >= 5.0
+        # two sub-beats: A the near-looking head (window at full strength, grid at its grid share), B the reverse
+        sA = float(M.smoothstep((u - SUB_A) / 0.3)) * (1 - float(M.smoothstep((u - SUB_B) / 0.3)))
+        sB = float(M.smoothstep((u - SUB_B) / 0.3)) * (1 - float(M.smoothstep((u - SUB_END) / 0.3)))
+        loc4, glo7 = ctx["w"][s]                     # head 4's local share, head 7's global share
+        reading = dict(sA=sA, sB=sB, local=sA * 1.0 + sB * (1 - glo7), glob=sA * (1 - loc4) + sB * 1.0)
+        travel = s == 2 and u >= SUB_END + 0.5
         if travel:                       # scene 3: the focus visits the two other presets
-            k = 1 if u < 6.5 else 2
-            m = float(M.smoothstep((u - (5.0 if k == 1 else 6.5)) / 0.55))
+            t_a = SUB_END + 0.5
+            k = 1 if u < t_a + 1.5 else 2
+            m = float(M.smoothstep((u - (t_a if k == 1 else t_a + 1.5)) / 0.55))
             a_c, b_c = ctx["centres"][k - 1], ctx["centres"][k]
             focus_c = (a_c[0] + (b_c[0] - a_c[0]) * m, a_c[1] + (b_c[1] - a_c[1]) * m)
         wrc = win_cont(focus_c, n_to)
@@ -307,27 +409,32 @@ def frame(ctx, t: float) -> Image.Image:
             ex = win_exact(focus_c, n_to)
             e = float(M.smoothstep((u - 1.0) / 0.3))
             wrc = (wrc[0] + (ex[0] - wrc[0]) * e, wrc[1] + (ex[1] - wrc[1]) * e)
-        layers = dict(n=n_to, key=f"g{s}", wrc=wrc, a_dense=dense * (1 - 0.0), thin=thin, a_grid=thin, a_tint=on)
+        rs = max(sA, sB)
+        layers = dict(n=n_to, key=f"g{s}", wrc=wrc, a_dense=dense * (1 - 0.5 * rs), thin=thin,
+                      a_grid=thin * (1 - 0.45 * rs), a_tint=on)
         a_win = 1.0
         legend_a = 1.0
         legend = (("every token in the window: half the side", "one per 2 × 2 block, the whole image") if s == 1 else
                   ("every token in the window: a quarter of the side", "one per 4 × 4 block, the whole image"))
         bars_a = on
+        mag_a = 0.0
+        if s == 1 and MAG:               # 2K: a magnified copy beside the to-scale canvas while the heads read
+            mag_a = float(M.smoothstep((u - 2.6) / 0.4)) * (1 - float(M.smoothstep((u - SUB_END) / 0.4)))
         if s == 1 and u < 1.2:
             zoom_img = crop_at(ctx, 0, 9, 0, 1)
         elif not travel:
-            zoom_img = crop_at(ctx, s, u, 1.2, 7.4 if s == 1 else 4.4)
-        zoom_a = 1.0 if sc == 3 else float(M.smoothstep(u / 0.5))
+            zoom_img = crop_at(ctx, s, u, 1.2, run_end)
+        zoom_a = (1.0 if sc == 3 else float(M.smoothstep(u / 0.5))) * (1 - mag_a)
         zoom_lab = "the patch, magnified"
-        if s == 2 and u >= 4.4 and not travel:          # end of the run: zoom to native pixels
-            z = float(M.smoothstep((u - 4.4) / 0.5))
+        if s == 2 and u >= SUB_END and not travel:          # end of the run: zoom to native pixels
+            z = float(M.smoothstep((u - SUB_END) / 0.5))
             span = 512 + (PZ - 512) * z
             fin = ctx["finals"][0]
             zoom_img = fin.resize((PZ, PZ), Image.LANCZOS, box=(256 - span / 2, 256 - span / 2, 256 + span / 2,
                                                                 256 + span / 2))
             one = z >= 1
         if travel:
-            k = 1 if u < 6.5 else 2
+            k = 1 if u < SUB_END + 2.0 else 2
             zoom_img = ctx["finals"][k].crop((116, 116, 396, 396))
             one = True
         if one:
@@ -359,22 +466,46 @@ def frame(ctx, t: float) -> Image.Image:
             wx0, wy0 = cx0 + wc * tok, cy0 + wr * tok
             d.rectangle([wx0 * S, wy0 * S, (wx0 + wside) * S, (wy0 + wside) * S],
                         outline=M.rgb(M.PAL["near"]) + (int(255 * a_win),), width=round(2.4 * S))
-        # patch brackets (green accent)
+        # reading: travelling pulses from the tokens the patch reads (uniform per view; strength = the highlighted
+        # head's share of that view), then the patch's brackets flash as they arrive
         pb = side / 8
         px_, py_ = cx0 + focus_c[0] / 4096 * side, cy0 + focus_c[1] / 4096 * side
-        brackets(d, (px_ - pb / 2, py_ - pb / 2, px_ + pb / 2, py_ + pb / 2), M.rgb(M.PAL["sca"]) + (255,),
-                 arm=max(6, pb / 4), w=2.2)
-        # reading strokes: which tokens the patch reads (uniform)
-        if sc in (2, 3) and bars_a > 0:
+        arriving = 0.0
+        far_c, near_c = M.rgb(M.PAL["far"]), M.rgb(M.PAL["near"])
+        if reading is not None and max(reading["local"], reading["glob"]) > 0.004:
             wr, wc = layers["wrc"]
-            loc = [(cx0 + (wc + c + 0.5) * tok, cy0 + (wr + r + 0.5) * tok) for r in (6, 19, 32, 45, 58)
-                   for c in (6, 19, 32, 45, 58) if not (r == 32 and c == 32)]
-            st = n // 64
-            glo = [(cx0 + (st * b2 + st // 2 + 0.5) * tok, cy0 + (st * b1 + st // 2 + 0.5) * tok)
-                   for b1 in (4, 18, 32, 46, 60) for b2 in (4, 18, 32, 46, 60)]
-            strokes(d, glo, (px_, py_), 2.6, 0.55, 22, M.rgb(M.PAL["far"]), 1.4, u, 0.9 * bars_a,
-                    glow=(2.6, M.rgb("#9CC3EE")))
-            strokes(d, loc, (px_, py_), 1.6, 0.45, 7, M.rgb(M.PAL["near"]), 1.4, u, 0.9 * bars_a)
+            loc = [(cx0 + (wc + c + 0.5) * tok, cy0 + (wr + r + 0.5) * tok) for r in (6, 22, 38, 54)
+                   for c in (6, 19, 32, 45, 58)]
+            st_ = n // 64
+            glo = [(cx0 + (st_ * b2 + st_ // 2 + 0.5) * tok, cy0 + (st_ * b1 + st_ // 2 + 0.5) * tok)
+                   for b1 in (0, 21, 42, 63) for b2 in (0, 16, 31, 47, 63)]
+            ctx["_src"] = (loc, glo)
+            arriving += flows(d, glo, (px_, py_), far_c, reading["glob"], u, 2.2, 0.7, 60, width=3.0)
+            arriving += flows(d, loc, (px_, py_), near_c, reading["local"], u, 1.4, 0.7, 24, width=3.0)
+        brackets_glow(d, (px_ - pb / 2, py_ - pb / 2, px_ + pb / 2, py_ + pb / 2), arriving * 0.8, arm=max(6, pb / 4))
+        # 2K: the same canvas magnified beside the to-scale one, with the same reads
+        if mag_a > 0:
+            mx0, my0, msz = MAG
+            kk = msz / side
+            mimg = comp.resize((msz * S, msz * S), Image.LANCZOS)
+            big.paste(mimg, (mx0 * S, my0 * S), Image.new("L", mimg.size, int(255 * mag_a)))
+            d.rectangle([mx0 * S - S, my0 * S - S, (mx0 + msz) * S + S, (my0 + msz) * S + S],
+                        outline=M.rgb(M.PAL["ink3"]) + (int(255 * mag_a),), width=round(1.5 * S))
+            wr, wc = layers["wrc"]
+            wxm, wym = mx0 + wc * tok * kk, my0 + wr * tok * kk
+            d.rectangle([wxm * S, wym * S, (wxm + 64 * tok * kk) * S, (wym + 64 * tok * kk) * S],
+                        outline=near_c + (int(255 * mag_a),), width=round(2.6 * S))
+            pxm, pym = mx0 + (px_ - cx0) * kk, my0 + (py_ - cy0) * kk
+            arr_m = 0.0
+            if reading is not None and "_src" in ctx:
+                loc, glo = ctx["_src"]
+                arr_m += flows(d, glo, (px_, py_), far_c, reading["glob"] * mag_a, u, 2.2, 0.7, 60, width=3.0,
+                               k=kk, off=(mx0, my0), org=(cx0, cy0))
+                arr_m += flows(d, loc, (px_, py_), near_c, reading["local"] * mag_a, u, 1.4, 0.7, 24, width=3.0,
+                               k=kk, off=(mx0, my0), org=(cx0, cy0))
+            pbm = pb * kk
+            brackets_glow(d, (pxm - pbm / 2, pym - pbm / 2, pxm + pbm / 2, pym + pbm / 2), arr_m * 0.8,
+                          arm=max(6, pbm / 4), alpha=mag_a)
     else:
         a_in = float(M.smoothstep(u / 0.8))
         RC = RECAP
@@ -408,6 +539,15 @@ def frame(ctx, t: float) -> Image.Image:
     big = big.convert("RGBA")
     big.alpha_composite(ov)
     img1 = big.convert("RGB").resize((W, H), Image.LANCZOS)
+    # ---------------------------------------------------------------- labels of the reading sub-beats
+    if mag_a > 0:
+        text(img1, (MAG[0], MAG[1] - 12), "the 2K canvas, magnified", 26, 600, "ink2", alpha=mag_a)
+    if reading is not None:
+        for key, lab, col in (("sA", "a near-looking head reads mostly its window", "near"),
+                              ("sB", "a far-looking head reads the whole image through the grid", "far")):
+            a_ = reading[key]
+            if a_ > 0.01:
+                chip_lines(img1, SUBLAB, lab, 28, 650, col, a_)
     # ---------------------------------------------------------------- right panel
     if not recap:
         dd = ImageDraw.Draw(img1, "RGBA")
@@ -446,18 +586,23 @@ def frame(ctx, t: float) -> Image.Image:
             s = sc - 1
             loc4, glo7 = ctx["w"][s]
             dd = ImageDraw.Draw(img1, "RGBA")
+            hi = (reading["sA"], reading["sB"]) if reading is not None else (0.0, 0.0)
             for j, (lab, share_local, right, col) in enumerate(
                     (("a near-looking head", loc4, f"{round(100 * loc4)}% local", "near"),
                      ("a far-looking head", 1 - glo7, f"{round(100 * glo7)}% global", "far"))):
                 y = PY0 + 30 + j * 130
-                text(img1, (BX0, y), lab, 26, 600, "ink", alpha=bars_a)
-                text(img1, (BX0, y + 34), right, 26, 600, col, alpha=bars_a)
+                al_j = bars_a * (1 - 0.65 * hi[1 - j])           # the other head dims while one is read
+                if hi[j] > 0.01:                                  # the highlighted head: the accent outline
+                    dd.rounded_rectangle([BX0 - 12, y - 34, BX0 + 332, y + 78], radius=8,
+                                         outline=M.rgb(M.PAL["sca"]) + (int(255 * hi[j] * bars_a),), width=2)
+                text(img1, (BX0, y), lab, 26, 600, "ink", alpha=al_j)
+                text(img1, (BX0, y + 34), right, 26, 600, col, alpha=al_j)
                 bw, bh, by = 320, 14, y + 52
                 cut = BX0 + bw * share_local
                 if share_local > 0.005:
-                    dd.rectangle([BX0, by, cut, by + bh], fill=M.rgb(M.PAL["near"]) + (int(255 * bars_a),))
+                    dd.rectangle([BX0, by, cut, by + bh], fill=M.rgb(M.PAL["near"]) + (int(255 * al_j),))
                 if share_local < 0.995:
-                    dd.rectangle([cut, by, BX0 + bw, by + bh], fill=M.rgb(M.PAL["far"]) + (int(255 * bars_a),))
+                    dd.rectangle([cut, by, BX0 + bw, by + bh], fill=M.rgb(M.PAL["far"]) + (int(255 * al_j),))
             text(img1, (BX0, PY0 + 30 + 2 * 130 - 10), "heads 4 and 7 of block 12", 26, 400, "ink3",
                  alpha=bars_a)
         if one and zoom_a > 0.5:
@@ -532,7 +677,7 @@ def build(sid: str, order: int, procs: int, cut: str = "16x9"):
     enc = M.encode_to_size(fdir / "%05d.png", mp4, FPS, n, MAX_BYTES, crf_floor=20, preset="veryslow", gop=n,
                            passlog=BUILD / name / "x264pass", x264="aq-mode=3", threads=16)
     p = M.check_video(mp4, max_bytes=MAX_BYTES, w=W, h=H)
-    t_rest = T0 + T1 + T2 + 3.8
+    t_rest = T0 + T1 + T2 + 4.2
     poster = M.poster_webp(Image.open(fdir / f"{round(t_rest * FPS):05d}.png"), M.OUT / f"{name}.webp", quality=84)
     ctx = context(sid)
     title = ctx["title"]
@@ -541,8 +686,8 @@ def build(sid: str, order: int, procs: int, cut: str = "16x9"):
            f"quarter of its side, and the blue grid of 64 by 64 keys spreads to one token per 2 by 2 and per 4 by 4 "
            f"block.")
     cap = (f"{title}: one patch, three sizes. Local: 64 x 64 tokens around the patch; global: 64 x 64 tokens over the "
-           f"whole image. Canvases to scale; strokes show which tokens the patch reads; positions exact; weights from "
-           f"the run.")
+           f"whole image. Canvases to scale; the pulses show which tokens the patch reads, each view scaled by the "
+           f"highlighted head's recorded weight; positions exact; weights from the run.")
     e = M.entry_for(name, mp4, poster, loop=True, alt=alt, caption=cap,
                     sources=dict(trace=str(VP.TRACE / "sca_v2_prog" / sid), prompt_id=sid,
                                  patch_centres=[list(c) for c in ctx["centres"]],

@@ -175,6 +175,16 @@ web/assets/video/v5 (the repo is committed by a loop; checked that no oversized 
 - Sheets: sheets/formation_*_sheet.png, formation_*_seam.png; look frames formation/look/.
 
 ### 8. "One patch, three sizes" (round 3, v5_patch3.py [--cut 16x9|9x16|both] [--only <id>] [--look t,t])
+- Round 4 (2026-11-14, coordinator): the reads were too faint (opera house at 12 s). Now 31.8 s; in 2K and 4K the
+  reading is the event: two 2.5 s sub-beats per stage, A the near-looking head (window flow full, grid flow at its
+  grid share: 5% at 2K, 7% at 4K) and B the far-looking head (grid flow full, window flow at its window share: 6%,
+  0%); the head's bar gets the accent outline, the other dims; a label chip over the canvas ("a near-looking head
+  reads mostly its window" / "a far-looking head reads the whole image through the grid"). Flows: travelling pulses,
+  3 px, glow and a dark casing (legible on bright and warm pictures), from 20 window tokens and 20 grid keys spread
+  over the whole image (corners included), each live source in a ring, brackets flash as pulses arrive; dot fields
+  dimmed during the sub-beats. 16:9 only: a magnified 2K canvas (500 px, 1.56x; a 2x copy, 640 px, cannot fit beside
+  the to-scale canvas and the legend) beside the to-scale one during the 2K sub-beats, carrying the same reads; the
+  patch zoom steps aside meanwhile. Same file names; sizes and checks below once the batch is in.
 - Status (19:40, after the node restart): ALL TEN FILES EXIST AND ARE IN manifest.json, every one checked complete
   (828 frames, 27.6 s, full decode without errors, posters at video size, v5_manifest.py passes), seamless:
     role "patch3" (1600 x 900): patch3_silver_braids.mp4 4.11 MB, patch3_jumping_spider.mp4 3.72 MB,

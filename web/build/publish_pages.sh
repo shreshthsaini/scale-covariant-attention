@@ -8,7 +8,7 @@
 set -e
 R=$(cd "$(dirname "$0")/../.." && pwd); T=$(mktemp -d /scratch/09032/saini_2/tmp/ghpages.XXXX)
 cd "$R" && git fetch -q origin && git archive origin/main web ':(exclude)web/build' ':(exclude)web/README.md' ':(exclude)web/assets/img/figs/*.png' ':(exclude)web/assets/img/figs/*.svg' ':(exclude)web/assets/img/showcase' ':(exclude)web/assets/img/ideogram4' ':(exclude)web/assets/js/ideogram4.js' ':(exclude)web/dev' | tar -x -C "$T"
-cd "$T/web" && cp "$R/paper/main.pdf" paper.pdf && sed -i 's#\.\./paper/main\.pdf#paper.pdf#g' ./*.html && touch .nojekyll
+cd "$T/web" && cp "$R/paper/main.pdf" paper.pdf && sed -i 's#\.\./paper/main\.pdf#paper.pdf#g' ./*.html && sed -i 's#\.\./\.\./paper/main\.pdf#../paper.pdf#g' review/index.html && touch .nojekyll
 if grep -rIl --include='*.html' --include='*.js' --include='*.json' --include='*.css' --include='*.vtt' --include='*.srt' \
      -e '/scratch/' -e '/work/09032' -e '/home1/' . ; then
   echo "publish_pages.sh: internal paths in the files above; not published" >&2; exit 1

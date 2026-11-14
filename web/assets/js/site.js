@@ -689,7 +689,7 @@
     var legacy = false;
     if (!list.length) {   /* v5 process videos (webmedia manifest roles process_<n>): final image beside the run */
       var VV = (window.SCA_V5 || {}).videos || {};
-      var keys = Object.keys(VV).filter(function (k) { return /^formation/.test(k) && VV[k].file; });
+      var keys = Object.keys(VV).filter(function (k) { return /^formation/.test(k) && VV[k].file && !/9x16/.test(k + " " + VV[k].file); });   /* 16:9 only */
       if (!keys.length) keys = Object.keys(VV).filter(function (k) { return /^process/.test(k) && VV[k].file; });
       list = keys.sort().map(function (k) {
         var x = VV[k];
