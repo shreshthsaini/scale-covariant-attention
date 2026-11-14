@@ -33,6 +33,14 @@ Main text at most 10 pages (now 9).
   compare (gain explorer, compact), results (three numbers, compact table, limits), explainer. 8,291 px, about 950
   visible words. heads / emulate / stages, the paper figures, gains plot, speed chart are on results.html; the
   eight-method grid is on gallery.html. The bundle's formation explorer carries one run; the site has three.
+- Round 3 in flight since 2026-11-13 18:55. User: the formation slideshow shows boxes and grids of different sizes
+  without explaining them; "show, for a given patch, how it's taking local or global attention in different regions
+  while making 1K, 2K, or 4K ... make a motion graphic video ... for all the examples". webmedia (resumed) builds
+  "One patch, three sizes": web/build/v5_patch3.py -> assets/video/v5/patch3_<prompt>.mp4 for the five traced
+  prompts (canvases drawn to scale; the 64 x 64-token window keeps its size while the image grows; the 64 x 64 grid
+  thins to one key per 2 x 2 and 4 x 4 block; strokes show which tokens the patch reads; two heads' real weights).
+  Lead reviews the first example before the rest render. Then webdesign makes it the lead of "How an image forms"
+  and rebuilds the bundle; publish to a NEW Artifact or remove old files (the current one is at 506 of 511 files).
 - NEXT: wait for the user's reaction to the Artifact; apply their changes (designer notes say how to rebuild), rebuild
   the bundle, republish the Artifact to the same URL; publish live only on the user's word; then HANDOVER 44,
   commit, push, sync.
