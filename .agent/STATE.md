@@ -33,18 +33,14 @@ Main text at most 10 pages (now 9).
   compare (gain explorer, compact), results (three numbers, compact table, limits), explainer. 8,291 px, about 950
   visible words. heads / emulate / stages, the paper figures, gains plot, speed chart are on results.html; the
   eight-method grid is on gallery.html. The bundle's formation explorer carries one run; the site has three.
-- 2026-11-13 19:36: the session was stopped mid-round and restarted on a new controller node (job 1142854, about
-  two days left); the old 22:10 deadline no longer applies. webmedia and webdesign were resumed to finish round 3:
-  five patch3_<prompt>.mp4 exist (16:9), four 9:16 cuts, the fifth is being rendered; webdesign finishes the page
-  integration and rebuilds bundle_r3. wip_push loop restarted.
-- Round 3 in flight since 2026-11-13 18:55. User: the formation slideshow shows boxes and grids of different sizes
-  without explaining them; "show, for a given patch, how it's taking local or global attention in different regions
-  while making 1K, 2K, or 4K ... make a motion graphic video ... for all the examples". webmedia (resumed) builds
-  "One patch, three sizes": web/build/v5_patch3.py -> assets/video/v5/patch3_<prompt>.mp4 for the five traced
-  prompts (canvases drawn to scale; the 64 x 64-token window keeps its size while the image grows; the 64 x 64 grid
-  thins to one key per 2 x 2 and 4 x 4 block; strokes show which tokens the patch reads; two heads' real weights).
-  Lead reviews the first example before the rest render. Then webdesign makes it the lead of "How an image forms"
-  and rebuilds the bundle; publish to a NEW Artifact or remove old files (the current one is at 506 of 511 files).
+- Round 3 DONE (2026-11-13 20:10): "One patch, three sizes" motion graphic (web/build/v5_patch3.py; ten files
+  assets/video/v5/patch3_<prompt>[_9x16].mp4, five traced prompts) leads "How an image forms" with a five-example
+  switcher, the pick-a-patch explorer below it; formation_* carousel moved to gallery.html. Main page 8,515 px,
+  964 visible words. CURRENT ARTIFACT (new URL, the first one hit its file limit and is now stale):
+  https://claude.ai/artifact/9kjLBJTwgYmvVNhTWrLgad, 151 files from
+  /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r3_final (lead's publish copy in the session scratchpad,
+  sca_page_r3). Old Artifact (rounds 1 and 2): https://claude.ai/artifact/2bjKpeUBiJMNKzkTmkftH6.
+  The session restarted at 19:36 on controller job 1142854 (about two days left).
 - NEXT: wait for the user's reaction to the Artifact; apply their changes (designer notes say how to rebuild), rebuild
   the bundle, republish the Artifact to the same URL; publish live only on the user's word; then HANDOVER 44,
   commit, push, sync.

@@ -11,6 +11,29 @@
   poster), explorer with one run, no zoom tiles, served types only. Check PASS (1440x900, 400x844, light, dark).
 - Section screenshots: /scratch/09032/saini_2/sca/web_builds/v5_r3_final/forms_{desktop,desktop_dark,phone,phone_dark}.png
 
+## Round 3 (user via coordinator; finished on node i614-034 after the 19:35 restart)
+- "How an image forms" leads with "One patch, three sizes" (webmedia patch3_<prompt>.mp4, role patch3): a 72rem
+  (1152 px at 1440) 16:9 player in a frame, muted loop that plays while in view, a visible play/pause, poster only
+  under reduced motion; the 9:16 cut (role patch3_9x16) below 700 px; a one-row switcher of five pills with round
+  crops of each poster's image square. Then "Try it: pick a patch and scrub the run." and the formation explorer.
+  site.js patch3(); the poster is data-src (kept out of the first screen).
+- The formation_* carousel left the main page and sits on gallery.html ("Three runs, patch by patch").
+- How it works: step 2 "a native-size local window ... a native-size global grid"; step 3 "mixes its local window
+  and its global grid"; nothing else changed there.
+- Registry: v5_assets.js keeps readouts only for the hero, drops provenance fields and is written compact (36 KB).
+  Head pictures re-encoded at quality 74. First screen 2.97 MB.
+- Check (check_page.py --http --sections): PASS on every page. Main page 8,515 px at 1440 (9,072 on a phone),
+  964 visible words with the components' text (572 page copy), layout shift 0.002.
+- Screenshots: section /scratch/09032/saini_2/sca/web_builds/v5_r3_final2/section/forms_{desktop,desktop_dark,phone,phone_dark}.png;
+  full page /scratch/09032/saini_2/sca/web_builds/v5_r3_final2/shots/index_{desktop,phone}_{light,dark}_{first,full}.png;
+  all pages and sections /scratch/09032/saini_2/sca/web_builds/v5_r3_final2/check/.
+- Bundle for the new Artifact: /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r3_final/ (a fresh folder;
+  bundle_r3 is left untouched because nothing on scratch is deleted). 152 files including page.html, 65.5 MB.
+  files.json: chunk 0 = 147 files, 51.4 MB (every page file, all 16:9 videos, two 9:16 cuts); chunk 1 = 4 files,
+  14.0 MB (the remaining 9:16 cuts). The 9:16 cuts are included because the page plays them below 700 px (five
+  patch3 cuts and the speed race's cut). Explorer with one run, no zoom tiles, no formation_* videos, served types
+  only, no directory entries. Check PASS at 1440x900 and 400x844, light and dark.
+
 ## Round 2 (user via coordinator, 18:40): subtraction and one centrepiece
 - Main page now: hero; result (speed race + claim); How it works in three plain steps (1: two real attention
   pictures of block 12 heads 4 and 7 from paper/figures/src/data/v6_attn_block12.npz, web/build/v5_heads_pictures.py,

@@ -2220,3 +2220,11 @@ etc.", then "show in claud artifact first". Brief with the audit of both pages: 
   (version 4). publish_pages.sh now leaves out assets/img/ideogram4 and web/dev (site about 370 MB). Still not
   published live. Limits stated on the page: no attention maps at 4096^2 (positions exact, weights real); earlier
   steps of a patch are previews.
+- Round 3, 18:55 to 20:10 (user: the slideshow shows boxes and grids of different sizes without explaining them; show
+  for a given patch how it takes local and global attention while making 1K, 2K and 4K, as a motion graphic for all
+  examples). Done: "One patch, three sizes" (web/build/v5_patch3.py), ten videos for the five traced prompts: the
+  three stage canvases drawn to scale, the 64 x 64-token window keeping its size while the image grows, the grid
+  thinning to one key per 2 x 2 and 4 x 4 block, uniform strokes for what the patch reads nearby and everywhere,
+  two heads' real weights, a to-scale recap. It leads "How an image forms"; the explorer follows. New Artifact:
+  https://claude.ai/artifact/9kjLBJTwgYmvVNhTWrLgad (the first one reached its 511-file limit). Session was
+  interrupted at 19:35 and resumed on a new controller node; nothing was lost. Still not published live.
