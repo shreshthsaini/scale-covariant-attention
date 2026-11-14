@@ -2210,3 +2210,13 @@ etc.", then "show in claud artifact first". Brief with the audit of both pages: 
   clips, five process videos from existing progressive and AReA traces, explainer re-rendered at 85 s).
 - Not published to GitHub Pages. Artifact preview of the main page: https://claude.ai/artifact/2bjKpeUBiJMNKzkTmkftH6
   (449-file bundle, web/build/v5_artifact_bundle.py). Open items before going live are listed in .agent/STATE.md.
+- Round 2, 18:40 to 18:50 (user after seeing the Artifact: good, but show how the image forms patch by patch as AReA's
+  page does for its method; cleaner and more professional; the error curve, lookup table, heat maps and curve bundles
+  are confusing, explain the method another way; "maybe later in the paper"). Done: ten formation videos
+  (web/build/v5_formation.py; final image, the run, three zoom-in patches, the native window and the grid, two heads'
+  weights), the SCAComp.formation explorer ("pick a patch, watch it form"), compact modes of views / table /
+  percentiles, and a main page cut to 8,291 px and about 950 visible words with the method told in three plain
+  steps. Plots and tables moved to results.html, the eight-method grid to gallery.html. Artifact updated in place
+  (version 4). publish_pages.sh now leaves out assets/img/ideogram4 and web/dev (site about 370 MB). Still not
+  published live. Limits stated on the page: no attention maps at 4096^2 (positions exact, weights real); earlier
+  steps of a patch are previews.

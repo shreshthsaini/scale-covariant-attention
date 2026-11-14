@@ -18,8 +18,15 @@
   page loads), assets/js/ideogram4.js and web/dev. Estimated published size about 365 to 375 MB plus paper.pdf.
 - Artifact bundle round 2: /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r2/ (fresh folder). Served types
   only (no .vtt; the explainer keeps its burned-in captions), files only, chunk 0 = everything but zoom tiles (there
-  are no tiles now: the explainer zooms stop at the overviews), formation keeps its first run (Silver braids, 49
-  files), changed.json and removed.json against the published copy in the scratchpad (sca_page).
+  are no tiles now: the percentile explorer's zoom stops at its overviews), formation keeps its first run (Silver
+  braids, 49 files), changed.json and removed.json against the published copy in the scratchpad (sca_page).
+- Round 2 final (check PASS on every page; bundle PASS): main page 8,291 px at 1440 wide (was 14,813), 950 visible
+  words including the components' text (558 of page copy), first screen 2.99 MB, layout shift 0.002. Bundle_r2: 141
+  files, 30.9 MB, one chunk; changed.json 75 paths, removed.json 368 paths. Screenshots:
+  /scratch/09032/saini_2/sca/web_builds/v5_r2_final/shots/index_{desktop,phone}_{light,dark}_{first,full}.png,
+  v5_r2_final/check/ (sections, sub-pages), v5_r2_final/vs_area_{desktop,phone}.jpg,
+  /scratch/09032/saini_2/sca/web_builds/v5_artifact/shot_{1440,400}_{light,dark}.png (bundle).
+- The first bundle folder (v5_artifact/bundle/) stays on scratch untouched; publish from bundle_r2/files.json.
 
 ## Final check of round 1 (18:10)
 check_page.py --http --sections: RESULT PASS on index, gallery, results, exploratory (desktop and phone, light and
