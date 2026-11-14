@@ -124,9 +124,11 @@ Rebuild any item from the repository root:
   lead's brief asks for the tag and indicator; design.md asks for no burned-in text: the clean loop is the default
   and the page can draw the readout from `readout`; the tagged pair is there if it does not.
 
-### Totals (audit of 2026-11-13 18:26, after round 2)
-28 items, 79.4 MB with posters (web/assets/video/v5 is 76 MB on disk; formation_media data 6.2 MB), all pass
-v5_manifest.py. The ten formation videos are 36.7 MB of it. If the published site should stay near the first
+### Totals (audit of 2026-11-13 19:40, after round 3)
+38 items, 126.2 MB with posters, all pass v5_manifest.py: the ten patch3 videos are 44.9 MB of it, the ten
+formation videos 36.7 MB (formation_media data 6.2 MB more). If the published site must stay small, the main page
+needs only hero, speed race, patch3 (16:9 + 9:16) and compare; the rest can stay on sub-pages or unpublished.
+(Round-2 total was 28 items, 79.4 MB.) If the published site should stay near the first
 round's 45 MB: leave process_* (10.6 MB), method_emulation and method_stages (2.2 MB), the *_tagged heroes (5.0 MB)
 and possibly the formation 9x16 cuts (18.3 MB; the 16x9 cut plays fine on phones in landscape) off the main page.
 All posters: sheets/posters.png. Build order for a full rebuild: v5_hero.py, v5_hero_tagged.py, v5_speedrace.py,
@@ -173,10 +175,18 @@ web/assets/video/v5 (the repo is committed by a loop; checked that no oversized 
 - Sheets: sheets/formation_*_sheet.png, formation_*_seam.png; look frames formation/look/.
 
 ### 8. "One patch, three sizes" (round 3, v5_patch3.py [--cut 16x9|9x16|both] [--only <id>] [--look t,t])
-- Status (19:33): approved by the coordinator; ALL FIVE 16:9 FILES EXIST, role "patch3", 1600 x 900, 27.6 s,
-  seamless: patch3_silver_braids.mp4 4.11 MB, patch3_jumping_spider.mp4 3.72 MB, patch3_fjord_village.mp4 3.79 MB,
-  patch3_opera_house.mp4 5.16 MB, patch3_antique_shop.mp4 5.13 MB (cap 6 MB), WebP poster each (the 4K reading
-  beat). 9:16 cuts (900 x 1600, role "patch3_9x16", patch3_<id>_9x16.mp4) rendering next.
+- Status (19:40, after the node restart): ALL TEN FILES EXIST AND ARE IN manifest.json, every one checked complete
+  (828 frames, 27.6 s, full decode without errors, posters at video size, v5_manifest.py passes), seamless:
+    role "patch3" (1600 x 900): patch3_silver_braids.mp4 4.11 MB, patch3_jumping_spider.mp4 3.72 MB,
+      patch3_fjord_village.mp4 3.79 MB, patch3_opera_house.mp4 5.16 MB, patch3_antique_shop.mp4 5.13 MB
+    role "patch3_9x16" (900 x 1600): patch3_silver_braids_9x16.mp4 4.27 MB, patch3_jumping_spider_9x16.mp4 3.90 MB,
+      patch3_fjord_village_9x16.mp4 3.96 MB, patch3_opera_house_9x16.mp4 5.41 MB, patch3_antique_shop_9x16.mp4 5.46 MB
+  (cap 6 MB each; WebP poster each = the 4K reading beat). The antique shop 9:16 cut was cut off by the node restart
+  and was rendered again at 19:38; the other nine were complete. All ten carry the three round-3 tweaks (checked on
+  sheets/patch3_tweakcheck_16x9.png and _9x16.png and two full-size frames decoded from the encoded first video:
+  patch3/look/final_patch3_silver_braids_{12.50,20.00}.png). The phone cut stacks the canvas (anchored at the 4K
+  canvas's bottom-left), then legend, patch zoom and bars; its recap draws the three canvases at 0.66 so they stay
+  to scale with each other.
 - For the designer: this is the main "how SCA reads an image" explainer the user asked for. Embed patch3_<id>.mp4 as
   a muted loop with the same five-prompt switcher as the formation videos (one video at a time, preload none until
   chosen; patch3_<id>_9x16.mp4 below about 700 px); caption = manifest `caption`. It supersedes method_window on the

@@ -239,9 +239,8 @@ def main():
                     if "skip" not in (first or ""):
                         print("   keyboard: first Tab did not reach the skip link:", first); problems.append(tag + ":keyboard")
                 if a.sections and page == "index.html" and name in ("desktop", "phone", "desktop_dark"):
-                    for sid, sel in [("hero", ".hero5"), ("claim", "#claim"), ("abstract", "#abstract"), ("observation", "#observation"),
-                                     ("method", "#method"), ("see", "#see"), ("gallery", "#gallery"), ("process", "#process"),
-                                     ("results", "#results"), ("more", "#more")]:
+                    for sid, sel in [("hero", ".hero5"), ("claim", "#claim"), ("method", "#method"), ("forms", "#forms"),
+                                     ("see", "#see"), ("results", "#results"), ("more", "#more")]:
                         loc = pg.locator(sel).first
                         if loc.count():
                             loc.screenshot(path=os.path.join(a.out, f"{name}_sec_{sid}.png"))

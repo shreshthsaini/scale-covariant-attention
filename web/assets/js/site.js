@@ -1033,7 +1033,8 @@
       if (v.role === "patch3_9x16" || (/^patch3/.test(v.role || "") && /_9x16$/.test(stem))) tall[stem.replace(/^patch3_/, "").replace(/_9x16$/, "")] = v;
       else if (v.role === "patch3") wide.push({ key: stem.replace(/^patch3_/, ""), v: v });
     });
-    var chips = $(".p3-chips", fig), stage = $(".p3-stage", fig);
+    var chips = $(".p3-chips", fig), stage = $(".p3-stage", fig), pim = $("img.p3-poster", stage);
+    if (pim && !pim.getAttribute("src") && pim.getAttribute("data-src")) pim.src = pim.getAttribute("data-src");   /* held back from the first screen */
     if (!wide.length) { if (chips) chips.hidden = true; return; }
     var ORDER = ["silver_braids", "jumping_spider", "fjord_village", "opera_house", "antique_shop"];
     wide.sort(function (a, b) { var i = ORDER.indexOf(a.key), j = ORDER.indexOf(b.key); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
@@ -1069,7 +1070,7 @@
     wide.forEach(function (w, i) {
       var t = w.v.title || w.key.replace(/_/g, " ");
       var b = el("button", { type: "button", class: "p3-chip", "aria-pressed": String(i === 0), "aria-label": "Example: " + t },
-        [img(w.v.poster, ""), el("span", { text: t })]);
+        [el("span", { class: "p3-thumb" }, [img(w.v.poster, "")]), el("span", { text: t })]);   /* the thumb shows the image square of the poster */
       b.addEventListener("click", function () {
         if (at === i) return;
         at = i;

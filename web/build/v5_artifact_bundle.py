@@ -2,7 +2,7 @@
 """Artifact preview bundle of the main page (web/index.html), so the page can be looked at as a Claude Artifact
 before anything goes to the live site. Only the main page: sub-pages link to the live site.
 
-Builds /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r3/:
+Builds /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r3_final/:
   page.html     the page without <!DOCTYPE>, <html>, <head> or <body> (the host wraps it); it starts with
                 <title>Scale-Covariant Attention</title> and <meta name="claude:viewport-fit-sides" content="cover">,
                 then the stylesheet links, the content and the scripts
@@ -38,12 +38,12 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 WEB = REPO / "web"
 ROOT = Path("/scratch/09032/saini_2/sca/web_builds/v5_artifact")
-OUT = ROOT / "bundle_r3"   # round 3 (19:40): a fresh, complete folder for a new Artifact
+OUT = ROOT / "bundle_r3_final"   # round 3, rebuilt in a fresh folder (nothing on scratch is deleted; bundle_r3 stays as it was)
 PREV = Path("/scratch/09032/saini_2/tmp/tmp/claude-883311/-work-09032-saini-2-vista-Projects-Exploration/"
             "4c03b520-8e32-49ed-8c50-e539347fc179/scratchpad/sca_page")
 LIVE = "https://shreshthsaini.github.io/scale-covariant-attention/"
 TITLE = "Scale-Covariant Attention"
-FIXED_ROLES = ["hero16x9", "speedrace", "explainer"]   # no 9:16 cuts; step 2 falls back to a poster image
+FIXED_ROLES = ["hero16x9", "speedrace", "speedrace9x16", "explainer"]   # the race has a 9:16 cut the page plays on portrait screens
 SERVED = {".html", ".css", ".js", ".mjs", ".wasm", ".json", ".map", ".txt", ".md", ".csv", ".xml", ".svg", ".png",
           ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".ico", ".woff", ".woff2", ".ttf", ".otf", ".mp3", ".wav",
           ".ogg", ".mp4", ".webm", ".pdf"}
@@ -144,7 +144,7 @@ def build() -> None:
     reg = js_object(WEB / "assets/js/v5_assets.js", "window.SCA_V5")
     mounted = set(re.findall(r'data-comp="([a-z]+)"', page))
     allv = reg["videos"]
-    patch3 = [k for k, v in allv.items() if v.get("role") == "patch3"]          # the five 16:9 "one patch, three sizes"
+    patch3 = [k for k, v in allv.items() if v.get("role") in ("patch3", "patch3_9x16")]   # "one patch, three sizes": 16:9, and the 9:16 cuts the page plays below 700 px
     carousel = []
     if 'id="process-body"' in page:
         carousel = [k for k in allv if k.startswith("formation")] or [k for k in allv if k.startswith("process")]
@@ -257,7 +257,14 @@ def digest(p: Path) -> str:
 
 def write_manifest(prev: Path) -> dict:
     items = sorted((rel, p) for rel, p in files.items() if rel != "page.html")
-    items.sort(key=lambda x: (bool(TILE.search(x[0])), x[0]))     # chunk 0: everything but zoom tiles
+    def order(rel: str):                                           # chunk 0 first: every page file, then the videos by need
+        if TILE.search(rel):
+            return (2, 0, rel)
+        if not rel.endswith(".mp4"):
+            return (0, 0, rel)
+        rank = 5 if "_9x16" in rel else 0 if "hero_" in rel else 1 if "speedrace" in rel else 2 if "patch3_" in rel else 3 if "explainer" in rel else 4
+        return (1, rank, rel)
+    items.sort(key=lambda x: order(x[0]))
     chunks, cur, cur_b = [], {}, 0
     for rel, p in items:
         sz = p.stat().st_size

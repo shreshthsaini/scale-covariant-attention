@@ -33,6 +33,10 @@ Main text at most 10 pages (now 9).
   compare (gain explorer, compact), results (three numbers, compact table, limits), explainer. 8,291 px, about 950
   visible words. heads / emulate / stages, the paper figures, gains plot, speed chart are on results.html; the
   eight-method grid is on gallery.html. The bundle's formation explorer carries one run; the site has three.
+- 2026-11-13 19:36: the session was stopped mid-round and restarted on a new controller node (job 1142854, about
+  two days left); the old 22:10 deadline no longer applies. webmedia and webdesign were resumed to finish round 3:
+  five patch3_<prompt>.mp4 exist (16:9), four 9:16 cuts, the fifth is being rendered; webdesign finishes the page
+  integration and rebuilds bundle_r3. wip_push loop restarted.
 - Round 3 in flight since 2026-11-13 18:55. User: the formation slideshow shows boxes and grids of different sizes
   without explaining them; "show, for a given patch, how it's taking local or global attention in different regions
   while making 1K, 2K, or 4K ... make a motion graphic video ... for all the examples". webmedia (resumed) builds

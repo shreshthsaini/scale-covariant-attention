@@ -74,7 +74,7 @@ def main() -> None:
     for tag, head in (("near", int(macro("hlFocusHeadNear"))), ("far", int(macro("hlFocusHeadFar")))):
         im = picture(z["full"][k, head], base, q)
         path = OUT / f"head_{tag}.webp"
-        im.save(path, "WEBP", quality=80, method=6)
+        im.save(path, "WEBP", quality=74, method=6)
         print(f"{path.relative_to(REPO)}: head {head}, sigma {z['sigma'][k]:.2f}, query {q}, {path.stat().st_size // 1024} KB")
 
 
