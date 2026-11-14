@@ -9,7 +9,7 @@ drawn over the image, orange within 16 tokens of the query (the near set the pap
 opacity from the weight (square root, normalised to the head's own 99.5th percentile), a ring at the query and a
 thin outline of the 16-token neighbourhood. No labels are burned in; the page writes them.
 
-Writes web/assets/img/v5/head_near.webp and head_far.webp (900 x 900).
+Writes web/assets/img/v5/head_near.webp and head_far.webp (720 x 720).
 Usage: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_heads_pictures.py
 """
 from __future__ import annotations
@@ -25,7 +25,7 @@ NPZ = REPO / "paper/figures/src/data/v6_attn_block12.npz"
 IMG = REPO / "paper/figures/attn_focus/image_1024.png"
 MACROS = REPO / "paper/figures/snippets/attn_focus_numbers.tex"
 OUT = REPO / "web/assets/img/v5"
-SIZE, RADIUS = 900, 16
+SIZE, RADIUS = 720, 16
 NEAR, FAR = (240, 160, 75), (111, 163, 224)    # design.md dark-theme near and far (media sits on the screen ground)
 
 
@@ -59,7 +59,7 @@ def picture(att: np.ndarray, base: Image.Image, q: tuple[int, int]) -> Image.Ima
         d.line([(x0, j), (x0, min(j + 7, y1))], fill=NEAR + (220,), width=2)
         d.line([(x1, j), (x1, min(j + 7, y1))], fill=NEAR + (220,), width=2)
     cx, cy = (q[1] + .5) * cell, (q[0] + .5) * cell
-    d.ellipse([cx - 11, cy - 11, cx + 11, cy + 11], outline=(255, 255, 255, 255), width=3)
+    d.ellipse([cx - 9, cy - 9, cx + 9, cy + 9], outline=(255, 255, 255, 255), width=3)
     d.ellipse([cx - 3, cy - 3, cx + 3, cy + 3], fill=(255, 255, 255, 255))
     return im.convert("RGB")
 
@@ -74,7 +74,7 @@ def main() -> None:
     for tag, head in (("near", int(macro("hlFocusHeadNear"))), ("far", int(macro("hlFocusHeadFar")))):
         im = picture(z["full"][k, head], base, q)
         path = OUT / f"head_{tag}.webp"
-        im.save(path, "WEBP", quality=84, method=6)
+        im.save(path, "WEBP", quality=80, method=6)
         print(f"{path.relative_to(REPO)}: head {head}, sigma {z['sigma'][k]:.2f}, query {q}, {path.stat().st_size // 1024} KB")
 
 

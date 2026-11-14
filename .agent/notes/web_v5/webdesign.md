@@ -1,6 +1,27 @@
 # Web v5: designer and integrator (role webdesign), 2026-11-13
 
-## Final check (18:10)
+## Round 2 (user via coordinator, 18:40): subtraction and one centrepiece
+- Main page now: hero; result (speed race + claim); How it works in three plain steps (1: two real attention
+  pictures of block 12 heads 4 and 7 from paper/figures/src/data/v6_attn_block12.npz, web/build/v5_heads_pictures.py,
+  plus one stat line 97.5%; 2: views {compact} with its own mix bars hidden, fallback the method_window poster;
+  3: two plain bars from focus.{near,far}.{window,grid}_pct, new keys in build_numbers.py from \hlFocusNearPi and
+  \hlFocusFarPi); How an image forms (formation explorer, then the formation videos as a smaller carousel; process
+  videos if those are missing); Against the baselines (percentiles {compact}, rule printed once); Results (three macro
+  numbers, table {compact}, honest edges as one paragraph, links); explainer; citation. No eyebrows, badges, rule
+  chips, abstract, reach table, J curve, heat maps or paper figures on the main page.
+- Moved to results.html: abstract (top) and "Method in detail" (heads, paper Figure 3, emulate, stages, the three
+  method loops, method-zoom and emulation figures, the v4 widgets). Gains and speed were already there.
+- gallery.html: the eight-method set is now described as "the comparison set of an earlier paper version plus a
+  seeded draw of three from the other 183". FOR THE LEAD: that set is not fully rule-based (eight of its prompts were
+  picked by hand for an earlier paper version); raise it with the user.
+- publish_pages.sh also leaves out web/assets/img/ideogram4 (238 MB, used only by assets/js/ideogram4.js, which no
+  page loads), assets/js/ideogram4.js and web/dev. Estimated published size about 365 to 375 MB plus paper.pdf.
+- Artifact bundle round 2: /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r2/ (fresh folder). Served types
+  only (no .vtt; the explainer keeps its burned-in captions), files only, chunk 0 = everything but zoom tiles (there
+  are no tiles now: the explainer zooms stop at the overviews), formation keeps its first run (Silver braids, 49
+  files), changed.json and removed.json against the published copy in the scratchpad (sca_page).
+
+## Final check of round 1 (18:10)
 check_page.py --http --sections: RESULT PASS on index, gallery, results, exploratory (desktop and phone, light and
 dark) and review/: no console errors, no broken files, no overflow, zoom checks pass, reduced motion (no video
 plays), keyboard (first Tab reaches the skip link). Main page: 14,813 px at 1440 wide, 3,082 visible words of which

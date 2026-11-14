@@ -245,8 +245,8 @@ def main():
                         loc = pg.locator(sel).first
                         if loc.count():
                             loc.screenshot(path=os.path.join(a.out, f"{name}_sec_{sid}.png"))
-                if a.sections and page in ("index.html", "gallery.html") and name in ("desktop", "phone"):
-                    problems += zoom_checks(pg, tag, a.out)
+                if a.sections and page in ("index.html", "gallery.html") and name in ("desktop", "phone") and pg.locator("#cmp-zoom").count():
+                    problems += zoom_checks(pg, tag, a.out)   # the eight-method grid lives on the gallery since round 2
                 if a.sections and page == "gallery.html" and name in ("desktop", "phone"):
                     g = pg.locator("#gal button").first
                     if g.count():

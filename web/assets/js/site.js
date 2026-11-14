@@ -722,6 +722,7 @@
       $$("video", stage).forEach(function (v) { v.pause(); v.removeAttribute("src"); v.load(); });
       stage.innerHTML = ""; head.innerHTML = "";
       head.appendChild(metaRow([x.label, x.model, sizeLabel(x.size), "seed " + x.seed], true));
+      if (x.title) head.appendChild(el("p", { class: "proc-title", text: x.title }));
       head.appendChild(x.cap ? el("p", { class: "prompt", text: x.cap }) : el("p", { class: "prompt" }, [el("q", { text: x.prompt })]));
       var left = x.still ? el("div", { class: "still tile" }, [img(x.still, "Final image: " + x.prompt)]) : null;
       var v = loopVideo(x.mp4, x.poster, (legacy ? "Single-pass SCA" : "Progressive SCA") + " beside AReA, step by step: " + short(x.prompt, 80), true);

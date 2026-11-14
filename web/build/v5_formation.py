@@ -158,8 +158,8 @@ LAYOUTS = {
                  legend_xy=(115, 456), legend=20, flabel_xy=(115, 366), flabel=22, chip=20, chip_w=270, stage=22,
                  one=18),
     "9x16": dict(W=900, H=1600, CX=40, CY=96, CS=820, LX=40, LY=1262, LS=160, RS=250, conn="down",
-                 patch_xy=[(40, 966), (325, 966), (610, 966)], cap_xy=(450, 1508), cap_w=820, cap=30,
-                 legend_xy=(232, 1282), legend=22, flabel_xy=(40, 1452), flabel=22, chip=24, chip_w=330, stage=26,
+                 patch_xy=[(40, 966), (325, 966), (610, 966)], cap_xy=(450, 1522), cap_w=820, cap=30,
+                 legend_xy=(232, 1280), legend=24, flabel_xy=(40, 1452), flabel=22, chip=24, chip_w=330, stage=26,
                  one=22),
 }
 
@@ -390,23 +390,25 @@ _CTX: dict = {}
 
 
 def _work(task):
-    sid, idxs, outdir = task
-    if sid not in _CTX:
+    sid, cut, idxs, outdir = task
+    key = (sid, cut)
+    if key not in _CTX:
         _CTX.clear()
-        _CTX[sid] = context(sid)
+        _CTX[key] = context(sid, cut)
     for k in idxs:
-        draw(_CTX[sid], k / FPS).save(Path(outdir) / f"{k:05d}.png", compress_level=1)
+        draw(_CTX[key], k / FPS).save(Path(outdir) / f"{k:05d}.png", compress_level=1)
     return len(idxs)
 
 
-def build(sid: str, order: int, procs: int):
+def build(sid: str, order: int, procs: int, cut: str = "16x9"):
+    L = LAYOUTS[cut]
     total = T1 + T2 + T3 + T4 + TB
     n = round(total * FPS)
-    name = f"formation_{sid.split('_', 2)[-1]}"
+    name = f"formation_{sid.split('_', 2)[-1]}" + ("" if cut == "16x9" else "_9x16")
     fdir = BUILD / name / f"frames_n{n}"
     fdir.mkdir(parents=True, exist_ok=True)
     chunk = max(6, math.ceil(n / procs))
-    tasks = [(sid, list(range(i, min(n, i + chunk))), str(fdir)) for i in range(0, n, chunk)]
+    tasks = [(sid, cut, list(range(i, min(n, i + chunk))), str(fdir)) for i in range(0, n, chunk)]
     t0 = time.time()
     with Pool(min(procs, len(tasks))) as pool:
         sum(pool.imap_unordered(_work, tasks))
@@ -414,30 +416,33 @@ def build(sid: str, order: int, procs: int):
     mp4 = M.OUT / f"{name}.mp4"
     enc = M.encode_to_size(fdir / "%05d.png", mp4, FPS, n, MAX_BYTES, crf_floor=20, preset="veryslow", gop=n,
                            passlog=BUILD / name / "x264pass", x264="aq-mode=3", threads=16)
-    p = M.check_video(mp4, max_bytes=MAX_BYTES, w=W, h=H)
+    p = M.check_video(mp4, max_bytes=MAX_BYTES, w=L["W"], h=L["H"])
     t_rest = T1 + T2 + T3 + T4 * 0.8
     poster = M.poster_webp(Image.open(fdir / f"{round(t_rest * FPS):05d}.png"), M.OUT / f"{name}.webp", quality=84)
-    L = load(sid)
+    Ld = load(sid)
     title = VP.showcase()[sid]["title"]
+    side = "on the right" if cut == "16x9" else "below"
     alt = (f"{title}: a progressive SCA image forming over 57 steps at 1024, 2048 and 4096 pixels. A focus moves "
            f"across three detailed patches, showing the native-size window and the coarse grid each head reads, "
-           f"while zoomed patches on the right sharpen and end at native pixels.")
+           f"while zoomed patches {side} sharpen and end at native pixels.")
     cap = (f"{title}: how a 4096 x 4096 image forms with progressive SCA. Orange: the native-size window around a "
            f"patch; blue: the native-size grid over the whole image; chips: how much two heads use each "
-           f"(positions exact; weights from the reach table). Patches: the run's recorded window and two of highest edge energy.")
+           f"(positions exact; weights from the reach table). Patches: the run's recorded window and two of highest "
+           f"edge energy.")
     e = M.entry_for(name, mp4, poster, loop=True, alt=alt, caption=cap,
-                    sources=dict(trace=str(TRACE / sid), final_png=L["t"]["campaign"]["png"], prompt_id=sid,
-                                 patches=L["boxes"], data=f"web/assets/data/formation_media/{sid}/formation.json",
+                    sources=dict(trace=str(TRACE / sid), final_png=Ld["t"]["campaign"]["png"], prompt_id=sid,
+                                 patches=Ld["boxes"], data=f"web/assets/data/formation_media/{sid}/formation.json",
                                  rule="traced showcase prompts, one per category by seeded draw (as process videos)",
-                                 patch_rule="the trace's own window and two of highest edge energy, 1.4 spans apart (inspector presets)"),
-                    script="v5_formation.py", order=50 + order,
-                    extra=dict(role="formation", title=title, encode=enc, poster_time=round(t_rest, 3),
-                               captions=CAPS + ["Each patch ends at the final image's native pixels."],
+                                 patch_rule=("the trace's own window and two of highest edge energy, 1.4 spans apart "
+                                             "(inspector presets)")),
+                    script="v5_formation.py", order=50 + order + (0 if cut == "16x9" else 5),
+                    extra=dict(role="formation" if cut == "16x9" else "formation9x16", title=title, prompt_id=sid,
+                               encode=enc, poster_time=round(t_rest, 3), captions=CAPS,
                                timing=dict(stage1024=T1, stage2048=T2, stage4096=T3, hold=T4, back=TB)))
     M.manifest_put(e)
     sd = M.BUILD / "sheets"
-    M.contact_sheet(mp4, sd / f"{name}_sheet.png", n=16, cols=4, tile_w=480)
-    M.seam_sheet(mp4, sd / f"{name}_seam.png", tile_w=640)
+    M.contact_sheet(mp4, sd / f"{name}_sheet.png", n=16, cols=4, tile_w=480 if cut == "16x9" else 270)
+    M.seam_sheet(mp4, sd / f"{name}_seam.png", tile_w=640 if cut == "16x9" else 360)
     print(json.dumps(dict(name=name, **p, enc=enc)), flush=True)
 
 
@@ -446,12 +451,14 @@ def main():
     ap.add_argument("what", choices=["data", "video"])
     ap.add_argument("--only", default=None)
     ap.add_argument("--k", type=int, default=5)
+    ap.add_argument("--cut", default="16x9", choices=["16x9", "9x16", "both"])
     ap.add_argument("--procs", type=int, default=48)
     ap.add_argument("--look", type=str, default=None)
     a = ap.parse_args()
     sel = VP.selection(a.k)
     if a.only:
         sel = [s for s in sel if s == a.only] or [a.only]
+    cuts = ["16x9", "9x16"] if a.cut == "both" else [a.cut]
     if a.what == "data":
         index = []
         for sid in sel:
@@ -464,18 +471,21 @@ def main():
                                                              items=index), indent=1) + "\n")
         return
     if a.look:
-        ctx = context(sel[0])
-        outs = []
-        for tv in a.look.split(","):
-            p = BUILD / "look" / f"{sel[0]}_{float(tv):05.2f}.png"
-            p.parent.mkdir(parents=True, exist_ok=True)
-            draw(ctx, float(tv)).save(p)
-            outs.append(p)
-        M.frames_sheet(outs, BUILD / "look" / f"{sel[0]}_look.png", cols=2, tile_w=800, label=sel[0])
-        print(BUILD / "look" / f"{sel[0]}_look.png")
+        for cut in cuts:
+            ctx = context(sel[0], cut)
+            outs = []
+            for tv in a.look.split(","):
+                p = BUILD / "look" / f"{sel[0]}_{cut}_{float(tv):05.2f}.png"
+                p.parent.mkdir(parents=True, exist_ok=True)
+                draw(ctx, float(tv)).save(p)
+                outs.append(p)
+            M.frames_sheet(outs, BUILD / "look" / f"{sel[0]}_{cut}_look.png", cols=2 if cut == "16x9" else 3,
+                           tile_w=800 if cut == "16x9" else 450, label=f"{sel[0]} {cut}")
+            print(BUILD / "look" / f"{sel[0]}_{cut}_look.png")
         return
-    for i, sid in enumerate(sel):
-        build(sid, i, a.procs)
+    for cut in cuts:
+        for i, sid in enumerate(sel):
+            build(sid, i, a.procs, cut)
 
 
 if __name__ == "__main__":

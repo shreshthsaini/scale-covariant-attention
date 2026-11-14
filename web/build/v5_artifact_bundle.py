@@ -176,6 +176,21 @@ def build() -> None:
                      + json.dumps(data, ensure_ascii=True, separators=(",", ":")) + ";\n")
             if (d / "fallback.webp").is_file():
                 copy_web("assets/data/percentiles/fallback.webp")
+        elif name == "formation":                     # one run (its own image folder) keeps the bundle small
+            data = js_object(d / "data.js", "window.SCA_DATA.formation")
+            runs = data.get("runs") or []
+            if runs:
+                data["runs"] = runs[:1]
+                sid = runs[0].get("sid")
+                for f in sorted((d / "img" / str(sid)).rglob("*")):
+                    if f.is_file():
+                        copy_web(f.relative_to(WEB).as_posix())
+            for f in sorted(d.glob("*")):
+                if f.is_file() and f.name != "data.js":
+                    copy_web(f.relative_to(WEB).as_posix())
+            head_js = (d / "data.js").read_text(encoding="utf-8").split("window.SCA_DATA.formation")[0]
+            put_text("assets/data/formation/data.js", head_js + "window.SCA_DATA.formation = "
+                     + json.dumps(data, ensure_ascii=True, separators=(",", ":")) + ";\n")
         else:
             for f in sorted(d.rglob("*")):
                 if f.is_file() and not TILE.search(f.as_posix()):

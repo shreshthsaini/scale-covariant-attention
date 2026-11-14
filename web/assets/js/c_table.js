@@ -7,7 +7,9 @@
    underline = second per group, double dagger = campaign mean. No number is typed here.
 
    var c = SCAComp.table(el, {tab: "main" | "gen", hide: ["set"], lazy: true, base: "<data dir url>"});
-   options  tab   tab shown first (default "main")
+   options  tab      tab shown first (default "main")
+            compact  true: Table 1 only, with Method, Seconds, ImageReward, HPSv2.1, PickScore and the record; no tabs,
+                     no group chips, no sorting
             hide  column groups hidden at first (main: "time", "pref", "detail", "set", "holm")
    Interaction: tabs; group chips show or hide columns; a column header sorts best first, then worst first, then
    back to the paper's order. */
@@ -53,7 +55,9 @@
     var D = null, alive = true, io = null, ro = null, tab = opts.tab === "gen" ? "gen" : "main";
     var hidden = {}, sort = { k: null, dir: 0 };
     (opts.hide || []).forEach(function (g) { hidden[g] = true; });
-    if (!opts.hide && (root.clientWidth || 800) < 560) { hidden.detail = true; hidden.set = true; }   /* phones: fewer columns at first */
+    if (!opts.hide && !opts.compact && (root.clientWidth || 800) < 560) { hidden.detail = true; hidden.set = true; }   /* phones: fewer columns at first */
+    var compact = !!opts.compact;
+    if (compact) { tab = "main"; root.classList.add(P + "compact"); }
     root.classList.add("c-" + NAME);
     root.innerHTML = "";
 
@@ -86,6 +90,7 @@
     function ready() {
       if (!alive) return;
       D = window.SCA_DATA[NAME];
+      if (compact) { top.hidden = true; setTab("main", true); root.classList.remove(P + "loading"); return; }
       [["main", D.main.title], ["gen", D.gen.title]].forEach(function (q) {
         var b = el("button", "tab", { type: "button", role: "tab", id: P + q[0] + "-" + (++UID), "aria-selected": String(q[0] === tab), text: q[1] });
         b.addEventListener("click", function () { setTab(q[0]); });
@@ -103,8 +108,9 @@
       tab = t; sort = { k: null, dir: 0 };
       Array.prototype.forEach.call(tabs.children, function (b, i) { var on = (i === 0) === (t === "main"); b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1; });
       wrap.setAttribute("aria-label", T().title);
-      buildChips(); render();
-      note.innerHTML = ""; sub(note, T().note);
+      if (!compact) buildChips();
+      render();
+      note.innerHTML = ""; sub(note, compact && T().compact ? T().compact.note : T().note);
     }
     function buildChips() {
       chips.innerHTML = "";
@@ -119,7 +125,10 @@
         chips.appendChild(b);
       });
     }
-    function cols() { return T().cols.filter(function (c) { return !hidden[c.g]; }); }
+    function cols() {
+      if (compact && T().compact) { var keep = T().compact.cols; return T().cols.filter(function (c) { return keep.indexOf(c.k) >= 0; }); }
+      return T().cols.filter(function (c) { return !hidden[c.g]; });
+    }
     function keyOf(r, c) {
       var x = r.cells[c.k];
       if (!x) return null;
@@ -152,6 +161,11 @@
       var cg = el("colgroup"); cg.appendChild(el("col", "col-name"));
       C.forEach(function (c) { cg.appendChild(el("col", "col-" + c.g)); }); tableEl.appendChild(cg);
       var thead = el("thead"), r1 = el("tr", "gh"), r2 = el("tr", "ch");
+      if (compact && t.compact) {             /* one plain header row: full names, no sorting */
+        r2.appendChild(el("th", "corner corner-c", { scope: "col", text: "Method" }));
+        C.forEach(function (c) { r2.appendChild(el("th", "c c-" + c.k + " cc", { scope: "col", text: t.compact.labels[c.k] || c.label })); });
+        thead.appendChild(r2); tableEl.appendChild(thead);
+      } else {
       r1.appendChild(el("th", "corner", { scope: "col", rowspan: "2", text: tab === "main" ? "Method" : "Setting" }));
       t.colgroups.forEach(function (g) {
         var n = C.filter(function (c) { return c.g === g.k; }).length;
@@ -171,6 +185,7 @@
         th.appendChild(b); r2.appendChild(th);
       });
       thead.appendChild(r1); thead.appendChild(r2); tableEl.appendChild(thead);
+      }
       var tb = el("tbody"), last = null, flat = !!sort.k;
       ordered().forEach(function (r) {
         if (!flat && r.group !== last) {

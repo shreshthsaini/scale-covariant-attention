@@ -389,7 +389,16 @@ def run_views_compact(page, view, out, tag, log):
     return shots
 
 
-RUNNERS = {"percentiles": run_percentiles, "heads": run_heads, "emulate": run_emulate, "table": run_table, "speed": run_speed, "views": run_views, "stages": run_stages, "formation": run_formation, "views_compact": run_views_compact}
+def run_table_compact(page, view, out, tag, log):
+    page.wait_for_selector(".c-table-r", timeout=20000)
+    page.wait_for_timeout(500)
+    log.append(("header", page.evaluate("() => Array.from(document.querySelectorAll('.c-table-ch th')).map(e => e.textContent).join(' | ')")))
+    log.append(("rows", page.evaluate("() => Array.from(document.querySelectorAll('.c-table-r')).map(r => Array.from(r.children).map(c => c.textContent).join(' ')).join(' || ')")))
+    log.append(("tabs/chips visible", page.evaluate("() => [getComputedStyle(document.querySelector('.c-table-top')).display, document.querySelectorAll('.c-table-chip').length]")))
+    return [shot(page, out, f"{tag}_0")]
+
+
+RUNNERS = {"percentiles": run_percentiles, "heads": run_heads, "emulate": run_emulate, "table": run_table, "speed": run_speed, "views": run_views, "stages": run_stages, "formation": run_formation, "views_compact": run_views_compact, "table_compact": run_table_compact, "percentiles_compact": run_percentiles}
 
 
 def main():

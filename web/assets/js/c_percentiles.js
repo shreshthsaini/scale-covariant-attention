@@ -10,6 +10,7 @@
    options  start  percentile shown first (10..90, default 50, the median)
             lazy   load data and images only when the mount comes within 900 px of the viewport (default true)
             base   URL of the data directory (default: ../data/percentiles/ next to this script)
+            compact  true: one short line under the images instead of the selection rule (the page prints the rule)
    Interaction: slider, arrow keys, Home/End, click on the strip chart, swipe on the images (whole view);
    click or tap an image to fly all four to native pixels at that point (SCAZoom.grid), drag to pan,
    double-click or Esc to return to the whole images. */
@@ -118,6 +119,7 @@
     }
     fit();
     root.classList.add(P + "loading");          /* reserves the final heights until the data arrives (no layout shift) */
+    if (opts.compact) root.classList.add(P + "compact");
 
     /* ------------------------------------------------------------ data */
     function fail() {
@@ -146,6 +148,11 @@
       drawChart();
       rule.innerHTML = "";
       var camp = D.methods.filter(function (m) { return m.secs_kind !== "clean"; }).map(function (m) { return m.label; });
+      if (opts.compact) {
+        root.classList.add(P + "compact");
+        rule.appendChild(document.createTextNode("Seconds per 4096\u00b2 image" + (camp.length ? " (\u2021 campaign mean)" : "") + ". "));
+        rule.appendChild(el("span", "hint", { html: '<span class="' + P + 'h-m">Click an image to zoom all four to native pixels.</span><span class="' + P + 'h-t">Tap an image to zoom all four to native pixels.</span>' }));
+      } else {
       var full = el("span", "rule-more", { text:
         " Each stop is the prompt at that nearest-rank decile of the paired ImageReward difference, progressive SCA minus AReA, over the "
         + D.n + " evaluation prompts at seed " + D.seed + ", as in the paper's decile figures; the four images share prompt and initial noise. "
@@ -157,6 +164,7 @@
       rule.appendChild(full);
       rule.appendChild(tog);
       rule.appendChild(el("span", "hint", { html: ' <span class="' + P + 'h-m">Click an image to zoom all four to native pixels; drag to pan; double-click or Esc returns.</span><span class="' + P + 'h-t">Tap an image to zoom all four to native pixels; double-tap returns; swipe for the next percentile.</span>' }));
+      }
       range.disabled = false;
       var startP = +opts.start || 50, k = 4;
       D.stops.forEach(function (st, i) { if (st.p === startP) k = i; });

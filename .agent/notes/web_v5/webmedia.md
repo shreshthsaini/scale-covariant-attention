@@ -124,10 +124,14 @@ Rebuild any item from the repository root:
   lead's brief asks for the tag and indicator; design.md asks for no burned-in text: the clean loop is the default
   and the page can draw the readout from `readout`; the tagged pair is there if it does not.
 
-### Totals (audit of 2026-11-13 17:05)
-18 items, 41.2 MB with posters (web/assets/video/v5 is 40 MB on disk), all pass v5_manifest.py. All posters:
-sheets/posters.png. Build order for a full rebuild: v5_hero.py, v5_hero_tagged.py, v5_speedrace.py, v5_method.py,
-v5_compare.py, v5_process.py, v5_explainer.py (needs the frame folders of the first four), then v5_manifest.py.
+### Totals (audit of 2026-11-13 18:26, after round 2)
+28 items, 79.4 MB with posters (web/assets/video/v5 is 76 MB on disk; formation_media data 6.2 MB), all pass
+v5_manifest.py. The ten formation videos are 36.7 MB of it. If the published site should stay near the first
+round's 45 MB: leave process_* (10.6 MB), method_emulation and method_stages (2.2 MB), the *_tagged heroes (5.0 MB)
+and possibly the formation 9x16 cuts (18.3 MB; the 16x9 cut plays fine on phones in landscape) off the main page.
+All posters: sheets/posters.png. Build order for a full rebuild: v5_hero.py, v5_hero_tagged.py, v5_speedrace.py,
+v5_method.py, v5_compare.py, v5_process.py, v5_formation.py data, v5_formation.py video --cut both, v5_explainer.py
+(needs the frame folders of hero, speedrace and method), then v5_manifest.py.
 
 Encodes: v5_media.encode_to_size writes every attempt to <build>/enc_tmp and copies only the file that fits into
 web/assets/video/v5 (the repo is committed by a loop; checked that no oversized attempt reached the history).
@@ -137,9 +141,12 @@ web/assets/video/v5 (the repo is committed by a loop; checked that no oversized 
   rules), adds `source` (design.md's field name) and `order`, writes total_mb. Run after any rebuild.
 - Phone check: sheets/phone_390.png (hero 9:16 tagged and the race phone cut at 390 px wide: legible).
 
-### 7. Formation videos (round 2, v5_formation.py video [--only <id>] [--look t,t]): formation_<id>.mp4 x 5
-- The SCA counterpart of AReA's "each image beside the run that made it". 1600 x 900, 20.2 s, 30 fps, at most 4 MB,
-  role "formation", seamless (cross-fade to frame 0), poster = the final hold (patches at 1:1).
+### 7. Formation videos (round 2, v5_formation.py video [--cut 16x9|9x16|both] [--only <id>] [--look t,t])
+- formation_<id>.mp4 (1600 x 900, role "formation") and formation_<id>_9x16.mp4 (900 x 1600, role
+  "formation9x16") for id = silver_braids, jumping_spider, fjord_village, opera_house, antique_shop. 20.2 s, 30 fps,
+  3.6 to 3.7 MB each (cap 4 MB, two-pass), seamless (cross-fade to frame 0), poster = the final hold (patches at 1:1).
+- The SCA counterpart of AReA's "each image beside the run that made it". Phone cut: forming image on top, the three
+  patches in a row under it (connectors down), final image, legend and caption at the bottom.
 - Left: the final 4096^2 image (small). Centre: the recorded run forming (x0 preview of each of the 57 steps). Right:
   three zoom-in patches (thin orange frames, a line to each patch's box on the centre image), from the run's previews,
   ending in a zoom to the final PNG's own pixels with a "1:1" chip. No plots, curves, tables, heat maps or formulas.
@@ -181,8 +188,12 @@ web/assets/video/v5 (the repo is committed by a loop; checked that no oversized 
 
 ## Requests to the designer (webdesign)
 0. Round 2: the formation videos replace the process videos on the main page ("How an image forms"): embed
-   formation_<id>.mp4 (role formation) as muted loops with a prompt switcher or a row of five posters; caption from the
-   manifest. The method loops with the parabola and the table (method_emulation, method_stages) are now optional.
+   formation_<id>.mp4 (role formation; formation_<id>_9x16.mp4, role formation9x16, below about 700 px) as muted
+   loops with a prompt switcher (five posters as thumbnails, one video at a time, preload none until chosen); caption
+   from the manifest `caption`. The user found the parabola, table, curves and heat maps confusing: drop
+   method_emulation, method_stages and the explainer's observation/emulation scenes from the main page (keep them for
+   a sub-page if wanted). method_window (orange window, blue grid, no formula) and the speed race still fit the
+   cleaner page. The process videos (with AReA's run) can move to a sub-page.
 1. Hero: `<video muted autoplay loop playsinline preload="auto" poster="assets/video/v5/hero_16x9.webp">` with
    hero_16x9.mp4, and hero_9x16.mp4 below about 700 px width (source media query or swap in site.js). The image is a
    square centred on #0B0D0C at rest, so the --screen ground blends into the frame. The readout (tag, zoom indicator,

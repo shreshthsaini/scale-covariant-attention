@@ -25,7 +25,34 @@ Checked: no console errors, no overflow; 712 px at 1440x900 (1200 px container);
 Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_build_formation.py (seconds).
 Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_2/shots/formation_*.png
 
-## Status
+### Compact modes: DONE, ready to mount (old forms unchanged without the option)
+- views {compact: true}: the image with the draggable query, the orange window, the blue grid and the size switch
+  (1024^2 / 2048^2 / 4096^2), and beside it a two-line legend, two bars for block 12's heads 4 and 7 (window share
+  orange, grid share blue: 93% / 7% and 0% / 100% at 4096^2, 95% / 5% and 6% / 94% at 2048^2; at 1024^2 one line,
+  "both views are the whole image") and one sentence: "Every head gets both views and mixes them by how far it
+  looks." No insets, no key counts, no note. Weights: the r = 2 / r = 4 tables (results/evidence/calib/k1_1024.npz)
+  at the method figure's noise bin (sigma 0.62), exported by v5_build_views.py. 600 px at 1440x900, 540 px at 390x844.
+  Mount: <div class="comp-mount" data-comp="views" data-options='{"compact": true}'></div>. Demo web/dev/views_compact.html.
+- table {compact: true}: Table 1 only; one plain header row Method / Seconds / ImageReward / HPSv2.1 / PickScore /
+  Better / worse (the Holm record as ten cells), our two rows shaded, group rows kept (single pass, multi-stage), no
+  tabs, no chips, no sorting; one short note (n, campaign mark, what the record means). 498 px desktop, 630 px phone.
+  Mount: data-options='{"compact": true}'. Demo web/dev/table_compact.html.
+- percentiles {compact: true}: everything as before except the text under the images, now one line: "Seconds per
+  4096^2 image (double dagger campaign mean). Click an image to zoom all four to native pixels." (tap on touch). The
+  page prints the selection rule. 676 px desktop, 641 px phone. Demo web/dev/percentiles_compact.html.
+Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_2/shots/{views_compact,table_compact,percentiles_compact}_*.png
+
+### Round 2 integration (checked with v5_check_components.py --page index.html and --page results.html)
+index.html mounts views {compact}, formation, percentiles {compact}, table {compact}; results.html mounts table
+{tab: gen}, speed, heads, emulate, stages. All go live at 1440x900 and 390x844 in both themes with no console errors
+from the components. Heights on index.html (desktop / phone): views 513 / 502, formation 712 / 916, percentiles
+687 / 667, table 480 / 612. Layout shift when data arrives (--shift): at most 8 px for every component and mode.
+Page screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_2/page/page_{index,results}_<name>_*.png.
+Note for the lead: the media owner's export web/assets/data/formation_media/ (6.1 MB, five prompts, patch sprites) is
+not read by c_formation.js, which needs whole-frame keyframes and builds its own (web/assets/data/formation/); the two
+use the same presets (v5_build_formation.presets). If only the component uses it, formation_media need not ship.
+
+## Status (round 1; round 2 above)
 All seven components are finished and checked (demo pages and index.html, 1440x900 and 390x844, light and dark):
 percentiles, heads, emulate, table, speed (the brief's list) and views, stages (extras: method steps 1 and 3).
 index.html mounts all seven (heads, views, emulate, stages, percentiles, table, speed) and each goes live with no

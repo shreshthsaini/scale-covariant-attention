@@ -1,7 +1,7 @@
 """Audit and finish web/assets/video/v5/manifest.json (run after any v5_*.py build).
 
 For every item: the MP4 and poster exist; ffprobe says H.264 High, yuv420p, even size, no audio stream, moov first;
-size within its limit (loops 2.5 MB, the explainer 10 MB); the recorded width, height, seconds and bytes match the
+size within its limit (loops 2.5 MB, formation videos 4 MB, the explainer 10 MB); the recorded width, height, seconds and bytes match the
 file; poster size equals the video size; the wording rules hold in alt and caption. It adds "source" (one line of
 where the pixels or numbers come from, the field design.md asks for), fixes the item order, and writes totals.
 Exit status 1 on any failure.
@@ -21,6 +21,9 @@ import v5_media as M  # noqa: E402
 
 ORDER = ["hero_16x9", "hero_9x16", "hero_16x9_tagged", "hero_9x16_tagged", "speedrace_16x9", "speedrace_9x16",
          "method_window", "method_emulation", "method_stages", "compare_p25", "compare_p50", "compare_p75",
+         "formation_silver_braids", "formation_jumping_spider", "formation_fjord_village", "formation_opera_house",
+         "formation_antique_shop", "formation_silver_braids_9x16", "formation_jumping_spider_9x16",
+         "formation_fjord_village_9x16", "formation_opera_house_9x16", "formation_antique_shop_9x16",
          "process_silver_braids", "process_jumping_spider", "process_fjord_village", "process_opera_house",
          "process_antique_shop", "explainer"]
 
@@ -41,6 +44,8 @@ def source_line(e: dict) -> str:
         return f"recorded progressive SCA run {s['trace']}"
     if i.startswith("compare"):
         return "paper Figure 5 rows (qual_main_provenance.json): AReA, HRDiT, progressive SCA 4096^2 PNGs"
+    if i.startswith("formation"):
+        return f"recorded progressive SCA run {s['trace']} (previews, per-step weights) and its final PNG"
     if i.startswith("process"):
         return f"traces {s['progressive_trace']} and {s['area_trace']}"
     if i == "explainer":
@@ -54,7 +59,7 @@ def main() -> int:
     total = 0
     for e in data["items"]:
         mp4, poster = M.OUT / e["file"], M.OUT / e["poster"]
-        limit = 10_000_000 if e["id"] == "explainer" else 2_500_000
+        limit = 10_000_000 if e["id"] == "explainer" else (4_000_000 if e["id"].startswith("formation") else 2_500_000)
         try:
             p = M.check_video(mp4, max_bytes=limit)
         except Exception as ex:  # noqa: BLE001

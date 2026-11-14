@@ -121,7 +121,7 @@
         var d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (!d) return;
         e.preventDefault(); setRun((run + d + D.runs.length) % D.runs.length); tabs.children[run].focus();
       });
-      small.textContent = "Boxes and dots: exact positions. Bars: the weights this run used. No attention maps exist at 4096\u00b2. Earlier steps are previews.";
+      small.textContent = "Exact positions; the run's own weights; no attention maps exist at 4096\u00b2; earlier steps are previews.";
       range.disabled = false; play.disabled = false; setPlay(false);
       setRun(clamp(run, 0, D.runs.length - 1), true);
       root.classList.remove(P + "loading");
@@ -276,7 +276,7 @@
       }
       say.textContent = st === 0
         ? S + "\u00b2, the training size: the layout forms with the model's own attention."
-        : S + "\u00b2: each head mixes a native-size window and a native-size grid; near-looking heads read the window, far-looking heads the grid.";
+        : S + "\u00b2: near-looking heads read the native-size window, far-looking heads the native-size grid.";
       range.setAttribute("aria-valuetext", (f ? "step " + f.step + " of " + D.steps_total + ", " + S + " squared" : "final image"));
       main.setAttribute("aria-label", R.title + " at " + (f ? "step " + f.step : "the end") + " (" + S + " squared): the " + g.w + " by " + g.w + "-token window around the patch"
         + (view === "far" ? " and the " + g.n0 + " by " + g.n0 + " grid over the whole image" : "") + ".");
