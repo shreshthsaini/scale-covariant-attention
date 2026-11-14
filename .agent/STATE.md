@@ -22,6 +22,14 @@ Main text at most 10 pages (now 9).
     replace with a rule-based set or get the user's OK; (2) exclude assets/img/ideogram4 (238 MB, unused by v5) and
     web/dev from publishing so the site is under 400 MB; (3) review/ shows single-pass images on prompts that name
     people; (4) sub-pages still carry v4 widget styling; (5) page is about 6% over the 14,000 px target.
+- User feedback on the Artifact, 2026-11-13 18:35: good, but (1) the examples must show how an image forms, patch
+  by patch, like AReA's page does for its method; (2) cleaner and more professional, fewer things; (3) the error
+  curve, lookup table, heat maps and curve bundles are confusing: take them off and explain the method another way.
+  Round 2 in flight since 18:40 (same three workers, resumed): webmedia renders formation_<prompt>.mp4; webinteractive
+  builds SCAComp.formation ("pick a patch, watch it form") and compact modes of views, table, percentiles;
+  webdesign rebuilds the main page (hero, result, how it works in three plain steps, how an image forms, compare,
+  results, explainer), moves heads / emulate / stages and the eight-method grid to sub-pages, and rebuilds the
+  bundle with changed.json / removed.json. Due 21:15; node ends about 22:10.
 - NEXT: wait for the user's reaction to the Artifact; apply their changes (designer notes say how to rebuild), rebuild
   the bundle, republish the Artifact to the same URL; publish live only on the user's word; then HANDOVER 44,
   commit, push, sync.

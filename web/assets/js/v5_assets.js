@@ -5,6 +5,10 @@ window.SCA_V5 = {
    "js": "assets/js/c_emulate.js",
    "css": "assets/css/c_emulate.css"
   },
+  "formation": {
+   "js": "assets/js/c_formation.js",
+   "css": "assets/css/c_formation.css"
+  },
   "heads": {
    "js": "assets/js/c_heads.js",
    "css": "assets/css/c_heads.css"
@@ -2048,6 +2052,45 @@ window.SCA_V5 = {
    "source": "paper headline macros; v5 loop frames; v6_observation data; native and full-attention images",
    "role": "explainer",
    "bytes": 7641538
+  },
+  "formation": {
+   "file": "assets/video/v5/formation_silver_braids.mp4",
+   "poster": "assets/video/v5/formation_silver_braids.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 20.2,
+   "loop": true,
+   "alt": "Silver braids: a progressive SCA image forming over 57 steps at 1024, 2048 and 4096 pixels. A focus moves across three detailed patches, showing the native-size window and the coarse grid each head reads, while zoomed patches on the right sharpen and end at native pixels.",
+   "caption": "Silver braids: how a 4096 x 4096 image forms with progressive SCA. Orange: the native-size window around a patch; blue: the native-size grid over the whole image; chips: how much two heads use each (positions exact; weights from the reach table). Patches: the run's recorded window and two of highest edge energy.",
+   "role": "formation",
+   "bytes": 3686570,
+   "title": "Silver braids"
+  },
+  "formation_formation_jumping_spider": {
+   "file": "assets/video/v5/formation_jumping_spider.mp4",
+   "poster": "assets/video/v5/formation_jumping_spider.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 20.2,
+   "loop": true,
+   "alt": "Jumping spider: a progressive SCA image forming over 57 steps at 1024, 2048 and 4096 pixels. A focus moves across three detailed patches, showing the native-size window and the coarse grid each head reads, while zoomed patches on the right sharpen and end at native pixels.",
+   "caption": "Jumping spider: how a 4096 x 4096 image forms with progressive SCA. Orange: the native-size window around a patch; blue: the native-size grid over the whole image; chips: how much two heads use each (positions exact; weights from the reach table). Patches: the run's recorded window and two of highest edge energy.",
+   "role": "formation",
+   "bytes": 3725360,
+   "title": "Jumping spider"
+  },
+  "formation_formation_fjord_village": {
+   "file": "assets/video/v5/formation_fjord_village.mp4",
+   "poster": "assets/video/v5/formation_fjord_village.webp",
+   "width": 1600,
+   "height": 900,
+   "seconds": 20.2,
+   "loop": true,
+   "alt": "Fjord village: a progressive SCA image forming over 57 steps at 1024, 2048 and 4096 pixels. A focus moves across three detailed patches, showing the native-size window and the coarse grid each head reads, while zoomed patches on the right sharpen and end at native pixels.",
+   "caption": "Fjord village: how a 4096 x 4096 image forms with progressive SCA. Orange: the native-size window around a patch; blue: the native-size grid over the whole image; chips: how much two heads use each (positions exact; weights from the reach table). Patches: the run's recorded window and two of highest edge energy.",
+   "role": "formation",
+   "bytes": 3684090,
+   "title": "Fjord village"
   }
  }
 };

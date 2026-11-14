@@ -2,20 +2,20 @@
 """Artifact preview bundle of the main page (web/index.html), so the page can be looked at as a Claude Artifact
 before anything goes to the live site. Only the main page: sub-pages link to the live site.
 
-Builds /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle/:
+Builds /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r2/:
   page.html     the page without <!DOCTYPE>, <html>, <head> or <body> (the host wraps it); it starts with
                 <title>Scale-Covariant Attention</title> and <meta name="claude:viewport-fit-sides" content="cover">,
                 then the stylesheet links, the content and the scripts
-  assets/...    every file the page loads, at the same relative paths as on the site (CSS, JS, data, fonts, images,
-                videos, posters, captions); nothing loads from another host
+  assets/...    every file the page loads, at the same relative paths as on the site; nothing loads from another host
   files.json    {"chunks": [{relative path: absolute source path}, ...]} for the Artifact tool, page.html excluded,
-                at most 240 files and 55 MB per chunk
-What is trimmed for the Artifact limits (480 files, 230 MB, 15 MB per binary, 16 MB per text file): the
-percentile explorer keeps native tiles for the 10th, 50th and 90th percentile stops only, and the eight-method grid
-keeps its overviews without native tiles; where a grid has no tiles, zoomgrid.js stops at the overview's
-resolution instead of requesting missing files. Videos: the roles the main page plays. Links to the paper, the
+                at most 240 files and 55 MB per chunk; chunk 0 holds everything the page needs, zoom tiles come last
+  changed.json  published paths that are new or whose bytes differ from the previous published bundle (--prev)
+  removed.json  published paths of the previous bundle that this page no longer uses
+The file set follows the page: the components it mounts (data-comp), the videos it plays (hero, speed race, the
+step-2 loop, the formation or process carousel, the explainer), the data scripts it defers, the images it names.
+Only types the Artifact host serves are carried (.vtt captions are left out and their track dropped). No native
+zoom tiles: the percentile explorer zooms to its overviews and zoomgrid.js stops there. Links to the paper, the
 gallery, the results page, the exploratory page and the 96-prompt review point to the live site and say so.
-
 The bundle is rebuilt in place (nothing on scratch is deleted); files.json is the authoritative list.
 
 Usage, from the repository root:
@@ -29,8 +29,8 @@ failed requests and horizontal overflow, and saves first-screen screenshots besi
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
-import os
 import re
 import shutil
 from pathlib import Path
@@ -38,18 +38,22 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 WEB = REPO / "web"
 ROOT = Path("/scratch/09032/saini_2/sca/web_builds/v5_artifact")
-OUT = ROOT / "bundle"
+OUT = ROOT / "bundle_r2"   # round 2 (18:45): a fresh folder, so no file of the first bundle lingers beside it
+PREV = Path("/scratch/09032/saini_2/tmp/tmp/claude-883311/-work-09032-saini-2-vista-Projects-Exploration/"
+            "4c03b520-8e32-49ed-8c50-e539347fc179/scratchpad/sca_page")
 LIVE = "https://shreshthsaini.github.io/scale-covariant-attention/"
 TITLE = "Scale-Covariant Attention"
-ROLES = ["hero16x9", "speedrace", "speedrace9x16", "method_window", "method_emulation", "method_stages",
-         "process_1", "process_2", "process_3", "process_4", "process_5", "explainer"]
-TILE_STOPS = {10, 50, 90}           # percentile stops that keep their native tiles
-DEFER_DROP = {"assets/js/showcase.js"}   # data the main page no longer uses
+FIXED_ROLES = ["hero16x9", "speedrace", "speedrace9x16", "method_window", "explainer"]
+SERVED = {".html", ".css", ".js", ".mjs", ".wasm", ".json", ".map", ".txt", ".md", ".csv", ".xml", ".svg", ".png",
+          ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".ico", ".woff", ".woff2", ".ttf", ".otf", ".mp3", ".wav",
+          ".ogg", ".mp4", ".webm", ".pdf"}
 MAX_FILES, MAX_TOTAL, MAX_BIN, MAX_TEXT = 480, 230e6, 15e6, 16e6
 CHUNK_FILES, CHUNK_BYTES = 240, 55e6
-TEXT = {".html", ".css", ".js", ".json", ".vtt", ".svg", ".txt"}
+TEXT = {".html", ".css", ".js", ".json", ".svg", ".txt"}
+TILE = re.compile(r"/\d+_\d+\.webp$")
 
-files: dict[str, Path] = {}        # published relative path -> source written in the bundle
+files: dict[str, Path] = {}        # published relative path -> file written in the bundle
+skipped: set[str] = set()
 
 
 def put_file(rel: str, src: Path) -> None:
@@ -79,20 +83,25 @@ def copy_web(rel: str) -> None:
     if rel in files:            # already placed (possibly as a trimmed bundle copy): keep it
         return
     src = WEB / rel
-    if not src.exists():
+    if not src.is_file():       # never a directory
+        if src.exists():
+            return
         raise SystemExit(f"missing source file {rel}")
+    if src.suffix.lower() not in SERVED:
+        skipped.add(rel)
+        return
     put_file(rel, src)
 
 
 def css_refs(rel: str) -> None:
-    """Copy a stylesheet and every url(...) it names (fonts, images), at the same relative paths."""
+    """Copy a stylesheet and every file url(...) it names (fonts, images), at the same relative paths."""
     copy_web(rel)
     base = (WEB / rel).parent
     for u in re.findall(r"url\(\s*['\"]?([^'\")]+)['\"]?\s*\)", (WEB / rel).read_text(encoding="utf-8")):
         if u.startswith(("data:", "http:", "https:", "#")):
             continue
         tgt = (base / u).resolve()
-        if tgt.exists():
+        if tgt.is_file():
             copy_web(tgt.relative_to(WEB.resolve()).as_posix())
 
 
@@ -111,39 +120,44 @@ def build() -> None:
         pre, href, rest, inner = m.group(1), m.group(2), m.group(3), m.group(4)
         target = LIVE + ("paper.pdf" if href == "../paper/main.pdf" else href)
         if href != "../paper/main.pdf":
-            inner = inner.replace('<span class="go">Open', '<span class="go">Open on the live site') if 'class="go"' in inner else inner + " " + note
+            inner = inner + " " + note
         return f'<a {pre}href="{target}" target="_blank" rel="noopener"{rest}>{inner}</a>'
     body = re.sub(r'<a ([^>]*?)href="(\.\./paper/main\.pdf|gallery\.html|results\.html|exploratory\.html|review/index\.html)"([^>]*)>(.*?)</a>',
                   live, body, flags=re.S)
     if re.search(r'href="(?!https://|#)[^"]+\.html', body):
         raise SystemExit("a relative link to another page is left in the bundle page")
 
-    # ---------------------------------------------------------------- deferred data scripts the bundle carries
     m = re.search(r"window\.SCA_DEFER = (\[.*?\]);", body)
-    defer = [d for d in json.loads(m.group(1)) if d not in DEFER_DROP]
-    body = body.replace(m.group(0), "window.SCA_DEFER = " + json.dumps(defer) + ";")
+    defer = json.loads(m.group(1)) if m else []
     links = re.findall(r'<link rel="stylesheet" href="([^"]+)">', head)
-    preloads = re.findall(r'<link rel="preload" href="(assets/fonts/[^"]+)" as="font" type="font/woff2" crossorigin>', head)
     page = (f"<title>{TITLE}</title>\n"
             '<meta name="claude:viewport-fit-sides" content="cover">\n'
             f'<meta name="description" content="{desc}">\n'
             + "".join(f'<link rel="stylesheet" href="{h}">\n' for h in links)
-            + "".join(f'<link rel="preload" href="{h}" as="font" type="font/woff2" crossorigin>\n' for h in preloads)
             + "<style>.live-note{font-size:.72em;font-weight:500;opacity:.7;margin-left:.35em;white-space:nowrap}</style>\n"
             + f"<script>{theme_js}</script>\n" + body.strip() + "\n")
     put_text("page.html", page)
-
     for h in links:
         css_refs(h)
-    # ---------------------------------------------------------------- registry: only bundled components and videos
+
+    # ---------------------------------------------------------------- components the page mounts; videos it plays
     reg = js_object(WEB / "assets/js/v5_assets.js", "window.SCA_V5")
-    videos = {r: reg["videos"][r] for r in ROLES if r in reg["videos"]}
-    for v in videos.values():
-        for k in ("file", "poster", "vtt", "still"):
-            if v.get(k):
-                copy_web(v[k])
+    mounted = set(re.findall(r'data-comp="([a-z]+)"', page))
+    allv = reg["videos"]
+    carousel = [k for k in allv if k.startswith("formation")] or [k for k in allv if k.startswith("process")]
+    videos = {}
+    for r in FIXED_ROLES + sorted(carousel):
+        if r in allv:
+            v = dict(allv[r])
+            v.pop("vtt", None)                       # the host does not serve .vtt; captions are burned in
+            videos[r] = v
+            for k in ("file", "poster", "still"):
+                if v.get(k):
+                    copy_web(v[k])
     comps = {}
     for name, c in sorted(reg["comps"].items()):
+        if name not in mounted:
+            continue
         comps[name] = c
         copy_web(c["js"])
         if c.get("css"):
@@ -151,81 +165,49 @@ def build() -> None:
         d = WEB / "assets/data" / name
         if not d.is_dir():
             continue
-        if name == "percentiles":
+        if name == "percentiles":                     # overviews only: the zoom stops there
             data = js_object(d / "data.js", "window.SCA_DATA.percentiles")
             for st in data["stops"]:
                 for cell in st["cells"].values():
                     copy_web(f"assets/data/percentiles/{cell['view']}")
-                    t = cell.get("tiles")
-                    if not t:
-                        continue
-                    if st["p"] in TILE_STOPS:
-                        for r in range(t["rows"]):
-                            for c_ in range(t["cols"]):
-                                copy_web("assets/data/percentiles/" + t["path"].replace("{c}", str(c_)).replace("{r}", str(r)))
-                    else:
-                        del cell["tiles"]
+                    cell.pop("tiles", None)
             head_js = (d / "data.js").read_text(encoding="utf-8").split("window.SCA_DATA.percentiles")[0]
             put_text("assets/data/percentiles/data.js", head_js + "window.SCA_DATA.percentiles = "
                      + json.dumps(data, ensure_ascii=True, separators=(",", ":")) + ";\n")
-            if (d / "fallback.webp").exists():
+            if (d / "fallback.webp").is_file():
                 copy_web("assets/data/percentiles/fallback.webp")
         else:
             for f in sorted(d.rglob("*")):
-                if f.is_file():
+                if f.is_file() and not TILE.search(f.as_posix()):
                     copy_web(f.relative_to(WEB).as_posix())
-    put_text("assets/js/v5_assets.js", "// Bundle copy of assets/js/v5_assets.js: the components and videos this bundle carries.\n"
+    put_text("assets/js/v5_assets.js", "// Bundle copy of assets/js/v5_assets.js: the components and videos this page uses.\n"
              "window.SCA_V5 = " + json.dumps({"comps": comps, "videos": videos}, indent=1, ensure_ascii=True) + ";\n")
-
-    # ---------------------------------------------------------------- data scripts
     put_text("assets/js/media.js", "// Bundle: the v4 teaser and explainer are not carried; the v5 videos replace them.\nwindow.SCA_MEDIA = {};\n")
-    put_text("assets/js/traces.js", "// Bundle: the single-pass trace videos are not carried; the v5 process videos replace them.\n"
+    put_text("assets/js/traces.js", "// Bundle: the single-pass trace videos are not carried; the v5 videos replace them.\n"
              'window.SCA_TRACES = {"available": []};\n')
-    zs = js_object(WEB / "assets/js/zoomsets.js", "window.SCA_ZOOMSETS")
-    images = js_object(WEB / "assets/js/images.js", "window.SCA_IMAGES")
-    thumb_of = {r.get("sid"): r.get("thumb") for r in (images.get("compare") or {}).get("items", []) if r.get("thumb")}
-    comp_sets = zs.get("compare", [])
-    keep_thumbs = []
-    for z in comp_sets:
-        for p in z["panels"]:
-            p.pop("rt", None)
-            p.pop("tiles", None)
-            copy_web(p["view"])
-        th = z.get("thumb") or thumb_of.get(z["sid"]) or z["panels"][0]["view"]
-        copy_web(th)
-        keep_thumbs.append({"sid": z["sid"], "thumb": th})
-    put_text("assets/js/zoomsets.js", "// Bundle copy: the eight-method sets with overviews only (no native tiles).\n"
-             "window.SCA_ZOOMSETS = " + json.dumps({"compare": comp_sets}, ensure_ascii=True, separators=(",", ":")) + ";\n")
-    put_text("assets/js/images.js", "// Bundle copy: the comparison thumbnails only.\n"
-             "window.SCA_IMAGES = " + json.dumps({"compare": {"items": keep_thumbs}}, ensure_ascii=True) + ";\n")
-    for rel in ["assets/js/numbers.js", "assets/js/site.js", "assets/js/zoomgrid.js", "assets/js/process.js",
-                "assets/js/method_data.js", "assets/js/v6_figs.js"]:
+    for rel in ["assets/js/site.js"] + defer:
         copy_web(rel)
-    # ---------------------------------------------------------------- every other file the page names
     for ref in re.findall(r'(?:src|data-src|poster|href)="(assets/[^"]+)"', page):
         copy_web(ref)
     for ref in re.findall(r'<script src="(assets/[^"]+)"', page):
         copy_web(ref)
-    for d in defer:
-        if d not in files:
-            copy_web(d)
 
 
 def verify() -> list[str]:
-    """Every assets/... path named in a bundled text file exists in the bundle; limits hold."""
+    """Every assets/... path named in a bundled page, style or script exists in the bundle; limits hold."""
     problems = []
     for rel, p in list(files.items()):
-        if p.suffix in {".js", ".css", ".html", ".json"}:
+        if p.suffix in {".js", ".css", ".html"}:
             t = p.read_text(encoding="utf-8", errors="replace")
+            if p.suffix in {".js", ".css"}:
+                t = re.sub(r"/\*.*?\*/", "", t, flags=re.S)     # paths named in comments are not loads
             for ref in set(re.findall(r'["\'(](assets/[A-Za-z0-9_./-]+\.(?:webp|png|jpg|mp4|vtt|svg|js|css|woff2))', t)):
-                if "{" in ref:
+                if "{" in ref or ref in files:
                     continue
-                if ref not in files and not (OUT / ref).exists():
-                    if rel in ("assets/js/numbers.js", "assets/js/method_data.js", "assets/js/v6_figs.js"):
-                        continue          # data strings, not loads
-                    problems.append(f"{rel} names {ref}, which is not in the bundle")
-    n = len(files)
-    total = sum(p.stat().st_size for p in files.values())
+                if rel in ("assets/js/numbers.js",):
+                    continue          # data strings, not loads
+                problems.append(f"{rel} names {ref}, which is not in the bundle")
+    n, total = len(files), sum(p.stat().st_size for p in files.values())
     if n > MAX_FILES:
         problems.append(f"{n} files > {MAX_FILES}")
     if total > MAX_TOTAL:
@@ -236,6 +218,10 @@ def verify() -> list[str]:
             problems.append(f"text file {rel} is {sz / 1e6:.1f} MB")
         if p.suffix not in TEXT and sz > MAX_BIN:
             problems.append(f"binary {rel} is {sz / 1e6:.1f} MB")
+        if p.suffix.lower() not in SERVED:
+            problems.append(f"{rel} has a type the host does not serve")
+        if not p.is_file():
+            problems.append(f"{rel} is not a file")
     if files["page.html"].stat().st_size > 1e6:
         problems.append("page.html is over 1 MB")
     head = files["page.html"].read_text(encoding="utf-8")[:8192]
@@ -246,8 +232,13 @@ def verify() -> list[str]:
     return problems
 
 
-def write_manifest() -> dict:
+def digest(p: Path) -> str:
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+
+
+def write_manifest(prev: Path) -> dict:
     items = sorted((rel, p) for rel, p in files.items() if rel != "page.html")
+    items.sort(key=lambda x: (bool(TILE.search(x[0])), x[0]))     # chunk 0: everything but zoom tiles
     chunks, cur, cur_b = [], {}, 0
     for rel, p in items:
         sz = p.stat().st_size
@@ -259,9 +250,28 @@ def write_manifest() -> dict:
     if cur:
         chunks.append(cur)
     (OUT / "files.json").write_text(json.dumps({"chunks": chunks}, indent=1) + "\n", encoding="utf-8")
+    # ---------------------------------------------------------------- against the previous published bundle
+    changed, removed = [], []
+    if prev.is_dir():
+        old = set()
+        pf = prev / "files.json"
+        if pf.is_file():
+            for ch in json.loads(pf.read_text(encoding="utf-8")).get("chunks", []):
+                old |= set(ch)
+        old.add("page.html")
+        for rel, p in sorted(files.items()):
+            q = prev / rel
+            if not q.is_file() or q.stat().st_size != p.stat().st_size or digest(q) != digest(p):
+                changed.append(rel)
+        removed = sorted(r for r in old if r not in files)
+    else:
+        changed = sorted(files)
+    (OUT / "changed.json").write_text(json.dumps(changed, indent=1) + "\n", encoding="utf-8")
+    (OUT / "removed.json").write_text(json.dumps(removed, indent=1) + "\n", encoding="utf-8")
     total = sum(p.stat().st_size for p in files.values())
     info = {"bundle": str(OUT), "files": len(files), "total_mb": round(total / 1e6, 1), "chunks": len(chunks),
-            "chunk_sizes": [(len(c), round(sum(Path(v).stat().st_size for v in c.values()) / 1e6, 1)) for c in chunks]}
+            "chunk_sizes": [(len(c), round(sum(Path(v).stat().st_size for v in c.values()) / 1e6, 1)) for c in chunks],
+            "changed": len(changed), "removed": len(removed), "left_out_types": sorted(skipped)}
     print(json.dumps(info))
     return info
 
@@ -292,6 +302,7 @@ def check() -> int:
     srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Q, directory=str(OUT)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     port = srv.server_address[1]
+    allowed = set(files) | {"_check_light.html", "_check_dark.html"}
     bad = 0
     with sync_playwright() as p:
         b = p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"])
@@ -300,13 +311,17 @@ def check() -> int:
                 ctx = b.new_context(viewport={"width": vw, "height": vh}, color_scheme=theme,
                                     device_scale_factor=1 if vw > 500 else 2, is_mobile=vw < 500, has_touch=vw < 500)
                 pg = ctx.new_page()
-                errs, fails, blocked = [], [], []
+                errs, fails, blocked, unlisted = [], [], [], []
 
                 def route(r):
-                    if r.request.url.startswith(f"http://127.0.0.1:{port}/"):
+                    u = r.request.url
+                    if u.startswith(f"http://127.0.0.1:{port}/"):
+                        rel = u.split(f":{port}/", 1)[1].split("?")[0].split("#")[0]
+                        if rel and rel not in allowed:
+                            unlisted.append(rel)     # a file the page asks for that the Artifact would not have
                         r.continue_()
                     else:
-                        blocked.append(r.request.url)
+                        blocked.append(u)
                         r.abort()
                 pg.route("**/*", route)
                 pg.on("console", lambda m: errs.append(m.text) if m.type == "error" else None)
@@ -322,17 +337,18 @@ def check() -> int:
                 while y < h:
                     y += int(vh * .8)
                     pg.evaluate(f"window.scrollTo(0, {y})")
-                    pg.wait_for_timeout(200)
+                    pg.wait_for_timeout(220)
                     h = pg.evaluate("document.documentElement.scrollHeight")
                 pg.wait_for_timeout(1500)
                 over = pg.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
                 live = pg.evaluate("Array.from(document.querySelectorAll('.comp-figure.is-live .comp-mount')).map(m => m.getAttribute('data-comp'))")
                 vids = pg.evaluate("document.querySelectorAll('video').length")
-                ok = not errs and not fails and not blocked and over <= 0
+                ok = not errs and not fails and not blocked and not unlisted and over <= 0
                 bad += 0 if ok else 1
                 print(json.dumps({"view": f"{vw}x{vh}", "theme": theme, "height": h, "overflow_px": over, "console_errors": errs[:6],
                                   "failed": sorted(set(fails))[:6], "blocked_external": sorted(set(blocked))[:6],
-                                  "components_live": live, "videos": vids, "screenshot": str(shot)}))
+                                  "unlisted": sorted(set(unlisted))[:6], "components_live": live, "videos": vids,
+                                  "screenshot": str(shot)}))
                 ctx.close()
         b.close()
     srv.shutdown()
@@ -342,10 +358,11 @@ def check() -> int:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--check", action="store_true", help="also run the headless check (needs playwright)")
+    ap.add_argument("--prev", default=str(PREV), help="the previous published bundle, for changed.json and removed.json")
     a = ap.parse_args()
     build()
     problems = verify()
-    write_manifest()
+    write_manifest(Path(a.prev))
     for pr in problems:
         print("PROBLEM", pr)
     bad = check() if a.check else 0

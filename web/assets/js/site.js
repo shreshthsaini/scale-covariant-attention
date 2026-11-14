@@ -689,7 +689,9 @@
     var legacy = false;
     if (!list.length) {   /* v5 process videos (webmedia manifest roles process_<n>): final image beside the run */
       var VV = (window.SCA_V5 || {}).videos || {};
-      list = Object.keys(VV).filter(function (k) { return /^process/.test(k) && VV[k].file; }).sort().map(function (k) {
+      var keys = Object.keys(VV).filter(function (k) { return /^formation/.test(k) && VV[k].file; });
+      if (!keys.length) keys = Object.keys(VV).filter(function (k) { return /^process/.test(k) && VV[k].file; });
+      list = keys.sort().map(function (k) {
         var x = VV[k];
         return { sid: k, prompt: x.prompt || "", cap: x.prompt ? "" : pretty(x.caption || x.alt || ""), mp4: x.file, poster: x.poster, still: x.still || null, size: x.size || [4096, 4096],
                  model: x.model || "FLUX.1-dev", seed: x.seed === undefined ? 0 : x.seed, label: x.label || "Progressive SCA beside AReA", title: x.title || "", caption: x.caption || "" };
@@ -1017,6 +1019,12 @@
       if (io) io.observe(t); else mount(m);
     });
   })();
+
+  /* "How it works", step 3: each bar's window share comes from the number printed beside it (numbers.js) */
+  $$(".mix-w[data-pct]").forEach(function (b) {
+    var v = val(b.getAttribute("data-pct"));
+    if (!isNaN(v)) b.style.width = clamp(v, 0, 100) + "%";
+  });
 
   /* paper figures in .figcard open full size */
   $$(".figcard[data-zoomable]").forEach(function (b) {

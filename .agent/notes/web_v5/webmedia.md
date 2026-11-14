@@ -137,7 +137,52 @@ web/assets/video/v5 (the repo is committed by a loop; checked that no oversized 
   rules), adds `source` (design.md's field name) and `order`, writes total_mb. Run after any rebuild.
 - Phone check: sheets/phone_390.png (hero 9:16 tagged and the race phone cut at 390 px wide: legible).
 
+### 7. Formation videos (round 2, v5_formation.py video [--only <id>] [--look t,t]): formation_<id>.mp4 x 5
+- The SCA counterpart of AReA's "each image beside the run that made it". 1600 x 900, 20.2 s, 30 fps, at most 4 MB,
+  role "formation", seamless (cross-fade to frame 0), poster = the final hold (patches at 1:1).
+- Left: the final 4096^2 image (small). Centre: the recorded run forming (x0 preview of each of the 57 steps). Right:
+  three zoom-in patches (thin orange frames, a line to each patch's box on the centre image), from the run's previews,
+  ending in a zoom to the final PNG's own pixels with a "1:1" chip. No plots, curves, tables, heat maps or formulas.
+- Beats and captions: 1024^2 (3.6 s, no overlay) "The layout forms at the size the model was trained on."; 2048^2
+  (6.3 s) and 4096^2 (6.3 s): the focus visits the three patches (2.1 s each): query tile (white), the native-size
+  window around it (orange: half the image side at 2048^2, a quarter at 4096^2; 64 x 64 tokens, clamped; same
+  geometry as method_window) and the native-size grid of 64 x 64 block centres over the whole image (blue dots, stride
+  2 or 4 tokens), with two chips beside the window: "head 4: N% window", "head 7: N% grid" = the trace's own per-step
+  weight of block 12 heads 4 and 7 (what the run read from the reach table at r = 2 or 4). Captions "Near-looking
+  heads read a native-size window around each patch." and "Far-looking heads read a coarse grid over the whole image,
+  so the layout holds."; hold (3.4 s) "Each patch ends at the final image's native pixels." A small legend under the
+  final image names the three marks while the focus is on. Stage chip top left of the centre image.
+- Patches = the inspector's presets (web/build/v5_build_formation.presets, imported, so video and inspector agree):
+  the trace's own 512 px window, then two windows of highest edge energy at least 1.4 spans from each other and from
+  it; as 512 px boxes [x, y, w, h] in 4096 px, top to bottom:
+    sc_h01_silver_braids   [1472, 256], [832, 640], [2752, 3584]
+    sc_a02_jumping_spider  [1920, 1216], [1728, 1920], [2560, 1984]
+    sc_l01_fjord_village   [2304, 2240], [3008, 2496], [2112, 2944]
+    sc_l03_opera_house     [1792, 256], [2752, 256], [3200, 1216]
+    sc_d03_antique_shop    [3200, 1408], [2880, 2112], [64, 2368]
+- Honesty: positions exact, weights from the trace (the reach table), frames the real run; no attention map is drawn
+  (none exists at 4096^2). Patch pixels during the run come from the 1024 px previews (128 x 128 preview px per patch,
+  shown at 200 px); only the end shows native pixels (the final PNG).
+- Sheets: sheets/formation_*_sheet.png, formation_*_seam.png; look frames formation/look/.
+
+### Data for the interactive owner (webinteractive): web/assets/data/formation_media/ (6.1 MB, 5 prompts)
+- index.json: prompts, titles and patch boxes. <id>/formation.json: patch boxes, per-step list (step, stage 0/1/2,
+  size "1024x1024"/"2048x2048"/"4096x4096", sigma, head4_window and head7_window = pi of block 12 heads 4 and 7, null
+  at 1024^2), trace locations, geometry constants.
+- <id>/patch<k>_steps.webp: a 57-tile horizontal sprite, 128 x 128 per tile (7296 x 128 px), tile i = step i + 1:
+  the patch region of that step's 1024 px preview at native preview pixels (scale it up in CSS).
+  <id>/patch<k>_final.webp: the 512 x 512 patch of the final PNG at 1:1.
+- Trace files (scratch, read-only for you): /scratch/09032/saini_2/sca/web_assets/trace/sca_v2_prog/<id>/
+  steps/x0_00.webp .. x0_56.webp (1024 x 1024 preview of the whole image, every step and stage),
+  steps/crop_00.png .. crop_56.png (512 x 512, the trace window box_xys at native resolution, upsampled by
+  crop_scale 4 / 2 / 1 at 1024^2 / 2048^2 / 4096^2), final.png (4096 x 4096), trace.json (steps[].stage, stage_res,
+  sigma, pi [57 blocks][24 heads]). Your own v5_build_formation.py already writes formation/img and data.js; I moved
+  my export out of formation/ into formation_media/ so the two never collide.
+
 ## Requests to the designer (webdesign)
+0. Round 2: the formation videos replace the process videos on the main page ("How an image forms"): embed
+   formation_<id>.mp4 (role formation) as muted loops with a prompt switcher or a row of five posters; caption from the
+   manifest. The method loops with the parabola and the table (method_emulation, method_stages) are now optional.
 1. Hero: `<video muted autoplay loop playsinline preload="auto" poster="assets/video/v5/hero_16x9.webp">` with
    hero_16x9.mp4, and hero_9x16.mp4 below about 700 px width (source media query or swap in site.js). The image is a
    square centred on #0B0D0C at rest, so the --screen ground blends into the frame. The readout (tag, zoom indicator,

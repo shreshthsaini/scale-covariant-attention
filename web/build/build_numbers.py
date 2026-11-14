@@ -1567,6 +1567,12 @@ def build_tex() -> None:
     main_tex = REPO / "paper" / "main.tex"   # the paper's sample sizes (\nmain, \nabl, \nhrgen) are set in its preamble
     for m in re.finditer(r"\\newcommand\{\\(n[a-z]+)\}\{(\d+)\}", main_tex.read_text(encoding="utf-8")):
         seen.setdefault(m.group(1), (m.group(2), main_tex))
+    for tag, name in (("near", "hlFocusNearPi"), ("far", "hlFocusFarPi")):   # the two example heads' mix, in percent
+        if name in seen:
+            pi = float(seen[name][0].replace(MINUS, "-"))
+            w = int(Decimal(str(pi * 100)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+            put(f"focus.{tag}.window_pct", w, str(w), seen[name][1], f"100 x \\{name}, rounded: the share of the window view")
+            put(f"focus.{tag}.grid_pct", 100 - w, str(100 - w), seen[name][1], f"100 - focus.{tag}.window_pct: the share of the grid view")
     for name, (disp, path) in sorted(seen.items()):
         plain = disp.replace(MINUS, "-").replace(TIMES, "")
         try:

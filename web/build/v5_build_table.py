@@ -143,6 +143,11 @@ def main():
     gg, grows = parse(os.path.join(SNIP, "tab_generality.tex"), GEN_COLS, mac)
     rec = dict(
         main=dict(title="Main comparison at 4096\u00b2", groups=mg, colgroups=[dict(k=k, label=l) for k, l in MAIN_GROUPS],
+                  compact=dict(cols=["time", "ir", "hps", "pick", "holm"],
+                               labels=dict(time="Seconds", ir="ImageReward", hps="HPSv2.1", pick="PickScore", holm="Better / worse"),
+                               note=("FLUX.1-dev at 4096\u00b2, " + mac["nmain"] + " Aesthetic-4K prompts, seed 0. Seconds: clean batch-1 median "
+                                     "(\u2021 campaign mean). Better / worse: of ten per-image metrics, where progressive SCA is "
+                                     "significantly better or worse than the row (Holm).")),
                   cols=[dict(k=k, label=l, g=g, dir=d) for k, l, g, d in MAIN_COLS], rows=mrows,
                   note=("FLUX.1-dev, " + mac["nmain"] + " Aesthetic-4K prompts, seed 0; HPSv2.1 \u00d7100; M_c: MUSIQ on 1024\u00b2 "
                         "crops; FID_p: patch FID (our definition). Time: clean batch-1 median on one GH200 (\u2021 campaign mean) "

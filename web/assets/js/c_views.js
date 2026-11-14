@@ -7,7 +7,9 @@
    constants (n0, tile, patch) come from the code through that script. No number is typed here.
 
    var c = SCAComp.views(el, {size: 4096, lazy: true, base: "<data dir url>"});  c.size(2048); c.destroy();
-   options  size   image side shown first (1024, 2048 or 4096; default 4096)
+   options  size     image side shown first (1024, 2048 or 4096; default 4096)
+            compact  true: only the image with its two views, the size switch and two heads' mix (no insets,
+                     counts or note); the single method interactive of the main page
    Interaction: drag or tap on the image to move the query; arrow keys move it one tile; buttons switch the size. */
 (function () {
   "use strict";
@@ -70,7 +72,9 @@
     var gridBox = el("figure", "ib", null, [el("div", "if", null, [gridCv]), gridLab]);
     var insets = el("div", "insets", null, [winBox, gridBox]);
     var stats = el("div", "stats");
-    var side = el("div", "side", null, [insets, stats]);
+    var mix = el("div", "mix");
+    var side = el("div", "side", null, [insets, stats, mix]);
+    if (opts.compact) root.classList.add(P + "compact");
     var body = el("div", "body", null, [mainBox, side]);
     var note = el("p", "note");
     root.appendChild(top); root.appendChild(body); root.appendChild(note);
@@ -162,8 +166,7 @@
       var qx = (g.col + .5) * s, qy = (g.row + .5) * s, qa = Math.max(7 * m.d, 1.5 * s);
       ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(qx, qy, qa * .62, 0, 7); ctx.fill();
       ctx.fillStyle = css(C.screen); ctx.beginPath(); ctx.arc(qx, qy, qa * .34, 0, 7); ctx.fill();
-      insetsDraw(g);
-      statsDraw(g);
+      if (opts.compact) mixDraw(g); else { insetsDraw(g); statsDraw(g); }
       main.setAttribute("aria-label", "Image at " + S + " by " + S + ": the query at token row " + (g.row + 1) + ", column " + (g.col + 1) + " of " + g.n
         + "; its window view is the " + g.w + " by " + g.w + " token box around its tile; its grid view is one key in every " + g.r + " by " + g.r + " block.");
     }
@@ -188,6 +191,32 @@
       gridLab.appendChild(el("span", null, { text: n0 + " \u00d7 " + n0 + " keys over the whole image, one per " + g.r + " \u00d7 " + g.r + " block" }));
       winCv.setAttribute("aria-label", "The window view's pixels: a " + (g.w * D.patch) + "-pixel square around the query.");
       gridCv.setAttribute("aria-label", "The grid view: one 16-pixel patch per block, side by side; the orange box marks the window's place.");
+    }
+    function pct(x) { return Math.round(x * 100) + "%"; }
+    function bar(label, near) {
+      var row = el("div", "bar"), w = clamp(near, 0, 1);
+      row.appendChild(el("span", "bar-l", { text: label }));
+      var t = el("span", "bar-t", { role: "img", "aria-label": label + ": window " + pct(w) + ", grid " + pct(1 - w) });
+      if (w > 0) t.appendChild(el("i", "bar-n", { style: "width:" + (w * 100) + "%" }));
+      if (w < 1) t.appendChild(el("i", "bar-f", { style: "width:" + ((1 - w) * 100) + "%" }));
+      row.appendChild(t);
+      row.appendChild(el("span", "bar-v", null, [w > 0 ? el("b", "bv-n", { text: "window " + pct(w) }) : null, w > 0 && w < 1 ? document.createTextNode(" \u00b7 ") : null,
+        w < 1 ? el("b", "bv-f", { text: "grid " + pct(1 - w) }) : null]));
+      return row;
+    }
+    function mixDraw(g) {
+      mix.innerHTML = "";
+      mix.appendChild(el("div", "lgd", null, [el("span", "lg-n", { text: "window: " + g.w + " \u00d7 " + g.w + " tokens around the query" }),
+        el("span", "lg-f", { text: "grid: " + g.n0 + " \u00d7 " + g.n0 + " tokens over the whole image" })]));
+      var wt = D.weights && D.weights[String(g.r)];
+      if (wt) {
+        mix.appendChild(el("div", "mh", { text: "Two heads at " + S + "\u00b2" }));
+        mix.appendChild(bar("Head " + D.heads.near, wt.near));
+        mix.appendChild(bar("Head " + D.heads.far, wt.far));
+        mix.appendChild(el("p", "say", { text: "Every head gets both views and mixes them by how far it looks." }));
+      } else {
+        mix.appendChild(el("p", "say", { text: "At " + S + "\u00b2, the training size, both views are the whole image: the model's own attention." }));
+      }
     }
     function statsDraw(g) {
       var full = g.n * g.n, keys = g.n0 * g.n0;

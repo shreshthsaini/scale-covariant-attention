@@ -1,5 +1,30 @@
 # webinteractive notes (owner: webinteractive; components for the v5 page)
 
+## Round 2 (user: show how the image forms, cleaner page; emulate, stages and heads leave the main page)
+### formation: DONE, ready to mount (the new centrepiece)
+Files: web/assets/js/c_formation.js, web/assets/css/c_formation.css, web/assets/data/formation/ (data.js 7 KB,
+img/<id>/k0..k15.webp keyframe previews 1024 px, c0..c15.webp the trace's own window per keyframe at the stage's true
+resolution, f.webp and f_<c>_<r>.webp the final 4096^2 image as 4 x 4 native tiles), web/build/v5_build_formation.py,
+web/dev/formation.html. Data 6.1 MB for three runs.
+Mount: <div class="comp-mount" data-comp="formation" data-options='{}'></div>
+API: SCAComp.formation(el, {run: 0..2, preset: 0..2 (0 = the trace's own window), view: "near" | "far", stop: keyframe
+(default: the final image), lazy, base}) -> {run(i), stop(k), destroy()}.
+What it shows: prompt tabs (Silver braids, Jumping spider, Fjord village: the first three of the process videos' rule,
+v5_process.selection); the run at the chosen step with the query tile (white), the patch (green reticle), the
+native-size window around it (orange; near view dims the rest) or the native-size grid over the whole image (blue
+dots, far view); a scrubber with Play over 16 keyframes plus the final image, in three labelled segments (1024^2,
+2048^2, 4096^2); right: the patch enlarged at that step, two bars for block 12's heads 4 and 7 (window share orange,
+grid share blue, the weights the run multiplied in at that step, e.g. 93% / 7% and 4% / 96% at the end; at 1024^2
+"Every head attends to the whole image."), and one sentence per stage. About 60 words visible.
+Resolution: preset 1 is the trace's own 512 px window, decoded at every step (shown at 1024^2 / 2048^2 / native
+resolution by stage); any other patch shows the step's 1024 px preview, and native pixels at the final image (tiles).
+Small print says it: "Boxes and dots: exact positions. Bars: the weights this run used. No attention maps exist at
+4096^2. Earlier steps are previews."
+Geometry: the window and grid of sca/attn.py (window_index, pool_tokens center), n0 = 64, tile = 8, 16 px per token.
+Checked: no console errors, no overflow; 712 px at 1440x900 (1200 px container); 889 px at 390x844 (stacked).
+Rebuild: /work/09032/saini_2/vista/library/uv-envs/sca/bin/python web/build/v5_build_formation.py (seconds).
+Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webinteractive_2/shots/formation_*.png
+
 ## Status
 All seven components are finished and checked (demo pages and index.html, 1440x900 and 390x844, light and dark):
 percentiles, heads, emulate, table, speed (the brief's list) and views, stages (extras: method steps 1 and 3).

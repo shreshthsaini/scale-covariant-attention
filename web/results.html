@@ -41,6 +41,14 @@
     <p class="lead">Every metric with its interval, the seeds and HRGen-1K, timing, the method in detail and the full limitations. The main page keeps the headline; this page keeps the rest.</p>
   </div>
 </div>
+<section id="abstract" aria-labelledby="h-abstract">
+  <div class="wrap prose">
+    <p class="kicker">Abstract</p>
+    <h2 id="h-abstract" class="sr-only">Abstract</h2>
+    <p>Diffusion transformers trained near one megapixel can generate 4K images without retraining once their attention is adapted. Each such method must set how far every attention head looks, its reach, at a size the model never saw. Current methods share one schedule across heads or search a setting per size. We show that reach is a property of the head: at the training resolution of FLUX.1-dev, the head explains <span data-num="tex.hlVarHead">97.5</span>% of the variance of reach and the denoising step <span data-num="tex.hlVarStep">2.5</span>%. We introduce Scale-Covariant Attention (SCA), which mixes a native-size window and a native-size grid over the whole image with one number per head. Reach emulation fits that number once at 1024&sup2;, where full attention still works, in closed form. Inside HRDiT&rsquo;s sampler, SCA makes a 4096&sup2; image in <span data-num="tex.hlSecProg">49.2</span>&nbsp;s, <span data-num="tex.hlSpeedProgArea">4.1</span>&times; faster than AReA, and beats AReA on all ten per-image metrics at three seeds. It is statistically indistinguishable from HRDiT on three preference scores in <span data-num="tex.hlProgHrditPct">46</span>% of HRDiT&rsquo;s time.</p>
+  </div>
+</section>
+
 <section id="results" aria-labelledby="h-results">
   <div class="wrap">
     <div class="head-c">
@@ -173,8 +181,27 @@
     <div class="head-c">
       <p class="kicker">The method in detail</p>
       <h2 id="h-mdetail">Two views, reach emulation, one table</h2>
-      <p class="lede-c">The paper&rsquo;s operator figure, reach emulation and the two samplers, with the real reach table and three real heads.</p>
+      <p class="lede-c">Where each head looks at 1024&sup2;, how one number per head is fitted there in closed form, and how the sampler reads it at every stage.</p>
     </div>
+    <figure class="paper-fig comp-figure">
+      <h3 class="tbl-h">Reach is a property of the head</h3>
+      <div class="comp-fallback figcard" data-zoomable><img data-src="assets/img/v6/observation.webp" width="2400" height="829" style="aspect-ratio:2400/829;width:100%;height:auto" decoding="async" alt="Paper Figure 2: full attention of a near-reaching and a far-reaching head at three noise levels; the near share of all 1,368 heads over denoising; the variance split."></div>
+      <div class="comp-mount" data-comp="heads" data-options='{}'></div>
+    </figure>
+    <figure class="paper-fig">
+      <div class="figcard" data-zoomable><img src="assets/img/v6/method.webp" width="2400" height="1073" loading="lazy" decoding="async" alt="Paper Figure 3: full attention of one head at 1024 squared fitted by a mix of its shrunk window and grid views; the weight fills one cell of the reach table; at 4096 squared each sampler stage reads the table at its ratio."></div>
+      <figcaption><b>The method in one figure</b> (paper Figure 3). (a) Reach emulation at 1024&sup2;. (b) The reach table. (c) At 4096&sup2; a near-reaching head mixes mostly its window, a far-reaching head only its grid.</figcaption>
+    </figure>
+    <figure class="paper-fig comp-figure">
+      <h3 class="tbl-h">Reach emulation: the closed-form weight</h3>
+      <div class="comp-fallback figcard" data-zoomable><img data-src="assets/img/v6/emulation.webp" width="2400" height="698" style="aspect-ratio:2400/698;width:100%;height:auto" decoding="async" alt="Paper figure: the fitted weight against the near share of all heads, the relative output error of four mixing rules, and the transfer of reach tables."></div>
+      <div class="comp-mount" data-comp="emulate" data-options='{}'></div>
+    </figure>
+    <figure class="paper-fig comp-figure">
+      <h3 class="tbl-h">One table, read at every sampler stage</h3>
+      <div class="comp-fallback vslot" data-vrole="method_stages"><div class="vslot-media frame"></div></div>
+      <div class="comp-mount" data-comp="stages" data-options='{}'></div>
+    </figure>
     <div class="loops3">
       <figure class="vslot" data-vrole="method_window" hidden><div class="vslot-media frame"></div><figcaption data-vcap></figcaption></figure>
       <figure class="vslot" data-vrole="method_emulation" hidden><div class="vslot-media frame"></div><figcaption data-vcap></figcaption></figure>

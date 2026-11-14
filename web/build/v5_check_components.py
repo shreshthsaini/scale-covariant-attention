@@ -332,7 +332,64 @@ def check_shift(br, names, views):
     return worst
 
 
-RUNNERS = {"percentiles": run_percentiles, "heads": run_heads, "emulate": run_emulate, "table": run_table, "speed": run_speed, "views": run_views, "stages": run_stages}
+def run_formation(page, view, out, tag, log):
+    page.wait_for_selector(".c-formation-tab", timeout=20000)
+    page.wait_for_timeout(1500)
+    rd = "() => document.querySelector('.c-formation-pcap').textContent + ' | ' + document.querySelector('.c-formation-bars').textContent + ' | ' + document.querySelector('.c-formation-say').textContent"
+    log.append(("final", page.evaluate(rd)))
+    shots = [shot(page, out, f"{tag}_0_final")]
+    rng = page.query_selector(".c-formation-range")
+    rng.focus()
+    page.keyboard.press("Home")
+    page.wait_for_timeout(700)
+    log.append(("first step", page.evaluate(rd)))
+    shots.append(shot(page, out, f"{tag}_1_start"))
+    for _ in range(9):
+        page.keyboard.press("ArrowRight")
+    page.wait_for_timeout(700)
+    log.append(("stop 9", page.evaluate(rd)))
+    page.query_selector_all(".c-formation-vt")[1].click()
+    page.wait_for_timeout(500)
+    shots.append(shot(page, out, f"{tag}_2_far"))
+    b = page.query_selector(".c-formation-main").bounding_box()
+    if view == "phone":
+        tap(page, b["x"] + b["width"] * 0.3, b["y"] + b["height"] * 0.35)
+    else:
+        page.mouse.click(b["x"] + b["width"] * 0.3, b["y"] + b["height"] * 0.35)
+    page.wait_for_timeout(300)
+    page.query_selector_all(".c-formation-tab")[1].click()
+    page.wait_for_timeout(300)
+    rng.focus()
+    page.keyboard.press("End")
+    page.wait_for_timeout(1500)
+    log.append(("tab 2, final, clicked patch", page.evaluate(rd)))
+    shots.append(shot(page, out, f"{tag}_3_tab2"))
+    return shots
+
+
+def run_views_compact(page, view, out, tag, log):
+    page.wait_for_selector(".c-views-seg-b", timeout=20000)
+    page.wait_for_timeout(900)
+    rd = "() => document.querySelector('.c-views-mix').textContent"
+    log.append(("4096", page.evaluate(rd)))
+    shots = [shot(page, out, f"{tag}_0_4096")]
+    b = page.query_selector(".c-views-main").bounding_box()
+    if view == "phone":
+        tap(page, b["x"] + b["width"] * 0.5, b["y"] + b["height"] * 0.3)
+    else:
+        page.mouse.click(b["x"] + b["width"] * 0.5, b["y"] + b["height"] * 0.3)
+    page.query_selector_all(".c-views-seg-b")[1].click()
+    page.wait_for_timeout(400)
+    log.append(("2048", page.evaluate(rd)))
+    shots.append(shot(page, out, f"{tag}_1_2048"))
+    page.query_selector_all(".c-views-seg-b")[0].click()
+    page.wait_for_timeout(400)
+    log.append(("1024", page.evaluate(rd)))
+    shots.append(shot(page, out, f"{tag}_2_1024"))
+    return shots
+
+
+RUNNERS = {"percentiles": run_percentiles, "heads": run_heads, "emulate": run_emulate, "table": run_table, "speed": run_speed, "views": run_views, "stages": run_stages, "formation": run_formation, "views_compact": run_views_compact}
 
 
 def main():
