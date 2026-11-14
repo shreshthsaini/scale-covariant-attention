@@ -2,7 +2,7 @@
 """Artifact preview bundle of the main page (web/index.html), so the page can be looked at as a Claude Artifact
 before anything goes to the live site. Only the main page: sub-pages link to the live site.
 
-Builds /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r2/:
+Builds /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r3/:
   page.html     the page without <!DOCTYPE>, <html>, <head> or <body> (the host wraps it); it starts with
                 <title>Scale-Covariant Attention</title> and <meta name="claude:viewport-fit-sides" content="cover">,
                 then the stylesheet links, the content and the scripts
@@ -38,12 +38,12 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 WEB = REPO / "web"
 ROOT = Path("/scratch/09032/saini_2/sca/web_builds/v5_artifact")
-OUT = ROOT / "bundle_r2"   # round 2 (18:45): a fresh folder, so no file of the first bundle lingers beside it
+OUT = ROOT / "bundle_r3"   # round 3 (19:40): a fresh, complete folder for a new Artifact
 PREV = Path("/scratch/09032/saini_2/tmp/tmp/claude-883311/-work-09032-saini-2-vista-Projects-Exploration/"
             "4c03b520-8e32-49ed-8c50-e539347fc179/scratchpad/sca_page")
 LIVE = "https://shreshthsaini.github.io/scale-covariant-attention/"
 TITLE = "Scale-Covariant Attention"
-FIXED_ROLES = ["hero16x9", "speedrace", "speedrace9x16", "method_window", "explainer"]
+FIXED_ROLES = ["hero16x9", "speedrace", "explainer"]   # no 9:16 cuts; step 2 falls back to a poster image
 SERVED = {".html", ".css", ".js", ".mjs", ".wasm", ".json", ".map", ".txt", ".md", ".csv", ".xml", ".svg", ".png",
           ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".ico", ".woff", ".woff2", ".ttf", ".otf", ".mp3", ".wav",
           ".ogg", ".mp4", ".webm", ".pdf"}
@@ -144,9 +144,12 @@ def build() -> None:
     reg = js_object(WEB / "assets/js/v5_assets.js", "window.SCA_V5")
     mounted = set(re.findall(r'data-comp="([a-z]+)"', page))
     allv = reg["videos"]
-    carousel = [k for k in allv if k.startswith("formation")] or [k for k in allv if k.startswith("process")]
+    patch3 = [k for k, v in allv.items() if v.get("role") == "patch3"]          # the five 16:9 "one patch, three sizes"
+    carousel = []
+    if 'id="process-body"' in page:
+        carousel = [k for k in allv if k.startswith("formation")] or [k for k in allv if k.startswith("process")]
     videos = {}
-    for r in FIXED_ROLES + sorted(carousel):
+    for r in FIXED_ROLES + sorted(patch3) + sorted(carousel):
         if r in allv:
             v = dict(allv[r])
             v.pop("vtt", None)                       # the host does not serve .vtt; captions are burned in
@@ -198,8 +201,9 @@ def build() -> None:
     put_text("assets/js/v5_assets.js", "// Bundle copy of assets/js/v5_assets.js: the components and videos this page uses.\n"
              "window.SCA_V5 = " + json.dumps({"comps": comps, "videos": videos}, indent=1, ensure_ascii=True) + ";\n")
     put_text("assets/js/media.js", "// Bundle: the v4 teaser and explainer are not carried; the v5 videos replace them.\nwindow.SCA_MEDIA = {};\n")
-    put_text("assets/js/traces.js", "// Bundle: the single-pass trace videos are not carried; the v5 videos replace them.\n"
-             'window.SCA_TRACES = {"available": []};\n')
+    if "assets/js/traces.js" in defer or "assets/js/traces.js" in page:
+        put_text("assets/js/traces.js", "// Bundle: the single-pass trace videos are not carried; the v5 videos replace them.\n"
+                 'window.SCA_TRACES = {"available": []};\n')
     for rel in ["assets/js/site.js"] + defer:
         copy_web(rel)
     for ref in re.findall(r'(?:src|data-src|poster|href)="(assets/[^"]+)"', page):

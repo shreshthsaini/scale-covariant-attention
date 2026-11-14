@@ -172,6 +172,38 @@ web/assets/video/v5 (the repo is committed by a loop; checked that no oversized 
   shown at 200 px); only the end shows native pixels (the final PNG).
 - Sheets: sheets/formation_*_sheet.png, formation_*_seam.png; look frames formation/look/.
 
+### 8. "One patch, three sizes" (round 3, v5_patch3.py [--cut 16x9|9x16|both] [--only <id>] [--look t,t])
+- Status (19:33): approved by the coordinator; ALL FIVE 16:9 FILES EXIST, role "patch3", 1600 x 900, 27.6 s,
+  seamless: patch3_silver_braids.mp4 4.11 MB, patch3_jumping_spider.mp4 3.72 MB, patch3_fjord_village.mp4 3.79 MB,
+  patch3_opera_house.mp4 5.16 MB, patch3_antique_shop.mp4 5.13 MB (cap 6 MB), WebP poster each (the 4K reading
+  beat). 9:16 cuts (900 x 1600, role "patch3_9x16", patch3_<id>_9x16.mp4) rendering next.
+- For the designer: this is the main "how SCA reads an image" explainer the user asked for. Embed patch3_<id>.mp4 as
+  a muted loop with the same five-prompt switcher as the formation videos (one video at a time, preload none until
+  chosen; patch3_<id>_9x16.mp4 below about 700 px); caption = manifest `caption`. It supersedes method_window on the
+  main page.
+- Round-3 tweaks (coordinator): a 12% orange tint inside the window during the reading beats; the grid dots the blue
+  strokes start from are drawn brighter (a 5 x 5 lattice of grid keys across the whole image); strokes calmer (25
+  orange, 25 blue, 1.4 px, one pulse per source per period, staggered evenly: a steady flow; orange 7 px and short
+  trips, blue 22 px from all over the image); "reads nearby" / "reads everywhere" beside the legend while they play;
+  every canvas anchored at the 4K canvas's bottom-left corner with a faint outline of the 4K extent (room to grow).
+- Teaches why the window and the grid change share but never size. Canvases TO SCALE, one token = 2.5 px at every
+  stage: 1K canvas 160 px (64 tokens), 2K 320 px (128), 4K 640 px (256); the window (64 x 64 tokens) is always
+  160 px: the whole canvas at 1K, half the side at 2K, a quarter at 4K (clamped, the sampler's rule); the grid
+  (64 x 64 keys) takes every token at 1K, one per 2 x 2 block at 2K, one per 4 x 4 at 4K (dense tokens appear, then
+  three of four / fifteen of sixteen outside the window fade).
+- Scenes: 0 final image, patch in green corner brackets, patch at 1:1 (2 s) | 1 shrink to the 1K canvas, the run's
+  stage-1 frames, orange frame = whole canvas, blue dot field, magnified inset of the 1K canvas (6 s) | 2 growth to 2K,
+  window stays, thinning, light tints, uniform reading strokes (orange short from window tokens, blue long from grid
+  keys) into the patch, the patch zoom (the run's own native window at each step) sharpens, bars "a near-looking head:
+  95% local", "a far-looking head: 94% global" (8 s) | 3 growth to 4K, same, zoom ends at 1:1, bars 93% / 100%, then
+  the focus visits the two other presets (window travels, grid stays) (8 s) | 4 recap: 1K, 2K, 4K side by side to
+  scale, window and grid on each (3 s) | cross-fade to the start (0.6 s). One caption per scene (the storyboard's).
+- Bars: median over each stage's steps of the trace's per-step pi of block 12 heads 4 (local share) and 7 (global
+  share 1 - pi): 2K 0.952 / 0.936, 4K 0.930 / 1.000 (the same for all five prompts: the table is per head).
+- Patch: the formation component's first preset (the trace's own window), the other two presets in scene 3.
+- Review files: sheets/patch3_silver_braids_sheet.png (20 frames), sheets/patch3_silver_braids_seam.png; full-size
+  look frames patch3/look/sc_h01_silver_braids_{01.00,05.50,08.60,12.50,20.00,22.00,26.00}.png.
+
 ### Data for the interactive owner (webinteractive): web/assets/data/formation_media/ (6.1 MB, 5 prompts)
 - index.json: prompts, titles and patch boxes. <id>/formation.json: patch boxes, per-step list (step, stage 0/1/2,
   size "1024x1024"/"2048x2048"/"4096x4096", sigma, head4_window and head7_window = pi of block 12 heads 4 and 7, null

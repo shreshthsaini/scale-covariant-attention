@@ -21,7 +21,8 @@ import v5_media as M  # noqa: E402
 
 ORDER = ["hero_16x9", "hero_9x16", "hero_16x9_tagged", "hero_9x16_tagged", "speedrace_16x9", "speedrace_9x16",
          "method_window", "method_emulation", "method_stages", "compare_p25", "compare_p50", "compare_p75",
-         "formation_silver_braids", "formation_jumping_spider", "formation_fjord_village", "formation_opera_house",
+         "patch3_silver_braids", "patch3_jumping_spider", "patch3_fjord_village", "patch3_opera_house",
+         "patch3_antique_shop", "formation_silver_braids", "formation_jumping_spider", "formation_fjord_village", "formation_opera_house",
          "formation_antique_shop", "formation_silver_braids_9x16", "formation_jumping_spider_9x16",
          "formation_fjord_village_9x16", "formation_opera_house_9x16", "formation_antique_shop_9x16",
          "process_silver_braids", "process_jumping_spider", "process_fjord_village", "process_opera_house",
@@ -44,6 +45,8 @@ def source_line(e: dict) -> str:
         return f"recorded progressive SCA run {s['trace']}"
     if i.startswith("compare"):
         return "paper Figure 5 rows (qual_main_provenance.json): AReA, HRDiT, progressive SCA 4096^2 PNGs"
+    if i.startswith("patch3"):
+        return f"recorded progressive SCA run {s['trace']}: previews, native window crops, per-step weights; final PNG"
     if i.startswith("formation"):
         return f"recorded progressive SCA run {s['trace']} (previews, per-step weights) and its final PNG"
     if i.startswith("process"):
@@ -59,7 +62,8 @@ def main() -> int:
     total = 0
     for e in data["items"]:
         mp4, poster = M.OUT / e["file"], M.OUT / e["poster"]
-        limit = 10_000_000 if e["id"] == "explainer" else (4_000_000 if e["id"].startswith("formation") else 2_500_000)
+        limit = (10_000_000 if e["id"] == "explainer" else 6_000_000 if e["id"].startswith("patch3")
+                 else 4_000_000 if e["id"].startswith("formation") else 2_500_000)
         try:
             p = M.check_video(mp4, max_bytes=limit)
         except Exception as ex:  # noqa: BLE001

@@ -1021,6 +1021,72 @@
     });
   })();
 
+  /* "How an image forms": one patch followed through 1K, 2K and 4K (webmedia's patch3 loops) with an example
+     switcher; the 9:16 cut below 700 px when it exists; plays while in view, a visible play/pause, poster only under
+     reduced motion until the visitor presses play */
+  (function patch3() {
+    var fig = $("#patch3"); if (!fig) return;
+    var VV = V5.videos || {}, wide = [], tall = {};
+    Object.keys(VV).forEach(function (k) {
+      var v = VV[k]; if (!v || !v.file) return;
+      var stem = v.file.split("/").pop().replace(/\.mp4$/, "");
+      if (v.role === "patch3_9x16" || (/^patch3/.test(v.role || "") && /_9x16$/.test(stem))) tall[stem.replace(/^patch3_/, "").replace(/_9x16$/, "")] = v;
+      else if (v.role === "patch3") wide.push({ key: stem.replace(/^patch3_/, ""), v: v });
+    });
+    var chips = $(".p3-chips", fig), stage = $(".p3-stage", fig);
+    if (!wide.length) { if (chips) chips.hidden = true; return; }
+    var ORDER = ["silver_braids", "jumping_spider", "fjord_village", "opera_house", "antique_shop"];
+    wide.sort(function (a, b) { var i = ORDER.indexOf(a.key), j = ORDER.indexOf(b.key); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
+    var narrow = window.matchMedia && matchMedia("(max-width: 700px)").matches;
+    var poster = $("img.p3-poster", stage), v = null, at = 0, userPaused = REDUCED, visible = false;
+    var btn = el("button", { type: "button", class: "hud-btn p3-btn", "aria-label": "Pause the video", html: ICON_PAUSE });
+    stage.appendChild(btn);
+    function cur() { var w = wide[at]; return (narrow && tall[w.key]) || w.v; }
+    function shape(m) { stage.style.aspectRatio = (m.width && m.height) ? (m.width + " / " + m.height) : "16 / 9"; }
+    function load() {
+      var m = cur();
+      if (!v) {
+        v = document.createElement("video");
+        v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true;
+        v.setAttribute("muted", ""); v.setAttribute("playsinline", ""); v.preload = "auto";
+        v.addEventListener("playing", function () { v.classList.add("ready"); });
+        stage.insertBefore(v, btn);
+      }
+      v.classList.remove("ready");
+      v.setAttribute("aria-label", m.alt || "");
+      if (m.poster) { v.poster = m.poster; if (poster) poster.src = m.poster; }
+      v.src = m.file;
+      shape(m);
+    }
+    function sync() {
+      btn.innerHTML = userPaused ? ICON_PLAY : ICON_PAUSE;
+      btn.setAttribute("aria-label", userPaused ? "Play the video" : "Pause the video");
+      btn.setAttribute("aria-pressed", String(userPaused));
+      if (!v) return;
+      if (!userPaused && visible) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); } else v.pause();
+    }
+    btn.addEventListener("click", function () { userPaused = !userPaused; if (!v) load(); sync(); });
+    wide.forEach(function (w, i) {
+      var t = w.v.title || w.key.replace(/_/g, " ");
+      var b = el("button", { type: "button", class: "p3-chip", "aria-pressed": String(i === 0), "aria-label": "Example: " + t },
+        [img(w.v.poster, ""), el("span", { text: t })]);
+      b.addEventListener("click", function () {
+        if (at === i) return;
+        at = i;
+        $$("button", chips).forEach(function (x, j) { x.setAttribute("aria-pressed", String(j === i)); });
+        if (v || !REDUCED) load(); else { var m = cur(); if (poster && m.poster) poster.src = m.poster; shape(m); }
+        sync();
+      });
+      chips.appendChild(b);
+    });
+    shape(cur());
+    if (poster && cur().poster) poster.src = cur().poster;
+    if ("IntersectionObserver" in window) new IntersectionObserver(function (es) {
+      es.forEach(function (en) { visible = en.isIntersecting; if (visible && !v && !userPaused) load(); sync(); });
+    }, { threshold: 0.35 }).observe(stage);
+    else { visible = true; if (!userPaused) load(); sync(); }
+  })();
+
   /* "How it works", step 3: each bar's window share comes from the number printed beside it (numbers.js) */
   $$(".mix-w[data-pct]").forEach(function (b) {
     var v = val(b.getAttribute("data-pct"));

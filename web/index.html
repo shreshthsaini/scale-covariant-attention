@@ -106,7 +106,7 @@
       <li class="how-step">
         <div class="how-text">
           <p class="how-n">2</p>
-          <h3>At any size, every head gets both views: a native-size window around the patch and a native-size grid over the whole image.</h3>
+          <h3>At any size, every head gets both views: a native-size local window around the patch and a native-size global grid over the whole image.</h3>
         </div>
         <figure class="how-visual comp-figure">
           <div class="comp-fallback vslot" data-vrole="method_window"><div class="vslot-media frame"><img data-src="assets/video/v5/method_window.webp" width="1600" height="900" style="aspect-ratio:1600/900;width:100%;height:auto" decoding="async" alt="One head's window (orange) and grid (blue) on a 4096 by 4096 image."></div></div>
@@ -116,7 +116,7 @@
       <li class="how-step">
         <div class="how-text">
           <p class="how-n">3</p>
-          <h3>Each head mixes the two by how far it looked at 1024&sup2;, measured once, with no training.</h3>
+          <h3>Each head mixes its local window and its global grid by how far it looked at 1024&sup2;, measured once, with no training.</h3>
         </div>
         <div class="how-visual mixes">
           <div class="mix">
@@ -135,17 +135,23 @@
   </div>
 </section>
 
-<!-- ================================================================ how an image forms (formation component, then the formation or process videos) -->
+<!-- ================================================================ how an image forms: one patch through 1K, 2K and 4K (patch3 loops), then the explorer -->
 <section id="forms" class="scr" aria-labelledby="h-forms">
   <div class="wrap wide">
     <div class="sec-head">
       <h2 class="display" id="h-forms">How an image forms</h2>
-      <p class="lead">Each patch of the image is drawn by heads that look near and heads that look far. Watch the run, patch by patch, from noise to native pixels.</p>
+      <p class="lead">Follow one patch from 1K to 4K. The window around it keeps its size in tokens while the image grows; the grid over the whole image keeps its count.</p>
     </div>
-    <figure class="comp-figure forms-comp">
-      <div class="comp-mount" data-comp="formation" data-options='{}'></div>
+    <figure class="patch3" id="patch3">
+      <div class="p3-stage frame"><img class="p3-poster" src="assets/video/v5/patch3_silver_braids.webp" width="1600" height="900" loading="lazy" decoding="async" alt="One patch of a 4096 by 4096 portrait followed through progressive SCA's three sizes: the local window around it keeps 64 by 64 tokens while the canvas grows, and the global grid over the whole image keeps 64 by 64 tokens."></div>
+      <div class="p3-chips" role="group" aria-label="Example"></div>
     </figure>
-    <div id="process-body" class="forms-videos"></div>
+    <div class="forms-try">
+      <p class="try-lead">Try it: pick a patch and scrub the run.</p>
+      <figure class="comp-figure forms-comp">
+        <div class="comp-mount" data-comp="formation" data-options='{}'></div>
+      </figure>
+    </div>
   </div>
 </section>
 
@@ -234,7 +240,7 @@
 
 <script src="assets/js/v5_assets.js"></script>
 <script src="assets/js/media.js"></script>
-<script>window.SCA_DEFER = ["assets/js/numbers.js", "assets/js/process.js", "assets/js/traces.js", "assets/js/zoomgrid.js"];</script>
+<script>window.SCA_DEFER = ["assets/js/numbers.js", "assets/js/zoomgrid.js"];</script>
 <script src="assets/js/site.js"></script>
 </body>
 </html>

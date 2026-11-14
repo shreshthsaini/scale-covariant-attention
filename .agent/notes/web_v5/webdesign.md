@@ -1,5 +1,16 @@
 # Web v5: designer and integrator (role webdesign), 2026-11-13
 
+## Round 3 (19:30): one patch, three sizes
+- "How an image forms" leads with webmedia's patch3 loops (role patch3, five prompts) in a 72rem player (muted loop,
+  plays in view, play/pause button, poster only under reduced motion, the 9:16 cut below 700 px when one exists) with
+  a one-row example switcher (poster thumbnails); then "Try it: pick a patch and scrub the run." and the formation
+  explorer. The formation video carousel moved to gallery.html ("Three runs, patch by patch").
+- How it works: steps 2 and 3 now say "local window" and "global grid" once each.
+- Bundle for a NEW Artifact: /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r3/ (complete, fresh), 140
+  files, 41.1 MB, one chunk; no 9:16 cuts, no formation or process videos, no method loops (step 2 falls back to a
+  poster), explorer with one run, no zoom tiles, served types only. Check PASS (1440x900, 400x844, light, dark).
+- Section screenshots: /scratch/09032/saini_2/sca/web_builds/v5_r3_final/forms_{desktop,desktop_dark,phone,phone_dark}.png
+
 ## Round 2 (user via coordinator, 18:40): subtraction and one centrepiece
 - Main page now: hero; result (speed race + claim); How it works in three plain steps (1: two real attention
   pictures of block 12 heads 4 and 7 from paper/figures/src/data/v6_attn_block12.npz, web/build/v5_heads_pictures.py,
