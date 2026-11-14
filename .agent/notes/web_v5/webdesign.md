@@ -13,21 +13,40 @@
 
 ## Round 4 (2026-11-14): close the go-live items
 - gallery.html eight-method grid: a seeded draw replaces the partly hand-picked set. web/build/v5_gallery_draw.py ->
-  web/build/gallery_draw.json; rule: random.Random(0).sample(sorted(pool), 15), pool = the 195 Aesthetic-4K evaluation
-  prompt ids minus the main page's figure prompts (the nine gain-explorer deciles and the How-it-works sheep prompt),
-  185 ids; every pick has all eight images (HRDiT from the images Table 1 scored, eval/prog195_sca_v2 per_image.csv).
-  Picks: m2014927182109364975, m2742856837225126754, 1316997283360365550, 7289666028778764798, m4850138611731379908, m4450387145579100387, m2679953061215100202, 8065862701789418887, m4012780704267384036, 924453187493270635, m6394968997939197542, 6422600338162192082, m4844341235185759356, 4230887929316158402, 7637161027288029693. build_zoom.py compare now reads gallery_draw.json (overviews 1600 px, 3 stop tiles, thumbs).
-  Caption: "Fifteen evaluation prompts drawn with seed 0; single-pass SCA is hidden on prompts that name a person."
-- review/: rebuilt on site.css (v5 top bar, sub-page head, raised cards as <article>), single-pass SCA hidden on
-  prompts that name a person (the same keyword rule as site.js): 40 of the 96 prompts, so 40 panels hidden; one line
-  says so at the top. check_page.py's review zoom check now scopes ".rv-card"; publish_pages.sh rewrites the review
-  page's paper link to ../paper.pdf.
-- Sub-pages restyled (site.css "round 4" block): left-aligned heads without kickers, one pill style for every toggle,
-  plain meta lines, one card style, v5 type sizes. Gallery carousel shows 16:9 formation videos only.
-- Publishing: web/build/publish_exclude.txt (read by publish_pages.sh) leaves out what no page loads: the old
-  eight-method set (15 folders, 46.7 MB), assets/img/compare and qual, the single-pass trace videos and the v4
-  explainer, unplayed v5 videos (process, tagged and 9:16 hero, formation 9:16), and the unlinked review_qwen page.
-  Estimated site 365 MB plus paper.pdf 25 MB = 390 MB.
+  web/build/gallery_draw.json. Rule: random.Random(0).sample(sorted(pool), 15) (Python's random module), pool = the
+  195 Aesthetic-4K evaluation prompt ids minus the main page's figure prompts (the nine gain-explorer deciles and the
+  How-it-works sheep prompt), 185 ids; every pick has all eight images (HRDiT from the images Table 1 scored,
+  eval/prog195_sca_v2 per_image.csv). Picks (sid): m2014927182109364975, m2742856837225126754, 1316997283360365550,
+  7289666028778764798, m4850138611731379908, m4450387145579100387, m2679953061215100202, 8065862701789418887,
+  m4012780704267384036, 924453187493270635, m6394968997939197542, 6422600338162192082, m4844341235185759356,
+  4230887929316158402, 7637161027288029693. build_zoom.py compare reads gallery_draw.json (overviews 1600 px, 3 stop
+  tiles, thumbs; 63.7 MB new). Caption: "Fifteen evaluation prompts drawn with seed 0; single-pass SCA is hidden on
+  prompts that name a person." The "earlier paper version" sentence is gone.
+- review/: rebuilt on site.css (v5 top bar, sub-page head, raised cards as <article>; a <section> would take the
+  sub-page section spacing), single-pass SCA hidden on prompts that name a person (site.js's keyword rule): 40 of the
+  96 prompts, so 40 panels hidden; one line says so under the lead. check_page.py's review check scopes ".rv-card";
+  publish_pages.sh rewrites the review page's paper link to ../paper.pdf.
+- Sub-pages on the v5 system (site.css "round 4" block): left-aligned heads without kickers or eyebrows, one pill
+  style for every toggle, plain meta lines, one card style, v5 type sizes; every section on the wide column like the
+  main page (results' two mid-width sections and abstract/limits/protocol prose, exploratory's Ideogram section), table
+  titles and note boxes left-aligned. All four sub-pages carry the main page's navigation (Result, How it works, How an
+  image forms, Compare, Results, Gallery, Paper); the old "Idea" link pointed at a removed anchor (#observation).
+- Gallery carousel ("Each run, patch by patch", was "Three runs"): one item per run (5), the 16:9 cut, and below
+  700 px that run's 9:16 cut, as in the main page's players.
+- Publishing: web/build/publish_exclude.txt (read by publish_pages.sh as git pathspec excludes) leaves out 129 MB that
+  no page loads: the old eight-method set (15 folders, 46.7 MB), assets/img/qual, the trace videos and the v4
+  explainer (read only by fallbacks that never run while the v5 videos exist), the v5 process and tagged or 9:16 hero
+  cuts, and the unlinked review_qwen page. assets/img/compare STAYS (exploratory's Ideogram cards use it). Verified
+  two ways: the pathspecs against git ls-files, and a server that answers 404 for every excluded path while all five
+  pages are browsed at 1440 and 390 px with the carousels and switchers clicked (0 requests failed). Site: 397 MB in
+  3,959 files plus paper.pdf 25 MB.
+- Artifact bundle: /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r4/ (fresh), 152 files, 71.4 MB, two
+  chunks ([146 files, 51.4 MB], [5 files, 19.9 MB]); changed.json against the published copy sca_page_r3 lists 23
+  paths (site.css, site.js, v5_assets.js and the 20 patch3 files: ten mp4 and ten webp posters, all re-rendered at
+  12:30 to 12:35); removed.json empty; no new paths; page.html unchanged. Check PASS at 1440x900 and 400x844, light
+  and dark. The 23 was recounted independently by hashing every file against sca_page_r3.
+- Still open for the lead: git rm the 15 old web/assets/img/deep/compare folders (they are only excluded from the
+  site); exploratory.html's Ideogram section is still a visible placeholder ("The Ideogram 4.0 images are not in yet").
 
 ## Round 3 (user via coordinator; finished on node i614-034 after the 19:35 restart)
 - "How an image forms" leads with "One patch, three sizes" (webmedia patch3_<prompt>.mp4, role patch3): a 72rem

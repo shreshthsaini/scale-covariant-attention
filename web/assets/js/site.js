@@ -691,9 +691,12 @@
       var VV = (window.SCA_V5 || {}).videos || {};
       var keys = Object.keys(VV).filter(function (k) { return /^formation/.test(k) && VV[k].file && !/9x16/.test(k + " " + VV[k].file); });   /* 16:9 only */
       if (!keys.length) keys = Object.keys(VV).filter(function (k) { return /^process/.test(k) && VV[k].file; });
+      var tallOf = {}, narrowP = window.matchMedia && matchMedia("(max-width: 700px)").matches;   /* below 700 px each run's 9:16 cut, as in the main page's players */
+      Object.keys(VV).forEach(function (k) { var f = VV[k].file || ""; if (/_9x16\.mp4$/.test(f)) tallOf[f.replace(/_9x16\.mp4$/, ".mp4")] = VV[k]; });
       list = keys.sort().map(function (k) {
-        var x = VV[k];
-        return { sid: k, prompt: x.prompt || "", cap: x.prompt ? "" : pretty(x.caption || x.alt || ""), mp4: x.file, poster: x.poster, still: x.still || null, size: x.size || [4096, 4096],
+        var x = VV[k], c = (narrowP && tallOf[x.file]) || x;
+        return { sid: k, prompt: x.prompt || "", cap: x.prompt ? "" : pretty(x.caption || x.alt || ""), mp4: c.file, poster: c.poster, alt: x.alt || "",
+                 ratio: (c.width && c.height) ? c.width + " / " + c.height : null, still: x.still || null, size: x.size || [4096, 4096],
                  model: x.model || "FLUX.1-dev", seed: x.seed === undefined ? 0 : x.seed, label: x.label || "Progressive SCA beside AReA", title: x.title || "", caption: x.caption || "" };
       });
     }
@@ -725,7 +728,8 @@
       if (x.title) head.appendChild(el("p", { class: "proc-title", text: x.title }));
       head.appendChild(x.cap ? el("p", { class: "prompt", text: x.cap }) : el("p", { class: "prompt" }, [el("q", { text: x.prompt })]));
       var left = x.still ? el("div", { class: "still tile" }, [img(x.still, "Final image: " + x.prompt)]) : null;
-      var v = loopVideo(x.mp4, x.poster, (legacy ? "Single-pass SCA" : "Progressive SCA") + " beside AReA, step by step: " + short(x.prompt, 80), true);
+      var v = loopVideo(x.mp4, x.poster, x.alt || ((legacy ? "Single-pass SCA" : "Progressive SCA") + " beside AReA, step by step: " + short(x.prompt, 80)), true);
+      if (x.ratio) v.style.aspectRatio = x.ratio;
       if (left) stage.appendChild(left);
       stage.appendChild(v);
       if (!left) stage.style.gridTemplateColumns = "1fr";
