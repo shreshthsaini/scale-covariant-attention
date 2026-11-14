@@ -20,11 +20,16 @@ Main text at most 10 pages (now 9).
   /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r3_final (lead's publish copy in the session scratchpad,
   sca_page_r3). Old Artifact (rounds 1 and 2): https://claude.ai/artifact/2bjKpeUBiJMNKzkTmkftH6.
   The session restarted at 19:36 on controller job 1142854 (about two days left).
-- Round 4 in flight since 2026-11-14 12:15 (user: "continue"). webmedia: the patch3 reading strokes were nearly
-  invisible in the encoded videos; re-render all ten with visible flowing strokes, two sub-beats per stage tying the
-  orange/blue flows to the near- and far-looking heads' weights, a 2x magnifier at 2K. webdesign: rule-based
-  gallery set (seeded draw of 15, seed 0), person rule on review/ single-pass panels, v5 styling on sub-pages,
-  bundle_r4 with changed.json against the published copy; then the lead republishes the same Artifact URL.
+- Round 4 DONE (2026-11-14 13:50): patch3 videos re-rendered (31.8 s; visible pulses; two sub-beats per stage tie the
+  window and grid flows to the near- and far-looking heads' recorded weights; 1.56x magnifier at 2K, none in 9:16);
+  gallery eight-method set is now a seeded draw (web/build/v5_gallery_draw.py, random.Random(0).sample of 15 from
+  the 185 eval prompts not used in main-page figures; gallery_draw.json); review/ hides single-pass on 40 panels
+  whose prompts name a person; sub-pages restyled to v5; web/build/publish_exclude.txt keeps 129 MB of unused files
+  off the site (about 397 MB + paper.pdf). Artifact https://claude.ai/artifact/9kjLBJTwgYmvVNhTWrLgad is at version 3
+  (23 changed files from bundle_r4).
+  Open, not blocking: 15 old web/assets/img/deep/compare folders (46.7 MB tracked) are excluded from publishing but
+  still in git (deleting them needs the user's OK); exploratory.html has a "Placeholder" Ideogram section with empty
+  panels; gallery first screen is 9.6 MB.
 - NEXT: wait for the user's reaction to the Artifact; apply their changes (designer notes say how to rebuild), rebuild
   the bundle, republish the Artifact to the same URL; publish live only on the user's word; then HANDOVER 44,
   commit, push, sync.

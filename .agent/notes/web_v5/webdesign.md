@@ -31,6 +31,8 @@
   main page (results' two mid-width sections and abstract/limits/protocol prose, exploratory's Ideogram section), table
   titles and note boxes left-aligned. All four sub-pages carry the main page's navigation (Result, How it works, How an
   image forms, Compare, Results, Gallery, Paper); the old "Idea" link pointed at a removed anchor (#observation).
+  Sub-pages now preload the three main font files over http(s), as the main page does. Results keeps a layout shift
+  of 0.09 on desktop: the font swap reflows the abstract while the page's data scripts run (under the 0.1 bar).
 - Gallery carousel ("Each run, patch by patch", was "Three runs"): one item per run (5), the 16:9 cut, and below
   700 px that run's 9:16 cut, as in the main page's players.
 - Publishing: web/build/publish_exclude.txt (read by publish_pages.sh as git pathspec excludes) leaves out 129 MB that

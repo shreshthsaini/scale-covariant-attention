@@ -2228,3 +2228,8 @@ etc.", then "show in claud artifact first". Brief with the audit of both pages: 
   two heads' real weights, a to-scale recap. It leads "How an image forms"; the explorer follows. New Artifact:
   https://claude.ai/artifact/9kjLBJTwgYmvVNhTWrLgad (the first one reached its 511-file limit). Session was
   interrupted at 19:35 and resumed on a new controller node; nothing was lost. Still not published live.
+- Round 4, 2026-11-14 12:15 to 13:50 (user: "continue"): the patch3 reading strokes were nearly invisible in the
+  encoded files; re-rendered with visible pulses and per-head sub-beats (the near-looking head's flow is mostly window,
+  the far-looking head's mostly grid, each view scaled by the run's recorded weight). Gallery set made rule-based
+  (seeded draw of 15), review/ person rule for single-pass, sub-pages restyled, publish exclusions written. Artifact
+  updated in place (version 3). Still not published live.
