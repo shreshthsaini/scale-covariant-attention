@@ -2,7 +2,7 @@
 """Artifact preview bundle of the main page (web/index.html), so the page can be looked at as a Claude Artifact
 before anything goes to the live site. Only the main page: sub-pages link to the live site.
 
-Builds /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r3_final/:
+Builds /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle_r4/:
   page.html     the page without <!DOCTYPE>, <html>, <head> or <body> (the host wraps it); it starts with
                 <title>Scale-Covariant Attention</title> and <meta name="claude:viewport-fit-sides" content="cover">,
                 then the stylesheet links, the content and the scripts
@@ -38,9 +38,9 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 WEB = REPO / "web"
 ROOT = Path("/scratch/09032/saini_2/sca/web_builds/v5_artifact")
-OUT = ROOT / "bundle_r3_final"   # round 3, rebuilt in a fresh folder (nothing on scratch is deleted; bundle_r3 stays as it was)
+OUT = ROOT / "bundle_r4"   # round 4 (2026-11-14): fresh folder; changed.json against the published r3 copy
 PREV = Path("/scratch/09032/saini_2/tmp/tmp/claude-883311/-work-09032-saini-2-vista-Projects-Exploration/"
-            "4c03b520-8e32-49ed-8c50-e539347fc179/scratchpad/sca_page")
+            "4c03b520-8e32-49ed-8c50-e539347fc179/scratchpad/sca_page_r3")
 LIVE = "https://shreshthsaini.github.io/scale-covariant-attention/"
 TITLE = "Scale-Covariant Attention"
 FIXED_ROLES = ["hero16x9", "speedrace", "speedrace9x16", "explainer"]   # the race has a 9:16 cut the page plays on portrait screens

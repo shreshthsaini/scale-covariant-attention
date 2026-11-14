@@ -11,6 +11,24 @@
   poster), explorer with one run, no zoom tiles, served types only. Check PASS (1440x900, 400x844, light, dark).
 - Section screenshots: /scratch/09032/saini_2/sca/web_builds/v5_r3_final/forms_{desktop,desktop_dark,phone,phone_dark}.png
 
+## Round 4 (2026-11-14): close the go-live items
+- gallery.html eight-method grid: a seeded draw replaces the partly hand-picked set. web/build/v5_gallery_draw.py ->
+  web/build/gallery_draw.json; rule: random.Random(0).sample(sorted(pool), 15), pool = the 195 Aesthetic-4K evaluation
+  prompt ids minus the main page's figure prompts (the nine gain-explorer deciles and the How-it-works sheep prompt),
+  185 ids; every pick has all eight images (HRDiT from the images Table 1 scored, eval/prog195_sca_v2 per_image.csv).
+  Picks: m2014927182109364975, m2742856837225126754, 1316997283360365550, 7289666028778764798, m4850138611731379908, m4450387145579100387, m2679953061215100202, 8065862701789418887, m4012780704267384036, 924453187493270635, m6394968997939197542, 6422600338162192082, m4844341235185759356, 4230887929316158402, 7637161027288029693. build_zoom.py compare now reads gallery_draw.json (overviews 1600 px, 3 stop tiles, thumbs).
+  Caption: "Fifteen evaluation prompts drawn with seed 0; single-pass SCA is hidden on prompts that name a person."
+- review/: rebuilt on site.css (v5 top bar, sub-page head, raised cards as <article>), single-pass SCA hidden on
+  prompts that name a person (the same keyword rule as site.js): 40 of the 96 prompts, so 40 panels hidden; one line
+  says so at the top. check_page.py's review zoom check now scopes ".rv-card"; publish_pages.sh rewrites the review
+  page's paper link to ../paper.pdf.
+- Sub-pages restyled (site.css "round 4" block): left-aligned heads without kickers, one pill style for every toggle,
+  plain meta lines, one card style, v5 type sizes. Gallery carousel shows 16:9 formation videos only.
+- Publishing: web/build/publish_exclude.txt (read by publish_pages.sh) leaves out what no page loads: the old
+  eight-method set (15 folders, 46.7 MB), assets/img/compare and qual, the single-pass trace videos and the v4
+  explainer, unplayed v5 videos (process, tagged and 9:16 hero, formation 9:16), and the unlinked review_qwen page.
+  Estimated site 365 MB plus paper.pdf 25 MB = 390 MB.
+
 ## Round 3 (user via coordinator; finished on node i614-034 after the 19:35 restart)
 - "How an image forms" leads with "One patch, three sizes" (webmedia patch3_<prompt>.mp4, role patch3): a 72rem
   (1152 px at 1440) 16:9 player in a frame, muted loop that plays while in view, a visible play/pause, poster only

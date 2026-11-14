@@ -184,7 +184,16 @@ web/assets/video/v5 (the repo is committed by a loop; checked that no oversized 
   over the whole image (corners included), each live source in a ring, brackets flash as pulses arrive; dot fields
   dimmed during the sub-beats. 16:9 only: a magnified 2K canvas (500 px, 1.56x; a 2x copy, 640 px, cannot fit beside
   the to-scale canvas and the legend) beside the to-scale one during the 2K sub-beats, carrying the same reads; the
-  patch zoom steps aside meanwhile. Same file names; sizes and checks below once the batch is in.
+  patch zoom steps aside meanwhile. The recap labels now appear only once the canvases settle (no overlap while the
+  4K canvas glides). Same file names.
+- Round-4 files (2026-11-14 12:41, all ten re-rendered, v5_manifest.py passes, 31.8 s, 954 frames, seamless):
+    patch3 (16:9): silver_braids 5.03 MB, jumping_spider 4.50, fjord_village 4.51, opera_house 5.81,
+      antique_shop 5.75
+    patch3_9x16: silver_braids 4.82 MB, jumping_spider 4.37, fjord_village 4.40, opera_house 5.88, antique_shop 5.89
+  Manifest entries carry the caption "...the pulses show which tokens the patch reads, each view scaled by the
+  highlighted head's recorded weight; positions exact; weights from the run." and a `reading` note.
+  Review frames (decoded from the encoded file): patch3/look/final_r4_silver_braids_{2K_near_12.40,2K_far_14.90,
+  4K_near_21.00,4K_far_23.50}.png; sheets/patch3_<id>_sheet.png and _seam.png (and _9x16) regenerated.
 - Status (19:40, after the node restart): ALL TEN FILES EXIST AND ARE IN manifest.json, every one checked complete
   (828 frames, 27.6 s, full decode without errors, posters at video size, v5_manifest.py passes), seamless:
     role "patch3" (1600 x 900): patch3_silver_braids.mp4 4.11 MB, patch3_jumping_spider.mp4 3.72 MB,

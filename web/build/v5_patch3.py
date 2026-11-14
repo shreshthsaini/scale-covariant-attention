@@ -535,7 +535,7 @@ def frame(ctx, t: float) -> Image.Image:
             px_, py_ = x0 + pc[0] / 4096 * sd1, y0 + pc[1] / 4096 * sd1
             brackets(d, (px_ - pb / 2, py_ - pb / 2, px_ + pb / 2, py_ + pb / 2), M.rgb(M.PAL["sca"]) + (int(255 * al),),
                      arm=max(5, pb / 4), w=2.0)
-            ctx.setdefault("_recap_lab", {})[s] = (x0, al)
+            ctx.setdefault("_recap_lab", {})[s] = (x0, float(M.smoothstep((a_in - 0.8) / 0.2)))   # labels once settled
     big = big.convert("RGBA")
     big.alpha_composite(ov)
     img1 = big.convert("RGB").resize((W, H), Image.LANCZOS)
