@@ -1,5 +1,14 @@
 # Web v5: designer and integrator (role webdesign), 2026-11-13
 
+## Final check (18:10)
+check_page.py --http --sections: RESULT PASS on index, gallery, results, exploratory (desktop and phone, light and
+dark) and review/: no console errors, no broken files, no overflow, zoom checks pass, reduced motion (no video
+plays), keyboard (first Tab reaches the skip link). Main page: 14,813 px at 1440 wide, 3,082 visible words of which
+1,736 are page copy (the rest is the seven components' own text), first screen 2.94 MB, layout shift 0.002.
+Screenshots: /scratch/09032/saini_2/sca/web_builds/v5_webdesign_final4/shots/index_{desktop,phone}_{light,dark}_{first,full}.png
+(+ _full_s*.jpg segments); per-section and sub-page shots in v5_webdesign_final4/check/; side by side with AReA:
+v5_webdesign_final4/vs_area_desktop.jpg and vs_area_phone.jpg. Artifact bundle rebuilt after the last change (PASS).
+
 ## State (18:00)
 Main page rebuilt (web/index.html), new visual system (site.css), site.js split into boot + deferred rest(), three
 sub-pages, every number from build_numbers.py (paper macros as tex.* keys). All seven components and the videos of

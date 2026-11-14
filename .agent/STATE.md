@@ -9,24 +9,22 @@ Main text at most 10 pages (now 9).
 ## Status and next action
 - Paper: v6.2 delivered in two editions (tag paper-v6.2; .agent/notes/latest_delivery.md). Nothing in flight there.
   Open for the user: AI use statement, anonymous code URL.
-- IN FLIGHT since 2026-11-13 16:15: project page v5. User: "check the AReA webpage... our webpage should beat that
-  in style and quality and examples and video and gif etc." Lead brief with the audit of both pages, acceptance
-  list, page plan, component and video lists, shared contract: .agent/notes/web_v5/BRIEF.md. Captures of both pages:
-  /scratch/09032/saini_2/sca/web_builds/v6_audit/.
-- Three Opus workers (background agents of the lead session), notes in .agent/notes/web_v5/: webdesign (index.html,
-  site.css, site.js, sub-pages, numbers in line with paper v6.2), webinteractive (components percentiles, heads,
-  emulate, table, speed under assets/js/c_*.js with demos in web/dev/), webmedia (videos and loops under
-  assets/video/v5/ with manifest.json). Workers do not commit or publish.
-- User, 2026-11-13: "show in claud artifact first". Do NOT run publish_pages.sh until the user has seen the page as
-  a Claude Artifact and agreed. webdesign builds the artifact bundle (web/build/v5_artifact_bundle.py ->
-  /scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle/, page.html + files.json chunks of at most 240 files /
-  55 MB); the lead publishes it with the Artifact tool (first chunk with the page, then further chunks to the same
-  url). webmedia is finished (18 videos in web/assets/video/v5/, manifest.json).
-- NEXT: when they report, the lead reads screenshots, sends corrections, has webdesign integrate components and
-  videos, runs web/build/check_page.py, then publishes with `bash web/build/publish_pages.sh` and checks the live
-  URL https://shreshthsaini.github.io/scale-covariant-attention/. Then HANDOVER Section 44, commit, push, sync.
-- The controller node's allocation ends about 22:10 on 2026-11-13. If the session dies: workers die with it; read
-  the notes files, check web/ and git status, relaunch only unfinished roles with the same brief.
+- Project page v5 is BUILT in web/ and NOT published to the live site. User, 2026-11-13: "show in claud artifact
+  first": do not run web/build/publish_pages.sh until the user has seen the Artifact and agreed.
+  - Artifact preview (private, main page only): https://claude.ai/artifact/2bjKpeUBiJMNKzkTmkftH6, published 18:25
+    from the bundle built by web/build/v5_artifact_bundle.py (/scratch/09032/saini_2/sca/web_builds/v5_artifact/bundle;
+    the lead's publish copy is in the session scratchpad). The .vtt captions file is not in it (type not served).
+  - What exists (brief .agent/notes/web_v5/BRIEF.md; owners' notes design.md, webdesign.md, webinteractive.md,
+    webmedia.md): new index.html/site.css/site.js, sub-pages gallery.html, results.html, exploratory.html, review/;
+    seven components assets/js/c_*.js (percentiles, heads, emulate, table, speed, views, stages) with demos in
+    web/dev/; 18 videos in assets/video/v5/ with manifest.json; check_page.py passes on all pages.
+  - Open before going live: (1) the eight-method grid's 15 prompts include eight "chosen by hand" (the page says so);
+    replace with a rule-based set or get the user's OK; (2) exclude assets/img/ideogram4 (238 MB, unused by v5) and
+    web/dev from publishing so the site is under 400 MB; (3) review/ shows single-pass images on prompts that name
+    people; (4) sub-pages still carry v4 widget styling; (5) page is about 6% over the 14,000 px target.
+- NEXT: wait for the user's reaction to the Artifact; apply their changes (designer notes say how to rebuild), rebuild
+  the bundle, republish the Artifact to the same URL; publish live only on the user's word; then HANDOVER 44,
+  commit, push, sync.
 - GitHub: `bash scripts/wip_push.sh --loop 15` runs in the lead session (now also covers web/; stop with
   `touch /scratch/09032/saini_2/sca/paper_builds/wip_push.stop`).
 - \resra stays OFF for good (HANDOVER 40).
